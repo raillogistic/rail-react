@@ -29,6 +29,7 @@ export class AuthError extends Error {
   public readonly userMessage: string;
   public readonly shouldLogout: boolean;
   public readonly shouldRetry: boolean;
+  public readonly meta?: unknown;
 
   constructor(
     type: AuthErrorType,
@@ -40,6 +41,7 @@ export class AuthError extends Error {
       shouldLogout?: boolean;
       shouldRetry?: boolean;
       cause?: Error;
+      meta?: unknown;
     } = {}
   ) {
     super(message);
@@ -51,6 +53,7 @@ export class AuthError extends Error {
     this.shouldLogout = options.shouldLogout ?? false;
     this.shouldRetry = options.shouldRetry ?? false;
     this.cause = options.cause;
+    this.meta = options.meta;
   }
 }
 
@@ -104,7 +107,7 @@ export function mapGraphQLError(error: any): AuthError {
       AuthErrorType.NETWORK_ERROR,
       'Network error',
       'Unable to connect to the server. Please check your internet connection.',
-      { shouldLogout: false, networkError }
+      { shouldLogout: false, cause: error.networkError instanceof Error ? error.networkError : undefined, meta: error.networkError }
     );
   }
 

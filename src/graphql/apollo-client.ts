@@ -5,8 +5,12 @@ import { createUploadLink } from 'apollo-upload-client';
 import { tokenStorage, getSecureHeaders } from '../auth/utils/token-storage';
 import { AuthError, AuthErrorType, handleAuthError } from '../auth/utils/error-handler';
 
+// Prefer environment configuration; fall back to local dev.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const graphqlUri: string = ((import.meta as any).env?.VITE_API_ENDPOINT as string | undefined) ?? 'http://localhost:8000/graphql/';
+
 const uploadLink = createUploadLink({
-  uri: 'http://localhost:8000/graphql/',
+  uri: graphqlUri,
   credentials: 'include',
   // Use GET for queries to leverage browser/proxy HTTP caching and avoid unnecessary POSTs
   // useGETForQueries: true,
@@ -34,7 +38,7 @@ const createAuthLink = () => {
  * Create error link for handling authentication and network errors
  */
 const createErrorLink = () => {
-  return onError(({ graphQLErrors, networkError, operation, forward }) => {
+  return onError(({ graphQLErrors, networkError }) => {
     // Handle GraphQL errors
     if (graphQLErrors) {
       graphQLErrors.forEach(({ message, locations, path, extensions }) => {
@@ -48,11 +52,11 @@ const createErrorLink = () => {
             AuthErrorType.TOKEN_EXPIRED,
             'Authentication failed',
             'Your session has expired. Please log in again.',
-            { originalError: { message, locations, path } }
+            { shouldLogout: true, meta: { message, locations, path, code: extensions?.code } }
           );
 
           // Handle the error (this will trigger logout if needed)
-          handleAuthError(authError, () => {
+          void handleAuthError(authError, () => {
             // Clear tokens and redirect to login
             tokenStorage.clearAllTokens();
             window.location.href = '/login';
@@ -79,10 +83,10 @@ const createErrorLink = () => {
               AuthErrorType.TOKEN_EXPIRED,
               'Unauthorized access',
               'Your session has expired. Please log in again.',
-              { originalError: networkError }
+              { shouldLogout: true, meta: networkError }
             );
 
-            handleAuthError(authError, () => {
+            void handleAuthError(authError, () => {
               tokenStorage.clearAllTokens();
               window.location.href = '/login';
             });
@@ -139,7 +143,6 @@ const client = new ApolloClient({
     query: {
       errorPolicy: 'all',
       fetchPolicy: 'cache-first',
-      nextFetchPolicy: 'cache-first',
     },
 
   },

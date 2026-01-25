@@ -1,4 +1,3 @@
-import { ApolloClient } from '@apollo/client';
 import client from '@/graphql/apollo-client';
 
 /**

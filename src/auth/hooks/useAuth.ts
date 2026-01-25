@@ -12,17 +12,14 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMutation } from '@apollo/client/react';
 import {
-  getUserFromToken,
-  isTokenValid,
   type DecodedToken
 } from '../utils/token';
-import { AuthenticationError } from '../utils/authGuard';
 import { tokenStorage } from '../utils/token-storage';
 import { useTokenRefresh } from './useTokenRefresh';
 import { useSessionValidation } from './useSessionValidation';
 import { AuthError, AuthErrorType, mapGraphQLError, handleAuthError } from '../utils/error-handler';
 import { performLogoutCleanupWithRetry } from '../utils/apollo-cleanup';
-import { LOGIN_MUTATION, LoginResponse, LoginVariables, REFRESH_TOKEN_MUTATION, RefreshTokenResponse, RefreshTokenVariables, LOGOUT_MUTATION, LogoutResponse } from '@/graphql/mutations';
+import { LOGIN_MUTATION, type LoginResponse, type LoginVariables, LOGOUT_MUTATION, type LogoutResponse } from '@/graphql/mutations';
 import client from '@/graphql/apollo-client';
 import { DEFAULT_APP_ROUTE, ROUTES } from "@/routes/links";
 
@@ -40,14 +37,17 @@ export interface AuthState {
 
 export interface AuthActions {
   login: (credentials: LoginCredentials) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   clearError: () => void;
-  refreshAuth: () => void;
+  refreshAuth: () => Promise<void>;
   isRefreshing: boolean;
   isValidating: boolean;
 }
 
 export type UseAuthReturn = AuthState & AuthActions;
+
+const toError = (value: unknown): Error =>
+  value instanceof Error ? value : new Error(String(value));
 
 const normalizePermissions = (permissions: unknown): string[] => {
   if (!permissions) {
@@ -83,10 +83,6 @@ export const useAuth = (): UseAuthReturn => {
     client: client,
   });
 
-  const [refreshTokenMutation] = useMutation<RefreshTokenResponse, RefreshTokenVariables>(
-    REFRESH_TOKEN_MUTATION,
-    { client }
-  );
   const [logoutMutation] = useMutation<LogoutResponse>(LOGOUT_MUTATION, { client });
 
   const [state, setState] = useState<AuthState>({
@@ -100,7 +96,7 @@ export const useAuth = (): UseAuthReturn => {
   const logoutRef = useRef<(() => Promise<void>) | null>(null);
 
   // Memoized callbacks for token refresh hook
-  const onTokenRefreshed = useCallback((user: any) => {
+  const onTokenRefreshed = useCallback((user: Partial<DecodedToken> | null) => {
     const normalizedUser = normalizeUser(user);
     tokenStorage.setSessionActive(true);
     // Update state when token is refreshed
@@ -114,7 +110,7 @@ export const useAuth = (): UseAuthReturn => {
   const onRefreshFailed = useCallback(() => {
     // Handle refresh failure by logging out
     if (logoutRef.current) {
-      logoutRef.current();
+      void logoutRef.current();
     }
   }, []);
 
@@ -125,7 +121,7 @@ export const useAuth = (): UseAuthReturn => {
   );
 
   // Session validation hook for startup validation
-  const { isValidating, validateSession, validationError, wasAborted } = useSessionValidation();
+  const { isValidating, validateSession } = useSessionValidation();
 
 
   /**
@@ -193,9 +189,9 @@ export const useAuth = (): UseAuthReturn => {
       
       const authError = new AuthError(
         AuthErrorType.UNKNOWN_ERROR,
-        (error as Error).message || 'Authentication initialization failed',
+        toError(error).message || 'Authentication initialization failed',
         'Failed to initialize authentication. Please try logging in again.',
-        { shouldLogout: true, cause: error }
+        { shouldLogout: true, cause: toError(error), meta: error }
       );
 
       await ensureMinimumLoadingTime();
@@ -315,13 +311,15 @@ export const useAuth = (): UseAuthReturn => {
     } catch (error: unknown) {
       console.error('Login error:', error);
 
-      const authError = (error instanceof Error && (error.hasOwnProperty('networkError') || error.hasOwnProperty('graphQLErrors')))
+      // Apollo errors extend Error and may contain `networkError` / `graphQLErrors`.
+      const maybeApolloError = error as unknown as { networkError?: unknown; graphQLErrors?: unknown };
+      const authError = (maybeApolloError && (maybeApolloError.networkError || maybeApolloError.graphQLErrors))
         ? mapGraphQLError(error)
         : new AuthError(
           AuthErrorType.UNKNOWN_ERROR,
-          (error as Error).message || 'Login failed',
+          toError(error).message || 'Login failed',
           'Login failed. Please check your credentials and try again.',
-          { cause: error }
+          { cause: toError(error), meta: error }
         );
 
       setState(prev => ({ ...prev, isLoading: false, error: authError }));
@@ -337,42 +335,6 @@ export const useAuth = (): UseAuthReturn => {
   const clearError = useCallback(() => {
     setState(prev => ({ ...prev, error: null }));
   }, []);
-
-  /**
-   * Refresh authentication token using GraphQL mutation
-   */
-  const refreshToken = useCallback(async (): Promise<boolean> => {
-    try {
-      // We don't need to pass refresh_token explicitly if it's in a cookie
-      const { data } = await refreshTokenMutation({
-        variables: { refresh_token: null }, // Optional now
-      });
-
-      if (!data?.refresh_token) {
-        return false;
-      }
-
-      // Cookies updated by backend
-
-      // Update user state with new token info if needed (usually just validity)
-      // The user object might be returned or we might need to re-fetch 'me'
-      // But typically refresh just keeps the session alive.
-      // If we want to update the user object, we should call validateSession or use returned user.
-      const user = normalizeUser(data.refresh_token.user);
-      tokenStorage.setSessionActive(true);
-      
-      setState(prev => ({
-        ...prev,
-        user: user || prev.user, // Update if returned, else keep
-        isAuthenticated: true,
-      }));
-
-      return true;
-    } catch (error) {
-      console.error('Token refresh failed:', error);
-      return false;
-    }
-  }, [refreshTokenMutation]);
 
   /**
    * Refresh authentication state (useful for manual token refresh)

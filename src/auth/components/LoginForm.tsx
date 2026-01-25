@@ -18,11 +18,8 @@ import {
   Mail,
   Lock,
   AlertCircle,
-  Wifi,
   WifiOff,
 } from "lucide-react";
-import { Button } from "@/lib/components/ui/button";
-import { Input } from "@/lib/components/ui/input";
 import { useAuthContext } from "@/views/providers/AuthProvider";
 import {
   isServerOfflineError,
@@ -56,8 +53,8 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onForgotPassword }) => {
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      username: "admin",
-      password: "admin",
+      username: "",
+      password: "",
     },
   });
 

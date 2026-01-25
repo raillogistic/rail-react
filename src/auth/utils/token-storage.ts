@@ -18,6 +18,14 @@ const ACCESS_TOKEN_KEY = 'rail_access_token';
 const REFRESH_TOKEN_KEY = 'rail_refresh_token';
 const ACCESS_TOKEN_EXPIRY_KEY = 'rail_access_token_exp';
 
+const allowInsecureRefreshTokenStorage =
+  // Vite injects `import.meta.env` in the browser build.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_ALLOW_INSECURE_REFRESH_TOKEN_STORAGE === 'true') ||
+  false;
+
+let hasWarnedInsecureRefreshTokenStorage = false;
+
 // In-memory cache for the current page lifetime
 let csrfToken: string | null = null;
 let memoryAccessToken: string | null = null;
@@ -178,11 +186,26 @@ export const tokenStorage: TokenStorage = {
   },
 
   setRefreshToken: (token: string): void => {
+    if (!allowInsecureRefreshTokenStorage) {
+      if (!hasWarnedInsecureRefreshTokenStorage) {
+        hasWarnedInsecureRefreshTokenStorage = true;
+        console.warn(
+          'Ignoring refresh token provided to the client. Store refresh tokens in HttpOnly cookies instead. ' +
+            'To allow insecure sessionStorage fallback (dev only), set VITE_ALLOW_INSECURE_REFRESH_TOKEN_STORAGE=true.'
+        );
+      }
+      return;
+    }
+
     memoryRefreshToken = token;
     writeSessionStorage(REFRESH_TOKEN_KEY, token);
   },
 
   getRefreshToken: (): string | null => {
+    if (!allowInsecureRefreshTokenStorage) {
+      return null;
+    }
+
     if (memoryRefreshToken) {
       return memoryRefreshToken;
     }

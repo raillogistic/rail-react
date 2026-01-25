@@ -12,7 +12,6 @@ import {
   Lock,
   AlertCircle,
   WifiOff,
-  Train, // Using Train as placeholder icon if available, otherwise standard icon
 } from "lucide-react";
 import {
   isServerOfflineError,
@@ -34,7 +33,6 @@ export const LoginPage: React.FC = () => {
   const { login, isLoading, error, clearError } = useAuthContext();
   const [showPassword, setShowPassword] = useState(false);
   const [isServerOnline, setIsServerOnline] = useState(true);
-  const [isCheckingConnectivity, setIsCheckingConnectivity] = useState(false);
 
   const {
     register,
@@ -51,10 +49,8 @@ export const LoginPage: React.FC = () => {
 
   useEffect(() => {
     const checkConnectivity = async () => {
-      setIsCheckingConnectivity(true);
       const isOnline = await testServerConnectivity();
       setIsServerOnline(isOnline);
-      setIsCheckingConnectivity(false);
     };
 
     checkConnectivity();
@@ -67,10 +63,8 @@ export const LoginPage: React.FC = () => {
   useEffect(() => {
     if (error && isServerOfflineError(error)) {
       const checkConnectivity = async () => {
-        setIsCheckingConnectivity(true);
         const isOnline = await testServerConnectivity();
         setIsServerOnline(isOnline);
-        setIsCheckingConnectivity(false);
       };
       checkConnectivity();
     }

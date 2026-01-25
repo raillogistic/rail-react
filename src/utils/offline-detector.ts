@@ -8,8 +8,6 @@
  * Example: const isOffline = await isServerOffline()
  */
 
-import {  } from '@apollo/client';
-
 /**
  * Check if an error indicates the server is offline
  */
@@ -63,12 +61,32 @@ export const isBrowserOnline = (): boolean => {
 /**
  * Test server connectivity by making a simple request
  */
-export const testServerConnectivity = async (serverUrl: string = 'http://localhost:8000'): Promise<boolean> => {
+const getDefaultServerUrl = (): string => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const apiEndpoint = (import.meta as any).env?.VITE_API_ENDPOINT as string | undefined;
+
+  if (typeof window !== 'undefined') {
+    if (apiEndpoint) {
+      try {
+        return new URL(apiEndpoint, window.location.origin).origin;
+      } catch {
+        // ignore
+      }
+    }
+
+    return window.location.origin;
+  }
+
+  return 'http://localhost:8000';
+};
+
+export const testServerConnectivity = async (serverUrl?: string): Promise<boolean> => {
+  const baseUrl = serverUrl ?? getDefaultServerUrl();
   try {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
     
-    const response = await fetch(`${serverUrl}/health`, {
+    const response = await fetch(`${baseUrl}/health`, {
       method: 'GET',
       signal: controller.signal,
       cache: 'no-cache',

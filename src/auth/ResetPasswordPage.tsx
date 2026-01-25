@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -89,12 +89,12 @@ export function ResetPasswordPage() {
       } else {
         toast.error(response.data?.validate_reset_code?.errors[0] || "Code invalide.");
       }
-    } catch (error) {
+    } catch {
       toast.error("Erreur lors de la vérification.");
     }
   }
 
-  async function onResetPassword(data: any) {
+  async function onResetPassword(data: { new_password: string; confirm_password: string }) {
     try {
       const response = await confirmReset({
         variables: {
@@ -110,7 +110,7 @@ export function ResetPasswordPage() {
       } else {
         toast.error(response.data?.confirm_password_reset?.errors[0] || "Erreur lors de la réinitialisation.");
       }
-    } catch (error) {
+    } catch {
       toast.error("Erreur serveur.");
     }
   }
