@@ -5,7 +5,7 @@ import {
   IconUserCircle,
   IconSettings,
 } from "@tabler/icons-react";
-import { useAuthContext } from "@/views/providers/AuthProvider";
+import { useAuthContext } from "@/auth/context";
 import {
   Avatar,
   AvatarFallback,

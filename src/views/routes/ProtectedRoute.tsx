@@ -10,7 +10,7 @@
 
 import React from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import { useAuthContext } from "@/views/providers/AuthProvider";
+import { useAuthContext } from "@/auth/context";
 import { ROUTES } from "@/routes/links";
 import OfflineNotification from "@/lib/components/OfflineNotification";
 import { userHasPermission } from "@/auth/utils/permission-matching";

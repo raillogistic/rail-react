@@ -12,4 +12,10 @@ export default defineConfig({
       "@core": path.resolve(__dirname, "./src/core"),
     },
   },
+  test: {
+    globals: true,
+    environment: "jsdom",
+    setupFiles: "./src/test/setup.ts",
+    css: true,
+  },
 });

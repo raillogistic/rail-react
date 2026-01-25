@@ -14,7 +14,7 @@ import { useMutation } from '@apollo/client/react';
 import {
   type DecodedToken
 } from '../utils/token';
-import { tokenStorage } from '../utils/token-storage';
+import { AUTH_SESSION_EVENT, tokenStorage } from '../utils/token-storage';
 import { useTokenRefresh } from './useTokenRefresh';
 import { useSessionValidation } from './useSessionValidation';
 import { AuthError, AuthErrorType, mapGraphQLError, handleAuthError } from '../utils/error-handler';
@@ -121,7 +121,7 @@ export const useAuth = (): UseAuthReturn => {
         isAuthenticated: false,
       }));
     }
-  }, [performTokenRefresh, scheduleRefresh, validateSession]);
+  }, [validateSession]);
 
   const onRefreshFailed = useCallback(() => {
     // Handle refresh failure by logging out
@@ -380,6 +380,31 @@ export const useAuth = (): UseAuthReturn => {
   useEffect(() => {
     initializeAuth();
   }, [initializeAuth]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const handleSessionChange = (event: Event) => {
+      const detail = (event as CustomEvent<{ isActive?: boolean }>).detail;
+      if (detail?.isActive === false) {
+        setState(prev => ({
+          ...prev,
+          user: null,
+          isAuthenticated: false,
+          isLoading: false,
+          error: null,
+        }));
+      }
+    };
+
+    window.addEventListener(AUTH_SESSION_EVENT, handleSessionChange as EventListener);
+
+    return () => {
+      window.removeEventListener(AUTH_SESSION_EVENT, handleSessionChange as EventListener);
+    };
+  }, []);
 
   return {
     ...state,

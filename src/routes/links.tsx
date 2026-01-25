@@ -8,7 +8,6 @@
 import type { ComponentType, ReactNode } from "react";
 import { LayoutDashboard, Settings, Shield, User } from "lucide-react";
 
-import DashboardPage from "@/views/dashboard/Dashboard";
 import { AccountSettingsPage } from "@/views/settings/AccountSettingsPage";
 import { AdminUISettingsPage } from "@/views/settings/AdminUISettingsPage";
 import { AppearanceSettingsPage } from "@/views/settings/AppearanceSettingsPage";
@@ -73,7 +72,7 @@ const CORE_NAVIGATION_LINKS: NavigationSection[] = [
         icon: LayoutDashboard,
         requiresAuth: true,
         description: "Vue synthèse des indicateurs",
-        component: <DashboardPage />,
+        component: <>dashboard componentfrom links</>,
       },
     ],
   },
@@ -147,11 +146,11 @@ export const flattenNavigationPages = (): NavigationPage[] =>
           ]
         : []),
       ...(item.children ?? []),
-    ])
+    ]),
   );
 
 export const findNavigationByPath = (
-  pathname: string
+  pathname: string,
 ):
   | {
       section: NavigationSection;

@@ -12,11 +12,12 @@ import { jwtDecode } from "jwt-decode";
 import { tokenStorage } from "./token-storage";
 
 export interface DecodedToken {
-  username: string;
+  user_id?: string | number;
+  username?: string;
   first_name?: string;
   last_name?: string;
-  sub: string;
-  email: string;
+  email?: string;
+  sub?: string;
   exp: number;
   iat: number;
   permissions?: string[];

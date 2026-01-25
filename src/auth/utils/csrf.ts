@@ -2,6 +2,12 @@ import { tokenStorage } from "./token-storage";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const csrfBootstrapUrl: string | null = (import.meta as any).env?.VITE_CSRF_ENDPOINT ?? null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const csrfResponseHeader: string | null = (import.meta as any).env?.VITE_CSRF_RESPONSE_HEADER ?? null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const csrfResponseField: string | null = (import.meta as any).env?.VITE_CSRF_TOKEN_FIELD ?? null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const csrfWriteCookie: boolean = (import.meta as any).env?.VITE_CSRF_WRITE_COOKIE === "true";
 
 let bootstrapPromise: Promise<void> | null = null;
 
@@ -25,14 +31,49 @@ export const ensureCsrfCookie = async (): Promise<void> => {
 
   bootstrapPromise = (async () => {
     try {
-      await fetch(csrfBootstrapUrl, {
+      const response = await fetch(csrfBootstrapUrl, {
         method: "GET",
         credentials: "include",
         cache: "no-store",
       });
 
-      // Refresh in-memory cache from cookie after bootstrap call.
-      tokenStorage.getCSRFToken();
+      // Attempt to read CSRF token from response headers or JSON body.
+      let token: string | null = null;
+
+      if (csrfResponseHeader) {
+        token = response.headers.get(csrfResponseHeader);
+      } else {
+        // Common CSRF header names (case-insensitive).
+        token =
+          response.headers.get("x-csrftoken") ||
+          response.headers.get("x-csrf-token") ||
+          response.headers.get("x-xsrf-token");
+      }
+
+      if (!token) {
+        const contentType = response.headers.get("content-type") || "";
+        if (contentType.includes("application/json")) {
+          try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const data: any = await response.json();
+            const field = csrfResponseField || "csrfToken";
+            token =
+              data?.[field] ??
+              data?.csrfToken ??
+              data?.csrf_token ??
+              null;
+          } catch {
+            // ignore JSON parse errors
+          }
+        }
+      }
+
+      if (token) {
+        tokenStorage.setCSRFToken(token, { persist: csrfWriteCookie });
+      } else {
+        // Refresh in-memory cache from cookie after bootstrap call.
+        tokenStorage.getCSRFToken();
+      }
     } catch (error) {
       // Don't block app flows; some backends set CSRF cookies elsewhere.
       console.warn("CSRF bootstrap request failed:", error);
@@ -43,4 +84,3 @@ export const ensureCsrfCookie = async (): Promise<void> => {
 
   return bootstrapPromise;
 };
-

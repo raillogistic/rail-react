@@ -10,8 +10,13 @@ import Cookies from 'js-cookie';
 import { jwtDecode } from 'jwt-decode';
 
 // CSRF token storage
-const CSRF_TOKEN_KEY = 'csrftoken';
+// Prefer env override so the client can align with Django's CSRF_COOKIE_NAME.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const CSRF_COOKIE_NAME =
+  (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_CSRF_COOKIE_NAME) ||
+  'csrftoken';
 const SESSION_STATUS_KEY = 'rail_session_active';
+export const AUTH_SESSION_EVENT = 'auth-session-change';
 
 // Fallback storage keys for non-HttpOnly copies (session scoped)
 const ACCESS_TOKEN_KEY = 'rail_access_token';
@@ -76,6 +81,18 @@ const persistSessionFlag = (isActive: boolean): void => {
     }
   } catch (error) {
     console.warn('Unable to persist session flag', error);
+  }
+};
+
+const emitSessionEvent = (isActive: boolean): void => {
+  if (typeof window === 'undefined') {
+    return;
+  }
+
+  try {
+    window.dispatchEvent(new CustomEvent(AUTH_SESSION_EVENT, { detail: { isActive } }));
+  } catch {
+    // ignore
   }
 };
 
@@ -154,7 +171,7 @@ export interface TokenStorage {
   getRefreshToken: () => string | null;
   clearRefreshToken: () => void;
   getCSRFToken: () => string | null;
-  setCSRFToken: (token: string) => void;
+  setCSRFToken: (token: string, options?: { persist?: boolean }) => void;
   clearAllTokens: () => void;
   hasValidSession: () => boolean;
   getAccessTokenTimeToExpiry: () => number;
@@ -257,23 +274,34 @@ export const tokenStorage: TokenStorage = {
   },
 
   getCSRFToken: (): string | null => {
-    if (!csrfToken) {
-      csrfToken = Cookies.get(CSRF_TOKEN_KEY) || null;
+    if (csrfToken) {
+      return csrfToken;
     }
+
+    // Fallback to readable cookie if available (may be HttpOnly and unreadable).
+    const cookieValue = Cookies.get(CSRF_COOKIE_NAME) || null;
+    if (cookieValue) {
+      csrfToken = cookieValue;
+    }
+
     return csrfToken;
   },
 
-  setCSRFToken: (token: string): void => {
+  setCSRFToken: (token: string, options?: { persist?: boolean }): void => {
     csrfToken = token;
-    Cookies.set(CSRF_TOKEN_KEY, token, getSecureCookieOptions());
+
+    // Only persist to a non-HttpOnly cookie when explicitly allowed.
+    if (options?.persist) {
+      Cookies.set(CSRF_COOKIE_NAME, token, getSecureCookieOptions());
+    }
   },
 
   clearAllTokens: (): void => {
     csrfToken = null;
-    Cookies.remove(CSRF_TOKEN_KEY);
+    Cookies.remove(CSRF_COOKIE_NAME);
     tokenStorage.clearAccessToken();
     tokenStorage.clearRefreshToken();
-    persistSessionFlag(false);
+    tokenStorage.setSessionActive(false);
   },
 
   hasValidSession: (): boolean => {
@@ -282,6 +310,7 @@ export const tokenStorage: TokenStorage = {
 
   setSessionActive: (isActive: boolean): void => {
     persistSessionFlag(isActive);
+    emitSessionEvent(isActive);
   },
 
   getAccessTokenTimeToExpiry: (): number => {
@@ -321,12 +350,17 @@ export const shouldRefreshToken = (): boolean => {
 /**
  * Get headers with CSRF protection for requests
  */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const CSRF_HEADER_NAME: string =
+  (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_CSRF_HEADER_NAME) ||
+  'X-CSRFToken';
+
 export const getSecureHeaders = (): Record<string, string> => {
   const headers: Record<string, string> = {};
 
   const csrf = tokenStorage.getCSRFToken();
   if (csrf) {
-    headers['X-CSRFToken'] = csrf;
+    headers[CSRF_HEADER_NAME] = csrf;
     headers['X-Requested-With'] = 'XMLHttpRequest';
   }
 

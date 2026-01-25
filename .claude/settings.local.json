@@ -4,7 +4,9 @@
       "Bash(dir:*)",
       "Bash(ls -d:*)",
       "Bash(grep -r \"any\" src --include:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(npm install:*)",
+      "Bash(npm test:*)"
     ]
   }
 }

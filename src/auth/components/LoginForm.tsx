@@ -20,7 +20,7 @@ import {
   AlertCircle,
   WifiOff,
 } from "lucide-react";
-import { useAuthContext } from "@/views/providers/AuthProvider";
+import { useAuthContext } from "@/auth/context";
 import {
   isServerOfflineError,
   onOfflineStatusChange,

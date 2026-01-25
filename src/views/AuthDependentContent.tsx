@@ -1,6 +1,6 @@
 import React from "react";
 import { ThemeProvider } from "@/lib/theme/ThemeProvider";
-import { useAuthContext } from "@/views/providers/AuthProvider";
+import { useAuthContext } from "@/auth/context";
 import { RouteBuilder } from "@/views/routes/RouteBuilder";
 import { Toaster } from "@/lib/components/ui/sonner";
 import { 

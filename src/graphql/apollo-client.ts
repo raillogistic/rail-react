@@ -1,4 +1,4 @@
-import { ApolloClient, InMemoryCache, from } from '@apollo/client';
+import { ApolloClient, ApolloLink, InMemoryCache, from } from '@apollo/client';
 import { setContext } from '@apollo/client/link/context';
 import { onError } from '@apollo/client/link/error';
 import { fromPromise } from '@apollo/client/link/utils';
@@ -10,10 +10,22 @@ import { isCamelCaseSchema } from './schema-naming';
 
 // Prefer environment configuration; fall back to local dev.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-const graphqlUri: string = ((import.meta as any).env?.VITE_API_ENDPOINT as string | undefined) ?? 'http://localhost:8000/graphql/';
+const apiGraphqlUri: string =
+  ((import.meta as any).env?.VITE_API_ENDPOINT as string | undefined) ??
+  'http://localhost:8000/graphql/';
+const authGraphqlUri: string =
+  ((import.meta as any).env?.VITE_AUTH_ENDPOINT as string | undefined) ??
+  apiGraphqlUri;
 
-const uploadLink = createUploadLink({
-  uri: graphqlUri,
+const apiUploadLink = createUploadLink({
+  uri: apiGraphqlUri,
+  credentials: 'include',
+  // Use GET for queries to leverage browser/proxy HTTP caching and avoid unnecessary POSTs
+  // useGETForQueries: true,
+});
+
+const authUploadLink = createUploadLink({
+  uri: authGraphqlUri,
   credentials: 'include',
   // Use GET for queries to leverage browser/proxy HTTP caching and avoid unnecessary POSTs
   // useGETForQueries: true,
@@ -51,7 +63,7 @@ const refreshAccessToken = async (): Promise<boolean> => {
           }
         `;
 
-      const response = await fetch(graphqlUri, {
+      const response = await fetch(authGraphqlUri, {
         method: 'POST',
         credentials: 'include',
         headers: {
@@ -72,12 +84,16 @@ const refreshAccessToken = async (): Promise<boolean> => {
       const payload: any = await response.json();
       const token: string | undefined = payload?.data?.refresh_token?.token;
       const ok: boolean | undefined = payload?.data?.refresh_token?.ok;
+      const refreshToken: string | undefined = payload?.data?.refresh_token?.refresh_token;
 
       if (!ok || !token) {
         return false;
       }
 
       tokenStorage.setAccessToken(token);
+      if (refreshToken) {
+        tokenStorage.setRefreshToken(refreshToken);
+      }
       tokenStorage.setSessionActive(true);
       return true;
     } catch (error) {
@@ -122,7 +138,10 @@ const createAuthLink = () => {
  */
 const createErrorLink = () => {
   return onError(({ graphQLErrors, networkError, operation, forward }) => {
-    const context = operation.getContext() as { skipAuthRefresh?: boolean } | undefined;
+    const context = operation.getContext() as {
+      skipAuthRefresh?: boolean;
+      skipAuthRedirect?: boolean;
+    } | undefined;
     const skipAuthRefresh = context?.skipAuthRefresh === true;
 
     // Handle GraphQL errors
@@ -159,7 +178,6 @@ const createErrorLink = () => {
 
           void handleAuthError(authError, () => {
             tokenStorage.clearAllTokens();
-            window.location.href = '/login';
           });
 
           return forward(operation);
@@ -196,7 +214,6 @@ const createErrorLink = () => {
 
               void handleAuthError(authError, () => {
                 tokenStorage.clearAllTokens();
-                window.location.href = '/login';
               });
 
               return forward(operation);
@@ -227,12 +244,30 @@ const createErrorLink = () => {
   });
 };
 
+const authOperationNames = new Set<string>([
+  'Login',
+]);
+
+const createEndpointLink = () => {
+  return ApolloLink.split(
+    (operation) => {
+      const context = operation.getContext() as { useAuthEndpoint?: boolean } | undefined;
+      if (context?.useAuthEndpoint) {
+        return true;
+      }
+      return authOperationNames.has(operation.operationName);
+    },
+    authUploadLink,
+    apiUploadLink
+  );
+};
+
 // Create Apollo Client instance
 const client = new ApolloClient({
   link: from([
     createErrorLink(),
     createAuthLink(),
-    uploadLink,
+    createEndpointLink(),
   ]),
   cache: new InMemoryCache({
     typePolicies: {

@@ -11,7 +11,7 @@
 import React from "react";
 import { BrowserRouter } from "react-router-dom";
 import { ApolloProvider } from "@apollo/client/react";
-import { AuthProvider } from "@/views/providers/AuthProvider";
+import { AuthProvider } from "@/auth/context";
 import { AuthDependentContent } from "./views/AuthDependentContent";
 import client from "@/graphql/apollo-client";
 

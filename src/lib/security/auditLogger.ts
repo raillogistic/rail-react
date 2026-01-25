@@ -1,6 +1,6 @@
 import * as React from "react";
 import { gql, useMutation } from "@apollo/client";
-import { useAuthContext } from "@/views/providers/AuthProvider";
+import { useAuthContext } from "@/auth/context";
 
 const LOG_FRONTEND_AUDIT_MUTATION = gql`
   mutation LogFrontendAudit($input: FrontendAuditEventInput!) {
