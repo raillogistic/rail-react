@@ -13,7 +13,7 @@ import { useMutation } from '@apollo/client/react';
 import { tokenStorage, shouldRefreshToken } from '../utils/token-storage';
 import { getUserFromToken, isTokenValid } from '../utils/token';
 import {
-  REFRESH_TOKEN_MUTATION,
+  REFRESH_TOKEN_MUTATION_RESOLVED,
   type RefreshTokenResponse,
   type RefreshTokenVariables
 } from '@/graphql/mutations';
@@ -30,16 +30,17 @@ interface UseTokenRefreshReturn {
  * Hook for automatic token refresh management
  */
 export const useTokenRefresh = (
-  onTokenRefreshed?: (user: any) => void,
+  onTokenRefreshed?: (user: ReturnType<typeof getUserFromToken>) => void | Promise<void>,
   onRefreshFailed?: () => void
 ): UseTokenRefreshReturn => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const refreshTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isRefreshingRef = useRef(false);
+  const refreshTokenRef = useRef<(() => Promise<boolean>) | null>(null);
 
   // GraphQL mutation for token refresh
   const [refreshTokenMutation] = useMutation<RefreshTokenResponse, RefreshTokenVariables>(
-    REFRESH_TOKEN_MUTATION,
+    REFRESH_TOKEN_MUTATION_RESOLVED,
     { client }
   );
 
@@ -52,6 +53,33 @@ export const useTokenRefresh = (
       refreshTimerRef.current = null;
     }
   }, []);
+
+  /**
+   * Schedule automatic token refresh based on token expiry
+   */
+  const scheduleRefresh = useCallback(() => {
+    clearRefreshTimer();
+
+    const token = tokenStorage.getAccessToken();
+    if (!token || !isTokenValid(token)) {
+      return;
+    }
+
+    const timeLeftMs = tokenStorage.getAccessTokenTimeToExpiry();
+    if (timeLeftMs <= 0) {
+      return;
+    }
+
+    // Trigger refresh once we enter the refresh window.
+    const refreshWindowMs = 5 * 60 * 1000;
+    const refreshDelayMs = Math.max(0, timeLeftMs - refreshWindowMs);
+
+    refreshTimerRef.current = setTimeout(() => {
+      if (tokenStorage.hasValidSession()) {
+        void refreshTokenRef.current?.();
+      }
+    }, refreshDelayMs);
+  }, [clearRefreshTimer]);
 
   /**
    * Perform token refresh using GraphQL mutation
@@ -101,8 +129,11 @@ export const useTokenRefresh = (
       // Notify parent component of successful refresh
       if (onTokenRefreshed) {
         const user = getUserFromToken(token);
-        onTokenRefreshed(user);
+        await Promise.resolve(onTokenRefreshed(user));
       }
+
+      // Schedule the next refresh based on the newly issued token.
+      scheduleRefresh();
 
       console.log('✅ Token refreshed successfully');
       return true;
@@ -114,34 +145,9 @@ export const useTokenRefresh = (
       isRefreshingRef.current = false;
       setIsRefreshing(false);
     }
-  }, [refreshTokenMutation, onTokenRefreshed, onRefreshFailed]);
+  }, [refreshTokenMutation, onTokenRefreshed, onRefreshFailed, scheduleRefresh]);
 
-  /**
-   * Schedule automatic token refresh based on token expiry
-   */
-  const scheduleRefresh = useCallback(() => {
-    clearRefreshTimer();
-
-    const token = tokenStorage.getAccessToken();
-    if (!token || !isTokenValid(token)) {
-      return;
-    }
-
-    const timeLeftMs = tokenStorage.getAccessTokenTimeToExpiry();
-    if (timeLeftMs <= 0) {
-      return;
-    }
-
-    // Trigger refresh once we enter the refresh window.
-    const refreshWindowMs = 5 * 60 * 1000;
-    const refreshDelayMs = Math.max(0, timeLeftMs - refreshWindowMs);
-
-    refreshTimerRef.current = setTimeout(() => {
-      if (tokenStorage.hasValidSession()) {
-        refreshToken();
-      }
-    }, refreshDelayMs);
-  }, [clearRefreshTimer, refreshToken]);
+  refreshTokenRef.current = refreshToken;
 
   /**
    * Monitor token expiry and schedule refresh
@@ -157,7 +163,7 @@ export const useTokenRefresh = (
 
       if (shouldRefreshToken()) {
         // Token needs refresh soon
-        refreshToken();
+        void refreshToken();
         return;
       }
 

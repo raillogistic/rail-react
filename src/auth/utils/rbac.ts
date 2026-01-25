@@ -9,6 +9,7 @@
  */
 
 import { User } from "@/graphql/queries";
+import { userHasPermission } from "./permission-matching";
 
 
 /**
@@ -63,12 +64,7 @@ export const hasPermission = (user: User | null, permissionCodename: string): bo
   // Superusers have all permissions
   if (user.is_superuser) return true;
 
-  // Check if user has the permission through any of their roles
-  return user.roles.some(role =>
-    role.permissions.some(permission =>
-      permission.codename === permissionCodename
-    )
-  );
+  return userHasPermission(user, permissionCodename);
 };
 
 /**

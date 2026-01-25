@@ -13,6 +13,7 @@ import { Navigate, useLocation } from "react-router-dom";
 import { useAuthContext } from "@/views/providers/AuthProvider";
 import { ROUTES } from "@/routes/links";
 import OfflineNotification from "@/lib/components/OfflineNotification";
+import { userHasPermission } from "@/auth/utils/permission-matching";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -58,7 +59,8 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
 
   // Check for required permission if specified
   if (requiredPermission && user) {
-    const hasPermission = user.permissions?.includes(requiredPermission);
+    // Client-side permission checks are UX only; the backend must enforce authorization.
+    const hasPermission = userHasPermission(user, requiredPermission);
 
     if (!hasPermission) {
       return (

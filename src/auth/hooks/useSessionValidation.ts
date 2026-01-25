@@ -11,7 +11,7 @@
 import { useCallback, useState } from "react";
 import { useLazyQuery } from "@apollo/client/react";
 import { tokenStorage } from "../utils/token-storage";
-import { GET_CURRENT_USER, type CurrentUserResponse } from "@/graphql/queries";
+import { GET_CURRENT_USER_RESOLVED, type CurrentUserResponse } from "@/graphql/queries";
 import client from "@/graphql/apollo-client";
 
 interface UseSessionValidationReturn {
@@ -31,7 +31,7 @@ export const useSessionValidation = (): UseSessionValidationReturn => {
   const [wasAborted, setWasAborted] = useState(false);
 
   // Lazy query for current user (me query)
-  const [getCurrentUser] = useLazyQuery<CurrentUserResponse>(GET_CURRENT_USER, {
+  const [getCurrentUser] = useLazyQuery<CurrentUserResponse>(GET_CURRENT_USER_RESOLVED, {
     client: client,
     errorPolicy: "all",
     fetchPolicy: "network-only", // Always fetch from network for validation
@@ -53,10 +53,7 @@ export const useSessionValidation = (): UseSessionValidationReturn => {
   const validateSession = useCallback(async (): Promise<
     CurrentUserResponse["me"] | null
   > => {
-    // Don't validate if no tokens exist
-    if (!tokenStorage.hasValidSession()) {
-      return null;
-    }
+    // Cookie-based sessions can't be inferred from Web Storage; always attempt server validation.
 
     setIsValidating(true);
     setValidationError(null);

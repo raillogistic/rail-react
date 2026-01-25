@@ -18,6 +18,12 @@ const ACCESS_TOKEN_KEY = 'rail_access_token';
 const REFRESH_TOKEN_KEY = 'rail_refresh_token';
 const ACCESS_TOKEN_EXPIRY_KEY = 'rail_access_token_exp';
 
+const allowInsecureAccessTokenStorage =
+  // Vite injects `import.meta.env` in the browser build.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_ALLOW_INSECURE_ACCESS_TOKEN_STORAGE === 'true') ||
+  false;
+
 const allowInsecureRefreshTokenStorage =
   // Vite injects `import.meta.env` in the browser build.
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -34,6 +40,27 @@ let memoryAccessTokenExpiry: number | null = null;
 
 const isBrowserEnvironment = () =>
   typeof window !== 'undefined' && typeof window.sessionStorage !== 'undefined';
+
+// Best-effort cleanup of any previously persisted token copies.
+// Keeping tokens out of Web Storage reduces the XSS blast radius.
+(() => {
+  if (!isBrowserEnvironment()) {
+    return;
+  }
+
+  try {
+    const storage = window.sessionStorage;
+    if (!allowInsecureAccessTokenStorage) {
+      storage.removeItem(ACCESS_TOKEN_KEY);
+      storage.removeItem(ACCESS_TOKEN_EXPIRY_KEY);
+    }
+    if (!allowInsecureRefreshTokenStorage) {
+      storage.removeItem(REFRESH_TOKEN_KEY);
+    }
+  } catch {
+    // ignore
+  }
+})();
 
 const persistSessionFlag = (isActive: boolean): void => {
   if (!isBrowserEnvironment()) {
@@ -142,16 +169,22 @@ export const tokenStorage: TokenStorage = {
     memoryAccessToken = token;
     memoryAccessTokenExpiry = decodeExpiryMs(token);
 
-    writeSessionStorage(ACCESS_TOKEN_KEY, token);
-    writeSessionStorage(
-      ACCESS_TOKEN_EXPIRY_KEY,
-      memoryAccessTokenExpiry ? memoryAccessTokenExpiry.toString() : null
-    );
+    if (allowInsecureAccessTokenStorage) {
+      writeSessionStorage(ACCESS_TOKEN_KEY, token);
+      writeSessionStorage(
+        ACCESS_TOKEN_EXPIRY_KEY,
+        memoryAccessTokenExpiry ? memoryAccessTokenExpiry.toString() : null
+      );
+    }
   },
 
   getAccessToken: (): string | null => {
     if (memoryAccessToken) {
       return memoryAccessToken;
+    }
+
+    if (!allowInsecureAccessTokenStorage) {
+      return null;
     }
 
     const stored = readSessionStorage(ACCESS_TOKEN_KEY);

@@ -14,9 +14,9 @@ import {
 } from './types';
 import { themes } from './themes';
 import { 
-  UPDATE_MY_SETTINGS_MUTATION, 
-  UpdateMySettingsResponse, 
-  UpdateMySettingsVariables 
+  UPDATE_MY_SETTINGS_MUTATION_RESOLVED, 
+  type UpdateMySettingsResponse, 
+  type UpdateMySettingsVariables 
 } from '@/graphql/mutations';
 import client from '@/graphql/apollo-client';
 
@@ -123,7 +123,7 @@ export function ThemeProvider({
   });
 
   const [updateSettings] = useMutation<UpdateMySettingsResponse, UpdateMySettingsVariables>(
-    UPDATE_MY_SETTINGS_MUTATION,
+    UPDATE_MY_SETTINGS_MUTATION_RESOLVED,
     { 
       client,
       ignoreResults: true // We don't need the response to update UI, as we update state optimistically

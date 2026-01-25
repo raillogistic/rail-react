@@ -1,4 +1,5 @@
 import { gql } from '@apollo/client';
+import { isCamelCaseSchema } from './schema-naming';
 
 /**
  * Default ordering applied to paginated queries so the newest records appear first.
@@ -27,6 +28,15 @@ export const GET_CURRENT_USER = gql`
       last_name
       is_staff
       is_superuser
+      roles {
+        id
+        name
+        permissions {
+          id
+          name
+          codename
+        }
+      }
       permissions
       settings {
         theme
@@ -39,6 +49,50 @@ export const GET_CURRENT_USER = gql`
     }
   }
 `;
+
+export const GET_CURRENT_USER_CAMELCASE = gql`
+  query GetCurrentUser {
+    my_permissions: myPermissions {
+      model_name: modelName
+      can_create: canCreate
+      can_read: canRead
+      can_update: canUpdate
+      can_delete: canDelete
+      can_list: canList
+    }
+    me {
+      id
+      username
+      email
+      first_name: firstName
+      last_name: lastName
+      is_staff: isStaff
+      is_superuser: isSuperuser
+      roles {
+        id
+        name
+        permissions {
+          id
+          name
+          codename
+        }
+      }
+      permissions
+      settings {
+        theme
+        mode
+        layout
+        sidebar_collapse_mode: sidebarCollapseMode
+        font_size: fontSize
+        font_family: fontFamily
+      }
+    }
+  }
+`;
+
+export const GET_CURRENT_USER_RESOLVED = isCamelCaseSchema()
+  ? GET_CURRENT_USER_CAMELCASE
+  : GET_CURRENT_USER;
 
 /**
  * Purpose: GraphQL query to verify token validity with user roles
@@ -121,6 +175,7 @@ export interface User {
   roles: Role[];
   is_staff: boolean;
   is_superuser: boolean;
+  permissions?: string[];
   settings?: UserSettings;
 }
 

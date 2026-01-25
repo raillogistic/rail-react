@@ -15,15 +15,25 @@ import { toast } from "sonner";
 import { gql, useMutation } from "@apollo/client";
 import { Link, useNavigate } from "react-router-dom";
 import { ROUTES } from "@/routes/links";
+import { isCamelCaseSchema } from "@/graphql/schema-naming";
 
-const REQUEST_PASSWORD_RESET_MUTATION = gql`
-  mutation RequestPasswordReset($email: String!) {
-    request_password_reset(email: $email) {
-      ok
-      errors
-    }
-  }
-`;
+const REQUEST_PASSWORD_RESET_MUTATION = isCamelCaseSchema()
+  ? gql`
+      mutation RequestPasswordReset($email: String!) {
+        request_password_reset: requestPasswordReset(email: $email) {
+          ok
+          errors
+        }
+      }
+    `
+  : gql`
+      mutation RequestPasswordReset($email: String!) {
+        request_password_reset(email: $email) {
+          ok
+          errors
+        }
+      }
+    `;
 
 const forgotPasswordSchema = z.object({
   email: z.string().email({

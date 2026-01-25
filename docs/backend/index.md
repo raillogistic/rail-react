@@ -1,0 +1,57 @@
+# Rail Django Documentation
+
+Welcome to the official documentation for **Rail Django**, a production-ready GraphQL framework for Django.
+
+Rail Django wraps [Graphene-Django](https://docs.graphene-python.org/projects/django/en/latest/) to provide a battery-included experience with automatic schema generation, enhanced security, and enterprise-grade features.
+
+## 📚 Table of Contents
+
+### Getting Started
+*   [**Installation**](getting-started/installation.md): Set up Rail Django in your environment.
+*   [**Quickstart**](getting-started/quickstart.md): Build your first API in under 5 minutes.
+*   [**Architecture**](getting-started/architecture.md): Understand how Rail Django works under the hood.
+
+### Tutorials
+*   [**Building Your First API**](tutorials/first-api.md): Complete beginner tutorial.
+*   [**Authentication Tutorial**](tutorials/authentication.md): Secure your API with JWT and MFA.
+*   [**Permissions Tutorial**](tutorials/permissions.md): Implement granular access control.
+*   [**Queries Deep Dive**](tutorials/queries.md): Master complex query patterns.
+*   [**Mutations Deep Dive**](tutorials/mutations.md): Master data modification.
+*   [**Configuration Tutorial**](tutorials/configuration.md): Customize the framework.
+
+### Core Concepts
+*   [**Models & Schema**](core/models-and-schema.md): How Django models map to GraphQL types.
+*   [**Queries**](core/queries.md): Fetching data with advanced filtering and pagination.
+*   [**Filtering**](core/filtering.md): Deep dive into the `where` argument.
+*   [**Mutations**](core/mutations.md): Creating, updating, and deleting data.
+*   [**Configuration Reference**](core/configuration.md): Global settings reference.
+*   [**Performance**](core/performance.md): Optimization, caching, and N+1 prevention.
+
+### Security
+*   [**Authentication & MFA**](security/authentication.md): Identity verification strategies.
+*   [**Permissions (RBAC)**](security/permissions.md): Role-based and field-level access control.
+*   [**Validation**](security/validation.md): Input validation and data integrity.
+
+### Advanced Features & Extensions
+*   [**Testing**](guides/testing.md): Best practices and utilities for testing your GraphQL API.
+*   [**Plugin System**](guides/plugins.md): Extend the framework with custom hooks and logic.
+*   [**Extensions Overview**](extensions/index.md): Audit Logging, Webhooks, Multitenancy, and more.
+*   [**Migration: Unified Inputs**](guides/migration-unified-inputs.md): Moving to the new Prisma-style relation inputs.
+
+### Operations & Reference
+*   [**Production Deployment**](operations/deployment.md): Best practices for going live.
+*   [**Troubleshooting**](guides/troubleshooting.md): Common issues and how to solve them.
+*   [**API Reference**](reference/api.md): Public API documentation.
+*   [**CLI Reference**](reference/cli.md): `rail-admin` command usage.
+*   [**GraphQLMeta**](reference/meta.md): The comprehensive guide to `class GraphQLMeta`.
+
+## 🚀 Key Features
+
+*   **Auto-CamelCase**: Automatic conversion of snake_case Python fields to camelCase GraphQL fields.
+*   **Performance**: Automatic `select_related` and `prefetch_related` optimization.
+*   **Security**: Built-in Rate Limiting, Query Depth Analysis, and Field-Level Permissions.
+*   **Developer Experience**: Custom CLI for project scaffolding and clean architecture.
+
+## 🤝 Contributing
+
+We welcome contributions! Please see our [Contributing Guide](https://github.com/raillogistic/rail-django/blob/main/CONTRIBUTING.md) for details.

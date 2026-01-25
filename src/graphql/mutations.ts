@@ -1,4 +1,5 @@
 import { gql } from '@apollo/client';
+import { isCamelCaseSchema } from './schema-naming';
 
 /**
  * Purpose: GraphQL mutation for user authentication
@@ -24,6 +25,25 @@ export const LOGIN_MUTATION = gql`
   }
 `;
 
+export const LOGIN_MUTATION_CAMELCASE = gql`
+  mutation Login($username: String!, $password: String!) {
+    login(username: $username, password: $password) {
+      ok
+      errors
+      token
+      refresh_token: refreshToken
+      permissions
+      user {
+        id
+        username
+        email
+        first_name: firstName
+        last_name: lastName
+      }
+    }
+  }
+`;
+
 /**
  * Purpose: GraphQL mutation for refreshing authentication token
  * Args: refresh_token (string, optional when HttpOnly cookies are used)
@@ -36,6 +56,18 @@ export const REFRESH_TOKEN_MUTATION = gql`
       errors
       token
       refresh_token
+      permissions
+    }
+  }
+`;
+
+export const REFRESH_TOKEN_MUTATION_CAMELCASE = gql`
+  mutation RefreshToken($refresh_token: String) {
+    refresh_token: refreshToken(refreshToken: $refresh_token) {
+      ok
+      errors
+      token
+      refresh_token: refreshToken
       permissions
     }
   }
@@ -133,6 +165,49 @@ export const UPDATE_MY_SETTINGS_MUTATION = gql`
     }
   }
 `;
+
+export const UPDATE_MY_SETTINGS_MUTATION_CAMELCASE = gql`
+  mutation UpdateMySettings(
+    $theme: String
+    $mode: String
+    $layout: String
+    $sidebar_collapse_mode: String
+    $font_size: String
+    $font_family: String
+  ) {
+    update_my_settings: updateMySettings(
+      theme: $theme
+      mode: $mode
+      layout: $layout
+      sidebarCollapseMode: $sidebar_collapse_mode
+      fontSize: $font_size
+      fontFamily: $font_family
+    ) {
+      ok
+      errors
+      settings {
+        theme
+        mode
+        layout
+        sidebar_collapse_mode: sidebarCollapseMode
+        font_size: fontSize
+        font_family: fontFamily
+      }
+    }
+  }
+`;
+
+export const LOGIN_MUTATION_RESOLVED = isCamelCaseSchema()
+  ? LOGIN_MUTATION_CAMELCASE
+  : LOGIN_MUTATION;
+
+export const REFRESH_TOKEN_MUTATION_RESOLVED = isCamelCaseSchema()
+  ? REFRESH_TOKEN_MUTATION_CAMELCASE
+  : REFRESH_TOKEN_MUTATION;
+
+export const UPDATE_MY_SETTINGS_MUTATION_RESOLVED = isCamelCaseSchema()
+  ? UPDATE_MY_SETTINGS_MUTATION_CAMELCASE
+  : UPDATE_MY_SETTINGS_MUTATION;
 
 export interface UpdateMySettingsResponse {
   update_my_settings: {

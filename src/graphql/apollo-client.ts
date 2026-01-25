@@ -1,9 +1,12 @@
 import { ApolloClient, InMemoryCache, from } from '@apollo/client';
 import { setContext } from '@apollo/client/link/context';
 import { onError } from '@apollo/client/link/error';
+import { fromPromise } from '@apollo/client/link/utils';
 import { createUploadLink } from 'apollo-upload-client';
 import { tokenStorage, getSecureHeaders } from '../auth/utils/token-storage';
+import { ensureCsrfCookie } from '../auth/utils/csrf';
 import { AuthError, AuthErrorType, handleAuthError } from '../auth/utils/error-handler';
+import { isCamelCaseSchema } from './schema-naming';
 
 // Prefer environment configuration; fall back to local dev.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -16,11 +19,91 @@ const uploadLink = createUploadLink({
   // useGETForQueries: true,
 });
 
+let refreshInFlight: Promise<boolean> | null = null;
+
+const refreshAccessToken = async (): Promise<boolean> => {
+  if (refreshInFlight) {
+    return refreshInFlight;
+  }
+
+  refreshInFlight = (async () => {
+    try {
+      await ensureCsrfCookie();
+
+      const secureHeaders = getSecureHeaders();
+      const mutation = isCamelCaseSchema()
+        ? `
+          mutation RefreshToken($refresh_token: String) {
+            refresh_token: refreshToken(refreshToken: $refresh_token) {
+              ok
+              token
+              refresh_token: refreshToken
+            }
+          }
+        `
+        : `
+          mutation RefreshToken($refresh_token: String) {
+            refresh_token(refresh_token: $refresh_token) {
+              ok
+              token
+              refresh_token
+            }
+          }
+        `;
+
+      const response = await fetch(graphqlUri, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'content-type': 'application/json',
+          ...secureHeaders,
+        },
+        body: JSON.stringify({
+          query: mutation,
+          variables: { refresh_token: null },
+        }),
+      });
+
+      if (!response.ok) {
+        return false;
+      }
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const payload: any = await response.json();
+      const token: string | undefined = payload?.data?.refresh_token?.token;
+      const ok: boolean | undefined = payload?.data?.refresh_token?.ok;
+
+      if (!ok || !token) {
+        return false;
+      }
+
+      tokenStorage.setAccessToken(token);
+      tokenStorage.setSessionActive(true);
+      return true;
+    } catch (error) {
+      console.warn('Silent refresh failed:', error);
+      return false;
+    } finally {
+      refreshInFlight = null;
+    }
+  })();
+
+  return refreshInFlight;
+};
+
 /**
  * Create authentication link that adds authorization headers
  */
 const createAuthLink = () => {
-  return setContext(async (_, { headers }) => {
+  return setContext(async (operation, { headers }) => {
+    // If the backend enforces CSRF for cookie-auth flows, prime a CSRF cookie before
+    // sending requests. (No-op unless VITE_CSRF_ENDPOINT is configured.)
+    try {
+      await ensureCsrfCookie();
+    } catch {
+      // ignore
+    }
+
     const token = tokenStorage.getAccessToken();
     const secureHeaders = getSecureHeaders();
 
@@ -38,31 +121,50 @@ const createAuthLink = () => {
  * Create error link for handling authentication and network errors
  */
 const createErrorLink = () => {
-  return onError(({ graphQLErrors, networkError }) => {
+  return onError(({ graphQLErrors, networkError, operation, forward }) => {
+    const context = operation.getContext() as { skipAuthRefresh?: boolean } | undefined;
+    const skipAuthRefresh = context?.skipAuthRefresh === true;
+
     // Handle GraphQL errors
     if (graphQLErrors) {
+      const hasUnauthenticated = graphQLErrors.some(({ message, extensions }) =>
+        extensions?.code === 'UNAUTHENTICATED' || (typeof message === 'string' && message.toLowerCase().includes('authentication'))
+      );
+
       graphQLErrors.forEach(({ message, locations, path, extensions }) => {
         console.error(
           `GraphQL error: Message: ${message}, Location: ${locations}, Path: ${path}`
         );
 
         // Handle authentication errors
-        if (extensions?.code === 'UNAUTHENTICATED' || message.includes('Authentication')) {
+        if (!hasUnauthenticated) {
+          return;
+        }
+      });
+
+      // Attempt silent refresh + retry once, per docs.
+      if (hasUnauthenticated && !skipAuthRefresh && operation.operationName !== 'RefreshToken') {
+        operation.setContext({ ...context, skipAuthRefresh: true });
+        return fromPromise(refreshAccessToken()).flatMap((refreshed) => {
+          if (refreshed) {
+            return forward(operation);
+          }
+
           const authError = new AuthError(
-            AuthErrorType.TOKEN_EXPIRED,
+            AuthErrorType.SESSION_EXPIRED,
             'Authentication failed',
             'Your session has expired. Please log in again.',
-            { shouldLogout: true, meta: { message, locations, path, code: extensions?.code } }
+            { shouldLogout: true, meta: { graphQLErrors } }
           );
 
-          // Handle the error (this will trigger logout if needed)
           void handleAuthError(authError, () => {
-            // Clear tokens and redirect to login
             tokenStorage.clearAllTokens();
             window.location.href = '/login';
           });
-        }
-      });
+
+          return forward(operation);
+        });
+      }
     }
 
     // Handle network errors
@@ -73,22 +175,31 @@ const createErrorLink = () => {
       if ('statusCode' in networkError) {
         const statusCode = networkError.statusCode;
 
-        if (statusCode === 401 || statusCode === 403) {
+        if ((statusCode === 401 || statusCode === 403) && !skipAuthRefresh) {
           // Only redirect to login for definitive authentication errors
           // Check if this is during app initialization to avoid aggressive redirects
           const isInitializing = !tokenStorage.getAccessToken() || window.location.pathname === '/login';
 
           if (!isInitializing) {
-            const authError = new AuthError(
-              AuthErrorType.TOKEN_EXPIRED,
-              'Unauthorized access',
-              'Your session has expired. Please log in again.',
-              { shouldLogout: true, meta: networkError }
-            );
+            operation.setContext({ ...context, skipAuthRefresh: true });
+            return fromPromise(refreshAccessToken()).flatMap((refreshed) => {
+              if (refreshed) {
+                return forward(operation);
+              }
 
-            void handleAuthError(authError, () => {
-              tokenStorage.clearAllTokens();
-              window.location.href = '/login';
+              const authError = new AuthError(
+                AuthErrorType.TOKEN_EXPIRED,
+                'Unauthorized access',
+                'Your session has expired. Please log in again.',
+                { shouldLogout: true, meta: networkError }
+              );
+
+              void handleAuthError(authError, () => {
+                tokenStorage.clearAllTokens();
+                window.location.href = '/login';
+              });
+
+              return forward(operation);
             });
           }
         } else if (statusCode >= 500 || !statusCode) {

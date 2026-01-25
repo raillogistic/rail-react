@@ -19,7 +19,7 @@ import { useTokenRefresh } from './useTokenRefresh';
 import { useSessionValidation } from './useSessionValidation';
 import { AuthError, AuthErrorType, mapGraphQLError, handleAuthError } from '../utils/error-handler';
 import { performLogoutCleanupWithRetry } from '../utils/apollo-cleanup';
-import { LOGIN_MUTATION, type LoginResponse, type LoginVariables, LOGOUT_MUTATION, type LogoutResponse } from '@/graphql/mutations';
+import { LOGIN_MUTATION_RESOLVED, type LoginResponse, type LoginVariables, LOGOUT_MUTATION, type LogoutResponse } from '@/graphql/mutations';
 import client from '@/graphql/apollo-client';
 import { DEFAULT_APP_ROUTE, ROUTES } from "@/routes/links";
 
@@ -79,7 +79,7 @@ export const useAuth = (): UseAuthReturn => {
   const navigate = useNavigate();
 
   // GraphQL mutations
-  const [loginMutation] = useMutation<LoginResponse, LoginVariables>(LOGIN_MUTATION, {
+  const [loginMutation] = useMutation<LoginResponse, LoginVariables>(LOGIN_MUTATION_RESOLVED, {
     client: client,
   });
 
@@ -95,17 +95,33 @@ export const useAuth = (): UseAuthReturn => {
   // Forward declaration for logout function to avoid initialization order issues
   const logoutRef = useRef<(() => Promise<void>) | null>(null);
 
+  // Session validation hook for startup validation
+  const { isValidating, validateSession } = useSessionValidation();
+
   // Memoized callbacks for token refresh hook
-  const onTokenRefreshed = useCallback((user: Partial<DecodedToken> | null) => {
-    const normalizedUser = normalizeUser(user);
-    tokenStorage.setSessionActive(true);
-    // Update state when token is refreshed
-    setState(prev => ({
-      ...prev,
-      user: normalizedUser,
-      isAuthenticated: !!normalizedUser,
-    }));
-  }, []);
+  const onTokenRefreshed = useCallback(async () => {
+    // Prefer server-truth after refresh instead of relying on unverified JWT payload.
+    const userData = await validateSession();
+    if (userData) {
+      const normalizedUser = normalizeUser(userData);
+      tokenStorage.setSessionActive(true);
+      setState(prev => ({
+        ...prev,
+        user: normalizedUser,
+        isAuthenticated: true,
+      }));
+      return;
+    }
+
+    // If the backend indicates the session is invalid, `validateSession` clears the session flag.
+    if (!tokenStorage.hasValidSession()) {
+      setState(prev => ({
+        ...prev,
+        user: null,
+        isAuthenticated: false,
+      }));
+    }
+  }, [performTokenRefresh, scheduleRefresh, validateSession]);
 
   const onRefreshFailed = useCallback(() => {
     // Handle refresh failure by logging out
@@ -115,13 +131,10 @@ export const useAuth = (): UseAuthReturn => {
   }, []);
 
   // Token refresh hook for automatic renewal
-  const { isRefreshing, refreshToken: performTokenRefresh } = useTokenRefresh(
+  const { isRefreshing, refreshToken: performTokenRefresh, scheduleRefresh } = useTokenRefresh(
     onTokenRefreshed,
     onRefreshFailed
   );
-
-  // Session validation hook for startup validation
-  const { isValidating, validateSession } = useSessionValidation();
 
 
   /**
@@ -140,29 +153,26 @@ export const useAuth = (): UseAuthReturn => {
       }
     };
 
-    const hasStoredSession = tokenStorage.hasValidSession();
-
-    if (!hasStoredSession) {
-      await ensureMinimumLoadingTime();
-      setState({
-        user: null,
-        isAuthenticated: false,
-        isLoading: false,
-        error: null,
-      });
-      return;
-    }
-
     try {
       console.log('🔄 Starting authentication initialization (Cookie-based)...');
 
       // Validate session with backend (cookies are sent automatically)
-      const userData = await validateSession();
+      let userData = await validateSession();
+
+      // If the backend uses cookie-based refresh to mint access tokens, a fresh tab reload may
+      // start without an in-memory access token. Try a silent refresh once, then revalidate.
+      if (!userData && !tokenStorage.getAccessToken()) {
+        const refreshed = await performTokenRefresh();
+        if (refreshed) {
+          userData = await validateSession();
+        }
+      }
 
       if (userData) {
         console.log('✅ Session validation successful');
         const normalizedUser = normalizeUser(userData);
         tokenStorage.setSessionActive(true);
+        scheduleRefresh();
         await ensureMinimumLoadingTime();
         setState({
           user: normalizedUser,
@@ -170,6 +180,12 @@ export const useAuth = (): UseAuthReturn => {
           isLoading: false,
           error: null,
         });
+
+        // If we intentionally keep access tokens out of Web Storage, try to obtain an access
+        // token for this tab (best-effort) so Bearer-token backends keep working.
+        if (!tokenStorage.getAccessToken()) {
+          void performTokenRefresh();
+        }
       } else {
         // Session validation failed - don't show error during initialization
         // This could be due to network issues, backend offline, or actual session expiry
@@ -263,7 +279,7 @@ export const useAuth = (): UseAuthReturn => {
         return;
       }
 
-      const { ok, errors, token, refresh_token: refreshTokenValue, user: loginUser } = data.login;
+      const { ok, errors, token, refresh_token: refreshTokenValue, user: loginUser, permissions: loginPermissions } = data.login;
 
       if (ok === false || !loginUser) {
         const error = new AuthError(
@@ -286,7 +302,11 @@ export const useAuth = (): UseAuthReturn => {
       }
 
       tokenStorage.setSessionActive(true);
-      let user = normalizeUser(loginUser); // Use user from login response directly
+      scheduleRefresh();
+      let user = normalizeUser({
+        ...loginUser,
+        permissions: loginPermissions ?? [],
+      }); // Use user from login response directly
 
       try {
         // Immediately refresh the session from backend so settings (theme, layout, ...)
@@ -327,7 +347,7 @@ export const useAuth = (): UseAuthReturn => {
       // Handle error with appropriate actions
       await handleAuthError(authError, logout);
     }
-  }, [loginMutation, navigate, logout, validateSession]);
+  }, [loginMutation, navigate, logout, scheduleRefresh, validateSession]);
 
   /**
    * Clear authentication error
