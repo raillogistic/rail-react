@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir:*)",
+      "Bash(ls -d:*)",
+      "Bash(grep -r \"any\" src --include:*)",
+      "Bash(grep:*)"
+    ]
+  }
+}

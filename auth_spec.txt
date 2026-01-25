@@ -1,0 +1,86 @@
+🔐 1. Use Short-Lived Access Tokens and Secure Refresh Tokens
+
+Authenticate with JWTs issued by the backend.
+
+Keep access tokens short-lived (5–15 minutes) to limit damage if compromised.
+
+Store refresh tokens only in HTTP-only cookies, never accessible by JavaScript.
+
+Use the refresh token to silently obtain a new access token when it expires.
+
+🧠 2. Keep Authentication State Centralized
+
+Manage authentication (token presence, user info, login/logout) in a central provider or global store.
+
+The rest of your app should read authentication state from there — not from localStorage or URL params.
+
+This ensures consistency and simplifies logout, refresh, and session expiration handling.
+
+🧭 3. Protect Routes at the UI Level
+
+Wrap private pages (like dashboards or profiles) in a route guard that checks if the user is authenticated.
+
+If not authenticated, redirect to the login page.
+
+Always revalidate the session (e.g. via a me query) when the app starts — don’t rely solely on a stored token.
+
+⚙️ 4. Attach Tokens Automatically to Requests
+
+Configure Apollo to automatically include the access token in the Authorization header for authenticated operations.
+
+This should be done transparently via Apollo’s link system — not manually in every query or mutation.
+
+🔁 5. Handle Token Expiry and Auto-Refresh Gracefully
+
+When the backend signals that a token is expired or invalid, trigger a silent refresh request using the refresh token.
+
+If refresh fails (e.g., refresh token is invalid or expired), log the user out and redirect to the login screen.
+
+Always clear tokens and cache on logout.
+
+🧱 6. Verify Authorization on the Backend
+
+The frontend can hide or protect routes visually, but the real protection must happen on the backend.
+
+Every sensitive resolver should check user permissions and roles.
+
+The frontend’s role is to provide convenience, not security enforcement.
+
+🔒 7. Follow Security-Focused Practices
+
+Prefer HTTP-only cookies over localStorage for sensitive tokens to mitigate XSS attacks.
+
+If you must use storage, prefer sessionStorage and clear it on logout or tab close.
+
+Use HTTPS in all environments to protect token transmission.
+
+Avoid logging tokens or exposing them in URLs.
+
+Use strong CORS and SameSite settings to protect cookies.
+
+Implement CSRF protection if using cookies for auth.
+
+🧩 8. Implement Role-Based Access
+
+Fetch user roles/permissions after login and store them in your auth context.
+
+Use them to decide which UI components, menu items, or routes are visible.
+
+Always double-check permissions in backend resolvers as well.
+
+🧘 9. Provide Good UX for Session Handling
+
+Show clear feedback when the session expires (e.g. “Session expired, please log in again”).
+
+Support silent re-authentication when possible.
+
+Keep login/logout transitions smooth — clear cache and redirect appropriately.
+
+✅ 10. Recommended Overall Approach
+Layer	Best Practice
+Authentication	JWTs with refresh token rotation
+Storage	Access token in memory, refresh token in HTTP-only cookie
+Networking	Apollo Links to inject and refresh tokens
+Routing	Protected routes + centralized auth state
+UX	Silent refresh, clear logout, helpful session messages
+Security	HTTPS, CORS, CSRF protection, backend validation
