@@ -4,7 +4,7 @@ import { useAuthContext } from "@/auth/context";
 
 const LOG_FRONTEND_AUDIT_MUTATION = gql`
   mutation LogFrontendAudit($input: FrontendAuditEventInput!) {
-    response: log_frontend_audit(input: $input) {
+    response: logFrontendAudit(input: $input) {
       ok
       error
     }
@@ -30,15 +30,15 @@ export function useAuditLogger(appName: string, modelName: string) {
       return mutate({
         variables: {
           input: {
-            app_name: appName,
-            model_name: modelName,
+            appName,
+            modelName,
             component: payload.component,
             operation: payload.operation,
             description: payload.description,
             severity: payload.severity ?? "low",
             metadata: JSON.stringify(payload.metadata ?? {}),
             success: payload.success ?? true,
-            source_route: pathname,
+            sourceRoute: pathname,
           },
         },
         context: {

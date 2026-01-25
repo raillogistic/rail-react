@@ -54,188 +54,188 @@ import {
 
 export const MODEL_FORM_META_QUERY = `
 query ModelFormMetadata($app_name: String!, $model_name: String!, $nested_fields: [String!] = [], $exclude: [String!] = [], $only: [String!] = [], $exclude_relationships: [String!] = [], $only_relationships: [String!] = []) {
-  model_form_metadata(
-    app_name: $app_name
-    model_name: $model_name
-    nested_fields: $nested_fields
+  model_form_metadata: modelFormMetadata(
+    appName: $app_name
+    modelName: $model_name
+    nestedFields: $nested_fields
     exclude: $exclude
     only: $only
-    exclude_relationships: $exclude_relationships
-    only_relationships: $only_relationships
+    excludeRelationships: $exclude_relationships
+    onlyRelationships: $only_relationships
   ) {
     metadataVersion
-    app_name
-    model_name
-    verbose_name
-    verbose_name_plural
-    form_title
-    form_description
+    app_name: appName
+    model_name: modelName
+    verbose_name: verboseName
+    verbose_name_plural: verboseNamePlural
+    form_title: formTitle
+    form_description: formDescription
     fields {
       name
-      field_type
-      is_required
-      verbose_name
-      help_text
-      widget_type
+      field_type: fieldType
+      is_required: isRequired
+      verbose_name: verboseName
+      help_text: helpText
+      widget_type: widgetType
       placeholder
-      default_value
+      default_value: defaultValue
       choices {
         value
         label
       }
-      max_length
-      min_length
-      decimal_places
-      max_digits
-      min_value
-      max_value
-      auto_now
-      auto_now_add
+      max_length: maxLength
+      min_length: minLength
+      decimal_places: decimalPlaces
+      max_digits: maxDigits
+      min_value: minValue
+      max_value: maxValue
+      auto_now: autoNow
+      auto_now_add: autoNowAdd
       blank
       null
       unique
       editable
       validators
-      error_messages
+      error_messages: errorMessages
       disabled
       readonly
-      css_classes
-      data_attributes
-      has_permission
+      css_classes: cssClasses
+      data_attributes: dataAttributes
+      has_permission: hasPermission
       permissions {
-        can_read
-        can_write
+        can_read: canRead
+        can_write: canWrite
         visibility
-        access_level
-        mask_value
+        access_level: accessLevel
+        mask_value: maskValue
         reason
       }
     }
     relationships {
       name
-      relationship_type
-      verbose_name
-      help_text
-      widget_type
-      is_required
-      related_model
-      related_app
-      to_field
-      from_field
-      many_to_many
-      one_to_one
-      foreign_key
-      is_reverse
+      relationship_type: relationshipType
+      verbose_name: verboseName
+      help_text: helpText
+      widget_type: widgetType
+      is_required: isRequired
+      related_model: relatedModel
+      related_app: relatedApp
+      to_field: toField
+      from_field: fromField
+      many_to_many: manyToMany
+      one_to_one: oneToOne
+      foreign_key: foreignKey
+      is_reverse: isReverse
       multiple
-      queryset_filters
-      empty_label
-      limit_choices_to
+      queryset_filters: querysetFilters
+      empty_label: emptyLabel
+      limit_choices_to: limitChoicesTo
       disabled
       readonly
-      css_classes
-      data_attributes
+      css_classes: cssClasses
+      data_attributes: dataAttributes
       permissions {
-        can_read
-        can_write
+        can_read: canRead
+        can_write: canWrite
         visibility
-        access_level
-        mask_value
+        access_level: accessLevel
+        mask_value: maskValue
         reason
       }
     }
     nested {
       name
-      field_name
-      relationship_type
-      to_field
-      from_field
-      is_required
-      app_name
-      model_name
-      verbose_name
-      verbose_name_plural
-      form_title
-      form_description
+      field_name: fieldName
+      relationship_type: relationshipType
+      to_field: toField
+      from_field: fromField
+      is_required: isRequired
+      app_name: appName
+      model_name: modelName
+      verbose_name: verboseName
+      verbose_name_plural: verboseNamePlural
+      form_title: formTitle
+      form_description: formDescription
       fields {
         name
-        field_type
-        is_required
-        verbose_name
-        help_text
-        widget_type
+        field_type: fieldType
+        is_required: isRequired
+        verbose_name: verboseName
+        help_text: helpText
+        widget_type: widgetType
         placeholder
-        default_value
+        default_value: defaultValue
         choices {
           value
           label
         }
-        max_length
-        min_length
-        decimal_places
-        max_digits
-        min_value
-        max_value
-        auto_now
-        auto_now_add
+        max_length: maxLength
+        min_length: minLength
+        decimal_places: decimalPlaces
+        max_digits: maxDigits
+        min_value: minValue
+        max_value: maxValue
+        auto_now: autoNow
+        auto_now_add: autoNowAdd
         blank
         null
         unique
         editable
         validators
-        error_messages
+        error_messages: errorMessages
         disabled
         readonly
-        css_classes
-        data_attributes
-        has_permission
+        css_classes: cssClasses
+        data_attributes: dataAttributes
+        has_permission: hasPermission
       }
       relationships {
         name
-        relationship_type
-        verbose_name
-        help_text
-        widget_type
-        is_required
-        related_model
-        related_app
-        to_field
-        from_field
-        many_to_many
-        one_to_one
-        foreign_key
-        is_reverse
+        relationship_type: relationshipType
+        verbose_name: verboseName
+        help_text: helpText
+        widget_type: widgetType
+        is_required: isRequired
+        related_model: relatedModel
+        related_app: relatedApp
+        to_field: toField
+        from_field: fromField
+        many_to_many: manyToMany
+        one_to_one: oneToOne
+        foreign_key: foreignKey
+        is_reverse: isReverse
         multiple
-        queryset_filters
-        empty_label
-        limit_choices_to
+        queryset_filters: querysetFilters
+        empty_label: emptyLabel
+        limit_choices_to: limitChoicesTo
         disabled
         readonly
-        css_classes
-        data_attributes
+        css_classes: cssClasses
+        data_attributes: dataAttributes
       }
-      field_order
-      exclude_fields
-      readonly_fields
-      required_permissions
-      form_validation_rules
-      form_layout
-      css_classes
-      form_attributes
+      field_order: fieldOrder
+      exclude_fields: excludeFields
+      readonly_fields: readonlyFields
+      required_permissions: requiredPermissions
+      form_validation_rules: formValidationRules
+      form_layout: formLayout
+      css_classes: cssClasses
+      form_attributes: formAttributes
     }
-    field_order
-    exclude_fields
-    readonly_fields
-    required_permissions
-    form_validation_rules
-    form_layout
-    css_classes
-    form_attributes
+    field_order: fieldOrder
+    exclude_fields: excludeFields
+    readonly_fields: readonlyFields
+    required_permissions: requiredPermissions
+    form_validation_rules: formValidationRules
+    form_layout: formLayout
+    css_classes: cssClasses
+    form_attributes: formAttributes
     permissions {
-      can_create
-      can_update
-      can_delete
-      can_read
-      can_list
+      can_create: canCreate
+      can_update: canUpdate
+      can_delete: canDelete
+      can_read: canRead
+      can_list: canList
       reasons
     }
   }

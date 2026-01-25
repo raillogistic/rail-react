@@ -5,8 +5,8 @@ export const GET_GROUPS = gql`
     groups {
       id
       name
-      permissions_count
-      user_set_count
+      permissions_count: permissionsCount
+      user_set_count: userSetCount
     }
   }
 `;
@@ -20,17 +20,17 @@ export const GET_GROUP_DETAILS = gql`
         id
         name
         codename
-        content_type {
-          app_label
+        content_type: contentType {
+          app_label: appLabel
           model
         }
       }
-      user_set {
+      user_set: userSet {
         id
         username
         email
-        first_name
-        last_name
+        first_name: firstName
+        last_name: lastName
         groups {
           id
           name
@@ -46,8 +46,8 @@ export const GET_ALL_PERMISSIONS = gql`
       id
       name
       codename
-      content_type {
-        app_label
+      content_type: contentType {
+        app_label: appLabel
         model
       }
     }
@@ -60,8 +60,8 @@ export const GET_ALL_USERS = gql`
       id
       username
       email
-      first_name
-      last_name
+      first_name: firstName
+      last_name: lastName
       groups {
         id
         name
@@ -72,7 +72,7 @@ export const GET_ALL_USERS = gql`
 
 export const CREATE_GROUP = gql`
   mutation CreateGroup($input: CreateGroupInput!) {
-    create_group(input: $input) {
+    create_group: createGroup(input: $input) {
       response: object {
         id
         name
@@ -87,7 +87,7 @@ export const CREATE_GROUP = gql`
 
 export const UPDATE_GROUP = gql`
   mutation UpdateGroup($input: UpdateGroupInput!) {
-    update_group(input: $input) {
+    update_group: updateGroup(input: $input) {
       response: object {
         id
         name
@@ -105,7 +105,7 @@ export const UPDATE_GROUP = gql`
 
 export const DELETE_GROUP = gql`
   mutation DeleteGroup($id: ID!) {
-    delete_group(id: $id) {
+    delete_group: deleteGroup(id: $id) {
       ok
       errors {
         field
@@ -117,7 +117,7 @@ export const DELETE_GROUP = gql`
 
 export const UPDATE_USER_GROUPS = gql`
   mutation UpdateUserGroups($input: UpdateUserInput!) {
-    update_user(input: $input) {
+    update_user: updateUser(input: $input) {
       response: object {
         id
         groups {
@@ -135,7 +135,7 @@ export const UPDATE_USER_GROUPS = gql`
 
 export const REMOVE_USER_FROM_GROUP = gql`
   mutation RemoveUserFromGroup($input: UpdateUserInput!) {
-    update_user(input: $input) {
+    update_user: updateUser(input: $input) {
         response: object {
             id
             groups {

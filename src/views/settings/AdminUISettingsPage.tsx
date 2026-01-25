@@ -7,13 +7,13 @@ const GET_USER_PERMISSIONS = gql`
   query GetUserPermissions {
     me {
       id
-      is_superuser
-      model_permissions: model_permissions {
-        model_name
-        verbose_name
-        can_update
-        can_create
-        can_delete
+      is_superuser: isSuperuser
+      model_permissions: modelPermissions {
+        model_name: modelName
+        verbose_name: verboseName
+        can_update: canUpdate
+        can_create: canCreate
+        can_delete: canDelete
       }
     }
   }

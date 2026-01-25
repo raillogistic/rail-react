@@ -44,9 +44,30 @@ export type MethodMutationVariables<TInput extends Record<string, JsonValue> | u
 export function toOperationField(modelName: string): string {
   return modelName.replace(/[^A-Za-z0-9]/g, '').toLowerCase();
 }
+
+function toCamelCaseIdentifier(value: string): string {
+  if (!value) return value;
+  const hasUnderscore = value.includes("_") || value.includes(" ");
+  if (!hasUnderscore) {
+    return value.charAt(0).toLowerCase() + value.slice(1);
+  }
+  return value
+    .split(/[_\s]+/)
+    .filter(Boolean)
+    .map((part, index) => {
+      const normalized = toPascalCase(part);
+      if (index === 0) {
+        return normalized.charAt(0).toLowerCase() + normalized.slice(1);
+      }
+      return normalized;
+    })
+    .join("");
+}
 function toPascalCase(value: string): string {
-  const hasUpper = /[A-Z]/.test(value);
-  if (hasUpper && !value.includes('_')) return value;
+  if (!value) return value;
+  if (!value.includes('_') && !value.includes(' ')) {
+    return value.charAt(0).toUpperCase() + value.slice(1);
+  }
   return value
     .split(/[_\s]+/)
     .filter(Boolean)
@@ -58,12 +79,12 @@ function getInputType(prefix: 'Create' | 'Update', modelName: string): string {
 }
 
 export function build_create_mutation(modelName: string, selection = 'id'): string {
-  const field = toOperationField(modelName);
-  const inputType = getInputType('Create', modelName);
-  const operation = `create_${field}`;
+  const pascalModel = toPascalCase(modelName);
+  const inputType = getInputType('Create', pascalModel);
+  const operation = toCamelCaseIdentifier(`create_${pascalModel}`);
   return (
     `mutation ${operation}($input: ${inputType}!) {\n` +
-    `  response: create_${field}(input: $input) {\n` +
+    `  response: ${operation}(input: $input) {\n` +
     `    ok\n` +
     `    object { ${selection} }\n` +
     `    errors { field message }\n` +
@@ -73,12 +94,12 @@ export function build_create_mutation(modelName: string, selection = 'id'): stri
 }
 
 export function build_update_mutation(modelName: string, selection = 'id'): string {
-  const field = toOperationField(modelName);
-  const inputType = getInputType('Update', modelName);
-  const operation = `update_${field}`;
+  const pascalModel = toPascalCase(modelName);
+  const inputType = getInputType('Update', pascalModel);
+  const operation = toCamelCaseIdentifier(`update_${pascalModel}`);
   return (
     `mutation ${operation}($input: ${inputType}!) {\n` +
-    `  response: update_${field}(input: $input) {\n` +
+    `  response: ${operation}(input: $input) {\n` +
     `    ok\n` +
     `    object { ${selection} }\n` +
     `    errors { field message }\n` +
@@ -88,14 +109,14 @@ export function build_update_mutation(modelName: string, selection = 'id'): stri
 }
 
 export function build_delete_mutation(modelName: string, selection = 'id'): string {
-  const field = toOperationField(modelName);
-  const operation = `delete_${field}`;
+  const pascalModel = toPascalCase(modelName);
+  const operation = toCamelCaseIdentifier(`delete_${pascalModel}`);
   const objectSelection = selection.trim()
     ? `    object { ${selection} }\n`
     : "";
   return (
     `mutation ${operation}($id: ID!) {\n` +
-    `  response: delete_${field}(id: $id) {\n` +
+    `  response: ${operation}(id: $id) {\n` +
     `    ok\n` +
     objectSelection +
     `    errors { field message }\n` +
@@ -105,12 +126,12 @@ export function build_delete_mutation(modelName: string, selection = 'id'): stri
 }
 
 export function build_bulk_create_mutation(modelName: string, selection = 'id'): string {
-  const field = toOperationField(modelName);
-  const inputType = getInputType('Create', modelName);
-  const operation = `bulk_create_${field}`;
+  const pascalModel = toPascalCase(modelName);
+  const inputType = getInputType('Create', pascalModel);
+  const operation = toCamelCaseIdentifier(`bulk_create_${pascalModel}`);
   return (
     `mutation ${operation}($inputs: [${inputType}!]!) {\n` +
-    `  response: bulk_create_${field}(inputs: $inputs) {\n` +
+    `  response: ${operation}(inputs: $inputs) {\n` +
     `    ok\n` +
     `    objects { ${selection} }\n` +
     `    errors { field message }\n` +
@@ -120,11 +141,11 @@ export function build_bulk_create_mutation(modelName: string, selection = 'id'):
 }
 
 export function build_bulk_update_mutation(modelName: string, selection = 'id', bulkInputType = 'BulkUpdateInput'): string {
-  const field = toOperationField(modelName);
-  const operation = `bulk_update_${field}`;
+  const pascalModel = toPascalCase(modelName);
+  const operation = toCamelCaseIdentifier(`bulk_update_${pascalModel}`);
   return (
     `mutation ${operation}($inputs: [${bulkInputType}!]!) {\n` +
-    `  response: bulk_update_${field}(inputs: $inputs) {\n` +
+    `  response: ${operation}(inputs: $inputs) {\n` +
     `    ok\n` +
     `    objects { ${selection} }\n` +
     `    errors { field message }\n` +
@@ -134,11 +155,11 @@ export function build_bulk_update_mutation(modelName: string, selection = 'id', 
 }
 
 export function build_bulk_delete_mutation(modelName: string, selection = 'id'): string {
-  const field = toOperationField(modelName);
-  const operation = `bulk_delete_${field}`;
+  const pascalModel = toPascalCase(modelName);
+  const operation = toCamelCaseIdentifier(`bulk_delete_${pascalModel}`);
   return (
     `mutation ${operation}($ids: [ID!]!) {\n` +
-    `  response: bulk_delete_${field}(ids: $ids) {\n` +
+    `  response: ${operation}(ids: $ids) {\n` +
     `    ok\n` +
     `    objects { ${selection} }\n` +
     `    errors { field message }\n` +
@@ -159,13 +180,17 @@ export function build_method_mutation(
   methodName: string,
   options: MethodMutationBuilderOptions = {},
 ): string {
-  const field = toOperationField(modelName);
   const pascalModel = toPascalCase(modelName);
+  const camelModel = toCamelCaseIdentifier(pascalModel);
   const includeInput = options.include_input === true;
-  const inputType = options.input_type_name || `${pascalModel}${toPascalCase(methodName)}Input`;
+  const inputType =
+    options.input_type_name || `${pascalModel}${toPascalCase(methodName)}Input`;
   const resultBlock = options.result_selection ? `result { ${options.result_selection} }` : `result`;
-  const operation = options.field_name || `${field}_${methodName}`;
-  const mutationField = options.field_name || `${field}_${methodName}`;
+  const defaultField = `${camelModel}${toPascalCase(methodName)}`;
+  const mutationField = options.field_name
+    ? toCamelCaseIdentifier(options.field_name)
+    : defaultField;
+  const operation = mutationField;
 
   const varDefs = includeInput ? `($id: ID!, $input: ${inputType}!)` : `($id: ID!)`;
   const argDefs = includeInput ? `(id: $id, input: $input)` : `(id: $id)`;

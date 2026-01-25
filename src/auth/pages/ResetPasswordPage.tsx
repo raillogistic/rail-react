@@ -16,43 +16,31 @@ import { toast } from "sonner";
 import { gql, useMutation } from "@apollo/client";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { ROUTES } from "@/routes/links";
-import { isCamelCaseSchema } from "@/graphql/schema-naming";
+const VALIDATE_RESET_CODE_MUTATION = gql`
+  mutation ValidateResetCode($email: String!, $code: String!) {
+    validate_reset_code: validateResetCode(email: $email, code: $code) {
+      ok
+      errors
+    }
+  }
+`;
 
-const VALIDATE_RESET_CODE_MUTATION = isCamelCaseSchema()
-  ? gql`
-      mutation ValidateResetCode($email: String!, $code: String!) {
-        validate_reset_code: validateResetCode(email: $email, code: $code) {
-          ok
-          errors
-        }
-      }
-    `
-  : gql`
-      mutation ValidateResetCode($email: String!, $code: String!) {
-        validate_reset_code(email: $email, code: $code) {
-          ok
-          errors
-        }
-      }
-    `;
-
-const CONFIRM_PASSWORD_RESET_MUTATION = isCamelCaseSchema()
-  ? gql`
-      mutation ConfirmPasswordReset($email: String!, $code: String!, $newPassword: String!) {
-        confirm_password_reset: confirmPasswordReset(email: $email, code: $code, newPassword: $newPassword) {
-          ok
-          errors
-        }
-      }
-    `
-  : gql`
-      mutation ConfirmPasswordReset($email: String!, $code: String!, $newPassword: String!) {
-        confirm_password_reset(email: $email, code: $code, newPassword: $newPassword) {
-          ok
-          errors
-        }
-      }
-    `;
+const CONFIRM_PASSWORD_RESET_MUTATION = gql`
+  mutation ConfirmPasswordReset(
+    $email: String!
+    $code: String!
+    $newPassword: String!
+  ) {
+    confirm_password_reset: confirmPasswordReset(
+      email: $email
+      code: $code
+      newPassword: $newPassword
+    ) {
+      ok
+      errors
+    }
+  }
+`;
 
 const codeSchema = z.object({
   code: z.string().length(6, "Le code doit contenir 6 chiffres."),

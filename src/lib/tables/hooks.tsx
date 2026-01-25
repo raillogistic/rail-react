@@ -46,14 +46,14 @@ const MODEL_TABLE_BASE_QUERY = gql`
     $only_lookup: [String]
     $exclude_lookup: [String]
   ) {
-    response: model_table(
-      app_name: $app_name
-      model_name: $model_name
+    response: modelTable(
+      appName: $app_name
+      modelName: $model_name
       exclude: $exclude
       only: $only
-      include_nested: $include_nested
-      only_lookup: $only_lookup
-      exclude_lookup: $exclude_lookup
+      includeNested: $include_nested
+      onlyLookup: $only_lookup
+      excludeLookup: $exclude_lookup
     ) {
       metadataVersion
       app
@@ -64,11 +64,11 @@ const MODEL_TABLE_BASE_QUERY = gql`
       ordering
       defaultOrdering
       permissions {
-        can_create
-        can_update
-        can_delete
-        can_read
-        can_list
+        can_create: canCreate
+        can_update: canUpdate
+        can_delete: canDelete
+        can_read: canRead
+        can_list: canList
         reasons
       }
       fields {
@@ -76,19 +76,19 @@ const MODEL_TABLE_BASE_QUERY = gql`
         accessor
         display
         editable
-        field_type
+        field_type: fieldType
         filterable
         sortable
         title
         helpText
-        is_property
-        is_related
+        is_property: isProperty
+        is_related: isRelated
         permissions {
-          can_read
-          can_write
+          can_read: canRead
+          can_write: canWrite
           visibility
-          access_level
-          mask_value
+          access_level: accessLevel
+          mask_value: maskValue
           reason
         }
       }
@@ -106,47 +106,47 @@ const MODEL_TABLE_FILTERS_QUERY = gql`
     $only_lookup: [String]
     $exclude_lookup: [String]
   ) {
-    response: model_table(
-      app_name: $app_name
-      model_name: $model_name
+    response: modelTable(
+      appName: $app_name
+      modelName: $model_name
       exclude: $exclude
       only: $only
-      include_nested: $include_nested
-      only_lookup: $only_lookup
-      exclude_lookup: $exclude_lookup
+      includeNested: $include_nested
+      onlyLookup: $only_lookup
+      excludeLookup: $exclude_lookup
     ) {
       metadataVersion
       filters {
-        field_name
-        field_label
-        is_nested
-        related_model
-        is_custom
+        field_name: fieldName
+        field_label: fieldLabel
+        is_nested: isNested
+        related_model: relatedModel
+        is_custom: isCustom
         options {
           choices {
             value
             label
           }
           name
-          lookup_expr
-          help_text
-          filter_type
+          lookup_expr: lookupExpr
+          help_text: helpText
+          filter_type: filterType
         }
         nested {
-          field_name
-          field_label
-          is_nested
-          related_model
-          is_custom
+          field_name: fieldName
+          field_label: fieldLabel
+          is_nested: isNested
+          related_model: relatedModel
+          is_custom: isCustom
           options {
             choices {
               value
               label
             }
             name
-            lookup_expr
-            help_text
-            filter_type
+            lookup_expr: lookupExpr
+            help_text: helpText
+            filter_type: filterType
           }
         }
       }
@@ -164,48 +164,48 @@ const MODEL_TABLE_MUTATIONS_QUERY = gql`
     $only_lookup: [String]
     $exclude_lookup: [String]
   ) {
-    response: model_table(
-      app_name: $app_name
-      model_name: $model_name
+    response: modelTable(
+      appName: $app_name
+      modelName: $model_name
       exclude: $exclude
       only: $only
-      include_nested: $include_nested
-      only_lookup: $only_lookup
-      exclude_lookup: $exclude_lookup
+      includeNested: $include_nested
+      onlyLookup: $only_lookup
+      excludeLookup: $exclude_lookup
     ) {
       metadataVersion
       mutations {
         name
-        method_name
+        method_name: methodName
         description
-        input_type
-        input_fields {
+        input_type: inputType
+        input_fields: inputFields {
           name
-          field_type
+          field_type: fieldType
           required
-          default_value
+          default_value: defaultValue
           description
           choices
-          validation_rules
-          widget_type
+          validation_rules: validationRules
+          widget_type: widgetType
           placeholder
-          help_text
-          min_length
-          max_length
-          min_value
-          max_value
+          help_text: helpText
+          min_length: minLength
+          max_length: maxLength
+          min_value: minValue
+          max_value: maxValue
           pattern
-          related_model
+          related_model: relatedModel
           multiple
         }
-        requires_authentication
-        required_permissions
-        mutation_type
-        model_name
-        form_config
-        validation_schema
-        success_message
-        error_messages
+        requires_authentication: requiresAuthentication
+        required_permissions: requiredPermissions
+        mutation_type: mutationType
+        model_name: modelName
+        form_config: formConfig
+        validation_schema: validationSchema
+        success_message: successMessage
+        error_messages: errorMessages
         action
       }
     }
@@ -222,14 +222,14 @@ const MODEL_TABLE_TEMPLATES_QUERY = gql`
     $only_lookup: [String]
     $exclude_lookup: [String]
   ) {
-    response: model_table(
-      app_name: $app_name
-      model_name: $model_name
+    response: modelTable(
+      appName: $app_name
+      modelName: $model_name
       exclude: $exclude
       only: $only
-      include_nested: $include_nested
-      only_lookup: $only_lookup
-      exclude_lookup: $exclude_lookup
+      includeNested: $include_nested
+      onlyLookup: $only_lookup
+      excludeLookup: $exclude_lookup
     ) {
       metadataVersion
       pdfTemplates {
@@ -428,14 +428,14 @@ function buildAutoDataQuery(
 
   return gql`
     query ${queryName}($filters: ${typeName}, $ordering: [String], $page: Int, $per_page: Int${quickVariable}) {
-      ${fieldName}(filters: $filters, order_by: $ordering, page: $page, per_page: $per_page${quickArgument}) {
-        page_info {
-          total_count
-          page_count
-          current_page
-          per_page
-          has_next_page
-          has_previous_page
+      ${fieldName}(filters: $filters, orderBy: $ordering, page: $page, perPage: $per_page${quickArgument}) {
+        page_info: pageInfo {
+          total_count: totalCount
+          page_count: pageCount
+          current_page: currentPage
+          per_page: perPage
+          has_next_page: hasNextPage
+          has_previous_page: hasPreviousPage
         }
         items {
           ${selection}

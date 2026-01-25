@@ -8,17 +8,17 @@ const GET_UI_CONFIG = gql`
     $perPage: Int
     $orderBy: [String!]
   ) {
-    uicomponentconfigs_pages(
+    uicomponentconfigs_pages: uiComponentConfigsPages(
       page: $page
-      per_page: $perPage
-      order_by: $orderBy
+      perPage: $perPage
+      orderBy: $orderBy
       filters: { component_id__exact: $componentId }
     ) {
       items {
         id
-        component_id
+        component_id: componentId
         configuration
-        is_global
+        is_global: isGlobal
         users {
           id
           username
@@ -30,7 +30,7 @@ const GET_UI_CONFIG = gql`
 
 const CREATE_UI_CONFIG = gql`
   mutation CreateUIConfig($input: CreateUIComponentConfigInput!) {
-    create_uicomponentconfig(input: $input) {
+    create_uicomponentconfig: createUiComponentConfig(input: $input) {
       object {
         id
         configuration
@@ -41,7 +41,7 @@ const CREATE_UI_CONFIG = gql`
 
 const UPDATE_UI_CONFIG = gql`
   mutation UpdateUIConfig($input: UpdateUIComponentConfigInput!) {
-    update_uicomponentconfig(input: $input) {
+    update_uicomponentconfig: updateUiComponentConfig(input: $input) {
       object {
         id
         configuration
@@ -109,11 +109,11 @@ export function useUIConfig(componentId: string, userId?: string) {
           await createConfig({
             variables: {
               input: {
-                component_id: componentId,
-                component_type: DEFAULT_COMPONENT_TYPE,
+                componentId,
+                componentType: DEFAULT_COMPONENT_TYPE,
                 configuration: newConfig,
                 user: userId, // This might need to be passed differently depending on API
-                is_global: false,
+                isGlobal: false,
               },
             },
           });

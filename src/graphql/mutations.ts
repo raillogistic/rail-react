@@ -1,5 +1,4 @@
 import { gql } from '@apollo/client';
-import { isCamelCaseSchema } from './schema-naming';
 
 /**
  * Purpose: GraphQL mutation for user authentication
@@ -7,25 +6,6 @@ import { isCamelCaseSchema } from './schema-naming';
  * Returns: Authentication response with token and user data
  */
 export const LOGIN_MUTATION = gql`
-  mutation Login($username: String!, $password: String!) {
-    login(username: $username, password: $password) {
-      ok
-      errors
-      token
-      refresh_token
-      permissions
-      user {
-        id
-        username
-        email
-        first_name
-        last_name
-      }
-    }
-  }
-`;
-
-export const LOGIN_MUTATION_CAMELCASE = gql`
   mutation Login($username: String!, $password: String!) {
     login(username: $username, password: $password) {
       ok
@@ -50,18 +30,6 @@ export const LOGIN_MUTATION_CAMELCASE = gql`
  * Returns: New token and refresh token
  */
 export const REFRESH_TOKEN_MUTATION = gql`
-  mutation RefreshToken($refresh_token: String) {
-    refresh_token(refresh_token: $refresh_token) {
-      ok
-      errors
-      token
-      refresh_token
-      permissions
-    }
-  }
-`;
-
-export const REFRESH_TOKEN_MUTATION_CAMELCASE = gql`
   mutation RefreshToken($refresh_token: String) {
     refresh_token: refreshToken(refreshToken: $refresh_token) {
       ok
@@ -144,37 +112,6 @@ export const UPDATE_MY_SETTINGS_MUTATION = gql`
     $font_size: String
     $font_family: String
   ) {
-    update_my_settings(
-      theme: $theme
-      mode: $mode
-      layout: $layout
-      sidebar_collapse_mode: $sidebar_collapse_mode
-      font_size: $font_size
-      font_family: $font_family
-    ) {
-      ok
-      errors
-      settings {
-        theme
-        mode
-        layout
-        sidebar_collapse_mode
-        font_size
-        font_family
-      }
-    }
-  }
-`;
-
-export const UPDATE_MY_SETTINGS_MUTATION_CAMELCASE = gql`
-  mutation UpdateMySettings(
-    $theme: String
-    $mode: String
-    $layout: String
-    $sidebar_collapse_mode: String
-    $font_size: String
-    $font_family: String
-  ) {
     update_my_settings: updateMySettings(
       theme: $theme
       mode: $mode
@@ -197,17 +134,9 @@ export const UPDATE_MY_SETTINGS_MUTATION_CAMELCASE = gql`
   }
 `;
 
-export const LOGIN_MUTATION_RESOLVED = isCamelCaseSchema()
-  ? LOGIN_MUTATION_CAMELCASE
-  : LOGIN_MUTATION;
-
-export const REFRESH_TOKEN_MUTATION_RESOLVED = isCamelCaseSchema()
-  ? REFRESH_TOKEN_MUTATION_CAMELCASE
-  : REFRESH_TOKEN_MUTATION;
-
-export const UPDATE_MY_SETTINGS_MUTATION_RESOLVED = isCamelCaseSchema()
-  ? UPDATE_MY_SETTINGS_MUTATION_CAMELCASE
-  : UPDATE_MY_SETTINGS_MUTATION;
+export const LOGIN_MUTATION_RESOLVED = LOGIN_MUTATION;
+export const REFRESH_TOKEN_MUTATION_RESOLVED = REFRESH_TOKEN_MUTATION;
+export const UPDATE_MY_SETTINGS_MUTATION_RESOLVED = UPDATE_MY_SETTINGS_MUTATION;
 
 export interface UpdateMySettingsResponse {
   update_my_settings: {

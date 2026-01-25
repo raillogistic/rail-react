@@ -50,18 +50,18 @@ import { FieldRenderContext } from "@/lib/form/inputs/types";
 
 const METADATA_QUERY = gql`
   query UIConfigMetadata($app_name: String!, $model_name: String!) {
-    model_table(app_name: $app_name, model_name: $model_name) {
+    model_table: modelTable(appName: $app_name, modelName: $model_name) {
       verboseName
       fields {
         name
         title
-        field_type
+        field_type: fieldType
         sortable
         filterable
       }
       filters {
-        field_name
-        field_label
+        field_name: fieldName
+        field_label: fieldLabel
       }
     }
   }
@@ -69,10 +69,10 @@ const METADATA_QUERY = gql`
 
 const AVAILABLE_MODELS_QUERY = gql`
   query AvailableModels {
-    available_models {
-      app_label
-      model_name
-      verbose_name
+    available_models: availableModels {
+      app_label: appLabel
+      model_name: modelName
+      verbose_name: verboseName
     }
   }
 `;

@@ -185,6 +185,7 @@ export function useModelGrouping<TData>({
       "_"
     );
     const fieldName = `${modelName.toLowerCase()}s_groups`;
+    const schemaFieldName = `${modelName.toLowerCase()}sGroups`;
     return gql`
       query ${queryName}(
         $group_by: String!
@@ -192,11 +193,11 @@ export function useModelGrouping<TData>({
         $limit: Int
         $order_by: String
       ) {
-        ${fieldName}(
-          group_by: $group_by
+        ${fieldName}: ${schemaFieldName}(
+          groupBy: $group_by
           filters: $filters
           limit: $limit
-          order_by: $order_by
+          orderBy: $order_by
         ) {
           key
           label

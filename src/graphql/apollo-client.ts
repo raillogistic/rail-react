@@ -6,7 +6,6 @@ import { createUploadLink } from 'apollo-upload-client';
 import { tokenStorage, getSecureHeaders } from '../auth/utils/token-storage';
 import { ensureCsrfCookie } from '../auth/utils/csrf';
 import { AuthError, AuthErrorType, handleAuthError } from '../auth/utils/error-handler';
-import { isCamelCaseSchema } from './schema-naming';
 
 // Prefer environment configuration; fall back to local dev.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -43,25 +42,15 @@ const refreshAccessToken = async (): Promise<boolean> => {
       await ensureCsrfCookie();
 
       const secureHeaders = getSecureHeaders();
-      const mutation = isCamelCaseSchema()
-        ? `
-          mutation RefreshToken($refresh_token: String) {
-            refresh_token: refreshToken(refreshToken: $refresh_token) {
-              ok
-              token
-              refresh_token: refreshToken
-            }
+      const mutation = `
+        mutation RefreshToken($refresh_token: String) {
+          refresh_token: refreshToken(refreshToken: $refresh_token) {
+            ok
+            token
+            refresh_token: refreshToken
           }
-        `
-        : `
-          mutation RefreshToken($refresh_token: String) {
-            refresh_token(refresh_token: $refresh_token) {
-              ok
-              token
-              refresh_token
-            }
-          }
-        `;
+        }
+      `;
 
       const response = await fetch(authGraphqlUri, {
         method: 'POST',

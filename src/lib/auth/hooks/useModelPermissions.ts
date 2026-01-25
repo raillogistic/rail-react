@@ -3,15 +3,15 @@ import { useMemo } from "react";
 
 const MY_PERMISSIONS_QUERY = gql`
   query MyPermissions($modelName: String) {
-    my_permissions(model_name: $modelName) {
-      modelName: model_name
-      verboseName: verbose_name
-      can_create
-      can_read
-      can_update
-      can_delete
-      can_list
-      can_history
+    my_permissions: myPermissions(modelName: $modelName) {
+      modelName: modelName
+      verboseName: verboseName
+      can_create: canCreate
+      can_read: canRead
+      can_update: canUpdate
+      can_delete: canDelete
+      can_list: canList
+      can_history: canHistory
     }
   }
 `;

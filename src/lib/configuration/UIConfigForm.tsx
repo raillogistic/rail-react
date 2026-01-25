@@ -38,14 +38,14 @@ const USERS_AND_GROUPS_QUERY = gql`
 
 const CREATE_CONFIG_MUTATION = gql`
   mutation CreateUIComponentConfig($input: CreateUIComponentConfigInput!) {
-    createUiComponentConfig: create_uicomponentconfig(input: $input) {
+    createUiComponentConfig: createUiComponentConfig(input: $input) {
       object {
         id
-        component_id
-        target_model
-        component_type
+        component_id: componentId
+        target_model: targetModel
+        component_type: componentType
         configuration
-        is_global
+        is_global: isGlobal
         users {
           id
           username
@@ -68,14 +68,14 @@ const UPDATE_CONFIG_MUTATION = gql`
     $id: ID!
     $input: UpdateUIComponentConfigInput!
   ) {
-    updateUiComponentConfig: update_uicomponentconfig(id: $id, input: $input) {
+    updateUiComponentConfig: updateUiComponentConfig(id: $id, input: $input) {
       object {
         id
-        component_id
-        target_model
-        component_type
+        component_id: componentId
+        target_model: targetModel
+        component_type: componentType
         configuration
-        is_global
+        is_global: isGlobal
         users {
           id
           username
@@ -231,11 +231,11 @@ export function UIConfigForm({
     onSubmit: async ({ value }) => {
       try {
         const input = {
-          component_id: value.component_id,
-          target_model: value.target_model,
-          component_type: value.component_type,
+          componentId: value.component_id,
+          targetModel: value.target_model,
+          componentType: value.component_type,
           configuration: value.configuration,
-          is_global: value.is_global,
+          isGlobal: value.is_global,
           users: value.users,
           groups: value.groups,
         };
