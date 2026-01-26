@@ -29,14 +29,16 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     const { login } = data;
 
+    if (login.mfa_required) {
+      return {
+        success: false as const,
+        requiresMFA: true as const,
+        ephemeralToken: login.ephemeral_token,
+        mfaSetupRequired: login.mfa_setup_required,
+      };
+    }
+
     if (!login.ok) {
-      if (login.mfa_required) {
-        return {
-          success: false as const,
-          requiresMFA: true as const,
-          ephemeralToken: login.ephemeral_token,
-        };
-      }
       throw new Error(login.errors?.[0] || "Login failed");
     }
 

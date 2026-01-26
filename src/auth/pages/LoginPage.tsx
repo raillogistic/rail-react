@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@/routes/links";
 import { useAuthContext } from "@/auth/context";
 import { MFAChallenge } from "@/auth/components";
+import { MFASetupPage } from "./MFASetupPage";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -24,8 +25,17 @@ type LoginFormData = z.infer<typeof loginSchema>;
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
-  const { login, verifyMFA, logout, isLoading, error, clearError, status } =
-    useAuthContext();
+  const {
+    login,
+    verifyMFA,
+    logout,
+    isLoading,
+    error,
+    clearError,
+    status,
+    mfaSetupRequired,
+    ephemeralToken,
+  } = useAuthContext();
   const [showPassword, setShowPassword] = useState(false);
   const [isServerOnline, setIsServerOnline] = useState(true);
 
@@ -149,13 +159,21 @@ export const LoginPage: React.FC = () => {
 
           {/* Form or MFA Challenge */}
           {status === "mfa_required" ? (
-            <MFAChallenge
-              method="totp"
-              error={error?.userMessage || error?.message}
-              isLoading={isLoading}
-              onVerify={handleMFAVerify}
-              onCancel={handleCancelMFA}
-            />
+            mfaSetupRequired ? (
+              <MFASetupPage
+                embedded
+                ephemeralToken={ephemeralToken || undefined}
+                onComplete={handleMFAVerify}
+              />
+            ) : (
+              <MFAChallenge
+                method="totp"
+                error={error?.userMessage || error?.message}
+                isLoading={isLoading}
+                onVerify={handleMFAVerify}
+                onCancel={handleCancelMFA}
+              />
+            )
           ) : (
             <>
               <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">

@@ -26,6 +26,8 @@ export interface AuthState {
   isLoading: boolean;
   lastActivity: Date | null;
   sessionExpiresAt: Date | null;
+  mfaSetupRequired?: boolean;
+  ephemeralToken?: string | null;
 }
 
 export interface LoginCredentials {
@@ -47,6 +49,7 @@ export interface AuthResult {
   success: boolean;
   user?: AuthUser;
   requiresMFA?: boolean;
+  mfaSetupRequired?: boolean;
   mfaChallenge?: MFAChallenge;
   error?: AuthError;
 }

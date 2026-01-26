@@ -66,6 +66,15 @@ export const GET_CURRENT_USER = gql`
   }
 `;
 
+export const GET_MFA_STATUS = gql`
+  query GetMFAStatus {
+    me {
+      id
+      mfa_enabled: mfaEnabled
+    }
+  }
+`;
+
 export const GET_CURRENT_USER_RESOLVED = GET_CURRENT_USER;
 
 /**
@@ -151,6 +160,7 @@ export interface User {
   is_superuser: boolean;
   permissions?: string[];
   settings?: UserSettings;
+  mfa_enabled?: boolean;
 }
 
 //  Model Metadata Integration

@@ -19,7 +19,7 @@ interface AuthProviderProps {
   config?: Partial<AuthConfig>;
   onLogin?: (credentials: LoginCredentials) => Promise<
     | { success: true; user: AuthUser; tokens: TokenPair; sessionId: string }
-    | { success: false; requiresMFA: true; ephemeralToken: string }
+    | { success: false; requiresMFA: true; ephemeralToken: string; mfaSetupRequired?: boolean }
   >;
   onVerifyMFA?: (code: string, ephemeralToken: string) => Promise<{ user: AuthUser; tokens: TokenPair; sessionId: string }>;
   onLogout?: () => Promise<void>;
@@ -97,6 +97,7 @@ export function AuthProvider({
   const value: AuthContextValue = {
     ...state,
     login,
+    verifyMFA,
     logout,
     hasPermission,
     hasRole,

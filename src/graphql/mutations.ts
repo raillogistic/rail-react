@@ -24,6 +24,7 @@ export const LOGIN_MUTATION = gql`
       refresh_token: refreshToken
       ephemeral_token: ephemeralToken
       mfa_required: mfaRequired
+      mfa_setup_required: mfaSetupRequired
       permissions
       user {
         id
@@ -134,8 +135,8 @@ export interface LoginVariables {
 }
 
 export const SETUP_MFA_MUTATION = gql`
-  mutation SetupMFA($method: String!) {
-    setup_mfa: setupMFA(method: $method) {
+  mutation SetupMFA($method: String!, $ephemeral_token: String) {
+    setup_mfa: setupMfa(method: $method, ephemeralToken: $ephemeral_token) {
       secret
       qr_code_url: qrCodeUrl
       backup_codes: backupCodes
@@ -144,8 +145,16 @@ export const SETUP_MFA_MUTATION = gql`
 `;
 
 export const VERIFY_MFA_SETUP_MUTATION = gql`
-  mutation VerifyMFASetup($code: String!, $secret: String!) {
-    verify_mfa_setup: verifyMFASetup(code: $code, secret: $secret) {
+  mutation VerifyMFASetup(
+    $code: String!
+    $secret: String!
+    $ephemeral_token: String
+  ) {
+    verify_mfa_setup: verifyMfaSetup(
+      code: $code
+      secret: $secret
+      ephemeralToken: $ephemeral_token
+    ) {
       ok
       errors
     }
@@ -154,7 +163,7 @@ export const VERIFY_MFA_SETUP_MUTATION = gql`
 
 export const VERIFY_MFA_LOGIN_MUTATION = gql`
   mutation VerifyMFALogin($code: String!, $ephemeral_token: String!) {
-    verify_mfa_login: verifyMFALogin(
+    verify_mfa_login: verifyMfaLogin(
       code: $code
       ephemeralToken: $ephemeral_token
     ) {

@@ -142,7 +142,7 @@ export class AuthenticationManager {
       creds: LoginCredentials,
     ) => Promise<
       | { success: true; user: AuthUser; tokens: TokenPair; sessionId: string }
-      | { success: false; requiresMFA: true; ephemeralToken: string }
+      | { success: false; requiresMFA: true; ephemeralToken: string; mfaSetupRequired?: boolean }
     >,
   ): Promise<AuthResult> {
     const { username } = credentials;
@@ -180,9 +180,17 @@ export class AuthenticationManager {
 
       if (!result.success && result.requiresMFA) {
         this.mfaService.setEphemeralToken(result.ephemeralToken);
-        this.updateState({ status: "mfa_required", isLoading: false });
+        const mfaSetupRequired = !!result.mfaSetupRequired;
+        
+        this.updateState({ 
+          status: "mfa_required", 
+          isLoading: false,
+          mfaSetupRequired,
+          ephemeralToken: result.ephemeralToken
+        });
+        
         this.eventBus.emit("auth:mfa_required", { method: "totp" }); // Defaulting to TOTP for now
-        return { success: false, requiresMFA: true };
+        return { success: false, requiresMFA: true, mfaSetupRequired };
       }
 
       if (result.success) {
