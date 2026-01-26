@@ -15,7 +15,10 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "jsdom",
-    setupFiles: "./src/test/setup.ts",
+    setupFiles: [
+      "./src/test/setup.ts",
+      "./src/lib/form/filters/__tests__/setup/setup.ts",
+    ],
     css: true,
   },
 });

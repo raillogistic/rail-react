@@ -1,17 +1,19 @@
-import React from 'react';
-import { useApolloClient } from '@apollo/client';
-import { AuthProvider } from './AuthProvider';
+import React from "react";
+import { useApolloClient } from "@apollo/client";
+import { AuthProvider } from "./AuthProvider";
 import {
   LOGIN_MUTATION,
   LOGOUT_MUTATION,
   REFRESH_TOKEN_MUTATION,
-  VERIFY_MFA_LOGIN_MUTATION
-} from '@/graphql/mutations';
-import { GET_CURRENT_USER } from '@/graphql/queries';
-import { AuthUser, LoginCredentials, TokenPair } from '../types';
-import { tokenStorage } from '../utils/token-storage';
+  VERIFY_MFA_LOGIN_MUTATION,
+} from "@/graphql/mutations";
+import { GET_CURRENT_USER } from "@/graphql/queries";
+import { AuthUser, LoginCredentials, TokenPair } from "../types";
+import { tokenStorage } from "../utils/token-storage";
 
-export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const client = useApolloClient();
 
   const handleLogin = async (credentials: LoginCredentials) => {
@@ -21,7 +23,7 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
         username: credentials.username,
         password: credentials.password,
         deviceId: credentials.deviceId,
-        deviceName: credentials.deviceName
+        deviceName: credentials.deviceName,
       },
     });
 
@@ -35,7 +37,7 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
           ephemeralToken: login.ephemeral_token,
         };
       }
-      throw new Error(login.errors?.[0] || 'Login failed');
+      throw new Error(login.errors?.[0] || "Login failed");
     }
 
     return {
@@ -47,7 +49,7 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
         accessTokenExpiresAt: new Date(Date.now() + 15 * 60 * 1000), // Approximate if not returned
         refreshTokenExpiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       },
-      sessionId: 'session-' + Date.now(), // Backend should ideally return session ID
+      sessionId: "session-" + Date.now(), // Backend should ideally return session ID
     };
   };
 
@@ -60,7 +62,7 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
     const { verify_mfa_login } = data;
 
     if (!verify_mfa_login.ok) {
-      throw new Error(verify_mfa_login.errors?.[0] || 'Verification failed');
+      throw new Error(verify_mfa_login.errors?.[0] || "Verification failed");
     }
 
     return {
@@ -71,7 +73,7 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
         accessTokenExpiresAt: new Date(Date.now() + 15 * 60 * 1000),
         refreshTokenExpiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       },
-      sessionId: 'session-' + Date.now(),
+      sessionId: "session-" + Date.now(),
     };
   };
 
@@ -79,7 +81,7 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       await client.mutate({ mutation: LOGOUT_MUTATION });
     } catch (e) {
-      console.warn('Logout mutation failed', e);
+      console.warn("Logout mutation failed", e);
     }
     await client.clearStore();
   };
@@ -92,7 +94,7 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     const { refresh_token } = data;
     if (!refresh_token.ok) {
-      throw new Error(refresh_token.errors?.[0] || 'Refresh failed');
+      throw new Error(refresh_token.errors?.[0] || "Refresh failed");
     }
 
     return {
@@ -109,7 +111,7 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
       // For now, assume if we have access token or cookie, we try.
       const { data } = await client.query({
         query: GET_CURRENT_USER,
-        fetchPolicy: 'network-only',
+        fetchPolicy: "network-only",
       });
       return !!data?.me;
     } catch (e) {
@@ -126,8 +128,8 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
       onValidateSession={handleValidateSession}
       config={{
         token: {
-          storageType: 'memory', // ConnectedAuthProvider manages token storage via services
-        }
+          storageType: "memory", // ConnectedAuthProvider manages token storage via services
+        },
       }}
     >
       {children}

@@ -42,7 +42,15 @@ export class EventBus {
 
     // Cross-tab broadcast
     if (this.channel) {
-      this.channel.postMessage({ event, payload, timestamp: Date.now() });
+      try {
+        this.channel.postMessage({ event, payload, timestamp: Date.now() });
+      } catch (error) {
+        // Ignore errors if channel is closed/closing
+        if (error instanceof DOMException && error.name === 'InvalidStateError') {
+          return;
+        }
+        console.warn('Auth EventBus broadcast failed:', error);
+      }
     }
   }
 
@@ -71,7 +79,10 @@ export class EventBus {
   }
 
   destroy(): void {
-    this.channel?.close();
+    if (this.channel) {
+      this.channel.close();
+      this.channel = null;
+    }
     this.listeners.clear();
     this.debounceTimers.forEach(timer => clearTimeout(timer));
     this.debounceTimers.clear();

@@ -1,4 +1,4 @@
-import { gql } from '@apollo/client';
+import { gql } from "@apollo/client";
 
 /**
  * Purpose: GraphQL mutation for user authentication
@@ -6,8 +6,18 @@ import { gql } from '@apollo/client';
  * Returns: Authentication response with token and user data
  */
 export const LOGIN_MUTATION = gql`
-  mutation Login($username: String!, $password: String!, $deviceId: String, $deviceName: String) {
-    login(username: $username, password: $password, deviceId: $deviceId, deviceName: $deviceName) {
+  mutation Login(
+    $username: String!
+    $password: String!
+    $deviceId: String
+    $deviceName: String
+  ) {
+    login(
+      username: $username
+      password: $password
+      deviceId: $deviceId
+      deviceName: $deviceName
+    ) {
       ok
       errors
       token
@@ -144,7 +154,10 @@ export const VERIFY_MFA_SETUP_MUTATION = gql`
 
 export const VERIFY_MFA_LOGIN_MUTATION = gql`
   mutation VerifyMFALogin($code: String!, $ephemeral_token: String!) {
-    verify_mfa_login: verifyMFALogin(code: $code, ephemeralToken: $ephemeral_token) {
+    verify_mfa_login: verifyMFALogin(
+      code: $code
+      ephemeralToken: $ephemeral_token
+    ) {
       ok
       errors
       token

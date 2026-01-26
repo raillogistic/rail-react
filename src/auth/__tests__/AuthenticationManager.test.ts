@@ -103,6 +103,68 @@ describe('AuthenticationManager', () => {
     expect(authManager.getState().isAuthenticated).toBe(false);
   });
 
+  it('correctly maps specific errors', async () => {
+    // Network Error
+    let error = new Error('Network Error');
+    let failLoginFn = vi.fn().mockRejectedValue(error);
+    let result = await authManager.login({ username: 'test', password: 'p' }, failLoginFn);
+    expect(result.error?.code).toBe('NETWORK_ERROR');
+
+    // Rate Limit Error
+    error = new Error('Rate limit exceeded');
+    failLoginFn = vi.fn().mockRejectedValue(error);
+    result = await authManager.login({ username: 'test', password: 'p' }, failLoginFn);
+    expect(result.error?.code).toBe('RATE_LIMITED');
+
+    // Server Error
+    error = new Error('Internal Server Error');
+    failLoginFn = vi.fn().mockRejectedValue(error);
+    result = await authManager.login({ username: 'test', password: 'p' }, failLoginFn);
+    expect(result.error?.code).toBe('SERVER_ERROR');
+
+    // Account Locked
+    error = new Error('Account is locked');
+    failLoginFn = vi.fn().mockRejectedValue(error);
+    result = await authManager.login({ username: 'test', password: 'p' }, failLoginFn);
+    expect(result.error?.code).toBe('ACCOUNT_LOCKED');
+    expect(result.error?.recoverable).toBe(false);
+  });
+
+  it('handles null user from verifyFn gracefully', async () => {
+    // Setup MFA state
+    authManager.mfaService.setEphemeralToken('temp-token');
+
+    // Mock verifyFn returning null user (simulating backend issue)
+    const badVerifyFn = vi.fn().mockResolvedValue({
+      success: true,
+      user: null, // This causes the manual throw
+      tokens: mockTokens,
+      sessionId: 'session-1'
+    });
+
+    const result = await authManager.verifyMFA('123456', badVerifyFn as any);
+
+    expect(result.success).toBe(false);
+    expect(result.error?.code).toBe('SERVER_ERROR');
+    expect(result.error?.message).toContain('no user data returned');
+  });
+
+  it('reports useful error message when login returns success but no user', async () => {
+    // Mock loginFn returning success but null user
+    const badLoginFn = vi.fn().mockResolvedValue({
+      success: true,
+      user: null,
+      tokens: mockTokens,
+      sessionId: 'session-1'
+    });
+
+    const result = await authManager.login({ username: 'u', password: 'p' }, badLoginFn as any);
+
+    expect(result.success).toBe(false);
+    expect(result.error?.code).toBe('SERVER_ERROR');
+    expect(result.error?.message).toContain("no user data returned");
+  });
+
   it('enforces rate limiting', async () => {
     const creds = { username: 'spammer', password: 'pwd' };
     const failLoginFn = vi.fn().mockRejectedValue(new Error('fail'));

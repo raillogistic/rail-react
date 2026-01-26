@@ -1,17 +1,23 @@
-import { EventBus } from './core/EventBus';
-import { StorageAdapter } from './core/StorageAdapter';
-import { RateLimiter } from './core/RateLimiter';
-import { TokenService } from './services/TokenService';
-import { SessionService } from './services/SessionService';
-import { PermissionService } from './services/PermissionService';
-import { DeviceService } from './services/DeviceService';
-import { MFAService } from './services/MFAService';
-import { AuditService } from './services/AuditService';
+import { EventBus } from "./core/EventBus";
+import { StorageAdapter } from "./core/StorageAdapter";
+import { RateLimiter } from "./core/RateLimiter";
+import { TokenService } from "./services/TokenService";
+import { SessionService } from "./services/SessionService";
+import { PermissionService } from "./services/PermissionService";
+import { DeviceService } from "./services/DeviceService";
+import { MFAService } from "./services/MFAService";
+import { AuditService } from "./services/AuditService";
 import type {
-  AuthConfig, AuthState, AuthUser, LoginCredentials,
-  AuthResult, LogoutOptions, TokenPair, TokenPayload
-} from './types';
-import { DEFAULT_AUTH_CONFIG, mergeConfig } from './constants/config';
+  AuthConfig,
+  AuthState,
+  AuthUser,
+  LoginCredentials,
+  AuthResult,
+  LogoutOptions,
+  TokenPair,
+  TokenPayload,
+} from "./types";
+import { DEFAULT_AUTH_CONFIG, mergeConfig } from "./constants/config";
 
 export class AuthenticationManager {
   private config: AuthConfig;
@@ -26,7 +32,7 @@ export class AuthenticationManager {
   private auditService: AuditService;
 
   private state: AuthState = {
-    status: 'idle',
+    status: "idle",
     user: null,
     error: null,
     isAuthenticated: false,
@@ -49,8 +55,8 @@ export class AuthenticationManager {
     });
     // Device storage should be persistent (localStorage)
     const deviceStorage = new StorageAdapter({
-      type: 'local',
-      prefix: 'device_',
+      type: "local",
+      prefix: "device_",
       encrypt: false, // Device ID usually doesn't need encryption, but could be added
     });
 
@@ -76,14 +82,14 @@ export class AuthenticationManager {
 
   // Initialize and check existing session
   async initialize(): Promise<void> {
-    this.updateState({ status: 'loading', isLoading: true });
+    this.updateState({ status: "loading", isLoading: true });
 
     // Check default storage first
     let accessToken = this.tokenService.getAccessToken();
 
     // If not found, check LocalStorage (Handle "Remember Me" persistence)
     if (!accessToken) {
-      this.storage.updateConfig({ type: 'local' });
+      this.storage.updateConfig({ type: "local" });
       const localToken = this.tokenService.getAccessToken();
 
       if (localToken) {
@@ -97,8 +103,8 @@ export class AuthenticationManager {
 
     if (!accessToken) {
       this.updateState({
-        status: 'unauthenticated',
-        isLoading: false
+        status: "unauthenticated",
+        isLoading: false,
       });
       return;
     }
@@ -112,7 +118,7 @@ export class AuthenticationManager {
       const payload = this.tokenService.decodeToken(accessToken);
       if (payload) {
         this.updateState({
-          status: 'authenticated',
+          status: "authenticated",
           isAuthenticated: true,
           isLoading: false,
           user: this.extractUserFromPayload(payload),
@@ -124,8 +130,8 @@ export class AuthenticationManager {
     // Session invalid, clear and set unauthenticated
     this.tokenService.clearTokens();
     this.updateState({
-      status: 'unauthenticated',
-      isLoading: false
+      status: "unauthenticated",
+      isLoading: false,
     });
   }
 
@@ -151,40 +157,44 @@ export class AuthenticationManager {
     // Check rate limit
     if (!this.rateLimiter.canAttempt(username)) {
       const lockoutEnd = this.rateLimiter.getLockoutEndTime(username);
-      this.eventBus.emit('auth:rate_limited', {
+      this.eventBus.emit("auth:rate_limited", {
         retryAfter: lockoutEnd ? lockoutEnd.getTime() - Date.now() : 0,
         key: username,
       });
       return {
         success: false,
         error: {
-          code: 'RATE_LIMITED',
-          message: 'Too many login attempts. Please try again later.',
+          code: "RATE_LIMITED",
+          message: "Too many login attempts. Please try again later.",
           timestamp: new Date(),
           recoverable: true,
         },
       };
     }
 
-    this.updateState({ status: 'loading', isLoading: true });
-    this.eventBus.emit('auth:login_started', { username });
+    this.updateState({ status: "loading", isLoading: true });
+    this.eventBus.emit("auth:login_started", { username });
 
     try {
       const result = await loginFn(enhancedCredentials);
 
       if (!result.success && result.requiresMFA) {
         this.mfaService.setEphemeralToken(result.ephemeralToken);
-        this.updateState({ status: 'mfa_required', isLoading: false });
-        this.eventBus.emit('auth:mfa_required', { method: 'totp' }); // Defaulting to TOTP for now
+        this.updateState({ status: "mfa_required", isLoading: false });
+        this.eventBus.emit("auth:mfa_required", { method: "totp" }); // Defaulting to TOTP for now
         return { success: false, requiresMFA: true };
       }
 
       if (result.success) {
         const { user, tokens, sessionId } = result;
 
+        if (!user) {
+          throw new Error("Login successful but no user data returned");
+        }
+
         // Handle Remember Me - switch storage persistence if requested
         if (credentials.rememberMe) {
-          this.storage.updateConfig({ type: 'local' });
+          this.storage.updateConfig({ type: "local" });
         } else {
           // Revert to default config if not remember me (or ensure it's session/memory)
           this.storage.updateConfig({ type: this.config.token.storageType });
@@ -201,7 +211,7 @@ export class AuthenticationManager {
         this.permissionService.setPermissions(user.permissions, user.roles);
 
         this.updateState({
-          status: 'authenticated',
+          status: "authenticated",
           isAuthenticated: true,
           isLoading: false,
           user,
@@ -209,47 +219,83 @@ export class AuthenticationManager {
           error: null,
         });
 
-        this.eventBus.emit('auth:login_success', { user, sessionId });
+        this.eventBus.emit("auth:login_success", { user, sessionId });
         return { success: true, user };
       }
 
-      throw new Error('Unexpected login result');
-
+      throw new Error("Unexpected login result");
     } catch (error) {
-      this.rateLimiter.recordAttempt(username, false);
+      // Determine error details
+      let message = 'Invalid username or password';
+      let code: import('../types').AuthErrorCode = 'INVALID_CREDENTIALS';
+      let recoverable = true;
+
+      if (error instanceof Error) {
+        message = error.message;
+
+        // Map known error types
+        if (message.match(/network|connection|offline|fetch/i)) {
+          code = 'NETWORK_ERROR';
+        } else if (message.match(/server/i)) {
+          code = 'SERVER_ERROR';
+        } else if (message.match(/rate|limit/i)) {
+          code = 'RATE_LIMITED';
+        } else if (message.match(/lock/i)) {
+          code = 'ACCOUNT_LOCKED';
+          recoverable = false;
+        } else if (message.match(/disable/i)) {
+          code = 'ACCOUNT_DISABLED';
+          recoverable = false;
+        } else if (message.includes('no user data returned')) {
+          code = 'SERVER_ERROR';
+        } else if (!message.match(/invalid|credential|password/i)) {
+           // If it doesn't look like a credential error (and we ruled out the above),
+           // treat as unknown/server error
+           code = 'UNKNOWN_ERROR';
+        }
+      }
+
+      // Only record failed attempt if it's likely a credential issue
+      // We also count UNKNOWN_ERROR to be safe against credential stuffing with obscure errors
+      if (code === 'INVALID_CREDENTIALS' || code === 'UNKNOWN_ERROR') {
+        this.rateLimiter.recordAttempt(username, false);
+      }
 
       const authError = {
-        code: 'INVALID_CREDENTIALS' as const,
-        message: 'Invalid username or password',
+        code,
+        message,
         timestamp: new Date(),
-        recoverable: true,
+        recoverable,
       };
 
       this.updateState({
-        status: 'error',
+        status: "error",
         isLoading: false,
         error: authError,
       });
 
-      this.eventBus.emit('auth:login_failed', { error: authError, username });
+      this.eventBus.emit("auth:login_failed", { error: authError, username });
       return { success: false, error: authError };
     }
   }
 
   async verifyMFA(
     code: string,
-    verifyFn: (code: string, ephemeralToken: string) => Promise<{ user: AuthUser; tokens: TokenPair; sessionId: string }>
+    verifyFn: (
+      code: string,
+      ephemeralToken: string,
+    ) => Promise<{ user: AuthUser; tokens: TokenPair; sessionId: string }>,
   ): Promise<AuthResult> {
     const ephemeralToken = this.mfaService.getEphemeralToken();
     if (!ephemeralToken) {
       return {
         success: false,
         error: {
-          code: 'MFA_INVALID',
-          message: 'Session expired. Please log in again.',
+          code: "MFA_INVALID",
+          message: "Session expired. Please log in again.",
           timestamp: new Date(),
-          recoverable: false
-        }
+          recoverable: false,
+        },
       };
     }
 
@@ -258,14 +304,22 @@ export class AuthenticationManager {
     try {
       const { user, tokens, sessionId } = await verifyFn(code, ephemeralToken);
 
+      if (!user) {
+        throw new Error("MFA verification successful but no user data returned");
+      }
+
       // Success
       this.mfaService.clearEphemeralToken();
       this.tokenService.setTokens(tokens);
-      this.sessionService.startSession(user, sessionId, tokens.accessTokenExpiresAt);
+      this.sessionService.startSession(
+        user,
+        sessionId,
+        tokens.accessTokenExpiresAt,
+      );
       this.permissionService.setPermissions(user.permissions, user.roles);
 
       this.updateState({
-        status: 'authenticated',
+        status: "authenticated",
         isAuthenticated: true,
         isLoading: false,
         user,
@@ -273,19 +327,39 @@ export class AuthenticationManager {
         error: null,
       });
 
-      this.eventBus.emit('auth:login_success', { user, sessionId });
+      this.eventBus.emit("auth:login_success", { user, sessionId });
       return { success: true, user };
-
     } catch (error) {
+      let code: import('../types').AuthErrorCode = 'MFA_INVALID';
+      let message = 'Invalid verification code';
+
+      if (error instanceof Error) {
+        // If it's a runtime error (like property access on null), treat as unknown/server error
+        if (error.message.includes('Cannot read properties of null') ||
+            error.message.includes('undefined')) {
+          code = 'UNKNOWN_ERROR';
+          message = error.message; // Keep original message for debugging
+        }
+        else if (error.message.includes('no user data returned')) {
+           code = 'SERVER_ERROR';
+           message = error.message;
+        }
+        // If it's a network/server error
+        else if (error.message.match(/network|connection|offline|fetch|server/i)) {
+           code = 'NETWORK_ERROR';
+           message = error.message;
+        }
+      }
+
       const authError = {
-        code: 'MFA_INVALID' as const,
-        message: 'Invalid verification code',
+        code,
+        message,
         timestamp: new Date(),
         recoverable: true,
       };
 
       this.updateState({
-        status: 'mfa_required', // Stay in MFA state
+        status: "mfa_required", // Stay in MFA state
         isLoading: false,
         error: authError,
       });
@@ -297,14 +371,14 @@ export class AuthenticationManager {
   // Logout
   async logout(options: LogoutOptions = {}): Promise<void> {
     const userId = this.state.user?.id;
-    const reason = options.reason || 'user_initiated';
+    const reason = options.reason || "user_initiated";
 
     this.tokenService.clearTokens();
     this.sessionService.endSession(reason);
     this.permissionService.invalidate();
 
     this.updateState({
-      status: 'unauthenticated',
+      status: "unauthenticated",
       isAuthenticated: false,
       user: null,
       error: null,
@@ -312,7 +386,7 @@ export class AuthenticationManager {
     });
 
     if (!options.silent) {
-      this.eventBus.emit('auth:logout', { reason, userId });
+      this.eventBus.emit("auth:logout", { reason, userId });
     }
   }
 
@@ -342,9 +416,9 @@ export class AuthenticationManager {
   }
 
   // Event subscription
-  on<T extends import('../types').AuthEventType>(
+  on<T extends import("../types").AuthEventType>(
     event: T,
-    handler: (payload: import('../types').AuthEventPayloads[T]) => void
+    handler: (payload: import("../types").AuthEventPayloads[T]) => void,
   ): () => void {
     return this.eventBus.on(event, handler);
   }
@@ -358,19 +432,19 @@ export class AuthenticationManager {
 
   private updateState(partial: Partial<AuthState>): void {
     this.state = { ...this.state, ...partial };
-    this.stateListeners.forEach(listener => listener(this.state));
+    this.stateListeners.forEach((listener) => listener(this.state));
   }
 
   private setupEventHandlers(): void {
     // Handle cross-tab logout
-    this.eventBus.on('auth:logout', () => {
+    this.eventBus.on("auth:logout", () => {
       if (this.state.isAuthenticated) {
-        this.logout({ silent: true, reason: 'forced_logout' });
+        this.logout({ silent: true, reason: "forced_logout" });
       }
     });
 
     // Handle token refresh
-    this.eventBus.on('auth:token_refreshed', ({ expiresAt }) => {
+    this.eventBus.on("auth:token_refreshed", ({ expiresAt }) => {
       this.updateState({ sessionExpiresAt: expiresAt });
     });
   }
@@ -378,7 +452,7 @@ export class AuthenticationManager {
   private extractUserFromPayload(payload: TokenPayload): AuthUser {
     return {
       id: payload.sub,
-      email: payload.email || '',
+      email: payload.email || "",
       roles: payload.roles || [],
       permissions: payload.permissions || [],
     };
