@@ -6,12 +6,14 @@ import { gql } from '@apollo/client';
  * Returns: Authentication response with token and user data
  */
 export const LOGIN_MUTATION = gql`
-  mutation Login($username: String!, $password: String!) {
-    login(username: $username, password: $password) {
+  mutation Login($username: String!, $password: String!, $deviceId: String, $deviceName: String) {
+    login(username: $username, password: $password, deviceId: $deviceId, deviceName: $deviceName) {
       ok
       errors
       token
       refresh_token: refreshToken
+      ephemeral_token: ephemeralToken
+      mfa_required: mfaRequired
       permissions
       user {
         id
@@ -37,6 +39,24 @@ export const REFRESH_TOKEN_MUTATION = gql`
       token
       refresh_token: refreshToken
       permissions
+    }
+  }
+`;
+
+export const REVOKE_SESSION_MUTATION = gql`
+  mutation RevokeSession($session_id: String!) {
+    revoke_session: revokeSession(sessionId: $session_id) {
+      ok
+      errors
+    }
+  }
+`;
+
+export const REVOKE_ALL_SESSIONS_MUTATION = gql`
+  mutation RevokeAllSessions {
+    revoke_all_sessions: revokeAllSessions {
+      ok
+      errors
     }
   }
 `;
@@ -102,6 +122,53 @@ export interface LoginVariables {
   username: string;
   password: string;
 }
+
+export const SETUP_MFA_MUTATION = gql`
+  mutation SetupMFA($method: String!) {
+    setup_mfa: setupMFA(method: $method) {
+      secret
+      qr_code_url: qrCodeUrl
+      backup_codes: backupCodes
+    }
+  }
+`;
+
+export const VERIFY_MFA_SETUP_MUTATION = gql`
+  mutation VerifyMFASetup($code: String!, $secret: String!) {
+    verify_mfa_setup: verifyMFASetup(code: $code, secret: $secret) {
+      ok
+      errors
+    }
+  }
+`;
+
+export const VERIFY_MFA_LOGIN_MUTATION = gql`
+  mutation VerifyMFALogin($code: String!, $ephemeral_token: String!) {
+    verify_mfa_login: verifyMFALogin(code: $code, ephemeralToken: $ephemeral_token) {
+      ok
+      errors
+      token
+      refresh_token: refreshToken
+      permissions
+      user {
+        id
+        username
+        email
+        first_name: firstName
+        last_name: lastName
+      }
+    }
+  }
+`;
+
+export const DISABLE_MFA_MUTATION = gql`
+  mutation DisableMFA($password: String!) {
+    disable_mfa: disableMFA(password: $password) {
+      ok
+      errors
+    }
+  }
+`;
 
 export const UPDATE_MY_SETTINGS_MUTATION = gql`
   mutation UpdateMySettings(

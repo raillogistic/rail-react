@@ -3,22 +3,23 @@ import { ThemeProvider } from "@/lib/theme/ThemeProvider";
 import { useAuthContext } from "@/auth/context";
 import { RouteBuilder } from "@/views/routes/RouteBuilder";
 import { Toaster } from "@/lib/components/ui/sonner";
-import { 
-  ThemeKey, 
-  ThemeMode, 
-  Layout, 
-  SidebarCollapseMode, 
-  FontSize, 
-  FontFamily 
+import { ActivityTimeoutModal } from "@/auth/components/ActivityTimeoutModal";
+import {
+  ThemeKey,
+  ThemeMode,
+  Layout,
+  SidebarCollapseMode,
+  FontSize,
+  FontFamily
 } from "@/lib/theme";
 
 export const AuthDependentContent: React.FC = () => {
-  const { user } = useAuthContext();
+  const { user, isAuthenticated } = useAuthContext();
   const storageKey = user ? `vite-ui-theme-${user.id}` : "vite-ui-theme";
 
   // Extract settings with fallbacks
   const userSettings = user?.settings;
-  
+
   return (
     <ThemeProvider
       defaultTheme={(userSettings?.theme as ThemeKey) || "default"}
@@ -31,6 +32,7 @@ export const AuthDependentContent: React.FC = () => {
     >
       <RouteBuilder />
       <Toaster />
+      {isAuthenticated && <ActivityTimeoutModal />}
     </ThemeProvider>
   );
 };

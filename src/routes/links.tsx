@@ -5,8 +5,9 @@
  * sidebar, header, and routing table all share the same source of truth.
  */
 
-import type { ComponentType, ReactNode } from "react";
-import { LayoutDashboard, Settings, Shield, User } from "lucide-react";
+import { MFASetupPage } from "@/auth/pages/MFASetupPage";
+import { SessionsPage } from "@/auth/pages/SessionsPage";
+import { LayoutDashboard, Settings, Shield, User, Smartphone, Lock } from "lucide-react";
 
 import { AccountSettingsPage } from "@/views/settings/AccountSettingsPage";
 import { AdminUISettingsPage } from "@/views/settings/AdminUISettingsPage";
@@ -27,6 +28,8 @@ export const ROUTES = {
   SETTINGS_APPEARANCE: "/settings/appearance",
   SETTINGS_LAYOUT: "/settings/layout",
   SETTINGS_ADMIN: "/settings/admin",
+  SETTINGS_SESSIONS: "/settings/sessions",
+  SETTINGS_MFA: "/settings/mfa",
 } as const;
 
 export type RouteKey = keyof typeof ROUTES;
@@ -115,6 +118,24 @@ const CORE_NAVIGATION_LINKS: NavigationSection[] = [
         requiresAuth: true,
         component: <AdminUISettingsPage />,
         description: "Configuration globale UI",
+      },
+      {
+        id: "settings-sessions",
+        title: "Sessions",
+        path: ROUTES.SETTINGS_SESSIONS,
+        icon: Smartphone, // Using Smartphone as proxy for devices/sessions
+        requiresAuth: true,
+        component: <SessionsPage />,
+        description: "Gérer vos sessions actives",
+      },
+      {
+        id: "settings-mfa",
+        title: "Authentification à deux facteurs",
+        path: ROUTES.SETTINGS_MFA,
+        icon: Lock,
+        requiresAuth: true,
+        component: <MFASetupPage />,
+        description: "Sécuriser votre compte",
       },
     ],
   },

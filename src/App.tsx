@@ -11,7 +11,7 @@
 import React from "react";
 import { BrowserRouter } from "react-router-dom";
 import { ApolloProvider } from "@apollo/client/react";
-import { AuthProvider } from "@/auth/context";
+import { ConnectedAuthProvider } from "@/auth/context/ConnectedAuthProvider";
 import { AuthDependentContent } from "./views/AuthDependentContent";
 import client from "@/graphql/apollo-client";
 
@@ -21,9 +21,9 @@ const App: React.FC = () => {
   return (
     <ApolloProvider client={client}>
       <BrowserRouter>
-        <AuthProvider>
+        <ConnectedAuthProvider>
           <AuthDependentContent />
-        </AuthProvider>
+        </ConnectedAuthProvider>
       </BrowserRouter>
     </ApolloProvider>
   );

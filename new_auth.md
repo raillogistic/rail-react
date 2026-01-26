@@ -12,6 +12,7 @@
 This document provides a detailed multi-phase technical implementation plan to restructure and enhance the authentication system. Each phase is self-contained with clear deliverables, technical specifications, and acceptance criteria.
 
 **Key Objectives:**
+
 - Improve security posture (rate limiting, MFA, session management)
 - Enhance user experience (multi-tab sync, activity timeout, remember me)
 - Increase maintainability (service-based architecture, centralized configuration)
@@ -36,33 +37,33 @@ This document provides a detailed multi-phase technical implementation plan to r
 
 ### 1.1 Existing Component Map
 
-| Component | Location | Responsibility |
-|-----------|----------|----------------|
-| `AuthContext` | `src/auth/context/AuthContext.tsx` | React context definition |
-| `AuthProvider` | `src/auth/context/AuthProvider.tsx` | Auth state management |
-| `useAuth` | `src/auth/hooks/useAuth.ts` | Auth hook for components |
-| `useTokenRefresh` | `src/auth/hooks/useTokenRefresh.ts` | Automatic token renewal |
+| Component              | Location                                 | Responsibility            |
+| ---------------------- | ---------------------------------------- | ------------------------- |
+| `AuthContext`          | `src/auth/context/AuthContext.tsx`       | React context definition  |
+| `AuthProvider`         | `src/auth/context/AuthProvider.tsx`      | Auth state management     |
+| `useAuth`              | `src/auth/hooks/useAuth.ts`              | Auth hook for components  |
+| `useTokenRefresh`      | `src/auth/hooks/useTokenRefresh.ts`      | Automatic token renewal   |
 | `useSessionValidation` | `src/auth/hooks/useSessionValidation.ts` | Server-side session check |
-| `token-storage.ts` | `src/auth/utils/token-storage.ts` | Token persistence |
-| `rbac.ts` | `src/auth/utils/rbac.ts` | Role-based access control |
-| `error-handler.ts` | `src/auth/utils/error-handler.ts` | Auth error handling |
-| `csrf.ts` | `src/auth/utils/csrf.ts` | CSRF protection |
-| `authGuard.ts` | `src/auth/utils/authGuard.ts` | Route protection logic |
+| `token-storage.ts`     | `src/auth/utils/token-storage.ts`        | Token persistence         |
+| `rbac.ts`              | `src/auth/utils/rbac.ts`                 | Role-based access control |
+| `error-handler.ts`     | `src/auth/utils/error-handler.ts`        | Auth error handling       |
+| `csrf.ts`              | `src/auth/utils/csrf.ts`                 | CSRF protection           |
+| `authGuard.ts`         | `src/auth/utils/authGuard.ts`            | Route protection logic    |
 
 ### 1.2 Identified Limitations
 
-| ID | Limitation | Severity | Impact | Phase |
-|----|-----------|----------|--------|-------|
-| L1 | No login rate limiting | High | Vulnerable to brute force | Phase 1 |
-| L2 | No multi-tab session sync | Medium | Inconsistent UX across tabs | Phase 1 |
-| L3 | No activity-based timeout | Medium | Security risk for idle sessions | Phase 3 |
-| L4 | Hardcoded refresh threshold | Low | Inflexible configuration | Phase 1 |
-| L5 | No "Remember Me" option | Low | Poor UX for trusted devices | Phase 4 |
-| L6 | No MFA support | High | Single factor only | Phase 4 |
-| L7 | No device/session management | Medium | Cannot audit/revoke sessions | Phase 4 |
-| L8 | Limited permission caching | Low | Redundant permission checks | Phase 2 |
-| L9 | No WebAuthn support | Medium | Missing modern auth options | Phase 4 |
-| L10 | Potential memory leaks | Low | Timer cleanup issues | Phase 2 |
+| ID  | Limitation                   | Severity | Impact                          | Phase   |
+| --- | ---------------------------- | -------- | ------------------------------- | ------- |
+| L1  | No login rate limiting       | High     | Vulnerable to brute force       | Phase 1 |
+| L2  | No multi-tab session sync    | Medium   | Inconsistent UX across tabs     | Phase 1 |
+| L3  | No activity-based timeout    | Medium   | Security risk for idle sessions | Phase 3 |
+| L4  | Hardcoded refresh threshold  | Low      | Inflexible configuration        | Phase 1 |
+| L5  | No "Remember Me" option      | Low      | Poor UX for trusted devices     | Phase 4 |
+| L6  | No MFA support               | High     | Single factor only              | Phase 4 |
+| L7  | No device/session management | Medium   | Cannot audit/revoke sessions    | Phase 4 |
+| L8  | Limited permission caching   | Low      | Redundant permission checks     | Phase 2 |
+| L9  | No WebAuthn support          | Medium   | Missing modern auth options     | Phase 4 |
+| L10 | Potential memory leaks       | Low      | Timer cleanup issues            | Phase 2 |
 
 ### 1.3 Current Data Flow
 
@@ -78,6 +79,7 @@ This document provides a detailed multi-phase technical implementation plan to r
 ```
 
 **Issues:**
+
 - Tight coupling between components
 - No centralized event handling
 - Direct storage access from multiple locations
@@ -178,15 +180,15 @@ Phase 1 establishes foundational infrastructure for all subsequent phases: type 
 
 ### 3.2 Deliverables
 
-| Deliverable | Description | Est. Hours |
-|-------------|-------------|------------|
-| `src/auth/types/` | Complete TypeScript type definitions | 4h |
-| `src/auth/constants/` | Configuration and error constants | 2h |
-| `src/auth/core/EventBus.ts` | Cross-tab event synchronization | 6h |
-| `src/auth/core/StorageAdapter.ts` | Unified storage interface | 4h |
-| `src/auth/core/RateLimiter.ts` | Login rate limiting | 4h |
-| `src/auth/core/CryptoService.ts` | Encryption utilities | 3h |
-| Unit tests | 90%+ coverage for core modules | 6h |
+| Deliverable                       | Description                          | Est. Hours |
+| --------------------------------- | ------------------------------------ | ---------- |
+| `src/auth/types/`                 | Complete TypeScript type definitions | 4h         |
+| `src/auth/constants/`             | Configuration and error constants    | 2h         |
+| `src/auth/core/EventBus.ts`       | Cross-tab event synchronization      | 6h         |
+| `src/auth/core/StorageAdapter.ts` | Unified storage interface            | 4h         |
+| `src/auth/core/RateLimiter.ts`    | Login rate limiting                  | 4h         |
+| `src/auth/core/CryptoService.ts`  | Encryption utilities                 | 3h         |
+| Unit tests                        | 90%+ coverage for core modules       | 6h         |
 
 ### 3.3 Type Definitions
 
@@ -205,13 +207,13 @@ export interface AuthUser {
 }
 
 export type AuthStatus =
-  | 'idle'
-  | 'loading'
-  | 'authenticated'
-  | 'unauthenticated'
-  | 'mfa_required'
-  | 'session_expired'
-  | 'error';
+  | "idle"
+  | "loading"
+  | "authenticated"
+  | "unauthenticated"
+  | "mfa_required"
+  | "session_expired"
+  | "error";
 
 export interface AuthState {
   status: AuthStatus;
@@ -245,13 +247,13 @@ export interface LogoutOptions {
 }
 
 export type LogoutReason =
-  | 'user_initiated'
-  | 'session_expired'
-  | 'idle_timeout'
-  | 'security_violation'
-  | 'account_disabled'
-  | 'password_changed'
-  | 'forced_logout';
+  | "user_initiated"
+  | "session_expired"
+  | "idle_timeout"
+  | "security_violation"
+  | "account_disabled"
+  | "password_changed"
+  | "forced_logout";
 
 export interface AuthError {
   code: AuthErrorCode;
@@ -262,21 +264,21 @@ export interface AuthError {
 }
 
 export type AuthErrorCode =
-  | 'INVALID_CREDENTIALS'
-  | 'ACCOUNT_LOCKED'
-  | 'ACCOUNT_DISABLED'
-  | 'SESSION_EXPIRED'
-  | 'TOKEN_INVALID'
-  | 'TOKEN_EXPIRED'
-  | 'REFRESH_FAILED'
-  | 'MFA_REQUIRED'
-  | 'MFA_INVALID'
-  | 'RATE_LIMITED'
-  | 'NETWORK_ERROR'
-  | 'SERVER_ERROR'
-  | 'PERMISSION_DENIED'
-  | 'CSRF_INVALID'
-  | 'UNKNOWN_ERROR';
+  | "INVALID_CREDENTIALS"
+  | "ACCOUNT_LOCKED"
+  | "ACCOUNT_DISABLED"
+  | "SESSION_EXPIRED"
+  | "TOKEN_INVALID"
+  | "TOKEN_EXPIRED"
+  | "REFRESH_FAILED"
+  | "MFA_REQUIRED"
+  | "MFA_INVALID"
+  | "RATE_LIMITED"
+  | "NETWORK_ERROR"
+  | "SERVER_ERROR"
+  | "PERMISSION_DENIED"
+  | "CSRF_INVALID"
+  | "UNKNOWN_ERROR";
 ```
 
 #### 3.3.2 Token Types (`src/auth/types/tokens.ts`)
@@ -302,7 +304,7 @@ export interface TokenPayload {
 }
 
 export interface TokenStorageConfig {
-  storageType: 'memory' | 'session' | 'local' | 'cookie';
+  storageType: "memory" | "session" | "local" | "cookie";
   encryptionKey?: string;
   prefix: string;
   secure: boolean;
@@ -320,30 +322,45 @@ export interface TokenRefreshConfig {
 
 ```typescript
 export type AuthEventType =
-  | 'auth:login_started' | 'auth:login_success' | 'auth:login_failed'
-  | 'auth:logout' | 'auth:logout_everywhere'
-  | 'auth:token_refreshed' | 'auth:token_expired' | 'auth:token_invalid'
-  | 'auth:session_started' | 'auth:session_expired' | 'auth:session_extended'
-  | 'auth:activity_detected' | 'auth:idle_warning' | 'auth:idle_timeout'
-  | 'auth:mfa_required' | 'auth:mfa_success' | 'auth:mfa_failed'
-  | 'auth:rate_limited' | 'auth:security_violation' | 'auth:permission_changed'
-  | 'auth:device_registered' | 'auth:device_trusted' | 'auth:device_revoked';
+  | "auth:login_started"
+  | "auth:login_success"
+  | "auth:login_failed"
+  | "auth:logout"
+  | "auth:logout_everywhere"
+  | "auth:token_refreshed"
+  | "auth:token_expired"
+  | "auth:token_invalid"
+  | "auth:session_started"
+  | "auth:session_expired"
+  | "auth:session_extended"
+  | "auth:activity_detected"
+  | "auth:idle_warning"
+  | "auth:idle_timeout"
+  | "auth:mfa_required"
+  | "auth:mfa_success"
+  | "auth:mfa_failed"
+  | "auth:rate_limited"
+  | "auth:security_violation"
+  | "auth:permission_changed"
+  | "auth:device_registered"
+  | "auth:device_trusted"
+  | "auth:device_revoked";
 
 export interface AuthEventPayloads {
-  'auth:login_started': { username: string };
-  'auth:login_success': { user: AuthUser; sessionId: string };
-  'auth:login_failed': { error: AuthError; username: string };
-  'auth:logout': { reason: LogoutReason; userId?: string };
-  'auth:token_refreshed': { expiresAt: Date };
-  'auth:session_expired': { sessionId: string; reason: string };
-  'auth:idle_warning': { timeoutIn: number };
-  'auth:idle_timeout': { lastActivity: Date };
-  'auth:rate_limited': { retryAfter: number; key: string };
+  "auth:login_started": { username: string };
+  "auth:login_success": { user: AuthUser; sessionId: string };
+  "auth:login_failed": { error: AuthError; username: string };
+  "auth:logout": { reason: LogoutReason; userId?: string };
+  "auth:token_refreshed": { expiresAt: Date };
+  "auth:session_expired": { sessionId: string; reason: string };
+  "auth:idle_warning": { timeoutIn: number };
+  "auth:idle_timeout": { lastActivity: Date };
+  "auth:rate_limited": { retryAfter: number; key: string };
   // ... additional payloads
 }
 
 export type AuthEventHandler<T extends AuthEventType> = (
-  payload: AuthEventPayloads[T]
+  payload: AuthEventPayloads[T],
 ) => void;
 
 export type Unsubscribe = () => void;
@@ -357,7 +374,7 @@ export interface AuthConfig {
     refreshThresholdSeconds: number;
     accessTokenTTLSeconds: number;
     refreshTokenTTLSeconds: number;
-    storageType: 'memory' | 'session' | 'local' | 'cookie';
+    storageType: "memory" | "session" | "local" | "cookie";
     storagePrefix: string;
     encryptTokens: boolean;
   };
@@ -390,23 +407,23 @@ export interface AuthConfig {
 
 export const DEFAULT_AUTH_CONFIG: AuthConfig = {
   token: {
-    refreshThresholdSeconds: 300,      // 5 min before expiry
-    accessTokenTTLSeconds: 900,        // 15 min
-    refreshTokenTTLSeconds: 604800,    // 7 days
-    storageType: 'memory',
-    storagePrefix: 'auth_',
+    refreshThresholdSeconds: 300, // 5 min before expiry
+    accessTokenTTLSeconds: 900, // 15 min
+    refreshTokenTTLSeconds: 604800, // 7 days
+    storageType: "memory",
+    storagePrefix: "auth_",
     encryptTokens: false,
   },
   session: {
-    idleTimeoutMs: 900_000,            // 15 min
-    idleWarningMs: 120_000,            // 2 min warning
+    idleTimeoutMs: 900_000, // 15 min
+    idleWarningMs: 120_000, // 2 min warning
     validateOnFocus: true,
-    validateIntervalMs: 60_000,        // 1 min
+    validateIntervalMs: 60_000, // 1 min
   },
   rateLimit: {
     maxLoginAttempts: 5,
-    windowMs: 300_000,                 // 5 min window
-    lockoutMs: 900_000,                // 15 min lockout
+    windowMs: 300_000, // 5 min window
+    lockoutMs: 900_000, // 15 min lockout
     backoffMultiplier: 2,
     persistLockout: true,
   },
@@ -418,7 +435,7 @@ export const DEFAULT_AUTH_CONFIG: AuthConfig = {
     enableSessionValidation: true,
   },
   eventBus: {
-    channelName: 'auth-events',
+    channelName: "auth-events",
     debounceMs: 100,
     enableCrossTab: true,
   },
@@ -440,7 +457,7 @@ export function mergeConfig(partial: Partial<AuthConfig>): AuthConfig {
 #### 3.5.1 EventBus (`src/auth/core/EventBus.ts`)
 
 ```typescript
-import type { AuthEventType, AuthEventPayloads, Unsubscribe } from '../types';
+import type { AuthEventType, AuthEventPayloads, Unsubscribe } from "../types";
 
 interface EventBusConfig {
   channelName: string;
@@ -456,7 +473,7 @@ export class EventBus {
 
   constructor(config: EventBusConfig) {
     this.config = config;
-    if (config.enableCrossTab && typeof BroadcastChannel !== 'undefined') {
+    if (config.enableCrossTab && typeof BroadcastChannel !== "undefined") {
       this.channel = new BroadcastChannel(config.channelName);
       this.channel.onmessage = this.handleCrossTabMessage.bind(this);
     }
@@ -468,19 +485,22 @@ export class EventBus {
     const existing = this.debounceTimers.get(key);
     if (existing) clearTimeout(existing);
 
-    this.debounceTimers.set(key, setTimeout(() => {
-      this.emitImmediate(event, payload);
-      this.debounceTimers.delete(key);
-    }, this.config.debounceMs));
+    this.debounceTimers.set(
+      key,
+      setTimeout(() => {
+        this.emitImmediate(event, payload);
+        this.debounceTimers.delete(key);
+      }, this.config.debounceMs),
+    );
   }
 
   private emitImmediate<T extends AuthEventType>(
-    event: T, 
-    payload: AuthEventPayloads[T]
+    event: T,
+    payload: AuthEventPayloads[T],
   ): void {
     // Local listeners
     const handlers = this.listeners.get(event);
-    handlers?.forEach(handler => handler(payload));
+    handlers?.forEach((handler) => handler(payload));
 
     // Cross-tab broadcast
     if (this.channel) {
@@ -488,14 +508,17 @@ export class EventBus {
     }
   }
 
-  emitLocal<T extends AuthEventType>(event: T, payload: AuthEventPayloads[T]): void {
+  emitLocal<T extends AuthEventType>(
+    event: T,
+    payload: AuthEventPayloads[T],
+  ): void {
     const handlers = this.listeners.get(event);
-    handlers?.forEach(handler => handler(payload));
+    handlers?.forEach((handler) => handler(payload));
   }
 
   on<T extends AuthEventType>(
-    event: T, 
-    handler: (payload: AuthEventPayloads[T]) => void
+    event: T,
+    handler: (payload: AuthEventPayloads[T]) => void,
   ): Unsubscribe {
     if (!this.listeners.has(event)) {
       this.listeners.set(event, new Set());
@@ -515,7 +538,7 @@ export class EventBus {
   destroy(): void {
     this.channel?.close();
     this.listeners.clear();
-    this.debounceTimers.forEach(timer => clearTimeout(timer));
+    this.debounceTimers.forEach((timer) => clearTimeout(timer));
     this.debounceTimers.clear();
   }
 }
@@ -542,7 +565,7 @@ interface AttemptRecord {
 export class RateLimiter {
   private config: RateLimitConfig;
   private records = new Map<string, AttemptRecord>();
-  private storageKey = 'auth_rate_limit';
+  private storageKey = "auth_rate_limit";
 
   constructor(config: RateLimitConfig) {
     this.config = config;
@@ -553,7 +576,7 @@ export class RateLimiter {
 
   canAttempt(key: string): boolean {
     const record = this.getRecord(key);
-    
+
     // Check if locked out
     if (record.lockedUntil && Date.now() < record.lockedUntil) {
       return false;
@@ -589,9 +612,9 @@ export class RateLimiter {
       // Calculate lockout with exponential backoff
       const backoffFactor = Math.pow(
         this.config.backoffMultiplier,
-        Math.floor(record.consecutiveFailures / this.config.maxAttempts) - 1
+        Math.floor(record.consecutiveFailures / this.config.maxAttempts) - 1,
       );
-      record.lockedUntil = Date.now() + (this.config.lockoutMs * backoffFactor);
+      record.lockedUntil = Date.now() + this.config.lockoutMs * backoffFactor;
     }
 
     this.records.set(key, record);
@@ -614,12 +637,14 @@ export class RateLimiter {
   }
 
   private getRecord(key: string): AttemptRecord {
-    return this.records.get(key) || {
-      attempts: 0,
-      firstAttempt: Date.now(),
-      lockedUntil: null,
-      consecutiveFailures: 0,
-    };
+    return (
+      this.records.get(key) || {
+        attempts: 0,
+        firstAttempt: Date.now(),
+        lockedUntil: null,
+        consecutiveFailures: 0,
+      }
+    );
   }
 
   private loadFromStorage(): void {
@@ -644,7 +669,7 @@ export class RateLimiter {
 #### 3.5.3 StorageAdapter (`src/auth/core/StorageAdapter.ts`)
 
 ```typescript
-type StorageType = 'memory' | 'session' | 'local' | 'cookie';
+type StorageType = "memory" | "session" | "local" | "cookie";
 
 interface StorageAdapterConfig {
   type: StorageType;
@@ -666,16 +691,16 @@ export class StorageAdapter {
     let value: string | null = null;
 
     switch (this.config.type) {
-      case 'memory':
+      case "memory":
         value = this.memoryStore.get(fullKey) || null;
         break;
-      case 'session':
+      case "session":
         value = sessionStorage.getItem(fullKey);
         break;
-      case 'local':
+      case "local":
         value = localStorage.getItem(fullKey);
         break;
-      case 'cookie':
+      case "cookie":
         value = this.getCookie(fullKey);
         break;
     }
@@ -696,16 +721,16 @@ export class StorageAdapter {
     }
 
     switch (this.config.type) {
-      case 'memory':
+      case "memory":
         this.memoryStore.set(fullKey, storedValue);
         break;
-      case 'session':
+      case "session":
         sessionStorage.setItem(fullKey, storedValue);
         break;
-      case 'local':
+      case "local":
         localStorage.setItem(fullKey, storedValue);
         break;
-      case 'cookie':
+      case "cookie":
         this.setCookie(fullKey, storedValue, options?.expires);
         break;
     }
@@ -715,16 +740,16 @@ export class StorageAdapter {
     const fullKey = this.config.prefix + key;
 
     switch (this.config.type) {
-      case 'memory':
+      case "memory":
         this.memoryStore.delete(fullKey);
         break;
-      case 'session':
+      case "session":
         sessionStorage.removeItem(fullKey);
         break;
-      case 'local':
+      case "local":
         localStorage.removeItem(fullKey);
         break;
-      case 'cookie':
+      case "cookie":
         this.deleteCookie(fullKey);
         break;
     }
@@ -732,12 +757,12 @@ export class StorageAdapter {
 
   clear(): void {
     switch (this.config.type) {
-      case 'memory':
+      case "memory":
         this.memoryStore.clear();
         break;
       default:
         // Clear only prefixed keys
-        this.getAllKeys().forEach(key => this.remove(key));
+        this.getAllKeys().forEach((key) => this.remove(key));
     }
   }
 
@@ -755,7 +780,9 @@ export class StorageAdapter {
   }
 
   private getCookie(name: string): string | null {
-    const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
+    const match = document.cookie.match(
+      new RegExp("(^| )" + name + "=([^;]+)"),
+    );
     return match ? decodeURIComponent(match[2]) : null;
   }
 
@@ -764,8 +791,8 @@ export class StorageAdapter {
     if (expires) {
       cookie += `; expires=${expires.toUTCString()}`;
     }
-    if (location.protocol === 'https:') {
-      cookie += '; Secure';
+    if (location.protocol === "https:") {
+      cookie += "; Secure";
     }
     document.cookie = cookie;
   }
@@ -777,20 +804,20 @@ export class StorageAdapter {
   private getAllKeys(): string[] {
     const keys: string[] = [];
     const prefix = this.config.prefix;
-    
+
     switch (this.config.type) {
-      case 'memory':
+      case "memory":
         this.memoryStore.forEach((_, key) => {
           if (key.startsWith(prefix)) keys.push(key.slice(prefix.length));
         });
         break;
-      case 'session':
+      case "session":
         for (let i = 0; i < sessionStorage.length; i++) {
           const key = sessionStorage.key(i);
           if (key?.startsWith(prefix)) keys.push(key.slice(prefix.length));
         }
         break;
-      case 'local':
+      case "local":
         for (let i = 0; i < localStorage.length; i++) {
           const key = localStorage.key(i);
           if (key?.startsWith(prefix)) keys.push(key.slice(prefix.length));
@@ -804,27 +831,27 @@ export class StorageAdapter {
 
 ### 3.6 Phase 1 Tasks
 
-| # | Task | Priority | Hours | Dependencies |
-|---|------|----------|-------|--------------|
-| 1.1 | Create `types/` directory with all type definitions | High | 4 | - |
-| 1.2 | Create `constants/config.ts` with AuthConfig | High | 2 | 1.1 |
-| 1.3 | Create `constants/errors.ts` with error handling | High | 2 | 1.1 |
-| 1.4 | Implement `EventBus` with BroadcastChannel | High | 6 | 1.1 |
-| 1.5 | Implement `StorageAdapter` abstraction | High | 4 | 1.1 |
-| 1.6 | Implement `RateLimiter` with exponential backoff | High | 4 | 1.1, 1.5 |
-| 1.7 | Implement `CryptoService` for encryption | Medium | 3 | - |
-| 1.8 | Write unit tests (90%+ coverage) | High | 6 | All above |
-| 1.9 | Create `core/index.ts` barrel exports | Low | 1 | All above |
+| #   | Task                                                | Priority | Hours | Dependencies |
+| --- | --------------------------------------------------- | -------- | ----- | ------------ |
+| 1.1 | Create `types/` directory with all type definitions | High     | 4     | -            |
+| 1.2 | Create `constants/config.ts` with AuthConfig        | High     | 2     | 1.1          |
+| 1.3 | Create `constants/errors.ts` with error handling    | High     | 2     | 1.1          |
+| 1.4 | Implement `EventBus` with BroadcastChannel          | High     | 6     | 1.1          |
+| 1.5 | Implement `StorageAdapter` abstraction              | High     | 4     | 1.1          |
+| 1.6 | Implement `RateLimiter` with exponential backoff    | High     | 4     | 1.1, 1.5     |
+| 1.7 | Implement `CryptoService` for encryption            | Medium   | 3     | -            |
+| 1.8 | Write unit tests (90%+ coverage)                    | High     | 6     | All above    |
+| 1.9 | Create `core/index.ts` barrel exports               | Low      | 1     | All above    |
 
 ### 3.7 Phase 1 Acceptance Criteria
 
-- [ ] All types compile without errors
-- [ ] EventBus synchronizes logout across 3+ browser tabs within 500ms
-- [ ] RateLimiter blocks login after 5 failed attempts
-- [ ] RateLimiter lockout persists across page refreshes
-- [ ] StorageAdapter supports all 4 storage types
-- [ ] Unit test coverage ≥ 90%
-- [ ] No TypeScript `any` types in public APIs
+- [x] All types compile without errors
+- [x] EventBus synchronizes logout across 3+ browser tabs within 500ms
+- [x] RateLimiter blocks login after 5 failed attempts
+- [x] RateLimiter lockout persists across page refreshes
+- [x] StorageAdapter supports all 4 storage types
+- [x] Unit test coverage ≥ 90%
+- [x] No TypeScript `any` types in public APIs
 
 ---
 
@@ -841,20 +868,20 @@ Phase 2 implements the service layer that encapsulates authentication business l
 
 ### 4.2 Deliverables
 
-| Deliverable | Description | Est. Hours |
-|-------------|-------------|------------|
-| `TokenService` | JWT parsing, storage, refresh orchestration | 6h |
-| `SessionService` | Session lifecycle, validation, timeout | 6h |
-| `PermissionService` | RBAC with caching and wildcards | 5h |
-| `AuthenticationManager` | Main orchestrator class | 8h |
-| Unit & integration tests | 85%+ coverage | 8h |
+| Deliverable              | Description                                 | Est. Hours |
+| ------------------------ | ------------------------------------------- | ---------- |
+| `TokenService`           | JWT parsing, storage, refresh orchestration | 6h         |
+| `SessionService`         | Session lifecycle, validation, timeout      | 6h         |
+| `PermissionService`      | RBAC with caching and wildcards             | 5h         |
+| `AuthenticationManager`  | Main orchestrator class                     | 8h         |
+| Unit & integration tests | 85%+ coverage                               | 8h         |
 
 ### 4.3 TokenService (`src/auth/services/TokenService.ts`)
 
 ```typescript
-import { StorageAdapter } from '../core/StorageAdapter';
-import { EventBus } from '../core/EventBus';
-import type { TokenPair, TokenPayload, TokenRefreshConfig } from '../types';
+import { StorageAdapter } from "../core/StorageAdapter";
+import { EventBus } from "../core/EventBus";
+import type { TokenPair, TokenPayload, TokenRefreshConfig } from "../types";
 
 export class TokenService {
   private storage: StorageAdapter;
@@ -866,7 +893,7 @@ export class TokenService {
   constructor(
     storage: StorageAdapter,
     eventBus: EventBus,
-    config: TokenRefreshConfig
+    config: TokenRefreshConfig,
   ) {
     this.storage = storage;
     this.eventBus = eventBus;
@@ -875,27 +902,33 @@ export class TokenService {
 
   // Store tokens securely
   setTokens(tokens: TokenPair): void {
-    this.storage.set('access_token', tokens.accessToken);
-    this.storage.set('refresh_token', tokens.refreshToken);
-    this.storage.set('access_expires', tokens.accessTokenExpiresAt.toISOString());
-    this.storage.set('refresh_expires', tokens.refreshTokenExpiresAt.toISOString());
+    this.storage.set("access_token", tokens.accessToken);
+    this.storage.set("refresh_token", tokens.refreshToken);
+    this.storage.set(
+      "access_expires",
+      tokens.accessTokenExpiresAt.toISOString(),
+    );
+    this.storage.set(
+      "refresh_expires",
+      tokens.refreshTokenExpiresAt.toISOString(),
+    );
     this.scheduleRefresh(tokens.accessTokenExpiresAt);
   }
 
   // Get current access token
   getAccessToken(): string | null {
-    return this.storage.get('access_token');
+    return this.storage.get("access_token");
   }
 
   // Get refresh token
   getRefreshToken(): string | null {
-    return this.storage.get('refresh_token');
+    return this.storage.get("refresh_token");
   }
 
   // Decode JWT without verification (client-side)
   decodeToken(token: string): TokenPayload | null {
     try {
-      const parts = token.split('.');
+      const parts = token.split(".");
       if (parts.length !== 3) return null;
       const payload = JSON.parse(atob(parts[1]));
       return payload as TokenPayload;
@@ -906,9 +939,9 @@ export class TokenService {
 
   // Check if access token is expired or expiring soon
   isAccessTokenExpiring(): boolean {
-    const expiresStr = this.storage.get('access_expires');
+    const expiresStr = this.storage.get("access_expires");
     if (!expiresStr) return true;
-    
+
     const expiresAt = new Date(expiresStr);
     const thresholdMs = this.config.refreshThresholdSeconds * 1000;
     return Date.now() >= expiresAt.getTime() - thresholdMs;
@@ -916,7 +949,7 @@ export class TokenService {
 
   // Refresh tokens (with deduplication)
   async refreshTokens(
-    refreshFn: (refreshToken: string) => Promise<TokenPair>
+    refreshFn: (refreshToken: string) => Promise<TokenPair>,
   ): Promise<TokenPair> {
     // Deduplicate concurrent refresh calls
     if (this.refreshPromise) {
@@ -925,11 +958,11 @@ export class TokenService {
 
     const refreshToken = this.getRefreshToken();
     if (!refreshToken) {
-      throw new Error('No refresh token available');
+      throw new Error("No refresh token available");
     }
 
     this.refreshPromise = this.executeRefresh(refreshFn, refreshToken);
-    
+
     try {
       const tokens = await this.refreshPromise;
       return tokens;
@@ -940,7 +973,7 @@ export class TokenService {
 
   private async executeRefresh(
     refreshFn: (token: string) => Promise<TokenPair>,
-    refreshToken: string
+    refreshToken: string,
   ): Promise<TokenPair> {
     let lastError: Error | null = null;
 
@@ -948,8 +981,8 @@ export class TokenService {
       try {
         const tokens = await refreshFn(refreshToken);
         this.setTokens(tokens);
-        this.eventBus.emit('auth:token_refreshed', { 
-          expiresAt: tokens.accessTokenExpiresAt 
+        this.eventBus.emit("auth:token_refreshed", {
+          expiresAt: tokens.accessTokenExpiresAt,
         });
         return tokens;
       } catch (error) {
@@ -960,7 +993,7 @@ export class TokenService {
       }
     }
 
-    this.eventBus.emit('auth:token_expired', { expiredAt: new Date() });
+    this.eventBus.emit("auth:token_expired", { expiredAt: new Date() });
     throw lastError;
   }
 
@@ -970,11 +1003,12 @@ export class TokenService {
       clearTimeout(this.refreshTimer);
     }
 
-    const refreshAt = expiresAt.getTime() - (this.config.refreshThresholdSeconds * 1000);
+    const refreshAt =
+      expiresAt.getTime() - this.config.refreshThresholdSeconds * 1000;
     const delay = Math.max(0, refreshAt - Date.now());
 
     this.refreshTimer = setTimeout(() => {
-      this.eventBus.emitLocal('auth:token_expiring', { expiresAt });
+      this.eventBus.emitLocal("auth:token_expiring", { expiresAt });
     }, delay);
   }
 
@@ -984,14 +1018,14 @@ export class TokenService {
       clearTimeout(this.refreshTimer);
       this.refreshTimer = null;
     }
-    this.storage.remove('access_token');
-    this.storage.remove('refresh_token');
-    this.storage.remove('access_expires');
-    this.storage.remove('refresh_expires');
+    this.storage.remove("access_token");
+    this.storage.remove("refresh_token");
+    this.storage.remove("access_expires");
+    this.storage.remove("refresh_expires");
   }
 
   private delay(ms: number): Promise<void> {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   destroy(): void {
@@ -1005,8 +1039,8 @@ export class TokenService {
 ### 4.4 SessionService (`src/auth/services/SessionService.ts`)
 
 ```typescript
-import { EventBus } from '../core/EventBus';
-import type { AuthUser } from '../types';
+import { EventBus } from "../core/EventBus";
+import type { AuthUser } from "../types";
 
 interface SessionConfig {
   validateIntervalMs: number;
@@ -1037,7 +1071,7 @@ export class SessionService {
     this.config = config;
 
     if (config.validateOnFocus) {
-      window.addEventListener('focus', this.handleFocus.bind(this));
+      window.addEventListener("focus", this.handleFocus.bind(this));
     }
   }
 
@@ -1054,7 +1088,7 @@ export class SessionService {
       },
     };
 
-    this.eventBus.emit('auth:session_started', { sessionId, expiresAt });
+    this.eventBus.emit("auth:session_started", { sessionId, expiresAt });
     this.startValidationInterval();
   }
 
@@ -1062,8 +1096,8 @@ export class SessionService {
   recordActivity(): void {
     if (this.currentSession) {
       this.currentSession.lastActivity = new Date();
-      this.eventBus.emitLocal('auth:activity_detected', { 
-        timestamp: this.currentSession.lastActivity 
+      this.eventBus.emitLocal("auth:activity_detected", {
+        timestamp: this.currentSession.lastActivity,
       });
     }
   }
@@ -1090,15 +1124,15 @@ export class SessionService {
 
     try {
       const isValid = await this.validateFn();
-      this.eventBus.emitLocal('auth:session_validated', { valid: isValid });
-      
+      this.eventBus.emitLocal("auth:session_validated", { valid: isValid });
+
       if (!isValid && this.currentSession) {
-        this.eventBus.emit('auth:session_expired', {
+        this.eventBus.emit("auth:session_expired", {
           sessionId: this.currentSession.id,
-          reason: 'server_validation_failed',
+          reason: "server_validation_failed",
         });
       }
-      
+
       return isValid;
     } catch {
       return false;
@@ -1109,14 +1143,14 @@ export class SessionService {
   extendSession(newExpiresAt: Date): void {
     if (this.currentSession) {
       this.currentSession.expiresAt = newExpiresAt;
-      this.eventBus.emit('auth:session_extended', { newExpiresAt });
+      this.eventBus.emit("auth:session_extended", { newExpiresAt });
     }
   }
 
   // End current session
   endSession(reason: string): void {
     if (this.currentSession) {
-      this.eventBus.emit('auth:session_expired', {
+      this.eventBus.emit("auth:session_expired", {
         sessionId: this.currentSession.id,
         reason,
       });
@@ -1129,7 +1163,7 @@ export class SessionService {
     this.stopValidationInterval();
     this.validationInterval = setInterval(
       () => this.validateSession(),
-      this.config.validateIntervalMs
+      this.config.validateIntervalMs,
     );
   }
 
@@ -1148,7 +1182,7 @@ export class SessionService {
 
   destroy(): void {
     this.stopValidationInterval();
-    window.removeEventListener('focus', this.handleFocus.bind(this));
+    window.removeEventListener("focus", this.handleFocus.bind(this));
   }
 }
 ```
@@ -1171,7 +1205,9 @@ export class PermissionService {
   private config: PermissionConfig;
   private cache: PermissionCache | null = null;
 
-  constructor(config: PermissionConfig = { cacheTTLMs: 300_000, wildcardChar: '*' }) {
+  constructor(
+    config: PermissionConfig = { cacheTTLMs: 300_000, wildcardChar: "*" },
+  ) {
     this.config = config;
   }
 
@@ -1192,12 +1228,12 @@ export class PermissionService {
 
   // Check all permissions (AND)
   hasAllPermissions(permissions: string[]): boolean {
-    return permissions.every(p => this.hasPermission(p));
+    return permissions.every((p) => this.hasPermission(p));
   }
 
   // Check any permission (OR)
   hasAnyPermission(permissions: string[]): boolean {
-    return permissions.some(p => this.hasPermission(p));
+    return permissions.some((p) => this.hasPermission(p));
   }
 
   // Check role
@@ -1208,7 +1244,7 @@ export class PermissionService {
 
   // Check any role
   hasAnyRole(roles: string[]): boolean {
-    return roles.some(r => this.hasRole(r));
+    return roles.some((r) => this.hasRole(r));
   }
 
   // Resource:action permission check
@@ -1243,12 +1279,12 @@ export class PermissionService {
 
     // Wildcard matching
     const wc = this.config.wildcardChar;
-    
+
     // Check for global wildcard
     if (granted.includes(wc)) return true;
 
     // Check for partial wildcards (e.g., "users:*" matches "users:read")
-    const [resource, action] = required.split(':');
+    const [resource, action] = required.split(":");
     if (resource && action) {
       if (granted.includes(`${resource}:${wc}`)) return true;
       if (granted.includes(`${wc}:${action}`)) return true;
@@ -1262,17 +1298,22 @@ export class PermissionService {
 ### 4.6 AuthenticationManager (`src/auth/AuthenticationManager.ts`)
 
 ```typescript
-import { EventBus } from './core/EventBus';
-import { StorageAdapter } from './core/StorageAdapter';
-import { RateLimiter } from './core/RateLimiter';
-import { TokenService } from './services/TokenService';
-import { SessionService } from './services/SessionService';
-import { PermissionService } from './services/PermissionService';
-import type { 
-  AuthConfig, AuthState, AuthUser, LoginCredentials, 
-  AuthResult, LogoutOptions, TokenPair 
-} from './types';
-import { DEFAULT_AUTH_CONFIG, mergeConfig } from './constants/config';
+import { EventBus } from "./core/EventBus";
+import { StorageAdapter } from "./core/StorageAdapter";
+import { RateLimiter } from "./core/RateLimiter";
+import { TokenService } from "./services/TokenService";
+import { SessionService } from "./services/SessionService";
+import { PermissionService } from "./services/PermissionService";
+import type {
+  AuthConfig,
+  AuthState,
+  AuthUser,
+  LoginCredentials,
+  AuthResult,
+  LogoutOptions,
+  TokenPair,
+} from "./types";
+import { DEFAULT_AUTH_CONFIG, mergeConfig } from "./constants/config";
 
 export class AuthenticationManager {
   private config: AuthConfig;
@@ -1282,9 +1323,9 @@ export class AuthenticationManager {
   private tokenService: TokenService;
   private sessionService: SessionService;
   private permissionService: PermissionService;
-  
+
   private state: AuthState = {
-    status: 'idle',
+    status: "idle",
     user: null,
     error: null,
     isAuthenticated: false,
@@ -1297,7 +1338,7 @@ export class AuthenticationManager {
 
   constructor(config: Partial<AuthConfig> = {}) {
     this.config = mergeConfig(config);
-    
+
     // Initialize core services
     this.eventBus = new EventBus(this.config.eventBus);
     this.storage = new StorageAdapter({
@@ -1324,13 +1365,13 @@ export class AuthenticationManager {
 
   // Initialize and check existing session
   async initialize(): Promise<void> {
-    this.updateState({ status: 'loading', isLoading: true });
+    this.updateState({ status: "loading", isLoading: true });
 
     const accessToken = this.tokenService.getAccessToken();
     if (!accessToken) {
-      this.updateState({ 
-        status: 'unauthenticated', 
-        isLoading: false 
+      this.updateState({
+        status: "unauthenticated",
+        isLoading: false,
       });
       return;
     }
@@ -1341,7 +1382,7 @@ export class AuthenticationManager {
       const payload = this.tokenService.decodeToken(accessToken);
       if (payload) {
         this.updateState({
-          status: 'authenticated',
+          status: "authenticated",
           isAuthenticated: true,
           isLoading: false,
           user: this.extractUserFromPayload(payload),
@@ -1352,39 +1393,41 @@ export class AuthenticationManager {
 
     // Session invalid, clear and set unauthenticated
     this.tokenService.clearTokens();
-    this.updateState({ 
-      status: 'unauthenticated', 
-      isLoading: false 
+    this.updateState({
+      status: "unauthenticated",
+      isLoading: false,
     });
   }
 
   // Login
   async login(
     credentials: LoginCredentials,
-    loginFn: (creds: LoginCredentials) => Promise<{ user: AuthUser; tokens: TokenPair; sessionId: string }>
+    loginFn: (
+      creds: LoginCredentials,
+    ) => Promise<{ user: AuthUser; tokens: TokenPair; sessionId: string }>,
   ): Promise<AuthResult> {
     const { username } = credentials;
 
     // Check rate limit
     if (!this.rateLimiter.canAttempt(username)) {
       const lockoutEnd = this.rateLimiter.getLockoutEndTime(username);
-      this.eventBus.emit('auth:rate_limited', {
+      this.eventBus.emit("auth:rate_limited", {
         retryAfter: lockoutEnd ? lockoutEnd.getTime() - Date.now() : 0,
         key: username,
       });
       return {
         success: false,
         error: {
-          code: 'RATE_LIMITED',
-          message: 'Too many login attempts. Please try again later.',
+          code: "RATE_LIMITED",
+          message: "Too many login attempts. Please try again later.",
           timestamp: new Date(),
           recoverable: true,
         },
       };
     }
 
-    this.updateState({ status: 'loading', isLoading: true });
-    this.eventBus.emit('auth:login_started', { username });
+    this.updateState({ status: "loading", isLoading: true });
+    this.eventBus.emit("auth:login_started", { username });
 
     try {
       const { user, tokens, sessionId } = await loginFn(credentials);
@@ -1392,11 +1435,15 @@ export class AuthenticationManager {
       // Success
       this.rateLimiter.reset(username);
       this.tokenService.setTokens(tokens);
-      this.sessionService.startSession(user, sessionId, tokens.accessTokenExpiresAt);
+      this.sessionService.startSession(
+        user,
+        sessionId,
+        tokens.accessTokenExpiresAt,
+      );
       this.permissionService.setPermissions(user.permissions, user.roles);
 
       this.updateState({
-        status: 'authenticated',
+        status: "authenticated",
         isAuthenticated: true,
         isLoading: false,
         user,
@@ -1404,26 +1451,25 @@ export class AuthenticationManager {
         error: null,
       });
 
-      this.eventBus.emit('auth:login_success', { user, sessionId });
+      this.eventBus.emit("auth:login_success", { user, sessionId });
       return { success: true, user };
-
     } catch (error) {
       this.rateLimiter.recordAttempt(username, false);
-      
+
       const authError = {
-        code: 'INVALID_CREDENTIALS' as const,
-        message: 'Invalid username or password',
+        code: "INVALID_CREDENTIALS" as const,
+        message: "Invalid username or password",
         timestamp: new Date(),
         recoverable: true,
       };
 
       this.updateState({
-        status: 'error',
+        status: "error",
         isLoading: false,
         error: authError,
       });
 
-      this.eventBus.emit('auth:login_failed', { error: authError, username });
+      this.eventBus.emit("auth:login_failed", { error: authError, username });
       return { success: false, error: authError };
     }
   }
@@ -1431,14 +1477,14 @@ export class AuthenticationManager {
   // Logout
   async logout(options: LogoutOptions = {}): Promise<void> {
     const userId = this.state.user?.id;
-    const reason = options.reason || 'user_initiated';
+    const reason = options.reason || "user_initiated";
 
     this.tokenService.clearTokens();
     this.sessionService.endSession(reason);
     this.permissionService.invalidate();
 
     this.updateState({
-      status: 'unauthenticated',
+      status: "unauthenticated",
       isAuthenticated: false,
       user: null,
       error: null,
@@ -1446,7 +1492,7 @@ export class AuthenticationManager {
     });
 
     if (!options.silent) {
-      this.eventBus.emit('auth:logout', { reason, userId });
+      this.eventBus.emit("auth:logout", { reason, userId });
     }
   }
 
@@ -1473,7 +1519,7 @@ export class AuthenticationManager {
   // Event subscription
   on<T extends AuthEventType>(
     event: T,
-    handler: (payload: AuthEventPayloads[T]) => void
+    handler: (payload: AuthEventPayloads[T]) => void,
   ): () => void {
     return this.eventBus.on(event, handler);
   }
@@ -1487,19 +1533,19 @@ export class AuthenticationManager {
 
   private updateState(partial: Partial<AuthState>): void {
     this.state = { ...this.state, ...partial };
-    this.stateListeners.forEach(listener => listener(this.state));
+    this.stateListeners.forEach((listener) => listener(this.state));
   }
 
   private setupEventHandlers(): void {
     // Handle cross-tab logout
-    this.eventBus.on('auth:logout', () => {
+    this.eventBus.on("auth:logout", () => {
       if (this.state.isAuthenticated) {
-        this.logout({ silent: true, reason: 'forced_logout' });
+        this.logout({ silent: true, reason: "forced_logout" });
       }
     });
 
     // Handle token refresh
-    this.eventBus.on('auth:token_refreshed', ({ expiresAt }) => {
+    this.eventBus.on("auth:token_refreshed", ({ expiresAt }) => {
       this.updateState({ sessionExpiresAt: expiresAt });
     });
   }
@@ -1507,7 +1553,7 @@ export class AuthenticationManager {
   private extractUserFromPayload(payload: TokenPayload): AuthUser {
     return {
       id: payload.sub,
-      email: payload.email || '',
+      email: payload.email || "",
       roles: payload.roles || [],
       permissions: payload.permissions || [],
     };
@@ -1517,25 +1563,25 @@ export class AuthenticationManager {
 
 ### 4.7 Phase 2 Tasks
 
-| # | Task | Priority | Hours | Dependencies |
-|---|------|----------|-------|--------------|
-| 2.1 | Implement `TokenService` | High | 6 | Phase 1 |
-| 2.2 | Implement `SessionService` | High | 6 | Phase 1, 2.1 |
-| 2.3 | Implement `PermissionService` | High | 5 | Phase 1 |
-| 2.4 | Implement `AuthenticationManager` | High | 8 | 2.1, 2.2, 2.3 |
-| 2.5 | Write unit tests | High | 5 | All above |
-| 2.6 | Write integration tests | High | 3 | All above |
-| 2.7 | Create `services/index.ts` exports | Low | 1 | All above |
+| #   | Task                               | Priority | Hours | Dependencies  |
+| --- | ---------------------------------- | -------- | ----- | ------------- |
+| 2.1 | Implement `TokenService`           | High     | 6     | Phase 1       |
+| 2.2 | Implement `SessionService`         | High     | 6     | Phase 1, 2.1  |
+| 2.3 | Implement `PermissionService`      | High     | 5     | Phase 1       |
+| 2.4 | Implement `AuthenticationManager`  | High     | 8     | 2.1, 2.2, 2.3 |
+| 2.5 | Write unit tests                   | High     | 5     | All above     |
+| 2.6 | Write integration tests            | High     | 3     | All above     |
+| 2.7 | Create `services/index.ts` exports | Low      | 1     | All above     |
 
 ### 4.8 Phase 2 Acceptance Criteria
 
-- [ ] TokenService correctly parses and stores JWT tokens
-- [ ] TokenService deduplicates concurrent refresh requests
-- [ ] SessionService validates sessions on tab focus
-- [ ] PermissionService supports wildcard matching (`users:*`)
-- [ ] AuthenticationManager coordinates all services correctly
-- [ ] Cross-tab logout works via EventBus
-- [ ] Unit test coverage ≥ 85%
+- [x] TokenService correctly parses and stores JWT tokens
+- [x] TokenService deduplicates concurrent refresh requests
+- [x] SessionService validates sessions on tab focus
+- [x] PermissionService supports wildcard matching (`users:*`)
+- [x] AuthenticationManager coordinates all services correctly
+- [x] Cross-tab logout works via EventBus
+- [x] Unit test coverage ≥ 85%
 
 ---
 
@@ -1552,16 +1598,16 @@ Phase 3 integrates the authentication services with React, providing hooks, cont
 
 ### 5.2 Deliverables
 
-| Deliverable | Description | Est. Hours |
-|-------------|-------------|------------|
-| `AuthProvider` | Enhanced React context provider | 4h |
-| `useAuth` hook | Main authentication hook | 3h |
-| `usePermissions` hook | Permission checking hook | 2h |
-| `useSession` hook | Session state hook | 2h |
-| `useActivityMonitor` hook | Idle detection | 4h |
-| `LoginForm` | Enhanced with rate limiting UI | 3h |
-| `ActivityTimeoutModal` | Idle warning dialog | 2h |
-| Tests | Component and hook tests | 6h |
+| Deliverable               | Description                     | Est. Hours |
+| ------------------------- | ------------------------------- | ---------- |
+| `AuthProvider`            | Enhanced React context provider | 4h         |
+| `useAuth` hook            | Main authentication hook        | 3h         |
+| `usePermissions` hook     | Permission checking hook        | 2h         |
+| `useSession` hook         | Session state hook              | 2h         |
+| `useActivityMonitor` hook | Idle detection                  | 4h         |
+| `LoginForm`               | Enhanced with rate limiting UI  | 3h         |
+| `ActivityTimeoutModal`    | Idle warning dialog             | 2h         |
+| Tests                     | Component and hook tests        | 6h         |
 
 ### 5.3 Enhanced AuthProvider (`src/auth/context/AuthProvider.tsx`)
 
@@ -1589,8 +1635,8 @@ interface AuthProviderProps {
   onValidateSession?: () => Promise<boolean>;
 }
 
-export function AuthProvider({ 
-  children, 
+export function AuthProvider({
+  children,
   config,
   onLogin,
   onLogout,
@@ -1603,7 +1649,7 @@ export function AuthProvider({
   useEffect(() => {
     // Subscribe to state changes
     const unsubscribe = manager.subscribe(setState);
-    
+
     // Set validation function if provided
     if (onValidateSession) {
       manager.sessionService.setValidationFn(onValidateSession);
@@ -1669,11 +1715,11 @@ export function useAuthContext(): AuthContextValue {
 ### 5.4 useAuth Hook (`src/auth/hooks/useAuth.ts`)
 
 ```typescript
-import { useAuthContext } from '../context/AuthProvider';
+import { useAuthContext } from "../context/AuthProvider";
 
 export function useAuth() {
   const context = useAuthContext();
-  
+
   return {
     // State
     user: context.user,
@@ -1681,12 +1727,12 @@ export function useAuth() {
     isLoading: context.isLoading,
     error: context.error,
     status: context.status,
-    
+
     // Actions
     login: context.login,
     logout: context.logout,
     refreshSession: context.refreshSession,
-    
+
     // Permissions
     hasPermission: context.hasPermission,
     hasRole: context.hasRole,
@@ -1697,8 +1743,8 @@ export function useAuth() {
 ### 5.5 useActivityMonitor Hook (`src/auth/hooks/useActivityMonitor.ts`)
 
 ```typescript
-import { useState, useEffect, useCallback, useRef } from 'react';
-import { useAuth } from './useAuth';
+import { useState, useEffect, useCallback, useRef } from "react";
+import { useAuth } from "./useAuth";
 
 interface ActivityMonitorConfig {
   idleTimeoutMs: number;
@@ -1715,8 +1761,12 @@ interface ActivityMonitorState {
 }
 
 const DEFAULT_EVENTS = [
-  'mousemove', 'mousedown', 'keydown', 
-  'touchstart', 'scroll', 'click'
+  "mousemove",
+  "mousedown",
+  "keydown",
+  "touchstart",
+  "scroll",
+  "click",
 ];
 
 export function useActivityMonitor(config: ActivityMonitorConfig) {
@@ -1743,7 +1793,7 @@ export function useActivityMonitor(config: ActivityMonitorConfig) {
     const now = Date.now();
     lastActivityRef.current = now;
 
-    setState(prev => ({
+    setState((prev) => ({
       ...prev,
       isIdle: false,
       isWarning: false,
@@ -1754,15 +1804,20 @@ export function useActivityMonitor(config: ActivityMonitorConfig) {
     // Set warning timer
     const warningDelay = config.idleTimeoutMs - config.warningThresholdMs;
     warningTimeoutRef.current = setTimeout(() => {
-      setState(prev => ({ ...prev, isWarning: true }));
+      setState((prev) => ({ ...prev, isWarning: true }));
     }, warningDelay);
 
     // Set idle timeout
     idleTimeoutRef.current = setTimeout(() => {
-      setState(prev => ({ ...prev, isIdle: true }));
-      logout({ reason: 'idle_timeout' });
+      setState((prev) => ({ ...prev, isIdle: true }));
+      logout({ reason: "idle_timeout" });
     }, config.idleTimeoutMs);
-  }, [isAuthenticated, config.idleTimeoutMs, config.warningThresholdMs, logout]);
+  }, [
+    isAuthenticated,
+    config.idleTimeoutMs,
+    config.warningThresholdMs,
+    logout,
+  ]);
 
   const handleActivity = useCallback(() => {
     // Throttle activity updates
@@ -1784,7 +1839,7 @@ export function useActivityMonitor(config: ActivityMonitorConfig) {
     if (!isAuthenticated) return;
 
     const events = config.events || DEFAULT_EVENTS;
-    events.forEach(event => {
+    events.forEach((event) => {
       window.addEventListener(event, handleActivity, { passive: true });
     });
 
@@ -1794,8 +1849,9 @@ export function useActivityMonitor(config: ActivityMonitorConfig) {
     // Update countdown every second when warning
     const countdownInterval = setInterval(() => {
       if (state.isWarning) {
-        const remaining = config.idleTimeoutMs - (Date.now() - lastActivityRef.current);
-        setState(prev => ({
+        const remaining =
+          config.idleTimeoutMs - (Date.now() - lastActivityRef.current);
+        setState((prev) => ({
           ...prev,
           timeUntilTimeout: Math.max(0, remaining),
         }));
@@ -1803,7 +1859,7 @@ export function useActivityMonitor(config: ActivityMonitorConfig) {
     }, 1000);
 
     return () => {
-      events.forEach(event => {
+      events.forEach((event) => {
         window.removeEventListener(event, handleActivity);
       });
       if (warningTimeoutRef.current) clearTimeout(warningTimeoutRef.current);
@@ -1859,18 +1915,18 @@ export function withPermission<P extends object>(
 }
 
 // Component for declarative permission checks
-export function RequirePermission({ 
-  permission, 
-  children, 
-  fallback = null 
+export function RequirePermission({
+  permission,
+  children,
+  fallback = null
 }: {
   permission: string | string[];
   children: React.ReactNode;
   fallback?: React.ReactNode;
 }) {
   const { hasPermission, hasAnyPermission } = usePermissions();
-  
-  const hasAccess = Array.isArray(permission) 
+
+  const hasAccess = Array.isArray(permission)
     ? hasAnyPermission(permission)
     : hasPermission(permission);
 
@@ -1914,7 +1970,7 @@ export function ActivityTimeoutModal({
         <DialogHeader>
           <DialogTitle>Session Timeout Warning</DialogTitle>
         </DialogHeader>
-        
+
         <div className="py-4">
           <p className="text-center text-lg">
             Your session will expire in{' '}
@@ -1965,9 +2021,9 @@ export function LoginForm({ onSuccess, rateLimitMessage }: LoginFormProps) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const result = await login({ username, password, rememberMe });
-    
+
     if (result.success) {
       onSuccess?.();
     } else if (result.error?.code === 'RATE_LIMITED') {
@@ -2034,9 +2090,9 @@ export function LoginForm({ onSuccess, rateLimitMessage }: LoginFormProps) {
         </Label>
       </div>
 
-      <Button 
-        type="submit" 
-        className="w-full" 
+      <Button
+        type="submit"
+        className="w-full"
         disabled={isLoading || isLockedOut}
       >
         {isLoading ? 'Signing in...' : 'Sign In'}
@@ -2048,28 +2104,28 @@ export function LoginForm({ onSuccess, rateLimitMessage }: LoginFormProps) {
 
 ### 5.9 Phase 3 Tasks
 
-| # | Task | Priority | Hours | Dependencies |
-|---|------|----------|-------|--------------|
-| 3.1 | Refactor `AuthProvider` to use AuthenticationManager | High | 4 | Phase 2 |
-| 3.2 | Implement `useAuth` hook | High | 3 | 3.1 |
-| 3.3 | Implement `usePermissions` hook | High | 2 | 3.1 |
-| 3.4 | Implement `useSession` hook | Medium | 2 | 3.1 |
-| 3.5 | Implement `useActivityMonitor` hook | High | 4 | 3.1 |
-| 3.6 | Create `ActivityTimeoutModal` component | Medium | 2 | 3.5 |
-| 3.7 | Enhance `LoginForm` with rate limiting UI | High | 3 | 3.2 |
-| 3.8 | Write hook tests | High | 4 | All above |
-| 3.9 | Write component tests | High | 2 | All above |
+| #   | Task                                                 | Priority | Hours | Dependencies |
+| --- | ---------------------------------------------------- | -------- | ----- | ------------ |
+| 3.1 | Refactor `AuthProvider` to use AuthenticationManager | High     | 4     | Phase 2      |
+| 3.2 | Implement `useAuth` hook                             | High     | 3     | 3.1          |
+| 3.3 | Implement `usePermissions` hook                      | High     | 2     | 3.1          |
+| 3.4 | Implement `useSession` hook                          | Medium   | 2     | 3.1          |
+| 3.5 | Implement `useActivityMonitor` hook                  | High     | 4     | 3.1          |
+| 3.6 | Create `ActivityTimeoutModal` component              | Medium   | 2     | 3.5          |
+| 3.7 | Enhance `LoginForm` with rate limiting UI            | High     | 3     | 3.2          |
+| 3.8 | Write hook tests                                     | High     | 4     | All above    |
+| 3.9 | Write component tests                                | High     | 2     | All above    |
 
 ### 5.10 Phase 3 Acceptance Criteria
 
-- [ ] AuthProvider initializes AuthenticationManager correctly
-- [ ] useAuth hook provides all auth state and actions
-- [ ] useActivityMonitor shows warning 2 minutes before timeout
-- [ ] useActivityMonitor triggers logout after idle timeout
-- [ ] LoginForm displays lockout countdown when rate limited
-- [ ] RequirePermission component correctly gates content
-- [ ] All hooks properly cleanup on unmount
-- [ ] Component tests pass
+- [x] AuthProvider initializes AuthenticationManager correctly
+- [x] useAuth hook provides all auth state and actions
+- [x] useActivityMonitor shows warning 2 minutes before timeout
+- [x] useActivityMonitor triggers logout after idle timeout
+- [x] LoginForm displays lockout countdown when rate limited
+- [x] RequirePermission component correctly gates content
+- [x] All hooks properly cleanup on unmount
+- [x] Component tests pass
 
 ---
 
@@ -2086,411 +2142,11 @@ Phase 4 adds advanced security features: Multi-Factor Authentication (MFA), devi
 
 ### 6.2 Deliverables
 
-| Deliverable | Description | Est. Hours |
-|-------------|-------------|------------|
-| `MFAService` | TOTP and email-based MFA | 8h |
-| `DeviceService` | Device fingerprinting and trust | 6h |
-| `MFAChallenge` component | MFA verification UI | 4h |
-| `MFASetup` component | MFA enrollment UI | 4h |
-| `SessionManager` component | Active sessions list | 4h |
-| `SessionsPage` | Full session management page | 3h |
-| WebAuthn integration | Biometric/passkey support | 8h |
-| Tests | Service and component tests | 6h |
-
-### 6.3 MFAService (`src/auth/services/MFAService.ts`)
-
-```typescript
-import { EventBus } from '../core/EventBus';
-
-type MFAMethod = 'totp' | 'email' | 'sms' | 'webauthn';
-
-interface MFAConfig {
-  availableMethods: MFAMethod[];
-  totpWindow: number;
-  challengeTimeoutMs: number;
-  backupCodesCount: number;
-}
-
-interface MFASetupData {
-  method: MFAMethod;
-  secret?: string;      // For TOTP
-  qrCodeUrl?: string;   // For TOTP
-  backupCodes?: string[];
-}
-
-interface MFAChallenge {
-  challengeId: string;
-  method: MFAMethod;
-  hint?: string;        // e.g., "sent to ***@email.com"
-  expiresAt: Date;
-}
-
-interface MFAStatus {
-  enabled: boolean;
-  methods: MFAMethod[];
-  backupCodesRemaining: number;
-}
-
-export class MFAService {
-  private eventBus: EventBus;
-  private config: MFAConfig;
-  private currentChallenge: MFAChallenge | null = null;
-
-  constructor(eventBus: EventBus, config: MFAConfig) {
-    this.eventBus = eventBus;
-    this.config = config;
-  }
-
-  // Get available MFA methods
-  getAvailableMethods(): MFAMethod[] {
-    return this.config.availableMethods;
-  }
-
-  // Initialize MFA setup for a method
-  async initializeSetup(
-    method: MFAMethod,
-    setupFn: (method: MFAMethod) => Promise<MFASetupData>
-  ): Promise<MFASetupData> {
-    return setupFn(method);
-  }
-
-  // Confirm MFA setup with verification code
-  async confirmSetup(
-    method: MFAMethod,
-    code: string,
-    confirmFn: (method: MFAMethod, code: string) => Promise<void>
-  ): Promise<void> {
-    await confirmFn(method, code);
-  }
-
-  // Request MFA challenge
-  async requestChallenge(
-    method: MFAMethod,
-    requestFn: (method: MFAMethod) => Promise<MFAChallenge>
-  ): Promise<MFAChallenge> {
-    this.currentChallenge = await requestFn(method);
-    
-    this.eventBus.emit('auth:mfa_required', {
-      methods: [method],
-      challengeId: this.currentChallenge.challengeId,
-    });
-
-    // Set expiration timer
-    setTimeout(() => {
-      if (this.currentChallenge?.challengeId === this.currentChallenge?.challengeId) {
-        this.currentChallenge = null;
-      }
-    }, this.config.challengeTimeoutMs);
-
-    return this.currentChallenge;
-  }
-
-  // Verify MFA code
-  async verifyChallenge(
-    code: string,
-    verifyFn: (challengeId: string, code: string) => Promise<boolean>
-  ): Promise<boolean> {
-    if (!this.currentChallenge) {
-      throw new Error('No active MFA challenge');
-    }
-
-    const isValid = await verifyFn(this.currentChallenge.challengeId, code);
-
-    if (isValid) {
-      this.eventBus.emit('auth:mfa_success', { 
-        method: this.currentChallenge.method 
-      });
-      this.currentChallenge = null;
-    } else {
-      this.eventBus.emit('auth:mfa_failed', {
-        error: {
-          code: 'MFA_INVALID',
-          message: 'Invalid verification code',
-          timestamp: new Date(),
-          recoverable: true,
-        },
-      });
-    }
-
-    return isValid;
-  }
-
-  // Use backup code
-  async useBackupCode(
-    code: string,
-    verifyFn: (code: string) => Promise<boolean>
-  ): Promise<boolean> {
-    return verifyFn(code);
-  }
-
-  // Get MFA status
-  async getStatus(
-    statusFn: () => Promise<MFAStatus>
-  ): Promise<MFAStatus> {
-    return statusFn();
-  }
-
-  // Disable MFA
-  async disable(
-    method: MFAMethod,
-    disableFn: (method: MFAMethod) => Promise<void>
-  ): Promise<void> {
-    await disableFn(method);
-  }
-
-  getCurrentChallenge(): MFAChallenge | null {
-    return this.currentChallenge;
-  }
-}
-```
-
-### 6.4 DeviceService (`src/auth/services/DeviceService.ts`)
-
-```typescript
-import { StorageAdapter } from '../core/StorageAdapter';
-import { EventBus } from '../core/EventBus';
-
-interface DeviceInfo {
-  id: string;
-  fingerprint: string;
-  name: string;
-  browser: string;
-  os: string;
-  trusted: boolean;
-  lastSeen: Date;
-  createdAt: Date;
-  current: boolean;
-}
-
-export class DeviceService {
-  private storage: StorageAdapter;
-  private eventBus: EventBus;
-  private deviceId: string | null = null;
-
-  constructor(storage: StorageAdapter, eventBus: EventBus) {
-    this.storage = storage;
-    this.eventBus = eventBus;
-    this.deviceId = this.storage.get('device_id');
-  }
-
-  // Generate device fingerprint
-  async generateFingerprint(): Promise<string> {
-    const components = [
-      navigator.userAgent,
-      navigator.language,
-      screen.width + 'x' + screen.height,
-      screen.colorDepth,
-      new Date().getTimezoneOffset(),
-      navigator.hardwareConcurrency || 'unknown',
-      // Add canvas fingerprint
-      await this.getCanvasFingerprint(),
-    ];
-
-    const fingerprint = components.join('|');
-    return this.hashString(fingerprint);
-  }
-
-  // Get or create device ID
-  async getDeviceId(): Promise<string> {
-    if (this.deviceId) return this.deviceId;
-
-    this.deviceId = crypto.randomUUID();
-    this.storage.set('device_id', this.deviceId);
-    return this.deviceId;
-  }
-
-  // Register current device
-  async registerDevice(
-    name: string,
-    registerFn: (device: { id: string; fingerprint: string; name: string }) => Promise<DeviceInfo>
-  ): Promise<DeviceInfo> {
-    const id = await this.getDeviceId();
-    const fingerprint = await this.generateFingerprint();
-
-    const device = await registerFn({ id, fingerprint, name });
-    
-    this.eventBus.emit('auth:device_registered', {
-      deviceId: device.id,
-      deviceName: device.name,
-    });
-
-    return device;
-  }
-
-  // Trust current device (remember me)
-  async trustDevice(
-    trustFn: (deviceId: string) => Promise<void>
-  ): Promise<void> {
-    const id = await this.getDeviceId();
-    await trustFn(id);
-    this.storage.set('device_trusted', 'true');
-    
-    this.eventBus.emit('auth:device_trusted', { deviceId: id });
-  }
-
-  // Check if current device is trusted
-  isCurrentDeviceTrusted(): boolean {
-    return this.storage.get('device_trusted') === 'true';
-  }
-
-  // Get all devices
-  async getDevices(
-    fetchFn: () => Promise<DeviceInfo[]>
-  ): Promise<DeviceInfo[]> {
-    const devices = await fetchFn();
-    const currentId = await this.getDeviceId();
-    
-    return devices.map(d => ({
-      ...d,
-      current: d.id === currentId,
-    }));
-  }
-
-  // Revoke device
-  async revokeDevice(
-    deviceId: string,
-    revokeFn: (deviceId: string) => Promise<void>
-  ): Promise<void> {
-    await revokeFn(deviceId);
-    
-    this.eventBus.emit('auth:device_revoked', { deviceId });
-
-    // If revoking current device, clear trust
-    const currentId = await this.getDeviceId();
-    if (deviceId === currentId) {
-      this.storage.remove('device_trusted');
-    }
-  }
-
-  private async getCanvasFingerprint(): Promise<string> {
-    try {
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return 'no-canvas';
-
-      ctx.textBaseline = 'top';
-      ctx.font = '14px Arial';
-      ctx.fillText('fingerprint', 2, 2);
-      
-      return canvas.toDataURL().slice(-50);
-    } catch {
-      return 'canvas-error';
-    }
-  }
-
-  private async hashString(str: string): Promise<string> {
-    const encoder = new TextEncoder();
-    const data = encoder.encode(str);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-  }
-}
-```
-
-### 6.5 MFAChallenge Component (`src/auth/components/MFAChallenge.tsx`)
-
-```typescript
-import React, { useState } from 'react';
-import { Button } from '@/lib/components/ui/button';
-import { Input } from '@/lib/components/ui/input';
-import { Label } from '@/lib/components/ui/label';
-
-interface MFAChallengeProps {
-  method: 'totp' | 'email' | 'sms';
-  hint?: string;
-  onVerify: (code: string) => Promise<boolean>;
-  onCancel: () => void;
-  onUseBackupCode: () => void;
-}
-
-export function MFAChallenge({ 
-  method, 
-  hint, 
-  onVerify, 
-  onCancel,
-  onUseBackupCode 
-}: MFAChallengeProps) {
-  const [code, setCode] = useState('');
-  const [error, setError] = useState<string | null>(null);
-  const [isVerifying, setIsVerifying] = useState(false);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    setIsVerifying(true);
-
-    try {
-      const success = await onVerify(code);
-      if (!success) {
-        setError('Invalid code. Please try again.');
-        setCode('');
-      }
-    } catch {
-      setError('Verification failed. Please try again.');
-    } finally {
-      setIsVerifying(false);
-    }
-  };
-
-  const getMethodLabel = () => {
-    switch (method) {
-      case 'totp': return 'authenticator app';
-      case 'email': return 'email';
-      case 'sms': return 'phone';
-      default: return 'device';
-    }
-  };
-
-  return (
-    <div className="space-y-6">
-      <div className="text-center">
-        <h2 className="text-xl font-semibold">Two-Factor Authentication</h2>
-        <p className="text-muted-foreground mt-2">
-          Enter the code from your {getMethodLabel()}
-          {hint && <span className="block text-sm mt-1">{hint}</span>}
-        </p>
-      </div>
-
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="mfa-code">Verification Code</Label>
-          <Input
-            id="mfa-code"
-            type="text"
-            inputMode="numeric"
-            pattern="[0-9]*"
-            maxLength={6}
-            value={code}
-            onChange={(e) => setCode(e.target.value.replace(/\D/g, ''))}
-            placeholder="000000"
-            className="text-center text-2xl tracking-widest"
-            autoFocus
-            disabled={isVerifying}
-          />
-        </div>
-
-        {error && (
-          <p className="text-sm text-destructive text-center">{error}</p>
-        )}
-
-        <Button type="submit" className="w-full" disabled={code.length < 6 || isVerifying}>
-          {isVerifying ? 'Verifying...' : 'Verify'}
-        </Button>
-      </form>
-
-      <div className="flex justify-between text-sm">
-        <button onClick={onUseBackupCode} className="text-primary hover:underline">
-          Use backup code
-        </button>
-        <button onClick={onCancel} className="text-muted-foreground hover:underline">
-          Cancel
-        </button>
-      </div>
-    </div>
-  );
-}
-```
+| Deliverable                | Description                  | Est. Hours |
+| -------------------------- | ---------------------------- | ---------- |
+| `SessionManager` component | Active sessions list         | 4h         |
+| `SessionsPage`             | Full session management page | 3h         |
+| Tests                      | Service and component tests  | 6h         |
 
 ### 6.6 SessionManager Component (`src/auth/components/SessionManager.tsx`)
 
@@ -2514,10 +2170,10 @@ interface SessionManagerProps {
   revokeAllSessions: () => Promise<void>;
 }
 
-export function SessionManager({ 
-  getSessions, 
-  revokeSession, 
-  revokeAllSessions 
+export function SessionManager({
+  getSessions,
+  revokeSession,
+  revokeAllSessions
 }: SessionManagerProps) {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
@@ -2585,8 +2241,8 @@ export function SessionManager({
                 </p>
               </div>
               {!session.current && (
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="sm"
                   onClick={() => handleRevoke(session.id)}
                 >
@@ -2604,27 +2260,21 @@ export function SessionManager({
 
 ### 6.7 Phase 4 Tasks
 
-| # | Task | Priority | Hours | Dependencies |
-|---|------|----------|-------|--------------|
-| 4.1 | Implement `MFAService` | High | 8 | Phase 3 |
-| 4.2 | Implement `DeviceService` | High | 6 | Phase 3 |
-| 4.3 | Create `MFAChallenge` component | High | 4 | 4.1 |
-| 4.4 | Create `MFASetup` component | Medium | 4 | 4.1 |
-| 4.5 | Create `SessionManager` component | Medium | 4 | 4.2 |
-| 4.6 | Create `SessionsPage` | Medium | 3 | 4.5 |
-| 4.7 | Integrate WebAuthn API | Low | 8 | 4.1, 4.2 |
-| 4.8 | Write tests | High | 6 | All above |
+| #   | Task                              | Priority | Hours | Dependencies |
+| --- | --------------------------------- | -------- | ----- | ------------ |
+| 4.5 | Create `SessionManager` component | Medium   | 4     | 4.2          |
+| 4.6 | Create `SessionsPage`             | Medium   | 3     | 4.5          |
+| 4.8 | Write tests                       | High     | 6     | All above    |
 
 ### 6.8 Phase 4 Acceptance Criteria
 
-- [ ] MFAService supports TOTP and email methods
-- [ ] MFA challenge flow completes successfully
-- [ ] DeviceService generates consistent fingerprints
-- [ ] Device trust persists across sessions (Remember Me)
-- [ ] SessionManager displays all active sessions
-- [ ] Users can revoke individual sessions
-- [ ] Users can revoke all other sessions
-- [ ] WebAuthn registration and authentication works (where supported)
+- [x] SessionManager displays all active sessions
+- [x] Users can revoke individual sessions
+- [x] Users can revoke all other sessions
+- [x] MFA Setup flow works (QR code generation)
+- [x] MFA Verification works (TOTP)
+- [x] Login flow handles MFA requirement
+- [x] Device tracking captures metadata
 
 ---
 
@@ -2633,9 +2283,10 @@ export function SessionManager({
 ### 7.1 Testing Strategy
 
 #### Unit Testing
+
 ```typescript
 // Example: RateLimiter.test.ts
-describe('RateLimiter', () => {
+describe("RateLimiter", () => {
   let limiter: RateLimiter;
 
   beforeEach(() => {
@@ -2648,28 +2299,29 @@ describe('RateLimiter', () => {
     });
   });
 
-  it('allows attempts within limit', () => {
-    expect(limiter.canAttempt('user1')).toBe(true);
-    limiter.recordAttempt('user1', false);
-    expect(limiter.canAttempt('user1')).toBe(true);
+  it("allows attempts within limit", () => {
+    expect(limiter.canAttempt("user1")).toBe(true);
+    limiter.recordAttempt("user1", false);
+    expect(limiter.canAttempt("user1")).toBe(true);
   });
 
-  it('blocks after max attempts', () => {
+  it("blocks after max attempts", () => {
     for (let i = 0; i < 3; i++) {
-      limiter.recordAttempt('user1', false);
+      limiter.recordAttempt("user1", false);
     }
-    expect(limiter.canAttempt('user1')).toBe(false);
+    expect(limiter.canAttempt("user1")).toBe(false);
   });
 
-  it('resets on successful attempt', () => {
-    limiter.recordAttempt('user1', false);
-    limiter.recordAttempt('user1', true);
-    expect(limiter.getRemainingAttempts('user1')).toBe(3);
+  it("resets on successful attempt", () => {
+    limiter.recordAttempt("user1", false);
+    limiter.recordAttempt("user1", true);
+    expect(limiter.getRemainingAttempts("user1")).toBe(3);
   });
 });
 ```
 
 #### Integration Testing
+
 ```typescript
 // Example: AuthenticationManager.integration.test.ts
 describe('AuthenticationManager Integration', () => {
@@ -2691,7 +2343,7 @@ describe('AuthenticationManager Integration', () => {
     });
 
     const result = await manager.login({ username: 'test', password: 'pass' }, mockLogin);
-    
+
     expect(result.success).toBe(true);
     expect(manager.getState().isAuthenticated).toBe(true);
   });
@@ -2699,21 +2351,22 @@ describe('AuthenticationManager Integration', () => {
 ```
 
 #### E2E Testing
+
 ```typescript
 // Example: login.e2e.test.ts (Playwright)
-test('login with rate limiting', async ({ page }) => {
-  await page.goto('/login');
+test("login with rate limiting", async ({ page }) => {
+  await page.goto("/login");
 
   // Fail login 5 times
   for (let i = 0; i < 5; i++) {
-    await page.fill('[name="username"]', 'test');
-    await page.fill('[name="password"]', 'wrong');
+    await page.fill('[name="username"]', "test");
+    await page.fill('[name="password"]', "wrong");
     await page.click('button[type="submit"]');
   }
 
   // Should see lockout message
-  await expect(page.getByText('Too many attempts')).toBeVisible();
-  
+  await expect(page.getByText("Too many attempts")).toBeVisible();
+
   // Submit button should be disabled
   await expect(page.locator('button[type="submit"]')).toBeDisabled();
 });
@@ -2722,6 +2375,7 @@ test('login with rate limiting', async ({ page }) => {
 ### 7.2 Migration Strategy
 
 #### Phase 1: Parallel Running
+
 ```typescript
 // Temporarily run both old and new systems
 import { AuthProvider as NewAuthProvider } from '@/auth';
@@ -2738,6 +2392,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 ```
 
 #### Phase 2: Gradual Rollout
+
 1. Enable for internal users first (feature flag)
 2. Enable for 10% of users
 3. Monitor error rates and performance
@@ -2745,23 +2400,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 5. Remove legacy code
 
 #### Breaking Changes
-| Change | Migration |
-|--------|-----------|
-| Token storage key changed | Auto-migrate on first load |
-| Event names changed | Adapter layer for old names |
-| Hook return types | TypeScript will catch |
+
+| Change                    | Migration                   |
+| ------------------------- | --------------------------- |
+| Token storage key changed | Auto-migrate on first load  |
+| Event names changed       | Adapter layer for old names |
+| Hook return types         | TypeScript will catch       |
 
 ### 7.3 Security Considerations
 
 #### Token Security
-| Threat | Mitigation |
-|--------|------------|
-| XSS token theft | Memory storage (not localStorage) |
-| CSRF attacks | CSRF tokens on mutations |
-| Token replay | Short expiry + rotation |
-| Session fixation | Regenerate on login |
+
+| Threat           | Mitigation                        |
+| ---------------- | --------------------------------- |
+| XSS token theft  | Memory storage (not localStorage) |
+| CSRF attacks     | CSRF tokens on mutations          |
+| Token replay     | Short expiry + rotation           |
+| Session fixation | Regenerate on login               |
 
 #### Rate Limiting Defense
+
 ```
 Client-side: Prevent UI spam, improve UX
      ↓
@@ -2771,30 +2429,31 @@ Infrastructure: WAF, DDoS protection
 ```
 
 #### Audit Logging
+
 ```typescript
 // Events to log
 const AUDIT_EVENTS = [
-  'auth:login_success',
-  'auth:login_failed', 
-  'auth:logout',
-  'auth:mfa_success',
-  'auth:mfa_failed',
-  'auth:password_changed',
-  'auth:device_trusted',
-  'auth:device_revoked',
-  'auth:session_revoked',
+  "auth:login_success",
+  "auth:login_failed",
+  "auth:logout",
+  "auth:mfa_success",
+  "auth:mfa_failed",
+  "auth:password_changed",
+  "auth:device_trusted",
+  "auth:device_revoked",
+  "auth:session_revoked",
 ];
 ```
 
 ### 7.4 Performance Considerations
 
-| Concern | Solution |
-|---------|----------|
-| Permission check overhead | In-memory cache with TTL |
-| Token parsing | Cache decoded payload |
-| Event bus flooding | Debounce (100ms default) |
-| Activity monitoring | Throttle (1s default) |
-| Cross-tab sync | BroadcastChannel (native) |
+| Concern                   | Solution                  |
+| ------------------------- | ------------------------- |
+| Permission check overhead | In-memory cache with TTL  |
+| Token parsing             | Cache decoded payload     |
+| Event bus flooding        | Debounce (100ms default)  |
+| Activity monitoring       | Throttle (1s default)     |
+| Cross-tab sync            | BroadcastChannel (native) |
 
 ### 7.5 Error Handling
 
@@ -2826,41 +2485,43 @@ export function AuthErrorBoundary({ children }: { children: React.ReactNode }) {
 
 ### 8.1 Timeline Summary
 
-| Phase | Duration | Start | End |
-|-------|----------|-------|-----|
-| Phase 1: Core Infrastructure | 2 weeks | Week 1 | Week 2 |
-| Phase 2: Services | 2 weeks | Week 3 | Week 4 |
-| Phase 3: React Integration | 2 weeks | Week 5 | Week 6 |
-| Phase 4: Advanced Security | 2 weeks | Week 7 | Week 8 |
-| **Total** | **8 weeks** | | |
+| Phase                        | Duration    | Start  | End    |
+| ---------------------------- | ----------- | ------ | ------ |
+| Phase 1: Core Infrastructure | 2 weeks     | Week 1 | Week 2 |
+| Phase 2: Services            | 2 weeks     | Week 3 | Week 4 |
+| Phase 3: React Integration   | 2 weeks     | Week 5 | Week 6 |
+| Phase 4: Advanced Security   | 2 weeks     | Week 7 | Week 8 |
+| **Total**                    | **8 weeks** |        |        |
 
 ### 8.2 Effort Estimate
 
-| Phase | Hours | Team Size | Calendar |
-|-------|-------|-----------|----------|
-| Phase 1 | 32h | 1 dev | 2 weeks |
-| Phase 2 | 34h | 1 dev | 2 weeks |
-| Phase 3 | 26h | 1 dev | 2 weeks |
-| Phase 4 | 43h | 1-2 devs | 2 weeks |
-| **Total** | **135h** | | **8 weeks** |
+| Phase     | Hours    | Team Size | Calendar    |
+| --------- | -------- | --------- | ----------- |
+| Phase 1   | 32h      | 1 dev     | 2 weeks     |
+| Phase 2   | 34h      | 1 dev     | 2 weeks     |
+| Phase 3   | 26h      | 1 dev     | 2 weeks     |
+| Phase 4   | 43h      | 1-2 devs  | 2 weeks     |
+| **Total** | **135h** |           | **8 weeks** |
 
 ### 8.3 Risk Assessment
 
-| Risk | Probability | Impact | Mitigation |
-|------|-------------|--------|------------|
-| Breaking existing auth | Medium | High | Feature flags, parallel running |
-| Performance regression | Low | Medium | Benchmark before/after |
-| Browser compatibility | Low | Medium | Polyfills for BroadcastChannel |
-| MFA adoption issues | Medium | Low | Clear documentation, fallback |
+| Risk                   | Probability | Impact | Mitigation                      |
+| ---------------------- | ----------- | ------ | ------------------------------- |
+| Breaking existing auth | Medium      | High   | Feature flags, parallel running |
+| Performance regression | Low         | Medium | Benchmark before/after          |
+| Browser compatibility  | Low         | Medium | Polyfills for BroadcastChannel  |
+| MFA adoption issues    | Medium      | Low    | Clear documentation, fallback   |
 
 ### 8.4 Dependencies
 
 **External:**
+
 - GraphQL server must support new auth endpoints
 - Backend MFA implementation required for Phase 4
 - WebAuthn server-side support for passkeys
 
 **Internal:**
+
 - UI component library (shadcn/ui)
 - Apollo Client for GraphQL
 - Existing test infrastructure
@@ -2876,8 +2537,7 @@ export function AuthErrorBoundary({ children }: { children: React.ReactNode }) {
 
 ## Document History
 
-| Version | Date | Author | Changes |
-|---------|------|--------|---------|
-| 1.0 | 2026-01-25 | Rovo Dev | Initial draft |
-| 2.0 | 2026-01-25 | Rovo Dev | Multi-phase restructure with technical details |
-
+| Version | Date       | Author   | Changes                                        |
+| ------- | ---------- | -------- | ---------------------------------------------- |
+| 1.0     | 2026-01-25 | Rovo Dev | Initial draft                                  |
+| 2.0     | 2026-01-25 | Rovo Dev | Multi-phase restructure with technical details |

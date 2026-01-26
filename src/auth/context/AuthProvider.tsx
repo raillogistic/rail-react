@@ -1,73 +1,120 @@
-/**
- * Authentication Provider Component
- * 
- * Purpose: Provides authentication context to the entire application
- * Args: children (React components to wrap with auth context)
- * Returns: JSX element with authentication context
- * Raises: Error when authentication context is used outside provider
- * Example: <AuthProvider><App /></AuthProvider>
- */
+import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { AuthenticationManager } from '../AuthenticationManager';
+import type { AuthState, AuthConfig, LoginCredentials, AuthResult, AuthUser, TokenPair } from '../types';
 
-import React, { type ReactNode } from "react";
-import { useAuth } from "@/auth/hooks/useAuth";
-import { AuthContext, useAuthContext } from './AuthContext';
-
-interface AuthProviderProps {
-  children: ReactNode;
+interface AuthContextValue extends AuthState {
+  login: (credentials: LoginCredentials) => Promise<AuthResult>;
+  verifyMFA: (code: string) => Promise<AuthResult>;
+  logout: () => Promise<void>;
+  hasPermission: (permission: string) => boolean;
+  hasRole: (role: string) => boolean;
+  refreshSession: () => Promise<void>;
+  clearError: () => void;
 }
 
-/**
- * Authentication Provider Component
- * Wraps the application with authentication context
- */
-export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const auth = useAuth();
+export const AuthContext = createContext<AuthContextValue | null>(null);
+
+interface AuthProviderProps {
+  children: React.ReactNode;
+  config?: Partial<AuthConfig>;
+  onLogin?: (credentials: LoginCredentials) => Promise<
+    | { success: true; user: AuthUser; tokens: TokenPair; sessionId: string }
+    | { success: false; requiresMFA: true; ephemeralToken: string }
+  >;
+  onVerifyMFA?: (code: string, ephemeralToken: string) => Promise<{ user: AuthUser; tokens: TokenPair; sessionId: string }>;
+  onLogout?: () => Promise<void>;
+  onRefresh?: (refreshToken: string) => Promise<TokenPair>;
+  onValidateSession?: () => Promise<boolean>;
+}
+
+export function AuthProvider({
+  children,
+  config,
+  onLogin,
+  onLogout,
+  onRefresh,
+  onValidateSession,
+  onVerifyMFA,
+}: AuthProviderProps) {
+  const [manager] = useState(() => new AuthenticationManager(config));
+  // Initialize with loading state to prevent flash of unauthenticated content
+  const [state, setState] = useState<AuthState>(() => ({
+    ...manager.getState(),
+    isLoading: true,
+    status: 'loading'
+  }));
+
+  useEffect(() => {
+    // Subscribe to state changes
+    const unsubscribe = manager.subscribe(setState);
+
+    // Set validation function if provided
+    if (onValidateSession) {
+      manager.sessionService.setValidationFn(onValidateSession);
+    }
+
+    // Initialize on mount
+    manager.initialize();
+
+    return () => {
+      unsubscribe();
+      manager.destroy();
+    };
+  }, [manager, onValidateSession]);
+
+  const login = useCallback(async (credentials: LoginCredentials) => {
+    if (!onLogin) throw new Error('onLogin handler not provided');
+    return manager.login(credentials, onLogin);
+  }, [manager, onLogin]);
+
+  const verifyMFA = useCallback(async (code: string) => {
+    if (!onVerifyMFA) throw new Error('onVerifyMFA handler not provided');
+    return manager.verifyMFA(code, onVerifyMFA);
+  }, [manager, onVerifyMFA]);
+
+  const logout = useCallback(async () => {
+    await manager.logout();
+    if (onLogout) await onLogout();
+  }, [manager, onLogout]);
+
+  const hasPermission = useCallback((permission: string) => {
+    return manager.hasPermission(permission);
+  }, [manager]);
+
+  const hasRole = useCallback((role: string) => {
+    return manager.hasRole(role);
+  }, [manager]);
+
+  const refreshSession = useCallback(async () => {
+    if (!onRefresh) throw new Error('onRefresh handler not provided');
+    await manager.tokenService.refreshTokens(onRefresh);
+  }, [manager, onRefresh]);
+
+  const clearError = useCallback(() => {
+    manager.clearError();
+  }, [manager]);
+
+  const value: AuthContextValue = {
+    ...state,
+    login,
+    logout,
+    hasPermission,
+    hasRole,
+    refreshSession,
+    clearError,
+  };
 
   return (
-    <AuthContext.Provider value={auth}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
-};
+}
 
-export { useAuthContext };
-
-/**
- * Higher-order component for components that require authentication
- */
-export const withAuth = <P extends object>(
-  Component: React.ComponentType<P>
-): React.FC<P> => {
-  const AuthenticatedComponent: React.FC<P> = (props) => {
-    const { isAuthenticated, isLoading } = useAuthContext();
-
-    if (isLoading) {
-      return (
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900"></div>
-        </div>
-      );
-    }
-
-    if (!isAuthenticated) {
-      return (
-        <div className="flex items-center justify-center min-h-screen">
-          <div className="text-center">
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">
-              Authentication Required
-            </h2>
-            <p className="text-gray-600">
-              Please log in to access this page.
-            </p>
-          </div>
-        </div>
-      );
-    }
-
-    return <Component {...props} />;
-  };
-
-  AuthenticatedComponent.displayName = `withAuth(${Component.displayName || Component.name})`;
-
-  return AuthenticatedComponent;
-};
+export function useAuthContext(): AuthContextValue {
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuthContext must be used within AuthProvider');
+  }
+  return context;
+}

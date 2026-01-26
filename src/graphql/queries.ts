@@ -9,6 +9,23 @@ export const DEFAULT_PAGINATION_ORDERING: ReadonlyArray<string> = ['-id'];
  * Purpose: GraphQL query to get current authenticated user information with roles and permissions
  * Returns: Current user data including roles and permissions
  */
+export const GET_ACTIVE_SESSIONS = gql`
+  query GetActiveSessions {
+    my_sessions: mySessions {
+      id
+      ip_address: ipAddress
+      user_agent: userAgent
+      last_activity: lastActivity
+      created_at: createdAt
+      is_current: isCurrent
+      location
+      device_type: deviceType
+      browser
+      os
+    }
+  }
+`;
+
 export const GET_CURRENT_USER = gql`
   query GetCurrentUser {
     my_permissions: myPermissions {
