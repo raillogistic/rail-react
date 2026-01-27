@@ -7,7 +7,14 @@
 
 import { MFASetupPage } from "@/auth/pages/MFASetupPage";
 import { SessionsPage } from "@/auth/pages/SessionsPage";
-import { LayoutDashboard, Settings, Shield, User, Smartphone, Lock } from "lucide-react";
+import {
+  LayoutDashboard,
+  Settings,
+  Shield,
+  User,
+  Smartphone,
+  Lock,
+} from "lucide-react";
 
 import { AccountSettingsPage } from "@/views/settings/AccountSettingsPage";
 import { AdminUISettingsPage } from "@/views/settings/AdminUISettingsPage";
@@ -15,6 +22,7 @@ import { AppearanceSettingsPage } from "@/views/settings/AppearanceSettingsPage"
 import { LayoutSettingsPage } from "@/views/settings/LayoutSettingsPage";
 
 import { getAppDefaultRoute, getAppNavigationLinks } from "@/apps/routes";
+import { DynamicFilterForm } from "@/lib/form/filters";
 
 export const ROUTES = {
   LOGIN: "/login",
@@ -75,7 +83,18 @@ const CORE_NAVIGATION_LINKS: NavigationSection[] = [
         icon: LayoutDashboard,
         requiresAuth: true,
         description: "Vue synthèse des indicateurs",
-        component: <>dashboard componentfrom links</>,
+        component: (
+          <DynamicFilterForm
+            app="store"
+            model="Product"
+            layout="popover"
+            maxDepth={2}
+            onApply={() => {}}
+            showPresets
+            showDistinct={false}
+            title="Filter Products"
+          />
+        ),
       },
     ],
   },

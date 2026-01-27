@@ -22,12 +22,25 @@ const DEFAULT_EVENTS = [
 
 export function useActivityMonitor(config: ActivityMonitorConfig) {
   const { isAuthenticated, logout } = useAuth();
+  
+  // Destructure config to ensure stable dependencies for primitives
+  const { 
+    idleTimeoutMs, 
+    warningThresholdMs, 
+    throttleMs = 1000,
+    events = DEFAULT_EVENTS 
+  } = config;
+
   const [state, setState] = useState<ActivityMonitorState>({
     isIdle: false,
     isWarning: false,
     lastActivity: new Date(),
     timeUntilTimeout: null,
   });
+
+  // Use refs to track state for interval/timeouts without triggering effect re-runs
+  const stateRef = useRef(state);
+  useEffect(() => { stateRef.current = state; }, [state]);
 
   const lastActivityRef = useRef(Date.now());
   const warningTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -44,16 +57,22 @@ export function useActivityMonitor(config: ActivityMonitorConfig) {
     const now = Date.now();
     lastActivityRef.current = now;
 
-    setState(prev => ({
-      ...prev,
-      isIdle: false,
-      isWarning: false,
-      lastActivity: new Date(now),
-      timeUntilTimeout: config.idleTimeoutMs,
-    }));
+    // Only update state if needed to avoid unnecessary renders
+    setState(prev => {
+        if (!prev.isIdle && !prev.isWarning && prev.timeUntilTimeout === idleTimeoutMs) {
+            return prev;
+        }
+        return {
+            ...prev,
+            isIdle: false,
+            isWarning: false,
+            lastActivity: new Date(now),
+            timeUntilTimeout: idleTimeoutMs,
+        };
+    });
 
     // Set warning timer
-    const warningDelay = config.idleTimeoutMs - config.warningThresholdMs;
+    const warningDelay = idleTimeoutMs - warningThresholdMs;
     warningTimeoutRef.current = setTimeout(() => {
       setState(prev => ({ ...prev, isWarning: true }));
     }, warningDelay);
@@ -62,8 +81,8 @@ export function useActivityMonitor(config: ActivityMonitorConfig) {
     idleTimeoutRef.current = setTimeout(() => {
       setState(prev => ({ ...prev, isIdle: true }));
       logout({ reason: 'idle_timeout' });
-    }, config.idleTimeoutMs);
-  }, [isAuthenticated, config.idleTimeoutMs, config.warningThresholdMs, logout]);
+    }, idleTimeoutMs);
+  }, [isAuthenticated, idleTimeoutMs, warningThresholdMs, logout]);
 
   const handleActivity = useCallback(() => {
     // Throttle activity updates
@@ -71,10 +90,10 @@ export function useActivityMonitor(config: ActivityMonitorConfig) {
 
     throttleRef.current = setTimeout(() => {
       throttleRef.current = null;
-    }, config.throttleMs || 1000);
+    }, throttleMs);
 
     resetTimers();
-  }, [resetTimers, config.throttleMs]);
+  }, [resetTimers, throttleMs]);
 
   const extendSession = useCallback(() => {
     resetTimers();
@@ -84,7 +103,8 @@ export function useActivityMonitor(config: ActivityMonitorConfig) {
   useEffect(() => {
     if (!isAuthenticated) return;
 
-    const events = config.events || DEFAULT_EVENTS;
+    // Use a stable reference for events if possible, or accept re-run on array change
+    // For now assuming events doesn't change often or is stable default
     events.forEach(event => {
       window.addEventListener(event, handleActivity, { passive: true });
     });
@@ -94,8 +114,9 @@ export function useActivityMonitor(config: ActivityMonitorConfig) {
 
     // Update countdown every second when warning
     const countdownInterval = setInterval(() => {
-      if (state.isWarning) {
-        const remaining = config.idleTimeoutMs - (Date.now() - lastActivityRef.current);
+      // Access current state via ref to avoid adding state to dependencies
+      if (stateRef.current.isWarning) {
+        const remaining = idleTimeoutMs - (Date.now() - lastActivityRef.current);
         setState(prev => ({
           ...prev,
           timeUntilTimeout: Math.max(0, remaining),
@@ -112,7 +133,8 @@ export function useActivityMonitor(config: ActivityMonitorConfig) {
       if (throttleRef.current) clearTimeout(throttleRef.current);
       clearInterval(countdownInterval);
     };
-  }, [isAuthenticated, config, handleActivity, resetTimers, state.isWarning]);
+  }, [isAuthenticated, idleTimeoutMs, warningThresholdMs, throttleMs, handleActivity, resetTimers]); 
+  // removed 'config' and 'state.isWarning' from deps
 
   return {
     ...state,
