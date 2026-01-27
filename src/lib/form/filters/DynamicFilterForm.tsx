@@ -132,6 +132,7 @@ export const DynamicFilterForm: React.FC<DynamicFilterFormProps> = ({
   });
 
   // Filter form state
+  // console.log("DynamicFilterForm: rendering");
   const { state, actions } = useNestedFilterForm({
     schema,
     initialState,

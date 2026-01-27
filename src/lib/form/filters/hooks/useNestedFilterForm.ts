@@ -4,7 +4,8 @@
  * Manages filter form state with TanStack Form and Zod validation.
  */
 
-import { useForm } from "@tanstack/react-form";
+import { useMemo } from "react";
+import { useForm, useStore } from "@tanstack/react-form";
 import { zodValidator } from "@tanstack/zod-form-adapter";
 import { z } from "zod";
 import type { 
@@ -48,20 +49,47 @@ export interface UseNestedFilterFormOptions {
   initialState?: FilterFormState;
 }
 
+// Create static validator adapter instance to prevent re-renders
+const validatorAdapter = zodValidator();
+
 export function useNestedFilterForm({
   schema,
   initialState,
 }: UseNestedFilterFormOptions) {
-  const form = useForm({
-    defaultValues: initialState ?? createInitialFilterState(),
-    validatorAdapter: zodValidator(),
-    validators: {
-      onChange: filterFormSchema,
-    },
+  const defaultValues = useMemo(() => initialState ?? createInitialFilterState(), [initialState]);
+
+  const formOptions = useMemo(() => ({
+    defaultValues,
+    // validatorAdapter,
+    // validators: {
+    //   onChange: filterFormSchema,
+    // },
+  }), [defaultValues]);
+
+  // Debug check for options stability
+  /*
+  const prevOptions = React.useRef(formOptions);
+  React.useEffect(() => {
+    if (prevOptions.current !== formOptions) {
+      console.log('Form options changed', {
+        defaultValuesChanged: prevOptions.current.defaultValues !== formOptions.defaultValues,
+        validatorsChanged: prevOptions.current.validators !== formOptions.validators,
+      });
+      prevOptions.current = formOptions;
+    }
   });
+  */
+
+  const form = useForm(formOptions);
+
+  /*
+  useEffect(() => {
+    console.log("useNestedFilterForm: form instance changed", form);
+  }, [form]);
+  */
 
   // Use useStore to make state reactive in the component
-  const state = form.useStore((s) => s.values);
+  const state = useStore(form.store, (s) => s.values);
 
   return {
     form,
