@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useCallback } from "react";
 import { useApolloClient } from "@apollo/client";
 import { AuthProvider } from "./AuthProvider";
 import {
@@ -16,7 +16,7 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const client = useApolloClient();
 
-  const handleLogin = async (credentials: LoginCredentials) => {
+  const handleLogin = useCallback(async (credentials: LoginCredentials) => {
     const { data } = await client.mutate({
       mutation: LOGIN_MUTATION,
       variables: {
@@ -53,9 +53,9 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
       },
       sessionId: "session-" + Date.now(), // Backend should ideally return session ID
     };
-  };
+  }, [client]);
 
-  const handleVerifyMFA = async (code: string, ephemeralToken: string) => {
+  const handleVerifyMFA = useCallback(async (code: string, ephemeralToken: string) => {
     const { data } = await client.mutate({
       mutation: VERIFY_MFA_LOGIN_MUTATION,
       variables: { code, ephemeral_token: ephemeralToken },
@@ -77,18 +77,18 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
       },
       sessionId: "session-" + Date.now(),
     };
-  };
+  }, [client]);
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(async () => {
     try {
       await client.mutate({ mutation: LOGOUT_MUTATION });
     } catch (e) {
       console.warn("Logout mutation failed", e);
     }
     await client.clearStore();
-  };
+  }, [client]);
 
-  const handleRefresh = async (refreshToken: string): Promise<TokenPair> => {
+  const handleRefresh = useCallback(async (refreshToken: string): Promise<TokenPair> => {
     const { data } = await client.mutate({
       mutation: REFRESH_TOKEN_MUTATION,
       variables: { refresh_token: refreshToken },
@@ -105,9 +105,9 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
       accessTokenExpiresAt: new Date(Date.now() + 15 * 60 * 1000),
       refreshTokenExpiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
     };
-  };
+  }, [client]);
 
-  const handleValidateSession = async () => {
+  const handleValidateSession = useCallback(async () => {
     try {
       // Don't validate if no token (unless checking cookie session?)
       // For now, assume if we have access token or cookie, we try.
@@ -119,7 +119,7 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
     } catch (e) {
       return false;
     }
-  };
+  }, [client]);
 
   return (
     <AuthProvider
@@ -130,7 +130,7 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
       onValidateSession={handleValidateSession}
       config={{
         token: {
-          storageType: "memory", // ConnectedAuthProvider manages token storage via services
+          storageType: "session", // Use session storage to persist across reloads
         },
       }}
     >

@@ -4,10 +4,11 @@ import { ROUTES } from "@/routes/links";
 import { useAuthContext } from "@/auth/context";
 import { MFAChallenge } from "@/auth/components";
 import { MFASetupPage } from "./MFASetupPage";
-import { useForm } from "react-hook-form";
+import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Eye, EyeOff, Mail, Lock, AlertCircle, WifiOff } from "lucide-react";
+import { Checkbox } from "@/lib/components/ui/checkbox";
 import {
   isServerOfflineError,
   onOfflineStatusChange,
@@ -19,6 +20,7 @@ import Cover from "@/assets/images/cover.jpg";
 const loginSchema = z.object({
   username: z.string().min(1, "Le nom d'utilisateur est requis"),
   password: z.string().min(1, "Le mot de passe est requis"),
+  rememberMe: z.boolean().optional(),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -42,6 +44,7 @@ export const LoginPage: React.FC = () => {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors, isSubmitting },
     reset,
   } = useForm<LoginFormData>({
@@ -49,6 +52,7 @@ export const LoginPage: React.FC = () => {
     defaultValues: {
       username: "",
       password: "",
+      rememberMe: false,
     },
   });
 
@@ -259,6 +263,26 @@ export const LoginPage: React.FC = () => {
                 </div>
 
                 <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <Controller
+                      name="rememberMe"
+                      control={control}
+                      render={({ field }) => (
+                        <Checkbox
+                          id="rememberMe"
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      )}
+                    />
+                    <label
+                      htmlFor="rememberMe"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-gray-700"
+                    >
+                      Se souvenir de moi
+                    </label>
+                  </div>
+
                   <div className="text-sm">
                     <button
                       type="button"

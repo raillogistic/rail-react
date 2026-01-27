@@ -10,7 +10,7 @@
 
 import React from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import { useAuthContext } from "@/auth/context";
+import { useAuth } from "@/auth/hooks/useAuth";
 import { ROUTES } from "@/routes/links";
 import OfflineNotification from "@/lib/components/OfflineNotification";
 import { userHasPermission } from "@/auth/utils/permission-matching";
@@ -27,7 +27,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
   requiredPermission,
 }) => {
   const { isAuthenticated, isLoading, isRefreshing, isValidating, user } =
-    useAuthContext();
+    useAuth();
   const location = useLocation();
 
   // Show loading state while checking authentication or refreshing tokens
