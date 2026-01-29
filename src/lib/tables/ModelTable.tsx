@@ -93,7 +93,8 @@ import {
   FormOverlay,
   PrintDialog,
 } from "./components/ModelTableOverlays";
-import { ModelAdvancedFiltersControl } from "./components/filtering";
+import { DynamicFilterForm } from "@/lib/form/filters/DynamicFilterForm";
+import type { FilterQueryVariables } from "@/lib/form/filters/types";
 
 type UseGraphQLModelTableOptions = Partial<
   Omit<Parameters<typeof useGraphQLModelTable>[0], "appName" | "modelName">
@@ -887,7 +888,19 @@ export default function ModelTable<TData = Record<string, unknown>>({
   const [historyBaseFilters, setHistoryBaseFilters] =
     useState<ComplexFilterInput<string> | null>(null);
 
-  const { setAdvancedFilters } = setters;
+  const { setAdvancedFilters, setPresets, setDistinctOn, setPageIndex } = setters;
+
+  const handleFilterApply = useCallback((variables: FilterQueryVariables) => {
+    setAdvancedFilters(variables.filters || null);
+    setPresets(variables.presets || []);
+    setDistinctOn(variables.distinctOn || []);
+    if (variables.orderBy) {
+      // Logic to update sorting state if needed, though usually handled by table header clicks.
+      // If DynamicFilterForm returns orderBy, we might want to sync it with table sorting state.
+      // For now, we'll focus on filters.
+    }
+    setPageIndex(0);
+  }, [setAdvancedFilters, setPresets, setDistinctOn, setPageIndex]);
 
   /**
    * Combine model-level advanced filters, column filters (emitted by BaseTable),
@@ -2470,14 +2483,6 @@ export default function ModelTable<TData = Record<string, unknown>>({
     };
   }, []);
 
-  const handleAdvancedFiltersApply = useCallback(
-    (filters: ComplexFilterInput<string> | null) => {
-      setAdvancedFiltersState(filters);
-      onAdvancedFiltersApply?.(filters, contextRef.current);
-    },
-    [onAdvancedFiltersApply]
-  );
-
   const handleColumnFiltersPayloadChange = useCallback(
     (filters: ComplexFilterInput<string>) => {
       const hasEntries = filters && Object.keys(filters).length > 0;
@@ -2650,30 +2655,13 @@ export default function ModelTable<TData = Record<string, unknown>>({
       remote_total_count={pageInfo?.total_count}
       toolbar_actions={
         <div className="flex items-center gap-2">
-          <ModelAdvancedFiltersControl
-            appName={appName}
-            modelName={modelName}
-            displayMode="dialog"
-            popupTitle="Filtres avancés"
-            showChips={false}
-            onApply={handleAdvancedFiltersApply}
-            renderButton={({ open, isActive, activeCount }) => (
-              <Button
-                variant="outline"
-                size="icon"
-                className="relative h-8 w-8"
-                title="Filtres avancés"
-                aria-pressed={isActive}
-                onClick={open}
-              >
-                <Filter className="h-4 w-4" />
-                {isActive ? (
-                  <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] font-semibold text-background">
-                    {Math.min(activeCount, 9)}
-                  </span>
-                ) : null}
-              </Button>
-            )}
+          <DynamicFilterForm
+            app={appName}
+            model={modelName}
+            onApply={handleFilterApply}
+            layout="popover"
+            showPresets={true}
+            showDistinct={true}
           />
           {resolvedToolbarActions}
         </div>

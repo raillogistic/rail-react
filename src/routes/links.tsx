@@ -23,6 +23,7 @@ import { LayoutSettingsPage } from "@/views/settings/LayoutSettingsPage";
 
 import { getAppDefaultRoute, getAppNavigationLinks } from "@/apps/routes";
 import { DynamicFilterForm } from "@/lib/form/filters";
+import { ModelTable } from "@/lib/tables/NewModelTable";
 
 export const ROUTES = {
   LOGIN: "/login",
@@ -84,16 +85,16 @@ const CORE_NAVIGATION_LINKS: NavigationSection[] = [
         requiresAuth: true,
         description: "Vue synthèse des indicateurs",
         component: (
-          <DynamicFilterForm
-            app="store"
-            model="Product"
-            layout="panel"
-            maxDepth={2}
-            onApply={(values) => console.log(values)}
-            showPresets
-            showDistinct={false}
-            title="Filter Products"
-          />
+          <ModelTable appName="store" modelName="Product" />
+          // <DynamicFilterForm
+          //   app="store"
+          //   model="Product"
+          //   layout="panel"
+          //   maxDepth={1}
+          //   onApply={(values) => console.log(values)}
+          //   showPresets
+          //   title="Filter Products"
+          // />
         ),
       },
     ],

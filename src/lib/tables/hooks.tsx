@@ -34,127 +34,75 @@ import {
 import { DEFAULT_PAGINATION_ORDERING } from "@/graphql/queries";
 
 /* ----------------------------
-   ?Y?? Metadata Queries
+   ⚡ Metadata Queries (V2)
 ---------------------------- */
-const MODEL_TABLE_BASE_QUERY = gql`
-  query model_table_base(
-    $app_name: String!
-    $model_name: String!
-    $exclude: [String]
-    $only: [String]
-    $include_nested: Boolean
-    $only_lookup: [String]
-    $exclude_lookup: [String]
-  ) {
-    response: model_table(
-      app_name: $app_name
-      model_name: $model_name
-      exclude: $exclude
-      only: $only
-      include_nested: $include_nested
-      only_lookup: $only_lookup
-      exclude_lookup: $exclude_lookup
-    ) {
-      metadataVersion
+export const MODEL_SCHEMA_QUERY = gql`
+  query ModelSchema($app: String!, $model: String!) {
+    modelSchema(app: $app, model: $model) {
       app
       model
       verboseName
       verboseNamePlural
-      tableName
-      ordering
-      defaultOrdering
-      permissions {
-        can_create
-        can_update
-        can_delete
-        can_read
-        can_list
-        reasons
-      }
       fields {
         name
-        accessor
-        display
-        editable
-        field_type
-        filterable
-        sortable
-        title
+        verboseName
         helpText
-        is_property
-        is_related
-        permissions {
-          can_read
-          can_write
-          visibility
-          access_level
-          mask_value
-          reason
-        }
+        fieldType
+        isRelation
       }
     }
   }
 `;
 
-const MODEL_TABLE_FILTERS_QUERY = gql`
-  query model_table_filters(
-    $app_name: String!
-    $model_name: String!
-    $exclude: [String]
-    $only: [String]
-    $include_nested: Boolean
-    $only_lookup: [String]
-    $exclude_lookup: [String]
-  ) {
-    response: model_table(
-      app_name: $app_name
-      model_name: $model_name
-      exclude: $exclude
-      only: $only
-      include_nested: $include_nested
-      only_lookup: $only_lookup
-      exclude_lookup: $exclude_lookup
-    ) {
-      metadataVersion
-      filters {
-        field_name
-        field_label
-        is_nested
-        related_model
-        is_custom
-        options {
-          choices {
-            value
-            label
-          }
-          name
-          lookup_expr
-          help_text
-          filter_type
-        }
-        nested {
-          field_name
-          field_label
-          is_nested
-          related_model
-          is_custom
-          options {
-            choices {
-              value
-              label
-            }
-            name
-            lookup_expr
-            help_text
-            filter_type
-          }
-        }
-      }
-    }
-  }
-`;
+interface ModelSchemaResponse {
+  modelSchema: {
+    app: string;
+    model: string;
+    verboseName: string;
+    verboseNamePlural: string;
+    fields: Array<{
+      name: string;
+      verboseName: string;
+      helpText: string;
+      fieldType: string;
+      isRelation: boolean;
+    }>;
+  };
+}
 
-const MODEL_TABLE_MUTATIONS_QUERY = gql`
+const mapV2SchemaToV1Metadata = (
+  schema: ModelSchemaResponse["modelSchema"]
+): Partial<ModelTableType> => {
+  return {
+    app: schema.app,
+    model: schema.model,
+    verboseName: schema.verboseName,
+    verboseNamePlural: schema.verboseNamePlural,
+    fields: schema.fields.map((f) => ({
+      name: f.name,
+      accessor: f.name,
+      display: f.name,
+      editable: true,
+      field_type: f.fieldType as any,
+      filterable: true,
+      sortable: true,
+      title: f.verboseName,
+      helpText: f.helpText,
+      is_property: false,
+      is_related: f.isRelation,
+      permissions: {
+        can_read: true,
+        can_write: true,
+        visibility: "visible",
+        access_level: "full",
+      },
+    })),
+    filters: [], // V2 filters handled by DynamicFilterForm
+    metadataVersion: "v2",
+  };
+};
+
+export const MODEL_TABLE_MUTATIONS_QUERY = gql`
   query model_table_mutations(
     $app_name: String!
     $model_name: String!
@@ -212,7 +160,7 @@ const MODEL_TABLE_MUTATIONS_QUERY = gql`
   }
 `;
 
-const MODEL_TABLE_TEMPLATES_QUERY = gql`
+export const MODEL_TABLE_TEMPLATES_QUERY = gql`
   query model_table_templates(
     $app_name: String!
     $model_name: String!
@@ -427,8 +375,8 @@ function buildAutoDataQuery(
   const quickArgument = includeQuick ? ",quick:$quick" : "";
 
   return gql`
-    query ${queryName}($filters: ${typeName}, $ordering: [String], $page: Int, $per_page: Int${quickVariable}) {
-      ${fieldName}(filters: $filters, order_by: $ordering, page: $page, per_page: $per_page${quickArgument}) {
+    query ${queryName}($filters: ${typeName}, $ordering: [String], $page: Int, $per_page: Int${quickVariable}, $presets: [String], $distinctOn: [String]) {
+      ${fieldName}(filters: $filters, order_by: $ordering, page: $page, per_page: $per_page${quickArgument}, presets: $presets, distinct_on: $distinctOn) {
         page_info {
           total_count
           page_count
@@ -465,7 +413,16 @@ export function useModelTableMetadata(
     [appName, modelName, filtersSignature]
   );
   const cachedEntry = useMetadataCacheEntry<ModelTableType>("table", scopeKey);
-  const variables = useMemo(
+
+  const schemaVariables = useMemo(
+    () => ({
+      app: appName,
+      model: modelName,
+    }),
+    [appName, modelName]
+  );
+
+  const legacyVariables = useMemo(
     () => ({
       app_name: appName,
       model_name: modelName,
@@ -477,6 +434,7 @@ export function useModelTableMetadata(
     }),
     [appName, modelName, filtersSignature]
   );
+
   const autoFetchEnabled = !(options?.skip ?? false);
   const [loadingState, setLoadingState] = useState<MetadataLoadingState>(
     DEFAULT_METADATA_LOADING_STATE
@@ -510,20 +468,21 @@ export function useModelTableMetadata(
     [scopeKey]
   );
 
-  const runBaseQuery = useCallback(
+  const runSchemaQuery = useCallback(
     async (fetchPolicy: WatchQueryFetchPolicy = "cache-and-network") => {
       setLoadingState((prev) => ({ ...prev, base: true }));
       setError(undefined);
       try {
         const result = await client.query<
-          BaseMetadataResponse,
-          GraphQLTableVars
+          ModelSchemaResponse,
+          { app: string; model: string }
         >({
-          query: MODEL_TABLE_BASE_QUERY,
-          variables,
+          query: MODEL_SCHEMA_QUERY,
+          variables: schemaVariables,
           fetchPolicy: "cache-first",
         });
-        const merged = applyMetadataPatch(result.data?.response ?? null);
+        const v1Metadata = mapV2SchemaToV1Metadata(result.data.modelSchema);
+        const merged = applyMetadataPatch(v1Metadata);
         void detailFetcherRef.current?.(false);
         return merged;
       } catch (err) {
@@ -533,31 +492,7 @@ export function useModelTableMetadata(
         setLoadingState((prev) => ({ ...prev, base: false }));
       }
     },
-    [client, variables, applyMetadataPatch]
-  );
-
-  const runFiltersQuery = useCallback(
-    async (fetchPolicy: WatchQueryFetchPolicy = "network-only") => {
-      setLoadingState((prev) => ({ ...prev, filters: true }));
-      setError(undefined);
-      try {
-        const result = await client.query<
-          FiltersMetadataResponse,
-          GraphQLTableVars
-        >({
-          query: MODEL_TABLE_FILTERS_QUERY,
-          variables,
-          fetchPolicy,
-        });
-        return applyMetadataPatch(result.data?.response ?? null);
-      } catch (err) {
-        setError(err as ApolloError);
-        throw err;
-      } finally {
-        setLoadingState((prev) => ({ ...prev, filters: false }));
-      }
-    },
-    [client, variables, applyMetadataPatch]
+    [client, schemaVariables, applyMetadataPatch]
   );
 
   const runMutationsQuery = useCallback(
@@ -570,7 +505,7 @@ export function useModelTableMetadata(
           GraphQLTableVars
         >({
           query: MODEL_TABLE_MUTATIONS_QUERY,
-          variables,
+          variables: legacyVariables,
           fetchPolicy,
         });
         return applyMetadataPatch(result.data?.response ?? null);
@@ -581,7 +516,7 @@ export function useModelTableMetadata(
         setLoadingState((prev) => ({ ...prev, mutations: false }));
       }
     },
-    [client, variables, applyMetadataPatch]
+    [client, legacyVariables, applyMetadataPatch]
   );
 
   const runTemplatesQuery = useCallback(
@@ -594,7 +529,7 @@ export function useModelTableMetadata(
           GraphQLTableVars
         >({
           query: MODEL_TABLE_TEMPLATES_QUERY,
-          variables,
+          variables: legacyVariables,
           fetchPolicy,
         });
         return applyMetadataPatch(result.data?.response ?? null);
@@ -605,7 +540,7 @@ export function useModelTableMetadata(
         setLoadingState((prev) => ({ ...prev, pdfTemplates: false }));
       }
     },
-    [client, variables, applyMetadataPatch]
+    [client, legacyVariables, applyMetadataPatch]
   );
 
   const shouldFetchBase =
@@ -613,16 +548,15 @@ export function useModelTableMetadata(
 
   useEffect(() => {
     if (!shouldFetchBase) return;
-    runBaseQuery("network-only").catch(() => undefined);
-  }, [shouldFetchBase, runBaseQuery]);
+    runSchemaQuery("network-only").catch(() => undefined);
+  }, [shouldFetchBase, runSchemaQuery]);
 
   const ensureDetailMetadata = useCallback(
     async (forceNetwork = false) => {
       if (!autoFetchEnabled) return;
       const snapshot = latestMetadataRef.current ?? cachedEntry?.data ?? null;
       if (!snapshot) return;
-      const filtersMissing =
-        !snapshot.filters || snapshot.filters.length === 0 || forceNetwork;
+
       const mutationsMissing =
         !snapshot.mutations || snapshot.mutations.length === 0 || forceNetwork;
       const templatesMissing =
@@ -632,16 +566,12 @@ export function useModelTableMetadata(
       const stale = forceNetwork
         ? true
         : !isCacheEntryFresh(cachedEntry, METADATA_CACHE_TTL_MS);
-      const needsDetails =
-        filtersMissing || mutationsMissing || templatesMissing || stale;
+      const needsDetails = mutationsMissing || templatesMissing || stale;
       if (!needsDetails || detailsFetchInFlight.current) {
         return;
       }
       detailsFetchInFlight.current = true;
       try {
-        if (filtersMissing || stale) {
-          await runFiltersQuery(forceNetwork ? "network-only" : "cache-first");
-        }
         if (mutationsMissing || stale) {
           await runMutationsQuery(
             forceNetwork ? "network-only" : "cache-first"
@@ -661,7 +591,6 @@ export function useModelTableMetadata(
     [
       autoFetchEnabled,
       cachedEntry,
-      runFiltersQuery,
       runMutationsQuery,
       runTemplatesQuery,
     ]
@@ -676,10 +605,10 @@ export function useModelTableMetadata(
   }, [ensureDetailMetadata]);
 
   const refetch = useCallback(async () => {
-    await runBaseQuery("network-only");
+    await runSchemaQuery("network-only");
     await ensureDetailMetadata(true);
     return latestMetadataRef.current;
-  }, [ensureDetailMetadata, runBaseQuery]);
+  }, [ensureDetailMetadata, runSchemaQuery]);
 
   const metadata = cachedEntry?.data ?? latestMetadataRef.current ?? null;
   const loading =
@@ -790,6 +719,8 @@ export function useGraphQLModelTable({
   const [quick, setQuick] = useState<string>("");
   const [advancedFilters, setAdvancedFilters] =
     useState<ComplexFilterInput<string> | null>(null);
+  const [presets, setPresets] = useState<string[]>([]);
+  const [distinctOn, setDistinctOn] = useState<string[]>([]);
 
   useEffect(() => {
     if (!fields.length) return;
@@ -923,6 +854,8 @@ export function useGraphQLModelTable({
         ordering: orderingPayload,
         page: pageIndex + 1,
         per_page: pageSize,
+        presets,
+        distinctOn,
         ...(includeQuickArgument ? { quick } : {}),
       },
       // Prefer cache-first to avoid unnecessary network calls that can cause latency
@@ -1083,6 +1016,8 @@ export function useGraphQLModelTable({
       setColumnVisibility,
       setQuick,
       setAdvancedFilters,
+      setPresets,
+      setDistinctOn,
     }),
     [pageIndex, pageInfo?.page_count]
   );
@@ -1104,11 +1039,15 @@ export function useGraphQLModelTable({
       columnVisibility,
       quick,
       advancedFilters,
+      presets,
+      distinctOn,
     },
     payloads: {
       filters: filtersPayload,
       ordering: orderingPayload,
       quick,
+      presets,
+      distinctOn,
     },
     setters,
     metadataLoading: metadataLoadingState,
