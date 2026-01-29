@@ -107,7 +107,7 @@ export const DynamicFilterForm: React.FC<DynamicFilterFormProps> = ({
   initialState,
   config: configOverrides,
   disabled,
-  title = "Filters",
+  title = "Filtres",
   showKeyboardHints = true,
 }) => {
   // Merge config with defaults
@@ -132,7 +132,6 @@ export const DynamicFilterForm: React.FC<DynamicFilterFormProps> = ({
   });
 
   // Filter form state
-  // console.log("DynamicFilterForm: rendering");
   const { state, actions } = useNestedFilterForm({
     schema,
     initialState,
@@ -251,11 +250,11 @@ export const DynamicFilterForm: React.FC<DynamicFilterFormProps> = ({
     return (
       <Alert variant="destructive">
         <AlertTriangle className="h-4 w-4" />
-        <AlertTitle>Filter Error</AlertTitle>
+        <AlertTitle>Erreur de filtre</AlertTitle>
         <AlertDescription>
-          {error?.message ?? "Failed to load filter metadata"}
+          {error?.message ?? "Échec du chargement des métadonnées du filtre"}
           <Button variant="link" size="sm" onClick={() => refetch()}>
-            Retry
+            Réessayer
           </Button>
         </AlertDescription>
       </Alert>
@@ -323,7 +322,7 @@ export const DynamicFilterForm: React.FC<DynamicFilterFormProps> = ({
           className="flex-1"
         >
           <Search className="mr-2 h-4 w-4" />
-          Apply Filters
+          Appliquer les filtres
         </Button>
 
         {allowSaveFilter && conditionCount > 0 && (
@@ -342,7 +341,7 @@ export const DynamicFilterForm: React.FC<DynamicFilterFormProps> = ({
                   <Save className="h-4 w-4" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent>Save filter (⌘S)</TooltipContent>
+              <TooltipContent>Enregistrer le filtre (⌘S)</TooltipContent>
             </Tooltip>
           </TooltipProvider>
         )}
@@ -359,7 +358,7 @@ export const DynamicFilterForm: React.FC<DynamicFilterFormProps> = ({
                 <RotateCcw className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Reset filters (⇧Esc)</TooltipContent>
+            <TooltipContent>Réinitialiser les filtres (⇧Esc)</TooltipContent>
           </Tooltip>
         </TooltipProvider>
       </div>
@@ -369,15 +368,15 @@ export const DynamicFilterForm: React.FC<DynamicFilterFormProps> = ({
         <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
           <span className="flex items-center gap-1">
             <Keyboard className="h-3 w-3" />
-            <kbd className="px-1 rounded bg-muted">⌘↵</kbd> Apply
+            <kbd className="px-1 rounded bg-muted">⌘↵</kbd> Appliquer
           </span>
           {allowSaveFilter && conditionCount > 0 && (
             <span>
-              <kbd className="px-1 rounded bg-muted">⌘S</kbd> Save
+              <kbd className="px-1 rounded bg-muted">⌘S</kbd> Enregistrer
             </span>
           )}
           <span>
-            <kbd className="px-1 rounded bg-muted">⇧Esc</kbd> Reset
+            <kbd className="px-1 rounded bg-muted">⇧Esc</kbd> Réinitialiser
           </span>
         </div>
       )}

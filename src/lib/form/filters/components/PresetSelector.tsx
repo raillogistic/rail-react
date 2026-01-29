@@ -183,7 +183,7 @@ export const PresetSelector: React.FC<PresetSelectorProps> = ({
             disabled={disabled}
           >
             <Bookmark className="h-4 w-4" />
-            <span>Presets</span>
+            <span>Prédéfinis</span>
             {selectedCount > 0 && (
               <Badge variant="secondary" className="ml-1 h-5 px-1.5">
                 {selectedCount}
@@ -195,14 +195,14 @@ export const PresetSelector: React.FC<PresetSelectorProps> = ({
         <PopoverContent className="w-[320px] p-0" align="start">
           <Command>
             <CommandInput
-              placeholder="Search presets..."
+              placeholder="Rechercher des préréglages..."
               value={search}
               onValueChange={setSearch}
             />
             <CommandList>
               <CommandEmpty>
                 <div className="py-6 text-center text-sm">
-                  <p className="text-muted-foreground">No presets found</p>
+                  <p className="text-muted-foreground">Aucun préréglage trouvé</p>
                 </div>
               </CommandEmpty>
 
@@ -211,7 +211,7 @@ export const PresetSelector: React.FC<PresetSelectorProps> = ({
                 <CommandGroup heading={
                   <div className="flex items-center gap-2">
                     <Star className="h-3 w-3 text-yellow-500" />
-                    <span>Built-in Presets</span>
+                    <span>Préréglages intégrés</span>
                   </div>
                 }>
                   {filteredGroups.static.map((preset) => (
@@ -233,7 +233,7 @@ export const PresetSelector: React.FC<PresetSelectorProps> = ({
                   <CommandGroup heading={
                     <div className="flex items-center gap-2">
                       <Bookmark className="h-3 w-3 text-blue-500" />
-                      <span>My Saved Filters</span>
+                      <span>Mes filtres enregistrés</span>
                     </div>
                   }>
                     {filteredGroups.saved.map((preset) => (
@@ -266,7 +266,7 @@ export const PresetSelector: React.FC<PresetSelectorProps> = ({
                   <CommandGroup heading={
                     <div className="flex items-center gap-2">
                       <Users className="h-3 w-3 text-green-500" />
-                      <span>Shared by Team</span>
+                      <span>Partagés par l'équipe</span>
                     </div>
                   }>
                     {filteredGroups.shared.map((preset) => (
@@ -286,9 +286,9 @@ export const PresetSelector: React.FC<PresetSelectorProps> = ({
 
             {/* Footer */}
             <div className="border-t p-2 text-xs text-muted-foreground flex items-center justify-between">
-              <span>{totalCount} preset{totalCount !== 1 ? "s" : ""} available</span>
+              <span>{totalCount} préréglage{totalCount !== 1 ? "s" : ""} disponible{totalCount !== 1 ? "s" : ""}</span>
               <span className="flex items-center gap-1">
-                <Check className="h-3 w-3" /> = active
+                <Check className="h-3 w-3" /> = actif
               </span>
             </div>
           </Command>
@@ -302,19 +302,19 @@ export const PresetSelector: React.FC<PresetSelectorProps> = ({
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Saved Filter?</AlertDialogTitle>
+            <AlertDialogTitle>Supprimer le filtre enregistré ?</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{deleteDialogPreset?.name}"?
-              This action cannot be undone.
+              Êtes-vous sûr de vouloir supprimer "{deleteDialogPreset?.name}" ?
+              Cette action est irréversible.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDeleteConfirm}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete
+              Supprimer
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -384,13 +384,13 @@ const PresetItem: React.FC<PresetItemProps> = ({
           )}
           {showAuthor && preset.createdBy && (
             <p className="text-xs text-muted-foreground">
-              by {preset.createdBy.username}
+              par {preset.createdBy.username}
             </p>
           )}
           {preset.useCount != null && preset.useCount > 0 && (
             <div className="flex items-center gap-1 text-xs text-muted-foreground">
               <Clock className="h-3 w-3" />
-              Used {preset.useCount} time{preset.useCount !== 1 ? "s" : ""}
+              Utilisé {preset.useCount} fois
             </div>
           )}
         </div>
@@ -413,7 +413,7 @@ const PresetItem: React.FC<PresetItemProps> = ({
                 <Sparkles className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Apply to filters</TooltipContent>
+            <TooltipContent>Appliquer aux filtres</TooltipContent>
           </Tooltip>
         </TooltipProvider>
 
@@ -433,18 +433,18 @@ const PresetItem: React.FC<PresetItemProps> = ({
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={onApply}>
                 <Sparkles className="mr-2 h-4 w-4" />
-                Apply to filters
+                Appliquer aux filtres
               </DropdownMenuItem>
               {onEdit && (
                 <DropdownMenuItem onClick={onEdit}>
                   <Pencil className="mr-2 h-4 w-4" />
-                  Edit
+                  Modifier
                 </DropdownMenuItem>
               )}
               {onShare && (
                 <DropdownMenuItem onClick={onShare}>
                   <Share2 className="mr-2 h-4 w-4" />
-                  Share with team
+                  Partager avec l'équipe
                 </DropdownMenuItem>
               )}
               {onDelete && (
@@ -455,7 +455,7 @@ const PresetItem: React.FC<PresetItemProps> = ({
                     className="text-destructive focus:text-destructive"
                   >
                     <Trash2 className="mr-2 h-4 w-4" />
-                    Delete
+                    Supprimer
                   </DropdownMenuItem>
                 </>
               )}

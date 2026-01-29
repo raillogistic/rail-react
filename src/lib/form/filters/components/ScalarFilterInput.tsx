@@ -80,7 +80,7 @@ export const ScalarFilterInput: React.FC<ScalarFilterInputProps> = ({
           htmlFor={`${field.fieldName}-isNull`}
           className="text-sm text-muted-foreground cursor-pointer"
         >
-          Field is empty (null)
+          Le champ est vide (nul)
         </label>
       </div>
     );
@@ -95,7 +95,7 @@ export const ScalarFilterInput: React.FC<ScalarFilterInputProps> = ({
           value={value ?? []}
           onChange={onChange}
           disabled={disabled}
-          placeholder={uiHints?.placeholder ?? "Select values..."}
+          placeholder={uiHints?.placeholder ?? "Sélectionner des valeurs..."}
         />
       );
     }
@@ -105,7 +105,7 @@ export const ScalarFilterInput: React.FC<ScalarFilterInputProps> = ({
         value={value}
         onChange={onChange}
         disabled={disabled}
-        placeholder={uiHints?.placeholder ?? "Select..."}
+        placeholder={uiHints?.placeholder ?? "Sélectionner..."}
       />
     );
   }
@@ -122,12 +122,12 @@ export const ScalarFilterInput: React.FC<ScalarFilterInputProps> = ({
         disabled={disabled}
       >
         <SelectTrigger className="w-full">
-          <SelectValue placeholder="Any" />
+          <SelectValue placeholder="Tout" />
         </SelectTrigger>
         <SelectContent>
-          <SelectItem value="__any__">Any value</SelectItem>
-          <SelectItem value="true">Yes / True</SelectItem>
-          <SelectItem value="false">No / False</SelectItem>
+          <SelectItem value="__any__">Toute valeur</SelectItem>
+          <SelectItem value="true">Oui / Vrai</SelectItem>
+          <SelectItem value="false">Non / Faux</SelectItem>
         </SelectContent>
       </Select>
     );
@@ -156,7 +156,7 @@ export const ScalarFilterInput: React.FC<ScalarFilterInputProps> = ({
             const val = e.target.value;
             onChange(val === "" ? undefined : parseInt(val, 10));
           }}
-          placeholder={`Enter ${opName}...`}
+          placeholder={`Entrer ${opName}...`}
           disabled={disabled}
           autoFocus={autoFocus}
           min={opName === "month" ? 1 : opName === "day" ? 1 : undefined}
@@ -211,7 +211,7 @@ export const ScalarFilterInput: React.FC<ScalarFilterInputProps> = ({
           const val = e.target.value;
           onChange(val === "" ? undefined : parseFloat(val));
         }}
-        placeholder={uiHints?.placeholder ?? "Enter number..."}
+        placeholder={uiHints?.placeholder ?? "Entrer un nombre..."}
         disabled={disabled}
         autoFocus={autoFocus}
         min={uiHints?.minValue}
@@ -229,7 +229,7 @@ export const ScalarFilterInput: React.FC<ScalarFilterInputProps> = ({
           value={Array.isArray(value) ? value : value ? [value] : []}
           onChange={(v) => onChange(isList ? v : v[0])}
           disabled={disabled}
-          placeholder="Enter key names..."
+          placeholder="Entrer les noms des clés..."
           singleValue={!isList && opName === "hasKey"}
         />
       );
@@ -244,7 +244,7 @@ export const ScalarFilterInput: React.FC<ScalarFilterInputProps> = ({
             onChange(e.target.value);
           }
         }}
-        placeholder='{"key": "value"}'
+        placeholder='{"clé": "valeur"}'
         disabled={disabled}
         rows={3}
         className="font-mono text-sm"
@@ -259,7 +259,7 @@ export const ScalarFilterInput: React.FC<ScalarFilterInputProps> = ({
         value={value ?? []}
         onChange={onChange}
         disabled={disabled}
-        placeholder={uiHints?.placeholder ?? "Type and press Enter..."}
+        placeholder={uiHints?.placeholder ?? "Tapez et appuyez sur Entrée..."}
       />
     );
   }
@@ -270,7 +270,7 @@ export const ScalarFilterInput: React.FC<ScalarFilterInputProps> = ({
       type="text"
       value={value ?? ""}
       onChange={(e) => onChange(e.target.value || undefined)}
-      placeholder={uiHints?.placeholder ?? "Enter value..."}
+      placeholder={uiHints?.placeholder ?? "Entrer une valeur..."}
       disabled={disabled}
       autoFocus={autoFocus}
     />
@@ -318,7 +318,7 @@ const SingleSelectChoices: React.FC<SingleSelectChoicesProps> = ({
       </SelectTrigger>
       <SelectContent>
         <SelectItem value="__none__">
-          <span className="text-muted-foreground">-- None --</span>
+          <span className="text-muted-foreground">-- Aucun --</span>
         </SelectItem>
         {Object.entries(groupedChoices).map(([group, items]) => (
           <SelectGroup key={group}>
@@ -482,7 +482,7 @@ const DatePickerInput: React.FC<DatePickerInputProps> = ({
           disabled={disabled}
         >
           <CalendarIcon className="mr-2 h-4 w-4" />
-          {isValidDate ? format(parsedDate!, formatStr) : "Pick a date"}
+          {isValidDate ? format(parsedDate!, formatStr) : "Choisir une date"}
           {value && (
             <X
               className="ml-auto h-4 w-4 hover:text-destructive"
@@ -555,7 +555,7 @@ const DateRangeInput: React.FC<DateRangeInputProps> = ({
           includeTime={includeTime}
         />
       </div>
-      <span className="text-muted-foreground text-sm">to</span>
+      <span className="text-muted-foreground text-sm">au</span>
       <div className="flex-1">
         <DatePickerInput
           value={end}
@@ -603,7 +603,7 @@ const NumberRangeInput: React.FC<NumberRangeInputProps> = ({
         step={step}
         className="w-24"
       />
-      <span className="text-muted-foreground text-sm">to</span>
+      <span className="text-muted-foreground text-sm">au</span>
       <Input
         type="number"
         value={maxVal ?? ""}
@@ -740,7 +740,7 @@ const NumberTagInput: React.FC<NumberTagInputProps> = ({
               addNumber();
             }
           }}
-          placeholder="Add number..."
+          placeholder="Ajouter un nombre..."
           disabled={disabled}
           min={min}
           max={max}

@@ -137,19 +137,19 @@ export const SaveFilterDialog: React.FC<SaveFilterDialogProps> = ({
     const errors: string[] = [];
 
     if (!name.trim()) {
-      errors.push("Name is required");
+      errors.push("Le nom est requis");
     } else if (name.trim().length < 3) {
-      errors.push("Name must be at least 3 characters");
+      errors.push("Le nom doit contenir au moins 3 caractères");
     } else if (name.trim().length > 100) {
-      errors.push("Name must be less than 100 characters");
+      errors.push("Le nom doit contenir moins de 100 caractères");
     }
 
     if (description.length > 500) {
-      errors.push("Description must be less than 500 characters");
+      errors.push("La description doit contenir moins de 500 caractères");
     }
 
     if (conditionCount === 0) {
-      errors.push("Filter must have at least one condition with a value");
+      errors.push("Le filtre doit avoir au moins une condition avec une valeur");
     }
 
     return {
@@ -196,7 +196,7 @@ export const SaveFilterDialog: React.FC<SaveFilterDialogProps> = ({
       onSaved();
       onOpenChange(false);
     } catch (err: any) {
-      setError(err.message ?? "Failed to save filter. Please try again.");
+      setError(err.message ?? "Échec de l'enregistrement du filtre. Veuillez réessayer.");
     }
   }, [
     validation.isValid,
@@ -219,12 +219,12 @@ export const SaveFilterDialog: React.FC<SaveFilterDialogProps> = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Save className="h-5 w-5" />
-            {isEditing ? "Update Saved Filter" : "Save Filter"}
+            {isEditing ? "Mettre à jour le filtre enregistré" : "Enregistrer le filtre"}
           </DialogTitle>
           <DialogDescription>
             {isEditing
-              ? "Update your saved filter configuration."
-              : "Save your current filter configuration for quick access later."}
+              ? "Mettez à jour votre configuration de filtre enregistré."
+              : "Enregistrez votre configuration actuelle pour un accès rapide plus tard."}
           </DialogDescription>
         </DialogHeader>
 
@@ -240,19 +240,19 @@ export const SaveFilterDialog: React.FC<SaveFilterDialogProps> = ({
           {/* Name field */}
           <div className="space-y-2">
             <Label htmlFor="filter-name">
-              Name <span className="text-destructive">*</span>
+              Nom <span className="text-destructive">*</span>
             </Label>
             <Input
               id="filter-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g., High Value Orders, Active Products..."
+              placeholder="ex: Commandes de grande valeur, Produits actifs..."
               maxLength={100}
               disabled={loading}
               autoFocus
             />
             <div className="flex justify-between text-xs text-muted-foreground">
-              <span>Give your filter a memorable name</span>
+              <span>Donnez un nom mémorable à votre filtre</span>
               <span>{name.length}/100</span>
             </div>
           </div>
@@ -264,13 +264,13 @@ export const SaveFilterDialog: React.FC<SaveFilterDialogProps> = ({
               id="filter-description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Optional description of what this filter shows..."
+              placeholder="Description optionnelle de ce que montre ce filtre..."
               rows={2}
               maxLength={500}
               disabled={loading}
             />
             <div className="flex justify-between text-xs text-muted-foreground">
-              <span>Help others understand this filter</span>
+              <span>Aidez les autres à comprendre ce filtre</span>
               <span>{description.length}/500</span>
             </div>
           </div>
@@ -285,13 +285,13 @@ export const SaveFilterDialog: React.FC<SaveFilterDialogProps> = ({
                   <Lock className="h-4 w-4 text-muted-foreground" />
                 )}
                 <Label htmlFor="filter-shared" className="font-medium">
-                  {isShared ? "Shared with team" : "Private filter"}
+                  {isShared ? "Partagé avec l'équipe" : "Filtre privé"}
                 </Label>
               </div>
               <p className="text-xs text-muted-foreground">
                 {isShared
-                  ? "Other team members can see and use this filter"
-                  : "Only you can see this filter"}
+                  ? "Les autres membres de l'équipe peuvent voir et utiliser ce filtre"
+                  : "Vous seul pouvez voir ce filtre"}
               </p>
             </div>
             <Switch
@@ -309,13 +309,13 @@ export const SaveFilterDialog: React.FC<SaveFilterDialogProps> = ({
                 <button className="flex w-full items-center justify-between p-3 text-sm hover:bg-muted/50 transition-colors">
                   <div className="flex items-center gap-2">
                     <Eye className="h-4 w-4" />
-                    <span>Filter Preview</span>
+                    <span>Aperçu du filtre</span>
                     <Badge variant="secondary" className="h-5">
                       {conditionCount} condition{conditionCount !== 1 ? "s" : ""}
                     </Badge>
                   </div>
                   <span className="text-xs text-muted-foreground">
-                    {showPreview ? "Hide" : "Show"}
+                    {showPreview ? "Masquer" : "Afficher"}
                   </span>
                 </button>
               </CollapsibleTrigger>
@@ -350,7 +350,7 @@ export const SaveFilterDialog: React.FC<SaveFilterDialogProps> = ({
             onClick={() => onOpenChange(false)}
             disabled={loading}
           >
-            Cancel
+            Annuler
           </Button>
           <Button
             onClick={handleSave}
@@ -359,12 +359,12 @@ export const SaveFilterDialog: React.FC<SaveFilterDialogProps> = ({
             {loading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                {isEditing ? "Updating..." : "Saving..."}
+                {isEditing ? "Mise à jour..." : "Enregistrement..."}
               </>
             ) : (
               <>
                 <Save className="mr-2 h-4 w-4" />
-                {isEditing ? "Update Filter" : "Save Filter"}
+                {isEditing ? "Mettre à jour le filtre" : "Enregistrer le filtre"}
               </>
             )}
           </Button>

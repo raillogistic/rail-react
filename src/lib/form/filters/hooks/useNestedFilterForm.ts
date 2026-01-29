@@ -60,99 +60,82 @@ export function useNestedFilterForm({
 
   const formOptions = useMemo(() => ({
     defaultValues,
-    // validatorAdapter,
-    // validators: {
-    //   onChange: filterFormSchema,
-    // },
+    validatorAdapter,
+    validators: {
+      onChange: filterFormSchema,
+    },
   }), [defaultValues]);
-
-  // Debug check for options stability
-  /*
-  const prevOptions = React.useRef(formOptions);
-  React.useEffect(() => {
-    if (prevOptions.current !== formOptions) {
-      console.log('Form options changed', {
-        defaultValuesChanged: prevOptions.current.defaultValues !== formOptions.defaultValues,
-        validatorsChanged: prevOptions.current.validators !== formOptions.validators,
-      });
-      prevOptions.current = formOptions;
-    }
-  });
-  */
 
   const form = useForm(formOptions);
 
-  /*
-  useEffect(() => {
-    console.log("useNestedFilterForm: form instance changed", form);
-  }, [form]);
-  */
-
   // Use useStore to make state reactive in the component
-  const state = useStore(form.store, (s) => s.values);
+  const selector = useMemo(() => (s: any) => s.values, []);
+  const state = useStore(form.store, selector);
+
+  const actions = useMemo(() => ({
+    reset: () => form.reset(),
+
+    setRoot: (root: FilterGroup) => form.setFieldValue("root", root),
+
+    addCondition: (parentId: string, fieldPath: string[], fieldName: string, operator: string) => {
+      const condition: FilterCondition = {
+        id: generateId(),
+        type: "condition",
+        fieldPath,
+        fieldName,
+        operator,
+        value: undefined,
+      };
+      // Update root by finding parent and adding condition
+      const currentRoot = form.getFieldValue("root");
+      form.setFieldValue("root", addConditionToGroup(currentRoot, parentId, condition));
+    },
+
+    addGroup: (parentId: string, logic: "AND" | "OR" = "OR") => {
+      const group: FilterGroup = {
+        id: generateId(),
+        type: "group",
+        logic,
+        conditions: [],
+        negated: false,
+      };
+      const currentRoot = form.getFieldValue("root");
+      form.setFieldValue("root", addGroupToGroup(currentRoot, parentId, group));
+    },
+
+    updateCondition: (id: string, updates: Partial<FilterCondition>) => {
+      const currentRoot = form.getFieldValue("root");
+      form.setFieldValue("root", updateItemInGroup(currentRoot, id, updates));
+    },
+
+    updateGroup: (id: string, updates: Partial<FilterGroup>) => {
+      const currentRoot = form.getFieldValue("root");
+      form.setFieldValue("root", updateItemInGroup(currentRoot, id, updates));
+    },
+
+    removeItem: (id: string) => {
+      const currentRoot = form.getFieldValue("root");
+      form.setFieldValue("root", removeItemFromGroup(currentRoot, id));
+    },
+
+    togglePreset: (presetId: string) => {
+      const current = form.getFieldValue("selectedPresets");
+      form.setFieldValue("selectedPresets",
+        current.includes(presetId)
+          ? current.filter((id: string) => id !== presetId)
+          : [...current, presetId]
+      );
+    },
+
+    setDistinctOn: (fields: string[]) => form.setFieldValue("distinctOn", fields),
+
+    setOrderBy: (fields: string[]) => form.setFieldValue("orderBy", fields),
+  }), [form]);
 
   return {
     form,
     state,
-    actions: {
-      reset: () => form.reset(),
-      
-      setRoot: (root: FilterGroup) => form.setFieldValue("root", root),
-      
-      addCondition: (parentId: string, fieldPath: string[], fieldName: string, operator: string) => {
-        const condition: FilterCondition = {
-          id: generateId(),
-          type: "condition",
-          fieldPath,
-          fieldName,
-          operator,
-          value: undefined,
-        };
-        // Update root by finding parent and adding condition
-        const currentRoot = form.getFieldValue("root");
-        form.setFieldValue("root", addConditionToGroup(currentRoot, parentId, condition));
-      },
-
-      addGroup: (parentId: string, logic: "AND" | "OR" = "OR") => {
-        const group: FilterGroup = {
-          id: generateId(),
-          type: "group",
-          logic,
-          conditions: [],
-          negated: false,
-        };
-        const currentRoot = form.getFieldValue("root");
-        form.setFieldValue("root", addGroupToGroup(currentRoot, parentId, group));
-      },
-
-      updateCondition: (id: string, updates: Partial<FilterCondition>) => {
-        const currentRoot = form.getFieldValue("root");
-        form.setFieldValue("root", updateItemInGroup(currentRoot, id, updates));
-      },
-
-      updateGroup: (id: string, updates: Partial<FilterGroup>) => {
-        const currentRoot = form.getFieldValue("root");
-        form.setFieldValue("root", updateItemInGroup(currentRoot, id, updates));
-      },
-
-      removeItem: (id: string) => {
-        const currentRoot = form.getFieldValue("root");
-        form.setFieldValue("root", removeItemFromGroup(currentRoot, id));
-      },
-
-      togglePreset: (presetId: string) => {
-        const current = form.getFieldValue("selectedPresets");
-        form.setFieldValue("selectedPresets",
-          current.includes(presetId)
-            ? current.filter((id: string) => id !== presetId)
-            : [...current, presetId]
-        );
-      },
-
-      setDistinctOn: (fields: string[]) => form.setFieldValue("distinctOn", fields),
-
-      setOrderBy: (fields: string[]) => form.setFieldValue("orderBy", fields),
-    },
+    actions,
   };
 }
 

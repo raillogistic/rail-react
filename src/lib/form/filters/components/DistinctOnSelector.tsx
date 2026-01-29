@@ -135,13 +135,13 @@ export const DistinctOnSelector: React.FC<DistinctOnSelectorProps> = ({
         <PopoverContent className="w-72 p-0" align="start">
           <Command>
             <CommandInput
-              placeholder="Search fields..."
+              placeholder="Rechercher des champs..."
               value={search}
               onValueChange={setSearch}
             />
             <CommandList>
-              <CommandEmpty>No fields available.</CommandEmpty>
-              <CommandGroup heading="Distinct By">
+              <CommandEmpty>Aucun champ disponible.</CommandEmpty>
+              <CommandGroup heading="Distinct par">
                 {filteredFields.map((field) => {
                   const isSelected = selectedFields.includes(field.fieldName);
                   const position = selectedFields.indexOf(field.fieldName);
@@ -218,7 +218,7 @@ export const DistinctOnSelector: React.FC<DistinctOnSelectorProps> = ({
                 className="h-auto p-0 ml-2"
                 onClick={() => onOrderByRequired(selectedFields)}
               >
-                Fix ORDER BY
+                Corriger ORDER BY
               </Button>
             )}
           </AlertDescription>
@@ -228,8 +228,8 @@ export const DistinctOnSelector: React.FC<DistinctOnSelectorProps> = ({
       {/* Help text */}
       {distinctFields.length > 0 && selectedFields.length === 0 && (
         <p className="text-xs text-muted-foreground">
-          Select fields to get one row per unique combination.
-          Requires PostgreSQL.
+          Sélectionnez des champs pour obtenir une ligne par combinaison unique.
+          Nécessite PostgreSQL.
         </p>
       )}
     </div>

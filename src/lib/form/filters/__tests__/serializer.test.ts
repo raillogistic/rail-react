@@ -90,6 +90,96 @@ const mockSchema: UnifiedFilterSchema = {
       supportsNone: true,
       supportsCount: true,
       supportsIsNull: false,
+      nestedSchema: {
+        app: "store",
+        model: "Tag",
+        verboseName: "Tag",
+        verboseNamePlural: "Tags",
+        config: {
+          inputTypeName: "TagWhereInput",
+          supportsAnd: true,
+          supportsOr: true,
+          supportsNot: true,
+          supportsFts: false,
+          supportsAggregation: false,
+          supportsDistinct: true,
+        },
+        fields: [
+          {
+            fieldName: "name",
+            fieldLabel: "Name",
+            baseType: "String",
+            graphqlType: "String",
+            filterInputType: "StringFilterInput",
+            operators: [{ name: "eq", label: "Equals", graphqlType: "String", isList: false }],
+            defaultOperator: "eq",
+            isRelation: false,
+            uiHints: { widget: "text" },
+          },
+          {
+            fieldName: "meta",
+            fieldLabel: "Meta",
+            baseType: "Relationship",
+            graphqlType: "TagMeta",
+            filterInputType: "TagMetaWhereInput",
+            operators: [],
+            defaultOperator: "eq",
+            isRelation: true,
+            uiHints: { widget: "combobox" },
+          }
+        ],
+        relationFilters: [
+           {
+            fieldName: "meta",
+            fieldLabel: "Meta",
+            relationType: "FOREIGN_KEY",
+            relatedApp: "store",
+            relatedModel: "TagMeta",
+            nestedFilterType: "TagMetaWhereInput",
+            supportsDirectFilter: true,
+            supportsSome: false,
+            supportsEvery: false,
+            supportsNone: false,
+            supportsCount: false,
+            supportsIsNull: true,
+             nestedSchema: {
+                app: "store",
+                model: "TagMeta",
+                verboseName: "TagMeta",
+                verboseNamePlural: "TagMetas",
+                config: {
+                  inputTypeName: "TagMetaWhereInput",
+                  supportsAnd: true,
+                  supportsOr: true,
+                  supportsNot: true,
+                  supportsFts: false,
+                  supportsAggregation: false,
+                  supportsDistinct: true,
+                },
+                fields: [
+                   {
+                    fieldName: "description",
+                    fieldLabel: "Description",
+                    baseType: "String",
+                    graphqlType: "String",
+                    filterInputType: "StringFilterInput",
+                    operators: [{ name: "eq", label: "Equals", graphqlType: "String", isList: false }],
+                    defaultOperator: "eq",
+                    isRelation: false,
+                    uiHints: { widget: "text" },
+                  }
+                ],
+                relationFilters: [],
+                presets: [],
+                distinctFields: [],
+                fieldGroups: []
+             }
+          }
+        ],
+        presets: [],
+        distinctFields: [],
+        fieldGroups: [],
+      }
     },
   ],
   presets: [],
@@ -344,6 +434,33 @@ describe("serializeFilterToGraphQL", () => {
       const result = serializeFilterToGraphQL(group, mockSchema, 3);
       expect(result).toEqual({
         tags_some: { name: { eq: "Sale" } },
+      });
+    });
+
+    it("should handle deep nesting with M2M at root level", () => {
+      // Path: tags (M2M) -> meta (FK) -> description
+      // Expectation: tags_some: { meta: { description: { eq: "test" } } }
+      const group: FilterGroup = {
+        id: "g1",
+        type: "group",
+        logic: "AND",
+        conditions: [
+          {
+            id: "c1",
+            type: "condition",
+            fieldPath: ["tags", "meta", "description"],
+            fieldName: "description",
+            operator: "eq",
+            value: "test",
+            relationOperator: "_some",
+          },
+        ],
+        negated: false,
+      };
+
+      const result = serializeFilterToGraphQL(group, mockSchema, 3);
+      expect(result).toEqual({
+        tags_some: { meta: { description: { eq: "test" } } },
       });
     });
   });

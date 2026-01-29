@@ -177,7 +177,7 @@ export const FilterConditionComponent: React.FC<FilterConditionProps> = ({
       <div className="flex items-center gap-2 p-3 rounded-lg border border-destructive/50 bg-destructive/5">
         <AlertCircle className="h-4 w-4 text-destructive" />
         <span className="text-sm text-destructive">
-          Unknown field: {condition.fieldPath.join(" → ")}
+          Champ inconnu : {condition.fieldPath.join(" → ")}
         </span>
         <Button
           variant="ghost"
@@ -241,9 +241,9 @@ export const FilterConditionComponent: React.FC<FilterConditionProps> = ({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="_some">has some</SelectItem>
-              <SelectItem value="_every">has every</SelectItem>
-              <SelectItem value="_none">has none</SelectItem>
+              <SelectItem value="_some">en a certains</SelectItem>
+              <SelectItem value="_every">a tout</SelectItem>
+              <SelectItem value="_none">n'a aucun</SelectItem>
             </SelectContent>
           </Select>
         )}
@@ -262,7 +262,7 @@ export const FilterConditionComponent: React.FC<FilterConditionProps> = ({
                 <X className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Remove filter</TooltipContent>
+            <TooltipContent>Supprimer le filtre</TooltipContent>
           </Tooltip>
         </TooltipProvider>
       </div>

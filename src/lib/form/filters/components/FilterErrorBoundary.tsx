@@ -48,15 +48,15 @@ export class FilterErrorBoundary extends React.Component<
       return (
         <Alert variant="destructive">
           <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Filter Error</AlertTitle>
+          <AlertTitle>Erreur de filtre</AlertTitle>
           <AlertDescription className="space-y-2">
-            <p>An error occurred while rendering filters.</p>
+            <p>Une erreur est survenue lors de l'affichage des filtres.</p>
             {this.state.error && (
               <p className="text-xs font-mono">{this.state.error.message}</p>
             )}
             <Button variant="outline" size="sm" onClick={this.handleReset}>
               <RefreshCw className="mr-2 h-4 w-4" />
-              Reset Filters
+              Réinitialiser les filtres
             </Button>
           </AlertDescription>
         </Alert>

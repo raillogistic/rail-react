@@ -133,14 +133,14 @@ export const FilterGroupComponent: React.FC<FilterGroupProps> = ({
           <SelectContent>
             <SelectItem value="AND">
               <div className="flex flex-col">
-                <span className="font-medium">AND</span>
-                <span className="text-xs text-muted-foreground">All match</span>
+                <span className="font-medium">ET</span>
+                <span className="text-xs text-muted-foreground">Tous correspondent</span>
               </div>
             </SelectItem>
             <SelectItem value="OR">
               <div className="flex flex-col">
-                <span className="font-medium">OR</span>
-                <span className="text-xs text-muted-foreground">Any match</span>
+                <span className="font-medium">OU</span>
+                <span className="text-xs text-muted-foreground">Au moins un correspond</span>
               </div>
             </SelectItem>
           </SelectContent>
@@ -173,14 +173,14 @@ export const FilterGroupComponent: React.FC<FilterGroupProps> = ({
                     group.negated && "text-destructive font-medium"
                   )}
                 >
-                  {group.negated ? "NOT" : "not"}
+                  {group.negated ? "NON" : "non"}
                 </Label>
               </div>
             </TooltipTrigger>
             <TooltipContent>
               {group.negated
-                ? "Results must NOT match these conditions"
-                : "Click to negate this group"}
+                ? "Les résultats ne doivent PAS correspondre à ces conditions"
+                : "Cliquez pour inverser ce groupe"}
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -221,7 +221,7 @@ export const FilterGroupComponent: React.FC<FilterGroupProps> = ({
                 <Trash2 className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Remove this group</TooltipContent>
+            <TooltipContent>Supprimer ce groupe</TooltipContent>
           </Tooltip>
         </TooltipProvider>
       )}
@@ -252,7 +252,7 @@ export const FilterGroupComponent: React.FC<FilterGroupProps> = ({
         <div className="px-3 py-1.5 bg-destructive/10 border-b border-destructive/20 flex items-center gap-2">
           <Ban className="h-3 w-3 text-destructive" />
           <span className="text-xs text-destructive font-medium">
-            Excluding results that match:
+            Exclure les résultats correspondant à :
           </span>
         </div>
       )}
@@ -263,8 +263,8 @@ export const FilterGroupComponent: React.FC<FilterGroupProps> = ({
           <div className="p-3 space-y-2">
             {group.conditions.length === 0 ? (
               <div className="text-center py-6 text-muted-foreground">
-                <p className="text-sm mb-2">No filters added yet</p>
-                <p className="text-xs">Click "Add Filter" to get started</p>
+                <p className="text-sm mb-2">Aucun filtre ajouté</p>
+                <p className="text-xs">Cliquez sur "Ajouter un filtre" pour commencer</p>
               </div>
             ) : (
               group.conditions.map((item, index) => (
@@ -329,7 +329,7 @@ export const FilterGroupComponent: React.FC<FilterGroupProps> = ({
                 >
                   <Button variant="outline" size="sm" className="gap-1.5">
                     <Plus className="h-4 w-4" />
-                    Add Filter
+                    Ajouter un filtre
                   </Button>
                 </FieldSelector>
 
@@ -344,11 +344,11 @@ export const FilterGroupComponent: React.FC<FilterGroupProps> = ({
                           onClick={handleAddGroup}
                         >
                           <CirclePlus className="h-4 w-4" />
-                          Add Group
+                          Ajouter un groupe
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent>
-                        Add a nested {group.logic === "AND" ? "OR" : "AND"} group
+                        Ajouter un groupe imbriqué {group.logic === "AND" ? "OU" : "ET"}
                       </TooltipContent>
                     </Tooltip>
                   </TooltipProvider>
@@ -359,7 +359,7 @@ export const FilterGroupComponent: React.FC<FilterGroupProps> = ({
             {/* Max filters warning */}
             {!canAddMore && (
               <div className="text-xs text-muted-foreground text-center py-2">
-                Maximum of {config.maxFiltersPerGroup} filters reached
+                Maximum de {config.maxFiltersPerGroup} filtres atteint
               </div>
             )}
           </div>
@@ -369,7 +369,7 @@ export const FilterGroupComponent: React.FC<FilterGroupProps> = ({
       {/* Collapsed summary */}
       {isCollapsed && !isRoot && (
         <div className="px-3 py-2 text-sm text-muted-foreground">
-          {conditionCount} {conditionCount === 1 ? "condition" : "conditions"} (collapsed)
+          {conditionCount} {conditionCount === 1 ? "condition" : "conditions"} (réduit)
         </div>
       )}
     </div>

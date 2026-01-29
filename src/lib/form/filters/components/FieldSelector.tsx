@@ -227,17 +227,17 @@ export const FieldSelector: React.FC<FieldSelectorProps> = ({
           {/* Search and Field List */}
           <Command>
             <CommandInput
-              placeholder="Search fields..."
+              placeholder="Rechercher des champs..."
               value={search}
               onValueChange={setSearch}
             />
             <CommandList>
-              <CommandEmpty>No fields found.</CommandEmpty>
+              <CommandEmpty>Aucun champ trouvé.</CommandEmpty>
 
               {/* Recent Fields (only at root level) */}
               {recentFields.length > 0 && navigationPath.length === 0 && !search && (
                 <>
-                  <CommandGroup heading="Recently Used">
+                  <CommandGroup heading="Récemment utilisés">
                     {recentFields.slice(0, 5).map((path, idx) => {
                       const fieldName = path[path.length - 1];
                       const pathLabel = path.join(" → ");
@@ -268,7 +268,7 @@ export const FieldSelector: React.FC<FieldSelectorProps> = ({
 
               {/* Scalar Fields */}
               {filteredScalars.length > 0 && (
-                <CommandGroup heading="Fields">
+                <CommandGroup heading="Champs">
                   {filteredScalars.map((field) => (
                     <CommandItem
                       key={field.fieldName}
@@ -309,7 +309,7 @@ export const FieldSelector: React.FC<FieldSelectorProps> = ({
               {filteredRelations.length > 0 && (
                 <>
                   <CommandSeparator />
-                  <CommandGroup heading="Related Models (click to expand)">
+                  <CommandGroup heading="Modèles liés (cliquer pour développer)">
                     {filteredRelations.map((relation) => (
                       <CommandItem
                         key={relation.fieldName}
@@ -339,9 +339,9 @@ export const FieldSelector: React.FC<FieldSelectorProps> = ({
                 <>
                   <CommandSeparator />
                   <div className="p-3 text-xs text-center text-muted-foreground bg-muted/30">
-                    Maximum depth ({config.maxDepth}) reached.
+                    Profondeur maximale ({config.maxDepth}) atteinte.
                     <br />
-                    Only scalar fields are available at this level.
+                    Seuls les champs scalaires sont disponibles à ce niveau.
                   </div>
                 </>
               )}
@@ -351,12 +351,12 @@ export const FieldSelector: React.FC<FieldSelectorProps> = ({
           {/* Footer with field count */}
           <div className="flex items-center justify-between px-3 py-2 border-t text-xs text-muted-foreground bg-muted/20">
             <span>
-              {filteredScalars.length} field{filteredScalars.length !== 1 ? "s" : ""}
+              {filteredScalars.length} champ{filteredScalars.length !== 1 ? "s" : ""}
               {filteredRelations.length > 0 && (
                 <>, {filteredRelations.length} relation{filteredRelations.length !== 1 ? "s" : ""}</>
               )}
             </span>
-            <span className="text-[10px]">Press ↵ to select</span>
+            <span className="text-[10px]">Appuyez sur ↵ pour sélectionner</span>
           </div>
         </div>
       </PopoverContent>
