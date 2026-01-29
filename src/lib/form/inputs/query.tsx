@@ -41,7 +41,8 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
   const rawError = meta.touchedErrors?.[0] ?? meta.errors?.[0];
   const submitCount = useStore(form.store, (state) => state.submitCount);
   const isSubmitted = submitCount > 0;
-  const showError = dirty || meta.isBlurred || isSubmitted || Boolean(meta.errorMap?.onSubmit);
+  const showError =
+    dirty || meta.isBlurred || isSubmitted || Boolean(meta.errorMap?.onSubmit);
   const error = showError ? rawError : undefined;
   const graphqlConfig = React.useMemo<
     QueryChoiceGraphQLConfig | undefined
@@ -60,12 +61,12 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
 
   const recipe = React.useMemo(
     () => buildGraphQLRecipe(graphqlConfig),
-    [graphqlConfig]
+    [graphqlConfig],
   );
 
   const inlineCreateConfig = React.useMemo(
     () => config.inlineCreate ?? null,
-    [config.inlineCreate]
+    [config.inlineCreate],
   );
 
   const relatedModelForInline =
@@ -84,7 +85,7 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
       inlineCreateConfig?.modelName,
       inlineCreateConfig?.permissionModelName,
       relatedModelForInline,
-    ]
+    ],
   );
 
   const inlineCreationEnabled = inlineCreateConfig?.enabled ?? true;
@@ -98,7 +99,7 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
     inlineCreateConfig?.permissionModelName ??
     (inlineAppName && inlineModelName
       ? `${inlineAppName}.${inlineModelName}`
-      : inlineModelInfo.permissionModelName ?? inlineModelName);
+      : (inlineModelInfo.permissionModelName ?? inlineModelName));
   const inlinePermissions = useModelPermissions(permissionTarget ?? "", {
     skip: !inlineCreationEnabled || !permissionTarget,
   });
@@ -120,7 +121,7 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
         .map((entry) => coerceValue(entry))
         .filter(
           (entry): entry is string | number =>
-            entry !== null && entry !== undefined
+            entry !== null && entry !== undefined,
         );
     }
     const single = coerceValue(field.state.value);
@@ -132,8 +133,9 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
     React.useState<ChoiceOption[]>(prefilledOptions);
   const [loading, setLoading] = React.useState(false);
   const [inlineFormOpen, setInlineFormOpen] = React.useState(false);
-  const inlineFormRef =
-    React.useRef<UseFormReturn<Record<string, any>> | null>(null);
+  const inlineFormRef = React.useRef<UseFormReturn<Record<string, any>> | null>(
+    null,
+  );
   const [search, setSearch] = React.useState("");
   const [highlightedIndex, setHighlightedIndex] = React.useState<number>(-1);
   const formValuesRef = React.useRef(form.state.values);
@@ -185,7 +187,7 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
       const dynamicVariables =
         typeof graphqlConfig?.variables === "function"
           ? graphqlConfig.variables(ctx)
-          : graphqlConfig?.variables ?? {};
+          : (graphqlConfig?.variables ?? {});
       const variables = {
         ...(graphqlConfig?.initialVariables ?? {}),
         ...dynamicVariables,
@@ -202,7 +204,7 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
       }
       if (includeVariableName && variables[includeVariableName] === undefined) {
         const includeValues = selectedValues.filter(
-          (value) => value !== undefined && value !== null
+          (value) => value !== undefined && value !== null,
         );
         if (includeValues.length > 0) {
           variables[includeVariableName] = includeValues;
@@ -217,14 +219,14 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
       limitVariableName,
       searchVariableName,
       selectedValues,
-    ]
+    ],
   );
 
   const mapRecordsToOptions = React.useCallback(
     (
       records: Record<string, any>[],
       data: Record<string, any>,
-      term: string
+      term: string,
     ) => {
       const ctx: QueryChoiceRecordContext = {
         field: fieldRef.current,
@@ -244,7 +246,7 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
         .filter((option): option is ChoiceOption => Boolean(option));
       return mapped;
     },
-    [descriptionKey, graphqlConfig, labelKey, valueKey]
+    [descriptionKey, graphqlConfig, labelKey, valueKey],
   );
 
   const load = React.useCallback(
@@ -267,13 +269,13 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
           next = mapRecordsToOptions(records, response.data, term);
           graphqlConfig?.onQueryResult?.(
             { data: response.data, records, options: next },
-            { field: fieldRef.current, form: formRef.current, search: term }
+            { field: fieldRef.current, form: formRef.current, search: term },
           );
         } else {
           if (process.env.NODE_ENV !== "production") {
             // eslint-disable-next-line no-console
             console.warn(
-              "[QueryChoiceInput] No loadOptions or GraphQL configuration provided."
+              "[QueryChoiceInput] No loadOptions or GraphQL configuration provided.",
             );
           }
         }
@@ -303,7 +305,7 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
       prefilledOptions,
       recipe.document,
       resultPath,
-    ]
+    ],
   );
 
   const debounceMs =
@@ -324,7 +326,7 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
         void load(term);
       }, debounceMs);
     },
-    [debounceMs, load]
+    [debounceMs, load],
   );
 
   React.useEffect(() => {
@@ -341,7 +343,7 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
       const { option, value } = resolveCreatedOption(
         payload,
         inlineCreateConfig?.mapCreatedOption,
-        { valueKey, labelKey, descriptionKey }
+        { valueKey, labelKey, descriptionKey },
       );
       if (value === null || value === undefined) {
         return;
@@ -368,7 +370,7 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
       load,
       selectedValues,
       valueKey,
-    ]
+    ],
   );
 
   const toggle = (value: ChoiceOption["value"]) => {
@@ -404,7 +406,7 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
     const container = optionsListRef.current;
     if (!container) return;
     const target = container.querySelector<HTMLElement>(
-      `[data-option-index="${highlightedIndex}"]`
+      `[data-option-index="${highlightedIndex}"]`,
     );
     target?.scrollIntoView({ block: "nearest" });
   }, [highlightedIndex]);
@@ -414,7 +416,7 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
       event.preventDefault();
       const direction = event.key === "ArrowDown" ? 1 : -1;
       setHighlightedIndex((current) =>
-        findNextEnabledIndex(options, current, direction)
+        findNextEnabledIndex(options, current, direction),
       );
       return;
     }
@@ -428,8 +430,10 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
   };
 
   const inlineFormProps = React.useMemo(() => {
-    const rawOverrides =
-      (inlineCreateConfig?.formProps ?? {}) as Record<string, any>;
+    const rawOverrides = (inlineCreateConfig?.formProps ?? {}) as Record<
+      string,
+      any
+    >;
     const {
       appName: _appName,
       modelName: _modelName,
@@ -531,12 +535,12 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
     }
     if (selectedValues.length > 0) {
       const resolved = options.filter((opt) =>
-        selectedValues.includes(opt.value)
+        selectedValues.includes(opt.value),
       );
       if (resolved.length > 0) {
         return resolved
           .map((opt) =>
-            opt.description ? `${opt.label} — ${opt.description}` : opt.label
+            opt.description ? `${opt.label} — ${opt.description}` : opt.label,
           )
           .join(", ");
       }
@@ -594,7 +598,7 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
                       className={cn(
                         "items-start rounded-md py-2 pl-8 pr-2 text-left",
                         option.description ? "gap-1" : null,
-                        index === highlightedIndex ? "bg-muted" : null
+                        index === highlightedIndex ? "bg-muted" : null,
                       )}
                       checked={selectedValues.includes(option.value)}
                       onCheckedChange={() => toggle(option.value)}
@@ -673,8 +677,12 @@ function resolveInlineModelInfo(options: {
   overrideModel?: string | null;
   overridePermissionModel?: string | null;
 }): InlineModelInfo {
-  const { rawRelatedModel, overrideApp, overrideModel, overridePermissionModel } =
-    options;
+  const {
+    rawRelatedModel,
+    overrideApp,
+    overrideModel,
+    overridePermissionModel,
+  } = options;
   const cleaned = rawRelatedModel?.trim() ?? null;
   const derivedAppModel =
     cleaned && cleaned.includes(".")
@@ -689,8 +697,7 @@ function resolveInlineModelInfo(options: {
   const appName = overrideApp ?? derivedAppModel.appName;
   const modelName = overrideModel ?? derivedAppModel.modelName;
 
-  let permissionModelName =
-    overridePermissionModel ?? rawRelatedModel ?? null;
+  let permissionModelName = overridePermissionModel ?? rawRelatedModel ?? null;
 
   if (!appName && permissionModelName && permissionModelName.includes(".")) {
     const parts = permissionModelName.split(".");
@@ -702,7 +709,7 @@ function resolveInlineModelInfo(options: {
   }
 
   const fullName =
-    appName && modelName ? `${appName}.${modelName}` : modelName ?? null;
+    appName && modelName ? `${appName}.${modelName}` : (modelName ?? null);
   permissionModelName = permissionModelName ?? fullName;
 
   return {
@@ -716,20 +723,18 @@ function resolveInlineModelInfo(options: {
 function resolveCreatedOption(
   payload: any,
   mapper: QueryChoiceInlineCreateConfig["mapCreatedOption"],
-  keys: { valueKey?: string; labelKey?: string; descriptionKey?: string }
+  keys: { valueKey?: string; labelKey?: string; descriptionKey?: string },
 ): { option: ChoiceOption | null; value: string | number | null } {
   const createdRecord =
     (payload?.object as Record<string, any> | undefined | null) ?? null;
   const mapped =
-    (typeof mapper === "function"
-      ? mapper(payload, keys)
-      : null) ??
+    (typeof mapper === "function" ? mapper(payload, keys) : null) ??
     (createdRecord
       ? defaultMapRecord(
           createdRecord,
           keys.valueKey,
           keys.labelKey,
-          keys.descriptionKey
+          keys.descriptionKey,
         )
       : null);
 
@@ -772,7 +777,7 @@ function normalizeInlineModelName(modelName: string | null): string | null {
 function findNextEnabledIndex(
   options: ChoiceOption[],
   startIndex: number,
-  direction: 1 | -1
+  direction: 1 | -1,
 ): number {
   if (!options.length) {
     return -1;
@@ -829,7 +834,7 @@ function extractPrefilledOption(entry: unknown): ChoiceOption | null {
 
 function mergeChoiceOptions(
   base: ChoiceOption[],
-  addition: ChoiceOption[]
+  addition: ChoiceOption[],
 ): ChoiceOption[] {
   if (!addition.length) return base;
   const map = new Map<ChoiceOption["value"], ChoiceOption>();
@@ -900,7 +905,7 @@ function buildGraphQLRecipe(config?: QueryChoiceGraphQLConfig): GraphQLRecipe {
       config.labelField ?? "desc",
       config.descriptionField,
       ...(config.extraFields ?? []),
-    ].filter(Boolean) as string[]
+    ].filter(Boolean) as string[],
   );
   if (selections.length === 0) {
     selections.push("id: pk");
@@ -931,11 +936,11 @@ function buildGraphQLRecipe(config?: QueryChoiceGraphQLConfig): GraphQLRecipe {
 
   const querySource = `
     query ${queryName}${
-    variableDefinitions.length ? `(${variableDefinitions.join(", ")})` : ""
-  } {
+      variableDefinitions.length ? `(${variableDefinitions.join(", ")})` : ""
+    } {
       ${listField}${
-    fieldArguments.length ? `(${fieldArguments.join(", ")})` : ""
-  } {
+        fieldArguments.length ? `(${fieldArguments.join(", ")})` : ""
+      } {
 ${selections.map((line) => `        ${line}`).join("\n")}
       }
     }
@@ -961,7 +966,7 @@ function ensureDocumentNode(input: DocumentNode | string): DocumentNode {
 
 function resolveRecords(
   data: Record<string, any> | undefined,
-  path?: string
+  path?: string,
 ): Record<string, any>[] {
   if (!data) return [];
   if (!path) {
@@ -981,7 +986,7 @@ function defaultMapRecord(
   record: Record<string, any>,
   valueKey?: string,
   labelKey?: string,
-  descriptionKey?: string
+  descriptionKey?: string,
 ): ChoiceOption | null {
   const value =
     getValue(record, valueKey) ??

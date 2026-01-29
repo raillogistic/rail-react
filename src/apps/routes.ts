@@ -3,9 +3,12 @@ type LocalAppRoutesModule = {
   APP_DEFAULT_ROUTE?: unknown;
 };
 
-const localModules = import.meta.glob<LocalAppRoutesModule>("./routes.local.ts", {
-  eager: true,
-});
+const localModules = import.meta.glob<LocalAppRoutesModule>(
+  "./routes.local.ts",
+  {
+    eager: true,
+  },
+);
 
 const localModule = Object.values(localModules)[0];
 
@@ -18,4 +21,3 @@ export const getAppDefaultRoute = (): string | undefined => {
   const route = localModule?.APP_DEFAULT_ROUTE;
   return typeof route === "string" ? route : undefined;
 };
-

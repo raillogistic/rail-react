@@ -83,11 +83,19 @@ export function mergeFilterMetadata(
     const modelField = fieldLookup.get(filter.fieldName);
     const relation = relationLookup.get(filter.fieldName);
 
+    let baseType = normalizeBaseType(filter.baseType);
+
+    // Upgrade baseType to Relationship if we found a matching relationship definition
+    // This handles cases where the filter schema reports "ID" or "String" for a foreign key
+    if (relation && (baseType === "String" || baseType === "Number")) {
+      baseType = "Relationship";
+    }
+
     return {
       fieldName: filter.fieldName,
       fieldLabel: filter.fieldLabel,
       helpText: modelField?.helpText,
-      baseType: normalizeBaseType(filter.baseType),
+      baseType,
       graphqlType: modelField?.graphqlType ?? filter.baseType,
       filterInputType: filter.filterInputType,
       operators: filter.options.map((opt) => ({

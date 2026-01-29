@@ -132,16 +132,16 @@ const mockSchema: UnifiedFilterSchema = {
            {
             fieldName: "meta",
             fieldLabel: "Meta",
-            relationType: "FOREIGN_KEY",
+            relationType: "MANY_TO_MANY",
             relatedApp: "store",
             relatedModel: "TagMeta",
             nestedFilterType: "TagMetaWhereInput",
-            supportsDirectFilter: true,
-            supportsSome: false,
-            supportsEvery: false,
-            supportsNone: false,
-            supportsCount: false,
-            supportsIsNull: true,
+            supportsDirectFilter: false,
+            supportsSome: true,
+            supportsEvery: true,
+            supportsNone: true,
+            supportsCount: true,
+            supportsIsNull: false,
              nestedSchema: {
                 app: "store",
                 model: "TagMeta",
@@ -437,9 +437,10 @@ describe("serializeFilterToGraphQL", () => {
       });
     });
 
-    it("should handle deep nesting with M2M at root level", () => {
-      // Path: tags (M2M) -> meta (FK) -> description
-      // Expectation: tags_some: { meta: { description: { eq: "test" } } }
+    it("should handle deep nesting with nested M2M relations", () => {
+      // Path: tags (M2M) -> meta (M2M) -> description
+      // Expectation: tags_some: { meta_some: { description: { eq: "test" } } }
+      // Note: Inner M2M defaults to _some since relationOperator only applies to top level in this logic
       const group: FilterGroup = {
         id: "g1",
         type: "group",
@@ -460,7 +461,7 @@ describe("serializeFilterToGraphQL", () => {
 
       const result = serializeFilterToGraphQL(group, mockSchema, 3);
       expect(result).toEqual({
-        tags_some: { meta: { description: { eq: "test" } } },
+        tags_some: { meta_some: { description: { eq: "test" } } },
       });
     });
   });

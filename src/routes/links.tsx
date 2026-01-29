@@ -87,9 +87,9 @@ const CORE_NAVIGATION_LINKS: NavigationSection[] = [
           <DynamicFilterForm
             app="store"
             model="Product"
-            layout="popover"
+            layout="panel"
             maxDepth={2}
-            onApply={() => {}}
+            onApply={(values) => console.log(values)}
             showPresets
             showDistinct={false}
             title="Filter Products"
