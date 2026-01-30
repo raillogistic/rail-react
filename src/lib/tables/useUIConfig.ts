@@ -4,33 +4,27 @@ import { useCallback, useMemo } from "react";
 const GET_UI_CONFIG = gql`
   query GetUIConfig(
     $componentId: String!
-    $page: Int
-    $perPage: Int
     $orderBy: [String!]
   ) {
-    uicomponentconfigs_pages(
-      page: $page
-      per_page: $perPage
-      order_by: $orderBy
-      filters: { component_id__exact: $componentId }
+    uiComponentConfigs(
+      orderBy: $orderBy
+      filters: { componentId: $componentId }
     ) {
-      items {
+      id
+      componentId
+      configuration
+      isGlobal
+      users {
         id
-        component_id
-        configuration
-        is_global
-        users {
-          id
-          username
-        }
+        username
       }
     }
   }
 `;
 
 const CREATE_UI_CONFIG = gql`
-  mutation CreateUIConfig($input: CreateUIComponentConfigInput!) {
-    create_uicomponentconfig(input: $input) {
+  mutation CreateUIConfig($input: CreateUiComponentConfigInput!) {
+    createUiComponentConfig(input: $input) {
       object {
         id
         configuration
@@ -40,8 +34,8 @@ const CREATE_UI_CONFIG = gql`
 `;
 
 const UPDATE_UI_CONFIG = gql`
-  mutation UpdateUIConfig($input: UpdateUIComponentConfigInput!) {
-    update_uicomponentconfig(input: $input) {
+  mutation UpdateUIConfig($input: UpdateUiComponentConfigInput!) {
+    updateUiComponentConfig(input: $input) {
       object {
         id
         configuration
@@ -60,7 +54,7 @@ const DEFAULT_COMPONENT_TYPE = "TABLE" as const;
 
 export function useUIConfig(componentId: string, userId?: string) {
   const { data, loading, refetch } = useQuery(GET_UI_CONFIG, {
-    variables: { componentId, page: 1, perPage: 20, orderBy: ["-updated_at"] },
+    variables: { componentId, orderBy: ["-updatedAt"] },
     skip: !componentId,
     fetchPolicy: "network-only", // Ensure we get fresh data
   });
@@ -69,7 +63,7 @@ export function useUIConfig(componentId: string, userId?: string) {
   const [updateConfig] = useMutation(UPDATE_UI_CONFIG);
 
   const configs = useMemo(() => {
-    return data?.uicomponentconfigs_pages?.items || [];
+    return data?.uiComponentConfigs || [];
   }, [data]);
 
   // Find user-specific config, or fallback to global
@@ -82,7 +76,7 @@ export function useUIConfig(componentId: string, userId?: string) {
     }
     // Fallback to global config if no user config found (or no userId provided)
     // We prefer the one with isGlobal=true
-    return configs.find((c: any) => c.is_global) || null;
+    return configs.find((c: any) => c.isGlobal) || null;
   }, [configs, userId]);
 
   const saveConfig = useCallback(
@@ -109,11 +103,11 @@ export function useUIConfig(componentId: string, userId?: string) {
           await createConfig({
             variables: {
               input: {
-                component_id: componentId,
-                component_type: DEFAULT_COMPONENT_TYPE,
+                componentId: componentId,
+                componentType: DEFAULT_COMPONENT_TYPE,
                 configuration: newConfig,
                 user: userId, // This might need to be passed differently depending on API
-                is_global: false,
+                isGlobal: false,
               },
             },
           });

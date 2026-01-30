@@ -58,13 +58,11 @@ import {
 import { ModelBiVisualizationPanel } from "../reporting/ModelBiVisualizationPanel";
 import { toast } from "sonner";
 import {
-  build_delete_mutation,
   build_method_mutation,
   type DeleteMutationResponse,
 } from "@/lib/form/backend/types/mutations";
 import { useAuth } from "../../auth/hooks/useAuth";
 import { useUIConfig } from "./useUIConfig";
-import { QuickFilterLoader } from "./components/QuickFilterLoader";
 import { useModelAccess, ModelAccessContext } from "@/lib/security/modelAccess";
 import { useModelTelemetry } from "@/lib/telemetry/useModelTelemetry";
 import {
@@ -83,10 +81,7 @@ import {
   getAuthorizationHeader,
   getSecureHeaders,
 } from "@/auth/utils/token-storage";
-import {
-  useModelGrouping,
-  type ModelTableGrouping,
-} from "./components/useModelGrouping";
+import { useModelGrouping, type ModelTableGrouping } from "./components/useModelGrouping";
 import {
   ActionDialog,
   DeleteConfirmationDialog,
@@ -94,7 +89,13 @@ import {
   PrintDialog,
 } from "./components/ModelTableOverlays";
 import { DynamicFilterForm } from "@/lib/form/filters/DynamicFilterForm";
-import type { FilterQueryVariables } from "@/lib/form/filters/types";
+import type {
+  FilterFormState,
+  UnifiedFilterSchema,
+} from "@/lib/form/filters/types";
+import { useFilterMetadata } from "@/lib/form/filters/hooks/useFilterMetadata";
+import { buildQueryVariables } from "@/lib/form/filters/queryBuilder";
+import { mapTableMetadataToFilterSchema } from "./hooks";
 
 type UseGraphQLModelTableOptions = Partial<
   Omit<Parameters<typeof useGraphQLModelTable>[0], "appName" | "modelName">
@@ -103,7 +104,7 @@ type UseGraphQLModelTableOptions = Partial<
 type ModelTableSelectionConfig<TData> = {
   on_selection_change?: (
     selected_rows: TData[],
-    selection_state: Record<string, boolean>
+    selection_state: Record<string, boolean>,
   ) => void;
   enabled?: boolean;
   position?: "start" | "end";
@@ -144,28 +145,28 @@ type ModelTablePrinterConfig<TData> = {
   enabled?: boolean;
   filterTemplate?: (
     template: ModelPdfTemplateMetadata,
-    ctx: ModelTableContext<TData>
+    ctx: ModelTableContext<TData>,
   ) => boolean;
   isActionVisible?: (
     row: TData,
     template: ModelPdfTemplateMetadata,
-    ctx: ModelTableContext<TData>
+    ctx: ModelTableContext<TData>,
   ) => boolean;
   getFilename?: (
     row: TData,
     template: ModelPdfTemplateMetadata,
-    ctx: ModelTableContext<TData>
+    ctx: ModelTableContext<TData>,
   ) => string | undefined;
   getId?: (row: TData) => string | number | null | undefined;
   onBeforePrint?: (
     row: TData,
     template: ModelPdfTemplateMetadata,
-    ctx: ModelTableContext<TData>
+    ctx: ModelTableContext<TData>,
   ) => Promise<void> | void;
   buildUrl?: (
     row: TData,
     template: ModelPdfTemplateMetadata,
-    ctx: ModelTableContext<TData>
+    ctx: ModelTableContext<TData>,
   ) => string;
   /**
    * Provide a schema to collect client data before sending to backend templates.
@@ -179,7 +180,7 @@ type ModelTablePrinterConfig<TData> = {
     values: Record<string, unknown>,
     template: ModelPdfTemplateMetadata,
     row: TData,
-    ctx: ModelTableContext<TData>
+    ctx: ModelTableContext<TData>,
   ) => Record<string, string>;
 };
 
@@ -200,7 +201,7 @@ const resolveMutationErrorMessage = (errors: unknown): string | undefined => {
         return record.message;
       }
       const stringValue = Object.values(record).find(
-        (entry) => typeof entry === "string"
+        (entry) => typeof entry === "string",
       );
       return stringValue as string | undefined;
     }
@@ -217,7 +218,7 @@ const resolveMutationErrorMessage = (errors: unknown): string | undefined => {
 };
 
 export type ModelTableCreationFormProps<
-  TFormValues extends Record<string, unknown>
+  TFormValues extends Record<string, unknown>,
 > = Partial<Omit<ModelFormProps<TFormValues>, "appName" | "modelName">> & {
   appName?: string;
   modelName?: string;
@@ -258,7 +259,7 @@ type ModelTableExportOptions<TData> = {
   trigger?:
     | React.ReactNode
     | ((
-        ctx: ModelTableContext<TData> & { openDrawer: () => void }
+        ctx: ModelTableContext<TData> & { openDrawer: () => void },
       ) => React.ReactNode);
 };
 
@@ -301,7 +302,7 @@ type UpdateFormMode = "modal" | "drawer";
  */
 export type ModelTableUpdateFormConfig<
   TData,
-  TFormValues extends Record<string, unknown>
+  TFormValues extends Record<string, unknown>,
 > = {
   /** Disable the built-in update form trigger when false. */
   enabled?: boolean;
@@ -321,14 +322,14 @@ export type ModelTableUpdateFormConfig<
    */
   getInitialValues?: (
     row: TData,
-    ctx: ModelTableContext<TData>
+    ctx: ModelTableContext<TData>,
   ) => Record<string, unknown>;
   /** Extracts the identifier used by the mutation when updating. */
   getId?: (row: TData) => string | number | null | undefined;
   /** Callback invoked after a successful update mutation. */
   onSuccess?: (
     payload: unknown,
-    ctx: ModelTableContext<TData> & { row: TData }
+    ctx: ModelTableContext<TData> & { row: TData },
   ) => void;
   /** Automatically close the update form after a successful mutation. */
   closeOnSuccess?: boolean;
@@ -378,29 +379,47 @@ export type ModelTableProps<TData = Record<string, unknown>> = {
   topActions?:
     | ModelTableTopAction<TData>[]
     | ((
-        ctx: ModelTableContext<TData>
+        ctx: ModelTableContext<TData>,
       ) => ModelTableTopAction<TData>[] | undefined);
   rowActions?: ModelTableRowActions<TData>;
   deleteConfig?: DeleteActionConfig<TData>;
   selection?: ModelTableSelectionConfig<TData>;
   options?: ModelTableOptions;
-  columnFiltersProp?: ColumnFiltersConfig;
 
-  onAdvancedFiltersApply?: (
-    filters: ComplexFilterInput<string> | null,
-    ctx: ModelTableContext<TData>
-  ) => void;
+  /**
+   * DynamicFilterForm configuration - unified filter system
+   * Replaces columnFiltersProp, onAdvancedFiltersApply, and quickFilters
+   */
+  filterConfig?: {
+    /** Layout mode for filter UI */
+    layout?: "panel" | "popover" | "inline";
+    /** Show preset selector (static + saved filters) */
+    showPresets?: boolean;
+    /** Show distinct field selector */
+    showDistinct?: boolean;
+    /** Allow saving new filters */
+    allowSaveFilter?: boolean;
+    /** Maximum nesting depth for relation filters */
+    maxDepth?: number;
+    /** Enable inline relation filter expansion */
+    enableInlineRelationFilters?: boolean;
+    /** Custom title for filter panel */
+    title?: string;
+    /** Show keyboard shortcuts hint */
+    showKeyboardHints?: boolean;
+  };
+
   columnVisibilityKey?: string | ((ctx: ModelTableContext<TData>) => string);
   exportOptions?: ModelTableExportOptions<TData>;
   creationForm?:
     | ModelTableCreationForm<Record<string, unknown>>
     | ((
-        ctx: ModelTableContext<TData>
+        ctx: ModelTableContext<TData>,
       ) => ModelTableCreationForm<Record<string, unknown>> | undefined);
   updateForm?:
     | ModelTableUpdateFormConfig<TData, Record<string, unknown>>
     | ((
-        ctx: ModelTableContext<TData>
+        ctx: ModelTableContext<TData>,
       ) =>
         | ModelTableUpdateFormConfig<TData, Record<string, unknown>>
         | undefined);
@@ -412,12 +431,8 @@ export type ModelTableProps<TData = Record<string, unknown>> = {
    */
   permissionStrategy?: (
     permissions: ReturnType<typeof useModelPermissions>,
-    ctx: ModelTableContext<TData>
+    ctx: ModelTableContext<TData>,
   ) => Partial<ReturnType<typeof useModelPermissions>>;
-  /**
-   * List of fields to show as quick filters in the toolbar.
-   */
-  quickFilters?: (string | QuickFilterConfig)[];
   expandable?: {
     render: (row: TData) => React.ReactNode;
     position?: "start" | "end";
@@ -465,7 +480,7 @@ const QUICK_SEARCH_DEBOUNCE_MS = 250;
 
 function defaultColumnKey(
   meta: ModelTableType | null,
-  fallback: string
+  fallback: string,
 ): string {
   const rawId =
     meta?.app && meta?.model
@@ -489,7 +504,6 @@ export default function ModelTable<TData = Record<string, unknown>>({
   selection,
   options,
   columnFiltersProp,
-
   onAdvancedFiltersApply,
   columnVisibilityKey,
   exportOptions,
@@ -499,7 +513,7 @@ export default function ModelTable<TData = Record<string, unknown>>({
   detailView,
   deleteConfig,
   permissionStrategy,
-  quickFilters,
+  filterConfig,
   expandable,
   grouping,
   enableGroupingSelector = true,
@@ -519,12 +533,12 @@ export default function ModelTable<TData = Record<string, unknown>>({
   } | null>(null);
   const [actionSubmitting, setActionSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState<"model" | "bi" | "history">(
-    "model"
+    "model",
   );
   const [biTabEnabled, setBiTabEnabled] = useState(false);
-  const [biActiveTab, setBiActiveTab] = useState<
-    "datasets" | "visualization"
-  >("datasets");
+  const [biActiveTab, setBiActiveTab] = useState<"datasets" | "visualization">(
+    "datasets",
+  );
   const biPanelRef = useRef<ModelBiPanelHandle>(null);
   const historyRefetchRef = useRef<(() => void) | null>(null);
   const registerHistoryRefetch = useCallback((handler: (() => void) | null) => {
@@ -598,7 +612,7 @@ export default function ModelTable<TData = Record<string, unknown>>({
   }, [showHistory, baseHistoryAllowed]);
 
   const showHistoryEnabled = Boolean(
-    showHistory && baseHistoryAllowed && !historyBlocked
+    showHistory && baseHistoryAllowed && !historyBlocked,
   );
   const userQueryOptions = hookOptions?.queryOptions ?? {};
 
@@ -614,7 +628,7 @@ export default function ModelTable<TData = Record<string, unknown>>({
       setters,
       refetch,
     }),
-    [meta, fields, table, items, pageInfo, state, payloads, setters, refetch]
+    [meta, fields, table, items, pageInfo, state, payloads, setters, refetch],
   );
 
   const telemetry = useModelTelemetry({
@@ -702,14 +716,14 @@ export default function ModelTable<TData = Record<string, unknown>>({
         })
         .filter(
           (
-            item
+            item,
           ): item is {
             name: string;
             type?: string | null;
-          } => Boolean(item?.name)
+          } => Boolean(item?.name),
         );
     },
-    []
+    [],
   );
 
   const buildDefaultPrintSchema = useCallback(
@@ -736,8 +750,8 @@ export default function ModelTable<TData = Record<string, unknown>>({
         .filter(
           (entry) =>
             !normalizedClientSchema.some(
-              (schemaEntry) => schemaEntry.name === entry.name
-            )
+              (schemaEntry) => schemaEntry.name === entry.name,
+            ),
         );
 
       let effectiveSchema = [...normalizedClientSchema, ...schemaFromFields];
@@ -774,7 +788,7 @@ export default function ModelTable<TData = Record<string, unknown>>({
       };
 
       const resolveFieldType = (
-        rawType?: string | null
+        rawType?: string | null,
       ): FormFieldConfig["type"] => {
         const normalized = (rawType ?? "").toString().toLowerCase();
         if (normalized === "date") return "date";
@@ -819,7 +833,7 @@ export default function ModelTable<TData = Record<string, unknown>>({
         ],
       };
     },
-    [normalizeClientDataSchema]
+    [normalizeClientDataSchema],
   );
 
   const logAction = useAuditableAction({
@@ -877,70 +891,73 @@ export default function ModelTable<TData = Record<string, unknown>>({
     onContextReady?.(context);
   }, [context, onContextReady]);
 
-  // --- Quick Filters & Advanced Filters State Management ---
-  const [advancedFiltersState, setAdvancedFiltersState] =
-    useState<ComplexFilterInput<string> | null>(null);
-  const [columnFiltersPayload, setColumnFiltersPayload] =
-    useState<ComplexFilterInput<string> | null>(null);
-  const [quickFiltersState, setQuickFiltersState] = useState<
-    Record<string, string[]>
-  >({});
-  const [historyBaseFilters, setHistoryBaseFilters] =
-    useState<ComplexFilterInput<string> | null>(null);
+  // --- DynamicFilterForm State Management ---
+  const [filterState, setFilterState] = useState<FilterFormState | null>(null);
+  const [popoverOpen, setPopoverOpen] = useState(false);
 
-  const { setAdvancedFilters, setPresets, setDistinctOn, setPageIndex } = setters;
+  // Fetch unified filter schema from metadata_v2
+  const {
+    schema: filterSchema,
+    loading: filterSchemaLoading,
+    error: filterSchemaError,
+    refetch: refetchFilterSchema,
+  } = useFilterMetadata({
+    app: appName,
+    model: modelName,
+    maxDepth: filterConfig?.maxDepth ?? 3,
+    includeSavedFilters: true,
+  });
 
-  const handleFilterApply = useCallback((variables: FilterQueryVariables) => {
-    setAdvancedFilters(variables.filters || null);
-    setPresets(variables.presets || []);
-    setDistinctOn(variables.distinctOn || []);
-    if (variables.orderBy) {
-      // Logic to update sorting state if needed, though usually handled by table header clicks.
-      // If DynamicFilterForm returns orderBy, we might want to sync it with table sorting state.
-      // For now, we'll focus on filters.
-    }
-    setPageIndex(0);
-  }, [setAdvancedFilters, setPresets, setDistinctOn, setPageIndex]);
+  // Build filter schema from table metadata for DynamicFilterForm
+  const unifiedFilterSchema = useMemo(() => {
+    if (!meta) return null;
+    return mapTableMetadataToFilterSchema(meta);
+  }, [meta]);
 
-  /**
-   * Combine model-level advanced filters, column filters (emitted by BaseTable),
-   * and quick filters into a single backend-compatible filters payload.
-   */
+  // Build query variables from filter state
+  const filterVariables = useMemo(() => {
+    if (!filterState || !filterSchema) return {};
+
+    return buildQueryVariables({
+      filterState: filterState.root,
+      schema: filterSchema,
+      selectedPresets: filterState.selectedPresets,
+      distinctOn: filterState.distinctOn,
+      orderBy: table
+        .getState()
+        .sorting.map((s) => `${s.desc ? "-" : ""}${s.id}`),
+      maxDepth: filterConfig?.maxDepth ?? 3,
+    });
+  }, [filterState, filterSchema, table, filterConfig?.maxDepth]);
+
+  // Sync filter variables to query
+  const { setAdvancedFilters, setPresets, setDistinctOn, setPageIndex } =
+    setters;
+
   React.useEffect(() => {
-    const parts: ComplexFilterInput<string>[] = [];
-
-    if (advancedFiltersState) {
-      parts.push(advancedFiltersState);
+    if (!filterVariables || Object.keys(filterVariables).length === 0) {
+      setAdvancedFilters(() => null);
+      setHistoryBaseFilters(null);
+      return;
     }
 
-    if (columnFiltersPayload) {
-      parts.push(columnFiltersPayload);
+    setAdvancedFilters(() => filterVariables.where ?? null);
+    setHistoryBaseFilters(filterVariables.where ?? null);
+
+    // Sync presets and distinctOn from filter variables
+    if (filterVariables.presets) {
+      setPresets(filterVariables.presets);
     }
-
-    Object.entries(quickFiltersState).forEach(([field, values]) => {
-      if (values && values.length > 0) {
-        // Construct { field__in: values }
-        parts.push({
-          [`${field}__in`]: values,
-        } as unknown as ComplexFilterInput<string>);
-      }
-    });
-
-    let merged: ComplexFilterInput<string> | null = null;
-    if (parts.length === 1) {
-      merged = parts[0];
-    } else if (parts.length > 1) {
-      merged = { AND: parts } as ComplexFilterInput<string>;
+    if (filterVariables.distinctOn) {
+      setDistinctOn(filterVariables.distinctOn);
     }
-
-    setHistoryBaseFilters(merged);
-    setAdvancedFilters((prev) => {
-      if (JSON.stringify(prev) !== JSON.stringify(merged)) {
-        return merged;
-      }
-      return prev;
-    });
-  }, [advancedFiltersState, columnFiltersPayload, quickFiltersState, setAdvancedFilters]);
+  }, [
+    filterVariables,
+    setAdvancedFilters,
+    setHistoryBaseFilters,
+    setPresets,
+    setDistinctOn,
+  ]);
 
   useEffect(() => {
     if (!showHistoryEnabled) {
@@ -996,22 +1013,22 @@ export default function ModelTable<TData = Record<string, unknown>>({
   const computedTitle =
     typeof title === "function"
       ? title(context)
-      : title ??
+      : (title ??
         (meta?.verboseNamePlural
           ? `Liste des ${meta.verboseNamePlural}`
           : meta?.verboseName
-          ? `Liste des ${meta.verboseName}`
-          : "Liste");
+            ? `Liste des ${meta.verboseName}`
+            : "Liste"));
   const historyTitle = meta?.verboseNamePlural
     ? `Historique des ${meta.verboseNamePlural}`
     : meta?.verboseName
-    ? `Historique de ${meta.verboseName}`
-    : "Historique";
+      ? `Historique de ${meta.verboseName}`
+      : "Historique";
 
   const resolvedColumnKey =
     typeof columnVisibilityKey === "function"
       ? columnVisibilityKey(context)
-      : columnVisibilityKey ?? defaultColumnKey(meta, `${modelName}_default`);
+      : (columnVisibilityKey ?? defaultColumnKey(meta, `${modelName}_default`));
   const historyColumnKey = `${resolvedColumnKey}:history`;
   const columnFiltersConfig = columnFiltersProp ?? {
     mode: "ag-grid",
@@ -1026,17 +1043,17 @@ export default function ModelTable<TData = Record<string, unknown>>({
   const rawCreationFormConfig = useMemo(
     () =>
       typeof creationForm === "function" ? creationForm(context) : creationForm,
-    [creationForm, context]
+    [creationForm, context],
   );
   const creationFormConfig = rawCreationFormConfig;
   const rawUpdateFormConfig = useMemo(
     () => (typeof updateForm === "function" ? updateForm(context) : updateForm),
-    [updateForm, context]
+    [updateForm, context],
   );
   const updateFormConfig =
     rawUpdateFormConfig && rawUpdateFormConfig.enabled === false
       ? null
-      : rawUpdateFormConfig ?? null;
+      : (rawUpdateFormConfig ?? null);
 
   const fallbackTopActions: ModelTableTopAction<TData>[] | undefined =
     useMemo(() => {
@@ -1056,7 +1073,7 @@ export default function ModelTable<TData = Record<string, unknown>>({
             appName,
             modelName,
             "table.fallback_create",
-            "ModelTable"
+            "ModelTable",
           ),
           on_click: () => {
             logAction("table.fallback_create", {
@@ -1085,8 +1102,8 @@ export default function ModelTable<TData = Record<string, unknown>>({
         creationFormConfig.formProps?.title
           ? `Créer ${creationFormConfig.formProps.title}`
           : meta?.verboseName
-          ? `Ajouter un ${meta.verboseName}`
-          : "Ajouter";
+            ? `Ajouter un ${meta.verboseName}`
+            : "Ajouter";
       const label = creationFormConfig.triggerLabel ?? defaultLabel;
       const icon = creationFormConfig.triggerIcon ?? (
         <PlusCircle className="mr-1 h-4 w-4" />
@@ -1103,7 +1120,7 @@ export default function ModelTable<TData = Record<string, unknown>>({
             appName,
             modelName,
             "table.creation_trigger",
-            "ModelTable"
+            "ModelTable",
           ),
           on_click: () => {
             logAction("table.creation_trigger", {
@@ -1114,7 +1131,7 @@ export default function ModelTable<TData = Record<string, unknown>>({
                 navigate(creationFormConfig.path);
               } else {
                 console.warn(
-                  "ModelTable creationForm in page mode requires a path."
+                  "ModelTable creationForm in page mode requires a path.",
                 );
               }
               return;
@@ -1163,7 +1180,7 @@ export default function ModelTable<TData = Record<string, unknown>>({
       }
       return undefined;
     },
-    [creationFormConfig, updateFormConfig]
+    [creationFormConfig, updateFormConfig],
   );
 
   const handleCreationSuccess = useCallback(
@@ -1179,10 +1196,10 @@ export default function ModelTable<TData = Record<string, unknown>>({
       const message =
         typeof configuredMessage === "function"
           ? configuredMessage({ payload, mode: "create" })
-          : configuredMessage ??
+          : (configuredMessage ??
             (meta?.verboseName
               ? `${meta.verboseName} créé(e) avec succès.`
-              : "Création effectuée avec succès.");
+              : "Création effectuée avec succès."));
 
       toast.success(message);
       logAction("table.creation_success", {
@@ -1209,7 +1226,7 @@ export default function ModelTable<TData = Record<string, unknown>>({
       getCreationFormCloseOnSuccess,
       resolveSuccessMessage,
       logAction,
-    ]
+    ],
   );
 
   const creationFormProps = useMemo(() => {
@@ -1235,7 +1252,7 @@ export default function ModelTable<TData = Record<string, unknown>>({
       setUpdateRow(row);
       setUpdateOpen(true);
     },
-    [updateFormConfig]
+    [updateFormConfig],
   );
 
   const handleRowEdit = useCallback(
@@ -1251,7 +1268,7 @@ export default function ModelTable<TData = Record<string, unknown>>({
       }
       rowActions?.on_edit?.(row);
     },
-    [handleOpenUpdateForm, rowActions, updateFormConfig, permissions.canUpdate]
+    [handleOpenUpdateForm, rowActions, updateFormConfig, permissions.canUpdate],
   );
 
   const resolveUpdateInitialValues = useCallback(
@@ -1298,7 +1315,7 @@ export default function ModelTable<TData = Record<string, unknown>>({
               if (!isNaN(dateObj.getTime())) {
                 // Format to local ISO string for input
                 const localIso = new Date(
-                  dateObj.getTime() - dateObj.getTimezoneOffset() * 60000
+                  dateObj.getTime() - dateObj.getTimezoneOffset() * 60000,
                 )
                   .toISOString()
                   .slice(0, 16);
@@ -1309,18 +1326,18 @@ export default function ModelTable<TData = Record<string, unknown>>({
           }
 
           sanitized[key] = value;
-        }
+        },
       );
       return sanitized;
     },
-    [context, updateFormConfig]
+    [context, updateFormConfig],
   );
 
   const resolveUpdateMutationId = useCallback(
     (
       row: TData | null,
       initialValues?: Record<string, unknown>,
-      explicitId?: string | number | null | undefined
+      explicitId?: string | number | null | undefined,
     ) => {
       if (explicitId !== undefined && explicitId !== null) {
         return String(explicitId);
@@ -1346,7 +1363,7 @@ export default function ModelTable<TData = Record<string, unknown>>({
       }
       return undefined;
     },
-    [updateFormConfig]
+    [updateFormConfig],
   );
 
   const handleUpdateSuccess = useCallback(
@@ -1380,7 +1397,7 @@ export default function ModelTable<TData = Record<string, unknown>>({
       refetch,
       updateRow,
       resolveSuccessMessage,
-    ]
+    ],
   );
 
   const updateFormProps = useMemo(() => {
@@ -1401,7 +1418,7 @@ export default function ModelTable<TData = Record<string, unknown>>({
     const resolvedMutationId = resolveUpdateMutationId(
       updateRow,
       mergedInitialValues,
-      userMutationId as string | number | null | undefined
+      userMutationId as string | number | null | undefined,
     );
     const onSuccessRedirect = (payload: unknown) => {
       userOnSuccessRedirect?.(payload);
@@ -1420,7 +1437,7 @@ export default function ModelTable<TData = Record<string, unknown>>({
       props.mutationId = resolvedMutationId;
     } else {
       console.warn(
-        "ModelTable updateForm requires an identifier (id/pk/uuid) to run update mutations."
+        "ModelTable updateForm requires an identifier (id/pk/uuid) to run update mutations.",
       );
     }
 
@@ -1449,8 +1466,19 @@ export default function ModelTable<TData = Record<string, unknown>>({
 
   const detailConfig = detailView ?? null;
   const deleteDocument = useMemo(
-    () => gql(build_delete_mutation(modelName, "")),
-    [modelName]
+    () =>
+      gql(`
+      mutation Delete${modelName}($id: ID!) {
+        response: delete${modelName}(id: $id) {
+          ok
+          errors {
+            field
+            message
+          }
+        }
+      }
+    `),
+    [modelName],
   );
   const [executeDeleteMutation, deleteMutationState] = useMutation<
     {
@@ -1474,7 +1502,7 @@ export default function ModelTable<TData = Record<string, unknown>>({
       }
       return extractBaseRowId(row);
     },
-    [deleteConfig, extractBaseRowId]
+    [deleteConfig, extractBaseRowId],
   );
 
   const resolvePrinterId = useCallback(
@@ -1486,7 +1514,7 @@ export default function ModelTable<TData = Record<string, unknown>>({
       }
       return extractBaseRowId(row);
     },
-    [printerConfig, extractBaseRowId]
+    [printerConfig, extractBaseRowId],
   );
 
   const requestDelete = useCallback(
@@ -1497,7 +1525,7 @@ export default function ModelTable<TData = Record<string, unknown>>({
       }
       setDeleteTarget(row);
     },
-    [permissions.canDelete]
+    [permissions.canDelete],
   );
 
   const resolveDeleteSuccessMessage = useCallback(
@@ -1509,7 +1537,7 @@ export default function ModelTable<TData = Record<string, unknown>>({
       }
       return "L'élément a été supprimé avec succès.";
     },
-    [deleteConfig]
+    [deleteConfig],
   );
 
   const resolveErrorMessage = useCallback(
@@ -1545,7 +1573,7 @@ export default function ModelTable<TData = Record<string, unknown>>({
       }
       return fallbackMessage;
     },
-    [deleteConfig, meta?.verboseName]
+    [deleteConfig, meta?.verboseName],
   );
 
   const mutationActions = useMemo(
@@ -1581,7 +1609,7 @@ export default function ModelTable<TData = Record<string, unknown>>({
             meta: enrichedMeta,
           };
         }),
-    [meta?.mutations]
+    [meta?.mutations],
   );
 
   const deriveMethodName = useCallback(
@@ -1593,7 +1621,7 @@ export default function ModelTable<TData = Record<string, unknown>>({
       }
       return mutation.name;
     },
-    [modelName]
+    [modelName],
   );
 
   const buildDefaultsFromMutation = useCallback(
@@ -1617,7 +1645,7 @@ export default function ModelTable<TData = Record<string, unknown>>({
       });
       return defaults;
     },
-    []
+    [],
   );
 
   const mapInputFieldToConfig = useCallback(
@@ -1683,7 +1711,7 @@ export default function ModelTable<TData = Record<string, unknown>>({
       }
       return baseConfig as FormFieldConfig;
     },
-    []
+    [],
   );
 
   const buildActionSchema = useCallback(
@@ -1699,7 +1727,7 @@ export default function ModelTable<TData = Record<string, unknown>>({
                 .sort(
                   (a, b) =>
                     overrideOrder.indexOf(a.name) -
-                    overrideOrder.indexOf(b.name)
+                    overrideOrder.indexOf(b.name),
                 ),
               ...fields.filter((f) => !overrideOrder.includes(f.name)),
             ]
@@ -1732,7 +1760,7 @@ export default function ModelTable<TData = Record<string, unknown>>({
         ],
       };
     },
-    [mapInputFieldToConfig]
+    [mapInputFieldToConfig],
   );
 
   const executeRowAction = useCallback(
@@ -1751,7 +1779,7 @@ export default function ModelTable<TData = Record<string, unknown>>({
           include_input: includeInput,
           input_type_name: meta.input_type ?? undefined,
           field_name: meta.name,
-        })
+        }),
       );
       setActionSubmitting(true);
       try {
@@ -1782,7 +1810,7 @@ export default function ModelTable<TData = Record<string, unknown>>({
         toast.error(
           err instanceof Error
             ? err.message
-            : "Erreur lors de l'exécution de l'action."
+            : "Erreur lors de l'exécution de l'action.",
         );
       } finally {
         setActionSubmitting(false);
@@ -1795,7 +1823,7 @@ export default function ModelTable<TData = Record<string, unknown>>({
       modelName,
       refetch,
       resolveDeleteId,
-    ]
+    ],
   );
 
   const closeDeleteDialog = useCallback(() => {
@@ -1845,7 +1873,7 @@ export default function ModelTable<TData = Record<string, unknown>>({
       }
       return detailConfig.getId(row);
     },
-    [detailConfig]
+    [detailConfig],
   );
 
   const handleDetailClick = useCallback(
@@ -1861,19 +1889,19 @@ export default function ModelTable<TData = Record<string, unknown>>({
       setDetailRow(row);
       setDetailOpen(true);
     },
-    [detailConfig, appName, modelName, getDetailId, navigate]
+    [detailConfig, appName, modelName, getDetailId, navigate],
   );
 
   const handlePrinterAction = useCallback(
     async (
       row: TData,
       template: ModelPdfTemplateMetadata,
-      clientDataOverride?: Record<string, string> | null
+      clientDataOverride?: Record<string, string> | null,
     ) => {
       const normalizedClientSchema = normalizeClientDataSchema(
         template?.clientDataSchema ??
           (template as any)?.client_data_schema ??
-          []
+          [],
       );
       const requiresClientData =
         template.allowClientData ??
@@ -1907,13 +1935,13 @@ export default function ModelTable<TData = Record<string, unknown>>({
         toast.error(
           err instanceof Error
             ? err.message
-            : "Erreur lors de la préparation de l'impression."
+            : "Erreur lors de la préparation de l'impression.",
         );
         return;
       }
       const sanitizedBase = baseEndpoint.replace(/\/+$/, "");
       const relativeTarget = `${sanitizedBase}/${encodeURIComponent(
-        String(rowId)
+        String(rowId),
       )}/`;
 
       const resolvedTarget = (() => {
@@ -1949,7 +1977,7 @@ export default function ModelTable<TData = Record<string, unknown>>({
           {
             method: "GET",
             headers,
-          }
+          },
         );
         if (!response.ok) {
           const detail = await response.text();
@@ -1976,13 +2004,13 @@ export default function ModelTable<TData = Record<string, unknown>>({
         }, 1000);
 
         toast.success(
-          `Document "${template.title}" ouvert dans un nouvel onglet.`
+          `Document "${template.title}" ouvert dans un nouvel onglet.`,
         );
       } catch (err) {
         toast.error(
           err instanceof Error
             ? err.message
-            : "Erreur lors de la génération du document."
+            : "Erreur lors de la génération du document.",
         );
       }
     },
@@ -1993,7 +2021,7 @@ export default function ModelTable<TData = Record<string, unknown>>({
       templateApiOrigin,
       pendingPrintData,
       normalizeClientDataSchema,
-    ]
+    ],
   );
 
   const handleSubmitPrintData = useCallback(
@@ -2002,7 +2030,7 @@ export default function ModelTable<TData = Record<string, unknown>>({
       const schemaEntries = normalizeClientDataSchema(
         pendingPrintTemplate.clientDataSchema ??
           (pendingPrintTemplate as any)?.client_data_schema ??
-          []
+          [],
       );
       const serializer =
         printerConfig?.serializeClientData ??
@@ -2011,10 +2039,10 @@ export default function ModelTable<TData = Record<string, unknown>>({
           const allowed = new Set<string>();
           schemaEntries.forEach((entry) => allowed.add(entry.name));
           (pendingPrintTemplate.clientDataFields || []).forEach((name) =>
-            allowed.add(String(name))
+            allowed.add(String(name)),
           );
           ((pendingPrintTemplate as any)?.client_data_fields || []).forEach(
-            (name: unknown) => allowed.add(String(name))
+            (name: unknown) => allowed.add(String(name)),
           );
           const hasAllowed = allowed.size > 0;
           Object.entries(formValues).forEach(([key, val]) => {
@@ -2032,7 +2060,7 @@ export default function ModelTable<TData = Record<string, unknown>>({
       await handlePrinterAction(
         pendingPrintRow,
         pendingPrintTemplate,
-        serialized
+        serialized,
       );
       setPendingPrintTemplate(null);
       setPendingPrintRow(null);
@@ -2045,7 +2073,7 @@ export default function ModelTable<TData = Record<string, unknown>>({
       context,
       handlePrinterAction,
       normalizeClientDataSchema,
-    ]
+    ],
   );
 
   const handleCancelPrintData = useCallback(() => {
@@ -2106,7 +2134,7 @@ export default function ModelTable<TData = Record<string, unknown>>({
     const renderWithPrinters = (
       row: TData,
       extraNode?: React.ReactNode,
-      includeCrudButtons = true
+      includeCrudButtons = true,
     ) => {
       const visiblePrinterTemplates = printerTemplates.filter((template) => {
         if (!printerConfig?.isActionVisible) {
@@ -2236,16 +2264,16 @@ export default function ModelTable<TData = Record<string, unknown>>({
 
   const actionSchema = useMemo(
     () => (activeAction ? buildActionSchema(activeAction.meta) : null),
-    [activeAction, buildActionSchema]
+    [activeAction, buildActionSchema],
   );
   const actionDefaults = useMemo(
     () =>
       activeAction ? buildDefaultsFromMutation(activeAction.meta) : undefined,
-    [activeAction, buildDefaultsFromMutation]
+    [activeAction, buildDefaultsFromMutation],
   );
   const actionMode = activeAction
-    ? (activeAction.meta.action?.mode as string | undefined) ??
-      ((activeAction.meta.input_fields?.length ?? 0) > 0 ? "form" : "confirm")
+    ? ((activeAction.meta.action?.mode as string | undefined) ??
+      ((activeAction.meta.input_fields?.length ?? 0) > 0 ? "form" : "confirm"))
     : null;
 
   const resolvedToolbarActions = useMemo(() => {
@@ -2371,7 +2399,7 @@ export default function ModelTable<TData = Record<string, unknown>>({
               ...context,
               openDrawer: () => exportDrawerRef.current?.open(),
             })
-          : exportConfig.trigger ?? (
+          : (exportConfig.trigger ?? (
               <Button
                 variant="outline"
                 size="icon"
@@ -2381,7 +2409,7 @@ export default function ModelTable<TData = Record<string, unknown>>({
               >
                 <Download className="h-4 w-4" />
               </Button>
-            )
+            ))
         : null;
 
     const toolbarItems = [
@@ -2418,77 +2446,20 @@ export default function ModelTable<TData = Record<string, unknown>>({
     Boolean(quickFilters?.length);
 
   const quickSearchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null
+    null,
   );
-
-  const renderedQuickFilters = useMemo(() => {
-    const nodes =
-      quickFilters?.map((filterDef) => {
-        let fieldKey: string;
-        let customTitle: string | undefined;
-        let customIcon: React.ReactNode | undefined;
-        let isSearchable: boolean | undefined;
-
-        if (typeof filterDef === "string") {
-          fieldKey = filterDef;
-        } else {
-          fieldKey = filterDef.field;
-          customTitle = filterDef.title;
-          customIcon = filterDef.icon;
-          isSearchable = filterDef.searchable;
-        }
-
-        // Find metadata for the field
-        const filterMeta = meta?.filters?.find(
-          (f) => f.field_name === fieldKey
-        );
-
-        if (!filterMeta) {
-          return null;
-        }
-
-        return (
-          <QuickFilterLoader
-            key={fieldKey}
-            fieldKey={fieldKey}
-            filterMeta={filterMeta}
-            selectedValues={quickFiltersState[fieldKey] || []}
-            onChange={(values) => {
-              setQuickFiltersState((prev) => ({
-                ...prev,
-                [fieldKey]: values,
-              }));
-            }}
-            title={customTitle}
-            icon={customIcon}
-            searchable={isSearchable}
-          />
-        );
-      }) ?? [];
-
-    return nodes.filter(Boolean) as React.ReactNode[];
-  }, [quickFilters, meta?.filters, quickFiltersState]);
 
   const contextRef = useRef(context);
   React.useEffect(() => {
     contextRef.current = context;
   }, [context]);
 
-  useEffect(() => {
-    return () => {
-      if (quickSearchTimeoutRef.current) {
-        clearTimeout(quickSearchTimeoutRef.current);
-        quickSearchTimeoutRef.current = null;
-      }
-    };
-  }, []);
-
   const handleColumnFiltersPayloadChange = useCallback(
     (filters: ComplexFilterInput<string>) => {
       const hasEntries = filters && Object.keys(filters).length > 0;
       setColumnFiltersPayload(hasEntries ? filters : null);
     },
-    []
+    [],
   );
 
   const handleQuickSearch =
@@ -2530,7 +2501,7 @@ export default function ModelTable<TData = Record<string, unknown>>({
   const exportColumnKey =
     typeof exportConfig.columnStorageKey === "function"
       ? exportConfig.columnStorageKey(context)
-      : exportConfig.columnStorageKey ?? resolvedColumnKey;
+      : (exportConfig.columnStorageKey ?? resolvedColumnKey);
 
   const deleteDialogTitle =
     deleteTarget && deleteConfig?.confirmTitle
@@ -2646,22 +2617,30 @@ export default function ModelTable<TData = Record<string, unknown>>({
       columnFilters={columnFiltersConfig}
       onQuickSearch={handleQuickSearch}
       available_filters={meta?.filters ?? []}
-      advancedFiltering={{
-        filters: [],
-        onApplyAdvancedFilters: () => {},
-      }}
-      on_advanced_filters_apply={handleColumnFiltersPayloadChange}
-      columns_visibility_storage_key={resolvedColumnKey}
-      remote_total_count={pageInfo?.total_count}
       toolbar_actions={
         <div className="flex items-center gap-2">
           <DynamicFilterForm
             app={appName}
             model={modelName}
+            maxDepth={filterConfig?.maxDepth ?? 3}
             onApply={handleFilterApply}
-            layout="popover"
-            showPresets={true}
-            showDistinct={true}
+            includeSavedFilters={true}
+            showDistinct={filterConfig?.showDistinct ?? true}
+            showPresets={filterConfig?.showPresets ?? true}
+            allowSaveFilter={filterConfig?.allowSaveFilter ?? true}
+            layout={filterConfig?.layout ?? "popover"}
+            config={{
+              autoApply: true,
+              autoApplyDelay: 300,
+              enableLogicalOperators: true,
+              enableNot: true,
+              defaultM2MOperator: "_some",
+              enableInlineRelationFilters:
+                filterConfig?.enableInlineRelationFilters ?? true,
+            }}
+            disabled={!permissions.canRead}
+            title={filterConfig?.title ?? "Filtres"}
+            showKeyboardHints={filterConfig?.showKeyboardHints ?? true}
           />
           {resolvedToolbarActions}
         </div>
@@ -2669,29 +2648,6 @@ export default function ModelTable<TData = Record<string, unknown>>({
       top_actions={resolvedTopActions}
       row_actions={resolvedRowActions}
       selection={resolvedSelection}
-      quick_filter_components={
-        <>
-          {quickFiltersLoading ? (
-            <span className="text-xs text-muted-foreground px-2">
-              Chargement des filtres...
-            </span>
-          ) : null}
-          {renderedQuickFilters}
-          {Object.values(quickFiltersState).some(
-            (val) => val && val.length > 0
-          ) && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setQuickFiltersState({})}
-              className="h-8 px-2 lg:px-3"
-            >
-              Réinitialiser
-              <X className="ml-2 h-4 w-4" />
-            </Button>
-          )}
-        </>
-      }
       options={{
         // compact: true,
         enable_column_drag: false,
@@ -2887,17 +2843,17 @@ export default function ModelTable<TData = Record<string, unknown>>({
           onConfirm={handleConfirmDelete}
         />
         {exportConfig.enabled !== false && (
-        <ModelTableExportDrawer
-          ref={exportDrawerRef}
-          meta={meta}
-          fields={fields}
-          pageInfo={pageInfo}
-          columnFilters={activeColumnFilters}
-          filtersPayload={exportFiltersPayload ?? null}
-          orderingPayload={orderingPayload}
-          quick={quick}
-          columnStorageKey={exportColumnKey}
-          additionalFilters={exportConfig.additionalFilters ?? []}
+          <ModelTableExportDrawer
+            ref={exportDrawerRef}
+            meta={meta}
+            fields={fields}
+            pageInfo={pageInfo}
+            columnFilters={activeColumnFilters}
+            filtersPayload={exportFiltersPayload ?? null}
+            orderingPayload={orderingPayload}
+            quick={quick}
+            columnStorageKey={exportColumnKey}
+            additionalFilters={exportConfig.additionalFilters ?? []}
           />
         )}
       </div>

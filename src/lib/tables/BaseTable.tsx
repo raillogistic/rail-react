@@ -19,22 +19,7 @@ import { Checkbox } from "@/lib/components/ui/checkbox";
 import { Card, CardContent } from "@/lib/components/ui/card";
 import { Table, TableHead } from "@/lib/components/ui/table";
 import { cn } from "@/lib/utils";
-import type {
-  ComplexFilterInput,
-  FilterFieldType,
-} from "./types";
-import {
-  useAdvancedFiltering,
-  AdvancedFiltersDialog,
-  ColumnFilterInput,
-  ColumnFilterAgTrigger,
-} from "./components/filtering";
-import type { ColumnFilterValue, FilterValue } from "./components/filtering";
-import { useColumnPersistence } from "./components/useColumnPersistence";
-import {
-  useColumnFilters,
-  isFilterValueEmpty,
-} from "./components/useColumnFilters";
+import type { ComplexFilterInput, FilterFieldType } from "./types";
 import { TableTitleBar } from "./components/TableTitleBar";
 import { TableToolbar } from "./components/TableToolbar";
 import { ColumnVisibilityMenu } from "./components/ColumnVisibilityMenu";
@@ -54,7 +39,7 @@ import type {
 
 const combineFilterPayloads = (
   advanced: ComplexFilterInput<string> | null,
-  column: ComplexFilterInput<string> | null
+  column: ComplexFilterInput<string> | null,
 ): ComplexFilterInput<string> | null => {
   if (advanced && column) {
     return { AND: [advanced, column] } as ComplexFilterInput<string>;
@@ -62,6 +47,9 @@ const combineFilterPayloads = (
   return advanced ?? column ?? null;
 };
 
+/**
+ * Props accepted by {@link BaseTable}.
+ */
 /**
  * Props accepted by {@link BaseTable}.
  */
@@ -87,18 +75,7 @@ export type BaseTableProps<TData> = {
   onQuickSearch?: (search: string) => void;
   columns_visibility_storage_key?: string;
   available_filters?: FilterFieldType[];
-  on_advanced_filters_apply?: (filters: ComplexFilterInput<string>) => void;
   remote_total_count?: number;
-  quick_filter_components?: React.ReactNode;
-  advancedFiltering?: {
-    filters: FilterFieldType[];
-    onApplyAdvancedFilters: (filters: ComplexFilterInput<string>) => void;
-    display?: "drawer" | "dialog";
-    title?: string;
-    triggerVariant?: "icon" | "button";
-    triggerLabel?: string;
-  };
-  columnFilters?: ColumnFiltersConfig;
   onColumnOrderChange?: (order: string[]) => void;
   onColumnVisibilityChange?: (visibility: string[]) => void;
 };
@@ -218,7 +195,7 @@ export function BaseTable<TData>({
         </div>
       );
     },
-    [row_actions]
+    [row_actions],
   );
 
   const build_ordering_payload = React.useCallback((): string[] => {
@@ -279,7 +256,7 @@ export function BaseTable<TData>({
 
   const combinedFilterMeta = React.useMemo(
     () => advancedFiltering?.filters ?? available_filters ?? [],
-    [advancedFiltering?.filters, available_filters]
+    [advancedFiltering?.filters, available_filters],
   );
   const chipMeta = React.useMemo(() => {
     const base = available_filters ?? [];
@@ -318,7 +295,7 @@ export function BaseTable<TData>({
       const hasEntries = filters && Object.keys(filters).length > 0;
       setAdvancedFiltersPayload(hasEntries ? filters : null);
     },
-    []
+    [],
   );
 
   const advancedFiltersController = useAdvancedFiltering({
@@ -339,7 +316,7 @@ export function BaseTable<TData>({
 
   const combinedFiltersPayload = React.useMemo(
     () => combineFilterPayloads(advancedFiltersPayload, columnFiltersPayload),
-    [advancedFiltersPayload, columnFiltersPayload]
+    [advancedFiltersPayload, columnFiltersPayload],
   );
 
   const rowSummary = React.useMemo(() => {
@@ -365,7 +342,7 @@ export function BaseTable<TData>({
       advancedFiltering?.onApplyAdvancedFilters?.(normalized);
       on_advanced_filters_apply?.(normalized);
     },
-    [advancedFiltering?.onApplyAdvancedFilters, on_advanced_filters_apply]
+    [advancedFiltering?.onApplyAdvancedFilters, on_advanced_filters_apply],
   );
 
   const hasNotifiedOnce = React.useRef(false);
@@ -394,7 +371,7 @@ export function BaseTable<TData>({
           key={`${header.id}-filter`}
           className={cn(
             "align-top px-2 py-1",
-            isActive && "bg-primary/5 border-b border-primary/30 rounded-sm"
+            isActive && "bg-primary/5 border-b border-primary/30 rounded-sm",
           )}
         >
           <ColumnFilterInput
@@ -408,7 +385,7 @@ export function BaseTable<TData>({
         </TableHead>
       );
     },
-    [columnFilterMetaMap, columnFiltersState, setColumnFilterValue]
+    [columnFilterMetaMap, columnFiltersState, setColumnFilterValue],
   );
 
   const renderHeaderFilterTrigger = React.useCallback(
@@ -433,7 +410,7 @@ export function BaseTable<TData>({
       columnFilterMetaMap,
       columnFiltersState,
       setColumnFilterValue,
-    ]
+    ],
   );
 
   const renderColumnFilterCell =
@@ -597,12 +574,7 @@ export function BaseTable<TData>({
           </Table>
         </CardContent>
       </Card>
-
       {paginationSection}
-
-      {advancedFiltersEnabled && (
-        <AdvancedFiltersDialog controller={advancedFiltersController} />
-      )}
     </div>
   );
 }

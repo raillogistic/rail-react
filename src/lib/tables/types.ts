@@ -370,3 +370,168 @@ export type ModelTableFiltersOptions = {
   /** Lookup expressions to exclude (e.g. `["regex"]`). */
   exclude_lookup?: string[];
 };
+
+// ============================================
+// Metadata V2 Types (from metadata_v2 API)
+// ============================================
+
+export interface ModelSchemaV2Response {
+  modelSchema: {
+    app: string;
+    model: string;
+    verboseName: string;
+    verboseNamePlural: string;
+    fields: FieldSchemaV2[];
+    relationships: RelationshipSchemaV2[];
+    mutations: MutationSchemaV2[];
+    templates: TemplateInfoType[];
+    permissions: ModelPermissionsType;
+    filterConfig: FilterConfigTypeV2;
+    relationFilters: RelationFilterSchemaV2[];
+    fieldGroups: FieldGroupType[];
+  };
+}
+
+export interface FieldSchemaV2 {
+  name: string;
+  verboseName: string;
+  helpText?: string;
+  fieldType: string;
+  graphqlType: string;
+  required: boolean;
+  nullable: boolean;
+  choices?: { value: string; label: string; group?: string }[];
+  minValue?: number;
+  maxValue?: number;
+  isRelation: boolean;
+  isNumeric: boolean;
+  isDate: boolean;
+  isDatetime: boolean;
+  isBoolean: boolean;
+  isText: boolean;
+  isJson: boolean;
+  isIndexed: boolean;
+}
+
+export interface RelationshipSchemaV2 {
+  name: string;
+  verboseName: string;
+  relatedApp: string;
+  relatedModel: string;
+  relationType: string;
+  isToMany: boolean;
+  lookupField: string;
+  searchFields: string[];
+}
+
+export interface MutationSchemaV2 {
+  name: string;
+  methodName?: string;
+  description?: string;
+  inputType?: string;
+  inputFields: MutationInputFieldMeta[];
+  requiresAuthentication: boolean;
+  requiredPermissions: string[];
+  mutationType: string;
+  modelName?: string;
+  formConfig?: Record<string, unknown>;
+  successMessage?: string;
+}
+
+export interface FilterConfigTypeV2 {
+  style: string;
+  argumentName: string;
+  inputTypeName: string;
+  supportsAnd: boolean;
+  supportsOr: boolean;
+  supportsNot: boolean;
+  supportsFts: boolean;
+  supportsAggregation: boolean;
+  presets?: Array<{
+    name: string;
+    description?: string;
+    filterJson: Record<string, unknown>;
+  }>;
+  computedFilters?: Array<{
+    name: string;
+    filterType: string;
+    description?: string;
+  }>;
+}
+
+export interface RelationFilterSchemaV2 {
+  relationName: string;
+  relationType: string;
+  supportsSome: boolean;
+  supportsEvery: boolean;
+  supportsNone: boolean;
+  supportsCount: boolean;
+  nestedFilterType: string;
+}
+
+export interface FieldGroupType {
+  key: string;
+  label: string;
+  description?: string;
+  fields: string[];
+  collapsed?: boolean;
+}
+
+export interface ModelPermissionsType {
+  canCreate: boolean;
+  canUpdate: boolean;
+  canDelete: boolean;
+  canRead: boolean;
+  canList: boolean;
+  canHistory: boolean;
+}
+
+export interface TemplateInfoType {
+  key: string;
+  title: string;
+  endpoint: string;
+  urlPath: string;
+  guard?: string | null;
+  requireAuthentication: boolean;
+  roles: string[];
+  permissions: string[];
+  allowed: boolean;
+  denialReason?: string | null;
+  allowClientData?: boolean;
+  clientDataFields?: string[];
+  clientDataSchema?: Array<{ name: string; type?: string | null }> | null;
+}
+
+export interface ModelTableMetadataV2 {
+  metadataVersion: "v2";
+  app: string;
+  model: string;
+  verboseName: string;
+  verboseNamePlural: string;
+  fields: TableFieldMetadataType[];
+  relationships: RelationshipSchemaV2[];
+  mutations: MutationMetadata[];
+  templates: ModelPdfTemplateMetadata[];
+  permissions: ModelPermissionMatrix;
+  filterConfig: FilterConfigTypeV2;
+  relationFilters: RelationFilterSchemaV2[];
+  fieldGroups: FieldGroupType[];
+  filterSchema: Array<{
+    fieldName: string;
+    fieldLabel: string;
+    baseType: string;
+    isNested: boolean;
+    relatedModel?: string;
+    filterInputType: string;
+    availableOperators: string[];
+    options: Array<{
+      name: string;
+      lookup: string;
+      label: string;
+      helpText?: string;
+      choices?: { value: string; label: string }[];
+      graphqlType: string;
+      isList: boolean;
+    }>;
+  }>;
+}

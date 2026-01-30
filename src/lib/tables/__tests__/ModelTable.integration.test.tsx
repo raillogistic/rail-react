@@ -12,6 +12,31 @@ import {
 } from "../hooks";
 import { gql } from "@apollo/client";
 
+// Mock useAuth to avoid AuthProvider requirement
+vi.mock("@/auth/hooks/useAuth", () => ({
+  useAuth: () => ({
+    isAuthenticated: true,
+    user: { id: 1, username: "testuser" },
+    hasPermission: () => true, // Allow all permissions
+    hasRole: () => true,
+    login: vi.fn(),
+    logout: vi.fn(),
+    isLoading: false,
+  }),
+}));
+
+// Mock AuthContext to satisfy useAuditLogger -> useAuthContext dependency
+vi.mock("@/auth/context", () => ({
+  useAuthContext: () => ({
+    user: { id: 1, username: "testuser" },
+    isAuthenticated: true,
+    isLoading: false,
+    hasPermission: () => true,
+    hasRole: () => true,
+  }),
+  AuthContext: React.createContext(null),
+}));
+
 // Mock DynamicFilterForm to avoid complex nested filter logic and metadata fetching in tests
 vi.mock("@/lib/form/filters/DynamicFilterForm", () => ({
   default: ({ onApply, layout, showPresets, showDistinct }: any) => (

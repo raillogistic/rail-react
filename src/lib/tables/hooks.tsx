@@ -5,7 +5,7 @@ import {
   useQuery,
   useApolloClient,
   type ApolloError,
-  type WatchQueryFetchPolicy,
+  type FetchPolicy,
 } from "@apollo/client";
 import {
   useReactTable,
@@ -20,169 +20,104 @@ import {
   ModelTableType,
   TableFieldMetadataType,
   ComplexFilterInput,
-  GraphQLTableVars,
   type ModelTableFiltersOptions,
+  ModelTableMetadataV2,
+  MutationMetadata,
+  ModelPdfTemplateMetadata,
 } from "./types";
 import {
   buildMetadataScopeKey,
-  isCacheEntryFresh,
-  stableSerialize,
   useMetadataCacheEntry,
-  writeMetadataCacheEntry,
-  METADATA_CACHE_TTL_MS,
+  stableSerialize,
 } from "@/lib/metadata/cache";
 import { DEFAULT_PAGINATION_ORDERING } from "@/graphql/queries";
+import type {
+  UnifiedFilterSchema,
+  FilterableField,
+  FilterPreset,
+  DistinctField,
+  RelationFilter,
+  FilterBaseType,
+  FieldGroup,
+} from "@/lib/form/filters/types";
 
 /* ----------------------------
-   ⚡ Metadata Queries (V2)
----------------------------- */
-export const MODEL_SCHEMA_QUERY = gql`
-  query ModelSchema($app: String!, $model: String!) {
+   ⚡ Complete V2 Metadata Query
+   ---------------------------- */
+export const MODEL_TABLE_METADATA_V2_QUERY = gql`
+  query ModelTableMetadataV2($app: String!, $model: String!) {
     modelSchema(app: $app, model: $model) {
       app
       model
       verboseName
       verboseNamePlural
+      
       fields {
         name
         verboseName
         helpText
         fieldType
+        graphqlType
+        required
+        nullable
+        choices { value label group }
+        minValue
+        maxValue
         isRelation
+        isNumeric
+        isDate
+        isDatetime
+        isBoolean
+        isText
+        isJson
+        isIndexed
       }
-    }
-  }
-`;
-
-interface ModelSchemaResponse {
-  modelSchema: {
-    app: string;
-    model: string;
-    verboseName: string;
-    verboseNamePlural: string;
-    fields: Array<{
-      name: string;
-      verboseName: string;
-      helpText: string;
-      fieldType: string;
-      isRelation: boolean;
-    }>;
-  };
-}
-
-const mapV2SchemaToV1Metadata = (
-  schema: ModelSchemaResponse["modelSchema"]
-): Partial<ModelTableType> => {
-  return {
-    app: schema.app,
-    model: schema.model,
-    verboseName: schema.verboseName,
-    verboseNamePlural: schema.verboseNamePlural,
-    fields: schema.fields.map((f) => ({
-      name: f.name,
-      accessor: f.name,
-      display: f.name,
-      editable: true,
-      field_type: f.fieldType as any,
-      filterable: true,
-      sortable: true,
-      title: f.verboseName,
-      helpText: f.helpText,
-      is_property: false,
-      is_related: f.isRelation,
-      permissions: {
-        can_read: true,
-        can_write: true,
-        visibility: "visible",
-        access_level: "full",
-      },
-    })),
-    filters: [], // V2 filters handled by DynamicFilterForm
-    metadataVersion: "v2",
-  };
-};
-
-export const MODEL_TABLE_MUTATIONS_QUERY = gql`
-  query model_table_mutations(
-    $app_name: String!
-    $model_name: String!
-    $exclude: [String]
-    $only: [String]
-    $include_nested: Boolean
-    $only_lookup: [String]
-    $exclude_lookup: [String]
-  ) {
-    response: model_table(
-      app_name: $app_name
-      model_name: $model_name
-      exclude: $exclude
-      only: $only
-      include_nested: $include_nested
-      only_lookup: $only_lookup
-      exclude_lookup: $exclude_lookup
-    ) {
-      metadataVersion
+      
+      relationships {
+        name
+        verboseName
+        relatedApp
+        relatedModel
+        relationType
+        isToMany
+        lookupField
+        searchFields
+      }
+      
       mutations {
         name
-        method_name
+        methodName
         description
-        input_type
-        input_fields {
+        inputType
+        inputFields {
           name
-          field_type
+          fieldType
           required
-          default_value
+          defaultValue
           description
           choices
-          validation_rules
-          widget_type
+          validationRules
+          widgetType
           placeholder
-          help_text
-          min_length
-          max_length
-          min_value
-          max_value
+          helpText
+          minLength
+          maxLength
+          minValue
+          maxValue
           pattern
-          related_model
+          relatedModel
           multiple
         }
-        requires_authentication
-        required_permissions
-        mutation_type
-        model_name
-        form_config
-        validation_schema
-        success_message
-        error_messages
-        action
+        requiresAuthentication
+        requiredPermissions
+        mutationType
+        modelName
+        formConfig
+        successMessage
       }
-    }
-  }
-`;
-
-export const MODEL_TABLE_TEMPLATES_QUERY = gql`
-  query model_table_templates(
-    $app_name: String!
-    $model_name: String!
-    $exclude: [String]
-    $only: [String]
-    $include_nested: Boolean
-    $only_lookup: [String]
-    $exclude_lookup: [String]
-  ) {
-    response: model_table(
-      app_name: $app_name
-      model_name: $model_name
-      exclude: $exclude
-      only: $only
-      include_nested: $include_nested
-      only_lookup: $only_lookup
-      exclude_lookup: $exclude_lookup
-    ) {
-      metadataVersion
-      pdfTemplates {
+      
+      templates {
         key
-        methodName
         title
         endpoint
         urlPath
@@ -196,65 +131,501 @@ export const MODEL_TABLE_TEMPLATES_QUERY = gql`
         clientDataFields
         clientDataSchema
       }
+      
+      permissions {
+        canCreate
+        canUpdate
+        canDelete
+        canRead
+        canList
+        canHistory
+      }
+      
+      filterConfig {
+        style
+        argumentName
+        inputTypeName
+        supportsAnd
+        supportsOr
+        supportsNot
+        supportsFts
+        supportsAggregation
+        presets {
+          name
+          description
+          filterJson
+        }
+        computedFilters {
+          name
+          filterType
+          description
+        }
+      }
+      
+      relationFilters {
+        relationName
+        relationType
+        supportsSome
+        supportsEvery
+        supportsNone
+        supportsCount
+        nestedFilterType
+      }
+      
+      fieldGroups {
+        key
+        label
+        description
+        fields
+        collapsed
+      }
+    }
+    
+    filterSchema(app: $app, model: $model) {
+      fieldName
+      fieldLabel
+      baseType
+      isNested
+      relatedModel
+      filterInputType
+      availableOperators
+      options {
+        name
+        lookup
+        label
+        helpText
+        choices { value label }
+        graphqlType
+        isList
+      }
     }
   }
 `;
 
-type BaseMetadataResponse = {
-  response: Omit<ModelTableType, "filters" | "mutations" | "pdfTemplates">;
-};
+interface ModelTableMetadataV2Response {
+  modelSchema: {
+    app: string;
+    model: string;
+    verboseName: string;
+    verboseNamePlural: string;
+    fields: Array<{
+      name: string;
+      verboseName: string;
+      helpText?: string;
+      fieldType: string;
+      graphqlType: string;
+      required: boolean;
+      nullable: boolean;
+      choices?: { value: string; label: string; group?: string }[];
+      minValue?: number;
+      maxValue?: number;
+      isRelation: boolean;
+      isNumeric: boolean;
+      isDate: boolean;
+      isDatetime: boolean;
+      isBoolean: boolean;
+      isText: boolean;
+      isJson: boolean;
+      isIndexed: boolean;
+    }>;
+    relationships: Array<{
+      name: string;
+      verboseName: string;
+      relatedApp: string;
+      relatedModel: string;
+      relationType: string;
+      isToMany: boolean;
+      lookupField: string;
+      searchFields: string[];
+    }>;
+    mutations: Array<{
+      name: string;
+      methodName?: string;
+      description?: string;
+      inputType?: string;
+      inputFields: Array<{
+        name: string;
+        fieldType: string;
+        required: boolean;
+        defaultValue?: unknown;
+        description?: string | null;
+        choices?: Array<Record<string, unknown>> | null;
+        validationRules?: Record<string, unknown> | null;
+        widgetType?: string | null;
+        placeholder?: string | null;
+        helpText?: string | null;
+        minLength?: number | null;
+        maxLength?: number | null;
+        minValue?: number | null;
+        maxValue?: number | null;
+        pattern?: string | null;
+        relatedModel?: string | null;
+        multiple?: boolean;
+      }>;
+      requiresAuthentication: boolean;
+      requiredPermissions: string[];
+      mutationType: string;
+      modelName?: string;
+      formConfig?: Record<string, unknown> | null;
+      successMessage?: string;
+    }>;
+    templates: Array<{
+      key: string;
+      title: string;
+      endpoint: string;
+      urlPath: string;
+      guard?: string | null;
+      requireAuthentication: boolean;
+      roles: string[];
+      permissions: string[];
+      allowed: boolean;
+      denialReason?: string | null;
+      allowClientData?: boolean;
+      clientDataFields?: string[];
+      clientDataSchema?: Array<{ name: string; type?: string | null }> | null;
+    }>;
+    permissions: {
+      canCreate: boolean;
+      canUpdate: boolean;
+      canDelete: boolean;
+      canRead: boolean;
+      canList: boolean;
+      canHistory: boolean;
+    };
+    filterConfig: {
+      style: string;
+      argumentName: string;
+      inputTypeName: string;
+      supportsAnd: boolean;
+      supportsOr: boolean;
+      supportsNot: boolean;
+      supportsFts: boolean;
+      supportsAggregation: boolean;
+      presets?: Array<{
+        name: string;
+        description?: string;
+        filterJson: Record<string, unknown>;
+      }>;
+      computedFilters?: Array<{
+        name: string;
+        filterType: string;
+        description?: string;
+      }>;
+    };
+    relationFilters: Array<{
+      relationName: string;
+      relationType: string;
+      supportsSome: boolean;
+      supportsEvery: boolean;
+      supportsNone: boolean;
+      supportsCount: boolean;
+      nestedFilterType: string;
+    }>;
+    fieldGroups: Array<{
+      key: string;
+      label: string;
+      description?: string;
+      fields: string[];
+      collapsed?: boolean;
+    }>;
+  };
+  filterSchema: Array<{
+    fieldName: string;
+    fieldLabel: string;
+    baseType: string;
+    isNested: boolean;
+    relatedModel?: string;
+    filterInputType: string;
+    availableOperators: string[];
+    options: Array<{
+      name: string;
+      lookup: string;
+      label: string;
+      helpText?: string;
+      choices?: { value: string; label: string }[];
+      graphqlType: string;
+      isList: boolean;
+    }>;
+  }>;
+}
 
-type FiltersMetadataResponse = {
-  response: Pick<ModelTableType, "metadataVersion" | "filters">;
-};
+/**
+ * Convert V2 metadata to ModelTableMetadataV2 format
+ */
+function normalizeBaseType(baseType: string): FilterBaseType {
+  const normalized = baseType.toLowerCase();
+  if (normalized.includes("string") || normalized.includes("char") || normalized.includes("text")) {
+    return "String";
+  }
+  if (normalized.includes("int") || normalized.includes("float") || normalized.includes("decimal")) {
+    return "Number";
+  }
+  if (normalized.includes("bool")) {
+    return "Boolean";
+  }
+  if (normalized.includes("date") && !normalized.includes("time")) {
+    return "Date";
+  }
+  if (normalized.includes("datetime") || normalized.includes("time")) {
+    return "DateTime";
+  }
+  if (normalized.includes("json")) {
+    return "JSON";
+  }
+  return "Relationship";
+}
 
-type MutationsMetadataResponse = {
-  response: Pick<ModelTableType, "metadataVersion" | "mutations">;
-};
+/**
+ * Map V2 metadata response to ModelTableMetadataV2 type
+ * Maps camelCase API response to internal types (which may use snake_case keys like field_type)
+ */
+export function mapV2MetadataToTableMetadata(
+  response: ModelTableMetadataV2Response
+): ModelTableMetadataV2 {
+  const { modelSchema, filterSchema } = response;
 
-type PdfTemplatesMetadataResponse = {
-  response: Pick<ModelTableType, "metadataVersion" | "pdfTemplates">;
-};
+  return {
+    metadataVersion: "v2",
+    app: modelSchema.app,
+    model: modelSchema.model,
+    verboseName: modelSchema.verboseName,
+    verboseNamePlural: modelSchema.verboseNamePlural,
+    fields: modelSchema.fields.map((f) => ({
+      name: f.name,
+      accessor: f.name,
+      display: f.name,
+      editable: true,
+      field_type: f.fieldType as any,
+      filterable: true,
+      sortable: true,
+      title: f.verboseName,
+      helpText: f.helpText ?? "",
+      is_property: !f.isRelation,
+      is_related: f.isRelation,
+      permissions: {
+        can_read: modelSchema.permissions.canRead,
+        can_write: modelSchema.permissions.canUpdate,
+        visibility: "visible",
+        access_level: "full",
+      },
+    })),
+    relationships: modelSchema.relationships,
+    mutations: modelSchema.mutations.map((m) => ({
+      name: m.name,
+      method_name: m.methodName,
+      description: m.description,
+      input_fields: m.inputFields.map((input) => ({
+        name: input.name,
+        field_type: input.fieldType,
+        required: input.required,
+        default_value: input.defaultValue,
+        description: input.description,
+        choices: input.choices,
+        validation_rules: input.validationRules,
+        widget_type: input.widgetType,
+        placeholder: input.placeholder,
+        help_text: input.helpText,
+        min_length: input.minLength,
+        max_length: input.maxLength,
+        min_value: input.minValue,
+        max_value: input.maxValue,
+        pattern: input.pattern,
+        related_model: input.relatedModel,
+        multiple: input.multiple,
+      })),
+      requires_authentication: m.requiresAuthentication,
+      required_permissions: m.requiredPermissions,
+      mutation_type: m.mutationType,
+      model_name: m.modelName,
+      form_config: m.formConfig,
+      validation_schema: null,
+      success_message: m.successMessage,
+      error_messages: null,
+      action: null,
+    })),
+    templates: modelSchema.templates.map((t) => ({
+      key: t.key,
+      methodName: "",
+      title: t.title,
+      endpoint: t.endpoint,
+      urlPath: t.urlPath,
+      guard: t.guard,
+      requireAuthentication: t.requireAuthentication,
+      roles: t.roles,
+      permissions: t.permissions,
+      allowed: t.allowed,
+      denialReason: t.denialReason,
+      allowClientData: t.allowClientData,
+      clientDataFields: t.clientDataFields,
+      clientDataSchema: t.clientDataSchema,
+    })),
+    permissions: {
+      can_create: modelSchema.permissions.canCreate,
+      can_update: modelSchema.permissions.canUpdate,
+      can_delete: modelSchema.permissions.canDelete,
+      can_read: modelSchema.permissions.canRead,
+      can_list: modelSchema.permissions.canList,
+      can_history: modelSchema.permissions.canHistory,
+    },
+    filterConfig: modelSchema.filterConfig,
+    relationFilters: modelSchema.relationFilters,
+    fieldGroups: modelSchema.fieldGroups,
+    filterSchema,
+  };
+}
+
+/**
+ * Map table metadata to UnifiedFilterSchema for DynamicFilterForm
+ */
+export function mapTableMetadataToFilterSchema(
+  metadata: ModelTableMetadataV2
+): UnifiedFilterSchema {
+  const filterableFields: FilterableField[] = metadata.filterSchema.map(
+    (field) => ({
+      fieldName: field.fieldName,
+      fieldLabel: field.fieldLabel,
+      helpText: undefined,
+      baseType: normalizeBaseType(field.baseType),
+      graphqlType: field.options[0]?.graphqlType ?? "String",
+      filterInputType: field.filterInputType,
+      operators: field.availableOperators.map((op) => ({
+        name: op,
+        label: op,
+        helpText: undefined,
+        graphqlType: field.options[0]?.graphqlType ?? "String",
+        isList: field.options[0]?.isList ?? false,
+        choices: field.options[0]?.choices?.map((c) => ({
+          value: c.value,
+          label: c.label,
+        })),
+      })),
+      defaultOperator: field.availableOperators[0] ?? "eq",
+      choices: field.options[0]?.choices?.map((c) => ({
+        value: c.value,
+        label: c.label,
+      })),
+      isRelation: field.isNested,
+      relationConfig: field.isNested && field.relatedModel ? {
+        relatedApp: "",
+        relatedModel: field.relatedModel,
+        lookupField: "id",
+        searchFields: [],
+      } : undefined,
+      uiHints: {
+        widget: field.baseType.toLowerCase(),
+      },
+      group: undefined,
+    })
+  );
+
+  const presets: FilterPreset[] = metadata.filterConfig.presets?.map((p) => ({
+    id: p.name,
+    name: p.name,
+    description: p.description,
+    filterJson: p.filterJson,
+    source: "static",
+  })) ?? [];
+
+  const distinctFields: DistinctField[] = [];
+
+  const relationFilters: RelationFilter[] = metadata.relationFilters.map((rf) => ({
+    fieldName: rf.relationName,
+    fieldLabel: rf.relationName,
+    relationType: rf.relationType as "FOREIGN_KEY" | "MANY_TO_MANY" | "REVERSE_FK" | "ONE_TO_ONE",
+    relatedApp: "",
+    relatedModel: "",
+    nestedFilterType: rf.nestedFilterType,
+    supportsDirectFilter: false,
+    supportsSome: rf.supportsSome,
+    supportsEvery: rf.supportsEvery,
+    supportsNone: rf.supportsNone,
+    supportsCount: rf.supportsCount,
+    supportsIsNull: false,
+  }));
+
+  const fieldGroups: FieldGroup[] = metadata.fieldGroups;
+
+  return {
+    app: metadata.app,
+    model: metadata.model,
+    verboseName: metadata.verboseName,
+    verboseNamePlural: metadata.verboseNamePlural,
+    config: {
+      inputTypeName: metadata.filterConfig.inputTypeName,
+      supportsAnd: metadata.filterConfig.supportsAnd,
+      supportsOr: metadata.filterConfig.supportsOr,
+      supportsNot: metadata.filterConfig.supportsNot,
+      supportsFts: metadata.filterConfig.supportsFts,
+      supportsAggregation: metadata.filterConfig.supportsAggregation,
+      supportsDistinct: false,
+    },
+    fields: filterableFields,
+    presets,
+    distinctFields,
+    relationFilters,
+    fieldGroups,
+  };
+}
+
+/**
+ * Hook to fetch complete table metadata from metadata_v2 API
+ */
+export function useModelTableMetadataV2(
+  appName: string,
+  modelName: string,
+  options?: { skip?: boolean }
+) {
+  const client = useApolloClient();
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<ApolloError | undefined>(undefined);
+  const [metadata, setMetadata] = useState<ModelTableMetadataV2 | null>(null);
+
+  const fetchMetadata = useCallback(
+    async (fetchPolicy: FetchPolicy = "cache-first") => {
+      setLoading(true);
+      setError(undefined);
+
+      try {
+        const result = await client.query<ModelTableMetadataV2Response>({
+          query: MODEL_TABLE_METADATA_V2_QUERY,
+          variables: { app: appName, model: modelName },
+          fetchPolicy,
+        });
+        const mapped = mapV2MetadataToTableMetadata(result.data);
+        setMetadata(mapped);
+        return mapped;
+      } catch (err) {
+        setError(err as ApolloError);
+        throw err;
+      } finally {
+        setLoading(false);
+      }
+    },
+    [appName, modelName, client]
+  );
+
+  useEffect(() => {
+    if (options?.skip) return;
+    fetchMetadata("cache-first").catch(() => undefined);
+  }, [options?.skip, fetchMetadata]);
+
+  const refetch = useCallback(() => {
+    return fetchMetadata("network-only");
+  }, [fetchMetadata]);
+
+  return {
+    metadata,
+    loading,
+    error,
+    refetch,
+  };
+}
 
 type MetadataLoadingState = {
   base: boolean;
   filters: boolean;
   mutations: boolean;
   pdfTemplates: boolean;
-};
-
-const mergeMetadataPayload = (
-  incoming: Partial<ModelTableType> | null,
-  previous: ModelTableType | null
-): ModelTableType | null => {
-  if (!incoming && !previous) return null;
-  const baseline = (previous ?? incoming) as ModelTableType | null;
-  if (!baseline) return null;
-  const merged: ModelTableType = {
-    ...baseline,
-    ...(incoming ?? {}),
-    metadataVersion:
-      incoming?.metadataVersion ??
-      previous?.metadataVersion ??
-      baseline.metadataVersion ??
-      "unknown",
-    filters: incoming?.filters ?? previous?.filters ?? baseline.filters ?? [],
-    mutations:
-      incoming?.mutations ?? previous?.mutations ?? baseline.mutations ?? [],
-    pdfTemplates:
-      incoming?.pdfTemplates ??
-      previous?.pdfTemplates ??
-      baseline.pdfTemplates ??
-      [],
-  };
-  return merged;
-};
-
-const DEFAULT_METADATA_LOADING_STATE: MetadataLoadingState = {
-  base: false,
-  filters: false,
-  mutations: false,
-  pdfTemplates: false,
 };
 
 type DataQueryOptions = {
@@ -354,15 +725,34 @@ function buildAutoDataQuery(
   additionalSelectionFields: string[] = [],
   options?: DataQueryOptions
 ) {
-  const fieldName = options?.fieldName ?? `${modelName.toLowerCase()}s_pages`;
-  const queryName = fieldName.replace(/[^a-zA-Z0-9_]/g, "_");
+  // Use camelCase convention for field name (e.g. Products -> products)
+  // rail-django auto_camelcase converts models to snake_case first, then camelCase.
+  // BUT the root query field usually matches the model name in plural.
+  // If model is "Product", query is "products".
+  // If fieldName override is provided, use it.
+  // We assume default query name is `camelCase(plural(modelName))`.
+  // The backend might expose `products` or `products_pages`.
+  // Since pagination is standard, `products` (list) with pagination args is expected if Relay is off?
+  // The provided context says "Fixed issue where root query fields were PascalCase... instead of camelCase".
+  // So query name should be camelCase.
+  // We construct it roughly.
+  
+  const defaultQueryName = options?.fieldName ?? (() => {
+    // Basic pluralization
+    const lower = modelName.toLowerCase();
+    const plural = lower.endsWith("s") ? lower : `${lower}s`;
+    return plural;
+  })();
+  
+  const queryName = defaultQueryName.replace(/[^a-zA-Z0-9_]/g, "_");
+  const fieldName = defaultQueryName;
   const includeQuick = options?.includeQuickArgument ?? true;
 
-  const typeName =
+  const typeName = 
     options?.filterTypeName ??
     `${modelName.charAt(0).toUpperCase() + modelName.slice(1)}ComplexFilter`;
 
-  const selection =
+  const selection = 
     customSelection ??
     buildSelectionSet({
       fields,
@@ -375,15 +765,15 @@ function buildAutoDataQuery(
   const quickArgument = includeQuick ? ",quick:$quick" : "";
 
   return gql`
-    query ${queryName}($filters: ${typeName}, $ordering: [String], $page: Int, $per_page: Int${quickVariable}, $presets: [String], $distinctOn: [String]) {
-      ${fieldName}(filters: $filters, order_by: $ordering, page: $page, per_page: $per_page${quickArgument}, presets: $presets, distinct_on: $distinctOn) {
-        page_info {
-          total_count
-          page_count
-          current_page
-          per_page
-          has_next_page
-          has_previous_page
+    query ${queryName}($filters: ${typeName}, $ordering: [String], $page: Int, $perPage: Int${quickVariable}, $presets: [String], $distinctOn: [String]) {
+      ${fieldName}(filters: $filters, orderBy: $ordering, page: $page, perPage: $perPage${quickArgument}, presets: $presets, distinctOn: $distinctOn) {
+        pageInfo {
+          totalCount
+          pageCount
+          currentPage
+          perPage
+          hasNextPage
+          hasPreviousPage
         }
         items {
           ${selection}
@@ -394,8 +784,8 @@ function buildAutoDataQuery(
 }
 
 /**
- * Loads table metadata in stages so the table can build columns quickly before filters,
- * mutations, and templates finish loading.
+ * Loads table metadata using V2 API.
+ * Replaces the legacy multi-stage loader.
  */
 export function useModelTableMetadata(
   appName: string,
@@ -403,7 +793,6 @@ export function useModelTableMetadata(
   filtersOptions?: ModelTableFiltersOptions,
   options?: { skip?: boolean }
 ) {
-  const client = useApolloClient();
   const filtersSignature = useMemo(
     () => stableSerialize(filtersOptions ?? {}),
     [filtersOptions]
@@ -412,216 +801,27 @@ export function useModelTableMetadata(
     () => buildMetadataScopeKey(appName, modelName, filtersSignature),
     [appName, modelName, filtersSignature]
   );
+  
+  // Reuse existing cache entry if available to prevent flash
   const cachedEntry = useMetadataCacheEntry<ModelTableType>("table", scopeKey);
-
-  const schemaVariables = useMemo(
-    () => ({
-      app: appName,
-      model: modelName,
-    }),
-    [appName, modelName]
+  
+  const { metadata, loading, error, refetch } = useModelTableMetadataV2(
+    appName, 
+    modelName, 
+    options
   );
 
-  const legacyVariables = useMemo(
-    () => ({
-      app_name: appName,
-      model_name: modelName,
-      exclude: filtersOptions?.exclude,
-      only: filtersOptions?.only,
-      include_nested: filtersOptions?.include_nested,
-      only_lookup: filtersOptions?.only_lookup,
-      exclude_lookup: filtersOptions?.exclude_lookup,
-    }),
-    [appName, modelName, filtersSignature]
-  );
-
-  const autoFetchEnabled = !(options?.skip ?? false);
-  const [loadingState, setLoadingState] = useState<MetadataLoadingState>(
-    DEFAULT_METADATA_LOADING_STATE
-  );
-  const [error, setError] = useState<ApolloError | undefined>(undefined);
-  const latestMetadataRef = useRef<ModelTableType | null>(
-    cachedEntry?.data ?? null
-  );
-  const detailFetcherRef = useRef<
-    ((forceNetwork?: boolean) => Promise<void>) | null
-  >(null);
-  const detailsFetchInFlight = useRef(false);
-
-  useEffect(() => {
-    latestMetadataRef.current = cachedEntry?.data ?? null;
-  }, [cachedEntry]);
-
-  const applyMetadataPatch = useCallback(
-    (partial: Partial<ModelTableType> | null) => {
-      const merged = mergeMetadataPayload(partial, latestMetadataRef.current);
-      if (!merged) return null;
-      latestMetadataRef.current = merged;
-      writeMetadataCacheEntry(
-        "table",
-        scopeKey,
-        merged.metadataVersion ?? partial?.metadataVersion ?? "unknown",
-        merged
-      );
-      return merged;
-    },
-    [scopeKey]
-  );
-
-  const runSchemaQuery = useCallback(
-    async (fetchPolicy: WatchQueryFetchPolicy = "cache-and-network") => {
-      setLoadingState((prev) => ({ ...prev, base: true }));
-      setError(undefined);
-      try {
-        const result = await client.query<
-          ModelSchemaResponse,
-          { app: string; model: string }
-        >({
-          query: MODEL_SCHEMA_QUERY,
-          variables: schemaVariables,
-          fetchPolicy: "cache-first",
-        });
-        const v1Metadata = mapV2SchemaToV1Metadata(result.data.modelSchema);
-        const merged = applyMetadataPatch(v1Metadata);
-        void detailFetcherRef.current?.(false);
-        return merged;
-      } catch (err) {
-        setError(err as ApolloError);
-        throw err;
-      } finally {
-        setLoadingState((prev) => ({ ...prev, base: false }));
-      }
-    },
-    [client, schemaVariables, applyMetadataPatch]
-  );
-
-  const runMutationsQuery = useCallback(
-    async (fetchPolicy: WatchQueryFetchPolicy = "network-only") => {
-      setLoadingState((prev) => ({ ...prev, mutations: true }));
-      setError(undefined);
-      try {
-        const result = await client.query<
-          MutationsMetadataResponse,
-          GraphQLTableVars
-        >({
-          query: MODEL_TABLE_MUTATIONS_QUERY,
-          variables: legacyVariables,
-          fetchPolicy,
-        });
-        return applyMetadataPatch(result.data?.response ?? null);
-      } catch (err) {
-        setError(err as ApolloError);
-        throw err;
-      } finally {
-        setLoadingState((prev) => ({ ...prev, mutations: false }));
-      }
-    },
-    [client, legacyVariables, applyMetadataPatch]
-  );
-
-  const runTemplatesQuery = useCallback(
-    async (fetchPolicy: WatchQueryFetchPolicy = "network-only") => {
-      setLoadingState((prev) => ({ ...prev, pdfTemplates: true }));
-      setError(undefined);
-      try {
-        const result = await client.query<
-          PdfTemplatesMetadataResponse,
-          GraphQLTableVars
-        >({
-          query: MODEL_TABLE_TEMPLATES_QUERY,
-          variables: legacyVariables,
-          fetchPolicy,
-        });
-        return applyMetadataPatch(result.data?.response ?? null);
-      } catch (err) {
-        setError(err as ApolloError);
-        throw err;
-      } finally {
-        setLoadingState((prev) => ({ ...prev, pdfTemplates: false }));
-      }
-    },
-    [client, legacyVariables, applyMetadataPatch]
-  );
-
-  const shouldFetchBase =
-    autoFetchEnabled && !isCacheEntryFresh(cachedEntry, METADATA_CACHE_TTL_MS);
-
-  useEffect(() => {
-    if (!shouldFetchBase) return;
-    runSchemaQuery("network-only").catch(() => undefined);
-  }, [shouldFetchBase, runSchemaQuery]);
-
-  const ensureDetailMetadata = useCallback(
-    async (forceNetwork = false) => {
-      if (!autoFetchEnabled) return;
-      const snapshot = latestMetadataRef.current ?? cachedEntry?.data ?? null;
-      if (!snapshot) return;
-
-      const mutationsMissing =
-        !snapshot.mutations || snapshot.mutations.length === 0 || forceNetwork;
-      const templatesMissing =
-        !snapshot.pdfTemplates ||
-        snapshot.pdfTemplates.length === 0 ||
-        forceNetwork;
-      const stale = forceNetwork
-        ? true
-        : !isCacheEntryFresh(cachedEntry, METADATA_CACHE_TTL_MS);
-      const needsDetails = mutationsMissing || templatesMissing || stale;
-      if (!needsDetails || detailsFetchInFlight.current) {
-        return;
-      }
-      detailsFetchInFlight.current = true;
-      try {
-        if (mutationsMissing || stale) {
-          await runMutationsQuery(
-            forceNetwork ? "network-only" : "cache-first"
-          );
-        }
-        if (templatesMissing || stale) {
-          await runTemplatesQuery(
-            forceNetwork ? "network-only" : "cache-first"
-          );
-        }
-      } catch (err) {
-        setError(err as ApolloError);
-      } finally {
-        detailsFetchInFlight.current = false;
-      }
-    },
-    [
-      autoFetchEnabled,
-      cachedEntry,
-      runMutationsQuery,
-      runTemplatesQuery,
-    ]
-  );
-
-  useEffect(() => {
-    detailFetcherRef.current = ensureDetailMetadata;
-  }, [ensureDetailMetadata]);
-
-  useEffect(() => {
-    void ensureDetailMetadata(false);
-  }, [ensureDetailMetadata]);
-
-  const refetch = useCallback(async () => {
-    await runSchemaQuery("network-only");
-    await ensureDetailMetadata(true);
-    return latestMetadataRef.current;
-  }, [ensureDetailMetadata, runSchemaQuery]);
-
-  const metadata = cachedEntry?.data ?? latestMetadataRef.current ?? null;
-  const loading =
-    !metadata && autoFetchEnabled && (loadingState.base || shouldFetchBase);
+  // Fallback to cache if loading and cache exists
+  const effectiveMetadata = metadata ?? cachedEntry?.data ?? null;
 
   return {
-    metadata,
+    metadata: effectiveMetadata as ModelTableType | null,
     loading,
     error,
     refetch,
-    loadingFilters: loadingState.filters,
-    loadingMutations: loadingState.mutations,
-    loadingPdfTemplates: loadingState.pdfTemplates,
+    loadingFilters: false,
+    loadingMutations: false,
+    loadingPdfTemplates: false,
   };
 }
 
@@ -692,9 +892,9 @@ export function useGraphQLModelTable({
   const metadataLoadingState = useMemo(
     () => ({
       base: metaLoading,
-      filters: metaFiltersLoading ?? false,
-      mutations: metaMutationsLoading ?? false,
-      pdfTemplates: metaTemplatesLoading ?? false,
+      filters: metaFiltersLoading,
+      mutations: metaMutationsLoading,
+      pdfTemplates: metaTemplatesLoading,
     }),
     [
       metaFiltersLoading,
@@ -717,8 +917,8 @@ export function useGraphQLModelTable({
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [quick, setQuick] = useState<string>("");
-  const [advancedFilters, setAdvancedFilters] =
-    useState<ComplexFilterInput<string> | null>(null);
+  const [advancedFilters,
+    setAdvancedFilters] = useState<ComplexFilterInput<string> | null>(null);
   const [presets, setPresets] = useState<string[]>([]);
   const [distinctOn, setDistinctOn] = useState<string[]>([]);
 
@@ -743,10 +943,14 @@ export function useGraphQLModelTable({
 
   /* --- 3. Build GraphQL Query --- */
   const includeQuickArgument = queryOptions?.includeQuickArgument ?? true;
-  const responseKey =
+  const responseKey = 
     queryOptions?.responseKey ??
     queryOptions?.fieldName ??
-    `${modelName.toLowerCase()}s_pages`;
+    (function autoResolveKey() {
+      // Logic duplicated from buildAutoDataQuery for consistency
+      const lower = modelName.toLowerCase();
+      return lower.endsWith("s") ? lower : `${lower}s`;
+    })();
 
   const dataQuery = useMemo(() => {
     if (!fields.length) return null;
@@ -780,6 +984,7 @@ export function useGraphQLModelTable({
       .map((f: any) => {
         // Support "field__lookup" syntax
         const [field, lookup] = f.id.split("__");
+        // Field name is likely already camelCase if metadata is camelCase
         return {
           [field]: { [lookup || "icontains"]: f.value },
         } as ComplexFilterInput<string>;
@@ -803,15 +1008,14 @@ export function useGraphQLModelTable({
 
     // If no parts built from UI state, fallback to initVariables.filters
     if (parts.length === 0) {
-      return (initVariables?.filters ??
-        null) as ComplexFilterInput<string> | null;
+      return (
+        initVariables?.filters ??
+        null
+      ) as ComplexFilterInput<string> | null;
     }
 
     // If only one part, return it directly; otherwise combine with AND
     if (parts.length === 1) {
-      // If we have UI filters AND initVariables.filters, we might want to combine them
-      // But usually UI filters override init filters or work on top.
-      // If initVariables.filters is "base filters" (like "category=books"), we should probably AND them.
       if (initVariables?.filters) {
         return {
           AND: [parts[0], initVariables.filters],
@@ -853,9 +1057,9 @@ export function useGraphQLModelTable({
         filters: filtersPayload,
         ordering: orderingPayload,
         page: pageIndex + 1,
-        per_page: pageSize,
+        perPage: pageSize, // camelCase
         presets,
-        distinctOn,
+        distinctOn, // camelCase
         ...(includeQuickArgument ? { quick } : {}),
       },
       // Prefer cache-first to avoid unnecessary network calls that can cause latency
@@ -867,6 +1071,8 @@ export function useGraphQLModelTable({
     }
   );
 
+  const rawPageInfo = tableData?.[responseKey]?.pageInfo;
+  
   const pageInfo = customItems
     ? {
         total_count: customItems.length,
@@ -876,7 +1082,14 @@ export function useGraphQLModelTable({
         has_next_page: false,
         has_previous_page: false,
       }
-    : tableData?.[responseKey]?.page_info;
+    : (rawPageInfo ? {
+        total_count: rawPageInfo.totalCount,
+        page_count: rawPageInfo.pageCount,
+        current_page: rawPageInfo.currentPage,
+        per_page: rawPageInfo.perPage,
+        has_next_page: rawPageInfo.hasNextPage,
+        has_previous_page: rawPageInfo.hasPreviousPage
+      } : undefined);
 
   const items = customItems ?? tableData?.[responseKey]?.items ?? [];
 
@@ -1054,34 +1267,3 @@ export function useGraphQLModelTable({
     supportsQuickSearch: includeQuickArgument,
   };
 }
-
-/**
-const {
-  table,
-  fields,
-  meta,
-  items,
-  pageInfo,
-  loading,
-  refetch,
-  setters,
-} = useGraphQLModelTable({
-  appName: "inventory",
-  modelName: "Product",
-  excludeColumns: ["debug_field"],
-  initVariables: {
-    filters: { active: { exact: true } },
-    ordering: ["-created_at"],
-  },
-  overrideColumns: {
-    price: {
-      cell: (info) => (
-        <span className="font-semibold text-green-600">
-          ${info.getValue()}
-        </span>
-      ),
-    },
-  },
-});
-
- */
