@@ -12,7 +12,7 @@ export interface MetadataCacheEntry<TPayload> {
 export const METADATA_CACHE_TTL_MS = 1000 * 60 * 5;
 const MAX_VERSION_HISTORY = 2;
 
-const stores: Record<MetadataKind, Map<string, MetadataCacheEntry<any>>> = {
+const stores: Record<MetadataKind, Map<string, MetadataCacheEntry<unknown>>> = {
   table: new Map(),
   form: new Map(),
 };
@@ -112,7 +112,7 @@ export function clearMetadataScope(kind: MetadataKind, scopeKey: string) {
   }
 }
 
-export function isCacheEntryFresh(entry: MetadataCacheEntry<any> | null, ttlMs: number = METADATA_CACHE_TTL_MS) {
+export function isCacheEntryFresh(entry: MetadataCacheEntry<unknown> | null, ttlMs: number = METADATA_CACHE_TTL_MS) {
   if (!entry) {
     return false;
   }

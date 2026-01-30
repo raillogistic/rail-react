@@ -534,4 +534,7 @@ export interface ModelTableMetadataV2 {
       isList: boolean;
     }>;
   }>;
+  // Compatibility fields for ModelTableType
+  filters: FilterFieldType[];
+  pdfTemplates: ModelPdfTemplateMetadata[];
 }

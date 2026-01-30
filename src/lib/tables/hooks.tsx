@@ -1,11 +1,8 @@
 // useGraphQLModelTable.tsx
-import { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   gql,
   useQuery,
-  useApolloClient,
-  type ApolloError,
-  type FetchPolicy,
 } from "@apollo/client";
 import {
   useReactTable,
@@ -17,337 +14,22 @@ import {
   VisibilityState,
 } from "@tanstack/react-table";
 import {
-  ModelTableType,
   TableFieldMetadataType,
   ComplexFilterInput,
   type ModelTableFiltersOptions,
   ModelTableMetadataV2,
-  MutationMetadata,
-  ModelPdfTemplateMetadata,
 } from "./types";
-import {
-  buildMetadataScopeKey,
-  useMetadataCacheEntry,
-  stableSerialize,
-} from "@/lib/metadata/cache";
+import { useModelMetadata } from "@/lib/metadata/hooks";
+import type { ModelMetadata } from "@/lib/metadata/types";
 import { DEFAULT_PAGINATION_ORDERING } from "@/graphql/queries";
 import type {
-  UnifiedFilterSchema,
-  FilterableField,
-  FilterPreset,
-  DistinctField,
-  RelationFilter,
   FilterBaseType,
-  FieldGroup,
 } from "@/lib/form/filters/types";
 
 /* ----------------------------
    ⚡ Complete V2 Metadata Query
    ---------------------------- */
-export const MODEL_TABLE_METADATA_V2_QUERY = gql`
-  query ModelTableMetadataV2($app: String!, $model: String!) {
-    modelSchema(app: $app, model: $model) {
-      app
-      model
-      verboseName
-      verboseNamePlural
-      
-      fields {
-        name
-        verboseName
-        helpText
-        fieldType
-        graphqlType
-        required
-        nullable
-        choices { value label group }
-        minValue
-        maxValue
-        isRelation
-        isNumeric
-        isDate
-        isDatetime
-        isBoolean
-        isText
-        isJson
-        isIndexed
-      }
-      
-      relationships {
-        name
-        verboseName
-        relatedApp
-        relatedModel
-        relationType
-        isToMany
-        lookupField
-        searchFields
-      }
-      
-      mutations {
-        name
-        methodName
-        description
-        inputType
-        inputFields {
-          name
-          fieldType
-          required
-          defaultValue
-          description
-          choices
-          validationRules
-          widgetType
-          placeholder
-          helpText
-          minLength
-          maxLength
-          minValue
-          maxValue
-          pattern
-          relatedModel
-          multiple
-        }
-        requiresAuthentication
-        requiredPermissions
-        mutationType
-        modelName
-        formConfig
-        successMessage
-      }
-      
-      templates {
-        key
-        title
-        endpoint
-        urlPath
-        guard
-        requireAuthentication
-        roles
-        permissions
-        allowed
-        denialReason
-        allowClientData
-        clientDataFields
-        clientDataSchema
-      }
-      
-      permissions {
-        canCreate
-        canUpdate
-        canDelete
-        canRead
-        canList
-        canHistory
-      }
-      
-      filterConfig {
-        style
-        argumentName
-        inputTypeName
-        supportsAnd
-        supportsOr
-        supportsNot
-        supportsFts
-        supportsAggregation
-        presets {
-          name
-          description
-          filterJson
-        }
-        computedFilters {
-          name
-          filterType
-          description
-        }
-      }
-      
-      relationFilters {
-        relationName
-        relationType
-        supportsSome
-        supportsEvery
-        supportsNone
-        supportsCount
-        nestedFilterType
-      }
-      
-      fieldGroups {
-        key
-        label
-        description
-        fields
-        collapsed
-      }
-    }
-    
-    filterSchema(app: $app, model: $model) {
-      fieldName
-      fieldLabel
-      baseType
-      isNested
-      relatedModel
-      filterInputType
-      availableOperators
-      options {
-        name
-        lookup
-        label
-        helpText
-        choices { value label }
-        graphqlType
-        isList
-      }
-    }
-  }
-`;
-
-interface ModelTableMetadataV2Response {
-  modelSchema: {
-    app: string;
-    model: string;
-    verboseName: string;
-    verboseNamePlural: string;
-    fields: Array<{
-      name: string;
-      verboseName: string;
-      helpText?: string;
-      fieldType: string;
-      graphqlType: string;
-      required: boolean;
-      nullable: boolean;
-      choices?: { value: string; label: string; group?: string }[];
-      minValue?: number;
-      maxValue?: number;
-      isRelation: boolean;
-      isNumeric: boolean;
-      isDate: boolean;
-      isDatetime: boolean;
-      isBoolean: boolean;
-      isText: boolean;
-      isJson: boolean;
-      isIndexed: boolean;
-    }>;
-    relationships: Array<{
-      name: string;
-      verboseName: string;
-      relatedApp: string;
-      relatedModel: string;
-      relationType: string;
-      isToMany: boolean;
-      lookupField: string;
-      searchFields: string[];
-    }>;
-    mutations: Array<{
-      name: string;
-      methodName?: string;
-      description?: string;
-      inputType?: string;
-      inputFields: Array<{
-        name: string;
-        fieldType: string;
-        required: boolean;
-        defaultValue?: unknown;
-        description?: string | null;
-        choices?: Array<Record<string, unknown>> | null;
-        validationRules?: Record<string, unknown> | null;
-        widgetType?: string | null;
-        placeholder?: string | null;
-        helpText?: string | null;
-        minLength?: number | null;
-        maxLength?: number | null;
-        minValue?: number | null;
-        maxValue?: number | null;
-        pattern?: string | null;
-        relatedModel?: string | null;
-        multiple?: boolean;
-      }>;
-      requiresAuthentication: boolean;
-      requiredPermissions: string[];
-      mutationType: string;
-      modelName?: string;
-      formConfig?: Record<string, unknown> | null;
-      successMessage?: string;
-    }>;
-    templates: Array<{
-      key: string;
-      title: string;
-      endpoint: string;
-      urlPath: string;
-      guard?: string | null;
-      requireAuthentication: boolean;
-      roles: string[];
-      permissions: string[];
-      allowed: boolean;
-      denialReason?: string | null;
-      allowClientData?: boolean;
-      clientDataFields?: string[];
-      clientDataSchema?: Array<{ name: string; type?: string | null }> | null;
-    }>;
-    permissions: {
-      canCreate: boolean;
-      canUpdate: boolean;
-      canDelete: boolean;
-      canRead: boolean;
-      canList: boolean;
-      canHistory: boolean;
-    };
-    filterConfig: {
-      style: string;
-      argumentName: string;
-      inputTypeName: string;
-      supportsAnd: boolean;
-      supportsOr: boolean;
-      supportsNot: boolean;
-      supportsFts: boolean;
-      supportsAggregation: boolean;
-      presets?: Array<{
-        name: string;
-        description?: string;
-        filterJson: Record<string, unknown>;
-      }>;
-      computedFilters?: Array<{
-        name: string;
-        filterType: string;
-        description?: string;
-      }>;
-    };
-    relationFilters: Array<{
-      relationName: string;
-      relationType: string;
-      supportsSome: boolean;
-      supportsEvery: boolean;
-      supportsNone: boolean;
-      supportsCount: boolean;
-      nestedFilterType: string;
-    }>;
-    fieldGroups: Array<{
-      key: string;
-      label: string;
-      description?: string;
-      fields: string[];
-      collapsed?: boolean;
-    }>;
-  };
-  filterSchema: Array<{
-    fieldName: string;
-    fieldLabel: string;
-    baseType: string;
-    isNested: boolean;
-    relatedModel?: string;
-    filterInputType: string;
-    availableOperators: string[];
-    options: Array<{
-      name: string;
-      lookup: string;
-      label: string;
-      helpText?: string;
-      choices?: { value: string; label: string }[];
-      graphqlType: string;
-      isList: boolean;
-    }>;
-  }>;
-}
+// Replaced by @/lib/metadata/hooks
 
 /**
  * Convert V2 metadata to ModelTableMetadataV2 format
@@ -380,9 +62,10 @@ function normalizeBaseType(baseType: string): FilterBaseType {
  * Maps camelCase API response to internal types (which may use snake_case keys like field_type)
  */
 export function mapV2MetadataToTableMetadata(
-  response: ModelTableMetadataV2Response
+  modelSchema: ModelMetadata
 ): ModelTableMetadataV2 {
-  const { modelSchema, filterSchema } = response;
+  // modelSchema is now the direct ModelMetadata object, not { modelSchema, filterSchema } response
+  // We need to extract filterSchema from modelSchema.filters
 
   return {
     metadataVersion: "v2",
@@ -394,7 +77,7 @@ export function mapV2MetadataToTableMetadata(
       name: f.name,
       accessor: f.name,
       display: f.name,
-      editable: true,
+      editable: f.editable,
       field_type: f.fieldType as any,
       filterable: true,
       sortable: true,
@@ -403,13 +86,22 @@ export function mapV2MetadataToTableMetadata(
       is_property: !f.isRelation,
       is_related: f.isRelation,
       permissions: {
-        can_read: modelSchema.permissions.canRead,
+        can_read: modelSchema.permissions.canList ?? true, // Fallback/Check logic
         can_write: modelSchema.permissions.canUpdate,
-        visibility: "visible",
+        visibility: f.visibility as any,
         access_level: "full",
       },
     })),
-    relationships: modelSchema.relationships,
+    relationships: modelSchema.relationships.map(r => ({
+       name: r.name,
+       verboseName: r.verboseName,
+       relatedApp: r.relatedApp,
+       relatedModel: r.relatedModel,
+       relationType: r.relationType,
+       isToMany: r.isToMany,
+       lookupField: r.lookupField,
+       searchFields: r.searchFields ?? [],
+    })),
     mutations: modelSchema.mutations.map((m) => ({
       name: m.name,
       method_name: m.methodName,
@@ -433,44 +125,110 @@ export function mapV2MetadataToTableMetadata(
         related_model: input.relatedModel,
         multiple: input.multiple,
       })),
-      requires_authentication: m.requiresAuthentication,
-      required_permissions: m.requiredPermissions,
-      mutation_type: m.mutationType,
+      requires_authentication: m.requiresAuthentication ?? false,
+      required_permissions: m.requiredPermissions ?? [],
+      mutation_type: m.mutationType ?? "custom",
       model_name: m.modelName,
-      form_config: m.formConfig,
+      form_config: typeof m.formConfig === "string" ? JSON.parse(m.formConfig) : m.formConfig,
       validation_schema: null,
       success_message: m.successMessage,
-      error_messages: null,
-      action: null,
+      error_messages: m.errorMessages ?? null,
+      action: typeof m.action === "string" ? JSON.parse(m.action) : m.action,
     })),
-    templates: modelSchema.templates.map((t) => ({
+    templates: (modelSchema.templates ?? []).map((t) => ({
       key: t.key,
-      methodName: "",
+      methodName: t.key.split(":").pop() ?? "",
       title: t.title,
       endpoint: t.endpoint,
-      urlPath: t.urlPath,
+      urlPath: t.urlPath ?? "",
       guard: t.guard,
-      requireAuthentication: t.requireAuthentication,
-      roles: t.roles,
-      permissions: t.permissions,
-      allowed: t.allowed,
+      requireAuthentication: t.requireAuthentication ?? false,
+      roles: t.roles ?? [],
+      permissions: t.permissions ?? [],
+      allowed: t.allowed ?? false,
       denialReason: t.denialReason,
       allowClientData: t.allowClientData,
       clientDataFields: t.clientDataFields,
-      clientDataSchema: t.clientDataSchema,
+      clientDataSchema: typeof t.clientDataSchema === "string" ? JSON.parse(t.clientDataSchema) : t.clientDataSchema,
     })),
     permissions: {
       can_create: modelSchema.permissions.canCreate,
       can_update: modelSchema.permissions.canUpdate,
       can_delete: modelSchema.permissions.canDelete,
-      can_read: modelSchema.permissions.canRead,
+      can_read: modelSchema.permissions.canRetrieve,
       can_list: modelSchema.permissions.canList,
-      can_history: modelSchema.permissions.canHistory,
+      can_history: modelSchema.permissions.canHistory ?? false,
+      reasons: typeof modelSchema.permissions.denialReasons === "string" 
+        ? JSON.parse(modelSchema.permissions.denialReasons) 
+        : modelSchema.permissions.denialReasons,
     },
-    filterConfig: modelSchema.filterConfig,
-    relationFilters: modelSchema.relationFilters,
-    fieldGroups: modelSchema.fieldGroups,
-    filterSchema,
+    filterConfig: modelSchema.filterConfig as any, // Cast due to strict type matching if needed
+    relationFilters: (modelSchema.relationFilters ?? []).map(rf => ({
+        relationName: rf.relationName,
+        relationType: rf.relationType,
+        supportsSome: rf.supportsSome,
+        supportsEvery: rf.supportsEvery,
+        supportsNone: rf.supportsNone,
+        supportsCount: rf.supportsCount,
+        nestedFilterType: rf.nestedFilterType ?? "",
+    })),
+    fieldGroups: (modelSchema.fieldGroups ?? []).map(fg => ({
+        key: fg.key,
+        label: fg.label,
+        description: fg.description,
+        fields: fg.fields,
+        collapsed: fg.collapsed
+    })),
+    filterSchema: modelSchema.filters.map(f => ({
+        fieldName: f.fieldName,
+        fieldLabel: f.fieldLabel,
+        baseType: f.baseType ?? "String",
+        isNested: f.isNested,
+        relatedModel: f.relatedModel,
+        filterInputType: f.filterInputType ?? "",
+        availableOperators: f.availableOperators ?? [],
+        options: f.options.map(o => ({
+            name: o.name,
+            lookup: o.lookup,
+            label: o.label,
+            helpText: o.helpText,
+            choices: o.choices?.map(c => ({ value: c.value, label: c.label })),
+            graphqlType: o.graphqlType ?? "String",
+            isList: o.isList ?? false
+        }))
+    })),
+    // Map to legacy filters format
+    filters: modelSchema.filters.map(f => ({
+        field_name: f.fieldName,
+        field_label: f.fieldLabel,
+        is_nested: f.isNested,
+        related_model: f.relatedModel,
+        is_custom: false, // Default
+        options: f.options.map(o => ({
+            name: o.name,
+            lookup_expr: o.lookup as any, // Cast to specific string literal if needed
+            help_text: o.helpText ?? "",
+            filter_type: "CharFilter", // Approximate/Default
+            choices: o.choices?.map(c => ({ value: c.value, label: c.label }))
+        }))
+    })),
+    // Map to legacy pdfTemplates
+    pdfTemplates: (modelSchema.templates ?? []).map((t) => ({
+      key: t.key,
+      methodName: t.key.split(":").pop() ?? "",
+      title: t.title,
+      endpoint: t.endpoint,
+      urlPath: t.urlPath ?? "",
+      guard: t.guard,
+      requireAuthentication: t.requireAuthentication ?? false,
+      roles: t.roles ?? [],
+      permissions: t.permissions ?? [],
+      allowed: t.allowed ?? false,
+      denialReason: t.denialReason,
+      allowClientData: t.allowClientData,
+      clientDataFields: t.clientDataFields,
+      clientDataSchema: t.clientDataSchema,
+    })),
   };
 }
 
@@ -478,8 +236,10 @@ export function mapV2MetadataToTableMetadata(
  * Map table metadata to UnifiedFilterSchema for DynamicFilterForm
  */
 export function mapTableMetadataToFilterSchema(
-  metadata: ModelTableMetadataV2
-): UnifiedFilterSchema {
+  metadata: ModelTableMetadataV2 | null
+): UnifiedFilterSchema | null {
+  if (!metadata) return null;
+
   const filterableFields: FilterableField[] = metadata.filterSchema.map(
     (field) => ({
       fieldName: field.fieldName,
@@ -526,7 +286,14 @@ export function mapTableMetadataToFilterSchema(
     source: "static",
   })) ?? [];
 
-  const distinctFields: DistinctField[] = [];
+  // Map distinct fields based on filterable fields
+  // In a real implementation, this might be filtered by specific criteria (e.g. isIndexed)
+  const distinctFields: DistinctField[] = filterableFields.map(field => ({
+    fieldName: field.fieldName,
+    fieldLabel: field.fieldLabel,
+    fieldType: field.baseType,
+    requiresOrderBy: false
+  }));
 
   const relationFilters: RelationFilter[] = metadata.relationFilters.map((rf) => ({
     fieldName: rf.relationName,
@@ -568,65 +335,37 @@ export function mapTableMetadataToFilterSchema(
 }
 
 /**
- * Hook to fetch complete table metadata from metadata_v2 API
+ * Loads table metadata using V2 API.
+ * Replaces the legacy multi-stage loader.
  */
-export function useModelTableMetadataV2(
+export function useModelTableMetadata(
   appName: string,
   modelName: string,
+  filtersOptions?: ModelTableFiltersOptions,
   options?: { skip?: boolean }
 ) {
-  const client = useApolloClient();
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<ApolloError | undefined>(undefined);
-  const [metadata, setMetadata] = useState<ModelTableMetadataV2 | null>(null);
-
-  const fetchMetadata = useCallback(
-    async (fetchPolicy: FetchPolicy = "cache-first") => {
-      setLoading(true);
-      setError(undefined);
-
-      try {
-        const result = await client.query<ModelTableMetadataV2Response>({
-          query: MODEL_TABLE_METADATA_V2_QUERY,
-          variables: { app: appName, model: modelName },
-          fetchPolicy,
-        });
-        const mapped = mapV2MetadataToTableMetadata(result.data);
-        setMetadata(mapped);
-        return mapped;
-      } catch (err) {
-        setError(err as ApolloError);
-        throw err;
-      } finally {
-        setLoading(false);
-      }
-    },
-    [appName, modelName, client]
+  // Use the new hook from @/lib/metadata/hooks
+  const { metadata, loading, error, refetch } = useModelMetadata(
+    appName,
+    modelName,
+    options
   );
 
-  useEffect(() => {
-    if (options?.skip) return;
-    fetchMetadata("cache-first").catch(() => undefined);
-  }, [options?.skip, fetchMetadata]);
-
-  const refetch = useCallback(() => {
-    return fetchMetadata("network-only");
-  }, [fetchMetadata]);
+  const mappedMetadata = useMemo(() => {
+    if (!metadata) return null;
+    return mapV2MetadataToTableMetadata(metadata);
+  }, [metadata]);
 
   return {
-    metadata,
+    metadata: mappedMetadata,
     loading,
     error,
     refetch,
+    loadingFilters: false,
+    loadingMutations: false,
+    loadingPdfTemplates: false,
   };
 }
-
-type MetadataLoadingState = {
-  base: boolean;
-  filters: boolean;
-  mutations: boolean;
-  pdfTemplates: boolean;
-};
 
 type DataQueryOptions = {
   fieldName?: string;
@@ -783,48 +522,6 @@ function buildAutoDataQuery(
   `;
 }
 
-/**
- * Loads table metadata using V2 API.
- * Replaces the legacy multi-stage loader.
- */
-export function useModelTableMetadata(
-  appName: string,
-  modelName: string,
-  filtersOptions?: ModelTableFiltersOptions,
-  options?: { skip?: boolean }
-) {
-  const filtersSignature = useMemo(
-    () => stableSerialize(filtersOptions ?? {}),
-    [filtersOptions]
-  );
-  const scopeKey = useMemo(
-    () => buildMetadataScopeKey(appName, modelName, filtersSignature),
-    [appName, modelName, filtersSignature]
-  );
-  
-  // Reuse existing cache entry if available to prevent flash
-  const cachedEntry = useMetadataCacheEntry<ModelTableType>("table", scopeKey);
-  
-  const { metadata, loading, error, refetch } = useModelTableMetadataV2(
-    appName, 
-    modelName, 
-    options
-  );
-
-  // Fallback to cache if loading and cache exists
-  const effectiveMetadata = metadata ?? cachedEntry?.data ?? null;
-
-  return {
-    metadata: effectiveMetadata as ModelTableType | null,
-    loading,
-    error,
-    refetch,
-    loadingFilters: false,
-    loadingMutations: false,
-    loadingPdfTemplates: false,
-  };
-}
-
 const buildInitialSortingState = (
   orderBy?: string | string[]
 ): SortingState => {
@@ -887,8 +584,10 @@ export function useGraphQLModelTable({
     loadingMutations: metaMutationsLoading,
     loadingPdfTemplates: metaTemplatesLoading,
   } = useModelTableMetadata(appName, modelName, filtersOptions, { skip });
-  const fields = modelMeta?.fields ?? [];
-  const filters = modelMeta?.filters ?? [];
+  
+  const fields = useMemo(() => modelMeta?.fields ?? [], [modelMeta]);
+  const filters = useMemo(() => modelMeta?.filters ?? [], [modelMeta]);
+  
   const metadataLoadingState = useMemo(
     () => ({
       base: metaLoading,

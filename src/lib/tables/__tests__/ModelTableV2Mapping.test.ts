@@ -20,6 +20,7 @@ describe("ModelTable V2 Migration", () => {
           model: "Product",
           verboseName: "Produit",
           verboseNamePlural: "Produits",
+          metadataVersion: "v2",
           fields: [
             {
               name: "name",
@@ -37,19 +38,18 @@ describe("ModelTable V2 Migration", () => {
               isText: true,
               isJson: false,
               isIndexed: true,
-              isJson: false,
             },
           ],
           relationships: [],
           mutations: [],
           templates: [],
           permissions: {
-            can_create: true,
-            can_update: true,
-            can_delete: true,
-            can_read: true,
-            can_list: true,
-            can_history: true,
+            canCreate: true,
+            canUpdate: true,
+            canDelete: true,
+            canRead: true,
+            canList: true,
+            canHistory: true,
           },
           filterConfig: {
             style: "graphql",
@@ -65,29 +65,29 @@ describe("ModelTable V2 Migration", () => {
           },
           relationFilters: [],
           fieldGroups: [],
+          filters: [
+            {
+              fieldName: "name",
+              fieldLabel: "Nom",
+              baseType: "String",
+              isNested: false,
+              filterInputType: "StringFilterInput",
+              availableOperators: ["eq", "contains", "icontains"],
+              options: [
+                {
+                  name: "eq",
+                  lookup: "eq",
+                  label: "Equals",
+                  graphqlType: "String",
+                  isList: false,
+                },
+              ],
+            },
+          ],
         },
-        filterSchema: [
-          {
-            fieldName: "name",
-            fieldLabel: "Nom",
-            baseType: "String",
-            isNested: false,
-            filterInputType: "StringFilterInput",
-            availableOperators: ["eq", "contains", "icontains"],
-            options: [
-              {
-                name: "eq",
-                lookup: "eq",
-                label: "Equals",
-                graphqlType: "String",
-                isList: false,
-              },
-            ],
-          },
-        ],
       };
 
-      const result = mapV2MetadataToTableMetadata(mockV2Response);
+      const result = mapV2MetadataToTableMetadata(mockV2Response.modelSchema as any);
 
       expect(result).toBeDefined();
       expect(result.app).toBe("inventory");
@@ -109,6 +109,7 @@ describe("ModelTable V2 Migration", () => {
           model: "Product",
           verboseName: "Product",
           verboseNamePlural: "Products",
+          metadataVersion: "v2",
           fields: [],
           relationships: [],
           mutations: [
@@ -117,43 +118,43 @@ describe("ModelTable V2 Migration", () => {
               methodName: "create",
               description: "Create a product",
               inputType: "CreateProductInput",
-              input_fields: [
+              inputFields: [
                 {
                   name: "name",
-                  field_type: "String!",
+                  fieldType: "String!",
                   required: true,
-                  default_value: undefined,
+                  defaultValue: undefined,
                   description: null,
                   choices: null,
-                  validation_rules: null,
-                  widget_type: null,
+                  validationRules: null,
+                  widgetType: null,
                   placeholder: null,
-                  help_text: null,
-                  min_length: null,
-                  max_length: null,
-                  min_value: null,
-                  max_value: null,
+                  helpText: null,
+                  minLength: null,
+                  maxLength: null,
+                  minValue: null,
+                  maxValue: null,
                   pattern: null,
-                  related_model: null,
+                  relatedModel: null,
                   multiple: undefined,
                 },
               ],
-              requires_authentication: true,
-              required_permissions: ["inventory.add_product"],
-              mutation_type: "create",
-              model_name: "Product",
-              form_config: null,
-              success_message: "Product created successfully",
+              requiresAuthentication: true,
+              requiredPermissions: ["inventory.add_product"],
+              mutationType: "create",
+              modelName: "Product",
+              formConfig: null,
+              successMessage: "Product created successfully",
             },
           ],
           templates: [],
           permissions: {
-            can_create: true,
-            can_update: true,
-            can_delete: true,
-            can_read: true,
-            can_list: true,
-            can_history: false,
+            canCreate: true,
+            canUpdate: true,
+            canDelete: true,
+            canRead: true,
+            canList: true,
+            canHistory: false,
           },
           filterConfig: {
             style: "graphql",
@@ -169,11 +170,11 @@ describe("ModelTable V2 Migration", () => {
           },
           relationFilters: [],
           fieldGroups: [],
+          filters: [],
         },
-        filterSchema: [],
       };
 
-      const result = mapV2MetadataToTableMetadata(mockV2Response);
+      const result = mapV2MetadataToTableMetadata(mockV2Response.modelSchema as any);
 
       expect(result.mutations).toBeDefined();
       expect(result.mutations).toHaveLength(1);
@@ -189,6 +190,7 @@ describe("ModelTable V2 Migration", () => {
           model: "Product",
           verboseName: "Product",
           verboseNamePlural: "Products",
+          metadataVersion: "v2",
           fields: [],
           relationships: [],
           mutations: [],
@@ -210,12 +212,12 @@ describe("ModelTable V2 Migration", () => {
             },
           ],
           permissions: {
-            can_create: true,
-            can_update: true,
-            can_delete: true,
-            can_read: true,
-            can_list: true,
-            can_history: false,
+            canCreate: true,
+            canUpdate: true,
+            canDelete: true,
+            canRead: true,
+            canList: true,
+            canHistory: false,
           },
           filterConfig: {
             style: "graphql",
@@ -231,11 +233,11 @@ describe("ModelTable V2 Migration", () => {
           },
           relationFilters: [],
           fieldGroups: [],
+          filters: [],
         },
-        filterSchema: [],
       };
 
-      const result = mapV2MetadataToTableMetadata(mockV2Response);
+      const result = mapV2MetadataToTableMetadata(mockV2Response.modelSchema as any);
 
       expect(result.pdfTemplates).toBeDefined();
       expect(result.pdfTemplates).toHaveLength(1);
