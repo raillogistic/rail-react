@@ -418,12 +418,12 @@ describe("serializeFilterToGraphQL", () => {
         type: "group",
         logic: "AND",
         conditions: [
-          { 
-            id: "c1", 
-            type: "condition", 
-            fieldPath: ["tags", "name"], 
-            fieldName: "name", 
-            operator: "eq", 
+          {
+            id: "c1",
+            type: "condition",
+            fieldPath: ["tags", "name"],
+            fieldName: "name",
+            operator: "eq",
             value: "Sale",
             relationOperator: "_some",
           },
@@ -433,14 +433,14 @@ describe("serializeFilterToGraphQL", () => {
 
       const result = serializeFilterToGraphQL(group, mockSchema, 3);
       expect(result).toEqual({
-        tags_some: { name: { eq: "Sale" } },
+        tagsSome: { name: { eq: "Sale" } },
       });
     });
 
     it("should handle deep nesting with nested M2M relations", () => {
       // Path: tags (M2M) -> meta (M2M) -> description
-      // Expectation: tags_some: { meta_some: { description: { eq: "test" } } }
-      // Note: Inner M2M defaults to _some since relationOperator only applies to top level in this logic
+      // Expectation: tagsSome: { metaSome: { description: { eq: "test" } } }
+      // Note: Inner M2M defaults to Some since relationOperator only applies to top level in this logic
       const group: FilterGroup = {
         id: "g1",
         type: "group",
@@ -461,7 +461,7 @@ describe("serializeFilterToGraphQL", () => {
 
       const result = serializeFilterToGraphQL(group, mockSchema, 3);
       expect(result).toEqual({
-        tags_some: { meta_some: { description: { eq: "test" } } },
+        tagsSome: { metaSome: { description: { eq: "test" } } },
       });
     });
   });

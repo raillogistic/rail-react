@@ -87,8 +87,8 @@ export const FieldSelector: React.FC<FieldSelectorProps> = ({
 
     for (let i = 0; i < navigationPath.length; i++) {
       const segment = navigationPath[i];
-      const relation = current?.relationFilters.find((r) => r.fieldName === segment);
-      
+      const relation = current?.relationFilters.find((r) => r.name === segment);
+
       if (relation?.nestedSchema) {
         current = relation.nestedSchema;
         crumbs.push({
@@ -124,7 +124,7 @@ export const FieldSelector: React.FC<FieldSelectorProps> = ({
     const lower = search.toLowerCase();
     return scalarFields.filter(
       (f) =>
-        f.fieldName.toLowerCase().includes(lower) ||
+        f.name.toLowerCase().includes(lower) ||
         f.fieldLabel.toLowerCase().includes(lower)
     );
   }, [scalarFields, search]);
@@ -134,7 +134,7 @@ export const FieldSelector: React.FC<FieldSelectorProps> = ({
     const lower = search.toLowerCase();
     return relationFields.filter(
       (r) =>
-        r.fieldName.toLowerCase().includes(lower) ||
+        r.name.toLowerCase().includes(lower) ||
         r.fieldLabel.toLowerCase().includes(lower)
     );
   }, [relationFields, search]);
@@ -142,8 +142,8 @@ export const FieldSelector: React.FC<FieldSelectorProps> = ({
   // Handlers
   const handleSelectScalar = useCallback(
     (field: FilterableField) => {
-      const fullPath = [...navigationPath, field.fieldName];
-      onSelect(fullPath, field.fieldName, field.defaultOperator);
+      const fullPath = [...navigationPath, field.name];
+      onSelect(fullPath, field.name, field.defaultOperator);
       setOpen(false);
       setNavigationPath(currentPath);
       setSearch("");
@@ -152,7 +152,7 @@ export const FieldSelector: React.FC<FieldSelectorProps> = ({
   );
 
   const handleNavigateToRelation = useCallback((relation: RelationFilter) => {
-    setNavigationPath([...navigationPath, relation.fieldName]);
+    setNavigationPath([...navigationPath, relation.name]);
     setSearch("");
   }, [navigationPath]);
 

@@ -26,6 +26,7 @@ const mockSchema: UnifiedFilterSchema = {
   },
   fields: [
     {
+      name: "name",
       fieldName: "name",
       fieldLabel: "Name",
       baseType: "String",
@@ -41,6 +42,7 @@ const mockSchema: UnifiedFilterSchema = {
       uiHints: { widget: "text" },
     },
     {
+      name: "price",
       fieldName: "price",
       fieldLabel: "Price",
       baseType: "Number",
@@ -56,7 +58,8 @@ const mockSchema: UnifiedFilterSchema = {
       uiHints: { widget: "number" },
     },
     {
-      fieldName: "isActive",
+      name: "isActive",
+      fieldName: "is_active",
       fieldLabel: "Is Active",
       baseType: "Boolean",
       graphqlType: "Boolean",

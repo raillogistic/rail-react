@@ -15,6 +15,7 @@ describe("mergeFilterMetadata", () => {
       fields: [
         {
           name: "name",
+          fieldName: "name",
           verboseName: "Name",
           helpText: "Product name",
           fieldType: "CharField",
@@ -32,6 +33,7 @@ describe("mergeFilterMetadata", () => {
         },
         {
           name: "price",
+          fieldName: "price",
           verboseName: "Price",
           helpText: "Product price",
           fieldType: "DecimalField",
@@ -51,6 +53,7 @@ describe("mergeFilterMetadata", () => {
         },
         {
           name: "status",
+          fieldName: "status",
           verboseName: "Status",
           helpText: null,
           fieldType: "CharField",
@@ -70,6 +73,7 @@ describe("mergeFilterMetadata", () => {
         },
         {
           name: "isActive",
+          fieldName: "is_active",
           verboseName: "Is Active",
           fieldType: "BooleanField",
           graphqlType: "Boolean",
@@ -77,6 +81,7 @@ describe("mergeFilterMetadata", () => {
         },
         {
           name: "createdAt",
+          fieldName: "created_at",
           verboseName: "Created At",
           fieldType: "DateTimeField",
           graphqlType: "DateTime",
@@ -84,6 +89,7 @@ describe("mergeFilterMetadata", () => {
         },
         {
           name: "id",
+          fieldName: "id",
           verboseName: "ID",
           graphqlType: "ID",
           isIndexed: true,
@@ -92,6 +98,7 @@ describe("mergeFilterMetadata", () => {
       relationships: [
         {
           name: "category",
+          fieldName: "category",
           verboseName: "Category",
           relatedApp: "store",
           relatedModel: "Category",
@@ -102,6 +109,7 @@ describe("mergeFilterMetadata", () => {
         },
         {
           name: "tags",
+          fieldName: "tags",
           verboseName: "Tags",
           relatedApp: "store",
           relatedModel: "Tag",
@@ -131,7 +139,8 @@ describe("mergeFilterMetadata", () => {
       },
       relationFilters: [
         {
-          relationName: "category",
+          name: "category",
+          fieldName: "category",
           relationType: "FOREIGN_KEY",
           supportsSome: false,
           supportsEvery: false,
@@ -140,7 +149,8 @@ describe("mergeFilterMetadata", () => {
           nestedFilterType: "CategoryWhereInput",
         },
         {
-          relationName: "tags",
+          name: "tags",
+          fieldName: "tags",
           relationType: "MANY_TO_MANY",
           supportsSome: true,
           supportsEvery: true,
@@ -163,6 +173,7 @@ describe("mergeFilterMetadata", () => {
   const mockFilterSchema = {
     filterSchema: [
       {
+        name: "name",
         fieldName: "name",
         fieldLabel: "Name",
         baseType: "String",
@@ -177,6 +188,7 @@ describe("mergeFilterMetadata", () => {
         ],
       },
       {
+        name: "price",
         fieldName: "price",
         fieldLabel: "Price",
         baseType: "Number",
@@ -191,6 +203,7 @@ describe("mergeFilterMetadata", () => {
         ],
       },
       {
+        name: "category",
         fieldName: "category",
         fieldLabel: "Category",
         baseType: "Relationship",
@@ -406,6 +419,7 @@ describe("mergeFilterMetadata", () => {
           ...mockFilterSchema.filterSchema,
           {
             fieldName: "status",
+            name: "status",
             fieldLabel: "Status",
             baseType: "String",
             isNested: false,

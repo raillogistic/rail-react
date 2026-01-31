@@ -81,7 +81,7 @@ export const FilterConditionComponent: React.FC<FilterConditionProps> = ({
       const isLast = i === condition.fieldPath.length - 1;
 
       // Check scalar field
-      const scalarField = currentSchema?.fields.find((f) => f.fieldName === segment);
+      const scalarField = currentSchema?.fields.find((f) => f.name === segment);
       if (scalarField) {
         if (isLast) {
           targetField = scalarField;
@@ -90,7 +90,7 @@ export const FilterConditionComponent: React.FC<FilterConditionProps> = ({
       }
 
       // Check relation field
-      const relation = currentSchema?.relationFilters.find((r) => r.fieldName === segment);
+      const relation = currentSchema?.relationFilters.find((r) => r.name === segment);
       if (relation) {
         relations.push(relation);
         if (relation.nestedSchema) {
@@ -202,7 +202,12 @@ export const FilterConditionComponent: React.FC<FilterConditionProps> = ({
       {/* Header: Field path and actions */}
       <div className="flex items-center gap-2">
         {showDragHandle && (
-          <GripVertical className="h-4 w-4 text-muted-foreground cursor-grab shrink-0" />
+          <GripVertical
+            className="h-4 w-4 text-muted-foreground cursor-grab shrink-0"
+            aria-label="Drag handle"
+            role="button"
+            tabIndex={0}
+          />
         )}
 
         {/* Field path breadcrumb */}
@@ -237,7 +242,7 @@ export const FilterConditionComponent: React.FC<FilterConditionProps> = ({
             onValueChange={handleRelationOperatorChange}
             disabled={disabled}
           >
-            <SelectTrigger className="w-28 h-7 text-xs">
+            <SelectTrigger className="w-28 h-7 text-xs" aria-label="Relation Operator">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>

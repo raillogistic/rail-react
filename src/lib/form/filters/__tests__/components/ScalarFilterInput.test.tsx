@@ -22,6 +22,7 @@ describe("ScalarFilterInput", () => {
 
   describe("String input", () => {
     const stringField: FilterableField = {
+      name: "name",
       fieldName: "name",
       fieldLabel: "Name",
       baseType: "String",
@@ -35,7 +36,7 @@ describe("ScalarFilterInput", () => {
 
     it("should render text input for string fields", () => {
       render(<ScalarFilterInput {...defaultProps} field={stringField} />);
-      
+
       expect(screen.getByRole("textbox")).toBeInTheDocument();
     });
 
@@ -75,6 +76,7 @@ describe("ScalarFilterInput", () => {
 
   describe("Number input", () => {
     const numberField: FilterableField = {
+      name: "price",
       fieldName: "price",
       fieldLabel: "Price",
       baseType: "Number",
@@ -88,7 +90,7 @@ describe("ScalarFilterInput", () => {
 
     it("should render number input for numeric fields", () => {
       render(<ScalarFilterInput {...defaultProps} field={numberField} />);
-      
+
       expect(screen.getByRole("spinbutton")).toBeInTheDocument();
     });
 
@@ -130,7 +132,8 @@ describe("ScalarFilterInput", () => {
 
   describe("Boolean input", () => {
     const booleanField: FilterableField = {
-      fieldName: "isActive",
+      name: "isActive",
+      fieldName: "is_active",
       fieldLabel: "Is Active",
       baseType: "Boolean",
       graphqlType: "Boolean",
@@ -143,7 +146,7 @@ describe("ScalarFilterInput", () => {
 
     it("should render select for boolean fields", () => {
       render(<ScalarFilterInput {...defaultProps} field={booleanField} />);
-      
+
       expect(screen.getByRole("combobox")).toBeInTheDocument();
     });
 
@@ -177,7 +180,8 @@ describe("ScalarFilterInput", () => {
 
   describe("Date input", () => {
     const dateField: FilterableField = {
-      fieldName: "createdAt",
+      name: "createdAt",
+      fieldName: "created_at",
       fieldLabel: "Created At",
       baseType: "Date",
       graphqlType: "Date",
@@ -226,6 +230,7 @@ describe("ScalarFilterInput", () => {
 
   describe("Choice/Enum input", () => {
     const choiceField: FilterableField = {
+      name: "status",
       fieldName: "status",
       fieldLabel: "Status",
       baseType: "String",

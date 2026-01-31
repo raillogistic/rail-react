@@ -32,6 +32,7 @@ interface ModelSchemaResponse {
 
 interface FilterSchemaResponse {
   filterSchema: Array<{
+    name: string;
     fieldName: string;
     fieldLabel: string;
     baseType: string;
@@ -58,7 +59,7 @@ interface SavedFiltersResponse {
 
 /**
  * Merge metadata from modelSchema, filterSchema, and savedFilters
- * into a unified schema for the filter UI.
+ * into a unified schema for the unified filter UI.
  */
 export function mergeFilterMetadata(
   modelSchemaData: ModelSchemaResponse,
@@ -71,6 +72,7 @@ export function mergeFilterMetadata(
   const savedFilters = savedFiltersData?.savedFilters ?? [];
 
   // Build field lookup from modelSchema for enrichment
+  // modelSchema.fields.name is now camelCase
   const fieldLookup = new Map(
     modelSchema.fields.map((f) => [f.name, f])
   );
@@ -80,8 +82,9 @@ export function mergeFilterMetadata(
 
   // Merge filter fields with model field details
   const fields: FilterableField[] = filterSchema.map((filter) => {
-    const modelField = fieldLookup.get(filter.fieldName);
-    const relation = relationLookup.get(filter.fieldName);
+    // filter.name is camelCase
+    const modelField = fieldLookup.get(filter.name);
+    const relation = relationLookup.get(filter.name);
 
     let baseType = normalizeBaseType(filter.baseType);
 
@@ -92,6 +95,7 @@ export function mergeFilterMetadata(
     }
 
     return {
+      name: filter.name,
       fieldName: filter.fieldName,
       fieldLabel: filter.fieldLabel,
       helpText: modelField?.helpText,
@@ -116,16 +120,17 @@ export function mergeFilterMetadata(
         searchFields: relation.searchFields ?? [],
       } : undefined,
       uiHints: buildUIHints(filter, modelField),
-      group: findFieldGroup(filter.fieldName, modelSchema.fieldGroups),
+      group: findFieldGroup(filter.name, modelSchema.fieldGroups),
     };
   });
 
   // Build relation filters with nested schema support
   const relationFilters: RelationFilter[] = modelSchema.relationFilters.map((rf: any) => {
-    const relation = relationLookup.get(rf.relationName);
+    const relation = relationLookup.get(rf.name);
     return {
-      fieldName: rf.relationName,
-      fieldLabel: relation?.verboseName ?? rf.relationName,
+      name: rf.name,
+      fieldName: rf.fieldName,
+      fieldLabel: relation?.verboseName ?? rf.name,
       relationType: rf.relationType,
       relatedApp: relation?.relatedApp ?? "",
       relatedModel: relation?.relatedModel ?? "",
@@ -144,8 +149,8 @@ export function mergeFilterMetadata(
   const presets: FilterPreset[] = [
     // Static presets from model definition
     ...(modelSchema.filterConfig?.presets ?? []).map((p: any) => ({
-      id: `static_${p.name}`,
-      name: p.name,
+      id: `static_${p.presetName}`, // Use original snake_case name for ID if preferred, or name
+      name: p.name, // camelCase name
       description: p.description,
       filterJson: typeof p.filterJson === "string" ? JSON.parse(p.filterJson) : p.filterJson,
       source: "static" as const,
@@ -168,7 +173,8 @@ export function mergeFilterMetadata(
   const distinctFields: DistinctField[] = modelSchema.fields
     .filter((f: any) => !f.isRelation && !f.isJson && (f.isIndexed || f.name === "id"))
     .map((f: any) => ({
-      fieldName: f.name,
+      name: f.name,
+      fieldName: f.fieldName,
       fieldLabel: f.verboseName,
       fieldType: f.graphqlType,
       requiresOrderBy: true, // PostgreSQL DISTINCT ON requires matching ORDER BY prefix

@@ -12,19 +12,22 @@ import type { DistinctField } from "../..";
 // Mock distinct fields
 const mockDistinctFields: DistinctField[] = [
   {
+    name: "category",
     fieldName: "category",
     fieldLabel: "Category",
     fieldType: "String",
     requiresOrderBy: true,
   },
   {
+    name: "status",
     fieldName: "status",
     fieldLabel: "Status",
     fieldType: "String",
     requiresOrderBy: true,
   },
   {
-    fieldName: "createdAt",
+    name: "createdAt",
+    fieldName: "created_at",
     fieldLabel: "Created At",
     fieldType: "DateTime",
     requiresOrderBy: true,
@@ -47,8 +50,8 @@ describe("DistinctOnSelector", () => {
   describe("rendering", () => {
     it("should render selector button", () => {
       render(<DistinctOnSelector {...defaultProps} />);
-      
-      expect(screen.getByRole("button")).toBeInTheDocument();
+
+      expect(screen.getByRole("combobox")).toBeInTheDocument();
     });
 
     it("should show selected count when fields are selected", () => {
@@ -58,16 +61,16 @@ describe("DistinctOnSelector", () => {
           selectedFields={["category", "status"]}
         />
       );
-      
+
       expect(screen.getByText(/2/)).toBeInTheDocument();
     });
 
     it("should show dropdown with available fields when clicked", async () => {
       const user = userEvent.setup();
       render(<DistinctOnSelector {...defaultProps} />);
-      
-      await user.click(screen.getByRole("button"));
-      
+
+      await user.click(screen.getByRole("combobox"));
+
       expect(screen.getByText("Category")).toBeInTheDocument();
       expect(screen.getByText("Status")).toBeInTheDocument();
       expect(screen.getByText("Created At")).toBeInTheDocument();
@@ -78,24 +81,24 @@ describe("DistinctOnSelector", () => {
     it("should call onDistinctChange when field is selected", async () => {
       const user = userEvent.setup();
       const onDistinctChange = vi.fn();
-      
+
       render(
         <DistinctOnSelector
           {...defaultProps}
           onDistinctChange={onDistinctChange}
         />
       );
-      
-      await user.click(screen.getByRole("button"));
+
+      await user.click(screen.getByRole("combobox"));
       await user.click(screen.getByText("Category"));
-      
+
       expect(onDistinctChange).toHaveBeenCalledWith(["category"]);
     });
 
     it("should toggle field when clicked again", async () => {
       const user = userEvent.setup();
       const onDistinctChange = vi.fn();
-      
+
       render(
         <DistinctOnSelector
           {...defaultProps}
@@ -103,17 +106,17 @@ describe("DistinctOnSelector", () => {
           onDistinctChange={onDistinctChange}
         />
       );
-      
-      await user.click(screen.getByRole("button"));
+
+      await user.click(screen.getByRole("combobox"));
       await user.click(screen.getByText("Category"));
-      
+
       expect(onDistinctChange).toHaveBeenCalledWith([]);
     });
 
     it("should allow multiple field selection", async () => {
       const user = userEvent.setup();
       const onDistinctChange = vi.fn();
-      
+
       render(
         <DistinctOnSelector
           {...defaultProps}
@@ -121,10 +124,10 @@ describe("DistinctOnSelector", () => {
           onDistinctChange={onDistinctChange}
         />
       );
-      
-      await user.click(screen.getByRole("button"));
+
+      await user.click(screen.getByRole("combobox"));
       await user.click(screen.getByText("Status"));
-      
+
       expect(onDistinctChange).toHaveBeenCalledWith(["category", "status"]);
     });
   });
@@ -134,7 +137,7 @@ describe("DistinctOnSelector", () => {
       const user = userEvent.setup();
       const onDistinctChange = vi.fn();
       const onOrderByChange = vi.fn();
-      
+
       render(
         <DistinctOnSelector
           {...defaultProps}
@@ -142,10 +145,10 @@ describe("DistinctOnSelector", () => {
           onOrderByChange={onOrderByChange}
         />
       );
-      
-      await user.click(screen.getByRole("button"));
+
+      await user.click(screen.getByRole("combobox"));
       await user.click(screen.getByText("Category"));
-      
+
       expect(onDistinctChange).toHaveBeenCalled();
       expect(onOrderByChange).toHaveBeenCalledWith(["category"]);
     });
@@ -194,7 +197,7 @@ describe("DistinctOnSelector", () => {
     it("should provide option to clear all distinct fields", async () => {
       const user = userEvent.setup();
       const onDistinctChange = vi.fn();
-      
+
       render(
         <DistinctOnSelector
           {...defaultProps}
@@ -202,12 +205,14 @@ describe("DistinctOnSelector", () => {
           onDistinctChange={onDistinctChange}
         />
       );
-      
-      await user.click(screen.getByRole("button"));
-      
+
+      // The distinct selector itself is a combobox
+      await user.click(screen.getByRole("combobox"));
+
+      // The clear button is a button
       const clearButton = screen.getByRole("button", { name: /clear/i });
       await user.click(clearButton);
-      
+
       expect(onDistinctChange).toHaveBeenCalledWith([]);
     });
   });
@@ -220,27 +225,27 @@ describe("DistinctOnSelector", () => {
           distinctFields={[]}
         />
       );
-      
-      expect(screen.getByRole("button")).toBeDisabled();
+
+      expect(screen.getByRole("combobox")).toBeDisabled();
     });
   });
 
   describe("accessibility", () => {
     it("should have accessible name", () => {
       render(<DistinctOnSelector {...defaultProps} />);
-      
-      const button = screen.getByRole("button");
+
+      const button = screen.getByRole("combobox");
       expect(button).toHaveAccessibleName();
     });
 
     it("should support keyboard navigation", async () => {
       const user = userEvent.setup();
       render(<DistinctOnSelector {...defaultProps} />);
-      
-      const button = screen.getByRole("button");
+
+      const button = screen.getByRole("combobox");
       await user.tab();
       expect(button).toHaveFocus();
-      
+
       await user.keyboard("{Enter}");
       expect(screen.getByText("Category")).toBeInTheDocument();
     });

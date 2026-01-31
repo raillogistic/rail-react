@@ -46,7 +46,8 @@ export interface FilterConfig {
 
 export interface FilterableField {
   // Identity
-  fieldName: string;        // camelCase
+  name: string;             // camelCase (GraphQL schema name)
+  fieldName: string;        // snake_case (Backend DB name)
   fieldLabel: string;       // Human readable
   helpText?: string;
   
@@ -113,7 +114,8 @@ export interface FilterUIHints {
 }
 
 export interface RelationFilter {
-  fieldName: string;
+  name: string;             // camelCase
+  fieldName: string;        // snake_case
   fieldLabel: string;
   relationType: "FOREIGN_KEY" | "MANY_TO_MANY" | "REVERSE_FK" | "ONE_TO_ONE";
   relatedApp: string;
@@ -149,7 +151,8 @@ export interface FilterPreset {
 }
 
 export interface DistinctField {
-  fieldName: string;
+  name: string;             // camelCase
+  fieldName: string;        // snake_case
   fieldLabel: string;
   fieldType: string;
   requiresOrderBy: boolean;  // Must be prefix of orderBy

@@ -56,7 +56,7 @@ export const DistinctOnSelector: React.FC<DistinctOnSelectorProps> = ({
     const lower = search.toLowerCase();
     return distinctFields.filter(
       (f) =>
-        f.fieldName.toLowerCase().includes(lower) ||
+        f.name.toLowerCase().includes(lower) ||
         f.fieldLabel.toLowerCase().includes(lower)
     );
   }, [distinctFields, search]);

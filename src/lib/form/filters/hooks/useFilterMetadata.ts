@@ -18,6 +18,7 @@ const FILTER_METADATA_QUERY = gql`
       verboseNamePlural
       fields {
         name
+        fieldName
         verboseName
         helpText
         fieldType
@@ -38,6 +39,7 @@ const FILTER_METADATA_QUERY = gql`
       }
       relationships {
         name
+        fieldName
         verboseName
         relatedApp
         relatedModel
@@ -57,17 +59,20 @@ const FILTER_METADATA_QUERY = gql`
         supportsAggregation
         presets {
           name
+          presetName
           description
           filterJson
         }
         computedFilters {
           name
+          fieldName
           filterType
           description
         }
       }
       relationFilters {
-        relationName
+        name
+        fieldName
         relationType
         supportsSome
         supportsEvery
@@ -83,6 +88,7 @@ const FILTER_METADATA_QUERY = gql`
       }
     }
     filterSchema(app: $app, model: $model) {
+      name
       fieldName
       fieldLabel
       baseType

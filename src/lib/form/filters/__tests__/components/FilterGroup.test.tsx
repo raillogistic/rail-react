@@ -89,22 +89,22 @@ describe("FilterGroupComponent", () => {
   describe("rendering", () => {
     it("should render empty group with add buttons", () => {
       render(<FilterGroupComponent {...defaultProps} />);
-      
-      expect(screen.getByRole("button", { name: /add condition/i })).toBeInTheDocument();
-      expect(screen.getByRole("button", { name: /add group/i })).toBeInTheDocument();
+
+      expect(screen.getByRole("button", { name: /ajouter un filtre/i })).toBeInTheDocument();
+      expect(screen.getByRole("button", { name: /ajouter un groupe/i })).toBeInTheDocument();
     });
 
     it("should render logic selector", () => {
       render(<FilterGroupComponent {...defaultProps} />);
-      
+
       // Should show AND/OR selector
       expect(screen.getByText(/and/i)).toBeInTheDocument();
     });
 
     it("should render NOT toggle", () => {
       render(<FilterGroupComponent {...defaultProps} />);
-      
-      expect(screen.getByText(/not/i)).toBeInTheDocument();
+
+      expect(screen.getByText(/non/i)).toBeInTheDocument();
     });
 
     it("should show condition count", () => {

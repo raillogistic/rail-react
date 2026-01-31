@@ -100,23 +100,37 @@ function buildNestedFilter(
     return filterValue;
   }
 
-  if (fieldPath.length === 1) {
-    return { [fieldPath[0]]: filterValue };
-  }
+  // 1. Resolve schemas and relation info for each segment forward
+  // We need to know the schema context for each segment to determine if it's a M2M relation
+  const pathInfo: Array<{
+    segment: string;
+    relation?: RelationFilter;
+  }> = [];
 
-  // Work backwards from the leaf
-  let result = filterValue;
   let currentSchema: UnifiedFilterSchema | undefined = schema;
 
-  for (let i = fieldPath.length - 1; i >= 0; i--) {
-    const segment = fieldPath[i];
-    const isFirst = i === 0;
-    const isLast = i === fieldPath.length - 1;
-
-    // Find relation info at this level
+  for (const segment of fieldPath) {
     const relation = currentSchema?.relationFilters.find(
       (r) => r.fieldName === segment
     );
+
+    pathInfo.push({ segment, relation });
+
+    if (relation?.nestedSchema) {
+      currentSchema = relation.nestedSchema;
+    } else {
+      // If we can't traverse deeper, we stop schema resolution but keep collecting segments
+      currentSchema = undefined;
+    }
+  }
+
+  // 2. Build result backwards using the resolved relation info
+  let result = filterValue;
+
+  for (let i = fieldPath.length - 1; i >= 0; i--) {
+    const { segment, relation } = pathInfo[i];
+    const isFirst = i === 0;
+    const isLast = i === fieldPath.length - 1;
 
     if (relation && !isLast) {
       const isM2MOrReverse =
@@ -125,19 +139,28 @@ function buildNestedFilter(
 
       if (isM2MOrReverse) {
         // Apply relation operator for M2M at the appropriate level
-        const opToUse = isFirst && relationOperator ? relationOperator : "_some";
-        const fieldWithOp = `${segment}${opToUse}`;
+        // Default to 'Some' if not specified
+        const rawOp = isFirst && relationOperator ? relationOperator : "Some";
+
+        // Ensure operator is camelCase suffix (e.g. "_some" -> "Some", "some" -> "Some")
+        const opSuffix = normalizeOperator(rawOp);
+
+        const fieldWithOp = `${segment}${opSuffix}`;
         result = { [fieldWithOp]: result };
       } else {
         result = { [segment]: result };
       }
-
-      // Navigate to nested schema for next iteration
-      currentSchema = relation.nestedSchema;
     } else {
       result = { [segment]: result };
     }
   }
 
   return result;
+}
+
+function normalizeOperator(op: string): string {
+  // Remove leading underscore if present
+  const clean = op.startsWith("_") ? op.slice(1) : op;
+  // Capitalize first letter
+  return clean.charAt(0).toUpperCase() + clean.slice(1);
 }

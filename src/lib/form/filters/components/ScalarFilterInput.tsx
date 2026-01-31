@@ -56,6 +56,7 @@ export interface ScalarFilterInputProps {
   onChange: (value: any) => void;
   disabled?: boolean;
   autoFocus?: boolean;
+  ariaLabel?: string;
 }
 
 export const ScalarFilterInput: React.FC<ScalarFilterInputProps> = ({
@@ -65,6 +66,7 @@ export const ScalarFilterInput: React.FC<ScalarFilterInputProps> = ({
   onChange,
   disabled,
   autoFocus,
+  ariaLabel,
 }) => {
   const { baseType, uiHints, choices } = field;
   const { name: opName, isList } = operator;

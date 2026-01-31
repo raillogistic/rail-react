@@ -26,6 +26,7 @@ const mockSchema: UnifiedFilterSchema = {
   },
   fields: [
     {
+      name: "name",
       fieldName: "name",
       fieldLabel: "Name",
       baseType: "String",
@@ -38,6 +39,7 @@ const mockSchema: UnifiedFilterSchema = {
       group: "basic",
     },
     {
+      name: "price",
       fieldName: "price",
       fieldLabel: "Price",
       baseType: "Number",
@@ -50,6 +52,7 @@ const mockSchema: UnifiedFilterSchema = {
       group: "basic",
     },
     {
+      name: "status",
       fieldName: "status",
       fieldLabel: "Status",
       baseType: "String",
@@ -62,6 +65,7 @@ const mockSchema: UnifiedFilterSchema = {
       group: "status",
     },
     {
+      name: "category",
       fieldName: "category",
       fieldLabel: "Category",
       baseType: "Relationship",

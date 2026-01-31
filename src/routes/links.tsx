@@ -24,6 +24,7 @@ import { LayoutSettingsPage } from "@/views/settings/LayoutSettingsPage";
 import { getAppDefaultRoute, getAppNavigationLinks } from "@/apps/routes";
 import { DynamicFilterForm } from "@/lib/form/filters";
 import { ModelTable } from "@/lib/tables/NewModelTable";
+import { ModelTableV2 } from "@/lib/tablev2";
 
 export const ROUTES = {
   LOGIN: "/login",
@@ -85,7 +86,8 @@ const CORE_NAVIGATION_LINKS: NavigationSection[] = [
         requiresAuth: true,
         description: "Vue synthèse des indicateurs",
         component: (
-          <ModelTable appName="store" modelName="Product" />
+          // <ModelTable appName="store" modelName="Product" />
+          <ModelTableV2 app="store" model="Product" />
           // <DynamicFilterForm
           //   app="store"
           //   model="Product"

@@ -71,7 +71,7 @@ export interface DynamicFilterFormProps {
   /** Maximum nesting depth for relation filters (default: 3) */
   maxDepth?: number;
   /** Callback when filters are applied */
-  onApply: (variables: FilterQueryVariables) => void;
+  onApply: (variables: FilterQueryVariables, state: FilterFormState) => void;
   /** Include user's saved filters */
   includeSavedFilters?: boolean;
   /** Show distinct field selector */
@@ -160,8 +160,8 @@ export const DynamicFilterForm: React.FC<DynamicFilterFormProps> = ({
       maxDepth,
     });
 
-    onApply(variables);
-    
+    onApply(variables, state);
+
     if (layout === "popover") {
       setPopoverOpen(false);
     }
@@ -170,7 +170,14 @@ export const DynamicFilterForm: React.FC<DynamicFilterFormProps> = ({
   // Reset filters
   const handleReset = useCallback(() => {
     actions.reset();
-    onApply({});
+    // Create empty state for reset
+    const emptyState: FilterFormState = {
+      root: { id: "root", type: "group", logic: "AND", conditions: [], negated: false },
+      selectedPresets: [],
+      distinctOn: [],
+      orderBy: [],
+    };
+    onApply({}, emptyState);
   }, [actions, onApply]);
 
   // Apply preset

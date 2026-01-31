@@ -8,13 +8,18 @@ import { vi } from "vitest";
 // Mock Radix UI Popover
 vi.mock("@radix-ui/react-popover", () => ({
   Root: ({ children }: any) => <div data-radix-popover-root>{children}</div>,
-  Trigger: React.forwardRef(({ children, ...props }: any, ref) => (
-    <button ref={ref} {...props} data-radix-popover-trigger>
-      {children}
-    </button>
-  )),
+  Trigger: React.forwardRef(({ children, asChild, ...props }: any, ref) => {
+    if (asChild && React.isValidElement(children)) {
+      return React.cloneElement(children, { ref, ...props, "data-radix-popover-trigger": true } as any);
+    }
+    return (
+      <button ref={ref} {...props} data-radix-popover-trigger>
+        {children}
+      </button>
+    );
+  }),
   Portal: ({ children }: any) => <div data-radix-popover-portal>{children}</div>,
-  Content: React.forwardRef(({ children, ...props }: any, ref) => (
+  Content: React.forwardRef(({ children, sideOffset, align, side, ...props }: any, ref) => (
     <div ref={ref} {...props} data-radix-popover-content>
       {children}
     </div>
@@ -39,12 +44,14 @@ vi.mock("@radix-ui/react-select", () => ({
     <span data-radix-select-value>{children || placeholder}</span>
   ),
   Portal: ({ children }: any) => <div data-radix-select-portal>{children}</div>,
-  Content: React.forwardRef(({ children, ...props }: any, ref) => (
+  Content: React.forwardRef(({ children, sideOffset, position, align, side, ...props }: any, ref) => (
     <div ref={ref} {...props} data-radix-select-content>
       {children}
     </div>
   )),
   Viewport: ({ children }: any) => <div data-radix-select-viewport>{children}</div>,
+  ScrollUpButton: ({ children }: any) => <div data-radix-select-scroll-up-button>{children}</div>,
+  ScrollDownButton: ({ children }: any) => <div data-radix-select-scroll-down-button>{children}</div>,
   Item: React.forwardRef(({ children, value, ...props }: any, ref) => (
     <div ref={ref} {...props} role="option" data-value={value} data-radix-select-item>
       {children}
@@ -168,11 +175,16 @@ vi.mock("@radix-ui/react-alert-dialog", () => ({
 // Mock Radix UI Dropdown Menu
 vi.mock("@radix-ui/react-dropdown-menu", () => ({
   Root: ({ children }: any) => <div data-radix-dropdown-root>{children}</div>,
-  Trigger: ({ children, ...props }: any) => (
-    <button {...props} data-radix-dropdown-trigger>
-      {children}
-    </button>
-  ),
+  Trigger: React.forwardRef(({ children, asChild, ...props }: any, ref) => {
+    if (asChild && React.isValidElement(children)) {
+      return React.cloneElement(children, { ref, ...props, "data-radix-dropdown-trigger": true } as any);
+    }
+    return (
+      <button ref={ref} {...props} data-radix-dropdown-trigger>
+        {children}
+      </button>
+    );
+  }),
   Portal: ({ children }: any) => <div data-radix-dropdown-portal>{children}</div>,
   Content: React.forwardRef(({ children, ...props }: any, ref) => (
     <div ref={ref} {...props} data-radix-dropdown-content>
@@ -198,6 +210,22 @@ vi.mock("@radix-ui/react-dropdown-menu", () => ({
       {children}
     </div>
   ),
+  CheckboxItem: React.forwardRef(({ children, checked, onCheckedChange, ...props }: any, ref) => (
+    <div
+      ref={ref}
+      {...props}
+      role="menuitemcheckbox"
+      aria-checked={checked}
+      data-radix-dropdown-checkbox-item
+      onClick={(e) => {
+        e.preventDefault();
+        onCheckedChange?.(!checked);
+      }}
+    >
+      {children}
+    </div>
+  )),
+  ItemIndicator: ({ children }: any) => <span data-radix-dropdown-item-indicator>{children}</span>,
 }));
 
 // Mock Radix UI Label
