@@ -280,7 +280,7 @@ export const FilterConditionComponent: React.FC<FilterConditionProps> = ({
           onValueChange={handleOperatorChange}
           disabled={disabled}
         >
-          <SelectTrigger className="w-48 shrink-0">
+          <SelectTrigger className="w-48 shrink-0" aria-label="Operator">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -312,6 +312,7 @@ export const FilterConditionComponent: React.FC<FilterConditionProps> = ({
             value={condition.value}
             onChange={handleValueChange}
             disabled={disabled}
+            ariaLabel="Value"
           />
         </div>
       </div>

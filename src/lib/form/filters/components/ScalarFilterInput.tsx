@@ -86,6 +86,7 @@ export const ScalarFilterInput: React.FC<ScalarFilterInputProps> = ({
           checked={value === true}
           onCheckedChange={(checked) => onChange(checked === true ? true : undefined)}
           disabled={disabled}
+          aria-label={ariaLabel}
         />
         <label
           htmlFor={`${field.fieldName}-isNull`}
@@ -107,6 +108,7 @@ export const ScalarFilterInput: React.FC<ScalarFilterInputProps> = ({
           onChange={onChange}
           disabled={disabled}
           placeholder={uiHints?.placeholder ?? "Sélectionner des valeurs..."}
+          ariaLabel={ariaLabel}
         />
       );
     }
@@ -117,6 +119,7 @@ export const ScalarFilterInput: React.FC<ScalarFilterInputProps> = ({
         onChange={onChange}
         disabled={disabled}
         placeholder={uiHints?.placeholder ?? "Sélectionner..."}
+        ariaLabel={ariaLabel}
       />
     );
   }

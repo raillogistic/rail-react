@@ -118,6 +118,7 @@ export const DistinctOnSelector: React.FC<DistinctOnSelectorProps> = ({
           <Button
             variant="outline"
             role="combobox"
+            aria-label="Distinct fields"
             aria-expanded={open}
             className="justify-between gap-2"
             disabled={disabled || distinctFields.length === 0}

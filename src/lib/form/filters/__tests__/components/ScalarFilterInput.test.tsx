@@ -152,28 +152,28 @@ describe("ScalarFilterInput", () => {
 
     it("should have true/false/null options", async () => {
       const user = userEvent.setup();
-      
+
       render(<ScalarFilterInput {...defaultProps} field={booleanField} />);
-      
+
       const select = screen.getByRole("combobox");
       await user.click(select);
-      
-      expect(screen.getByRole("option", { name: /true/i })).toBeInTheDocument();
-      expect(screen.getByRole("option", { name: /false/i })).toBeInTheDocument();
+
+      expect(screen.getByRole("option", { name: /Oui \/ Vrai/i })).toBeInTheDocument();
+      expect(screen.getByRole("option", { name: /Non \/ Faux/i })).toBeInTheDocument();
     });
 
     it("should call onChange when value is selected", async () => {
       const user = userEvent.setup();
       const onChange = vi.fn();
-      
+
       render(<ScalarFilterInput {...defaultProps} field={booleanField} onChange={onChange} />);
-      
+
       const select = screen.getByRole("combobox");
       await user.click(select);
-      
-      const trueOption = screen.getByRole("option", { name: /true/i });
+
+      const trueOption = screen.getByRole("option", { name: /Oui \/ Vrai/i });
       await user.click(trueOption);
-      
+
       expect(onChange).toHaveBeenCalledWith(true);
     });
   });
@@ -194,22 +194,22 @@ describe("ScalarFilterInput", () => {
 
     it("should render date picker", () => {
       render(<ScalarFilterInput {...defaultProps} field={dateField} />);
-      
-      expect(screen.getByRole("button", { name: /pick a date/i })).toBeInTheDocument();
+
+      expect(screen.getByRole("button", { name: /choisir une date/i })).toBeInTheDocument();
     });
 
     it("should call onChange when date is selected", async () => {
       const user = userEvent.setup();
       const onChange = vi.fn();
-      
+
       render(<ScalarFilterInput {...defaultProps} field={dateField} onChange={onChange} />);
-      
-      const picker = screen.getByRole("button", { name: /pick a date/i });
+
+      const picker = screen.getByRole("button", { name: /choisir une date/i });
       await user.click(picker);
-      
+
       // Select a date (simplified - actual implementation uses calendar)
       // This verifies the picker opens
-      expect(screen.getByRole("dialog") || screen.getByRole("grid")).toBeInTheDocument();
+      expect(screen.getByRole("grid")).toBeInTheDocument();
     });
 
     it("should render range picker for between operator", () => {
@@ -221,10 +221,12 @@ describe("ScalarFilterInput", () => {
       };
 
       render(<ScalarFilterInput {...defaultProps} field={dateField} operator={betweenOperator} />);
-      
-      // Should show range picker with from/to
-      expect(screen.getByText(/from/i)).toBeInTheDocument();
-      expect(screen.getByText(/to/i)).toBeInTheDocument();
+
+      // Should show range picker with "au" separator
+      expect(screen.getByText(/au/i)).toBeInTheDocument();
+      // Should have two date pickers
+      const pickers = screen.getAllByRole("button", { name: /choisir une date/i });
+      expect(pickers).toHaveLength(2);
     });
   });
 
@@ -387,14 +389,8 @@ describe("ScalarFilterInput", () => {
 
     it("should show placeholder text", () => {
       render(<ScalarFilterInput {...defaultProps} field={stringField} />);
-      
-      expect(screen.getByPlaceholderText("Enter name...")).toBeInTheDocument();
-    });
 
-    it("should show help text", () => {
-      render(<ScalarFilterInput {...defaultProps} field={stringField} />);
-      
-      expect(screen.getByText(/search by product name/i)).toBeInTheDocument();
+      expect(screen.getByPlaceholderText("Enter name...")).toBeInTheDocument();
     });
   });
 

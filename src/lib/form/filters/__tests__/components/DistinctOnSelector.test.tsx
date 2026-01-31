@@ -39,8 +39,8 @@ describe("DistinctOnSelector", () => {
     distinctFields: mockDistinctFields,
     selectedFields: [] as string[],
     orderBy: [] as string[],
-    onDistinctChange: vi.fn(),
-    onOrderByChange: vi.fn(),
+    onChange: vi.fn(),
+    onOrderByRequired: vi.fn(),
   };
 
   beforeEach(() => {
@@ -51,7 +51,8 @@ describe("DistinctOnSelector", () => {
     it("should render selector button", () => {
       render(<DistinctOnSelector {...defaultProps} />);
 
-      expect(screen.getByRole("combobox")).toBeInTheDocument();
+      // Use name to distinguish from the input inside the popover (which is mocked to be always present)
+      expect(screen.getByRole("combobox", { name: /distinct/i })).toBeInTheDocument();
     });
 
     it("should show selected count when fields are selected", () => {
@@ -62,14 +63,16 @@ describe("DistinctOnSelector", () => {
         />
       );
 
-      expect(screen.getByText(/2/)).toBeInTheDocument();
+      const button = screen.getByRole("combobox", { name: /distinct/i });
+      // The button should contain the badge with count "2"
+      expect(button).toHaveTextContent("2");
     });
 
     it("should show dropdown with available fields when clicked", async () => {
       const user = userEvent.setup();
       render(<DistinctOnSelector {...defaultProps} />);
 
-      await user.click(screen.getByRole("combobox"));
+      await user.click(screen.getByRole("combobox", { name: /distinct/i }));
 
       expect(screen.getByText("Category")).toBeInTheDocument();
       expect(screen.getByText("Status")).toBeInTheDocument();
@@ -80,77 +83,79 @@ describe("DistinctOnSelector", () => {
   describe("field selection", () => {
     it("should call onDistinctChange when field is selected", async () => {
       const user = userEvent.setup();
-      const onDistinctChange = vi.fn();
+      const onChange = vi.fn();
 
       render(
         <DistinctOnSelector
           {...defaultProps}
-          onDistinctChange={onDistinctChange}
+          onChange={onChange}
         />
       );
 
-      await user.click(screen.getByRole("combobox"));
-      await user.click(screen.getByText("Category"));
+      await user.click(screen.getByRole("combobox", { name: /distinct/i }));
 
-      expect(onDistinctChange).toHaveBeenCalledWith(["category"]);
+      // Use role option to be specific to the dropdown item
+      await user.click(screen.getByRole("option", { name: /Category/i }));
+
+      expect(onChange).toHaveBeenCalledWith(["category"]);
     });
 
     it("should toggle field when clicked again", async () => {
       const user = userEvent.setup();
-      const onDistinctChange = vi.fn();
+      const onChange = vi.fn();
 
       render(
         <DistinctOnSelector
           {...defaultProps}
           selectedFields={["category"]}
-          onDistinctChange={onDistinctChange}
+          onChange={onChange}
         />
       );
 
-      await user.click(screen.getByRole("combobox"));
-      await user.click(screen.getByText("Category"));
+      await user.click(screen.getByRole("combobox", { name: /distinct/i }));
+      await user.click(screen.getByRole("option", { name: /Category/i }));
 
-      expect(onDistinctChange).toHaveBeenCalledWith([]);
+      expect(onChange).toHaveBeenCalledWith([]);
     });
 
     it("should allow multiple field selection", async () => {
       const user = userEvent.setup();
-      const onDistinctChange = vi.fn();
+      const onChange = vi.fn();
 
       render(
         <DistinctOnSelector
           {...defaultProps}
           selectedFields={["category"]}
-          onDistinctChange={onDistinctChange}
+          onChange={onChange}
         />
       );
 
-      await user.click(screen.getByRole("combobox"));
-      await user.click(screen.getByText("Status"));
+      await user.click(screen.getByRole("combobox", { name: /distinct/i }));
+      await user.click(screen.getByRole("option", { name: /Status/i }));
 
-      expect(onDistinctChange).toHaveBeenCalledWith(["category", "status"]);
+      expect(onChange).toHaveBeenCalledWith(["category", "status"]);
     });
   });
 
   describe("orderBy integration", () => {
     it("should auto-add field to orderBy when selected", async () => {
       const user = userEvent.setup();
-      const onDistinctChange = vi.fn();
-      const onOrderByChange = vi.fn();
+      const onChange = vi.fn();
+      const onOrderByRequired = vi.fn();
 
       render(
         <DistinctOnSelector
           {...defaultProps}
-          onDistinctChange={onDistinctChange}
-          onOrderByChange={onOrderByChange}
+          onChange={onChange}
+          onOrderByRequired={onOrderByRequired}
         />
       );
 
-      await user.click(screen.getByRole("combobox"));
-      await user.click(screen.getByText("Category"));
+      await user.click(screen.getByRole("combobox", { name: /distinct/i }));
+      await user.click(screen.getByRole("option", { name: /Category/i }));
 
-      expect(onDistinctChange).toHaveBeenCalled();
-      expect(onOrderByChange).toHaveBeenCalledWith(["category"]);
+      expect(onChange).toHaveBeenCalled();
+      expect(onOrderByRequired).toHaveBeenCalledWith(["category"]);
     });
 
     it("should show warning when distinctOn doesn't match orderBy prefix", () => {
@@ -196,24 +201,24 @@ describe("DistinctOnSelector", () => {
   describe("clear functionality", () => {
     it("should provide option to clear all distinct fields", async () => {
       const user = userEvent.setup();
-      const onDistinctChange = vi.fn();
+      const onChange = vi.fn();
 
       render(
         <DistinctOnSelector
           {...defaultProps}
           selectedFields={["category", "status"]}
-          onDistinctChange={onDistinctChange}
+          onChange={onChange}
         />
       );
 
       // The distinct selector itself is a combobox
-      await user.click(screen.getByRole("combobox"));
+      await user.click(screen.getByRole("combobox", { name: /distinct/i }));
 
       // The clear button is a button
       const clearButton = screen.getByRole("button", { name: /clear/i });
       await user.click(clearButton);
 
-      expect(onDistinctChange).toHaveBeenCalledWith([]);
+      expect(onChange).toHaveBeenCalledWith([]);
     });
   });
 

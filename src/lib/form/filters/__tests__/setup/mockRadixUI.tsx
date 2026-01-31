@@ -29,41 +29,109 @@ vi.mock("@radix-ui/react-popover", () => ({
 }));
 
 // Mock Radix UI Select
-vi.mock("@radix-ui/react-select", () => ({
-  Root: ({ children, onValueChange, value }: any) => (
-    <div data-radix-select-root data-value={value} onClick={() => onValueChange?.("mock")}>
-      {children}
-    </div>
-  ),
-  Trigger: React.forwardRef(({ children, ...props }: any, ref) => (
-    <button ref={ref} {...props} role="combobox" data-radix-select-trigger>
-      {children}
-    </button>
-  )),
-  Value: ({ children, placeholder }: any) => (
-    <span data-radix-select-value>{children || placeholder}</span>
-  ),
-  Portal: ({ children }: any) => <div data-radix-select-portal>{children}</div>,
-  Content: React.forwardRef(({ children, sideOffset, position, align, side, ...props }: any, ref) => (
-    <div ref={ref} {...props} data-radix-select-content>
-      {children}
-    </div>
-  )),
-  Viewport: ({ children }: any) => <div data-radix-select-viewport>{children}</div>,
-  ScrollUpButton: ({ children }: any) => <div data-radix-select-scroll-up-button>{children}</div>,
-  ScrollDownButton: ({ children }: any) => <div data-radix-select-scroll-down-button>{children}</div>,
-  Item: React.forwardRef(({ children, value, ...props }: any, ref) => (
-    <div ref={ref} {...props} role="option" data-value={value} data-radix-select-item>
-      {children}
-    </div>
-  )),
-  ItemText: ({ children }: any) => <span data-radix-select-item-text>{children}</span>,
-  ItemIndicator: ({ children }: any) => <span data-radix-select-item-indicator>{children}</span>,
-  Group: ({ children }: any) => <div data-radix-select-group>{children}</div>,
-  Label: ({ children }: any) => <div data-radix-select-label>{children}</div>,
-  Separator: () => <div data-radix-select-separator />,
-  Icon: ({ children }: any) => <span data-radix-select-icon>{children}</span>,
-}));
+vi.mock("@radix-ui/react-select", () => {
+  const React = require("react");
+  const SelectContext = React.createContext({
+    value: undefined,
+    onValueChange: (v: any) => {},
+    open: false,
+    onOpenChange: (open: boolean) => {},
+  });
+
+  return {
+    Root: ({ children, onValueChange, value, open, onOpenChange, defaultOpen }: any) => {
+      const [isOpen, setIsOpen] = React.useState(defaultOpen || false);
+      const handleOpenChange = (newOpen: boolean) => {
+        setIsOpen(newOpen);
+        onOpenChange?.(newOpen);
+      };
+
+      return (
+        <SelectContext.Provider
+          value={{
+            value,
+            onValueChange,
+            open: open !== undefined ? open : isOpen,
+            onOpenChange: handleOpenChange
+          }}
+        >
+          <div data-radix-select-root data-value={value} data-state={open || isOpen ? "open" : "closed"}>
+            {children}
+          </div>
+        </SelectContext.Provider>
+      );
+    },
+    Trigger: React.forwardRef(({ children, onClick, ...props }: any, ref) => {
+      const ctx = React.useContext(SelectContext);
+      return (
+        <button
+          ref={ref}
+          {...props}
+          role="combobox"
+          aria-expanded={ctx.open}
+          data-state={ctx.open ? "open" : "closed"}
+          onClick={(e) => {
+            onClick?.(e);
+            ctx.onOpenChange(!ctx.open);
+          }}
+          data-radix-select-trigger
+        >
+          {children}
+        </button>
+      );
+    }),
+    Value: ({ children, placeholder }: any) => {
+      const ctx = React.useContext(SelectContext);
+      return (
+        <span data-radix-select-value>
+          {ctx.value ? String(ctx.value) : (children || placeholder)}
+        </span>
+      );
+    },
+    Portal: ({ children }: any) => <div data-radix-select-portal>{children}</div>,
+    Content: React.forwardRef(({ children, ...props }: any, ref) => {
+      const ctx = React.useContext(SelectContext);
+      // In tests, we often want to query content even if closed, but Radix unmounts it.
+      // However, for userEvent.click to work on options, they must be in the DOM.
+      if (!ctx.open) return null;
+
+      return (
+        <div ref={ref} {...props} data-radix-select-content>
+          {children}
+        </div>
+      );
+    }),
+    Viewport: ({ children }: any) => <div data-radix-select-viewport>{children}</div>,
+    ScrollUpButton: ({ children }: any) => <div data-radix-select-scroll-up-button>{children}</div>,
+    ScrollDownButton: ({ children }: any) => <div data-radix-select-scroll-down-button>{children}</div>,
+    Item: React.forwardRef(({ children, value, onClick, ...props }: any, ref) => {
+      const ctx = React.useContext(SelectContext);
+      return (
+        <div
+          ref={ref}
+          {...props}
+          role="option"
+          aria-selected={ctx.value === value}
+          data-value={value}
+          data-radix-select-item
+          onClick={(e) => {
+            onClick?.(e);
+            ctx.onValueChange?.(value);
+            ctx.onOpenChange(false);
+          }}
+        >
+          {children}
+        </div>
+      );
+    }),
+    ItemText: ({ children }: any) => <span data-radix-select-item-text>{children}</span>,
+    ItemIndicator: ({ children }: any) => <span data-radix-select-item-indicator>{children}</span>,
+    Group: ({ children }: any) => <div data-radix-select-group>{children}</div>,
+    Label: ({ children }: any) => <div data-radix-select-label>{children}</div>,
+    Separator: () => <div data-radix-select-separator />,
+    Icon: ({ children }: any) => <span data-radix-select-icon>{children}</span>,
+  };
+});
 
 // Mock Radix UI Switch
 vi.mock("@radix-ui/react-switch", () => ({
@@ -276,5 +344,67 @@ vi.mock("@radix-ui/react-accordion", () => ({
     </div>
   ),
 }));
+
+// Mock cmdk (used by Command component)
+vi.mock("cmdk", () => {
+  const React = require("react");
+
+  const Command = ({ children, ...props }: any) => <div {...props} data-cmdk-root>{children}</div>;
+
+  const CommandInput = ({ children, value, onValueChange, ...props }: any) => (
+    <input
+      {...props}
+      value={value}
+      onChange={(e) => onValueChange?.(e.target.value)}
+      data-cmdk-input
+    />
+  );
+  CommandInput.displayName = "CommandInput";
+
+  const CommandList = ({ children, ...props }: any) => <div {...props} data-cmdk-list>{children}</div>;
+  CommandList.displayName = "CommandList";
+
+  const CommandEmpty = ({ children, ...props }: any) => <div {...props} data-cmdk-empty>{children}</div>;
+  CommandEmpty.displayName = "CommandEmpty";
+
+  const CommandGroup = ({ children, ...props }: any) => <div {...props} data-cmdk-group>{children}</div>;
+  CommandGroup.displayName = "CommandGroup";
+
+  const CommandItem = ({ children, onSelect, value, ...props }: any) => (
+    <div
+      {...props}
+      data-cmdk-item
+      role="option"
+      onClick={() => onSelect?.(value)}
+    >
+      {children}
+    </div>
+  );
+  CommandItem.displayName = "CommandItem";
+
+  const CommandSeparator = ({ ...props }: any) => <div {...props} data-cmdk-separator />;
+  CommandSeparator.displayName = "CommandSeparator";
+
+  // Attach subcomponents to Command
+  (Command as any).Input = CommandInput;
+  (Command as any).List = CommandList;
+  (Command as any).Empty = CommandEmpty;
+  (Command as any).Group = CommandGroup;
+  (Command as any).Item = CommandItem;
+  (Command as any).Separator = CommandSeparator;
+  (Command as any).displayName = "Command";
+
+  return {
+    Command,
+    CommandInput,
+    CommandList,
+    CommandEmpty,
+    CommandGroup,
+    CommandItem,
+    CommandSeparator,
+    // Ensure default export is also Command if imported that way
+    default: Command,
+  };
+});
 
 export {};
