@@ -1,28 +1,13 @@
-/**
- * FieldSelector - Nested Field Picker with Depth Navigation
- * 
- * Features:
- * - Navigate through related models up to maxDepth
- * - Breadcrumb navigation for nested paths
- * - Search/filter fields
- * - Visual distinction between scalar and relation fields
- * - Keyboard navigation support
- * - Recently used fields (optional)
- */
-
 import React, { useState, useMemo, useCallback } from "react";
 import {
   ArrowLeft,
   ChevronRight,
-  Database,
   Link2,
-  Search,
   Hash,
   Calendar,
   ToggleLeft,
   Type,
   Braces,
-  Clock,
 } from "lucide-react";
 
 import { Button } from "@/lib/components/ui/button";
@@ -41,13 +26,6 @@ import {
   CommandList,
   CommandSeparator,
 } from "@/lib/components/ui/command";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/lib/components/ui/tooltip";
-import { ScrollArea } from "@/lib/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
 
 import type {
@@ -78,7 +56,6 @@ export const FieldSelector: React.FC<FieldSelectorProps> = ({
   const [navigationPath, setNavigationPath] = useState<string[]>(currentPath);
   const [search, setSearch] = useState("");
 
-  // Get current schema at navigation path
   const { currentSchema, breadcrumbs } = useMemo(() => {
     let current: UnifiedFilterSchema | undefined = schema;
     const crumbs: Array<{ label: string; path: string[] }> = [
@@ -103,7 +80,6 @@ export const FieldSelector: React.FC<FieldSelectorProps> = ({
     return { currentSchema: current, breadcrumbs: crumbs };
   }, [schema, navigationPath]);
 
-  // Get available fields at current level
   const { scalarFields, relationFields } = useMemo(() => {
     if (!currentSchema) {
       return { scalarFields: [], relationFields: [] };
@@ -118,7 +94,6 @@ export const FieldSelector: React.FC<FieldSelectorProps> = ({
     };
   }, [currentSchema, navigationPath, config.maxDepth]);
 
-  // Filter by search
   const filteredScalars = useMemo(() => {
     if (!search) return scalarFields;
     const lower = search.toLowerCase();
@@ -139,7 +114,6 @@ export const FieldSelector: React.FC<FieldSelectorProps> = ({
     );
   }, [relationFields, search]);
 
-  // Handlers
   const handleSelectScalar = useCallback(
     (field: FilterableField) => {
       const fullPath = [...navigationPath, field.name];
@@ -177,15 +151,13 @@ export const FieldSelector: React.FC<FieldSelectorProps> = ({
     [currentPath]
   );
 
-  const currentDepth = navigationPath.length;
   const canGoBack = navigationPath.length > 0;
 
   return (
     <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>{children}</PopoverTrigger>
-      <PopoverContent className="w-[360px] p-0" align="start">
+      <PopoverContent className="w-[320px] p-0" align="start">
         <div className="flex flex-col">
-          {/* Breadcrumb Navigation */}
           <div className="flex items-center gap-1 p-2 border-b bg-muted/30">
             {canGoBack && (
               <Button
@@ -197,78 +169,70 @@ export const FieldSelector: React.FC<FieldSelectorProps> = ({
                 <ArrowLeft className="h-4 w-4" />
               </Button>
             )}
-            <ScrollArea className="flex-1" orientation="horizontal">
-              <div className="flex items-center gap-1 text-sm">
-                {breadcrumbs.map((crumb, index) => (
-                  <React.Fragment key={index}>
-                    {index > 0 && (
-                      <ChevronRight className="h-3 w-3 text-muted-foreground shrink-0" />
+            <div className="flex items-center gap-1 text-sm flex-1 min-w-0 overflow-hidden">
+              {breadcrumbs.map((crumb, index) => (
+                <React.Fragment key={index}>
+                  {index > 0 && (
+                    <ChevronRight className="h-3 w-3 text-muted-foreground shrink-0" />
+                  )}
+                  <button
+                    className={cn(
+                      "hover:text-primary transition-colors truncate",
+                      index === breadcrumbs.length - 1
+                        ? "font-medium text-foreground"
+                        : "text-muted-foreground"
                     )}
-                    <button
-                      className={cn(
-                        "hover:text-primary transition-colors whitespace-nowrap",
-                        index === breadcrumbs.length - 1
-                          ? "font-medium text-foreground"
-                          : "text-muted-foreground"
-                      )}
-                      onClick={() => handleBreadcrumbClick(crumb.path)}
-                    >
-                      {crumb.label}
-                    </button>
-                  </React.Fragment>
-                ))}
-              </div>
-            </ScrollArea>
-            <Badge variant="outline" className="shrink-0 text-xs">
-              {currentDepth}/{config.maxDepth}
+                    onClick={() => handleBreadcrumbClick(crumb.path)}
+                  >
+                    {crumb.label}
+                  </button>
+                </React.Fragment>
+              ))}
+            </div>
+            <Badge variant="outline" className="shrink-0 text-xs h-5">
+              {navigationPath.length}/{config.maxDepth}
             </Badge>
           </div>
 
-          {/* Search and Field List */}
           <Command>
             <CommandInput
-              placeholder="Rechercher des champs..."
+              placeholder="Search fields..."
               value={search}
               onValueChange={setSearch}
             />
             <CommandList>
-              <CommandEmpty>Aucun champ trouvé.</CommandEmpty>
+              <CommandEmpty>No fields found</CommandEmpty>
 
-              {/* Recent Fields (only at root level) */}
               {recentFields.length > 0 && navigationPath.length === 0 && !search && (
                 <>
-                  <CommandGroup heading="Récemment utilisés">
+                  <CommandGroup heading="Recent">
                     {recentFields.slice(0, 5).map((path, idx) => {
                       const fieldName = path[path.length - 1];
                       const pathLabel = path.join(" → ");
-                      return (
+                      const field = schema.fields.find(
+                        (f) => f.fieldName === fieldName
+                      );
+                      return field ? (
                         <CommandItem
                           key={idx}
                           value={`recent-${pathLabel}`}
                           onSelect={() => {
-                            const field = schema.fields.find(
-                              (f) => f.fieldName === fieldName
-                            );
-                            if (field) {
-                              onSelect(path, fieldName, field.defaultOperator);
-                              setOpen(false);
-                            }
+                            onSelect(path, fieldName, field.defaultOperator);
+                            setOpen(false);
                           }}
-                          className="flex items-center gap-2"
+                          className="text-xs"
                         >
-                          <Clock className="h-4 w-4 text-muted-foreground" />
                           <span className="truncate">{pathLabel}</span>
                         </CommandItem>
-                      );
+                      ) : null;
                     })}
                   </CommandGroup>
                   <CommandSeparator />
                 </>
               )}
 
-              {/* Scalar Fields */}
               {filteredScalars.length > 0 && (
-                <CommandGroup heading="Champs">
+                <CommandGroup heading="Fields">
                   {filteredScalars.map((field) => (
                     <CommandItem
                       key={field.fieldName}
@@ -278,38 +242,20 @@ export const FieldSelector: React.FC<FieldSelectorProps> = ({
                     >
                       <FieldTypeIcon type={field.baseType} />
                       <div className="flex-1 min-w-0">
-                        <div className="font-medium">{field.fieldLabel}</div>
-                        <div className="text-xs text-muted-foreground flex items-center gap-2">
-                          <span>{field.graphqlType}</span>
-                          {field.choices && field.choices.length > 0 && (
-                            <Badge variant="outline" className="text-[10px] h-4">
-                              {field.choices.length} options
-                            </Badge>
-                          )}
+                        <div className="font-medium text-xs">{field.fieldLabel}</div>
+                        <div className="text-[10px] text-muted-foreground">
+                          {field.graphqlType}
                         </div>
                       </div>
-                      {field.helpText && (
-                        <TooltipProvider>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <div className="text-muted-foreground">ℹ️</div>
-                            </TooltipTrigger>
-                            <TooltipContent side="left" className="max-w-xs">
-                              {field.helpText}
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      )}
                     </CommandItem>
                   ))}
                 </CommandGroup>
               )}
 
-              {/* Relation Fields */}
               {filteredRelations.length > 0 && (
                 <>
                   <CommandSeparator />
-                  <CommandGroup heading="Modèles liés (cliquer pour développer)">
+                  <CommandGroup heading="Related">
                     {filteredRelations.map((relation) => (
                       <CommandItem
                         key={relation.fieldName}
@@ -317,16 +263,15 @@ export const FieldSelector: React.FC<FieldSelectorProps> = ({
                         onSelect={() => handleNavigateToRelation(relation)}
                         className="flex items-center gap-2"
                       >
-                        <Link2 className="h-4 w-4 text-blue-500" />
+                        <Link2 className="h-3.5 w-3.5 text-blue-500" />
                         <div className="flex-1 min-w-0">
-                          <div className="font-medium">{relation.fieldLabel}</div>
-                          <div className="text-xs text-muted-foreground flex items-center gap-2">
-                            <span>{relation.relatedModel}</span>
-                            <RelationTypeBadge type={relation.relationType} />
+                          <div className="font-medium text-xs">{relation.fieldLabel}</div>
+                          <div className="text-[10px] text-muted-foreground">
+                            {relation.relatedModel}
                           </div>
                         </div>
                         {relation.nestedSchema && (
-                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                          <ChevronRight className="h-3.5 w-3.5 text-muted-foreground" />
                         )}
                       </CommandItem>
                     ))}
@@ -334,29 +279,22 @@ export const FieldSelector: React.FC<FieldSelectorProps> = ({
                 </>
               )}
 
-              {/* Depth Limit Message */}
-              {currentDepth >= config.maxDepth && (
+              {navigationPath.length >= config.maxDepth && (
                 <>
                   <CommandSeparator />
                   <div className="p-3 text-xs text-center text-muted-foreground bg-muted/30">
-                    Profondeur maximale ({config.maxDepth}) atteinte.
-                    <br />
-                    Seuls les champs scalaires sont disponibles à ce niveau.
+                    Max depth ({config.maxDepth}) reached
                   </div>
                 </>
               )}
             </CommandList>
           </Command>
 
-          {/* Footer with field count */}
-          <div className="flex items-center justify-between px-3 py-2 border-t text-xs text-muted-foreground bg-muted/20">
-            <span>
-              {filteredScalars.length} champ{filteredScalars.length !== 1 ? "s" : ""}
-              {filteredRelations.length > 0 && (
-                <>, {filteredRelations.length} relation{filteredRelations.length !== 1 ? "s" : ""}</>
-              )}
-            </span>
-            <span className="text-[10px]">Appuyez sur ↵ pour sélectionner</span>
+          <div className="px-3 py-1.5 border-t text-[10px] text-muted-foreground bg-muted/20">
+            {filteredScalars.length} field{filteredScalars.length !== 1 ? "s" : ""}
+            {filteredRelations.length > 0 && (
+              <>, {filteredRelations.length} related</>
+            )}
           </div>
         </div>
       </PopoverContent>
@@ -364,9 +302,8 @@ export const FieldSelector: React.FC<FieldSelectorProps> = ({
   );
 };
 
-// Helper: Icon for field type
 const FieldTypeIcon: React.FC<{ type: string }> = ({ type }) => {
-  const iconClass = "h-4 w-4 text-muted-foreground";
+  const iconClass = "h-3.5 w-3.5 text-muted-foreground";
   
   switch (type) {
     case "String":
@@ -381,26 +318,8 @@ const FieldTypeIcon: React.FC<{ type: string }> = ({ type }) => {
     case "JSON":
       return <Braces className={iconClass} />;
     default:
-      return <Database className={iconClass} />;
+      return null;
   }
-};
-
-// Helper: Badge for relation type
-const RelationTypeBadge: React.FC<{ type: string }> = ({ type }) => {
-  const labels: Record<string, { label: string; variant: "default" | "secondary" | "outline" }> = {
-    FOREIGN_KEY: { label: "FK", variant: "outline" },
-    MANY_TO_MANY: { label: "M2M", variant: "secondary" },
-    REVERSE_FK: { label: "Rev", variant: "outline" },
-    ONE_TO_ONE: { label: "1:1", variant: "outline" },
-  };
-  
-  const config = labels[type] ?? { label: type, variant: "outline" as const };
-  
-  return (
-    <Badge variant={config.variant} className="text-[10px] h-4 px-1">
-      {config.label}
-    </Badge>
-  );
 };
 
 export default FieldSelector;
