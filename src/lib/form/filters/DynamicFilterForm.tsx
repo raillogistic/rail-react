@@ -1,47 +1,22 @@
-/**
- * Dynamic Filters - Main Component
- * 
- * Entry point for the dynamic filter system.
- * 
- * Features:
- * - Complete filter UI with nested conditions
- * - AND/OR/NOT logical operators
- * - Filter presets (static, saved, shared)
- * - DISTINCT ON support
- * - Save/Edit filter dialogs
- * - Multiple layout modes (panel, popover, inline)
- * - Keyboard shortcuts
- */
-
 import React, { useState, useCallback, useMemo, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/lib/components/ui/card";
+import { Card, CardContent } from "@/lib/components/ui/card";
 import { Button } from "@/lib/components/ui/button";
 import { Skeleton } from "@/lib/components/ui/skeleton";
-import { Alert, AlertDescription, AlertTitle } from "@/lib/components/ui/alert";
-import { ScrollArea } from "@/lib/components/ui/scroll-area";
-import { Separator } from "@/lib/components/ui/separator";
+import { Alert, AlertDescription } from "@/lib/components/ui/alert";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/lib/components/ui/popover";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/lib/components/ui/tooltip";
-import {
   Filter,
-  RotateCcw,
+  X,
   Search,
   AlertTriangle,
   Save,
-  Settings2,
   ChevronDown,
-  Keyboard,
+  Sparkles,
 } from "lucide-react";
-import { Badge } from "@/lib/components/ui/badge";
 
 import { useFilterMetadata } from "./hooks/useFilterMetadata";
 import { useNestedFilterForm } from "./hooks/useNestedFilterForm";
@@ -58,10 +33,9 @@ import type {
   FilterQueryVariables, 
   NestedFilterConfig, 
   FilterPreset,
-  FilterCondition,
-  FilterGroup,
 } from "./types";
 import { DEFAULT_NESTED_CONFIG } from "./types";
+import { cn } from "@/lib/utils";
 
 export interface DynamicFilterFormProps {
   /** Django app name */
@@ -108,16 +82,14 @@ export const DynamicFilterForm: React.FC<DynamicFilterFormProps> = ({
   config: configOverrides,
   disabled,
   title = "Filtres",
-  showKeyboardHints = true,
+  showKeyboardHints = false,
 }) => {
-  // Merge config with defaults
   const config: NestedFilterConfig = useMemo(() => ({
     ...DEFAULT_NESTED_CONFIG,
     maxDepth,
     ...configOverrides,
   }), [maxDepth, configOverrides]);
 
-  // Fetch combined metadata
   const {
     schema,
     loading,
@@ -131,23 +103,21 @@ export const DynamicFilterForm: React.FC<DynamicFilterFormProps> = ({
     includeSavedFilters,
   });
 
-  // Filter form state
   const { state, actions } = useNestedFilterForm({
     schema,
     initialState,
   });
 
-  // UI state
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [editingPreset, setEditingPreset] = useState<FilterPreset | null>(null);
   const [popoverOpen, setPopoverOpen] = useState(false);
+  const [showPresetsList, setShowPresetsList] = useState(false);
 
-  // Count active filters
   const conditionCount = useMemo(() => countConditions(state.root), [state.root]);
   const presetCount = state.selectedPresets.length;
   const totalActiveCount = conditionCount + presetCount;
+  const hasActiveFilters = totalActiveCount > 0;
 
-  // Apply filters
   const handleApply = useCallback(() => {
     if (!schema) return;
 
@@ -167,10 +137,8 @@ export const DynamicFilterForm: React.FC<DynamicFilterFormProps> = ({
     }
   }, [state, schema, maxDepth, onApply, layout]);
 
-  // Reset filters
   const handleReset = useCallback(() => {
     actions.reset();
-    // Create empty state for reset
     const emptyState: FilterFormState = {
       root: { id: "root", type: "group", logic: "AND", conditions: [], negated: false },
       selectedPresets: [],
@@ -180,48 +148,46 @@ export const DynamicFilterForm: React.FC<DynamicFilterFormProps> = ({
     onApply({}, emptyState);
   }, [actions, onApply]);
 
-  // Apply preset
   const handleApplyPreset = useCallback((preset: FilterPreset) => {
     if (!schema) return;
     const newRoot = applyPresetToFilterState(preset, state.root, schema, "replace");
     actions.setRoot(newRoot);
-  }, [schema, state.root, actions]);
+    handleApply();
+  }, [schema, state.root, actions, handleApply]);
 
-  // Edit preset
   const handleEditPreset = useCallback((preset: FilterPreset) => {
     setEditingPreset(preset);
     setSaveDialogOpen(true);
   }, []);
 
-  // Delete preset
   const handleDeletePreset = useCallback(async (preset: FilterPreset) => {
-    // This would call a delete mutation
-    // For now, just refetch
     refetchSavedFilters();
   }, [refetchSavedFilters]);
 
-  // Share preset
   const handleSharePreset = useCallback(async (preset: FilterPreset) => {
-    // This would call an update mutation with isShared: true
     refetchSavedFilters();
   }, [refetchSavedFilters]);
 
-  // Keyboard shortcuts
+  const handleRemovePreset = useCallback((presetId: string) => {
+    actions.togglePreset(presetId);
+  }, [actions]);
+
+  const handleRemoveCondition = useCallback((id: string) => {
+    actions.removeItem(id);
+  }, [actions]);
+
   useEffect(() => {
     if (disabled || layout === "popover") return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Cmd/Ctrl + Enter to apply
       if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
         e.preventDefault();
         handleApply();
       }
-      // Cmd/Ctrl + S to save
       if ((e.metaKey || e.ctrlKey) && e.key === "s" && allowSaveFilter && conditionCount > 0) {
         e.preventDefault();
         setSaveDialogOpen(true);
       }
-      // Escape to reset
       if (e.key === "Escape" && e.shiftKey) {
         e.preventDefault();
         handleReset();
@@ -232,35 +198,25 @@ export const DynamicFilterForm: React.FC<DynamicFilterFormProps> = ({
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [disabled, layout, handleApply, handleReset, allowSaveFilter, conditionCount]);
 
-  // Loading state
   if (loading) {
     return (
-      <Card>
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Filter className="h-5 w-5" />
-            {title}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <Skeleton className="h-10 w-full" />
+      <Card className="border-muted">
+        <CardContent className="p-6 space-y-4">
+          <Skeleton className="h-8 w-32" />
+          <Skeleton className="h-12 w-full rounded-lg" />
           <Skeleton className="h-20 w-full" />
-          <Skeleton className="h-10 w-full" />
-          <Skeleton className="h-10 w-3/4" />
         </CardContent>
       </Card>
     );
   }
 
-  // Error state
   if (error || !schema) {
     return (
       <Alert variant="destructive">
         <AlertTriangle className="h-4 w-4" />
-        <AlertTitle>Erreur de filtre</AlertTitle>
-        <AlertDescription>
-          {error?.message ?? "Échec du chargement des métadonnées du filtre"}
-          <Button variant="link" size="sm" onClick={() => refetch()}>
+        <AlertDescription className="flex items-center justify-between">
+          <span>{error?.message ?? "Échec du chargement"}</span>
+          <Button variant="link" size="sm" onClick={() => refetch()} className="h-auto p-0">
             Réessayer
           </Button>
         </AlertDescription>
@@ -268,148 +224,149 @@ export const DynamicFilterForm: React.FC<DynamicFilterFormProps> = ({
     );
   }
 
-  // Main filter content
   const filterContent = (
-    <div className="flex flex-col gap-4 h-full">
-      {/* Toolbar: Presets and Distinct */}
-      {(showPresets || showDistinct) && (
-        <div className="flex flex-wrap items-center gap-2">
-          {showPresets && schema.presets.length > 0 && (
-            <PresetSelector
-              presets={schema.presets}
-              selectedPresets={state.selectedPresets}
-              onTogglePreset={actions.togglePreset}
-              onApplyPreset={handleApplyPreset}
-              onEditPreset={handleEditPreset}
-              onDeletePreset={handleDeletePreset}
-              onSharePreset={handleSharePreset}
-              disabled={disabled}
-            />
-          )}
+    <div className="flex flex-col gap-3 h-full">
+      <div className="flex items-center gap-2">
+        <Filter className="h-4 w-4 text-muted-foreground" />
+        <span className="text-sm font-medium">{title}</span>
+        {hasActiveFilters && (
+          <span className="ml-auto text-xs text-muted-foreground">
+            {totalActiveCount} actif{totalActiveCount > 1 ? 's' : ''}
+          </span>
+        )}
+      </div>
 
-          {showDistinct && schema.distinctFields.length > 0 && (
-            <DistinctOnSelector
-              distinctFields={schema.distinctFields}
-              selectedFields={state.distinctOn}
-              orderBy={state.orderBy}
-              onChange={actions.setDistinctOn}
-              onOrderByRequired={actions.setOrderBy}
-              disabled={disabled}
-            />
-          )}
-        </div>
+      <div className="flex flex-wrap items-center gap-2">
+        {showPresets && schema.presets.length > 0 && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 gap-1.5 text-xs"
+            onClick={() => setShowPresetsList(!showPresetsList)}
+          >
+            <Sparkles className="h-3.5 w-3.5" />
+            Presets
+          </Button>
+        )}
+
+        {showDistinct && schema.distinctFields.length > 0 && (
+          <DistinctOnSelector
+            distinctFields={schema.distinctFields}
+            selectedFields={state.distinctOn}
+            orderBy={state.orderBy}
+            onChange={actions.setDistinctOn}
+            onOrderByRequired={actions.setOrderBy}
+            disabled={disabled}
+          />
+        )}
+      </div>
+
+      {showPresetsList && schema.presets.length > 0 && (
+        <PresetSelector
+          presets={schema.presets}
+          selectedPresets={state.selectedPresets}
+          onTogglePreset={actions.togglePreset}
+          onApplyPreset={handleApplyPreset}
+          onEditPreset={handleEditPreset}
+          onDeletePreset={handleDeletePreset}
+          onSharePreset={handleSharePreset}
+          disabled={disabled}
+        />
       )}
 
-      {(showPresets || showDistinct) && <Separator />}
+      <div className="flex-1 min-h-0 flex flex-col gap-2">
+        <div className="flex-1 overflow-auto">
+          <FilterGroupComponent
+            group={state.root}
+            schema={schema}
+            config={config}
+            onChange={(updates) => {
+              const newRoot = { ...state.root, ...updates };
+              actions.setRoot(newRoot);
+            }}
+            onAddCondition={actions.addCondition}
+            onAddGroup={actions.addGroup}
+            onUpdateCondition={actions.updateCondition}
+            onRemoveItem={actions.removeItem}
+            isRoot
+            depth={0}
+          />
+        </div>
+      </div>
 
-      {/* Main filter area */}
-      <ScrollArea className="flex-1 -mr-4 pr-4">
-        <FilterGroupComponent
-          group={state.root}
-          schema={schema}
-          config={config}
-          onChange={(updates) => {
-            const newRoot = { ...state.root, ...updates };
-            actions.setRoot(newRoot);
-          }}
-          onAddCondition={actions.addCondition}
-          onAddGroup={actions.addGroup}
-          onUpdateCondition={actions.updateCondition}
-          onRemoveItem={actions.removeItem}
-          isRoot
-          depth={0}
-        />
-      </ScrollArea>
-
-      {/* Action buttons */}
       <div className="flex items-center gap-2 pt-2 border-t">
         <Button
           onClick={handleApply}
           disabled={disabled}
-          className="flex-1"
+          className="flex-1 h-9"
         >
           <Search className="mr-2 h-4 w-4" />
-          Appliquer les filtres
+          Appliquer
         </Button>
 
         {allowSaveFilter && conditionCount > 0 && (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  onClick={() => {
-                    setEditingPreset(null);
-                    setSaveDialogOpen(true);
-                  }}
-                  disabled={disabled}
-                >
-                  <Save className="h-4 w-4" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>Enregistrer le filtre (⌘S)</TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-9"
+            onClick={() => {
+              setEditingPreset(null);
+              setSaveDialogOpen(true);
+            }}
+            disabled={disabled}
+          >
+            <Save className="h-3.5 w-3.5 mr-1.5" />
+            Enregistrer
+          </Button>
         )}
 
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={handleReset}
-                disabled={disabled}
-              >
-                <RotateCcw className="h-4 w-4" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>Réinitialiser les filtres (⇧Esc)</TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
+        {hasActiveFilters && (
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-9"
+            onClick={handleReset}
+            disabled={disabled}
+          >
+            <X className="h-3.5 w-3.5" />
+          </Button>
+        )}
       </div>
 
-      {/* Keyboard hints */}
       {showKeyboardHints && !disabled && (
-        <div className="flex items-center justify-center gap-4 text-xs text-muted-foreground">
-          <span className="flex items-center gap-1">
-            <Keyboard className="h-3 w-3" />
-            <kbd className="px-1 rounded bg-muted">⌘↵</kbd> Appliquer
-          </span>
-          {allowSaveFilter && conditionCount > 0 && (
-            <span>
-              <kbd className="px-1 rounded bg-muted">⌘S</kbd> Enregistrer
-            </span>
-          )}
-          <span>
-            <kbd className="px-1 rounded bg-muted">⇧Esc</kbd> Réinitialiser
-          </span>
+        <div className="text-center text-[10px] text-muted-foreground">
+          ⌘↵ Appliquer • ⌘S Enregistrer • ⇧Esc Réinitialiser
         </div>
       )}
     </div>
   );
 
-  // Render based on layout mode
   if (layout === "popover") {
     return (
       <>
         <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
           <PopoverTrigger asChild>
-            <Button variant="outline" className="gap-2">
-              <Filter className="h-4 w-4" />
-              {title}
-              {totalActiveCount > 0 && (
-                <Badge variant="secondary" className="h-5 px-1.5">
-                  {totalActiveCount}
-                </Badge>
+            <Button
+              variant="outline"
+              size="sm"
+              className={cn(
+                "gap-1.5 h-8",
+                hasActiveFilters && "border-primary"
               )}
-              <ChevronDown className="h-4 w-4 opacity-50" />
+            >
+              <Filter className="h-3.5 w-3.5" />
+              {title}
+              {hasActiveFilters && (
+                <span className="ml-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
+                  {totalActiveCount}
+                </span>
+              )}
+              <ChevronDown className="h-3 w-3.5 opacity-50" />
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-[450px] p-4" align="start">
+          <PopoverContent className="w-[420px] p-4" align="start">
             <FilterErrorBoundary onReset={handleReset}>
-              <div className="max-h-[500px] overflow-hidden flex flex-col">
+              <div className="max-h-[480px] overflow-hidden flex flex-col">
                 {filterContent}
               </div>
             </FilterErrorBoundary>
@@ -436,14 +393,7 @@ export const DynamicFilterForm: React.FC<DynamicFilterFormProps> = ({
   if (layout === "inline") {
     return (
       <FilterErrorBoundary onReset={handleReset}>
-        <div className="border rounded-lg p-4 bg-card">
-          <div className="flex items-center gap-2 mb-4">
-            <Filter className="h-5 w-5" />
-            <span className="font-semibold">{title}</span>
-            {totalActiveCount > 0 && (
-              <Badge variant="secondary">{totalActiveCount}</Badge>
-            )}
-          </div>
+        <div className="border rounded-xl bg-card overflow-hidden">
           {filterContent}
         </div>
 
@@ -464,23 +414,10 @@ export const DynamicFilterForm: React.FC<DynamicFilterFormProps> = ({
     );
   }
 
-  // Default: panel layout
   return (
     <FilterErrorBoundary onReset={handleReset}>
-      <Card className="h-full flex flex-col">
-        <CardHeader className="pb-3">
-          <CardTitle className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Filter className="h-5 w-5" />
-              <span>{title}</span>
-              {totalActiveCount > 0 && (
-                <Badge variant="secondary">{totalActiveCount}</Badge>
-              )}
-            </div>
-          </CardTitle>
-        </CardHeader>
-
-        <CardContent className="flex-1 overflow-hidden flex flex-col">
+      <Card className="h-full flex flex-col border-0 shadow-none">
+        <CardContent className="flex-1 overflow-hidden flex flex-col p-4">
           {filterContent}
         </CardContent>
       </Card>

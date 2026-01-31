@@ -10,19 +10,25 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/lib/components/ui/dropdown-menu";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/lib/components/ui/dialog";
 import { useTable } from "../context/TableContext";
 import { useMetadata } from "../context/MetadataContext";
 import { useTableFilters } from "../hooks/useTableFilters";
 import { DynamicFilterForm } from "../../form/filters/DynamicFilterForm";
-import { FilterFormState, FilterQueryVariables } from "../../form/filters/types";
-import { Popover, PopoverContent, PopoverTrigger } from "@/lib/components/ui/popover";
+import {
+  FilterFormState,
+  FilterQueryVariables,
+} from "../../form/filters/types";
 
 export function TableToolbar() {
   const { app, model, metadata } = useMetadata();
-  const {
-    columnVisibility,
-    setColumnVisibility,
-  } = useTable();
+  const { columnVisibility, setColumnVisibility } = useTable();
   const {
     quickSearch,
     setQuickSearch,
@@ -44,7 +50,10 @@ export function TableToolbar() {
     });
   };
 
-  const handleApplyFilters = (variables: FilterQueryVariables, state: FilterFormState) => {
+  const handleApplyFilters = (
+    variables: FilterQueryVariables,
+    state: FilterFormState,
+  ) => {
     // variables contains the compiled GraphQL query variables (where, presets, etc.)
     // state contains the UI state (FilterFormState)
 
@@ -68,8 +77,8 @@ export function TableToolbar() {
           />
         </div>
 
-        <Popover open={filterOpen} onOpenChange={setFilterOpen}>
-          <PopoverTrigger asChild>
+        <Dialog open={filterOpen} onOpenChange={setFilterOpen}>
+          <DialogTrigger asChild>
             <Button variant="outline" className="border-dashed">
               <Filter className="mr-2 h-4 w-4" />
               Filters
@@ -77,17 +86,17 @@ export function TableToolbar() {
                 <span className="ml-1 rounded-full bg-primary w-2 h-2" />
               )}
             </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-[600px] p-0" align="start">
-             <DynamicFilterForm
-                app={app}
-                model={model}
-                layout="inline"
-                onApply={handleApplyFilters}
-                initialState={advancedFilters}
-             />
-          </PopoverContent>
-        </Popover>
+          </DialogTrigger>
+          <DialogContent className="max-w-4xl max-h-[90vh] p-0 overflow-hidden flex flex-col">
+            <DynamicFilterForm
+              app={app}
+              model={model}
+              layout="panel"
+              onApply={handleApplyFilters}
+              initialState={advancedFilters}
+            />
+          </DialogContent>
+        </Dialog>
 
         {hasActiveFilters && (
           <Button

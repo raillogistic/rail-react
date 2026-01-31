@@ -23,12 +23,18 @@ import { Loader2 } from "lucide-react";
 // ============================================================================
 
 function TableContent({ persistenceKey }: { persistenceKey?: string }) {
-  const { metadata, loading: metadataLoading, error: metadataError, app, model } = useMetadata();
+  const {
+    metadata,
+    loading: metadataLoading,
+    error: metadataError,
+    app,
+    model,
+  } = useMetadata();
   const {
     columnOrder,
     setColumnOrder,
     setColumnVisibility,
-    error: dataError
+    error: dataError,
   } = useTable();
 
   // 1. Persistence
@@ -57,7 +63,7 @@ function TableContent({ persistenceKey }: { persistenceKey?: string }) {
     if (metadata?.fields && columnOrder.length === 0) {
       // Default order: all visible fields
       const visibleFields = metadata.fields.filter(
-        (f) => f.visibility !== "hidden"
+        (f) => f.visibility !== "hidden",
       );
       const defaultOrder = visibleFields.map((f) => f.name);
       setColumnOrder(defaultOrder);
@@ -100,7 +106,10 @@ function TableContent({ persistenceKey }: { persistenceKey?: string }) {
 
       {/* Desktop View */}
       <div className="hidden md:block">
-        <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+        <DndContext
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
           <TableFrame>
             <SortableContext
               items={columnOrder}
@@ -119,7 +128,7 @@ function TableContent({ persistenceKey }: { persistenceKey?: string }) {
 
       {dataError && (
         <div className="text-sm text-red-500 px-2">
-            Error loading data: {dataError.message}
+          Error loading data: {dataError.message}
         </div>
       )}
     </div>
@@ -138,7 +147,12 @@ export interface ModelTableV2Props {
   // Future: options prop for overrides
 }
 
-export function ModelTableV2({ app, model, className, persistenceKey }: ModelTableV2Props) {
+export function ModelTableV2({
+  app,
+  model,
+  className,
+  persistenceKey,
+}: ModelTableV2Props) {
   return (
     <div className={className}>
       <MetadataProvider app={app} model={model}>
