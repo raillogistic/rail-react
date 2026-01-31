@@ -1,10 +1,8 @@
 import React from "react";
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { FieldSelector } from "../..";
-import { Button } from "@/lib/components/ui/button";
-import type { UnifiedFilterSchema } from "../..";
+import { FilterRow } from "../..";
+import type { FilterCondition, UnifiedFilterSchema } from "../..";
 
 const schema: UnifiedFilterSchema = {
   app: "store",
@@ -51,19 +49,29 @@ const config = {
   autoApplyDelay: 500,
 };
 
-describe("FieldSelector", () => {
-  it("opens the popover", async () => {
-    const user = userEvent.setup();
+describe("FilterRow", () => {
+  it("renders field selector, operator, and value input", () => {
+    const condition: FilterCondition = {
+      id: "c1",
+      type: "condition",
+      fieldPath: ["name"],
+      fieldName: "name",
+      operator: "eq",
+      value: "",
+    };
     render(
-      <FieldSelector
+      <FilterRow
+        condition={condition}
         schema={schema}
         config={config}
-        onSelect={vi.fn()}
-      >
-        <Button>Select field</Button>
-      </FieldSelector>
+        onChange={vi.fn()}
+        onRemove={vi.fn()}
+        onFieldChange={vi.fn()}
+      />
     );
-    await user.click(screen.getByRole("button", { name: /select field/i }));
-    expect(screen.getByPlaceholderText(/search fields/i)).toBeInTheDocument();
+
+    expect(screen.getByRole("button", { name: /name/i })).toBeInTheDocument();
+    expect(screen.getByRole("combobox", { name: /operator/i })).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: /value/i })).toBeInTheDocument();
   });
 });

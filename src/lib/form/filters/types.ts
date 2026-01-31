@@ -59,6 +59,7 @@ export interface FilterableField {
   // Operators
   operators: FilterOperator[];
   defaultOperator: string;
+  preferredOperators?: string[];
   
   // For choice fields
   choices?: FilterChoice[];
@@ -111,6 +112,24 @@ export interface FilterUIHints {
   step?: number;
   dateFormat?: string;
   allowClear?: boolean;
+  defaultOperator?: string;
+  preferredOperators?: string[];
+  datePresets?: DatePreset[];
+  autocompleteEndpoint?: string;
+  recentValuesKey?: string;
+  displayWidth?: "sm" | "md" | "lg" | "full";
+  showInQuickFilter?: boolean;
+  priority?: number;
+  pattern?: string;
+  patternMessage?: string;
+}
+
+export interface DatePreset {
+  key: string;
+  label: string;
+  days?: number;
+  startOfPeriod?: "day" | "week" | "month" | "quarter" | "year";
+  getValue?: () => [string, string?];
 }
 
 export interface RelationFilter {

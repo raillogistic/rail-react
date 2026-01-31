@@ -3,20 +3,21 @@ import {
   Plus,
   X,
   ChevronDown,
+  Layers,
 } from "lucide-react";
 
 import { Button } from "@/lib/components/ui/button";
+import { ToggleGroup, ToggleGroupItem } from "@/lib/components/ui/toggle-group";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/lib/components/ui/select";
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/lib/components/ui/collapsible";
+import { Switch } from "@/lib/components/ui/switch";
 import { cn } from "@/lib/utils";
 
-import { FilterConditionComponent } from "./FilterCondition";
-import { FieldSelector } from "./FieldSelector";
+import { InlineFieldSelector } from "./InlineFieldSelector";
+import { FilterRow } from "./FilterRow";
 import type {
   FilterGroup as FilterGroupType,
   FilterCondition,
@@ -37,6 +38,8 @@ export interface FilterGroupProps {
   isRoot?: boolean;
   depth?: number;
   currentPath?: string[];
+  recentFields?: string[][];
+  favoriteFields?: string[][];
 }
 
 export const FilterGroupComponent: React.FC<FilterGroupProps> = ({
@@ -52,7 +55,10 @@ export const FilterGroupComponent: React.FC<FilterGroupProps> = ({
   isRoot = false,
   depth = 0,
   currentPath = [],
+  recentFields,
+  favoriteFields,
 }) => {
+  const [collapsed, setCollapsed] = useState(false);
   const canAddMore = group.conditions.length < config.maxFiltersPerGroup;
 
   const handleLogicChange = useCallback(
@@ -69,114 +75,174 @@ export const FilterGroupComponent: React.FC<FilterGroupProps> = ({
     [group.id, onAddCondition]
   );
 
-  const activeConditions = group.conditions.filter(
-    (item) => item.type === "condition" && item.value !== undefined && item.value !== "" && item.value !== null &&
-      !(Array.isArray(item.value) && item.value.length === 0)
-  );
-
   const hasConditions = group.conditions.length > 0;
 
+  const canAddGroup = depth < config.maxDepth;
+
   return (
-    <div className="space-y-3">
-      {!isRoot && (
-        <div className="flex items-center justify-between px-2">
-          <Select
+    <Collapsible open={!collapsed} onOpenChange={(open) => setCollapsed(!open)}>
+      <div
+        className={cn("space-y-3", depth > 0 && "border rounded-lg bg-muted/30 p-3")}
+        data-testid="filter-group"
+      >
+        <div className="flex items-center gap-2">
+          <span className="text-xs uppercase tracking-wide text-muted-foreground">
+            Match {group.logic === "AND" ? "ALL" : "ANY"}
+          </span>
+          <ToggleGroup
+            type="single"
+            size="sm"
             value={group.logic}
-            onValueChange={(v) => handleLogicChange(v as "AND" | "OR")}
+            onValueChange={(value) => value && handleLogicChange(value as "AND" | "OR")}
+            aria-label="Group logic"
           >
-            <SelectTrigger className="w-20 h-7 text-xs">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="AND">AND</SelectItem>
-              <SelectItem value="OR">OR</SelectItem>
-            </SelectContent>
-          </Select>
-          {onRemove && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-7 w-7 text-muted-foreground hover:text-destructive"
-              onClick={onRemove}
-            >
-              <X className="h-3.5 w-3.5" />
-            </Button>
+            <ToggleGroupItem value="AND" aria-label="Match all">
+              ALL
+            </ToggleGroupItem>
+            <ToggleGroupItem value="OR" aria-label="Match any">
+              ANY
+            </ToggleGroupItem>
+          </ToggleGroup>
+
+        <div className="ml-auto flex items-center gap-1">
+          {config.enableNot && (
+            <div className="flex items-center gap-2 mr-2">
+              <span className="text-xs text-muted-foreground">NOT</span>
+              <Switch
+                checked={group.negated}
+                onCheckedChange={(checked) => onChange({ negated: checked })}
+                aria-label="Toggle NOT"
+              />
+            </div>
           )}
+          {!isRoot && (
+            <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-muted-foreground hover:text-destructive"
+                onClick={onRemove}
+                aria-label="Remove group"
+              >
+                <X className="h-3.5 w-3.5" />
+              </Button>
+            )}
+            <CollapsibleTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-muted-foreground"
+                aria-label="Toggle group"
+              >
+                <ChevronDown className={cn("h-4 w-4 transition-transform", collapsed && "-rotate-90")} />
+              </Button>
+            </CollapsibleTrigger>
+          </div>
         </div>
-      )}
 
-      {!hasConditions ? (
-        <FieldSelector
-          schema={schema}
-          config={config}
-          currentPath={currentPath}
-          onSelect={handleAddCondition}
-        >
-          <Button variant="outline" className="w-full h-10 border-dashed text-muted-foreground hover:text-foreground">
-            <Plus className="h-4 w-4 mr-2" />
-            Add filter
-          </Button>
-        </FieldSelector>
-      ) : (
-        <div className="space-y-2">
-          {group.conditions.map((item, index) => (
-            <React.Fragment key={item.id}>
-              {item.type === "condition" ? (
-                <div className="relative group">
-                  <FilterConditionComponent
-                    condition={item}
-                    schema={schema}
-                    config={config}
-                    onChange={(updates) => onUpdateCondition(item.id, updates)}
-                    onRemove={() => onRemoveItem(item.id)}
-                    depth={depth}
-                  />
-                </div>
-              ) : (
-                <div className="border rounded-lg bg-muted/50 p-3">
-                  <FilterGroupComponent
-                    group={item}
-                    schema={schema}
-                    config={config}
-                    onChange={(updates) => {
-                      const updatedConditions = group.conditions.map((c) =>
-                        c.id === item.id ? { ...c, ...updates } : c
-                      );
-                      onChange({ conditions: updatedConditions });
-                    }}
-                    onRemove={() => onRemoveItem(item.id)}
-                    onAddCondition={onAddCondition}
-                    onAddGroup={onAddGroup}
-                    onUpdateCondition={onUpdateCondition}
-                    onRemoveItem={onRemoveItem}
-                    depth={depth + 1}
-                    currentPath={currentPath}
-                  />
-                </div>
-              )}
-            </React.Fragment>
-          ))}
-
-          {canAddMore && (
-            <FieldSelector
+        <CollapsibleContent className="space-y-2">
+          {!hasConditions ? (
+            <InlineFieldSelector
               schema={schema}
               config={config}
               currentPath={currentPath}
               onSelect={handleAddCondition}
-            >
-              <Button
-                variant="ghost"
-                size="sm"
-                className="w-full h-8 text-muted-foreground hover:text-foreground hover:bg-muted"
-              >
-                <Plus className="h-3.5 w-3.5 mr-1.5" />
-                Add another filter
-              </Button>
-            </FieldSelector>
+              trigger={
+                <Button
+                  variant="outline"
+                  className="w-full h-10 border-dashed text-muted-foreground hover:text-foreground"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add filter
+                </Button>
+              }
+              recentFields={recentFields}
+              favoriteFields={favoriteFields}
+            />
+          ) : (
+            <div className="space-y-2">
+              {group.conditions.map((item) => (
+                <React.Fragment key={item.id}>
+                  {item.type === "condition" ? (
+                    <FilterRow
+                      condition={item}
+                      schema={schema}
+                      config={config}
+                      onChange={(updates) => onUpdateCondition(item.id, updates)}
+                      onRemove={() => onRemoveItem(item.id)}
+                      onFieldChange={(fieldPath, fieldName, operator) =>
+                        onUpdateCondition(item.id, {
+                          fieldPath,
+                          fieldName,
+                          operator,
+                          value: undefined,
+                        })
+                      }
+                      recentFields={recentFields}
+                      favoriteFields={favoriteFields}
+                    />
+                  ) : (
+                    <FilterGroupComponent
+                      group={item}
+                      schema={schema}
+                      config={config}
+                      onChange={(updates) => {
+                        const updatedConditions = group.conditions.map((c) =>
+                          c.id === item.id ? { ...c, ...updates } : c
+                        );
+                        onChange({ conditions: updatedConditions });
+                      }}
+                      onRemove={() => onRemoveItem(item.id)}
+                      onAddCondition={onAddCondition}
+                      onAddGroup={onAddGroup}
+                      onUpdateCondition={onUpdateCondition}
+                      onRemoveItem={onRemoveItem}
+                      depth={depth + 1}
+                      currentPath={currentPath}
+                      recentFields={recentFields}
+                      favoriteFields={favoriteFields}
+                    />
+                  )}
+                </React.Fragment>
+              ))}
+
+              <div className="flex items-center gap-2">
+                {canAddMore && (
+                  <InlineFieldSelector
+                    schema={schema}
+                    config={config}
+                    currentPath={currentPath}
+                    onSelect={handleAddCondition}
+                    trigger={
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="flex-1 h-8 text-muted-foreground hover:text-foreground hover:bg-muted"
+                      >
+                        <Plus className="h-3.5 w-3.5 mr-1.5" />
+                        Add {group.logic === "OR" ? "OR" : ""} filter
+                      </Button>
+                    }
+                    recentFields={recentFields}
+                    favoriteFields={favoriteFields}
+                  />
+                )}
+
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="h-8"
+                  onClick={() => onAddGroup(group.id, "OR")}
+                  disabled={!canAddGroup}
+                >
+                  <Layers className="h-3.5 w-3.5 mr-1.5" />
+                  Add group
+                </Button>
+              </div>
+            </div>
           )}
-        </div>
-      )}
-    </div>
+        </CollapsibleContent>
+      </div>
+    </Collapsible>
   );
 };
 

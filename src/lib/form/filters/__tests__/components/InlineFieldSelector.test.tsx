@@ -2,7 +2,7 @@ import React from "react";
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { FieldSelector } from "../..";
+import { InlineFieldSelector } from "../..";
 import { Button } from "@/lib/components/ui/button";
 import type { UnifiedFilterSchema } from "../..";
 
@@ -31,7 +31,7 @@ const schema: UnifiedFilterSchema = {
       operators: [{ name: "eq", label: "Equals", graphqlType: "String", isList: false }],
       defaultOperator: "eq",
       isRelation: false,
-      uiHints: { widget: "text" },
+      uiHints: { widget: "text", showInQuickFilter: true },
     },
   ],
   relationFilters: [],
@@ -51,19 +51,19 @@ const config = {
   autoApplyDelay: 500,
 };
 
-describe("FieldSelector", () => {
-  it("opens the popover", async () => {
+describe("InlineFieldSelector", () => {
+  it("opens and shows search input", async () => {
     const user = userEvent.setup();
     render(
-      <FieldSelector
+      <InlineFieldSelector
         schema={schema}
         config={config}
         onSelect={vi.fn()}
-      >
-        <Button>Select field</Button>
-      </FieldSelector>
+        trigger={<Button>Pick</Button>}
+      />
     );
-    await user.click(screen.getByRole("button", { name: /select field/i }));
+
+    await user.click(screen.getByRole("button", { name: /pick/i }));
     expect(screen.getByPlaceholderText(/search fields/i)).toBeInTheDocument();
   });
 });

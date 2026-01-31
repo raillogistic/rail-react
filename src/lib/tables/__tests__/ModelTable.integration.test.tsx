@@ -37,8 +37,8 @@ vi.mock("@/auth/context", () => ({
   AuthContext: React.createContext(null),
 }));
 
-// Mock DynamicFilterForm to avoid complex nested filter logic and metadata fetching in tests
-vi.mock("@/lib/form/filters/DynamicFilterForm", () => ({
+// Mock FilterPanel to avoid complex nested filter logic and metadata fetching in tests
+vi.mock("@/lib/form/filters/FilterPanel", () => ({
   default: ({ onApply, layout, showPresets, showDistinct }: any) => (
     <div data-testid="dynamic-filter-form">
       <span>Filter Form ({layout})</span>

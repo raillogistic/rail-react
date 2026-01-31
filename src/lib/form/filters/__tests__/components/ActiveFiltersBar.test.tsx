@@ -1,10 +1,8 @@
 import React from "react";
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { FieldSelector } from "../..";
-import { Button } from "@/lib/components/ui/button";
-import type { UnifiedFilterSchema } from "../..";
+import { ActiveFiltersBar } from "../..";
+import type { FilterFormState, UnifiedFilterSchema } from "../..";
 
 const schema: UnifiedFilterSchema = {
   app: "store",
@@ -40,30 +38,23 @@ const schema: UnifiedFilterSchema = {
   fieldGroups: [],
 };
 
-const config = {
-  maxDepth: 3,
-  enableLogicalOperators: true,
-  enableNot: true,
-  defaultM2MOperator: "_some",
-  enableInlineRelationFilters: true,
-  maxFiltersPerGroup: 10,
-  autoApply: false,
-  autoApplyDelay: 500,
-};
-
-describe("FieldSelector", () => {
-  it("opens the popover", async () => {
-    const user = userEvent.setup();
+describe("ActiveFiltersBar", () => {
+  it("renders add filter button when empty", () => {
+    const state: FilterFormState = {
+      root: { id: "root", type: "group", logic: "AND", conditions: [], negated: false },
+      selectedPresets: [],
+      distinctOn: [],
+      orderBy: [],
+    };
     render(
-      <FieldSelector
+      <ActiveFiltersBar
+        state={state}
         schema={schema}
-        config={config}
-        onSelect={vi.fn()}
-      >
-        <Button>Select field</Button>
-      </FieldSelector>
+        onRemoveCondition={vi.fn()}
+        onClearAll={vi.fn()}
+        onAddFilter={vi.fn()}
+      />
     );
-    await user.click(screen.getByRole("button", { name: /select field/i }));
-    expect(screen.getByPlaceholderText(/search fields/i)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /add filter/i })).toBeInTheDocument();
   });
 });

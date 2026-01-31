@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide describes how to migrate from the legacy ModelTable implementation to the new V2 implementation that uses the `metadata_v2` API and `DynamicFilterForm` system.
+This guide describes how to migrate from the legacy ModelTable implementation to the new V2 implementation that uses the `metadata_v2` API and `FilterPanel` system.
 
 ## Breaking Changes
 
@@ -11,8 +11,8 @@ This guide describes how to migrate from the legacy ModelTable implementation to
 | Prop | Replacement | Notes |
 |------|--------------|---------|
 | `columnFiltersProp` | `filterConfig` | Use the unified `filterConfig` object |
-| `onAdvancedFiltersApply` | `filterConfig` with DynamicFilterForm's `onApply` | Filter application now handled internally |
-| `quickFilters` | `filterConfig.showPresets` | Use the preset system in DynamicFilterForm |
+| `onAdvancedFiltersApply` | `filterConfig` with FilterPanel's `onApply` | Filter application now handled internally |
+| `quickFilters` | `filterConfig.showPresets` | Use the preset system in FilterPanel |
 
 ### Type Changes
 
@@ -25,7 +25,7 @@ This guide describes how to migrate from the legacy ModelTable implementation to
 
 ### `filterConfig`
 
-Unified configuration object for DynamicFilterForm integration:
+Unified configuration object for FilterPanel integration:
 
 ```typescript
 filterConfig?: {
@@ -282,7 +282,7 @@ render(
   />
 );
 
-// Check DynamicFilterForm is rendered
+// Check FilterPanel is rendered
 expect(screen.getByText(/filters/i)).toBeInTheDocument();
 ```
 
@@ -290,14 +290,14 @@ expect(screen.getByText(/filters/i)).toBeInTheDocument();
 
 These components are no longer needed and can be removed:
 
-- `QuickFilterLoader` - replaced by `PresetSelector` in DynamicFilterForm
-- `QuickFilter` - replaced by DynamicFilterForm presets
-- `ModelAdvancedFiltersControl` - replaced by DynamicFilterForm
-- `AdvancedFiltersDialog` - replaced by DynamicFilterForm dialogs
-- `ColumnFilterInput` - replaced by DynamicFilterForm conditions
-- `FilterFieldSelector` - replaced by DynamicFilterForm field selector
-- `useColumnFilters` - replaced by DynamicFilterForm state management
-- `useAdvancedFiltering` - replaced by DynamicFilterForm
+- `QuickFilterLoader` - replaced by `PresetSelector` in FilterPanel
+- `QuickFilter` - replaced by FilterPanel presets
+- `ModelAdvancedFiltersControl` - replaced by FilterPanel
+- `AdvancedFiltersDialog` - replaced by FilterPanel dialogs
+- `ColumnFilterInput` - replaced by FilterPanel conditions
+- `FilterFieldSelector` - replaced by FilterPanel field selector
+- `useColumnFilters` - replaced by FilterPanel state management
+- `useAdvancedFiltering` - replaced by FilterPanel
 
 ## File Changes Summary
 
@@ -314,7 +314,7 @@ These components are no longer needed and can be removed:
    - Add `mapTableMetadataToFilterSchema` function
 
 3. **`@rail-react/src/lib/tables/ModelTable.tsx`**
-   - Add DynamicFilterForm imports
+   - Add FilterPanel imports
    - Replace filter state management
    - Replace quick filter rendering
    - Replace advanced filter rendering
@@ -346,7 +346,7 @@ If issues arise, rollback steps:
 For issues or questions about migration:
 
 - Check test files in `__tests__/ModelTableV2Migration.test.tsx`
-- Review DynamicFilterForm documentation in `@rail-react/src/lib/form/filters/`
+- Review FilterPanel documentation in `@rail-react/src/lib/form/filters/`
 - Check metadata V2 API docs in `@rail-django/rail_django/extensions/metadata_v2/`
 
 ## Checklist
@@ -355,7 +355,7 @@ Before migrating, ensure:
 
 - [ ] Backend has `metadata_v2` GraphQL API deployed
 - [ ] Backend returns `filterSchema` and `modelSchema` queries
-- [ ] `DynamicFilterForm` component is available in codebase
+- [ ] `FilterPanel` component is available in codebase
 - [ ] All ModelTable usages are identified
 - [ ] Tests are updated for new behavior
 - [ ] Documentation is updated

@@ -81,6 +81,8 @@ export interface SaveFilterDialogProps {
   schema: UnifiedFilterSchema;
   maxDepth: number;
   existingFilter?: FilterPreset;
+  existingNames?: string[];
+  canShare?: boolean;
   onSaved: () => void;
 }
 
@@ -92,6 +94,8 @@ export const SaveFilterDialog: React.FC<SaveFilterDialogProps> = ({
   schema,
   maxDepth,
   existingFilter,
+  existingNames = [],
+  canShare = true,
   onSaved,
 }) => {
   // Form state
@@ -109,6 +113,12 @@ export const SaveFilterDialog: React.FC<SaveFilterDialogProps> = ({
   const isEditing = !!existingFilter;
 
   // Initialize form when editing
+  useEffect(() => {
+    if (!canShare && isShared) {
+      setIsShared(false);
+    }
+  }, [canShare, isShared]);
+
   useEffect(() => {
     if (open) {
       if (existingFilter) {
@@ -131,6 +141,14 @@ export const SaveFilterDialog: React.FC<SaveFilterDialogProps> = ({
   }, [filterState, schema, maxDepth]);
 
   const conditionCount = countConditions(filterState);
+  const normalizedName = name.trim().toLowerCase();
+  const duplicateName = normalizedName.length > 0
+    ? existingNames.some((existing) => {
+        if (!existing) return false;
+        if (existingFilter && existing === existingFilter.name) return false;
+        return existing.trim().toLowerCase() == normalizedName;
+      })
+    : false;
 
   // Validation
   const validation = React.useMemo(() => {
@@ -156,7 +174,7 @@ export const SaveFilterDialog: React.FC<SaveFilterDialogProps> = ({
       isValid: errors.length === 0,
       errors,
     };
-  }, [name, description, conditionCount]);
+  }, [name, description, conditionCount, duplicateName]);
 
   // Handle save
   const handleSave = useCallback(async () => {
@@ -298,7 +316,7 @@ export const SaveFilterDialog: React.FC<SaveFilterDialogProps> = ({
               id="filter-shared"
               checked={isShared}
               onCheckedChange={setIsShared}
-              disabled={loading}
+              disabled={loading || !canShare}
             />
           </div>
 

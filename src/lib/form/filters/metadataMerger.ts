@@ -40,6 +40,16 @@ interface FilterSchemaResponse {
     relatedModel?: string;
     filterInputType: string;
     availableOperators: string[];
+    defaultOperator?: string;
+    preferredOperators?: string[];
+    datePresets?: Array<{
+      key: string;
+      label: string;
+      days?: number;
+      startOfPeriod?: string;
+    }>;
+    showInQuickFilter?: boolean;
+    priority?: number;
     options: any[];
   }>;
 }
@@ -110,7 +120,8 @@ export function mergeFilterMetadata(
         isList: opt.isList ?? false,
         choices: opt.choices,
       })),
-      defaultOperator: selectDefaultOperator(filter.baseType, filter.options),
+      defaultOperator: filter.defaultOperator ?? getDefaultOperator(filter.baseType),
+      preferredOperators: filter.preferredOperators ?? getPreferredOperators(filter.baseType),
       choices: modelField?.choices,
       isRelation: filter.isNested,
       relationConfig: relation ? {
@@ -217,21 +228,6 @@ function normalizeBaseType(baseType: string): FilterBaseType {
   return mapping[baseType] ?? "String";
 }
 
-function selectDefaultOperator(baseType: string, options: any[]): string {
-  const preferred: Record<string, string[]> = {
-    String: ["icontains", "contains", "eq"],
-    Number: ["eq", "gte", "lte"],
-    Boolean: ["eq"],
-    Date: ["eq", "gte", "between"],
-    DateTime: ["gte", "eq", "between"],
-    Relationship: ["eq"],
-    JSON: ["hasKey", "contains"],
-  };
-  const prefs = preferred[baseType] ?? ["eq"];
-  const available = options.map((o) => o.name);
-  return prefs.find((p) => available.includes(p)) ?? available[0] ?? "eq";
-}
-
 function buildUIHints(filter: any, modelField: any): FilterUIHints {
   const baseType = filter.baseType;
   const hints: FilterUIHints = {
@@ -259,6 +255,12 @@ function buildUIHints(filter: any, modelField: any): FilterUIHints {
     hints.widget = "json";
   }
 
+  hints.defaultOperator = filter.defaultOperator ?? getDefaultOperator(baseType);
+  hints.preferredOperators = filter.preferredOperators ?? getPreferredOperators(baseType);
+  hints.datePresets = filter.datePresets ?? getDatePresets(baseType);
+  hints.showInQuickFilter = filter.showInQuickFilter ?? false;
+  hints.priority = filter.priority ?? 999;
+
   return hints;
 }
 
@@ -270,3 +272,41 @@ function findFieldGroup(fieldName: string, groups: any[]): string | undefined {
   }
   return undefined;
 }
+
+function getDefaultOperator(baseType: string): string {
+  const preferred = getPreferredOperators(baseType);
+  return preferred[0] ?? "eq";
+}
+
+function getPreferredOperators(baseType: string): string[] {
+  const preferred: Record<string, string[]> = {
+    String: ["icontains", "eq", "startsWith", "endsWith", "in"],
+    Number: ["eq", "gte", "lte", "between", "in"],
+    Boolean: ["eq"],
+    Date: ["eq", "gte", "lte", "between", "year", "month"],
+    DateTime: ["gte", "lte", "between", "eq", "year", "month"],
+    Relationship: ["eq", "in", "isNull"],
+    JSON: ["hasKey", "contains", "eq"],
+  };
+  return preferred[baseType] ?? ["eq"];
+}
+
+function getDatePresets(baseType: string): FilterUIHints["datePresets"] {
+  if (baseType !== "Date" && baseType !== "DateTime") {
+    return undefined;
+  }
+  return DEFAULT_DATE_PRESETS;
+}
+
+const DEFAULT_DATE_PRESETS = [
+  { key: "today", label: "Today", startOfPeriod: "day" },
+  { key: "yesterday", label: "Yesterday" },
+  { key: "thisWeek", label: "This Week", startOfPeriod: "week" },
+  { key: "lastWeek", label: "Last Week", startOfPeriod: "week" },
+  { key: "thisMonth", label: "This Month", startOfPeriod: "month" },
+  { key: "lastMonth", label: "Last Month", startOfPeriod: "month" },
+  { key: "thisQuarter", label: "This Quarter", startOfPeriod: "quarter" },
+  { key: "thisYear", label: "This Year", startOfPeriod: "year" },
+  { key: "last30Days", label: "Last 30 Days" },
+  { key: "last90Days", label: "Last 90 Days" },
+];

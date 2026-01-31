@@ -6,7 +6,8 @@ A metadata-driven, headless-capable data table for Rail React, built on top of S
 
 - **Metadata Driven**: Automatically configures columns, labels, and types based on `ModelMetadataV2`.
 - **GraphQL Integrated**: Auto-generates GraphQL queries (`useTableData`).
-- **Advanced Filtering**: Supports complex nested filters via `DynamicFilterForm`.
+- **Advanced Filtering**: Supports complex nested filters via `FilterPanel`.
+- **Filter Panel V2**: New inline/panel/toolbar modes via `useNewFilterUI` or `FilterPanel`.
 - **Responsive**: Switches to card view on mobile devices (`TableMobileCard`).
 - **Persisted State**: Saves column order, visibility, and sorting to `localStorage`.
 - **Compound Components**: Fully composable architecture.

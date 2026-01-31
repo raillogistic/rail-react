@@ -22,7 +22,7 @@ import { AppearanceSettingsPage } from "@/views/settings/AppearanceSettingsPage"
 import { LayoutSettingsPage } from "@/views/settings/LayoutSettingsPage";
 
 import { getAppDefaultRoute, getAppNavigationLinks } from "@/apps/routes";
-import { DynamicFilterForm } from "@/lib/form/filters";
+import { FilterPanel } from "@/lib/form/filters";
 import { ModelTable } from "@/lib/tables/NewModelTable";
 import { ModelTableV2 } from "@/lib/tablev2";
 
@@ -87,8 +87,26 @@ const CORE_NAVIGATION_LINKS: NavigationSection[] = [
         description: "Vue synthèse des indicateurs",
         component: (
           // <ModelTable appName="store" modelName="Product" />
-          <ModelTableV2 app="store" model="Product" />
-          // <DynamicFilterForm
+          <>
+            {/* <FilterPanel
+              app="store"
+              model="Product"
+              onApply={(variables) => console.log(variables)}
+              persistKey="invoice_filters"
+              showPresets
+            /> */}
+            <FilterPanel
+              app="store"
+              model="Product"
+              layout="toolbar"
+              maxDepth={1}
+              onApply={(values) => console.log(values)}
+              showPresets
+              title="Filter Products"
+            />
+            {/* <ModelTableV2 app="store" model="Product" /> */}
+          </>
+          // <FilterPanel
           //   app="store"
           //   model="Product"
           //   layout="panel"

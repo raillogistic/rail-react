@@ -69,7 +69,7 @@ This document outlines the comprehensive feature set of the `@rail-react/tables`
   - **DevExtreme Style**: Inline filter row below headers.
 - **Types**: Text, Number, Date, Boolean, Choice.
 
-### **Advanced Filtering (`DynamicFilterForm`)**
+### **Advanced Filtering (`FilterPanel`)**
 - **Complex Logic**: Supports nested `AND` / `OR` / `NOT` groups.
 - **Deep Relations**: Filter by fields on related models (e.g., `author.company.name`).
 - **Presets**:

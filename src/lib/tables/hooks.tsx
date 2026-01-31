@@ -233,7 +233,7 @@ export function mapV2MetadataToTableMetadata(
 }
 
 /**
- * Map table metadata to UnifiedFilterSchema for DynamicFilterForm
+ * Map table metadata to UnifiedFilterSchema for FilterPanel
  */
 export function mapTableMetadataToFilterSchema(
   metadata: ModelTableMetadataV2 | null

@@ -20,7 +20,7 @@ import {
 import { useTable } from "../context/TableContext";
 import { useMetadata } from "../context/MetadataContext";
 import { useTableFilters } from "../hooks/useTableFilters";
-import { DynamicFilterForm } from "../../form/filters/DynamicFilterForm";
+import { FilterPanel } from "../../form/filters/FilterPanel";
 import {
   FilterFormState,
   FilterQueryVariables,
@@ -88,7 +88,7 @@ export function TableToolbar() {
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-4xl max-h-[90vh] p-0 overflow-hidden flex flex-col">
-            <DynamicFilterForm
+            <FilterPanel
               app={app}
               model={model}
               layout="panel"

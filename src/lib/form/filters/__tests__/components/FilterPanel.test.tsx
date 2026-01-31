@@ -1,10 +1,8 @@
 import React from "react";
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
-import { FieldSelector } from "../..";
-import { Button } from "@/lib/components/ui/button";
-import type { UnifiedFilterSchema } from "../..";
+import { FilterPanel } from "../..";
+import type { FilterFormState, UnifiedFilterSchema } from "../..";
 
 const schema: UnifiedFilterSchema = {
   app: "store",
@@ -51,19 +49,31 @@ const config = {
   autoApplyDelay: 500,
 };
 
-describe("FieldSelector", () => {
-  it("opens the popover", async () => {
-    const user = userEvent.setup();
+describe("FilterPanel", () => {
+  it("renders inline layout", () => {
+    const state: FilterFormState = {
+      root: { id: "root", type: "group", logic: "AND", conditions: [], negated: false },
+      selectedPresets: [],
+      distinctOn: [],
+      orderBy: [],
+    };
+
     render(
-      <FieldSelector
+      <FilterPanel
         schema={schema}
+        state={state}
         config={config}
-        onSelect={vi.fn()}
-      >
-        <Button>Select field</Button>
-      </FieldSelector>
+        onApply={vi.fn()}
+        onClearAll={vi.fn()}
+        onAddCondition={vi.fn()}
+        onAddGroup={vi.fn()}
+        onUpdateCondition={vi.fn()}
+        onUpdateGroup={vi.fn()}
+        onRemoveItem={vi.fn()}
+        layout="inline"
+      />
     );
-    await user.click(screen.getByRole("button", { name: /select field/i }));
-    expect(screen.getByPlaceholderText(/search fields/i)).toBeInTheDocument();
+
+    expect(screen.getByText(/filters/i)).toBeInTheDocument();
   });
 });

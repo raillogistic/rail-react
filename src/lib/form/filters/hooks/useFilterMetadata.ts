@@ -96,6 +96,16 @@ const FILTER_METADATA_QUERY = gql`
       relatedModel
       filterInputType
       availableOperators
+      defaultOperator
+      preferredOperators
+      datePresets {
+        key
+        label
+        days
+        startOfPeriod
+      }
+      showInQuickFilter
+      priority
       options {
         name
         lookup

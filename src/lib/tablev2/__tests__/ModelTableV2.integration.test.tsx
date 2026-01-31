@@ -5,9 +5,9 @@ import { GET_MODEL_SCHEMA } from '../queries';
 import { gql } from '@apollo/client';
 import { describe, it, expect, vi } from 'vitest';
 
-// Mock DynamicFilterForm to avoid extra Apollo queries in tests
-vi.mock('../../form/filters/DynamicFilterForm', () => ({
-  DynamicFilterForm: () => <div data-testid="dynamic-filter-form-mock">Filter Form</div>
+// Mock FilterPanel to avoid extra Apollo queries in tests
+vi.mock('../../form/filters/FilterPanel', () => ({
+  FilterPanel: () => <div data-testid="dynamic-filter-form-mock">Filter Form</div>
 }));
 
 // Mock TableToolbar to avoid Radix UI sideOffset warnings in tests

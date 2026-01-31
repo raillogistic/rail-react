@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide describes how to migrate from the legacy ModelTable implementation to the new V2 implementation that uses the `metadata_v2` API and `DynamicFilterForm` system.
+This guide describes how to migrate from the legacy ModelTable implementation to the new V2 implementation that uses the `metadata_v2` API and `FilterPanel` system.
 
 ## Breaking Changes
 
@@ -11,8 +11,8 @@ This guide describes how to migrate from the legacy ModelTable implementation to
 | Prop | Replacement | Notes |
 |------|--------------|---------|
 | `columnFiltersProp` | `filterConfig` | Use the unified `filterConfig` object |
-| `onAdvancedFiltersApply` | `filterConfig` with DynamicFilterForm's `onApply` | Filter application now handled internally |
-| `quickFilters` | `filterConfig.showPresets` | Use the preset system in DynamicFilterForm |
+| `onAdvancedFiltersApply` | `filterConfig` with FilterPanel's `onApply` | Filter application now handled internally |
+| `quickFilters` | `filterConfig.showPresets` | Use the preset system in FilterPanel |
 
 ### Type Changes
 
@@ -25,7 +25,7 @@ This guide describes how to migrate from the legacy ModelTable implementation to
 
 ### `filterConfig`
 
-Unified configuration object for DynamicFilterForm integration:
+Unified configuration object for FilterPanel integration:
 
 ```typescript
 filterConfig?: {

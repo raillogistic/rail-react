@@ -1,7 +1,7 @@
 /**
  * ModelTable V2 Migration Tests
  * 
- * Tests for metadata V2 API integration and DynamicFilterForm support
+ * Tests for metadata V2 API integration and FilterPanel support
  */
 
 import { describe, it, expect, beforeEach, vi } from "vitest";

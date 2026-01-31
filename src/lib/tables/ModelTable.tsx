@@ -88,7 +88,7 @@ import {
   FormOverlay,
   PrintDialog,
 } from "./components/ModelTableOverlays";
-import { DynamicFilterForm } from "@/lib/form/filters/DynamicFilterForm";
+import { FilterPanel } from "@/lib/form/filters/FilterPanel";
 import type {
   FilterFormState,
   UnifiedFilterSchema,
@@ -387,7 +387,7 @@ export type ModelTableProps<TData = Record<string, unknown>> = {
   options?: ModelTableOptions;
 
   /**
-   * DynamicFilterForm configuration - unified filter system
+   * FilterPanel configuration - unified filter system
    * Replaces columnFiltersProp, onAdvancedFiltersApply, and quickFilters
    */
   filterConfig?: {
@@ -891,7 +891,7 @@ export default function ModelTable<TData = Record<string, unknown>>({
     onContextReady?.(context);
   }, [context, onContextReady]);
 
-  // --- DynamicFilterForm State Management ---
+  // --- FilterPanel State Management ---
   const [filterState, setFilterState] = useState<FilterFormState | null>(null);
   const [popoverOpen, setPopoverOpen] = useState(false);
 
@@ -908,7 +908,7 @@ export default function ModelTable<TData = Record<string, unknown>>({
     includeSavedFilters: true,
   });
 
-  // Build filter schema from table metadata for DynamicFilterForm
+  // Build filter schema from table metadata for FilterPanel
   const unifiedFilterSchema = useMemo(() => {
     if (!meta) return null;
     return mapTableMetadataToFilterSchema(meta);
@@ -2619,7 +2619,7 @@ export default function ModelTable<TData = Record<string, unknown>>({
       available_filters={meta?.filters ?? []}
       toolbar_actions={
         <div className="flex items-center gap-2">
-          <DynamicFilterForm
+          <FilterPanel
             app={appName}
             model={modelName}
             maxDepth={filterConfig?.maxDepth ?? 3}
