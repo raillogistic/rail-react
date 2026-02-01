@@ -91,11 +91,8 @@ import {
 import { FilterPanel } from "@/lib/form/filters/FilterPanel";
 import type {
   FilterFormState,
-  UnifiedFilterSchema,
+  FilterQueryVariables,
 } from "@/lib/form/filters/types";
-import { useFilterMetadata } from "@/lib/form/filters/hooks/useFilterMetadata";
-import { buildQueryVariables } from "@/lib/form/filters/queryBuilder";
-import { mapTableMetadataToFilterSchema } from "./hooks";
 
 type UseGraphQLModelTableOptions = Partial<
   Omit<Parameters<typeof useGraphQLModelTable>[0], "appName" | "modelName">
@@ -503,8 +500,6 @@ export default function ModelTable<TData = Record<string, unknown>>({
   rowActions,
   selection,
   options,
-  columnFiltersProp,
-  onAdvancedFiltersApply,
   columnVisibilityKey,
   exportOptions,
   creationForm,
@@ -892,52 +887,29 @@ export default function ModelTable<TData = Record<string, unknown>>({
   }, [context, onContextReady]);
 
   // --- FilterPanel State Management ---
-  const [filterState, setFilterState] = useState<FilterFormState | null>(null);
-  const [popoverOpen, setPopoverOpen] = useState(false);
-
-  // Fetch unified filter schema from metadata_v2
-  const {
-    schema: filterSchema,
-    loading: filterSchemaLoading,
-    error: filterSchemaError,
-    refetch: refetchFilterSchema,
-  } = useFilterMetadata({
-    app: appName,
-    model: modelName,
-    maxDepth: filterConfig?.maxDepth ?? 3,
-    includeSavedFilters: true,
-  });
-
-  // Build filter schema from table metadata for FilterPanel
-  const unifiedFilterSchema = useMemo(() => {
-    if (!meta) return null;
-    return mapTableMetadataToFilterSchema(meta);
-  }, [meta]);
-
-  // Build query variables from filter state
-  const filterVariables = useMemo(() => {
-    if (!filterState || !filterSchema) return {};
-
-    return buildQueryVariables({
-      filterState: filterState.root,
-      schema: filterSchema,
-      selectedPresets: filterState.selectedPresets,
-      distinctOn: filterState.distinctOn,
-      orderBy: table
-        .getState()
-        .sorting.map((s) => `${s.desc ? "-" : ""}${s.id}`),
-      maxDepth: filterConfig?.maxDepth ?? 3,
-    });
-  }, [filterState, filterSchema, table, filterConfig?.maxDepth]);
+  const [filterVariables, setFilterVariables] =
+    useState<FilterQueryVariables | null>(null);
+  const [historyBaseFilters, setHistoryBaseFilters] =
+    useState<ComplexFilterInput<string> | null>(null);
 
   // Sync filter variables to query
   const { setAdvancedFilters, setPresets, setDistinctOn, setPageIndex } =
     setters;
 
+  const handleFilterApply = useCallback(
+    (variables: FilterQueryVariables, _state: FilterFormState) => {
+      setFilterVariables(variables);
+      setPageIndex(0);
+    },
+    [setPageIndex],
+  );
+
   React.useEffect(() => {
     if (!filterVariables || Object.keys(filterVariables).length === 0) {
       setAdvancedFilters(() => null);
       setHistoryBaseFilters(null);
+      setPresets([]);
+      setDistinctOn([]);
       return;
     }
 
@@ -945,12 +917,8 @@ export default function ModelTable<TData = Record<string, unknown>>({
     setHistoryBaseFilters(filterVariables.where ?? null);
 
     // Sync presets and distinctOn from filter variables
-    if (filterVariables.presets) {
-      setPresets(filterVariables.presets);
-    }
-    if (filterVariables.distinctOn) {
-      setDistinctOn(filterVariables.distinctOn);
-    }
+    setPresets(filterVariables.presets ?? []);
+    setDistinctOn(filterVariables.distinctOn ?? []);
   }, [
     filterVariables,
     setAdvancedFilters,
@@ -1030,7 +998,7 @@ export default function ModelTable<TData = Record<string, unknown>>({
       ? columnVisibilityKey(context)
       : (columnVisibilityKey ?? defaultColumnKey(meta, `${modelName}_default`));
   const historyColumnKey = `${resolvedColumnKey}:history`;
-  const columnFiltersConfig = columnFiltersProp ?? {
+  const columnFiltersConfig = {
     mode: "ag-grid",
     debounce_ms: 1,
   };
@@ -2439,12 +2407,6 @@ export default function ModelTable<TData = Record<string, unknown>>({
     selectedGroupingField,
   ]);
 
-  // Resolve Quick Filters
-  const quickFiltersLoading =
-    metadataLoadingState.filters &&
-    (meta?.filters?.length ?? 0) === 0 &&
-    Boolean(quickFilters?.length);
-
   const quickSearchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
@@ -2453,14 +2415,6 @@ export default function ModelTable<TData = Record<string, unknown>>({
   React.useEffect(() => {
     contextRef.current = context;
   }, [context]);
-
-  const handleColumnFiltersPayloadChange = useCallback(
-    (filters: ComplexFilterInput<string>) => {
-      const hasEntries = filters && Object.keys(filters).length > 0;
-      setColumnFiltersPayload(hasEntries ? filters : null);
-    },
-    [],
-  );
 
   const handleQuickSearch =
     enableQuickSearch && supportsQuickSearch
@@ -2475,24 +2429,7 @@ export default function ModelTable<TData = Record<string, unknown>>({
         }
       : undefined;
 
-  // Explicitly reconstruct filters for Export to ensure latest state matches UI components,
-  // bypassing any potential synchronization lag in the hook's effect cycle.
-  const exportFiltersPayload = useMemo(() => {
-    const parts: ComplexFilterInput<string>[] = [];
-    if (columnFiltersPayload) parts.push(columnFiltersPayload);
-    if (advancedFiltersState) parts.push(advancedFiltersState);
-    Object.entries(quickFiltersState).forEach(([field, values]) => {
-      if (values && values.length > 0) {
-        parts.push({
-          [`${field}__in`]: values,
-        } as unknown as ComplexFilterInput<string>);
-      }
-    });
-
-    if (parts.length === 0) return null;
-    if (parts.length === 1) return parts[0];
-    return { AND: parts } as ComplexFilterInput<string>;
-  }, [advancedFiltersState, columnFiltersPayload, quickFiltersState]);
+  const exportFiltersPayload = filtersPayload ?? null;
 
   const exportConfig: ModelTableExportOptions<TData> = {
     enabled: true,
@@ -2531,7 +2468,6 @@ export default function ModelTable<TData = Record<string, unknown>>({
       componentId={historyComponentId}
       userId={user?.sub}
       baseFilters={historyBaseFilters}
-      onAdvancedFiltersApply={handleAdvancedFiltersApply}
       onPermissionRevoked={() => setHistoryBlocked(true)}
       onError={(err) => telemetry.recordError(err)}
       onRefetchChange={registerHistoryRefetch}

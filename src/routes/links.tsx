@@ -22,8 +22,7 @@ import { AppearanceSettingsPage } from "@/views/settings/AppearanceSettingsPage"
 import { LayoutSettingsPage } from "@/views/settings/LayoutSettingsPage";
 
 import { getAppDefaultRoute, getAppNavigationLinks } from "@/apps/routes";
-import { FilterPanel, FilterTreeView } from "@/lib/form/filters";
-import { ModelTable } from "@/lib/tables/NewModelTable";
+import { FilterPanel } from "@/lib/form/filters";
 import { ModelTableV2 } from "@/lib/tablev2";
 
 export const ROUTES = {
@@ -96,15 +95,15 @@ const CORE_NAVIGATION_LINKS: NavigationSection[] = [
               showPresets
             /> */}
 
-            <div className="grid grid-cols-2 gap-2">
-              <FilterPanel
+            <div className="grid gap-2">
+              {/* <FilterPanel
                 app="store"
                 model="Product"
                 maxDepth={2}
                 onApply={(variables, state) => {
                   console.log(variables, state);
                 }}
-              />
+              /> */}
               {/* <FilterPanel
                 app="store"
                 model="Product"
@@ -115,7 +114,7 @@ const CORE_NAVIGATION_LINKS: NavigationSection[] = [
                 title="Filter Products"
               /> */}
             </div>
-            {/* <ModelTableV2 app="store" model="Product" /> */}
+            <ModelTableV2 app="store" model="Product" />
           </>
           // <FilterPanel
           //   app="store"
