@@ -5,6 +5,7 @@ import { GET_MODEL_SCHEMA } from "@/lib/tablev2/queries";
 const STORAGE_VERSION = 1;
 const STORAGE_PREFIX = "rail:metadata-cache:v1";
 const LATEST_USER_KEY = `${STORAGE_PREFIX}:latest_user`;
+const DEPLOY_VERSION_KEY = `${STORAGE_PREFIX}:deploy_version`;
 const RECENT_LIMIT = 25;
 
 export type PersistedMetadataEntry = {
@@ -57,6 +58,9 @@ const writeLatestUserKey = (userKey: string): void => {
     // ignore storage failures
   }
 };
+
+const buildDeployVersionKey = (userKey: string) =>
+  `${DEPLOY_VERSION_KEY}:${userKey}`;
 
 const readStore = (userKey: string): PersistedStore => {
   const cached = storeCache.get(userKey);
@@ -128,6 +132,32 @@ const getStoreForWrite = (): { userKey: string; store: PersistedStore } | null =
   return { userKey, store: readStore(userKey) };
 };
 
+export const getPersistedDeployVersion = (userKey: string): string | null => {
+  if (!isBrowser()) return null;
+  try {
+    return window.localStorage.getItem(buildDeployVersionKey(userKey));
+  } catch {
+    return null;
+  }
+};
+
+export const setPersistedDeployVersion = (
+  userKey: string,
+  version: string | null,
+): void => {
+  if (!isBrowser()) return;
+  try {
+    const key = buildDeployVersionKey(userKey);
+    if (!version) {
+      window.localStorage.removeItem(key);
+    } else {
+      window.localStorage.setItem(key, version);
+    }
+  } catch {
+    // ignore storage failures
+  }
+};
+
 export const recordModelUsage = (app: string, model: string): void => {
   const context = getStoreForWrite();
   if (!context) return;
@@ -146,6 +176,22 @@ export const recordModelUsage = (app: string, model: string): void => {
   }
 
   writeStore(userKey, store);
+};
+
+export const clearPersistedMetadataStore = (userKey: string): void => {
+  storeCache.delete(userKey);
+  if (!isBrowser()) return;
+  try {
+    window.localStorage.removeItem(buildStorageKey(userKey));
+    window.localStorage.removeItem(buildDeployVersionKey(userKey));
+  } catch {
+    // ignore storage failures
+  }
+};
+
+export const hasPersistedMetadataEntries = (userKey: string): boolean => {
+  const store = readStore(userKey);
+  return Object.keys(store.entries).length > 0;
 };
 
 export const getRecentModelKeys = (userKey: string, limit = RECENT_LIMIT): string[] => {

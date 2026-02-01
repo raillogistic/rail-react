@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Search, X, Filter, Columns } from "lucide-react";
 import { Input } from "@/lib/components/ui/input";
 import { Button } from "@/lib/components/ui/button";
@@ -17,6 +17,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/lib/components/ui/dialog";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "@/lib/components/ui/sheet";
 import { useTable } from "../context/TableContext";
 import { useMetadata } from "../context/MetadataContext";
 import { useTableFilters } from "../hooks/useTableFilters";
@@ -25,8 +32,13 @@ import {
   FilterFormState,
   FilterQueryVariables,
 } from "../../form/filters/types";
+import type { FilterPanelOptions } from "../index";
 
-export function TableToolbar() {
+export function TableToolbar({
+  filterPanel,
+}: {
+  filterPanel?: FilterPanelOptions;
+}) {
   const { app, model, metadata } = useMetadata();
   const { columnVisibility, setColumnVisibility } = useTable();
   const {
@@ -38,7 +50,25 @@ export function TableToolbar() {
     advancedFilters,
   } = useTableFilters();
 
-  const [filterOpen, setFilterOpen] = useState(false);
+  const panelDefaults = useMemo(
+    () => ({
+      mode: filterPanel?.mode ?? "drawer",
+      defaultOpen: filterPanel?.defaultOpen ?? true,
+      title: filterPanel?.title ?? "Filters",
+      widthClassName: filterPanel?.widthClassName ?? "sm:max-w-md",
+      side: filterPanel?.side ?? "right",
+    }),
+    [filterPanel],
+  );
+
+  const panelWidthClassName = useMemo(() => {
+    if (!filterPanel?.widthClassName) {
+      return panelDefaults.widthClassName;
+    }
+    return `${filterPanel.widthClassName} sm:max-w-none max-w-none`;
+  }, [filterPanel?.widthClassName, panelDefaults.widthClassName]);
+
+  const [filterOpen, setFilterOpen] = useState(panelDefaults.defaultOpen);
 
   if (!metadata) return null;
 
@@ -64,6 +94,16 @@ export function TableToolbar() {
     setFilterOpen(false);
   };
 
+  const filterContent = (
+    <FilterPanel
+      app={app}
+      model={model}
+      layout="panel"
+      onApply={handleApplyFilters}
+      initialState={advancedFilters}
+    />
+  );
+
   return (
     <div className="flex items-center justify-between py-4 gap-2">
       <div className="flex flex-1 items-center space-x-2">
@@ -77,26 +117,48 @@ export function TableToolbar() {
           />
         </div>
 
-        <Dialog open={filterOpen} onOpenChange={setFilterOpen}>
-          <DialogTrigger asChild>
-            <Button variant="outline" className="border-dashed">
-              <Filter className="mr-2 h-4 w-4" />
-              Filters
-              {hasActiveFilters && (
-                <span className="ml-1 rounded-full bg-primary w-2 h-2" />
-              )}
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[90vh] p-0 overflow-hidden flex flex-col">
-            <FilterPanel
-              app={app}
-              model={model}
-              layout="panel"
-              onApply={handleApplyFilters}
-              initialState={advancedFilters}
-            />
-          </DialogContent>
-        </Dialog>
+        {panelDefaults.mode === "modal" ? (
+          <Dialog open={filterOpen} onOpenChange={setFilterOpen}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="border-dashed">
+                <Filter className="mr-2 h-4 w-4" />
+                {panelDefaults.title}
+                {hasActiveFilters && (
+                  <span className="ml-1 rounded-full bg-primary w-2 h-2" />
+                )}
+              </Button>
+            </DialogTrigger>
+            <DialogContent
+              className={`max-h-[90vh] p-0 overflow-hidden flex flex-col ${panelWidthClassName}`}
+            >
+              <DialogHeader className="border-b px-4 py-3">
+                <DialogTitle>{panelDefaults.title}</DialogTitle>
+              </DialogHeader>
+              {filterContent}
+            </DialogContent>
+          </Dialog>
+        ) : (
+          <Sheet open={filterOpen} onOpenChange={setFilterOpen}>
+            <SheetTrigger asChild>
+              <Button variant="outline" className="border-dashed">
+                <Filter className="mr-2 h-4 w-4" />
+                {panelDefaults.title}
+                {hasActiveFilters && (
+                  <span className="ml-1 rounded-full bg-primary w-2 h-2" />
+                )}
+              </Button>
+            </SheetTrigger>
+            <SheetContent
+              side={panelDefaults.side}
+              className={`p-0 ${panelWidthClassName}`}
+            >
+              <SheetHeader className="border-b">
+                <SheetTitle>{panelDefaults.title}</SheetTitle>
+              </SheetHeader>
+              {filterContent}
+            </SheetContent>
+          </Sheet>
+        )}
 
         {hasActiveFilters && (
           <Button

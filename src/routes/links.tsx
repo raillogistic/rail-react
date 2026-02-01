@@ -113,7 +113,14 @@ const CORE_NAVIGATION_LINKS: NavigationSection[] = [
                 title="Filter Products"
               /> */}
             </div>
-            <ModelTableV2 app="store" model="Product" />
+            <ModelTableV2
+              app="store"
+              model="Product"
+              filterPanel={{
+                mode: "drawer",
+                widthClassName: "w-[50%]",
+              }}
+            />
           </>
           // <FilterPanel
           //   app="store"

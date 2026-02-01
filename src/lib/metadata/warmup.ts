@@ -2,12 +2,16 @@ import { gql, type ApolloClient } from "@apollo/client";
 import { FILTER_METADATA_QUERY } from "@/lib/form/filters/queries";
 import { GET_MODEL_SCHEMA } from "@/lib/tablev2/queries";
 import {
+  clearPersistedMetadataStore,
+  getPersistedDeployVersion,
   getRecentModelKeys,
+  hasPersistedMetadataEntries,
   isEntryStale,
   persistFilterMetadata,
   persistTableMetadata,
   readPersistedModelEntry,
   setActiveMetadataUserKey,
+  setPersistedDeployVersion,
 } from "./persisted-cache";
 
 const AVAILABLE_MODELS_QUERY = gql`
@@ -16,6 +20,12 @@ const AVAILABLE_MODELS_QUERY = gql`
       app
       model
     }
+  }
+`;
+
+const METADATA_DEPLOY_VERSION_QUERY = gql`
+  query MetadataDeployVersion {
+    metadataDeployVersion
   }
 `;
 
@@ -161,6 +171,31 @@ export async function warmupMetadataCache(
 
   setActiveMetadataUserKey(userKey);
 
+  let deployVersion: string | null = null;
+  try {
+    const versionResult = await client.query({
+      query: METADATA_DEPLOY_VERSION_QUERY,
+      fetchPolicy: "network-only",
+    });
+    deployVersion = versionResult.data?.metadataDeployVersion ?? null;
+  } catch {
+    deployVersion = null;
+  }
+
+  if (deployVersion) {
+    const storedVersion = getPersistedDeployVersion(userKey);
+    if (storedVersion && storedVersion !== deployVersion) {
+      clearPersistedMetadataStore(userKey);
+    }
+    if (
+      storedVersion &&
+      storedVersion === deployVersion &&
+      hasPersistedMetadataEntries(userKey)
+    ) {
+      return;
+    }
+  }
+
   const { data } = await client.query({
     query: AVAILABLE_MODELS_QUERY,
     fetchPolicy: "network-only",
@@ -192,5 +227,9 @@ export async function warmupMetadataCache(
           fetchMetadataForModel(client, model.app, model.model, staleMs),
       );
     });
+  }
+
+  if (deployVersion) {
+    setPersistedDeployVersion(userKey, deployVersion);
   }
 }

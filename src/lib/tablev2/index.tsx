@@ -22,7 +22,23 @@ import { Loader2 } from "lucide-react";
 // Inner Component (Inside Contexts)
 // ============================================================================
 
-function TableContent({ persistenceKey }: { persistenceKey?: string }) {
+type FilterPanelMode = "drawer" | "modal";
+
+export interface FilterPanelOptions {
+  mode?: FilterPanelMode;
+  defaultOpen?: boolean;
+  title?: string;
+  widthClassName?: string;
+  side?: "top" | "right" | "bottom" | "left";
+}
+
+function TableContent({
+  persistenceKey,
+  filterPanel,
+}: {
+  persistenceKey?: string;
+  filterPanel?: FilterPanelOptions;
+}) {
   const {
     metadata,
     loading: metadataLoading,
@@ -99,7 +115,7 @@ function TableContent({ persistenceKey }: { persistenceKey?: string }) {
 
   return (
     <div className="space-y-4">
-      <TableToolbar />
+      <TableToolbar filterPanel={filterPanel} />
 
       {/* Mobile View */}
       <TableMobileCard />
@@ -144,6 +160,7 @@ export interface ModelTableV2Props {
   model: string;
   className?: string;
   persistenceKey?: string;
+  filterPanel?: FilterPanelOptions;
   // Future: options prop for overrides
 }
 
@@ -152,12 +169,16 @@ export function ModelTableV2({
   model,
   className,
   persistenceKey,
+  filterPanel,
 }: ModelTableV2Props) {
   return (
     <div className={className}>
       <MetadataProvider app={app} model={model}>
         <TableProvider>
-          <TableContent persistenceKey={persistenceKey} />
+          <TableContent
+            persistenceKey={persistenceKey}
+            filterPanel={filterPanel}
+          />
         </TableProvider>
       </MetadataProvider>
     </div>
