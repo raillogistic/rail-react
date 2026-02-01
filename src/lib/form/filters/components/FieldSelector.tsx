@@ -39,7 +39,11 @@ export interface FieldSelectorProps {
   schema: UnifiedFilterSchema;
   config: NestedFilterConfig;
   currentPath?: string[];
-  onSelect: (fieldPath: string[], fieldName: string, defaultOperator: string) => void;
+  onSelect: (
+    fieldPath: string[],
+    fieldName: string,
+    defaultOperator: string,
+  ) => void;
   recentFields?: string[][];
   children: React.ReactNode;
 }
@@ -100,7 +104,7 @@ export const FieldSelector: React.FC<FieldSelectorProps> = ({
     return scalarFields.filter(
       (f) =>
         f.name.toLowerCase().includes(lower) ||
-        f.fieldLabel.toLowerCase().includes(lower)
+        f.fieldLabel.toLowerCase().includes(lower),
     );
   }, [scalarFields, search]);
 
@@ -110,7 +114,7 @@ export const FieldSelector: React.FC<FieldSelectorProps> = ({
     return relationFields.filter(
       (r) =>
         r.name.toLowerCase().includes(lower) ||
-        r.fieldLabel.toLowerCase().includes(lower)
+        r.fieldLabel.toLowerCase().includes(lower),
     );
   }, [relationFields, search]);
 
@@ -122,13 +126,16 @@ export const FieldSelector: React.FC<FieldSelectorProps> = ({
       setNavigationPath(currentPath);
       setSearch("");
     },
-    [navigationPath, onSelect, currentPath]
+    [navigationPath, onSelect, currentPath],
   );
 
-  const handleNavigateToRelation = useCallback((relation: RelationFilter) => {
-    setNavigationPath([...navigationPath, relation.name]);
-    setSearch("");
-  }, [navigationPath]);
+  const handleNavigateToRelation = useCallback(
+    (relation: RelationFilter) => {
+      setNavigationPath([...navigationPath, relation.name]);
+      setSearch("");
+    },
+    [navigationPath],
+  );
 
   const handleGoBack = useCallback(() => {
     setNavigationPath(navigationPath.slice(0, -1));
@@ -148,7 +155,7 @@ export const FieldSelector: React.FC<FieldSelectorProps> = ({
         setSearch("");
       }
     },
-    [currentPath]
+    [currentPath],
   );
 
   const canGoBack = navigationPath.length > 0;
@@ -180,7 +187,7 @@ export const FieldSelector: React.FC<FieldSelectorProps> = ({
                       "hover:text-primary transition-colors truncate",
                       index === breadcrumbs.length - 1
                         ? "font-medium text-foreground"
-                        : "text-muted-foreground"
+                        : "text-muted-foreground",
                     )}
                     onClick={() => handleBreadcrumbClick(crumb.path)}
                   >
@@ -203,33 +210,35 @@ export const FieldSelector: React.FC<FieldSelectorProps> = ({
             <CommandList>
               <CommandEmpty>No fields found</CommandEmpty>
 
-              {recentFields.length > 0 && navigationPath.length === 0 && !search && (
-                <>
-                  <CommandGroup heading="Recent">
-                    {recentFields.slice(0, 5).map((path, idx) => {
-                      const fieldName = path[path.length - 1];
-                      const pathLabel = path.join(" → ");
-                      const field = schema.fields.find(
-                        (f) => f.fieldName === fieldName
-                      );
-                      return field ? (
-                        <CommandItem
-                          key={idx}
-                          value={`recent-${pathLabel}`}
-                          onSelect={() => {
-                            onSelect(path, fieldName, field.defaultOperator);
-                            setOpen(false);
-                          }}
-                          className="text-xs"
-                        >
-                          <span className="truncate">{pathLabel}</span>
-                        </CommandItem>
-                      ) : null;
-                    })}
-                  </CommandGroup>
-                  <CommandSeparator />
-                </>
-              )}
+              {recentFields.length > 0 &&
+                navigationPath.length === 0 &&
+                !search && (
+                  <>
+                    <CommandGroup heading="Recent">
+                      {recentFields.slice(0, 5).map((path, idx) => {
+                        const fieldName = path[path.length - 1];
+                        const pathLabel = path.join(" → ");
+                        const field = schema.fields.find(
+                          (f) => f.fieldName === fieldName,
+                        );
+                        return field ? (
+                          <CommandItem
+                            key={idx}
+                            value={`recent-${pathLabel}`}
+                            onSelect={() => {
+                              onSelect(path, fieldName, field.defaultOperator);
+                              setOpen(false);
+                            }}
+                            className="text-xs"
+                          >
+                            <span className="truncate">{pathLabel}</span>
+                          </CommandItem>
+                        ) : null;
+                      })}
+                    </CommandGroup>
+                    <CommandSeparator />
+                  </>
+                )}
 
               {filteredScalars.length > 0 && (
                 <CommandGroup heading="Fields">
@@ -242,7 +251,9 @@ export const FieldSelector: React.FC<FieldSelectorProps> = ({
                     >
                       <FieldTypeIcon type={field.baseType} />
                       <div className="flex-1 min-w-0">
-                        <div className="font-medium text-xs">{field.fieldLabel}</div>
+                        <div className="font-medium text-xs">
+                          {field.fieldLabel}
+                        </div>
                         <div className="text-[10px] text-muted-foreground">
                           {field.graphqlType}
                         </div>
@@ -265,7 +276,9 @@ export const FieldSelector: React.FC<FieldSelectorProps> = ({
                       >
                         <Link2 className="h-3.5 w-3.5 text-blue-500" />
                         <div className="flex-1 min-w-0">
-                          <div className="font-medium text-xs">{relation.fieldLabel}</div>
+                          <div className="font-medium text-xs">
+                            {relation.fieldLabel}
+                          </div>
                           <div className="text-[10px] text-muted-foreground">
                             {relation.relatedModel}
                           </div>
@@ -291,7 +304,8 @@ export const FieldSelector: React.FC<FieldSelectorProps> = ({
           </Command>
 
           <div className="px-3 py-1.5 border-t text-[10px] text-muted-foreground bg-muted/20">
-            {filteredScalars.length} field{filteredScalars.length !== 1 ? "s" : ""}
+            {filteredScalars.length} field
+            {filteredScalars.length !== 1 ? "s" : ""}
             {filteredRelations.length > 0 && (
               <>, {filteredRelations.length} related</>
             )}
@@ -304,7 +318,7 @@ export const FieldSelector: React.FC<FieldSelectorProps> = ({
 
 const FieldTypeIcon: React.FC<{ type: string }> = ({ type }) => {
   const iconClass = "h-3.5 w-3.5 text-muted-foreground";
-  
+
   switch (type) {
     case "String":
       return <Type className={iconClass} />;

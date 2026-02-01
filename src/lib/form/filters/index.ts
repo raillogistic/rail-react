@@ -1,11 +1,13 @@
 /**
  * Dynamic Filters - Public API
- * 
+ *
  * Main entry point for the dynamic filter system.
- * 
+ *
  * Features:
  * - Auto-generated filter UI from GraphQL metadata
  * - Complex nested filtering with AND/OR/NOT
+ * - Tree-based state management with undo/redo
+ * - Lazy loading of nested relation schemas
  * - Filter presets (static, saved, shared)
  * - DISTINCT ON support
  * - Multiple layout modes
@@ -39,21 +41,38 @@ export type {
 
 export { DEFAULT_NESTED_CONFIG } from "./types";
 
-// Utilities
+// Tree utilities
+export * from "./tree";
+
+// Context
+export {
+  FilterTreeProvider,
+  useFilterTree,
+  useFilterTreeState,
+  useFilterTreeActions,
+} from "./context";
+export type {
+  FilterTreeState,
+  FilterTreeAction,
+  FilterTreeContextValue,
+  FilterTreeProviderProps,
+} from "./context";
+
+// State utilities
 export {
   createInitialFilterState,
   generateId,
   countConditions,
-  cloneFilterGroup,
-  findItemById,
-  removeItemById,
-  updateItemById,
   validateFilterState,
 } from "./state";
 
 // Hooks
 export { useFilterMetadata } from "./hooks/useFilterMetadata";
-export type { UseFilterMetadataOptions, UseFilterMetadataResult } from "./hooks/useFilterMetadata";
+export type {
+  UseFilterMetadataOptions,
+  UseFilterMetadataResult,
+  RelationLoadingState,
+} from "./hooks/useFilterMetadata";
 
 export { useNestedFilterForm } from "./hooks/useNestedFilterForm";
 export type { UseNestedFilterFormOptions } from "./hooks/useNestedFilterForm";
@@ -66,6 +85,9 @@ export type { UseFilterKeyboardOptions } from "./hooks/useFilterKeyboard";
 
 export { useFilterPersistence } from "./hooks/useFilterPersistence";
 export type { UseFilterPersistenceOptions } from "./hooks/useFilterPersistence";
+
+export { useRelationSchema, useLoadedRelationSchema } from "./hooks/useRelationSchema";
+export type { UseRelationSchemaOptions, UseRelationSchemaReturn } from "./hooks/useRelationSchema";
 
 // Serialization
 export { serializeFilterToGraphQL } from "./serializer";
@@ -105,6 +127,9 @@ export type { FilterConditionProps } from "./components/FilterCondition";
 export { FieldSelector } from "./components/FieldSelector";
 export type { FieldSelectorProps } from "./components/FieldSelector";
 
+export { EnhancedFieldSelector } from "./components/EnhancedFieldSelector";
+export type { EnhancedFieldSelectorProps } from "./components/EnhancedFieldSelector";
+
 export { ScalarFilterInput } from "./components/ScalarFilterInput";
 export type { ScalarFilterInputProps } from "./components/ScalarFilterInput";
 
@@ -127,3 +152,7 @@ export { SaveFilterDialog } from "./components/SaveFilterDialog";
 export type { SaveFilterDialogProps } from "./components/SaveFilterDialog";
 
 export { FilterErrorBoundary } from "./components/FilterErrorBoundary";
+
+// New tree visualization component
+export { FilterTreeView } from "./components/FilterTreeView";
+export type { FilterTreeViewProps } from "./components/FilterTreeView";

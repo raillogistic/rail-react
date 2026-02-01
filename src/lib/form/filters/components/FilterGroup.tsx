@@ -1,10 +1,5 @@
 import React, { useState, useCallback } from "react";
-import {
-  Plus,
-  X,
-  ChevronDown,
-  Layers,
-} from "lucide-react";
+import { Plus, X, ChevronDown, Layers } from "lucide-react";
 
 import { Button } from "@/lib/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/lib/components/ui/toggle-group";
@@ -21,6 +16,7 @@ import { FilterRow } from "./FilterRow";
 import type {
   FilterGroup as FilterGroupType,
   FilterCondition,
+  RelationFilter,
   UnifiedFilterSchema,
   NestedFilterConfig,
 } from "../types";
@@ -31,7 +27,12 @@ export interface FilterGroupProps {
   config: NestedFilterConfig;
   onChange: (updates: Partial<FilterGroupType>) => void;
   onRemove?: () => void;
-  onAddCondition: (groupId: string, fieldPath: string[], fieldName: string, operator: string) => void;
+  onAddCondition: (
+    groupId: string,
+    fieldPath: string[],
+    fieldName: string,
+    operator: string,
+  ) => void;
   onAddGroup: (parentId: string, logic: "AND" | "OR") => void;
   onUpdateCondition: (id: string, updates: Partial<FilterCondition>) => void;
   onRemoveItem: (id: string) => void;
@@ -40,6 +41,10 @@ export interface FilterGroupProps {
   currentPath?: string[];
   recentFields?: string[][];
   favoriteFields?: string[][];
+  onLoadRelationSchema?: (
+    relation: RelationFilter
+  ) => Promise<UnifiedFilterSchema | null>;
+  getRelationSchema?: (relation: RelationFilter) => UnifiedFilterSchema | null;
 }
 
 export const FilterGroupComponent: React.FC<FilterGroupProps> = ({
@@ -57,6 +62,8 @@ export const FilterGroupComponent: React.FC<FilterGroupProps> = ({
   currentPath = [],
   recentFields,
   favoriteFields,
+  onLoadRelationSchema,
+  getRelationSchema,
 }) => {
   const [collapsed, setCollapsed] = useState(false);
   const canAddMore = group.conditions.length < config.maxFiltersPerGroup;
@@ -65,14 +72,14 @@ export const FilterGroupComponent: React.FC<FilterGroupProps> = ({
     (logic: "AND" | "OR") => {
       onChange({ logic });
     },
-    [onChange]
+    [onChange],
   );
 
   const handleAddCondition = useCallback(
     (fieldPath: string[], fieldName: string, operator: string) => {
       onAddCondition(group.id, fieldPath, fieldName, operator);
     },
-    [group.id, onAddCondition]
+    [group.id, onAddCondition],
   );
 
   const hasConditions = group.conditions.length > 0;
@@ -82,7 +89,10 @@ export const FilterGroupComponent: React.FC<FilterGroupProps> = ({
   return (
     <Collapsible open={!collapsed} onOpenChange={(open) => setCollapsed(!open)}>
       <div
-        className={cn("space-y-3", depth > 0 && "border rounded-lg bg-muted/30 p-3")}
+        className={cn(
+          "space-y-3",
+          depth > 0 && "border rounded-lg bg-muted/30 p-3",
+        )}
         data-testid="filter-group"
       >
         <div className="flex items-center gap-2">
@@ -93,7 +103,9 @@ export const FilterGroupComponent: React.FC<FilterGroupProps> = ({
             type="single"
             size="sm"
             value={group.logic}
-            onValueChange={(value) => value && handleLogicChange(value as "AND" | "OR")}
+            onValueChange={(value) =>
+              value && handleLogicChange(value as "AND" | "OR")
+            }
             aria-label="Group logic"
           >
             <ToggleGroupItem value="AND" aria-label="Match all">
@@ -104,19 +116,19 @@ export const FilterGroupComponent: React.FC<FilterGroupProps> = ({
             </ToggleGroupItem>
           </ToggleGroup>
 
-        <div className="ml-auto flex items-center gap-1">
-          {config.enableNot && (
-            <div className="flex items-center gap-2 mr-2">
-              <span className="text-xs text-muted-foreground">NOT</span>
-              <Switch
-                checked={group.negated}
-                onCheckedChange={(checked) => onChange({ negated: checked })}
-                aria-label="Toggle NOT"
-              />
-            </div>
-          )}
-          {!isRoot && (
-            <Button
+          <div className="ml-auto flex items-center gap-1">
+            {config.enableNot && (
+              <div className="flex items-center gap-2 mr-2">
+                <span className="text-xs text-muted-foreground">NOT</span>
+                <Switch
+                  checked={group.negated}
+                  onCheckedChange={(checked) => onChange({ negated: checked })}
+                  aria-label="Toggle NOT"
+                />
+              </div>
+            )}
+            {!isRoot && (
+              <Button
                 variant="ghost"
                 size="icon"
                 className="h-7 w-7 text-muted-foreground hover:text-destructive"
@@ -133,7 +145,12 @@ export const FilterGroupComponent: React.FC<FilterGroupProps> = ({
                 className="h-7 w-7 text-muted-foreground"
                 aria-label="Toggle group"
               >
-                <ChevronDown className={cn("h-4 w-4 transition-transform", collapsed && "-rotate-90")} />
+                <ChevronDown
+                  className={cn(
+                    "h-4 w-4 transition-transform",
+                    collapsed && "-rotate-90",
+                  )}
+                />
               </Button>
             </CollapsibleTrigger>
           </div>
@@ -146,6 +163,8 @@ export const FilterGroupComponent: React.FC<FilterGroupProps> = ({
               config={config}
               currentPath={currentPath}
               onSelect={handleAddCondition}
+              onLoadRelationSchema={onLoadRelationSchema}
+              getRelationSchema={getRelationSchema}
               trigger={
                 <Button
                   variant="outline"
@@ -167,7 +186,9 @@ export const FilterGroupComponent: React.FC<FilterGroupProps> = ({
                       condition={item}
                       schema={schema}
                       config={config}
-                      onChange={(updates) => onUpdateCondition(item.id, updates)}
+                      onChange={(updates) =>
+                        onUpdateCondition(item.id, updates)
+                      }
                       onRemove={() => onRemoveItem(item.id)}
                       onFieldChange={(fieldPath, fieldName, operator) =>
                         onUpdateCondition(item.id, {
@@ -179,6 +200,8 @@ export const FilterGroupComponent: React.FC<FilterGroupProps> = ({
                       }
                       recentFields={recentFields}
                       favoriteFields={favoriteFields}
+                      onLoadRelationSchema={onLoadRelationSchema}
+                      getRelationSchema={getRelationSchema}
                     />
                   ) : (
                     <FilterGroupComponent
@@ -187,7 +210,7 @@ export const FilterGroupComponent: React.FC<FilterGroupProps> = ({
                       config={config}
                       onChange={(updates) => {
                         const updatedConditions = group.conditions.map((c) =>
-                          c.id === item.id ? { ...c, ...updates } : c
+                          c.id === item.id ? { ...c, ...updates } : c,
                         );
                         onChange({ conditions: updatedConditions });
                       }}
@@ -200,6 +223,8 @@ export const FilterGroupComponent: React.FC<FilterGroupProps> = ({
                       currentPath={currentPath}
                       recentFields={recentFields}
                       favoriteFields={favoriteFields}
+                      onLoadRelationSchema={onLoadRelationSchema}
+                      getRelationSchema={getRelationSchema}
                     />
                   )}
                 </React.Fragment>
@@ -212,6 +237,8 @@ export const FilterGroupComponent: React.FC<FilterGroupProps> = ({
                     config={config}
                     currentPath={currentPath}
                     onSelect={handleAddCondition}
+                    onLoadRelationSchema={onLoadRelationSchema}
+                    getRelationSchema={getRelationSchema}
                     trigger={
                       <Button
                         variant="ghost"
@@ -219,7 +246,9 @@ export const FilterGroupComponent: React.FC<FilterGroupProps> = ({
                         className="flex-1 h-8 text-muted-foreground hover:text-foreground hover:bg-muted"
                       >
                         <Plus className="h-3.5 w-3.5 mr-1.5" />
-                        Add {group.logic === "OR" ? "OR" : ""} filter
+                        {group.logic === "OR"
+                          ? "Add OR condition"
+                          : "Add filter"}
                       </Button>
                     }
                     recentFields={recentFields}

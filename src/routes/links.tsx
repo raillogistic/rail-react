@@ -22,7 +22,7 @@ import { AppearanceSettingsPage } from "@/views/settings/AppearanceSettingsPage"
 import { LayoutSettingsPage } from "@/views/settings/LayoutSettingsPage";
 
 import { getAppDefaultRoute, getAppNavigationLinks } from "@/apps/routes";
-import { FilterPanel } from "@/lib/form/filters";
+import { FilterPanel, FilterTreeView } from "@/lib/form/filters";
 import { ModelTable } from "@/lib/tables/NewModelTable";
 import { ModelTableV2 } from "@/lib/tablev2";
 
@@ -95,15 +95,24 @@ const CORE_NAVIGATION_LINKS: NavigationSection[] = [
               persistKey="invoice_filters"
               showPresets
             /> */}
-            <FilterPanel
-              app="store"
-              model="Product"
-              layout="toolbar"
-              maxDepth={1}
-              onApply={(values) => console.log(values)}
-              showPresets
-              title="Filter Products"
-            />
+
+            <div className="grid grid-cols-2 gap-2">
+              <FilterPanel
+                app="store"
+                model="Product"
+                maxDepth={2}
+                onApply={(variables, state) => {}}
+              />
+              {/* <FilterPanel
+                app="store"
+                model="Product"
+                layout="inline"
+                maxDepth={3}
+                onApply={(values) => console.log(values)}
+                showPresets
+                title="Filter Products"
+              /> */}
+            </div>
             {/* <ModelTableV2 app="store" model="Product" /> */}
           </>
           // <FilterPanel

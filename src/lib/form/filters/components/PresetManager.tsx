@@ -69,6 +69,7 @@ export interface PresetManagerProps {
   onDeletePreset?: (preset: FilterPreset) => void;
   onSharePreset?: (preset: FilterPreset) => void;
   disabled?: boolean;
+  label?: string;
 }
 
 export const PresetManager: React.FC<PresetManagerProps> = ({
@@ -80,6 +81,7 @@ export const PresetManager: React.FC<PresetManagerProps> = ({
   onDeletePreset,
   onSharePreset,
   disabled,
+  label = "Saved Filters",
 }) => {
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -166,7 +168,7 @@ export const PresetManager: React.FC<PresetManagerProps> = ({
             disabled={disabled}
           >
             <Bookmark className="h-4 w-4" />
-            <span>Saved Filters</span>
+            <span>{label}</span>
             {selectedCount > 0 && (
               <Badge variant="secondary" className="ml-1 h-5 px-1.5">
                 {selectedCount}

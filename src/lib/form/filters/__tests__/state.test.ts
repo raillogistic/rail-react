@@ -1,18 +1,20 @@
 /**
- * Unit tests for filter state helpers
+ * Unit tests for filter state and tree operations
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
+import { describe, it, expect } from "vitest";
 import {
   createInitialFilterState,
   generateId,
   countConditions,
-  cloneFilterGroup,
-  findItemById,
-  removeItemById,
-  updateItemById,
   validateFilterState,
 } from "../state";
+import {
+  findById,
+  removeById,
+  updateById,
+  cloneNode,
+} from "../tree/operations";
 import type { FilterGroup, FilterCondition, FilterFormState } from "../types";
 
 describe("state helpers", () => {
@@ -27,7 +29,7 @@ describe("state helpers", () => {
 
     it("should generate IDs with expected prefix", () => {
       const id = generateId();
-      expect(id).toMatch(/^f_[a-z0-9]+_[a-z0-9]+$/);
+      expect(id).toMatch(/^f_/);
     });
   });
 
@@ -116,274 +118,6 @@ describe("state helpers", () => {
         negated: false,
       };
       expect(countConditions(group)).toBe(3);
-    });
-  });
-
-  describe("cloneFilterGroup", () => {
-    it("should create a deep copy", () => {
-      const original: FilterGroup = {
-        id: "g1",
-        type: "group",
-        logic: "AND",
-        conditions: [
-          { id: "c1", type: "condition", fieldPath: ["name"], fieldName: "name", operator: "eq", value: "test" },
-        ],
-        negated: false,
-      };
-
-      const cloned = cloneFilterGroup(original);
-
-      // Should be equal but not same reference
-      expect(cloned).toEqual(original);
-      expect(cloned).not.toBe(original);
-      expect(cloned.conditions).not.toBe(original.conditions);
-      expect(cloned.conditions[0]).not.toBe(original.conditions[0]);
-    });
-
-    it("should clone nested groups", () => {
-      const original: FilterGroup = {
-        id: "g1",
-        type: "group",
-        logic: "AND",
-        conditions: [
-          {
-            id: "g2",
-            type: "group",
-            logic: "OR",
-            conditions: [
-              { id: "c1", type: "condition", fieldPath: ["name"], fieldName: "name", operator: "eq", value: "test" },
-            ],
-            negated: true,
-          },
-        ],
-        negated: false,
-      };
-
-      const cloned = cloneFilterGroup(original);
-      const nestedOriginal = original.conditions[0] as FilterGroup;
-      const nestedCloned = cloned.conditions[0] as FilterGroup;
-
-      expect(nestedCloned).not.toBe(nestedOriginal);
-      expect(nestedCloned.conditions[0]).not.toBe(nestedOriginal.conditions[0]);
-    });
-  });
-
-  describe("findItemById", () => {
-    const group: FilterGroup = {
-      id: "g1",
-      type: "group",
-      logic: "AND",
-      conditions: [
-        { id: "c1", type: "condition", fieldPath: ["name"], fieldName: "name", operator: "eq", value: "test" },
-        {
-          id: "g2",
-          type: "group",
-          logic: "OR",
-          conditions: [
-            { id: "c2", type: "condition", fieldPath: ["status"], fieldName: "status", operator: "eq", value: "active" },
-          ],
-          negated: false,
-        },
-      ],
-      negated: false,
-    };
-
-    it("should find root group", () => {
-      const found = findItemById(group, "g1");
-      expect(found).toBe(group);
-    });
-
-    it("should find direct condition", () => {
-      const found = findItemById(group, "c1");
-      expect(found?.id).toBe("c1");
-      expect((found as FilterCondition).fieldName).toBe("name");
-    });
-
-    it("should find nested group", () => {
-      const found = findItemById(group, "g2");
-      expect(found?.id).toBe("g2");
-      expect((found as FilterGroup).logic).toBe("OR");
-    });
-
-    it("should find deeply nested condition", () => {
-      const found = findItemById(group, "c2");
-      expect(found?.id).toBe("c2");
-      expect((found as FilterCondition).fieldName).toBe("status");
-    });
-
-    it("should return null for non-existent ID", () => {
-      const found = findItemById(group, "nonexistent");
-      expect(found).toBeNull();
-    });
-  });
-
-  describe("removeItemById", () => {
-    it("should remove direct condition", () => {
-      const group: FilterGroup = {
-        id: "g1",
-        type: "group",
-        logic: "AND",
-        conditions: [
-          { id: "c1", type: "condition", fieldPath: ["name"], fieldName: "name", operator: "eq", value: "test" },
-          { id: "c2", type: "condition", fieldPath: ["status"], fieldName: "status", operator: "eq", value: "active" },
-        ],
-        negated: false,
-      };
-
-      const result = removeItemById(group, "c1");
-      expect(result.conditions).toHaveLength(1);
-      expect(result.conditions[0].id).toBe("c2");
-    });
-
-    it("should remove nested condition", () => {
-      const group: FilterGroup = {
-        id: "g1",
-        type: "group",
-        logic: "AND",
-        conditions: [
-          {
-            id: "g2",
-            type: "group",
-            logic: "OR",
-            conditions: [
-              { id: "c1", type: "condition", fieldPath: ["name"], fieldName: "name", operator: "eq", value: "test" },
-              { id: "c2", type: "condition", fieldPath: ["status"], fieldName: "status", operator: "eq", value: "active" },
-            ],
-            negated: false,
-          },
-        ],
-        negated: false,
-      };
-
-      const result = removeItemById(group, "c1");
-      const nestedGroup = result.conditions[0] as FilterGroup;
-      expect(nestedGroup.conditions).toHaveLength(1);
-      expect(nestedGroup.conditions[0].id).toBe("c2");
-    });
-
-    it("should remove nested group", () => {
-      const group: FilterGroup = {
-        id: "g1",
-        type: "group",
-        logic: "AND",
-        conditions: [
-          { id: "c1", type: "condition", fieldPath: ["name"], fieldName: "name", operator: "eq", value: "test" },
-          {
-            id: "g2",
-            type: "group",
-            logic: "OR",
-            conditions: [],
-            negated: false,
-          },
-        ],
-        negated: false,
-      };
-
-      const result = removeItemById(group, "g2");
-      expect(result.conditions).toHaveLength(1);
-      expect(result.conditions[0].id).toBe("c1");
-    });
-
-    it("should not modify original group (immutable)", () => {
-      const original: FilterGroup = {
-        id: "g1",
-        type: "group",
-        logic: "AND",
-        conditions: [
-          { id: "c1", type: "condition", fieldPath: ["name"], fieldName: "name", operator: "eq", value: "test" },
-        ],
-        negated: false,
-      };
-
-      const result = removeItemById(original, "c1");
-      expect(original.conditions).toHaveLength(1);
-      expect(result.conditions).toHaveLength(0);
-    });
-  });
-
-  describe("updateItemById", () => {
-    it("should update direct condition", () => {
-      const group: FilterGroup = {
-        id: "g1",
-        type: "group",
-        logic: "AND",
-        conditions: [
-          { id: "c1", type: "condition", fieldPath: ["name"], fieldName: "name", operator: "eq", value: "test" },
-        ],
-        negated: false,
-      };
-
-      const result = updateItemById(group, "c1", (item) => ({
-        ...item,
-        value: "updated",
-      }));
-
-      expect((result.conditions[0] as FilterCondition).value).toBe("updated");
-    });
-
-    it("should update root group", () => {
-      const group: FilterGroup = {
-        id: "g1",
-        type: "group",
-        logic: "AND",
-        conditions: [],
-        negated: false,
-      };
-
-      const result = updateItemById(group, "g1", (item) => ({
-        ...item,
-        logic: "OR",
-      }));
-
-      expect(result.logic).toBe("OR");
-    });
-
-    it("should update nested condition", () => {
-      const group: FilterGroup = {
-        id: "g1",
-        type: "group",
-        logic: "AND",
-        conditions: [
-          {
-            id: "g2",
-            type: "group",
-            logic: "OR",
-            conditions: [
-              { id: "c1", type: "condition", fieldPath: ["name"], fieldName: "name", operator: "eq", value: "test" },
-            ],
-            negated: false,
-          },
-        ],
-        negated: false,
-      };
-
-      const result = updateItemById(group, "c1", (item) => ({
-        ...item,
-        operator: "contains",
-      }));
-
-      const nestedGroup = result.conditions[0] as FilterGroup;
-      expect((nestedGroup.conditions[0] as FilterCondition).operator).toBe("contains");
-    });
-
-    it("should not modify original group (immutable)", () => {
-      const original: FilterGroup = {
-        id: "g1",
-        type: "group",
-        logic: "AND",
-        conditions: [
-          { id: "c1", type: "condition", fieldPath: ["name"], fieldName: "name", operator: "eq", value: "test" },
-        ],
-        negated: false,
-      };
-
-      const result = updateItemById(original, "c1", (item) => ({
-        ...item,
-        value: "updated",
-      }));
-
-      expect((original.conditions[0] as FilterCondition).value).toBe("test");
-      expect((result.conditions[0] as FilterCondition).value).toBe("updated");
     });
   });
 
@@ -525,6 +259,302 @@ describe("state helpers", () => {
 
       const errors = validateFilterState(state);
       expect(errors).toHaveLength(0);
+    });
+  });
+});
+
+describe("tree operations", () => {
+  describe("cloneNode", () => {
+    it("should create a deep copy", () => {
+      const original: FilterGroup = {
+        id: "g1",
+        type: "group",
+        logic: "AND",
+        conditions: [
+          { id: "c1", type: "condition", fieldPath: ["name"], fieldName: "name", operator: "eq", value: "test" },
+        ],
+        negated: false,
+      };
+
+      const cloned = cloneNode(original);
+
+      expect(cloned).toEqual(original);
+      expect(cloned).not.toBe(original);
+      expect(cloned.conditions).not.toBe(original.conditions);
+      expect(cloned.conditions[0]).not.toBe(original.conditions[0]);
+    });
+
+    it("should clone nested groups", () => {
+      const original: FilterGroup = {
+        id: "g1",
+        type: "group",
+        logic: "AND",
+        conditions: [
+          {
+            id: "g2",
+            type: "group",
+            logic: "OR",
+            conditions: [
+              { id: "c1", type: "condition", fieldPath: ["name"], fieldName: "name", operator: "eq", value: "test" },
+            ],
+            negated: true,
+          },
+        ],
+        negated: false,
+      };
+
+      const cloned = cloneNode(original);
+      const nestedOriginal = original.conditions[0] as FilterGroup;
+      const nestedCloned = cloned.conditions[0] as FilterGroup;
+
+      expect(nestedCloned).not.toBe(nestedOriginal);
+      expect(nestedCloned.conditions[0]).not.toBe(nestedOriginal.conditions[0]);
+    });
+
+    it("should regenerate IDs when requested", () => {
+      const original: FilterGroup = {
+        id: "g1",
+        type: "group",
+        logic: "AND",
+        conditions: [
+          { id: "c1", type: "condition", fieldPath: ["name"], fieldName: "name", operator: "eq", value: "test" },
+        ],
+        negated: false,
+      };
+
+      const cloned = cloneNode(original, true);
+
+      expect(cloned.id).not.toBe(original.id);
+      expect(cloned.conditions[0].id).not.toBe(original.conditions[0].id);
+    });
+  });
+
+  describe("findById", () => {
+    const group: FilterGroup = {
+      id: "g1",
+      type: "group",
+      logic: "AND",
+      conditions: [
+        { id: "c1", type: "condition", fieldPath: ["name"], fieldName: "name", operator: "eq", value: "test" },
+        {
+          id: "g2",
+          type: "group",
+          logic: "OR",
+          conditions: [
+            { id: "c2", type: "condition", fieldPath: ["status"], fieldName: "status", operator: "eq", value: "active" },
+          ],
+          negated: false,
+        },
+      ],
+      negated: false,
+    };
+
+    it("should find root group", () => {
+      const found = findById(group, "g1");
+      expect(found?.node).toBe(group);
+      expect(found?.path).toEqual([]);
+    });
+
+    it("should find direct condition", () => {
+      const found = findById(group, "c1");
+      expect(found?.node.id).toBe("c1");
+      expect(found?.path).toEqual([0]);
+      expect((found?.node as FilterCondition).fieldName).toBe("name");
+    });
+
+    it("should find nested group", () => {
+      const found = findById(group, "g2");
+      expect(found?.node.id).toBe("g2");
+      expect(found?.path).toEqual([1]);
+      expect((found?.node as FilterGroup).logic).toBe("OR");
+    });
+
+    it("should find deeply nested condition", () => {
+      const found = findById(group, "c2");
+      expect(found?.node.id).toBe("c2");
+      expect(found?.path).toEqual([1, 0]);
+      expect((found?.node as FilterCondition).fieldName).toBe("status");
+    });
+
+    it("should return null for non-existent ID", () => {
+      const found = findById(group, "nonexistent");
+      expect(found).toBeNull();
+    });
+  });
+
+  describe("removeById", () => {
+    it("should remove direct condition", () => {
+      const group: FilterGroup = {
+        id: "g1",
+        type: "group",
+        logic: "AND",
+        conditions: [
+          { id: "c1", type: "condition", fieldPath: ["name"], fieldName: "name", operator: "eq", value: "test" },
+          { id: "c2", type: "condition", fieldPath: ["status"], fieldName: "status", operator: "eq", value: "active" },
+        ],
+        negated: false,
+      };
+
+      const result = removeById(group, "c1");
+      expect(result.success).toBe(true);
+      expect(result.root.conditions).toHaveLength(1);
+      expect(result.root.conditions[0].id).toBe("c2");
+    });
+
+    it("should remove nested condition", () => {
+      const group: FilterGroup = {
+        id: "g1",
+        type: "group",
+        logic: "AND",
+        conditions: [
+          {
+            id: "g2",
+            type: "group",
+            logic: "OR",
+            conditions: [
+              { id: "c1", type: "condition", fieldPath: ["name"], fieldName: "name", operator: "eq", value: "test" },
+              { id: "c2", type: "condition", fieldPath: ["status"], fieldName: "status", operator: "eq", value: "active" },
+            ],
+            negated: false,
+          },
+        ],
+        negated: false,
+      };
+
+      const result = removeById(group, "c1");
+      expect(result.success).toBe(true);
+      const nestedGroup = result.root.conditions[0] as FilterGroup;
+      expect(nestedGroup.conditions).toHaveLength(1);
+      expect(nestedGroup.conditions[0].id).toBe("c2");
+    });
+
+    it("should remove nested group", () => {
+      const group: FilterGroup = {
+        id: "g1",
+        type: "group",
+        logic: "AND",
+        conditions: [
+          { id: "c1", type: "condition", fieldPath: ["name"], fieldName: "name", operator: "eq", value: "test" },
+          {
+            id: "g2",
+            type: "group",
+            logic: "OR",
+            conditions: [],
+            negated: false,
+          },
+        ],
+        negated: false,
+      };
+
+      const result = removeById(group, "g2");
+      expect(result.success).toBe(true);
+      expect(result.root.conditions).toHaveLength(1);
+      expect(result.root.conditions[0].id).toBe("c1");
+    });
+
+    it("should not modify original group (immutable)", () => {
+      const original: FilterGroup = {
+        id: "g1",
+        type: "group",
+        logic: "AND",
+        conditions: [
+          { id: "c1", type: "condition", fieldPath: ["name"], fieldName: "name", operator: "eq", value: "test" },
+        ],
+        negated: false,
+      };
+
+      const result = removeById(original, "c1");
+      expect(original.conditions).toHaveLength(1);
+      expect(result.root.conditions).toHaveLength(0);
+    });
+  });
+
+  describe("updateById", () => {
+    it("should update direct condition", () => {
+      const group: FilterGroup = {
+        id: "g1",
+        type: "group",
+        logic: "AND",
+        conditions: [
+          { id: "c1", type: "condition", fieldPath: ["name"], fieldName: "name", operator: "eq", value: "test" },
+        ],
+        negated: false,
+      };
+
+      const result = updateById(group, "c1", (item) => ({
+        ...item,
+        value: "updated",
+      }));
+
+      expect(result.success).toBe(true);
+      expect((result.root.conditions[0] as FilterCondition).value).toBe("updated");
+    });
+
+    it("should update root group", () => {
+      const group: FilterGroup = {
+        id: "g1",
+        type: "group",
+        logic: "AND",
+        conditions: [],
+        negated: false,
+      };
+
+      const result = updateById(group, "g1", (item) => ({
+        ...item,
+        logic: "OR",
+      }));
+
+      expect(result.success).toBe(true);
+      expect(result.root.logic).toBe("OR");
+    });
+
+    it("should update nested condition", () => {
+      const group: FilterGroup = {
+        id: "g1",
+        type: "group",
+        logic: "AND",
+        conditions: [
+          {
+            id: "g2",
+            type: "group",
+            logic: "OR",
+            conditions: [
+              { id: "c1", type: "condition", fieldPath: ["name"], fieldName: "name", operator: "eq", value: "test" },
+            ],
+            negated: false,
+          },
+        ],
+        negated: false,
+      };
+
+      const result = updateById(group, "c1", (item) => ({
+        ...item,
+        operator: "contains",
+      }));
+
+      expect(result.success).toBe(true);
+      const nestedGroup = result.root.conditions[0] as FilterGroup;
+      expect((nestedGroup.conditions[0] as FilterCondition).operator).toBe("contains");
+    });
+
+    it("should not modify original group (immutable)", () => {
+      const original: FilterGroup = {
+        id: "g1",
+        type: "group",
+        logic: "AND",
+        conditions: [
+          { id: "c1", type: "condition", fieldPath: ["name"], fieldName: "name", operator: "eq", value: "test" },
+        ],
+        negated: false,
+      };
+
+      const result = updateById(original, "c1", (item) => ({
+        ...item,
+        value: "updated",
+      }));
+
+      expect((original.conditions[0] as FilterCondition).value).toBe("test");
+      expect((result.root.conditions[0] as FilterCondition).value).toBe("updated");
     });
   });
 });

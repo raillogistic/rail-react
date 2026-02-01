@@ -5,7 +5,6 @@
 import React, { useMemo } from "react";
 import { X, AlertCircle } from "lucide-react";
 import { Button } from "@/lib/components/ui/button";
-import { Badge } from "@/lib/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -38,6 +37,10 @@ export interface FilterRowProps {
   validationError?: string;
   recentFields?: string[][];
   favoriteFields?: string[][];
+  onLoadRelationSchema?: (
+    relation: RelationFilter
+  ) => Promise<UnifiedFilterSchema | null>;
+  getRelationSchema?: (relation: RelationFilter) => UnifiedFilterSchema | null;
 }
 
 export const FilterRow: React.FC<FilterRowProps> = ({
@@ -53,6 +56,8 @@ export const FilterRow: React.FC<FilterRowProps> = ({
   validationError,
   recentFields,
   favoriteFields,
+  onLoadRelationSchema,
+  getRelationSchema,
 }) => {
   const { field, relationChain } = useMemo(() => {
     let currentSchema: UnifiedFilterSchema | undefined = schema;
@@ -64,24 +69,28 @@ export const FilterRow: React.FC<FilterRowProps> = ({
       const isLast = i === condition.fieldPath.length - 1;
 
       const scalarField = currentSchema?.fields.find((f) => f.name === segment);
-      if (scalarField) {
+      if (scalarField && (!scalarField.isRelation || isLast)) {
         if (isLast) {
           targetField = scalarField;
         }
         break;
       }
 
-      const relation = currentSchema?.relationFilters.find((r) => r.name === segment);
+      const relation = currentSchema?.relationFilters.find(
+        (r) => r.name === segment || r.fieldName === segment,
+      );
       if (relation) {
         relations.push(relation);
-        if (relation.nestedSchema) {
-          currentSchema = relation.nestedSchema;
+        const nestedSchema =
+          relation.nestedSchema ?? getRelationSchema?.(relation);
+        if (nestedSchema) {
+          currentSchema = nestedSchema;
         }
       }
     }
 
     return { field: targetField, relationChain: relations };
-  }, [schema, condition.fieldPath]);
+  }, [schema, condition.fieldPath, getRelationSchema]);
 
   const needsRelationOperator = useMemo(() => {
     return relationChain.some(
@@ -117,68 +126,57 @@ export const FilterRow: React.FC<FilterRowProps> = ({
   return (
     <div
       className={cn(
-        "group flex flex-col gap-2 p-3 rounded-lg border bg-card transition-colors",
+        "group flex flex-wrap items-center gap-2 rounded-lg border bg-card px-3 py-2 transition-colors",
         validationError && "border-destructive/50 bg-destructive/5",
         isNew && "animate-in fade-in-0 slide-in-from-top-1 duration-200"
       )}
     >
-      <div className="flex items-center gap-2 flex-wrap">
-        <InlineFieldSelector
-          schema={schema}
-          config={config}
-          currentPath={condition.fieldPath}
-          onSelect={(fieldPath, fieldName, operator) => {
-            onFieldChange(fieldPath, fieldName, operator);
-          }}
-          trigger={
-            <Button
-              variant="outline"
-              size="sm"
-              className="h-8 text-xs gap-1.5"
-              disabled={disabled}
-            >
-              {condition.fieldPath.length === 0 ? "Select field..." : field.fieldLabel}
-            </Button>
-          }
-          recentFields={recentFields}
-          favoriteFields={favoriteFields}
-        />
-
-        {needsRelationOperator && (
-          <Select
-            value={condition.relationOperator ?? config.defaultM2MOperator}
-            onValueChange={(value) => onChange({ relationOperator: value })}
+      <InlineFieldSelector
+        schema={schema}
+        config={config}
+        currentPath={condition.fieldPath}
+        onSelect={(fieldPath, fieldName, operator) => {
+          onFieldChange(fieldPath, fieldName, operator);
+        }}
+        onLoadRelationSchema={onLoadRelationSchema}
+        getRelationSchema={getRelationSchema}
+        trigger={
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 text-xs gap-1.5"
             disabled={disabled}
           >
-            <SelectTrigger className="h-8 w-24 text-xs" aria-label="Relation operator">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="_some">some</SelectItem>
-              <SelectItem value="_every">every</SelectItem>
-              <SelectItem value="_none">none</SelectItem>
-            </SelectContent>
-          </Select>
-        )}
+            {condition.fieldPath.length === 0 ? "Select field..." : field.fieldLabel}
+          </Button>
+        }
+        recentFields={recentFields}
+        favoriteFields={favoriteFields}
+      />
 
-        <CompactOperatorSelect
-          field={field}
-          value={condition.operator}
-          onChange={(newOperator) => onChange({ operator: newOperator, value: undefined })}
+      {needsRelationOperator && (
+        <Select
+          value={condition.relationOperator ?? config.defaultM2MOperator}
+          onValueChange={(value) => onChange({ relationOperator: value })}
           disabled={disabled}
-        />
-
-        <Button
-          variant="ghost"
-          size="icon"
-          className="ml-auto h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
-          onClick={onRemove}
-          disabled={disabled}
-          aria-label="Remove filter"
         >
-          <X className="h-4 w-4" />
-        </Button>
-      </div>
+          <SelectTrigger className="h-8 w-24 text-xs" aria-label="Relation operator">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="_some">some</SelectItem>
+            <SelectItem value="_every">every</SelectItem>
+            <SelectItem value="_none">none</SelectItem>
+          </SelectContent>
+        </Select>
+      )}
+
+      <CompactOperatorSelect
+        field={field}
+        value={condition.operator}
+        onChange={(newOperator) => onChange({ operator: newOperator, value: undefined })}
+        disabled={disabled}
+      />
 
       <SmartValueInput
         field={field}
@@ -187,10 +185,22 @@ export const FilterRow: React.FC<FilterRowProps> = ({
         onChange={(newValue) => onChange({ value: newValue })}
         disabled={disabled}
         autoFocus={autoFocus || isNew}
+        className="flex-1 min-w-[180px] items-center"
       />
 
+      <Button
+        variant="ghost"
+        size="icon"
+        className="ml-auto h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+        onClick={onRemove}
+        disabled={disabled}
+        aria-label="Remove filter"
+      >
+        <X className="h-4 w-4" />
+      </Button>
+
       {validationError && (
-        <div className="flex items-center gap-1 text-xs text-destructive">
+        <div className="flex w-full items-center gap-1 text-xs text-destructive">
           <AlertCircle className="h-3 w-3" />
           {validationError}
         </div>

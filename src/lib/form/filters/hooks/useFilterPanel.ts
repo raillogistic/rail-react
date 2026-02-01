@@ -1,5 +1,7 @@
 /**
- * useFilterPanel - Centralized filter panel state management.
+ * useFilterPanel - Refactored with tree utilities.
+ *
+ * Centralized filter panel state management using immutable tree operations.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -12,12 +14,15 @@ import type {
   UnifiedFilterSchema,
 } from "../types";
 import {
-  createInitialFilterState,
-  generateId,
-  countConditions,
-  removeItemById,
-  updateItemById,
-} from "../state";
+  findById,
+  updateById,
+  removeById,
+  appendChild,
+  getTreeStats,
+  createGroup,
+  createCondition,
+  cloneNode,
+} from "../tree/operations";
 import { buildQueryVariables } from "../queryBuilder";
 import { useFilterPersistence } from "./useFilterPersistence";
 
@@ -36,11 +41,17 @@ export interface UseFilterPanelReturn {
   activeCount: number;
   hasChanges: boolean;
   setRoot: (root: FilterGroup) => void;
-  addCondition: (fieldPath: string[], fieldName: string, operator: string, groupId?: string) => void;
+  addCondition: (
+    fieldPath: string[],
+    fieldName: string,
+    operator: string,
+    groupId?: string
+  ) => void;
   updateCondition: (id: string, updates: Partial<FilterCondition>) => void;
   removeCondition: (id: string) => void;
   addGroup: (parentId: string, logic: "AND" | "OR") => void;
   setGroupLogic: (groupId: string, logic: "AND" | "OR") => void;
+  toggleGroupNegation: (groupId: string) => void;
   togglePreset: (presetId: string) => void;
   setDistinctOn: (fields: string[]) => void;
   setOrderBy: (fields: string[]) => void;
@@ -53,6 +64,19 @@ export interface UseFilterPanelReturn {
   addToRecent: (fieldPath: string[]) => void;
   favoriteFields: string[][];
   toggleFavorite: (fieldPath: string[]) => void;
+  // New tree-based utilities
+  findNode: (id: string) => FilterCondition | FilterGroup | null;
+  getStats: () => ReturnType<typeof getTreeStats>;
+  duplicateNode: (id: string) => void;
+}
+
+function createInitialFilterState(): FilterFormState {
+  return {
+    root: createGroup(),
+    selectedPresets: [],
+    distinctOn: [],
+    orderBy: [],
+  };
 }
 
 export function useFilterPanel({
@@ -63,14 +87,20 @@ export function useFilterPanel({
   onApply,
   persistKey,
 }: UseFilterPanelOptions): UseFilterPanelReturn {
-  const persistence = persistKey ? useFilterPersistence({ key: persistKey }) : null;
+  // Always call the hook to follow Rules of Hooks, but only use it if persistKey is provided
+  const persistence = useFilterPersistence({ key: persistKey ?? "" });
+  const shouldPersist = Boolean(persistKey);
+
   const [state, setState] = useState<FilterFormState>(() => {
     if (initialState) return initialState;
-    const persisted = persistence?.load();
+    const persisted = shouldPersist ? persistence?.load() : null;
     return persisted ?? createInitialFilterState();
   });
 
-  const baselineRef = useRef(JSON.stringify(initialState ?? createInitialFilterState()));
+  const baselineRef = useRef(
+    JSON.stringify(initialState ?? createInitialFilterState())
+  );
+
   const [recentFields, setRecentFields] = useState<string[][]>(() => {
     if (!persistKey) return [];
     try {
@@ -79,6 +109,7 @@ export function useFilterPanel({
       return [];
     }
   });
+
   const [favoriteFields, setFavoriteFields] = useState<string[][]>(() => {
     if (!persistKey) return [];
     try {
@@ -88,19 +119,30 @@ export function useFilterPanel({
     }
   });
 
-  const activeCount = useMemo(() => countConditions(state.root) + state.selectedPresets.length, [state]);
-  const hasChanges = useMemo(() => JSON.stringify(state) !== baselineRef.current, [state]);
+  // Use tree stats for active count
+  const stats = useMemo(() => getTreeStats(state.root), [state.root]);
+  const activeCount = useMemo(
+    () => stats.activeConditionCount + state.selectedPresets.length,
+    [stats.activeConditionCount, state.selectedPresets.length]
+  );
 
+  const hasChanges = useMemo(
+    () => JSON.stringify(state) !== baselineRef.current,
+    [state]
+  );
+
+  // Persistence effect
   useEffect(() => {
-    if (!persistKey) return;
+    if (!shouldPersist) return;
     const handle = window.setTimeout(() => {
-      persistence?.save(state);
+      persistence.save(state);
       localStorage.setItem(`${persistKey}_recent`, JSON.stringify(recentFields));
       localStorage.setItem(`${persistKey}_favorites`, JSON.stringify(favoriteFields));
     }, 300);
     return () => window.clearTimeout(handle);
-  }, [state, persistKey, persistence, recentFields, favoriteFields]);
+  }, [state, shouldPersist, persistKey, persistence, recentFields, favoriteFields]);
 
+  // Auto-apply effect
   useEffect(() => {
     if (!autoApply || !onApply || !schema) return;
     const handle = window.setTimeout(() => {
@@ -111,73 +153,119 @@ export function useFilterPanel({
 
   const addToRecent = useCallback((fieldPath: string[]) => {
     setRecentFields((prev) => {
-      const next = [fieldPath, ...prev.filter((p) => p.join(".") !== fieldPath.join("."))];
+      const key = fieldPath.join(".");
+      const next = [fieldPath, ...prev.filter((p) => p.join(".") !== key)];
       return next.slice(0, 5);
     });
   }, []);
 
   const toggleFavorite = useCallback((fieldPath: string[]) => {
     setFavoriteFields((prev) => {
-      const exists = prev.some((p) => p.join(".") === fieldPath.join("."));
+      const key = fieldPath.join(".");
+      const exists = prev.some((p) => p.join(".") === key);
       if (exists) {
-        return prev.filter((p) => p.join(".") !== fieldPath.join("."));
+        return prev.filter((p) => p.join(".") !== key);
       }
       return [...prev, fieldPath];
     });
   }, []);
 
+  // Tree-based operations
   const addCondition = useCallback(
-    (fieldPath: string[], fieldName: string, operator: string, groupId?: string) => {
-      const condition: FilterCondition = {
-        id: generateId(),
-        type: "condition",
-        fieldPath,
-        fieldName,
-        operator,
-        value: undefined,
-      };
-      setState((prev) => ({
-        ...prev,
-        root: addConditionToGroup(prev.root, groupId ?? prev.root.id, condition),
-      }));
+    (
+      fieldPath: string[],
+      fieldName: string,
+      operator: string,
+      groupId?: string
+    ) => {
+      const condition = createCondition(fieldPath, fieldName, operator);
+
+      setState((prev) => {
+        // Find the parent group
+        const parentId = groupId ?? prev.root.id;
+        const found = findById(prev.root, parentId);
+
+        if (!found || found.node.type !== "group") {
+          // Fallback: add to root
+          return {
+            ...prev,
+            root: {
+              ...prev.root,
+              conditions: [...prev.root.conditions, condition],
+            },
+          };
+        }
+
+        // Use tree operation to append
+        const result = appendChild(prev.root, found.path, condition);
+        return result.success ? { ...prev, root: result.root } : prev;
+      });
+
       addToRecent(fieldPath);
     },
     [addToRecent]
   );
 
-  const updateCondition = useCallback((id: string, updates: Partial<FilterCondition>) => {
-    setState((prev) => ({
-      ...prev,
-      root: updateItemById(prev.root, id, (item) => ({ ...item, ...updates })),
-    }));
-  }, []);
+  const updateCondition = useCallback(
+    (id: string, updates: Partial<FilterCondition>) => {
+      setState((prev) => {
+        const result = updateById(prev.root, id, (node) => ({
+          ...node,
+          ...updates,
+        }));
+        return result.success ? { ...prev, root: result.root } : prev;
+      });
+    },
+    []
+  );
 
   const removeCondition = useCallback((id: string) => {
-    setState((prev) => ({
-      ...prev,
-      root: removeItemById(prev.root, id),
-    }));
+    setState((prev) => {
+      const result = removeById(prev.root, id);
+      return result.success ? { ...prev, root: result.root } : prev;
+    });
   }, []);
 
   const addGroup = useCallback((parentId: string, logic: "AND" | "OR") => {
-    const group: FilterGroup = {
-      id: generateId(),
-      type: "group",
-      logic,
-      conditions: [],
-      negated: false,
-    };
-    setState((prev) => ({
-      ...prev,
-      root: addGroupToGroup(prev.root, parentId, group),
-    }));
+    const group = createGroup(logic);
+
+    setState((prev) => {
+      const found = findById(prev.root, parentId);
+
+      if (!found || found.node.type !== "group") {
+        // Fallback: add to root
+        return {
+          ...prev,
+          root: {
+            ...prev.root,
+            conditions: [...prev.root.conditions, group],
+          },
+        };
+      }
+
+      const result = appendChild(prev.root, found.path, group);
+      return result.success ? { ...prev, root: result.root } : prev;
+    });
   }, []);
 
   const setGroupLogic = useCallback((groupId: string, logic: "AND" | "OR") => {
-    setState((prev) => ({
-      ...prev,
-      root: updateItemById(prev.root, groupId, (item) => ({ ...item, logic })),
-    }));
+    setState((prev) => {
+      const result = updateById(prev.root, groupId, (node) => {
+        if (node.type !== "group") return node;
+        return { ...node, logic };
+      });
+      return result.success ? { ...prev, root: result.root } : prev;
+    });
+  }, []);
+
+  const toggleGroupNegation = useCallback((groupId: string) => {
+    setState((prev) => {
+      const result = updateById(prev.root, groupId, (node) => {
+        if (node.type !== "group") return node;
+        return { ...node, negated: !node.negated };
+      });
+      return result.success ? { ...prev, root: result.root } : prev;
+    });
   }, []);
 
   const togglePreset = useCallback((presetId: string) => {
@@ -190,24 +278,20 @@ export function useFilterPanel({
   }, []);
 
   const setDistinctOn = useCallback((fields: string[]) => {
-    setState((prev) => ({
-      ...prev,
-      distinctOn: fields,
-    }));
+    setState((prev) => ({ ...prev, distinctOn: fields }));
   }, []);
 
   const setOrderBy = useCallback((fields: string[]) => {
-    setState((prev) => ({
-      ...prev,
-      orderBy: fields,
-    }));
+    setState((prev) => ({ ...prev, orderBy: fields }));
   }, []);
 
   const clearAll = useCallback(() => {
     const next = createInitialFilterState();
     setState(next);
-    persistence?.clear();
-  }, [persistence]);
+    if (shouldPersist) {
+      persistence.clear();
+    }
+  }, [shouldPersist, persistence]);
 
   const reset = useCallback(() => {
     const next = initialState ?? createInitialFilterState();
@@ -239,6 +323,27 @@ export function useFilterPanel({
     onApply(getVariablesInternal());
   }, [onApply, getVariablesInternal]);
 
+  // New tree utilities
+  const findNode = useCallback(
+    (id: string) => findById(state.root, id)?.node ?? null,
+    [state.root]
+  );
+
+  const getStats = useCallback(() => getTreeStats(state.root), [state.root]);
+
+  const duplicateNode = useCallback((id: string) => {
+    setState((prev) => {
+      const found = findById(prev.root, id);
+      if (!found || found.path.length === 0) return prev; // Can't duplicate root
+
+      const cloned = cloneNode(found.node, true);
+      const parentPath = found.path.slice(0, -1);
+      const result = appendChild(prev.root, parentPath, cloned);
+
+      return result.success ? { ...prev, root: result.root } : prev;
+    });
+  }, []);
+
   return {
     state,
     activeCount,
@@ -249,6 +354,7 @@ export function useFilterPanel({
     removeCondition,
     addGroup,
     setGroupLogic,
+    toggleGroupNegation,
     togglePreset,
     setDistinctOn,
     setOrderBy,
@@ -261,30 +367,9 @@ export function useFilterPanel({
     addToRecent,
     favoriteFields,
     toggleFavorite,
-  };
-}
-
-function addConditionToGroup(group: FilterGroup, parentId: string, condition: FilterCondition): FilterGroup {
-  if (group.id === parentId) {
-    return { ...group, conditions: [...group.conditions, condition] };
-  }
-  return {
-    ...group,
-    conditions: group.conditions.map((item) =>
-      item.type === "group" ? addConditionToGroup(item, parentId, condition) : item
-    ),
-  };
-}
-
-function addGroupToGroup(group: FilterGroup, parentId: string, newGroup: FilterGroup): FilterGroup {
-  if (group.id === parentId) {
-    return { ...group, conditions: [...group.conditions, newGroup] };
-  }
-  return {
-    ...group,
-    conditions: group.conditions.map((item) =>
-      item.type === "group" ? addGroupToGroup(item, parentId, newGroup) : item
-    ),
+    findNode,
+    getStats,
+    duplicateNode,
   };
 }
 
