@@ -6,104 +6,15 @@
  */
 
 import { useQuery, gql, useApolloClient } from "@apollo/client";
-import { useMemo, useCallback, useRef, useState } from "react";
+import { useMemo, useCallback, useRef, useState, useEffect } from "react";
 import { mergeFilterMetadata } from "../metadataMerger";
 import type { UnifiedFilterSchema, RelationFilter } from "../types";
-
-const FILTER_METADATA_QUERY = gql`
-  query FilterMetadata($app: String!, $model: String!) {
-    modelSchema(app: $app, model: $model) {
-      app
-      model
-      verboseName
-      verboseNamePlural
-      fields {
-        name
-        fieldName
-        verboseName
-        helpText
-        graphqlType
-        choices {
-          value
-          label
-          group
-        }
-        minValue
-        maxValue
-        isRelation
-        isJson
-        isIndexed
-      }
-      relationships {
-        name
-        verboseName
-        relatedApp
-        relatedModel
-        lookupField
-        searchFields
-      }
-      filterConfig {
-        inputTypeName
-        supportsAnd
-        supportsOr
-        supportsNot
-        supportsFts
-        supportsAggregation
-        presets {
-          name
-          presetName
-          description
-          filterJson
-        }
-      }
-      relationFilters {
-        name
-        fieldName
-        relationType
-        supportsSome
-        supportsEvery
-        supportsNone
-        supportsCount
-        nestedFilterType
-      }
-      fieldGroups {
-        key
-        label
-        description
-        fields
-      }
-    }
-    filterSchema(app: $app, model: $model) {
-      name
-      fieldName
-      fieldLabel
-      baseType
-      isNested
-      filterInputType
-      defaultOperator
-      preferredOperators
-      datePresets {
-        key
-        label
-        days
-        startOfPeriod
-      }
-      showInQuickFilter
-      priority
-      options {
-        name
-        label
-        helpText
-        choices {
-          value
-          label
-        }
-        graphqlType
-        isList
-      }
-    }
-  }
-`;
+import { FILTER_METADATA_QUERY } from "../queries";
+import {
+  persistFilterMetadata,
+  readPersistedFilterMetadata,
+  recordModelUsage,
+} from "@/lib/metadata/persisted-cache";
 
 const SAVED_FILTERS_QUERY = gql`
   query SavedFilters($modelName: String!) {
@@ -232,15 +143,39 @@ export function useFilterMetadata({
     fetchPolicy: "cache-and-network",
   });
 
+  const persistedMetadata = useMemo(
+    () => readPersistedFilterMetadata(app, model) as typeof metadataData | null,
+    [app, model],
+  );
+
+  const effectiveMetadata = useMemo(
+    () => metadataData ?? persistedMetadata,
+    [metadataData, persistedMetadata],
+  );
+
+  useEffect(() => {
+    if (skip || !app || !model) return;
+    recordModelUsage(app, model);
+  }, [app, model, skip]);
+
+  useEffect(() => {
+    if (!metadataData?.modelSchema || !metadataData?.filterSchema) return;
+    persistFilterMetadata(app, model, {
+      modelSchema: metadataData.modelSchema,
+      filterSchema: metadataData.filterSchema,
+    });
+  }, [metadataData, app, model]);
+
   // Merge all metadata sources with loaded relation schemas
   const schema = useMemo(() => {
-    if (!metadataData?.modelSchema || !metadataData?.filterSchema) {
+    if (skip) return null;
+    if (!effectiveMetadata?.modelSchema || !effectiveMetadata?.filterSchema) {
       return null;
     }
 
     const baseSchema = mergeFilterMetadata(
-      metadataData,
-      metadataData,
+      effectiveMetadata,
+      effectiveMetadata,
       includeSavedFilters ? savedFiltersData : null,
       { maxDepth },
     );
@@ -263,11 +198,12 @@ export function useFilterMetadata({
 
     return baseSchema;
   }, [
-    metadataData,
+    effectiveMetadata,
     savedFiltersData,
     includeSavedFilters,
     maxDepth,
     relationSchemas,
+    skip,
   ]);
 
   const loadSchemaByModel = useCallback(

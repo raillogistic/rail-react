@@ -4,6 +4,8 @@ import { useAuthContext } from "@/auth/context";
 import { RouteBuilder } from "@/views/routes/RouteBuilder";
 import { Toaster } from "@/lib/components/ui/sonner";
 import { ActivityTimeoutModal } from "@/auth/components/ActivityTimeoutModal";
+import { useMetadataWarmup } from "@/lib/metadata/useMetadataWarmup";
+import { MetadataWarmupIndicator } from "@/lib/metadata/MetadataWarmupIndicator";
 import {
   ThemeKey,
   ThemeMode,
@@ -16,6 +18,9 @@ import {
 export const AuthDependentContent: React.FC = () => {
   const { user, isAuthenticated } = useAuthContext();
   const storageKey = user ? `vite-ui-theme-${user.id}` : "vite-ui-theme";
+  const userKey = user?.id ? String(user.id) : null;
+
+  const { warming } = useMetadataWarmup({ enabled: isAuthenticated, userKey });
 
   // Extract settings with fallbacks
   const userSettings = user?.settings;
@@ -33,6 +38,7 @@ export const AuthDependentContent: React.FC = () => {
       <RouteBuilder />
       <Toaster />
       {isAuthenticated && <ActivityTimeoutModal />}
+      <MetadataWarmupIndicator active={warming} />
     </ThemeProvider>
   );
 };
