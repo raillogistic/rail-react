@@ -26,7 +26,11 @@ const FILTER_METADATA_QUERY = gql`
         graphqlType
         required
         nullable
-        choices { value label group }
+        choices {
+          value
+          label
+          group
+        }
         minValue
         maxValue
         isRelation
@@ -112,7 +116,10 @@ const FILTER_METADATA_QUERY = gql`
         lookup
         label
         helpText
-        choices { value label }
+        choices {
+          value
+          label
+        }
         graphqlType
         isList
       }
@@ -124,7 +131,7 @@ const SAVED_FILTERS_QUERY = gql`
   query SavedFilters($modelName: String!) {
     savedFilters(
       where: { modelName: { eq: $modelName } }
-      orderBy: ["-updatedAt"]
+      orderBy: ["-updated_at"]
       limit: 50
     ) {
       id
@@ -132,7 +139,10 @@ const SAVED_FILTERS_QUERY = gql`
       description
       filterJson
       isShared
-      createdBy { id username }
+      createdBy {
+        id
+        username
+      }
       useCount
       lastUsedAt
     }
@@ -162,7 +172,7 @@ export interface UseFilterMetadataResult {
   refetchSavedFilters: () => void;
   /** Load schema for a specific relation on-demand */
   loadRelationSchema: (
-    relationName: string
+    relationName: string,
   ) => Promise<UnifiedFilterSchema | null>;
   /** Check if a relation schema is loaded */
   isRelationLoaded: (relationName: string) => boolean;
@@ -172,11 +182,11 @@ export interface UseFilterMetadataResult {
   prefetchRelations: (relationNames: string[]) => Promise<void>;
   /** Load schema for a relation (by related app/model) */
   loadSchemaForRelation: (
-    relation: RelationFilter
+    relation: RelationFilter,
   ) => Promise<UnifiedFilterSchema | null>;
   /** Get cached schema for a relation */
   getSchemaForRelation: (
-    relation: RelationFilter
+    relation: RelationFilter,
   ) => UnifiedFilterSchema | null;
 }
 
@@ -205,17 +215,17 @@ export function useFilterMetadata({
     Map<string, RelationLoadingState>
   >(() => new Map());
 
-  const [, setModelLoadingStates] = useState<
-    Map<string, RelationLoadingState>
-  >(() => new Map());
+  const [, setModelLoadingStates] = useState<Map<string, RelationLoadingState>>(
+    () => new Map(),
+  );
 
   // In-flight requests
-  const inFlightRequests = useRef<Map<string, Promise<UnifiedFilterSchema | null>>>(
-    new Map()
-  );
-  const modelRequests = useRef<Map<string, Promise<UnifiedFilterSchema | null>>>(
-    new Map()
-  );
+  const inFlightRequests = useRef<
+    Map<string, Promise<UnifiedFilterSchema | null>>
+  >(new Map());
+  const modelRequests = useRef<
+    Map<string, Promise<UnifiedFilterSchema | null>>
+  >(new Map());
 
   const getModelKey = useCallback((appName: string, modelName: string) => {
     return `${appName}::${modelName}`;
@@ -254,7 +264,7 @@ export function useFilterMetadata({
       metadataData,
       metadataData,
       includeSavedFilters ? savedFiltersData : null,
-      { maxDepth }
+      { maxDepth },
     );
 
     // Inject loaded relation schemas
@@ -274,10 +284,19 @@ export function useFilterMetadata({
     }
 
     return baseSchema;
-  }, [metadataData, savedFiltersData, includeSavedFilters, maxDepth, relationSchemas]);
+  }, [
+    metadataData,
+    savedFiltersData,
+    includeSavedFilters,
+    maxDepth,
+    relationSchemas,
+  ]);
 
   const loadSchemaByModel = useCallback(
-    async (appName: string, modelName: string): Promise<UnifiedFilterSchema | null> => {
+    async (
+      appName: string,
+      modelName: string,
+    ): Promise<UnifiedFilterSchema | null> => {
       if (!enableLazyLoading) return null;
 
       const key = getModelKey(appName, modelName);
@@ -345,7 +364,7 @@ export function useFilterMetadata({
       modelRequests.current.set(key, fetchPromise);
       return fetchPromise;
     },
-    [client, enableLazyLoading, getModelKey, maxDepth, modelSchemas]
+    [client, enableLazyLoading, getModelKey, maxDepth, modelSchemas],
   );
 
   const loadSchemaForRelation = useCallback(
@@ -355,7 +374,7 @@ export function useFilterMetadata({
       }
       return loadSchemaByModel(relation.relatedApp, relation.relatedModel);
     },
-    [loadSchemaByModel]
+    [loadSchemaByModel],
   );
 
   const getSchemaForRelation = useCallback(
@@ -365,7 +384,7 @@ export function useFilterMetadata({
       const key = getModelKey(relation.relatedApp, relation.relatedModel);
       return modelSchemas.get(key) ?? null;
     },
-    [getModelKey, modelSchemas]
+    [getModelKey, modelSchemas],
   );
 
   // Load a relation schema on demand
@@ -386,7 +405,7 @@ export function useFilterMetadata({
 
       // Find the relation
       const relation = schema.relationFilters.find(
-        (rf) => rf.name === relationName || rf.fieldName === relationName
+        (rf) => rf.name === relationName || rf.fieldName === relationName,
       );
 
       if (!relation) {
@@ -440,37 +459,43 @@ export function useFilterMetadata({
       inFlightRequests.current.set(relationName, fetchPromise);
       return fetchPromise;
     },
-    [schema, enableLazyLoading, relationSchemas, loadSchemaForRelation]
+    [schema, enableLazyLoading, relationSchemas, loadSchemaForRelation],
   );
 
   const isRelationLoaded = useCallback(
     (relationName: string): boolean => {
       return relationSchemas.has(relationName);
     },
-    [relationSchemas]
+    [relationSchemas],
   );
 
   const getRelationLoadingState = useCallback(
     (relationName: string): RelationLoadingState => {
       return (
-        relationLoadingStates.get(relationName) ?? { loading: false, error: null }
+        relationLoadingStates.get(relationName) ?? {
+          loading: false,
+          error: null,
+        }
       );
     },
-    [relationLoadingStates]
+    [relationLoadingStates],
   );
 
   const prefetchRelations = useCallback(
     async (relationNames: string[]): Promise<void> => {
       await Promise.all(
         relationNames.map((name) => {
-          if (!relationSchemas.has(name) && !inFlightRequests.current.has(name)) {
+          if (
+            !relationSchemas.has(name) &&
+            !inFlightRequests.current.has(name)
+          ) {
             return loadRelationSchema(name);
           }
           return Promise.resolve(null);
-        })
+        }),
       );
     },
-    [relationSchemas, loadRelationSchema]
+    [relationSchemas, loadRelationSchema],
   );
 
   const refetch = useCallback(() => {

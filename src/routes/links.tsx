@@ -101,7 +101,9 @@ const CORE_NAVIGATION_LINKS: NavigationSection[] = [
                 app="store"
                 model="Product"
                 maxDepth={2}
-                onApply={(variables, state) => {}}
+                onApply={(variables, state) => {
+                  console.log(variables, state);
+                }}
               />
               {/* <FilterPanel
                 app="store"

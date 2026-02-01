@@ -85,6 +85,7 @@ export const FilterGroupComponent: React.FC<FilterGroupProps> = ({
   const hasConditions = group.conditions.length > 0;
 
   const canAddGroup = depth < config.maxDepth;
+  const showNegationWarning = config.enableNot && group.negated;
 
   return (
     <Collapsible open={!collapsed} onOpenChange={(open) => setCollapsed(!open)}>
@@ -92,6 +93,9 @@ export const FilterGroupComponent: React.FC<FilterGroupProps> = ({
         className={cn(
           "space-y-3",
           depth > 0 && "border rounded-lg bg-muted/30 p-3",
+          showNegationWarning &&
+            "border border-destructive/70 ring-1 ring-destructive/20 rounded-lg",
+          showNegationWarning && depth === 0 && "p-3"
         )}
         data-testid="filter-group"
       >

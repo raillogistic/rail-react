@@ -240,7 +240,11 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
     const fieldName = field.fieldName;
     const lowerName = name.toLowerCase();
     const lowerFieldName = fieldName.toLowerCase();
+    const inputType = field.filterInputType ?? "";
+    const isAggregationInput =
+      inputType.includes("Aggregation") || inputType.includes("CountFilterInput");
     const advancedNames = new Set([
+      "include",
       "quick",
       "quicksearch",
       "search",
@@ -272,11 +276,18 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
       return true;
     }
 
+    if (lowerFieldName.endsWith("_agg") || name.endsWith("Agg")) {
+      return true;
+    }
+
     if (
-      lowerFieldName.endsWith("_agg") ||
-      name.endsWith("Agg") ||
-      lowerFieldName.endsWith("_count") ||
-      name.endsWith("Count") ||
+      (lowerFieldName.endsWith("_count") || name.endsWith("Count")) &&
+      isAggregationInput
+    ) {
+      return true;
+    }
+
+    if (
       lowerFieldName.endsWith("_some") ||
       name.endsWith("Some") ||
       lowerFieldName.endsWith("_every") ||
