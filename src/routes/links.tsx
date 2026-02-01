@@ -22,7 +22,6 @@ import { AppearanceSettingsPage } from "@/views/settings/AppearanceSettingsPage"
 import { LayoutSettingsPage } from "@/views/settings/LayoutSettingsPage";
 
 import { getAppDefaultRoute, getAppNavigationLinks } from "@/apps/routes";
-import { FilterPanel } from "@/lib/form/filters";
 import { ModelTableV2 } from "@/lib/tablev2";
 
 export const ROUTES = {

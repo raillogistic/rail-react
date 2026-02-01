@@ -22,10 +22,7 @@ const FILTER_METADATA_QUERY = gql`
         fieldName
         verboseName
         helpText
-        fieldType
         graphqlType
-        required
-        nullable
         choices {
           value
           label
@@ -34,28 +31,18 @@ const FILTER_METADATA_QUERY = gql`
         minValue
         maxValue
         isRelation
-        isNumeric
-        isDate
-        isDatetime
-        isBoolean
-        isText
         isJson
         isIndexed
       }
       relationships {
         name
-        fieldName
         verboseName
         relatedApp
         relatedModel
-        relationType
-        isToMany
         lookupField
         searchFields
       }
       filterConfig {
-        style
-        argumentName
         inputTypeName
         supportsAnd
         supportsOr
@@ -67,12 +54,6 @@ const FILTER_METADATA_QUERY = gql`
           presetName
           description
           filterJson
-        }
-        computedFilters {
-          name
-          fieldName
-          filterType
-          description
         }
       }
       relationFilters {
@@ -98,9 +79,7 @@ const FILTER_METADATA_QUERY = gql`
       fieldLabel
       baseType
       isNested
-      relatedModel
       filterInputType
-      availableOperators
       defaultOperator
       preferredOperators
       datePresets {
@@ -113,7 +92,6 @@ const FILTER_METADATA_QUERY = gql`
       priority
       options {
         name
-        lookup
         label
         helpText
         choices {
