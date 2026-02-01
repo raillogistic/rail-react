@@ -32,12 +32,15 @@ export interface FilterPanelOptions {
   side?: "top" | "right" | "bottom" | "left";
 }
 
+export type ModelTableFilterPanelProps = FilterPanelOptions &
+  Partial<import("../form/filters/FilterPanel").FilterPanelProps>;
+
 function TableContent({
   persistenceKey,
   filterPanel,
 }: {
   persistenceKey?: string;
-  filterPanel?: FilterPanelOptions;
+  filterPanel?: ModelTableFilterPanelProps;
 }) {
   const {
     metadata,
@@ -160,7 +163,7 @@ export interface ModelTableV2Props {
   model: string;
   className?: string;
   persistenceKey?: string;
-  filterPanel?: FilterPanelOptions;
+  filterPanel?: ModelTableFilterPanelProps;
   // Future: options prop for overrides
 }
 

@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useMemo, useRef, useState, useEffect } from "react";
 import { AlertTriangle } from "lucide-react";
 import { Button } from "@/lib/components/ui/button";
 import { Card, CardContent } from "@/lib/components/ui/card";
@@ -26,9 +26,12 @@ import type {
   FilterPreset,
   FilterQueryVariables,
   NestedFilterConfig,
+  DefaultFilterSpec,
+  FieldSelectorOptions,
 } from "./types";
 import { DEFAULT_NESTED_CONFIG } from "./types";
 import type { UnifiedFilterSchema } from "./types";
+import { createCondition, createGroup } from "./tree/operations";
 
 // ============================================================================
 // FilterPanel Props
@@ -45,6 +48,8 @@ export interface FilterPanelProps {
   allowSaveFilter?: boolean;
   layout?: "panel" | "popover" | "inline" | "toolbar";
   initialState?: FilterFormState;
+  defaultFilters?: DefaultFilterSpec[];
+  fieldSelector?: FieldSelectorOptions;
   config?: Partial<NestedFilterConfig>;
   disabled?: boolean;
   title?: string;
@@ -63,6 +68,8 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
   allowSaveFilter = true,
   layout = "panel",
   initialState,
+  defaultFilters,
+  fieldSelector,
   config: configOverrides,
   disabled,
   title = "Filters",
@@ -112,6 +119,8 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
     initialState,
     persistKey,
   });
+
+  const defaultsAppliedRef = useRef(false);
 
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [editingPreset, setEditingPreset] = useState<FilterPreset | null>(null);
@@ -179,6 +188,107 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
     onCancel: clearAll,
     disabled,
   });
+
+  const resolveDefaultPath = useCallback(
+    async (spec: DefaultFilterSpec): Promise<{
+      path: string[];
+      operator: string;
+      value?: unknown;
+    } | null> => {
+      if (!schema) return null;
+      const raw =
+        typeof spec === "string" ? { name: spec } : spec;
+      const path =
+        raw.path ??
+        (raw.name.includes(".") ? raw.name.split(".") : [raw.name]);
+
+      let currentSchema: UnifiedFilterSchema | null = schema;
+      for (let i = 0; i < path.length; i++) {
+        const segment = path[i];
+        const isLast = i === path.length - 1;
+
+        if (isLast) {
+          const field = currentSchema?.fields.find(
+            (f) => f.name === segment || f.fieldName === segment,
+          );
+          if (!field) return null;
+          return {
+            path: [...path.slice(0, -1), field.name],
+            operator: raw.operator ?? field.defaultOperator ?? "eq",
+            value: raw.value,
+          };
+        }
+
+        const relation = currentSchema?.relationFilters.find(
+          (r) => r.name === segment || r.fieldName === segment,
+        );
+        if (!relation) return null;
+
+        let nestedSchema =
+          relation.nestedSchema ?? getSchemaForRelation(relation);
+        if (!nestedSchema) {
+          nestedSchema = await loadSchemaForRelation(relation);
+        }
+        if (!nestedSchema) return null;
+        currentSchema = nestedSchema;
+      }
+
+      return null;
+    },
+    [schema, getSchemaForRelation, loadSchemaForRelation],
+  );
+
+  useEffect(() => {
+    if (!schema || defaultsAppliedRef.current) return;
+    if (!defaultFilters || defaultFilters.length === 0) return;
+
+    const hasStateData = (value: FilterFormState | undefined) => {
+      if (!value) return false;
+      return (
+        value.root.conditions.length > 0 ||
+        value.selectedPresets.length > 0 ||
+        value.distinctOn.length > 0 ||
+        value.orderBy.length > 0
+      );
+    };
+
+    if (hasStateData(initialState) || hasStateData(state)) {
+      defaultsAppliedRef.current = true;
+      return;
+    }
+
+    const applyDefaults = async () => {
+      const resolved = await Promise.all(
+        defaultFilters.map((spec) => resolveDefaultPath(spec)),
+      );
+      const conditions = resolved
+        .filter(Boolean)
+        .map((item) =>
+          createCondition(item!.path, item!.path[item!.path.length - 1], item!.operator, item!.value),
+        );
+      if (conditions.length === 0) {
+        defaultsAppliedRef.current = true;
+        return;
+      }
+
+      const root = createGroup();
+      root.conditions = conditions;
+      setRoot(root);
+      defaultsAppliedRef.current = true;
+    };
+
+    void applyDefaults();
+  }, [
+    schema,
+    defaultFilters,
+    initialState,
+    resolveDefaultPath,
+    state.root.conditions.length,
+    state.selectedPresets.length,
+    state.distinctOn.length,
+    state.orderBy.length,
+    setRoot,
+  ]);
 
   if (loading) {
     return (
@@ -266,6 +376,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
             depth={0}
             recentFields={recentFields}
             favoriteFields={favoriteFields}
+            fieldSelector={fieldSelector}
             onLoadRelationSchema={loadSchemaForRelation}
             getRelationSchema={getSchemaForRelation}
           />
@@ -336,7 +447,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
                 {title}
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[480px] p-4" align="start">
+            <PopoverContent className="w-[95vw] max-w-[95vw] sm:w-[480px] sm:max-w-[480px] p-4" align="start">
               {filterContent}
             </PopoverContent>
           </div>
@@ -359,7 +470,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
               )}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-[480px] p-4" align="start">
+          <PopoverContent className="w-[95vw] max-w-[95vw] sm:w-[480px] sm:max-w-[480px] p-4" align="start">
             {filterContent}
           </PopoverContent>
         </Popover>

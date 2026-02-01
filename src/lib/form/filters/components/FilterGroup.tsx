@@ -19,6 +19,7 @@ import type {
   RelationFilter,
   UnifiedFilterSchema,
   NestedFilterConfig,
+  FieldSelectorOptions,
 } from "../types";
 
 export interface FilterGroupProps {
@@ -41,6 +42,7 @@ export interface FilterGroupProps {
   currentPath?: string[];
   recentFields?: string[][];
   favoriteFields?: string[][];
+  fieldSelector?: FieldSelectorOptions;
   onLoadRelationSchema?: (
     relation: RelationFilter
   ) => Promise<UnifiedFilterSchema | null>;
@@ -62,6 +64,7 @@ export const FilterGroupComponent: React.FC<FilterGroupProps> = ({
   currentPath = [],
   recentFields,
   favoriteFields,
+  fieldSelector,
   onLoadRelationSchema,
   getRelationSchema,
 }) => {
@@ -169,6 +172,7 @@ export const FilterGroupComponent: React.FC<FilterGroupProps> = ({
               onSelect={handleAddCondition}
               onLoadRelationSchema={onLoadRelationSchema}
               getRelationSchema={getRelationSchema}
+              fieldSelector={fieldSelector}
               trigger={
                 <Button
                   variant="outline"
@@ -204,6 +208,7 @@ export const FilterGroupComponent: React.FC<FilterGroupProps> = ({
                       }
                       recentFields={recentFields}
                       favoriteFields={favoriteFields}
+                      fieldSelector={fieldSelector}
                       onLoadRelationSchema={onLoadRelationSchema}
                       getRelationSchema={getRelationSchema}
                     />
@@ -227,6 +232,7 @@ export const FilterGroupComponent: React.FC<FilterGroupProps> = ({
                       currentPath={currentPath}
                       recentFields={recentFields}
                       favoriteFields={favoriteFields}
+                      fieldSelector={fieldSelector}
                       onLoadRelationSchema={onLoadRelationSchema}
                       getRelationSchema={getRelationSchema}
                     />
@@ -243,6 +249,7 @@ export const FilterGroupComponent: React.FC<FilterGroupProps> = ({
                     onSelect={handleAddCondition}
                     onLoadRelationSchema={onLoadRelationSchema}
                     getRelationSchema={getRelationSchema}
+                    fieldSelector={fieldSelector}
                     trigger={
                       <Button
                         variant="ghost"

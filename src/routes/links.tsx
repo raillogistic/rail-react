@@ -117,8 +117,11 @@ const CORE_NAVIGATION_LINKS: NavigationSection[] = [
               app="store"
               model="Product"
               filterPanel={{
-                mode: "drawer",
-                widthClassName: "w-[50%]",
+                defaultFilters: [
+                  "category",
+                  "name",
+                  { name: "sku", operator: "contains" },
+                ],
               }}
             />
           </>

@@ -185,6 +185,30 @@ export interface FieldGroup {
   collapsed?: boolean;
 }
 
+export type DefaultFilterSpec =
+  | string
+  | {
+      name: string;
+      path?: string[];
+      operator?: string;
+      value?: unknown;
+    };
+
+export interface FieldSelectorOptions {
+  /** Only allow these field names/paths (e.g. "name" or "category.name") */
+  only?: string[];
+  /** Exclude these field names/paths */
+  exclude?: string[];
+  /** Only show fields with choices/options */
+  requireChoices?: boolean;
+  /** Show relations in selector */
+  includeRelations?: boolean;
+  /** Allow advanced fields/relations */
+  includeAdvanced?: boolean;
+  /** Sorting strategy for field lists */
+  order?: "schema" | "alpha" | "priority" | "name";
+}
+
 /**
  * Filter state types
  */

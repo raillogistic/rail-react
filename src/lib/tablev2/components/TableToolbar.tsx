@@ -32,12 +32,12 @@ import {
   FilterFormState,
   FilterQueryVariables,
 } from "../../form/filters/types";
-import type { FilterPanelOptions } from "../index";
+import type { ModelTableFilterPanelProps } from "../index";
 
 export function TableToolbar({
   filterPanel,
 }: {
-  filterPanel?: FilterPanelOptions;
+  filterPanel?: ModelTableFilterPanelProps;
 }) {
   const { app, model, metadata } = useMetadata();
   const { columnVisibility, setColumnVisibility } = useTable();
@@ -53,19 +53,20 @@ export function TableToolbar({
   const panelDefaults = useMemo(
     () => ({
       mode: filterPanel?.mode ?? "drawer",
-      defaultOpen: filterPanel?.defaultOpen ?? true,
+      defaultOpen: filterPanel?.defaultOpen ?? false,
       title: filterPanel?.title ?? "Filters",
-      widthClassName: filterPanel?.widthClassName ?? "sm:max-w-md",
+      widthClassName: filterPanel?.widthClassName ?? "sm:w-1/2 sm:max-w-none",
       side: filterPanel?.side ?? "right",
     }),
     [filterPanel],
   );
 
   const panelWidthClassName = useMemo(() => {
+    const baseWidth = "w-screen max-w-screen";
     if (!filterPanel?.widthClassName) {
-      return panelDefaults.widthClassName;
+      return `${baseWidth} ${panelDefaults.widthClassName}`;
     }
-    return `${filterPanel.widthClassName} sm:max-w-none max-w-none`;
+    return `${baseWidth} ${filterPanel.widthClassName} sm:max-w-none`;
   }, [filterPanel?.widthClassName, panelDefaults.widthClassName]);
 
   const [filterOpen, setFilterOpen] = useState(panelDefaults.defaultOpen);
@@ -101,6 +102,7 @@ export function TableToolbar({
       layout="panel"
       onApply={handleApplyFilters}
       initialState={advancedFilters}
+      {...filterPanel}
     />
   );
 

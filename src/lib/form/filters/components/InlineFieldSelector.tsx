@@ -33,6 +33,7 @@ import type {
   FilterableField,
   RelationFilter,
   NestedFilterConfig,
+  FieldSelectorOptions,
 } from "../types";
 import { FieldTypeIcon } from "./InlineFieldSelectorIcons";
 
@@ -48,6 +49,7 @@ export interface InlineFieldSelectorProps {
   trigger: React.ReactNode;
   recentFields?: string[][];
   favoriteFields?: string[][];
+  fieldSelector?: FieldSelectorOptions;
   onLoadRelationSchema?: (
     relation: RelationFilter
   ) => Promise<UnifiedFilterSchema | null>;
@@ -77,6 +79,7 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
   trigger,
   recentFields = [],
   favoriteFields = [],
+  fieldSelector,
   onLoadRelationSchema,
   getRelationSchema,
 }) => {
@@ -90,13 +93,89 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
     Record<string, boolean>
   >({});
 
+  const selectorConfig = useMemo(
+    () => ({
+      only: fieldSelector?.only ?? [],
+      exclude: fieldSelector?.exclude ?? [],
+      requireChoices: fieldSelector?.requireChoices ?? false,
+      includeRelations: fieldSelector?.includeRelations ?? true,
+      includeAdvanced: fieldSelector?.includeAdvanced ?? true,
+      order: fieldSelector?.order ?? "schema",
+    }),
+    [fieldSelector],
+  );
+
+  const allowedOnly = useMemo(
+    () =>
+      new Set(selectorConfig.only.map((name) => name.trim().toLowerCase())),
+    [selectorConfig.only],
+  );
+  const allowedExclude = useMemo(
+    () =>
+      new Set(selectorConfig.exclude.map((name) => name.trim().toLowerCase())),
+    [selectorConfig.exclude],
+  );
+
+  const matchesAllowed = useCallback(
+    (candidates: string[]) => {
+      const normalized = candidates
+        .filter(Boolean)
+        .map((name) => name.toLowerCase());
+      if (allowedOnly.size > 0) {
+        const hit = normalized.some((name) => allowedOnly.has(name));
+        if (!hit) return false;
+      }
+      if (allowedExclude.size > 0) {
+        const blocked = normalized.some((name) => allowedExclude.has(name));
+        if (blocked) return false;
+      }
+      return true;
+    },
+    [allowedExclude, allowedOnly],
+  );
+
+  const sortFields = useCallback(
+    (fields: FilterableField[]) => {
+      if (selectorConfig.order === "schema") {
+        return fields;
+      }
+      const sorted = [...fields];
+      if (selectorConfig.order === "priority") {
+        sorted.sort(
+          (a, b) => (a.uiHints.priority ?? 999) - (b.uiHints.priority ?? 999),
+        );
+        return sorted;
+      }
+      if (selectorConfig.order === "name") {
+        sorted.sort((a, b) => a.name.localeCompare(b.name));
+        return sorted;
+      }
+      sorted.sort((a, b) => a.fieldLabel.localeCompare(b.fieldLabel));
+      return sorted;
+    },
+    [selectorConfig.order],
+  );
+
+  const allowAdvanced = selectorConfig.includeAdvanced;
+  const allowRelations = selectorConfig.includeRelations;
+  const effectiveShowAdvanced = allowAdvanced && showAdvanced;
+
   const quickFilters = useMemo(() => {
-    return schema.fields
+    const filtered = schema.fields
       .filter((field) => field.uiHints.showInQuickFilter && !field.isRelation)
-      .sort(
-        (a, b) => (a.uiHints.priority ?? 999) - (b.uiHints.priority ?? 999),
-      );
-  }, [schema.fields]);
+      .filter((field) => {
+        if (selectorConfig.requireChoices && !field.choices?.length) {
+          return false;
+        }
+        return matchesAllowed([
+          field.name,
+          field.fieldName,
+          field.fieldLabel,
+          field.name,
+        ]);
+      });
+    return sortFields(filtered);
+  }, [schema.fields, matchesAllowed, selectorConfig.requireChoices, sortFields]);
 
   const getNestedSchema = useCallback(
     (relation: RelationFilter) => {
@@ -308,15 +387,39 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
     return false;
   }, []);
 
-  const normalFields = useMemo(
-    () => schema.fields.filter((field) => !field.isRelation),
-    [schema.fields],
-  );
+  const normalFields = useMemo(() => {
+    const base = schema.fields.filter((field) => !field.isRelation);
+    const filtered = base.filter((field) => {
+      if (selectorConfig.requireChoices && !field.choices?.length) {
+        return false;
+      }
+      return matchesAllowed([
+        field.name,
+        field.fieldName,
+        field.fieldLabel,
+        field.name,
+      ]);
+    });
+    return sortFields(filtered);
+  }, [schema.fields, matchesAllowed, selectorConfig.requireChoices, sortFields]);
 
-  const advancedFields = useMemo(
-    () => schema.fields.filter(isAdvancedField),
-    [schema.fields, isAdvancedField],
-  );
+  const advancedFields = useMemo(() => {
+    if (!allowAdvanced) return [];
+    const filtered = schema.fields.filter(isAdvancedField).filter((field) => {
+      if (selectorConfig.requireChoices && !field.choices?.length) {
+        return false;
+      }
+      return matchesAllowed([field.name, field.fieldName, field.fieldLabel]);
+    });
+    return sortFields(filtered);
+  }, [
+    allowAdvanced,
+    schema.fields,
+    isAdvancedField,
+    matchesAllowed,
+    selectorConfig.requireChoices,
+    sortFields,
+  ]);
 
   const standardFields = useMemo(
     () => normalFields.filter((field) => !isAdvancedField(field)),
@@ -335,18 +438,50 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
 
   const recentVisible = useMemo(
     () =>
-      recentResolved.filter(
-        (item) => matchesResolved(item) && (showAdvanced || !isAdvancedField(item.field)),
-      ),
-    [recentResolved, matchesResolved, showAdvanced, isAdvancedField],
+      recentResolved.filter((item) => {
+        if (!matchesAllowed([item.field.name, item.field.fieldName, item.labelPath.join(".")])) {
+          return false;
+        }
+        if (selectorConfig.requireChoices && !item.field.choices?.length) {
+          return false;
+        }
+        return (
+          matchesResolved(item) &&
+          (effectiveShowAdvanced || !isAdvancedField(item.field))
+        );
+      }),
+    [
+      recentResolved,
+      matchesResolved,
+      effectiveShowAdvanced,
+      isAdvancedField,
+      matchesAllowed,
+      selectorConfig.requireChoices,
+    ],
   );
 
   const favoriteVisible = useMemo(
     () =>
-      favoriteResolved.filter(
-        (item) => matchesResolved(item) && (showAdvanced || !isAdvancedField(item.field)),
-      ),
-    [favoriteResolved, matchesResolved, showAdvanced, isAdvancedField],
+      favoriteResolved.filter((item) => {
+        if (!matchesAllowed([item.field.name, item.field.fieldName, item.labelPath.join(".")])) {
+          return false;
+        }
+        if (selectorConfig.requireChoices && !item.field.choices?.length) {
+          return false;
+        }
+        return (
+          matchesResolved(item) &&
+          (effectiveShowAdvanced || !isAdvancedField(item.field))
+        );
+      }),
+    [
+      favoriteResolved,
+      matchesResolved,
+      effectiveShowAdvanced,
+      isAdvancedField,
+      matchesAllowed,
+      selectorConfig.requireChoices,
+    ],
   );
 
   const favoriteTopLevel = useMemo(
@@ -368,7 +503,10 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
   }, [favoriteTopLevel]);
 
   const quickVisible = useMemo(
-    () => quickFilters.filter(matchesField).filter((field) => !isAdvancedField(field)),
+    () =>
+      quickFilters
+        .filter(matchesField)
+        .filter((field) => !isAdvancedField(field)),
     [quickFilters, matchesField, isAdvancedField],
   );
 
@@ -422,8 +560,14 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
       manyToOne: [] as RelationFilter[],
       manyToMany: [] as RelationFilter[],
     };
+    if (!allowRelations) {
+      return groups;
+    }
 
     schema.relationFilters.forEach((relation) => {
+      if (!matchesAllowed([relation.name, relation.fieldName, relation.fieldLabel])) {
+        return;
+      }
       switch (relation.relationType) {
         case "FOREIGN_KEY":
           groups.foreignKey.push(relation);
@@ -444,7 +588,7 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
     });
 
     return groups;
-  }, [schema.relationFilters]);
+  }, [schema.relationFilters, allowRelations, matchesAllowed]);
 
   const buildRelationEntry = useCallback(
     (relation: RelationFilter, path: string[], depth: number): RelationEntry => {
@@ -455,14 +599,21 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
 
       const scalarFields =
         shouldExpand && nestedSchema
-          ? nestedSchema.fields.filter((field) => !field.isRelation)
+          ? sortFields(nestedSchema.fields.filter((field) => !field.isRelation))
           : [];
-      const visibleScalars = showAdvanced
+      const visibleScalars = effectiveShowAdvanced
         ? scalarFields
         : scalarFields.filter((field) => !isAdvancedField(field));
+      const constrainedScalars = visibleScalars.filter((field) => {
+        if (selectorConfig.requireChoices && !field.choices?.length) {
+          return false;
+        }
+        const key = [...path, field.name].join(".");
+        return matchesAllowed([field.name, field.fieldName, field.fieldLabel, key]);
+      });
       const filteredScalars = hasSearch
-        ? visibleScalars.filter(matchesField)
-        : visibleScalars;
+        ? constrainedScalars.filter(matchesField)
+        : constrainedScalars;
 
       const childRelations =
         shouldExpand && canGoDeeper && nestedSchema
@@ -471,7 +622,7 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
             )
           : [];
 
-      const visibleChildRelations = showAdvanced
+      const visibleChildRelations = effectiveShowAdvanced
         ? childRelations
         : childRelations.filter(
             (child) => child.relation.relationType !== "MANY_TO_MANY",
@@ -503,8 +654,10 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
       hasSearch,
       matchesField,
       matchesRelation,
-      showAdvanced,
+      effectiveShowAdvanced,
       isAdvancedField,
+      matchesAllowed,
+      selectorConfig.requireChoices,
     ],
   );
 
@@ -549,15 +702,17 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
     manyToOneEntries.length +
     (showAdvanced ? manyToManyEntries.length : 0);
 
-  const advancedHiddenCount = showAdvanced
+  const advancedHiddenCount = effectiveShowAdvanced
     ? 0
     : advancedFields.length + relationGroups.manyToMany.length;
 
   const hasAdvanced =
-    advancedFields.length > 0 || relationGroups.manyToMany.length > 0;
+    allowAdvanced &&
+    (advancedFields.length > 0 || relationGroups.manyToMany.length > 0);
 
   const hasAdvancedVisible =
-    showAdvanced && (filteredAdvanced.length > 0 || manyToManyEntries.length > 0);
+    effectiveShowAdvanced &&
+    (filteredAdvanced.length > 0 || manyToManyEntries.length > 0);
 
   const hasVisibleContent =
     recentVisible.length > 0 ||
@@ -792,7 +947,7 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
             <Button
               type="button"
               size="sm"
-              variant={showAdvanced ? "secondary" : "outline"}
+              variant={effectiveShowAdvanced ? "secondary" : "outline"}
               className="h-8 text-[11px]"
               onClick={() => setShowAdvanced((prev) => !prev)}
               disabled={!hasAdvanced}

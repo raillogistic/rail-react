@@ -30,6 +30,28 @@ export function UserTable() {
 }
 ```
 
+### With Filter Panel Controls (drawer/modal + FilterPanel props)
+```tsx
+<ModelTableV2
+  app="sales"
+  model="Invoice"
+  filterPanel={{
+    mode: "drawer",
+    defaultOpen: true,
+    title: "Advanced Filters",
+    widthClassName: "w-[50%]",
+    side: "right",
+    defaultFilters: ["status", { name: "customer.name" }],
+    fieldSelector: { exclude: ["internalNotes"], includeAdvanced: false },
+    showDistinct: true,
+  }}
+/>
+```
+
+**Notes**:
+- `filterPanel` merges FilterPanel props (e.g. `defaultFilters`, `fieldSelector`) with UI controls (`mode`, `side`, `widthClassName`, `defaultOpen`, `title`).
+- Drawer default width: full width on small screens, `50%` on `sm+` unless overridden.
+
 ### With Persistence Key Override
 
 If you have multiple tables for the same model, provide a unique key to isolate persistence settings.
@@ -57,6 +79,21 @@ The table is composed of several contexts and components:
 - `hooks/`: Logic for data, metadata, filters, and persistence.
 - `components/`: UI components (Toolbar, Header, Row, Pagination, MobileCard).
 - `types.ts`: TypeScript definitions.
+
+## Metadata Warmup (cache-first)
+ModelTableV2 uses metadata caching under the hood. You can warm metadata at app startup to make filters/snappy loads instant.
+
+```tsx
+import { MetadataWarmupIndicator } from "@/lib/metadata/MetadataWarmupIndicator";
+import { useMetadataWarmup } from "@/lib/metadata/useMetadataWarmup";
+
+const { warming } = useMetadataWarmup({
+  enabled: !!user?.token,
+  userKey: user?.id ?? null,
+});
+
+return <MetadataWarmupIndicator active={warming} />;
+```
 
 ## Requirements
 

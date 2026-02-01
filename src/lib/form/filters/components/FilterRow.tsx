@@ -19,6 +19,7 @@ import type {
   RelationFilter,
   NestedFilterConfig,
   UnifiedFilterSchema,
+  FieldSelectorOptions,
 } from "../types";
 import { InlineFieldSelector } from "./InlineFieldSelector";
 import { CompactOperatorSelect } from "./CompactOperatorSelect";
@@ -37,6 +38,7 @@ export interface FilterRowProps {
   validationError?: string;
   recentFields?: string[][];
   favoriteFields?: string[][];
+  fieldSelector?: FieldSelectorOptions;
   onLoadRelationSchema?: (
     relation: RelationFilter
   ) => Promise<UnifiedFilterSchema | null>;
@@ -56,6 +58,7 @@ export const FilterRow: React.FC<FilterRowProps> = ({
   validationError,
   recentFields,
   favoriteFields,
+  fieldSelector,
   onLoadRelationSchema,
   getRelationSchema,
 }) => {
@@ -140,6 +143,7 @@ export const FilterRow: React.FC<FilterRowProps> = ({
         }}
         onLoadRelationSchema={onLoadRelationSchema}
         getRelationSchema={getRelationSchema}
+        fieldSelector={fieldSelector}
         trigger={
           <Button
             variant="outline"

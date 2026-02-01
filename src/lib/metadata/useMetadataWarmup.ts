@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useApolloClient } from "@apollo/client";
 import {
   getPersistedDeployVersion,
+  hasPersistedMetadataEntries,
   hydrateMetadataCache,
   setActiveMetadataUserKey,
 } from "./persisted-cache";
@@ -36,7 +37,7 @@ export function useMetadataWarmup(options: {
     lastUserKey.current = options.userKey;
     setActiveMetadataUserKey(options.userKey);
     const storedVersion = getPersistedDeployVersion(options.userKey);
-    if (storedVersion) {
+    if (storedVersion || hasPersistedMetadataEntries(options.userKey)) {
       hydrateMetadataCache(client.cache, options.userKey);
       setHydrated(true);
     }
