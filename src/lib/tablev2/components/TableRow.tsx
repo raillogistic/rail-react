@@ -95,7 +95,7 @@ export function TableRows() {
           ))}
 
           {/* Actions Cell */}
-          <TableCell>
+          <TableCell className="sticky right-0 bg-background">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="h-8 w-8 p-0">
