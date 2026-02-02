@@ -1,8 +1,8 @@
 import { gql } from "@apollo/client";
 
 export const GET_MODEL_SCHEMA = gql`
-  query GetModelSchema($app: String!, $model: String!) {
-    modelSchema(app: $app, model: $model) {
+  query GetModelSchema($app: String!, $model: String!, $objectId: ID) {
+    modelSchema(app: $app, model: $model, objectId: $objectId) {
       # Identity
       app
       model
@@ -33,6 +33,7 @@ export const GET_MODEL_SCHEMA = gql`
         supportsAnd
         supportsOr
         supportsNot
+        supportsQuick
         supportsFts
         supportsAggregation
         presets {
@@ -162,6 +163,30 @@ export const GET_MODEL_SCHEMA = gql`
       # Custom
       metadataVersion
       customMetadata
+
+      # Mutations
+      mutations {
+        name
+        operation
+        description
+        methodName
+        inputFields {
+          name
+          fieldName
+          fieldType
+          graphqlType
+          required
+          defaultValue
+          description
+          relatedModel
+        }
+        allowed
+        requiredPermissions
+        reason
+        mutationType
+        modelName
+        requiresAuthentication
+      }
     }
   }
 `;

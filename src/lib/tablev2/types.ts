@@ -166,11 +166,26 @@ export interface FilterConfig {
   supportsAnd: boolean;
   supportsOr: boolean;
   supportsNot: boolean;
+  supportsQuick?: boolean;
   dualModeEnabled: boolean;
   supportsFts: boolean;
   supportsAggregation: boolean;
   presets?: unknown[]; // Defined more specifically if needed
   computedFilters?: unknown[];
+}
+
+export interface MutationSchema {
+  name: string;
+  operation: string;
+  description?: string;
+  methodName?: string | null;
+  inputFields?: unknown[];
+  allowed: boolean;
+  requiredPermissions?: string[];
+  reason?: string | null;
+  mutationType?: string | null;
+  modelName?: string | null;
+  requiresAuthentication?: boolean | null;
 }
 
 export interface ModelPermissions {
@@ -208,7 +223,7 @@ export interface ModelSchema {
   relationFilters?: unknown[]; // Define recursively if needed
 
   // Mutations
-  mutations: unknown[]; // Define if needed for actions
+  mutations: MutationSchema[];
 
   // Permissions
   permissions: ModelPermissions;
@@ -259,6 +274,7 @@ export interface TableContextState {
   columnVisibility: ColumnVisibilityState;
   columnOrder: string[];
   rowSelection: Record<string, boolean>;
+  refreshKey: number;
 
   // Filters
   quickSearch: string;

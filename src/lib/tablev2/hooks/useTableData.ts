@@ -20,13 +20,14 @@ function buildDynamicQuery(_app: string, model: string, fields: FieldSchema[], f
     .join("\n      ");
 
   const whereType = filterConfig?.inputTypeName || `${model}WhereInput`;
+  const supportsQuick = !!filterConfig?.supportsQuick;
 
   return gql`
     query ${queryName}(
       $page: Int
       $perPage: Int
       $orderBy: [String]
-      $quick: String
+      ${supportsQuick ? "$quick: String" : ""}
       $where: ${whereType}
       $presets: [String]
       $distinctOn: [String]
@@ -35,7 +36,7 @@ function buildDynamicQuery(_app: string, model: string, fields: FieldSchema[], f
         page: $page
         perPage: $perPage
         orderBy: $orderBy
-        quick: $quick
+        ${supportsQuick ? "quick: $quick" : ""}
         where: $where
         presets: $presets
         distinctOn: $distinctOn
@@ -62,6 +63,7 @@ export function useTableData() {
     sorting,
     quickSearch,
     filterVariables,
+    refreshKey,
     _setData,
     _setTotal
   } = useTable();
@@ -85,16 +87,18 @@ export function useTableData() {
     // Here we let table sorting take precedence or just use table sorting.
     // Let's stick to table sorting for now as the source of truth for the grid.
 
+    const supportsQuick = !!metadata?.filterConfig?.supportsQuick;
+
     return {
       page: pagination.page,
       perPage: pagination.perPage,
       orderBy: orderBy.length > 0 ? orderBy : undefined,
-      quick: quickSearch || undefined,
+      ...(supportsQuick ? { quick: quickSearch || undefined } : {}),
       where,
       presets,
       distinctOn,
     };
-  }, [pagination.page, pagination.perPage, sorting, quickSearch, filterVariables]);
+  }, [pagination.page, pagination.perPage, sorting, quickSearch, filterVariables, metadata?.filterConfig?.supportsQuick]);
 
   // 3. Execute Query
   const { data, loading, error, refetch } = useQuery(query || gql`query Skip { __typename }`, {
@@ -124,6 +128,13 @@ export function useTableData() {
          // Usually better to keep stale data and show loading indicator
      }
   }, [data, loading, error, model, _setData, _setTotal]);
+
+  useEffect(() => {
+    if (!query) return;
+    if (!refetch) return;
+    if (refreshKey === 0) return;
+    refetch(variables);
+  }, [refreshKey, query, refetch, variables]);
 
   return { refetch };
 }

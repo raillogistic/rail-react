@@ -159,7 +159,9 @@ export function TableHeader() {
         })}
 
         {/* Actions Column Placeholder */}
-        <TableHead className="w-[50px] sticky right-0 bg-background z-10"></TableHead>
+        <TableHead className="w-[110px] sticky right-0 bg-background z-10 text-right">
+          Actions
+        </TableHead>
       </TableRow>
     </ShadcnTableHeader>
   );

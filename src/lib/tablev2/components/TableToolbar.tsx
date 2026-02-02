@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { Search, X, Filter, Columns } from "lucide-react";
+import { Search, X, Filter, Columns, Plus } from "lucide-react";
 import { Input } from "@/lib/components/ui/input";
 import { Button } from "@/lib/components/ui/button";
 import {
@@ -33,6 +33,7 @@ import {
   FilterQueryVariables,
 } from "../../form/filters/types";
 import type { ModelTableFilterPanelProps } from "../index";
+import { findMutation } from "../utils";
 
 export function TableToolbar({
   filterPanel,
@@ -72,6 +73,9 @@ export function TableToolbar({
   const [filterOpen, setFilterOpen] = useState(panelDefaults.defaultOpen);
 
   if (!metadata) return null;
+  const createMutation = findMutation(metadata.mutations, "create");
+  const canCreate = !!createMutation?.allowed;
+  const supportsQuick = !!metadata.filterConfig?.supportsQuick;
 
   // Handle column toggling
   const toggleColumn = (columnId: string, checked: boolean) => {
@@ -109,15 +113,17 @@ export function TableToolbar({
   return (
     <div className="flex items-center justify-between py-4 gap-2">
       <div className="flex flex-1 items-center space-x-2">
-        <div className="relative max-w-sm flex-1">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search..."
-            value={quickSearch}
-            onChange={(event) => setQuickSearch(event.target.value)}
-            className="pl-8"
-          />
-        </div>
+        {supportsQuick && (
+          <div className="relative max-w-sm flex-1">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search..."
+              value={quickSearch}
+              onChange={(event) => setQuickSearch(event.target.value)}
+              className="pl-8"
+            />
+          </div>
+        )}
 
         {panelDefaults.mode === "modal" ? (
           <Dialog open={filterOpen} onOpenChange={setFilterOpen}>
@@ -174,34 +180,42 @@ export function TableToolbar({
         )}
       </div>
 
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button variant="outline" className="ml-auto">
-            <Columns className="mr-2 h-4 w-4" />
-            Columns
+      <div className="flex items-center gap-2">
+        {canCreate && (
+          <Button>
+            <Plus className="mr-2 h-4 w-4" />
+            Add {metadata.verboseName}
           </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end">
-          <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          {metadata.fields
-            .filter((f) => !f.isPrimaryKey) // Usually don't hide ID via menu? or yes?
-            .map((column) => {
-              return (
-                <DropdownMenuCheckboxItem
-                  key={column.name}
-                  className="capitalize"
-                  checked={columnVisibility[column.name] ?? false}
-                  onCheckedChange={(value) =>
-                    toggleColumn(column.name, !!value)
-                  }
-                >
-                  {column.verboseName}
-                </DropdownMenuCheckboxItem>
-              );
-            })}
-        </DropdownMenuContent>
-      </DropdownMenu>
+        )}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" className="ml-auto">
+              <Columns className="mr-2 h-4 w-4" />
+              Columns
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {metadata.fields
+              .filter((f) => !f.isPrimaryKey) // Usually don't hide ID via menu? or yes?
+              .map((column) => {
+                return (
+                  <DropdownMenuCheckboxItem
+                    key={column.name}
+                    className="capitalize"
+                    checked={columnVisibility[column.name] ?? false}
+                    onCheckedChange={(value) =>
+                      toggleColumn(column.name, !!value)
+                    }
+                  >
+                    {column.verboseName}
+                  </DropdownMenuCheckboxItem>
+                );
+              })}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
     </div>
   );
 }

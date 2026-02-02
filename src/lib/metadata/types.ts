@@ -195,6 +195,7 @@ export interface FilterConfig {
   supportsOr: boolean;
   supportsNot: boolean;
   dualModeEnabled: boolean;
+  supportsQuick?: boolean;
   supportsFts: boolean;
   supportsAggregation: boolean;
   presets?: FilterPreset[];

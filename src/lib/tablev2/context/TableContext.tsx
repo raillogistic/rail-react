@@ -39,6 +39,7 @@ const initialState: TableContextState = {
   columnVisibility: {},
   columnOrder: [],
   rowSelection: {},
+  refreshKey: 0,
   quickSearch: "",
   advancedFilters: {
     root: { id: "root", type: "group", logic: "AND", conditions: [], negated: false },
@@ -103,7 +104,7 @@ function tableReducer(state: TableContextState, action: TableAction): TableConte
     case "SET_LOADING":
       return { ...state, loading: action.loading };
     case "REFRESH":
-      return { ...state }; // Logic handled in side effects
+      return { ...state, refreshKey: state.refreshKey + 1 };
     default:
       return state;
   }

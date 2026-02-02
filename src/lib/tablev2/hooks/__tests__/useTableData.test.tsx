@@ -49,6 +49,7 @@ vi.mock('../../context/MetadataContext', async () => {
       model: 'User',
       metadata: {
         fields: [{ name: 'username', fieldName: 'username', visibility: 'list' }],
+        filterConfig: { supportsQuick: true },
       },
       loading: false,
     }),

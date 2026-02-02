@@ -1,6 +1,6 @@
 import { format } from "date-fns";
 import { Check, X } from "lucide-react";
-import { FieldSchema } from "./types";
+import { FieldSchema, MutationSchema } from "./types";
 
 // Helper to format cell value
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -34,4 +34,18 @@ export function formatCellValue(value: any, field: FieldSchema) {
   }
 
   return String(value);
+}
+
+export function normalizeMutationType(mutation: MutationSchema): string {
+  return String(mutation.mutationType || mutation.operation || "").toLowerCase();
+}
+
+export function findMutation(
+  mutations: MutationSchema[] | undefined,
+  type: string,
+): MutationSchema | undefined {
+  const normalized = type.toLowerCase();
+  return mutations?.find(
+    (mutation) => normalizeMutationType(mutation) === normalized,
+  );
 }
