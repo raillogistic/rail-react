@@ -20,7 +20,7 @@ import { useTable } from "../context/TableContext";
 import { useMetadata } from "../context/MetadataContext";
 import { formatCellValue, findMutation, normalizeMutationType } from "../utils";
 import { GET_MODEL_SCHEMA } from "../queries";
-import { MutationSchema } from "../types";
+import type { BaseModelTableColumnDef, MutationSchema } from "../types";
 
 function RowActions({ rowId }: { rowId: string }) {
   const { app, model, metadata } = useMetadata();
@@ -148,9 +148,11 @@ function RowActions({ rowId }: { rowId: string }) {
 export function TableRows({
   loadingText,
   emptyState,
+  columns,
 }: {
   loadingText?: string;
   emptyState?: string;
+  columns?: BaseModelTableColumnDef[];
 }) {
   const { metadata } = useMetadata();
   const {
@@ -162,11 +164,54 @@ export function TableRows({
     setRowSelection,
   } = useTable();
 
-  if (!metadata) return null;
+  if (!metadata && !columns) return null;
 
-  const visibleColumns = columnOrder
-    .map((colId) => metadata.fields.find((f) => f.name === colId))
-    .filter((f) => f && columnVisibility[f.name]);
+  const fieldLookup = useMemo(() => {
+    if (!metadata) return new Map<string, typeof metadata.fields[number]>();
+    const lookup = new Map<string, typeof metadata.fields[number]>();
+    metadata.fields.forEach((field) => {
+      lookup.set(field.name, field);
+      if (field.fieldName) lookup.set(field.fieldName, field);
+    });
+    return lookup;
+  }, [metadata]);
+
+  const resolveValue = (row: Record<string, unknown>, accessor: string) =>
+    accessor.split(".").reduce<unknown>((acc, key) => {
+      if (!acc || typeof acc !== "object") return undefined;
+      return (acc as Record<string, unknown>)[key];
+    }, row);
+
+  const formatFallbackValue = (value: unknown) => {
+    if (value === null || value === undefined) return "—";
+    if (typeof value === "string" || typeof value === "number") {
+      return String(value);
+    }
+    if (typeof value === "boolean") return value ? "Oui" : "Non";
+    if (value instanceof Date) return value.toISOString();
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return String(value);
+    }
+  };
+
+  const visibleColumns = (() => {
+    if (columns && columns.length > 0) {
+      const byId = new Map(columns.map((column) => [column.id, column]));
+      const orderedIds =
+        columnOrder.length > 0 ? columnOrder : columns.map((c) => c.id);
+      return orderedIds
+        .map((id) => byId.get(id))
+        .filter((column): column is BaseModelTableColumnDef => !!column)
+        .filter((column) => columnVisibility[column.id] ?? true);
+    }
+
+    if (!metadata) return [];
+    return columnOrder
+      .map((colId) => metadata.fields.find((f) => f.name === colId))
+      .filter((f) => f && columnVisibility[f.name]);
+  })();
 
   const handleRowSelect = (rowId: string, checked: boolean) => {
     setRowSelection({
@@ -222,11 +267,34 @@ export function TableRows({
             </TableCell>
 
             {/* Data Cells */}
-            {visibleColumns.map((field) => (
-              <TableCell key={field!.name}>
-                {formatCellValue(row[field!.name], field!)}
-              </TableCell>
-            ))}
+            {visibleColumns.map((field) => {
+              if ("accessor" in field) {
+                const value = resolveValue(row, field.accessor);
+                const isSimpleAccessor = !field.accessor.includes(".");
+                const metaField = isSimpleAccessor
+                  ? fieldLookup.get(field.accessor)
+                  : undefined;
+
+                return (
+                  <TableCell key={field.id}>
+                    {field.render
+                      ? field.render(value, row, {
+                          accessor: field.accessor,
+                          columnId: field.id,
+                        })
+                      : metaField
+                        ? formatCellValue(value, metaField)
+                        : formatFallbackValue(value)}
+                  </TableCell>
+                );
+              }
+
+              return (
+                <TableCell key={field!.name}>
+                  {formatCellValue(row[field!.name], field!)}
+                </TableCell>
+              );
+            })}
 
             {/* Actions Cell */}
             <TableCell className="sticky right-0 bg-background">

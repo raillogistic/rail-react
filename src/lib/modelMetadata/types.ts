@@ -1,16 +1,20 @@
 import type { ModelTableType, FieldPermissionSnapshot } from "@/lib/tables/types";
-import type {
-  model_form_metadata,
-  field_permission_metadata,
-} from "@/lib/form/backend/types/meta";
+import type { FormMetadata } from "@/lib/form2/types";
 
 export type GraphQLModelMetadataResource =
   | { kind: "table"; metadata: ModelTableType }
-  | { kind: "form"; metadata: model_form_metadata };
+  | { kind: "form"; metadata: FormMetadata };
 
 export type RawFieldPermission =
   | FieldPermissionSnapshot
-  | field_permission_metadata
+  | {
+      can_read?: boolean;
+      can_write?: boolean;
+      visibility?: string;
+      access_level?: string;
+      mask_value?: string | null;
+      reason?: string | null;
+    }
   | null
   | undefined;
 

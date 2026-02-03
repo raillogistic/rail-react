@@ -16,7 +16,16 @@ import { TablePagination } from "./components/TablePagination";
 import { TableToolbar } from "./components/TableToolbar";
 import { TableMobileCard } from "./components/TableMobileCard";
 import { TableFrame, TableBody } from "./components/TableFrame";
-import { Loader2 } from "lucide-react";
+import { Loader2, Search } from "lucide-react";
+import { Input } from "@/lib/components/ui/input";
+import { useTableFilters } from "./hooks/useTableFilters";
+import type {
+  BaseModelTableColumnDef,
+  BaseModelTableField,
+  BaseModelTableRelationConfig,
+  FieldSchema,
+  RelationshipSchema,
+} from "./types";
 
 // ============================================================================
 // Inner Component (Inside Contexts)
@@ -79,15 +88,66 @@ export type ModelTableV2TableConfig = {
   };
 };
 
-function TableContent({
-  persistenceKey,
+function ModelTableV2Content({
   filterPanel,
   tableConfig,
 }: {
-  persistenceKey?: string;
   filterPanel?: ModelTableFilterPanelProps;
   tableConfig?: ModelTableV2TableConfig;
 }) {
+  const { metadata } = useMetadata();
+  const showTitle = tableConfig?.showTitle !== false;
+  const resolvedTitle =
+    tableConfig?.title || metadata?.verboseNamePlural || metadata?.model;
+
+  return (
+    <>
+      {showTitle && resolvedTitle ? (
+        <div className="px-2">
+          <h2 className="text-lg font-semibold">{resolvedTitle}</h2>
+        </div>
+      ) : null}
+      <TableToolbar filterPanel={filterPanel} tableConfig={tableConfig} />
+      <TableMobileCard emptyState={tableConfig?.emptyState} />
+    </>
+  );
+}
+
+// ============================================================================
+// Public Component
+// ============================================================================
+
+export interface ModelTableV2Props {
+  app: string;
+  model: string;
+  filterPanel?: ModelTableFilterPanelProps;
+  baseTable?: Omit<BaseModelTableProps, "app" | "model" | "children">;
+  // Future: options prop for overrides
+}
+
+// ============================================================================
+// Base Model Table (Minimal UI)
+// ============================================================================
+
+type BaseTableContentProps = {
+  persistenceKey?: string;
+  quickSearch?: boolean;
+  children?: React.ReactNode;
+  tableConfig?: ModelTableV2TableConfig;
+  hideTableOnMobile?: boolean;
+  fields?: BaseModelTableField[];
+  relations?: Record<string, BaseModelTableRelationConfig>;
+};
+
+function BaseTableContent({
+  persistenceKey,
+  quickSearch,
+  children,
+  tableConfig,
+  hideTableOnMobile,
+  fields,
+  relations,
+}: BaseTableContentProps) {
   const {
     metadata,
     loading: metadataLoading,
@@ -102,16 +162,78 @@ function TableContent({
     columnVisibility,
     error: dataError,
   } = useTable();
+  const { quickSearch: term, setQuickSearch } = useTableFilters();
+  const supportsQuick = !!metadata?.filterConfig?.supportsQuick;
 
-  // 1. Persistence
-  // Load/Save state from localStorage.
-  // We use app-model as default key, but allow overrides.
   const effectiveKey = persistenceKey || `${app}-${model}`;
   useTablePersistence(effectiveKey);
+  const queryConfig = React.useMemo(
+    () => ({ fields, relations }),
+    [fields, relations],
+  );
+  useTableData(queryConfig);
 
-  // 2. Data Fetching
-  // Trigger data fetching (depends on filters, sorting, etc.)
-  useTableData();
+  const columnDefs = React.useMemo(() => {
+    if (!metadata || !fields || fields.length === 0) return null;
+    const fieldLookup = new Map<string, FieldSchema>();
+    metadata.fields.forEach((field) => {
+      fieldLookup.set(field.name, field);
+      if (field.fieldName) fieldLookup.set(field.fieldName, field);
+    });
+    const relationLookup = new Map<string, RelationshipSchema>();
+    metadata.relationships.forEach((relation) => {
+      if (relation.name) relationLookup.set(relation.name, relation);
+      if (relation.fieldName) relationLookup.set(relation.fieldName, relation);
+    });
+
+    const buildColumnDef = (
+      accessor: string,
+      titleOverride?: string,
+      render?: BaseModelTableColumnDef["render"],
+    ): BaseModelTableColumnDef => {
+      const parts = accessor.split(".");
+      const root = parts[0];
+      const fieldMeta = fieldLookup.get(root);
+      const relationMeta = relationLookup.get(root);
+      const isRelation = !!fieldMeta?.isRelation || !!relationMeta;
+      const displayField = relations?.[root]?.display ?? "desc";
+      const displayAccessor =
+        parts.length === 1 && isRelation ? `${accessor}.${displayField}` : accessor;
+      const title =
+        titleOverride ||
+        fieldMeta?.verboseName ||
+        relationMeta?.verboseName ||
+        parts[parts.length - 1] ||
+        accessor;
+      const sortable = !displayAccessor.includes(".") && !!fieldMeta?.isIndexed;
+      const sortKey = !displayAccessor.includes(".")
+        ? fieldMeta?.name || displayAccessor
+        : undefined;
+
+      return {
+        id: accessor,
+        accessor: displayAccessor,
+        title,
+        render,
+        sortable,
+        sortKey,
+      };
+    };
+
+    return fields.map((entry) => {
+      if (typeof entry === "string") {
+        return buildColumnDef(entry);
+      }
+      return buildColumnDef(entry.accessor, entry.title, entry.render);
+    });
+  }, [metadata, fields, relations]);
+
+  const sortableColumnIds = React.useMemo(() => {
+    if (!columnDefs || columnDefs.length === 0) return columnOrder;
+    const ids = columnDefs.map((column) => column.id);
+    if (columnOrder.length === 0) return ids;
+    return columnOrder.filter((id) => ids.includes(id));
+  }, [columnDefs, columnOrder]);
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -122,11 +244,34 @@ function TableContent({
     }
   };
 
-  // Initial column order setup when metadata loads
-  // (Ideally this should be in an effect in TableContext or useTableMetadata,
-  // but we need access to setColumnOrder from TableContext)
   React.useEffect(() => {
     if (!metadata?.fields) return;
+
+    const targetColumns = columnDefs;
+    if (targetColumns && targetColumns.length > 0) {
+      const columnIds = targetColumns.map((column) => column.id);
+      const orderedIds = columnOrder.length ? columnOrder : [];
+      const missingIds = columnIds.filter((id) => !orderedIds.includes(id));
+
+      if (columnOrder.length === 0) {
+        setColumnOrder(columnIds);
+      } else if (missingIds.length > 0) {
+        setColumnOrder([...orderedIds, ...missingIds]);
+      }
+
+      const nextVisibility: Record<string, boolean> = { ...columnVisibility };
+      let visibilityChanged = false;
+      columnIds.forEach((id) => {
+        if (nextVisibility[id] === undefined) {
+          nextVisibility[id] = true;
+          visibilityChanged = true;
+        }
+      });
+      if (visibilityChanged) {
+        setColumnVisibility(nextVisibility);
+      }
+      return;
+    }
 
     const visibleFields = metadata.fields.filter(
       (f) => f.visibility !== "hidden",
@@ -156,6 +301,7 @@ function TableContent({
     }
   }, [
     metadata,
+    columnDefs,
     columnOrder,
     columnVisibility,
     setColumnOrder,
@@ -182,49 +328,44 @@ function TableContent({
     );
   }
 
-  const showTitle = tableConfig?.showTitle !== false;
-  const resolvedTitle =
-    tableConfig?.title || metadata?.verboseNamePlural || metadata?.model;
-
   return (
     <div className="space-y-4">
-      {showTitle && resolvedTitle ? (
-        <div className="px-2">
-          <h2 className="text-lg font-semibold">{resolvedTitle}</h2>
+      {children}
+      {children}
+      {quickSearch && supportsQuick ? (
+        <div className="relative max-w-sm">
+          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder={tableConfig?.searchPlaceholder ?? "Rechercher..."}
+            value={term}
+            onChange={(event) => setQuickSearch(event.target.value)}
+            className="pl-8"
+          />
         </div>
       ) : null}
-      <TableToolbar filterPanel={filterPanel} tableConfig={tableConfig} />
-
-      {/* Mobile View */}
-      <TableMobileCard
-        emptyState={tableConfig?.emptyState}
-      />
-
-      {/* Desktop View */}
-      <div className="hidden md:block">
-        <DndContext
-          collisionDetection={closestCenter}
-          onDragEnd={handleDragEnd}
-        >
+      <div className={hideTableOnMobile ? "hidden md:block" : undefined}>
+        <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <TableFrame>
             <SortableContext
-              items={columnOrder}
+              items={sortableColumnIds}
               strategy={horizontalListSortingStrategy}
             >
-              <TableHeader actionsLabel={tableConfig?.actionsLabel} />
+              <TableHeader
+                actionsLabel={tableConfig?.actionsLabel}
+                columns={columnDefs ?? undefined}
+              />
             </SortableContext>
             <TableBody>
               <TableRows
                 emptyState={tableConfig?.emptyState}
                 loadingText={tableConfig?.loadingText}
+                columns={columnDefs ?? undefined}
               />
             </TableBody>
           </TableFrame>
         </DndContext>
       </div>
-
       <TablePagination labels={tableConfig?.paginationLabels} />
-
       {dataError && (
         <div className="text-sm text-red-500 px-2">
           Erreur de chargement des donnees : {dataError.message}
@@ -234,40 +375,74 @@ function TableContent({
   );
 }
 
-// ============================================================================
-// Public Component
-// ============================================================================
-
-export interface ModelTableV2Props {
+export interface BaseModelTableProps {
   app: string;
   model: string;
   className?: string;
   persistenceKey?: string;
-  filterPanel?: ModelTableFilterPanelProps;
+  quickSearch?: boolean;
+  children?: React.ReactNode;
   tableConfig?: ModelTableV2TableConfig;
-  // Future: options prop for overrides
+  hideTableOnMobile?: boolean;
+  fields?: BaseModelTableField[];
+  relations?: Record<string, BaseModelTableRelationConfig>;
+}
+
+export function BaseModelTable({
+  app,
+  model,
+  className,
+  persistenceKey,
+  quickSearch,
+  children,
+  tableConfig,
+  hideTableOnMobile,
+  fields,
+  relations,
+}: BaseModelTableProps) {
+  return (
+    <div className={className}>
+      <MetadataProvider app={app} model={model}>
+        <TableProvider>
+          <BaseTableContent
+            persistenceKey={persistenceKey}
+            quickSearch={quickSearch}
+            tableConfig={tableConfig}
+            hideTableOnMobile={hideTableOnMobile}
+            fields={fields}
+            relations={relations}
+          >
+            {children}
+          </BaseTableContent>
+        </TableProvider>
+      </MetadataProvider>
+    </div>
+  );
 }
 
 export function ModelTableV2({
   app,
   model,
-  className,
-  persistenceKey,
   filterPanel,
-  tableConfig,
+  baseTable,
 }: ModelTableV2Props) {
   return (
-    <div className={className}>
-      <MetadataProvider app={app} model={model}>
-        <TableProvider>
-          <TableContent
-            persistenceKey={persistenceKey}
-            filterPanel={filterPanel}
-            tableConfig={tableConfig}
-          />
-        </TableProvider>
-      </MetadataProvider>
-    </div>
+    <BaseModelTable
+      app={app}
+      model={model}
+      className={baseTable?.className}
+      persistenceKey={baseTable?.persistenceKey}
+      quickSearch={baseTable?.quickSearch}
+      tableConfig={baseTable?.tableConfig}
+      hideTableOnMobile={baseTable?.hideTableOnMobile ?? true}
+      fields={baseTable?.fields}
+      relations={baseTable?.relations}
+    >
+      <ModelTableV2Content
+        filterPanel={filterPanel}
+        tableConfig={baseTable?.tableConfig}
+      />
+    </BaseModelTable>
   );
 }
 

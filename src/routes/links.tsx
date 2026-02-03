@@ -22,7 +22,8 @@ import { AppearanceSettingsPage } from "@/views/settings/AppearanceSettingsPage"
 import { LayoutSettingsPage } from "@/views/settings/LayoutSettingsPage";
 
 import { getAppDefaultRoute, getAppNavigationLinks } from "@/apps/routes";
-import { ModelTableV2 } from "@/lib/tablev2";
+import { BaseModelTable, ModelTableV2 } from "@/lib/tablev2";
+import ModelForm from "@/lib/form2";
 
 export const ROUTES = {
   LOGIN: "/login",
@@ -95,25 +96,15 @@ const CORE_NAVIGATION_LINKS: NavigationSection[] = [
             /> */}
 
             <div className="grid gap-2">
-              {/* <FilterPanel
+              <ModelForm appName="store" modelName="Product" />
+              {/* <BaseModelTable
                 app="store"
-                model="Product"
-                maxDepth={2}
-                onApply={(variables, state) => {
-                  console.log(variables, state);
-                }}
-              /> */}
-              {/* <FilterPanel
-                app="store"
-                model="Product"
-                layout="inline"
-                maxDepth={3}
-                onApply={(values) => console.log(values)}
-                showPresets
-                title="Filter Products"
+                model="Order"
+                fields={["id", "status", "customer.desc"]}
               /> */}
             </div>
-            <ModelTableV2
+
+            {/* <ModelTableV2
               app="store"
               model="Order"
               tableConfig={{
@@ -129,7 +120,7 @@ const CORE_NAVIGATION_LINKS: NavigationSection[] = [
                   { name: "sku", operator: "contains" },
                 ],
               }}
-            />
+            /> */}
           </>
           // <FilterPanel
           //   app="store"

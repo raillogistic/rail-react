@@ -12,6 +12,7 @@ import {
 import { useTable } from "../context/TableContext";
 import { useMetadata } from "../context/MetadataContext";
 import { Checkbox } from "@/lib/components/ui/checkbox";
+import type { BaseModelTableColumnDef } from "../types";
 
 interface DraggableHeadProps {
   id: string;
@@ -81,8 +82,10 @@ function DraggableHead({
 
 export function TableHeader({
   actionsLabel,
+  columns,
 }: {
   actionsLabel?: string;
+  columns?: BaseModelTableColumnDef[];
 }) {
   const { metadata } = useMetadata();
   const {
@@ -95,12 +98,25 @@ export function TableHeader({
     setRowSelection,
   } = useTable();
 
-  if (!metadata) return null;
+  if (!metadata && !columns) return null;
 
   // Determine visible columns in order
-  const visibleColumns = columnOrder
-    .map((colId) => metadata.fields.find((f) => f.name === colId))
-    .filter((f) => f && columnVisibility[f.name]);
+  const visibleColumns = (() => {
+    if (columns && columns.length > 0) {
+      const byId = new Map(columns.map((column) => [column.id, column]));
+      const orderedIds =
+        columnOrder.length > 0 ? columnOrder : columns.map((c) => c.id);
+      return orderedIds
+        .map((id) => byId.get(id))
+        .filter((column): column is BaseModelTableColumnDef => !!column)
+        .filter((column) => columnVisibility[column.id] ?? true);
+    }
+
+    if (!metadata) return [];
+    return columnOrder
+      .map((colId) => metadata.fields.find((f) => f.name === colId))
+      .filter((f) => f && columnVisibility[f.name]);
+  })();
 
   const handleSort = (field: string) => {
     // Toggle sort: none -> asc -> desc -> none (or just asc/desc toggle)
@@ -146,6 +162,26 @@ export function TableHeader({
 
         {visibleColumns.map((field) => {
           if (!field) return null;
+
+          if ("accessor" in field) {
+            const sortKey = field.sortKey ?? field.accessor;
+            const sortable = field.sortable ?? false;
+            const sort = sorting.find((s) => s.id === sortKey);
+            const direction = sort ? (sort.desc ? "desc" : "asc") : false;
+
+            return (
+              <DraggableHead
+                key={field.id}
+                id={field.id}
+                isSortable={sortable}
+                sortDirection={direction}
+                onSort={sortable ? () => handleSort(sortKey) : undefined}
+              >
+                {field.title}
+              </DraggableHead>
+            );
+          }
+
           const sort = sorting.find((s) => s.id === field.name);
           const direction = sort ? (sort.desc ? "desc" : "asc") : false;
 
@@ -153,7 +189,7 @@ export function TableHeader({
             <DraggableHead
               key={field.name}
               id={field.name}
-              isSortable={field.isIndexed} // Use isIndexed as proxy for sortability
+              isSortable={field.isIndexed}
               sortDirection={direction}
               onSort={() => handleSort(field.name)}
             >

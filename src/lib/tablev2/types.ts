@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { FilterFormState } from "../form/filters/types";
 
 // ============================================================================
@@ -299,3 +300,37 @@ export interface TableContextState {
   _setTotal: (total: number) => void;
   _setData: (data: Record<string, unknown>[], loading: boolean, error?: Error) => void;
 }
+
+// ============================================================================
+// BaseModelTable Configuration Types
+// ============================================================================
+
+export type BaseModelTableField =
+  | string
+  | {
+      accessor: string;
+      title?: string;
+      render?: (
+        value: unknown,
+        row: Record<string, unknown>,
+        context: { accessor: string; columnId: string },
+      ) => ReactNode;
+    };
+
+export type BaseModelTableRelationConfig = {
+  fields?: string[];
+  display?: string;
+};
+
+export type BaseModelTableColumnDef = {
+  id: string;
+  accessor: string;
+  title: string;
+  render?: (
+    value: unknown,
+    row: Record<string, unknown>,
+    context: { accessor: string; columnId: string },
+  ) => ReactNode;
+  sortable?: boolean;
+  sortKey?: string;
+};

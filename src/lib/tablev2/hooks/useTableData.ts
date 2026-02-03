@@ -2,7 +2,12 @@ import { useQuery, gql } from "@apollo/client";
 import { useMemo, useEffect } from "react";
 import { useTable } from "../context/TableContext";
 import { useMetadata } from "../context/MetadataContext";
-import { FieldSchema, RelationshipSchema } from "../types";
+import type {
+  BaseModelTableField,
+  BaseModelTableRelationConfig,
+  FieldSchema,
+  RelationshipSchema,
+} from "../types";
 
 // Helper to construct the dynamic query
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -12,6 +17,10 @@ function buildDynamicQuery(
   fields: FieldSchema[],
   relationships: RelationshipSchema[] | undefined,
   filterConfig?: any,
+  fieldConfig?: {
+    fields?: BaseModelTableField[];
+    relations?: Record<string, BaseModelTableRelationConfig>;
+  },
 ) {
   // Convert PascalCase model name to camelCase for the query name
   // e.g. User -> userPages
@@ -24,27 +33,122 @@ function buildDynamicQuery(
     if (relation.fieldName) relationLookup.set(relation.fieldName, relation);
   });
 
-  // Simple field selection for now.
-  // In a real app, this might handle nested relations if defined in metadata.
-  const fieldSelection = fields
-    .filter((f) => f.visibility !== "hidden") // Assume we filter visible fields
-    .map((field) => {
-      if (!field.isRelation) {
-        return field.name;
-      }
-      const relation =
-        relationLookup.get(field.name) ?? relationLookup.get(field.fieldName);
-      const selections = new Set<string>(["id", "desc"]);
-      if (
-        relation?.lookupField &&
-        relation.lookupField !== "id" &&
-        relation.lookupField !== "__str__"
-      ) {
-        selections.add(relation.lookupField);
-      }
-      return `${field.name} {\n        ${Array.from(selections).join("\n        ")}\n      }`;
-    })
-    .join("\n      ");
+  const relationConfig = fieldConfig?.relations ?? {};
+
+  const isRelationField = (name: string) =>
+    fields.some(
+      (field) =>
+        (field.name === name || field.fieldName === name) && field.isRelation,
+    ) ||
+    relationLookup.has(name);
+
+  const buildRelationSelection = (relationName: string) => {
+    const relation =
+      relationLookup.get(relationName) ?? relationLookup.get(relationName);
+    const config = relationConfig[relationName];
+    const selections = new Set<string>(config?.fields ?? []);
+    selections.add("id");
+    if (config?.display) {
+      selections.add(config.display);
+    } else {
+      selections.add("desc");
+    }
+    if (
+      relation?.lookupField &&
+      relation.lookupField !== "id" &&
+      relation.lookupField !== "__str__"
+    ) {
+      selections.add(relation.lookupField);
+    }
+    return `${relationName} {\n        ${Array.from(selections).join("\n        ")}\n      }`;
+  };
+
+  const buildDefaultFieldSelection = () =>
+    fields
+      .filter((f) => f.visibility !== "hidden")
+      .map((field) => {
+        if (!field.isRelation) {
+          return field.name;
+        }
+        return buildRelationSelection(field.name);
+      })
+      .join("\n      ");
+
+  const fieldSelection =
+    fieldConfig?.fields && fieldConfig.fields.length > 0
+      ? (() => {
+          type SelectionTree = Record<string, SelectionTree | true>;
+          const tree: SelectionTree = {};
+
+          const ensureObject = (node: SelectionTree, key: string) => {
+            if (!node[key] || node[key] === true) {
+              node[key] = {};
+            }
+            return node[key] as SelectionTree;
+          };
+
+          const addPathToTree = (node: SelectionTree, parts: string[]) => {
+            const [head, ...rest] = parts;
+            if (!head) return;
+            if (rest.length === 0) {
+              node[head] = true;
+              return;
+            }
+            const child = ensureObject(node, head);
+            addPathToTree(child, rest);
+          };
+
+          const addRelationDefaults = (relationName: string) => {
+            const relation = relationLookup.get(relationName);
+            const relationNode = ensureObject(tree, relationName);
+            const config = relationConfig[relationName];
+            const defaults = new Set<string>(config?.fields ?? []);
+            defaults.add("id");
+            defaults.add(config?.display ?? "desc");
+            if (
+              relation?.lookupField &&
+              relation.lookupField !== "id" &&
+              relation.lookupField !== "__str__"
+            ) {
+              defaults.add(relation.lookupField);
+            }
+            defaults.forEach((field) => addPathToTree(relationNode, [field]));
+          };
+
+          fieldConfig.fields.forEach((entry) => {
+            const accessor =
+              typeof entry === "string" ? entry : entry.accessor;
+            if (!accessor) return;
+            const parts = accessor.split(".");
+            const [root, ...rest] = parts;
+            if (!root) return;
+
+            if (rest.length === 0) {
+              if (isRelationField(root)) {
+                addRelationDefaults(root);
+              } else {
+                addPathToTree(tree, [root]);
+              }
+              return;
+            }
+
+            addRelationDefaults(root);
+            const relationNode = ensureObject(tree, root);
+            addPathToTree(relationNode, rest);
+          });
+
+          const serializeTree = (node: SelectionTree) =>
+            Object.entries(node)
+              .map(([key, value]) =>
+                value === true
+                  ? key
+                  : `${key} {\n        ${serializeTree(value)}\n      }`,
+              )
+              .join("\n      ");
+
+          return serializeTree(tree);
+        })()
+      : buildDefaultFieldSelection();
 
   const whereType = filterConfig?.inputTypeName || `${model}WhereInput`;
   const supportsQuick = !!filterConfig?.supportsQuick;
@@ -83,7 +187,10 @@ function buildDynamicQuery(
   `;
 }
 
-export function useTableData() {
+export function useTableData(config?: {
+  fields?: BaseModelTableField[];
+  relations?: Record<string, BaseModelTableRelationConfig>;
+}) {
   const { app, model, metadata } = useMetadata();
   const {
     pagination,
@@ -104,8 +211,9 @@ export function useTableData() {
       metadata.fields,
       metadata.relationships,
       metadata.filterConfig,
+      config,
     );
-  }, [app, model, metadata]);
+  }, [app, model, metadata, config]);
 
   // 2. Prepare Variables
   const variables = useMemo(() => {

@@ -1,6 +1,6 @@
 import * as React from "react";
-import { useFormMetadata } from "@/lib/form/backend/hooks";
-import type { model_form_metadata } from "@/lib/form/backend/types/meta";
+import { useFormMetadata } from "@/lib/form2/hooks/useFormMetadata";
+import type { FormMetadata } from "@/lib/form2/types";
 import { useModelTableMetadata } from "@/lib/tables/hooks";
 import type { ModelTableType, FieldPermissionSnapshot } from "@/lib/tables/types";
 import { useModelPermissions, type ModelPermissions } from "@/lib/auth/hooks/useModelPermissions";
@@ -13,7 +13,7 @@ export interface ModelAccessSnapshot {
   tableFieldPermissions: Record<string, NormalizedFieldPermission>;
   formFieldPermissions: Record<string, NormalizedFieldPermission>;
   tableMetadata: ModelTableType | null;
-  formMetadata: model_form_metadata | null;
+  formMetadata: FormMetadata | null;
   loading: boolean;
   error?: Error;
   refetch: () => Promise<void>;
@@ -26,29 +26,54 @@ export interface ModelAccessProviderProps {
   modelName: string;
   children: React.ReactNode;
   tableMeta?: ModelTableType | null;
-  formMeta?: model_form_metadata | null;
+  formMeta?: FormMetadata | null;
   loadTableMetadata?: boolean;
   loadFormMetadata?: boolean;
 }
 
-function buildFieldPermissionMap(
-  source: Array<{ name: string; permissions?: FieldPermissionSnapshot | null }> | undefined
-) {
+type PermissionSource = {
+  name: string;
+  permissions?: FieldPermissionSnapshot | null;
+  readable?: boolean;
+  writable?: boolean;
+  visibility?: string | null;
+};
+
+function resolveFieldPermission(source: PermissionSource) {
+  if (source.permissions) {
+    return normalizeFieldPermission(source.permissions);
+  }
+  if (
+    typeof source.readable === "boolean" ||
+    typeof source.writable === "boolean" ||
+    source.visibility
+  ) {
+    return normalizeFieldPermission({
+      can_read: Boolean(source.readable),
+      can_write: Boolean(source.writable),
+      visibility: source.visibility ?? "hidden",
+      access_level: "default",
+    });
+  }
+  return normalizeFieldPermission(null);
+}
+
+function buildFieldPermissionMap(source: PermissionSource[] | undefined) {
   if (!source) return {};
   return source.reduce<Record<string, NormalizedFieldPermission>>((acc, field) => {
-    acc[field.name] = normalizeFieldPermission(field.permissions);
+    acc[field.name] = resolveFieldPermission(field);
     return acc;
   }, {});
 }
 
-function buildFormFieldPermissionMap(metadata: model_form_metadata | null) {
+function buildFormFieldPermissionMap(metadata: FormMetadata | null) {
   if (!metadata) return {};
   const entries: Record<string, NormalizedFieldPermission> = {};
   metadata.fields?.forEach((field) => {
-    entries[field.name] = normalizeFieldPermission(field.permissions);
+    entries[field.name] = resolveFieldPermission(field);
   });
   metadata.relationships?.forEach((rel) => {
-    entries[rel.name] = normalizeFieldPermission(rel.permissions);
+    entries[rel.name] = resolveFieldPermission(rel);
   });
   return entries;
 }
@@ -57,7 +82,7 @@ export function useModelAccess(options: {
   appName: string;
   modelName: string;
   tableMetaOverride?: ModelTableType | null;
-  formMetaOverride?: model_form_metadata | null;
+  formMetaOverride?: FormMetadata | null;
   loadTableMetadata?: boolean;
   loadFormMetadata?: boolean;
 }): ModelAccessSnapshot {
@@ -102,13 +127,38 @@ export function useModelAccess(options: {
     if (!metadataPermissions) {
       return permissionSnapshot;
     }
+    const canCreate =
+      (metadataPermissions as any).can_create ??
+      (metadataPermissions as any).canCreate ??
+      permissionSnapshot.canCreate;
+    const canRead =
+      (metadataPermissions as any).can_read ??
+      (metadataPermissions as any).canRetrieve ??
+      (metadataPermissions as any).canRead ??
+      permissionSnapshot.canRead;
+    const canUpdate =
+      (metadataPermissions as any).can_update ??
+      (metadataPermissions as any).canUpdate ??
+      permissionSnapshot.canUpdate;
+    const canDelete =
+      (metadataPermissions as any).can_delete ??
+      (metadataPermissions as any).canDelete ??
+      permissionSnapshot.canDelete;
+    const canList =
+      (metadataPermissions as any).can_list ??
+      (metadataPermissions as any).canList ??
+      permissionSnapshot.canList;
+    const canHistory =
+      (metadataPermissions as any).can_history ??
+      (metadataPermissions as any).canHistory ??
+      permissionSnapshot.canHistory;
     return {
-      canCreate: metadataPermissions.can_create ?? permissionSnapshot.canCreate,
-      canRead: metadataPermissions.can_read ?? permissionSnapshot.canRead,
-      canUpdate: metadataPermissions.can_update ?? permissionSnapshot.canUpdate,
-      canDelete: metadataPermissions.can_delete ?? permissionSnapshot.canDelete,
-      canList: metadataPermissions.can_list ?? permissionSnapshot.canList,
-      canHistory: metadataPermissions.can_history ?? permissionSnapshot.canHistory,
+      canCreate,
+      canRead,
+      canUpdate,
+      canDelete,
+      canList,
+      canHistory,
       loading: permissionSnapshot.loading,
     };
   }, [permissionSnapshot, resolvedFormMetadata?.permissions, resolvedTableMetadata?.permissions]);
