@@ -2,21 +2,48 @@ import { useQuery, gql } from "@apollo/client";
 import { useMemo, useEffect } from "react";
 import { useTable } from "../context/TableContext";
 import { useMetadata } from "../context/MetadataContext";
-import { FieldSchema } from "../types";
+import { FieldSchema, RelationshipSchema } from "../types";
 
 // Helper to construct the dynamic query
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-function buildDynamicQuery(_app: string, model: string, fields: FieldSchema[], filterConfig?: any) {
+function buildDynamicQuery(
+  _app: string,
+  model: string,
+  fields: FieldSchema[],
+  relationships: RelationshipSchema[] | undefined,
+  filterConfig?: any,
+) {
   // Convert PascalCase model name to camelCase for the query name
   // e.g. User -> userPages
   const lowerCaseModel = model.charAt(0).toLowerCase() + model.slice(1);
   const queryName = `${lowerCaseModel}Pages`;
 
+  const relationLookup = new Map<string, RelationshipSchema>();
+  relationships?.forEach((relation) => {
+    if (relation.name) relationLookup.set(relation.name, relation);
+    if (relation.fieldName) relationLookup.set(relation.fieldName, relation);
+  });
+
   // Simple field selection for now.
   // In a real app, this might handle nested relations if defined in metadata.
   const fieldSelection = fields
     .filter((f) => f.visibility !== "hidden") // Assume we filter visible fields
-    .map((f) => f.name)
+    .map((field) => {
+      if (!field.isRelation) {
+        return field.name;
+      }
+      const relation =
+        relationLookup.get(field.name) ?? relationLookup.get(field.fieldName);
+      const selections = new Set<string>(["id", "desc"]);
+      if (
+        relation?.lookupField &&
+        relation.lookupField !== "id" &&
+        relation.lookupField !== "__str__"
+      ) {
+        selections.add(relation.lookupField);
+      }
+      return `${field.name} {\n        ${Array.from(selections).join("\n        ")}\n      }`;
+    })
     .join("\n      ");
 
   const whereType = filterConfig?.inputTypeName || `${model}WhereInput`;
@@ -71,7 +98,13 @@ export function useTableData() {
   // 1. Construct Query
   const query = useMemo(() => {
     if (!metadata) return null;
-    return buildDynamicQuery(app, model, metadata.fields, metadata.filterConfig);
+    return buildDynamicQuery(
+      app,
+      model,
+      metadata.fields,
+      metadata.relationships,
+      metadata.filterConfig,
+    );
   }, [app, model, metadata]);
 
   // 2. Prepare Variables

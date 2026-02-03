@@ -88,6 +88,9 @@ export interface FieldSchema {
   isRichText: boolean;
   isFsmField: boolean;
 
+  // Relation hints (for relationship fields synthesized in the client)
+  relationLookupField?: string;
+
   // FSM
   fsmTransitions?: FSMTransition[];
 

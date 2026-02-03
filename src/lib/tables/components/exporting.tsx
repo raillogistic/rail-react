@@ -181,7 +181,7 @@ const ModelTableExportDrawer = forwardRef<
       open: openDialog,
       close: closeDialog,
     }),
-    [openDialog, closeDialog]
+    [openDialog, closeDialog],
   );
 
   useEffect(() => {
@@ -246,7 +246,7 @@ const ModelTableExportDrawer = forwardRef<
           return field.accessor;
         }
         return { accessor: field.accessor, title: field.title };
-      }
+      },
     );
 
     const variables = buildVariables();
@@ -280,7 +280,7 @@ const ModelTableExportDrawer = forwardRef<
 
   const exportPayloadPreview = useMemo(
     () => buildExportPayload(),
-    [buildExportPayload]
+    [buildExportPayload],
   );
   const filtersPreview = useMemo(() => {
     if (!filtersPayload) return null;
@@ -291,7 +291,7 @@ const ModelTableExportDrawer = forwardRef<
     setSelectedFields((prev) =>
       prev.includes(fieldName)
         ? prev.filter((name) => name !== fieldName)
-        : [...prev, fieldName]
+        : [...prev, fieldName],
     );
   };
 
@@ -327,7 +327,7 @@ const ModelTableExportDrawer = forwardRef<
 
     const exportEndpoint =
       (import.meta.env.VITE_API_EXPORTING as string | undefined) ??
-      "/api/export/";
+      "/api/v1/export/";
 
     try {
       const response = await fetch(exportEndpoint, {
@@ -379,7 +379,7 @@ const ModelTableExportDrawer = forwardRef<
           <DialogTitle>Exporter les {datasetLabel}</DialogTitle>
           <DialogDescription>
             Sélectionnez les colonnes à inclure et vérifiez les filtres transmis
-            à <code>/api/export/</code>.
+            à <code>/api/v1/export/</code>.
           </DialogDescription>
         </DialogHeader>
         <div className="max-h-[70vh] overflow-y-auto space-y-6">

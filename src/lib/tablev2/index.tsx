@@ -35,12 +35,58 @@ export interface FilterPanelOptions {
 export type ModelTableFilterPanelProps = FilterPanelOptions &
   Partial<import("../form/filters/FilterPanel").FilterPanelProps>;
 
+export type ModelTableV2TableConfig = {
+  showTitle?: boolean;
+  title?: string;
+  actionsLabel?: string;
+  emptyState?: string;
+  loadingText?: string;
+  searchPlaceholder?: string;
+  resetLabel?: string;
+  addLabel?: string;
+  columnsLabel?: string;
+  toggleColumnsLabel?: string;
+  paginationLabels?: {
+    rowsPerPage?: string;
+    pageStatus?: (page: number, totalPages: number) => string;
+    selectionStatus?: (selected: number, total: number) => string;
+    firstPageAria?: string;
+    previousPageAria?: string;
+    nextPageAria?: string;
+    lastPageAria?: string;
+  };
+  exportLabels?: {
+    buttonAria?: string;
+    title?: string;
+    description?: string;
+    fieldsTitle?: string;
+    selectedCount?: (count: number) => string;
+    selectAll?: string;
+    clear?: string;
+    filenameLabel?: string;
+    filenamePlaceholder?: string;
+    formatLabel?: string;
+    quickSearchLabel?: string;
+    quickSearchActive?: string;
+    quickSearchNone?: string;
+    advancedFiltersLabel?: string;
+    advancedFiltersNone?: string;
+    orderingLabel?: string;
+    orderingNone?: string;
+    footerSelectedCount?: (count: number) => string;
+    cancel?: string;
+    download?: string;
+  };
+};
+
 function TableContent({
   persistenceKey,
   filterPanel,
+  tableConfig,
 }: {
   persistenceKey?: string;
   filterPanel?: ModelTableFilterPanelProps;
+  tableConfig?: ModelTableV2TableConfig;
 }) {
   const {
     metadata,
@@ -53,6 +99,7 @@ function TableContent({
     columnOrder,
     setColumnOrder,
     setColumnVisibility,
+    columnVisibility,
     error: dataError,
   } = useTable();
 
@@ -79,29 +126,48 @@ function TableContent({
   // (Ideally this should be in an effect in TableContext or useTableMetadata,
   // but we need access to setColumnOrder from TableContext)
   React.useEffect(() => {
-    if (metadata?.fields && columnOrder.length === 0) {
-      // Default order: all visible fields
-      const visibleFields = metadata.fields.filter(
-        (f) => f.visibility !== "hidden",
-      );
-      const defaultOrder = visibleFields.map((f) => f.name);
-      setColumnOrder(defaultOrder);
+    if (!metadata?.fields) return;
 
-      // Initialize visibility
-      const initialVisibility: Record<string, boolean> = {};
-      visibleFields.forEach((f) => {
-        initialVisibility[f.name] = true;
-      });
-      setColumnVisibility(initialVisibility);
+    const visibleFields = metadata.fields.filter(
+      (f) => f.visibility !== "hidden",
+    );
+    const visibleNames = visibleFields.map((field) => field.name);
+    const orderedNames = columnOrder.length ? columnOrder : [];
+    const missingNames = visibleNames.filter(
+      (name) => !orderedNames.includes(name),
+    );
+
+    if (columnOrder.length === 0) {
+      setColumnOrder(visibleNames);
+    } else if (missingNames.length > 0) {
+      setColumnOrder([...orderedNames, ...missingNames]);
     }
-  }, [metadata, columnOrder.length, setColumnOrder, setColumnVisibility]);
+
+    const nextVisibility: Record<string, boolean> = { ...columnVisibility };
+    let visibilityChanged = false;
+    visibleFields.forEach((field) => {
+      if (nextVisibility[field.name] === undefined) {
+        nextVisibility[field.name] = true;
+        visibilityChanged = true;
+      }
+    });
+    if (visibilityChanged) {
+      setColumnVisibility(nextVisibility);
+    }
+  }, [
+    metadata,
+    columnOrder,
+    columnVisibility,
+    setColumnOrder,
+    setColumnVisibility,
+  ]);
 
   if (metadataLoading) {
     return (
       <div
         className="flex h-64 items-center justify-center border rounded-md"
         role="status"
-        aria-label="Loading table metadata"
+        aria-label="Chargement des metadonnees du tableau"
       >
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
@@ -111,17 +177,28 @@ function TableContent({
   if (metadataError) {
     return (
       <div className="flex h-64 items-center justify-center border rounded-md text-red-500">
-        Error loading metadata: {metadataError.message}
+        Erreur de chargement des metadonnees : {metadataError.message}
       </div>
     );
   }
 
+  const showTitle = tableConfig?.showTitle !== false;
+  const resolvedTitle =
+    tableConfig?.title || metadata?.verboseNamePlural || metadata?.model;
+
   return (
     <div className="space-y-4">
-      <TableToolbar filterPanel={filterPanel} />
+      {showTitle && resolvedTitle ? (
+        <div className="px-2">
+          <h2 className="text-lg font-semibold">{resolvedTitle}</h2>
+        </div>
+      ) : null}
+      <TableToolbar filterPanel={filterPanel} tableConfig={tableConfig} />
 
       {/* Mobile View */}
-      <TableMobileCard />
+      <TableMobileCard
+        emptyState={tableConfig?.emptyState}
+      />
 
       {/* Desktop View */}
       <div className="hidden md:block">
@@ -134,20 +211,23 @@ function TableContent({
               items={columnOrder}
               strategy={horizontalListSortingStrategy}
             >
-              <TableHeader />
+              <TableHeader actionsLabel={tableConfig?.actionsLabel} />
             </SortableContext>
             <TableBody>
-              <TableRows />
+              <TableRows
+                emptyState={tableConfig?.emptyState}
+                loadingText={tableConfig?.loadingText}
+              />
             </TableBody>
           </TableFrame>
         </DndContext>
       </div>
 
-      <TablePagination />
+      <TablePagination labels={tableConfig?.paginationLabels} />
 
       {dataError && (
         <div className="text-sm text-red-500 px-2">
-          Error loading data: {dataError.message}
+          Erreur de chargement des donnees : {dataError.message}
         </div>
       )}
     </div>
@@ -164,6 +244,7 @@ export interface ModelTableV2Props {
   className?: string;
   persistenceKey?: string;
   filterPanel?: ModelTableFilterPanelProps;
+  tableConfig?: ModelTableV2TableConfig;
   // Future: options prop for overrides
 }
 
@@ -173,6 +254,7 @@ export function ModelTableV2({
   className,
   persistenceKey,
   filterPanel,
+  tableConfig,
 }: ModelTableV2Props) {
   return (
     <div className={className}>
@@ -181,6 +263,7 @@ export function ModelTableV2({
           <TableContent
             persistenceKey={persistenceKey}
             filterPanel={filterPanel}
+            tableConfig={tableConfig}
           />
         </TableProvider>
       </MetadataProvider>
@@ -212,6 +295,7 @@ export * from "./components/TablePagination";
 export * from "./components/TableRow";
 export * from "./components/TableToolbar";
 export * from "./components/TableMobileCard";
+export * from "./components/ExportDialog";
 
 // Utils
 export * from "./utils";

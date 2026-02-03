@@ -4,7 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/lib
 import { Skeleton } from "@/lib/components/ui/skeleton";
 import { formatCellValue } from "../utils";
 
-export function TableMobileCard() {
+export function TableMobileCard({
+  emptyState,
+}: {
+  emptyState?: string;
+}) {
   const { metadata } = useMetadata();
   const { data, loading, columnOrder, columnVisibility } = useTable();
 
@@ -36,7 +40,7 @@ export function TableMobileCard() {
   if (data.length === 0) {
       return (
         <div className="p-4 text-center text-muted-foreground md:hidden border rounded-md">
-            No results found.
+            {emptyState ?? "Aucun resultat."}
         </div>
       );
   }
@@ -60,7 +64,9 @@ export function TableMobileCard() {
             <Card key={rowId}>
                 <CardHeader className="pb-2">
                     <CardTitle className="text-base truncate">
-                        {titleField ? formatCellValue(row[titleField.name], titleField) : "Item"}
+                        {titleField
+                          ? formatCellValue(row[titleField.name], titleField)
+                          : metadata?.verboseName || "Element"}
                     </CardTitle>
                     <CardDescription className="text-xs font-mono">
                         ID: {rowId}

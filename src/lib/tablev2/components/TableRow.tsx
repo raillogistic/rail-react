@@ -1,10 +1,7 @@
 import { useMemo, useState } from "react";
 import { Pencil, Trash2 } from "lucide-react";
 import { gql, useMutation, useQuery } from "@apollo/client";
-import {
-  TableRow as ShadcnTableRow,
-  TableCell,
-} from "./TableFrame";
+import { TableRow as ShadcnTableRow, TableCell } from "./TableFrame";
 import { Checkbox } from "@/lib/components/ui/checkbox";
 import { Button } from "@/lib/components/ui/button";
 import {
@@ -30,18 +27,22 @@ function RowActions({ rowId }: { rowId: string }) {
   const { refresh } = useTable();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const baseMutations = metadata?.mutations ?? [];
+  const baseDeleteMutation = findMutation(baseMutations, "delete");
+  const baseUpdateMutation = findMutation(baseMutations, "update");
+  const baseCanDelete = !!baseDeleteMutation?.allowed;
+  const baseCanEdit = !!baseUpdateMutation?.allowed;
   const hasRowActions = baseMutations.some((mutation) => {
     const type = normalizeMutationType(mutation);
     return type === "update" || type === "delete";
   });
+  const shouldCheckInstancePermissions =
+    !!rowId && (baseCanDelete || baseCanEdit);
 
-  const { data: instanceData, loading: instanceLoading } = useQuery(
-    GET_MODEL_SCHEMA,
-    {
-      variables: { app, model, objectId: rowId },
-      skip: !hasRowActions || !rowId,
-    },
-  );
+  const { data: instanceData } = useQuery(GET_MODEL_SCHEMA, {
+    variables: { app, model, objectId: rowId },
+    skip: !hasRowActions || !shouldCheckInstancePermissions,
+    fetchPolicy: "network-only",
+  });
 
   const instanceMutations =
     (instanceData?.modelSchema?.mutations as MutationSchema[] | undefined) ??
@@ -50,8 +51,9 @@ function RowActions({ rowId }: { rowId: string }) {
   const deleteMutation = findMutation(instanceMutations, "delete");
   const updateMutation = findMutation(instanceMutations, "update");
 
-  const canDelete = !!deleteMutation?.allowed;
-  const canEdit = !!updateMutation?.allowed;
+  const canDelete = deleteMutation?.allowed ?? baseCanDelete;
+  const canEdit = updateMutation?.allowed ?? baseCanEdit;
+  console.log(rowId, updateMutation);
 
   const deleteMutationName = deleteMutation?.name || `delete${model}`;
   const deleteDocument = useMemo(
@@ -74,20 +76,19 @@ function RowActions({ rowId }: { rowId: string }) {
       const result = await executeDelete({ variables: { id: rowId } });
       const ok = !!result.data?.response?.ok;
       if (ok) {
-        toast.success(`${metadata?.verboseName ?? "Record"} deleted.`);
+        toast.success(`${metadata?.verboseName ?? "Enregistrement"} supprime.`);
         refresh();
       } else {
         const message =
           result.data?.response?.errors
             ?.map((error: { message?: string }) => error?.message)
             .filter(Boolean)
-            .join(", ") || "Delete failed.";
+            .join(", ") || "Echec de suppression.";
         toast.error(message);
       }
     } catch (error) {
       console.error("Failed to delete record", error);
-      const message =
-        error instanceof Error ? error.message : "Delete failed.";
+      const message = error instanceof Error ? error.message : "Echec de suppression.";
       toast.error(message);
     } finally {
       setConfirmOpen(false);
@@ -98,19 +99,6 @@ function RowActions({ rowId }: { rowId: string }) {
     return null;
   }
 
-  if (instanceLoading) {
-    return (
-      <div className="flex justify-end gap-2">
-        <Button size="sm" variant="ghost" disabled>
-          <Pencil className="h-4 w-4" />
-        </Button>
-        <Button size="sm" variant="ghost" disabled>
-          <Trash2 className="h-4 w-4" />
-        </Button>
-      </div>
-    );
-  }
-
   if (!canEdit && !canDelete) {
     return <span className="text-xs text-muted-foreground">—</span>;
   }
@@ -118,7 +106,7 @@ function RowActions({ rowId }: { rowId: string }) {
   return (
     <div className="flex justify-end gap-2">
       {canEdit && (
-        <Button size="sm" variant="ghost" aria-label="Edit">
+        <Button size="sm" variant="ghost" aria-label="Modifier">
           <Pencil className="h-4 w-4" />
         </Button>
       )}
@@ -128,7 +116,7 @@ function RowActions({ rowId }: { rowId: string }) {
             <Button
               size="sm"
               variant="ghost"
-              aria-label="Delete"
+              aria-label="Supprimer"
               disabled={deleting}
             >
               <Trash2 className="h-4 w-4 text-red-500" />
@@ -136,15 +124,18 @@ function RowActions({ rowId }: { rowId: string }) {
           </AlertDialogTrigger>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>Delete {metadata?.verboseName}?</AlertDialogTitle>
+              <AlertDialogTitle>
+                Supprimer {metadata?.verboseName} ?
+              </AlertDialogTitle>
               <AlertDialogDescription>
-                This action cannot be undone. The record will be permanently removed.
+                Cette action est irreversible. L'enregistrement sera supprime
+                definitivement.
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogCancel>Annuler</AlertDialogCancel>
               <AlertDialogAction onClick={handleDelete} disabled={deleting}>
-                Delete
+                Supprimer
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>
@@ -154,7 +145,13 @@ function RowActions({ rowId }: { rowId: string }) {
   );
 }
 
-export function TableRows() {
+export function TableRows({
+  loadingText,
+  emptyState,
+}: {
+  loadingText?: string;
+  emptyState?: string;
+}) {
   const { metadata } = useMetadata();
   const {
     data,
@@ -185,7 +182,7 @@ export function TableRows() {
           colSpan={visibleColumns.length + 2}
           className="h-24 text-center"
         >
-          Loading...
+          {loadingText ?? "Chargement..."}
         </TableCell>
       </ShadcnTableRow>
     );
@@ -198,7 +195,7 @@ export function TableRows() {
           colSpan={visibleColumns.length + 2}
           className="h-24 text-center"
         >
-          No results.
+          {emptyState ?? "Aucun resultat."}
         </TableCell>
       </ShadcnTableRow>
     );
@@ -209,34 +206,35 @@ export function TableRows() {
       {data.map((row) => {
         const rowId = String(row.id);
         return (
-        <ShadcnTableRow
-          key={rowId}
-          data-state={rowSelection[rowId] && "selected"}
-        >
-          {/* Selection Cell */}
-          <TableCell>
-            <Checkbox
-              checked={!!rowSelection[rowId]}
-              onCheckedChange={(checked) =>
-                handleRowSelect(rowId, checked as boolean)
-              }
-              aria-label="Select row"
-            />
-          </TableCell>
-
-          {/* Data Cells */}
-          {visibleColumns.map((field) => (
-            <TableCell key={field!.name}>
-              {formatCellValue(row[field!.name], field!)}
+          <ShadcnTableRow
+            key={rowId}
+            data-state={rowSelection[rowId] && "selected"}
+          >
+            {/* Selection Cell */}
+            <TableCell>
+              <Checkbox
+                checked={!!rowSelection[rowId]}
+                onCheckedChange={(checked) =>
+                  handleRowSelect(rowId, checked as boolean)
+                }
+                aria-label="Selectionner la ligne"
+              />
             </TableCell>
-          ))}
 
-          {/* Actions Cell */}
-          <TableCell className="sticky right-0 bg-background">
-            <RowActions rowId={rowId} />
-          </TableCell>
-        </ShadcnTableRow>
-      )})}
+            {/* Data Cells */}
+            {visibleColumns.map((field) => (
+              <TableCell key={field!.name}>
+                {formatCellValue(row[field!.name], field!)}
+              </TableCell>
+            ))}
+
+            {/* Actions Cell */}
+            <TableCell className="sticky right-0 bg-background">
+              <RowActions rowId={rowId} />
+            </TableCell>
+          </ShadcnTableRow>
+        );
+      })}
     </>
   );
 }

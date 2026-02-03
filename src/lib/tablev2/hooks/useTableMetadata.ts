@@ -18,6 +18,7 @@ export function useTableMetadata(app: string, model: string): UseTableMetadataRe
   const { data, loading, error } = useQuery(GET_MODEL_SCHEMA, {
     variables: { app, model },
     skip: !app || !model,
+    fetchPolicy: "network-only",
   });
 
   const persistedMetadata = useMemo(
@@ -35,8 +36,19 @@ export function useTableMetadata(app: string, model: string): UseTableMetadataRe
     persistTableMetadata(app, model, { modelSchema: data.modelSchema });
   }, [data, app, model]);
 
+  const metadata = useMemo(() => {
+    const base = (data?.modelSchema ?? persistedMetadata) as ModelSchema | null;
+    if (!base) return undefined;
+    const serverMutations = data?.modelSchema?.mutations;
+    return {
+      ...base,
+      // Mutations can be permission-sensitive; only trust the server response.
+      mutations: serverMutations ?? [],
+    };
+  }, [data, persistedMetadata]);
+
   return {
-    metadata: (data?.modelSchema ?? persistedMetadata) as ModelSchema | undefined,
+    metadata,
     loading,
     error,
   };

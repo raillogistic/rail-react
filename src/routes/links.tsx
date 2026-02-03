@@ -115,7 +115,13 @@ const CORE_NAVIGATION_LINKS: NavigationSection[] = [
             </div>
             <ModelTableV2
               app="store"
-              model="OrderItem"
+              model="Order"
+              tableConfig={{
+                actionsLabel: "Actionsss",
+                addLabel: "",
+                columnsLabel: "dsdsd",
+                emptyState: "emptttttt",
+              }}
               filterPanel={{
                 defaultFilters: [
                   "category",

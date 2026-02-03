@@ -1,6 +1,7 @@
-import { createContext, useContext, ReactNode } from "react";
+import { createContext, useContext, ReactNode, useMemo } from "react";
 import { ModelSchema } from "../types";
 import { useTableMetadata } from "../hooks/useTableMetadata";
+import { mergeModelSchemaWithRelationships } from "../utils";
 
 interface MetadataContextValue {
   metadata?: ModelSchema;
@@ -26,10 +27,15 @@ export function MetadataProvider({
   children,
 }: MetadataProviderProps) {
   const { metadata, loading, error } = useTableMetadata(app, model);
-  console.log(metadata);
+  const mergedMetadata = useMemo(
+    () => mergeModelSchemaWithRelationships(metadata),
+    [metadata],
+  );
 
   return (
-    <MetadataContext.Provider value={{ metadata, loading, error, app, model }}>
+    <MetadataContext.Provider
+      value={{ metadata: mergedMetadata, loading, error, app, model }}
+    >
       {children}
     </MetadataContext.Provider>
   );

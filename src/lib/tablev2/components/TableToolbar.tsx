@@ -32,13 +32,16 @@ import {
   FilterFormState,
   FilterQueryVariables,
 } from "../../form/filters/types";
-import type { ModelTableFilterPanelProps } from "../index";
+import type { ModelTableFilterPanelProps, ModelTableV2TableConfig } from "../index";
 import { findMutation } from "../utils";
+import { ModelTableExportDialog } from "./ExportDialog";
 
 export function TableToolbar({
   filterPanel,
+  tableConfig,
 }: {
   filterPanel?: ModelTableFilterPanelProps;
+  tableConfig?: ModelTableV2TableConfig;
 }) {
   const { app, model, metadata } = useMetadata();
   const { columnVisibility, setColumnVisibility } = useTable();
@@ -55,7 +58,7 @@ export function TableToolbar({
     () => ({
       mode: filterPanel?.mode ?? "drawer",
       defaultOpen: filterPanel?.defaultOpen ?? false,
-      title: filterPanel?.title ?? "Filters",
+      title: filterPanel?.title ?? "Filtres",
       widthClassName: filterPanel?.widthClassName ?? "sm:w-1/2 sm:max-w-none",
       side: filterPanel?.side ?? "right",
     }),
@@ -117,7 +120,7 @@ export function TableToolbar({
           <div className="relative max-w-sm flex-1">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search..."
+              placeholder={tableConfig?.searchPlaceholder ?? "Rechercher..."}
               value={quickSearch}
               onChange={(event) => setQuickSearch(event.target.value)}
               className="pl-8"
@@ -174,7 +177,7 @@ export function TableToolbar({
             onClick={() => clearAllFilters()}
             className="h-8 px-2 lg:px-3"
           >
-            Reset
+            {tableConfig?.resetLabel ?? "Reinitialiser"}
             <X className="ml-2 h-4 w-4" />
           </Button>
         )}
@@ -184,18 +187,22 @@ export function TableToolbar({
         {canCreate && (
           <Button>
             <Plus className="mr-2 h-4 w-4" />
-            Add {metadata.verboseName}
+            {tableConfig?.addLabel ?? `Ajouter ${metadata.verboseName}`}
           </Button>
         )}
+        <ModelTableExportDialog labels={tableConfig?.exportLabels} />
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="ml-auto">
               <Columns className="mr-2 h-4 w-4" />
-              Columns
+              {tableConfig?.columnsLabel ?? "Colonnes"}
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
-            <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
+            <DropdownMenuLabel>
+              {tableConfig?.toggleColumnsLabel ??
+                "Afficher/masquer les colonnes"}
+            </DropdownMenuLabel>
             <DropdownMenuSeparator />
             {metadata.fields
               .filter((f) => !f.isPrimaryKey) // Usually don't hide ID via menu? or yes?

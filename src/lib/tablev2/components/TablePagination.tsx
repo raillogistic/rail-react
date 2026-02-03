@@ -14,7 +14,19 @@ import {
 } from "@/lib/components/ui/select";
 import { useTable } from "../context/TableContext";
 
-export function TablePagination() {
+export function TablePagination({
+  labels,
+}: {
+  labels?: {
+    rowsPerPage?: string;
+    pageStatus?: (page: number, totalPages: number) => string;
+    selectionStatus?: (selected: number, total: number) => string;
+    firstPageAria?: string;
+    previousPageAria?: string;
+    nextPageAria?: string;
+    lastPageAria?: string;
+  };
+}) {
   const {
     pagination: { page, perPage, total, numPages },
     setPage,
@@ -22,14 +34,25 @@ export function TablePagination() {
     rowSelection,
   } = useTable();
 
+  const selectedCount = Object.keys(rowSelection).length;
+  const totalPages = numPages || 1;
+
+  const selectionText =
+    labels?.selectionStatus?.(selectedCount, total) ??
+    `${selectedCount} sur ${total} ligne(s) selectionnee(s).`;
+  const pageText =
+    labels?.pageStatus?.(page, totalPages) ?? `Page ${page} sur ${totalPages}`;
+
   return (
     <div className="flex items-center justify-between px-2 py-4">
       <div className="flex-1 text-sm text-muted-foreground">
-        {Object.keys(rowSelection).length} of {total} row(s) selected.
+        {selectionText}
       </div>
       <div className="flex items-center space-x-6 lg:space-x-8">
         <div className="flex items-center space-x-2">
-          <p className="text-sm font-medium">Rows per page</p>
+          <p className="text-sm font-medium">
+            {labels?.rowsPerPage ?? "Lignes par page"}
+          </p>
           <Select
             value={`${perPage}`}
             onValueChange={(value) => {
@@ -49,7 +72,7 @@ export function TablePagination() {
           </Select>
         </div>
         <div className="flex w-[100px] items-center justify-center text-sm font-medium">
-          Page {page} of {numPages || 1}
+          {pageText}
         </div>
         <div className="flex items-center space-x-2">
           <Button
@@ -58,7 +81,9 @@ export function TablePagination() {
             onClick={() => setPage(1)}
             disabled={page <= 1}
           >
-            <span className="sr-only">Go to first page</span>
+            <span className="sr-only">
+              {labels?.firstPageAria ?? "Aller a la premiere page"}
+            </span>
             <ChevronsLeft className="h-4 w-4" />
           </Button>
           <Button
@@ -67,7 +92,9 @@ export function TablePagination() {
             onClick={() => setPage(page - 1)}
             disabled={page <= 1}
           >
-            <span className="sr-only">Go to previous page</span>
+            <span className="sr-only">
+              {labels?.previousPageAria ?? "Aller a la page precedente"}
+            </span>
             <ChevronLeft className="h-4 w-4" />
           </Button>
           <Button
@@ -76,7 +103,9 @@ export function TablePagination() {
             onClick={() => setPage(page + 1)}
             disabled={page >= (numPages || 1)}
           >
-            <span className="sr-only">Go to next page</span>
+            <span className="sr-only">
+              {labels?.nextPageAria ?? "Aller a la page suivante"}
+            </span>
             <ChevronRight className="h-4 w-4" />
           </Button>
           <Button
@@ -85,7 +114,9 @@ export function TablePagination() {
             onClick={() => setPage(numPages || 1)}
             disabled={page >= (numPages || 1)}
           >
-            <span className="sr-only">Go to last page</span>
+            <span className="sr-only">
+              {labels?.lastPageAria ?? "Aller a la derniere page"}
+            </span>
             <ChevronsRight className="h-4 w-4" />
           </Button>
         </div>

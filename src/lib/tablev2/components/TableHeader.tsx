@@ -50,7 +50,7 @@ function DraggableHead({
           {...attributes}
           {...listeners}
           className="cursor-move opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-muted rounded"
-          aria-label="Reorder column"
+          aria-label="Reordonner la colonne"
         >
           <GripVertical className="h-4 w-4 text-muted-foreground" />
         </button>
@@ -79,7 +79,11 @@ function DraggableHead({
   );
 }
 
-export function TableHeader() {
+export function TableHeader({
+  actionsLabel,
+}: {
+  actionsLabel?: string;
+}) {
   const { metadata } = useMetadata();
   const {
     sorting,
@@ -136,7 +140,7 @@ export function TableHeader() {
           <Checkbox
             checked={allSelected || (someSelected ? "indeterminate" : false)}
             onCheckedChange={toggleSelectAll}
-            aria-label="Select all"
+            aria-label="Tout selectionner"
           />
         </TableHead>
 
@@ -160,7 +164,7 @@ export function TableHeader() {
 
         {/* Actions Column Placeholder */}
         <TableHead className="w-[110px] sticky right-0 bg-background z-10 text-right">
-          Actions
+          {actionsLabel ?? "Actions"}
         </TableHead>
       </TableRow>
     </ShadcnTableHeader>
