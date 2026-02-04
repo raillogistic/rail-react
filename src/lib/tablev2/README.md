@@ -67,7 +67,11 @@ Notes:
 - `mode: "persisted"` uses saved column order when available; `config` always uses `order`.
 - `locked` columns cannot be dragged.
 
-Row sorting via header clicks is intentionally disabled in `BaseModelTable`. Use filter `orderBy` if you need server-side ordering.
+Row sorting via header clicks is enabled in `BaseModelTable` and updates the GraphQL `orderBy` variable (multi-sort by default). Set `disableSorting` to turn it off.
+
+```tsx
+<BaseModelTable app="sales" model="Invoice" disableSorting />
+```
 
 ## Architecture
 

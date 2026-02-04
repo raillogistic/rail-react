@@ -140,6 +140,7 @@ type BaseTableContentProps = {
   relations?: Record<string, BaseModelTableRelationConfig>;
   columnOrdering?: BaseModelTableColumnOrderingConfig;
   skipCount?: boolean;
+  disableSorting?: boolean;
 };
 
 function BaseTableContent({
@@ -152,6 +153,7 @@ function BaseTableContent({
   relations,
   columnOrdering,
   skipCount,
+  disableSorting,
 }: BaseTableContentProps) {
   const {
     metadata,
@@ -400,6 +402,7 @@ function BaseTableContent({
                     actionsLabel={tableConfig?.actionsLabel}
                     columns={columnDefs ?? undefined}
                     columnOrdering={columnOrdering}
+                    disableSorting={disableSorting}
                   />
                 </SortableContext>
                 <TableBody>
@@ -437,6 +440,7 @@ export interface BaseModelTableProps {
   relations?: Record<string, BaseModelTableRelationConfig>;
   columnOrdering?: BaseModelTableColumnOrderingConfig;
   skipCount?: boolean;
+  disableSorting?: boolean;
 }
 
 export function BaseModelTable({
@@ -452,6 +456,7 @@ export function BaseModelTable({
   relations,
   columnOrdering,
   skipCount,
+  disableSorting,
 }: BaseModelTableProps) {
   return (
     <div className={className ? `h-full w-full ${className}` : "h-full w-full"}>
@@ -466,6 +471,7 @@ export function BaseModelTable({
             relations={relations}
             columnOrdering={columnOrdering}
             skipCount={skipCount}
+            disableSorting={disableSorting}
           >
             {children}
           </BaseTableContent>
@@ -494,6 +500,7 @@ export function ModelTableV2({
       relations={baseTable?.relations}
       columnOrdering={baseTable?.columnOrdering}
       skipCount={baseTable?.skipCount}
+      disableSorting={baseTable?.disableSorting}
     >
       <ModelTableV2Content
         filterPanel={filterPanel}
