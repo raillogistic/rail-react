@@ -1,5 +1,5 @@
 import * as React from "react";
-import type { FormSchema } from "../../form/inputs/types";
+import type { FormSchema } from "../inputs/types";
 import type {
   FormMetadata,
   InlineCreateOverrides,

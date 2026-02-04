@@ -1,4 +1,4 @@
-import type { FormFieldConfig, FormSchema } from "../../form/inputs/types";
+import type { FormFieldConfig, FormSchema } from "../inputs/types";
 
 const ALWAYS_INCLUDED_FORM_FIELDS = new Set(["id"]);
 

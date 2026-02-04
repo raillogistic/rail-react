@@ -180,6 +180,7 @@ const MOCK_DATA_QUERY = {
         $where: UserWhereInput
         $presets: [String]
         $distinctOn: [String]
+        $skipCount: Boolean
       ) {
         userPages(
           page: $page
@@ -189,6 +190,7 @@ const MOCK_DATA_QUERY = {
           where: $where
           presets: $presets
           distinctOn: $distinctOn
+          skipCount: $skipCount
         ) {
           pageInfo {
             totalCount
@@ -200,6 +202,12 @@ const MOCK_DATA_QUERY = {
             id
             id
             username
+            rowPermissions {
+              canUpdate
+              canDelete
+              updateReason
+              deleteReason
+            }
           }
         }
       }
@@ -212,6 +220,7 @@ const MOCK_DATA_QUERY = {
       where: undefined,
       presets: undefined,
       distinctOn: undefined,
+      skipCount: true,
     },
   },
   result: {
@@ -226,8 +235,30 @@ const MOCK_DATA_QUERY = {
           hasPreviousPage: false,
         },
         items: [
-          { __typename: 'User', id: '1', username: 'alice' },
-          { __typename: 'User', id: '2', username: 'bob' },
+          {
+            __typename: 'User',
+            id: '1',
+            username: 'alice',
+            rowPermissions: {
+              __typename: 'RowMutationPermissionsType',
+              canUpdate: true,
+              canDelete: true,
+              updateReason: null,
+              deleteReason: null,
+            },
+          },
+          {
+            __typename: 'User',
+            id: '2',
+            username: 'bob',
+            rowPermissions: {
+              __typename: 'RowMutationPermissionsType',
+              canUpdate: true,
+              canDelete: true,
+              updateReason: null,
+              deleteReason: null,
+            },
+          },
         ],
       },
     },

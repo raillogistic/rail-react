@@ -1,5 +1,6 @@
 import type {
   ChoiceFieldConfig,
+  ChoiceOption,
   FormFieldConfig,
   FormInputType,
   FormSchema,
@@ -7,7 +8,7 @@ import type {
   NumberFieldConfig,
   QueryChoiceFieldConfig,
   TextFieldConfig,
-} from "../../form/inputs/types";
+} from "../inputs/types";
 import type { FormMetadata, FieldSchema, RelationshipSchema } from "../types";
 import { parseCustomMetadata } from "./metadata";
 
@@ -54,7 +55,11 @@ export function collectFieldConfigs(
       if (field.readable === false) {
         return false;
       }
-      if (mode === "create" && field.editable === false) {
+      const nonEditable =
+        field.editable === false ||
+        field.writable === false ||
+        field.isPrimaryKey;
+      if (nonEditable) {
         return false;
       }
       return true;
@@ -70,7 +75,8 @@ export function collectFieldConfigs(
       if (rel.readable === false) {
         return false;
       }
-      if (mode === "create" && rel.editable === false) {
+      const nonEditable = rel.editable === false || rel.writable === false;
+      if (nonEditable) {
         return false;
       }
       return true;
@@ -102,7 +108,13 @@ function mapFieldSchema(
   const order = typeof custom?.order === "number" ? custom.order : undefined;
 
   const visibility = String(field.visibility ?? "").toLowerCase();
-  const hidden = visibility === "hidden" || visibility === "redacted";
+  const hiddenFromVisibility =
+    visibility === "hidden" || visibility === "redacted";
+  const hiddenOverride = custom?.hidden ?? custom?.hide;
+  const isJsonField = Boolean(field.isJson) || field.fieldType === "JSONField";
+  const hidden =
+    hiddenFromVisibility ||
+    (hiddenOverride !== undefined ? Boolean(hiddenOverride) : isJsonField);
   const readOnlyOverride =
     custom?.readOnly ?? custom?.readonly;
   const resolvedReadOnly =
@@ -127,15 +139,13 @@ function mapFieldSchema(
     hidden: hidden || field.readable === false,
   };
 
-  if (field.choices?.length) {
+  const choiceOptions = normalizeChoiceOptions(field.choices);
+  if (choiceOptions.length) {
     const multiple = Boolean(custom?.multiple || custom?.multi || custom?.multiselect);
     const config: ChoiceFieldConfig = {
       ...base,
       type: inputType === "radio" ? "radio" : "select",
-      options: field.choices.map((choice) => ({
-        value: choice.value,
-        label: choice.label,
-      })),
+      options: choiceOptions,
       multiple,
     };
     if (config.multiple && config.defaultValue === undefined) {
@@ -196,6 +206,36 @@ function mapFieldSchema(
     ...base,
     type: inputType,
   };
+}
+
+function normalizeChoiceOptions(
+  choices: FieldSchema["choices"],
+): ChoiceOption[] {
+  if (!Array.isArray(choices) || choices.length === 0) {
+    return [];
+  }
+  return choices
+    .map((choice) => {
+      if (!choice) return null;
+      const rawValue = (choice as { value?: unknown }).value;
+      if (rawValue === undefined || rawValue === null) {
+        return null;
+      }
+      const value =
+        typeof rawValue === "string" || typeof rawValue === "number"
+          ? rawValue
+          : String(rawValue);
+      const label =
+        typeof choice.label === "string" && choice.label.length > 0
+          ? choice.label
+          : String(value);
+      return {
+        value,
+        label,
+        disabled: choice.disabled,
+      } satisfies ChoiceOption;
+    })
+    .filter((option): option is ChoiceOption => Boolean(option));
 }
 
 function mapRelationshipSchema(

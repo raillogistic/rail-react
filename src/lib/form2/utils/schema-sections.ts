@@ -4,7 +4,7 @@ import type {
   FormFieldConfig,
   FormSchema,
   FormSectionConfig,
-} from "../../form/inputs/types";
+} from "../inputs/types";
 import type {
   FormMetadata,
   ModelFormOrderingOptions,

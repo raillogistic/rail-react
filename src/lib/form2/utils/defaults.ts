@@ -1,4 +1,4 @@
-import type { FormFieldConfig, FormSchema, FormInputType } from "../../form/inputs/types";
+import type { FormFieldConfig, FormSchema, FormInputType } from "../inputs/types";
 
 export function buildDefaultsFromSchema(schema: FormSchema): Record<string, any> {
   const target: Record<string, any> = {};

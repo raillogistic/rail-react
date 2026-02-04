@@ -5,9 +5,9 @@ import { Skeleton } from "@/lib/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useModelFormContext } from "../context/ModelFormContext";
 import type { ModelFormLayoutVariant } from "../types";
-import DynamicForm from "../../form/inputs/form";
-import AccordionSectionsForm from "../../form/complex/components/AccordionSectionsForm";
-import MasterDetailPreviewForm from "../../form/complex/components/MasterDetailPreviewForm";
+import DynamicForm from "../inputs/form";
+import AccordionSectionsForm from "../complex/components/AccordionSectionsForm";
+import MasterDetailPreviewForm from "../complex/components/MasterDetailPreviewForm";
 
 const DEFAULT_LOADING = (
   <Card className="space-y-3 p-4">

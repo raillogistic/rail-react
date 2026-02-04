@@ -28,7 +28,15 @@ export function TablePagination({
   };
 }) {
   const {
-    pagination: { page, perPage, total, numPages },
+    pagination: {
+      page,
+      perPage,
+      total,
+      numPages,
+      totalKnown,
+      hasNextPage,
+      hasPreviousPage,
+    },
     setPage,
     setPerPage,
     rowSelection,
@@ -37,11 +45,13 @@ export function TablePagination({
   const selectedCount = Object.keys(rowSelection).length;
   const totalPages = numPages || 1;
 
-  const selectionText =
-    labels?.selectionStatus?.(selectedCount, total) ??
-    `${selectedCount} sur ${total} ligne(s) selectionnee(s).`;
-  const pageText =
-    labels?.pageStatus?.(page, totalPages) ?? `Page ${page} sur ${totalPages}`;
+  const selectionText = totalKnown
+    ? labels?.selectionStatus?.(selectedCount, total) ??
+      `${selectedCount} sur ${total} ligne(s) selectionnee(s).`
+    : `${selectedCount} ligne(s) selectionnee(s).`;
+  const pageText = totalKnown
+    ? labels?.pageStatus?.(page, totalPages) ?? `Page ${page} sur ${totalPages}`
+    : `Page ${page}`;
 
   return (
     <div className="flex items-center justify-between px-2 py-4">
@@ -90,7 +100,7 @@ export function TablePagination({
             variant="outline"
             className="h-8 w-8 p-0"
             onClick={() => setPage(page - 1)}
-            disabled={page <= 1}
+            disabled={totalKnown ? page <= 1 : !hasPreviousPage}
           >
             <span className="sr-only">
               {labels?.previousPageAria ?? "Aller a la page precedente"}
@@ -101,7 +111,7 @@ export function TablePagination({
             variant="outline"
             className="h-8 w-8 p-0"
             onClick={() => setPage(page + 1)}
-            disabled={page >= (numPages || 1)}
+            disabled={totalKnown ? page >= (numPages || 1) : !hasNextPage}
           >
             <span className="sr-only">
               {labels?.nextPageAria ?? "Aller a la page suivante"}
@@ -112,7 +122,7 @@ export function TablePagination({
             variant="outline"
             className="hidden h-8 w-8 p-0 lg:flex"
             onClick={() => setPage(numPages || 1)}
-            disabled={page >= (numPages || 1)}
+            disabled={!totalKnown || page >= (numPages || 1)}
           >
             <span className="sr-only">
               {labels?.lastPageAria ?? "Aller a la derniere page"}

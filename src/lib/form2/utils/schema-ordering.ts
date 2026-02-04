@@ -1,6 +1,6 @@
-import type { FormSchema, FormFieldConfig } from "../../form/inputs/types";
+import type { FormSchema, FormFieldConfig } from "../inputs/types";
 import type { FormMetadata, InlineCreateOverrides, ModelFormOrderingOptions } from "../types";
-import type { QueryChoiceFieldConfig } from "../../form/inputs/types";
+import type { QueryChoiceFieldConfig } from "../inputs/types";
 
 export type CustomFieldOrderFactoryConfig = Omit<
   ModelFormOrderingOptions,

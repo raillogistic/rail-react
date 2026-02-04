@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Pencil, Trash2 } from "lucide-react";
-import { gql, useMutation, useQuery } from "@apollo/client";
+import { gql, useMutation } from "@apollo/client";
 import { TableRow as ShadcnTableRow, TableCell } from "./TableFrame";
 import { Checkbox } from "@/lib/components/ui/checkbox";
 import { Button } from "@/lib/components/ui/button";
@@ -19,11 +19,16 @@ import { toast } from "sonner";
 import { useTable } from "../context/TableContext";
 import { useMetadata } from "../context/MetadataContext";
 import { formatCellValue, findMutation, normalizeMutationType } from "../utils";
-import { GET_MODEL_SCHEMA } from "../queries";
-import type { BaseModelTableColumnDef, MutationSchema } from "../types";
+import type { BaseModelTableColumnDef, RowMutationPermissions } from "../types";
 
-function RowActions({ rowId }: { rowId: string }) {
-  const { app, model, metadata } = useMetadata();
+function RowActions({
+  rowId,
+  permissions,
+}: {
+  rowId: string;
+  permissions?: RowMutationPermissions | null;
+}) {
+  const { model, metadata } = useMetadata();
   const { refresh } = useTable();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const baseMutations = metadata?.mutations ?? [];
@@ -35,27 +40,10 @@ function RowActions({ rowId }: { rowId: string }) {
     const type = normalizeMutationType(mutation);
     return type === "update" || type === "delete";
   });
-  const shouldCheckInstancePermissions =
-    !!rowId && (baseCanDelete || baseCanEdit);
+  const canDelete = baseCanDelete && (permissions?.canDelete ?? true);
+  const canEdit = baseCanEdit && (permissions?.canUpdate ?? true);
 
-  const { data: instanceData } = useQuery(GET_MODEL_SCHEMA, {
-    variables: { app, model, objectId: rowId },
-    skip: !hasRowActions || !shouldCheckInstancePermissions,
-    fetchPolicy: "network-only",
-  });
-
-  const instanceMutations =
-    (instanceData?.modelSchema?.mutations as MutationSchema[] | undefined) ??
-    baseMutations;
-
-  const deleteMutation = findMutation(instanceMutations, "delete");
-  const updateMutation = findMutation(instanceMutations, "update");
-
-  const canDelete = deleteMutation?.allowed ?? baseCanDelete;
-  const canEdit = updateMutation?.allowed ?? baseCanEdit;
-  console.log(rowId, updateMutation);
-
-  const deleteMutationName = deleteMutation?.name || `delete${model}`;
+  const deleteMutationName = baseDeleteMutation?.name || `delete${model}`;
   const deleteDocument = useMemo(
     () => gql`
         mutation ${deleteMutationName}($id: ID!) {
@@ -250,6 +238,8 @@ export function TableRows({
     <>
       {data.map((row) => {
         const rowId = String(row.id);
+        const rowPermissions = (row as Record<string, unknown>)
+          .rowPermissions as RowMutationPermissions | undefined;
         return (
           <ShadcnTableRow
             key={rowId}
@@ -298,7 +288,7 @@ export function TableRows({
 
             {/* Actions Cell */}
             <TableCell className="sticky right-0 bg-background">
-              <RowActions rowId={rowId} />
+              <RowActions rowId={rowId} permissions={rowPermissions} />
             </TableCell>
           </ShadcnTableRow>
         );

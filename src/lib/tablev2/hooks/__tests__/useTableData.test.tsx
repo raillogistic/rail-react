@@ -14,6 +14,7 @@ const MOCK_DATA_QUERY = gql`
     $where: UserWhereInput
     $presets: [String]
     $distinctOn: [String]
+    $skipCount: Boolean
   ) {
     userPages(
       page: $page
@@ -23,6 +24,7 @@ const MOCK_DATA_QUERY = gql`
       where: $where
       presets: $presets
       distinctOn: $distinctOn
+      skipCount: $skipCount
     ) {
       pageInfo {
         totalCount
@@ -33,6 +35,12 @@ const MOCK_DATA_QUERY = gql`
       items {
         id
         username
+        rowPermissions {
+          canUpdate
+          canDelete
+          updateReason
+          deleteReason
+        }
       }
     }
   }
@@ -69,7 +77,8 @@ describe('useTableData', () => {
             quick: undefined,
             where: undefined,
             presets: undefined,
-            distinctOn: undefined
+            distinctOn: undefined,
+            skipCount: false,
           },
         },
         result: {
@@ -83,7 +92,20 @@ describe('useTableData', () => {
                 hasNextPage: false,
                 hasPreviousPage: false,
               },
-              items: [{ __typename: 'User', id: '1', username: 'alice' }],
+              items: [
+                {
+                  __typename: 'User',
+                  id: '1',
+                  username: 'alice',
+                  rowPermissions: {
+                    __typename: 'RowMutationPermissionsType',
+                    canUpdate: true,
+                    canDelete: true,
+                    updateReason: null,
+                    deleteReason: null,
+                  },
+                },
+              ],
             },
           },
         },

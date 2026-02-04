@@ -1,9 +1,6 @@
 import * as React from "react";
 import type { UseFormReturn } from "@tanstack/react-form";
-import type {
-  FormSchema,
-  FormBuilderProps,
-} from "../../form/inputs/types";
+import type { FormSchema, FormBuilderProps } from "../inputs/types";
 import type {
   FormMetadata,
   ModelFormLayoutVariant,

@@ -49,11 +49,11 @@ export const MainApp: React.FC = () => {
           onDismiss={hideOfflineAlert}
           message={lastError || undefined}
         />
-        <div className="flex min-h-screen flex-col w-full bg-background">
+        <div className="flex min-h-screen w-full min-w-0 flex-col bg-background">
           <AppNavbar />
-          <main className="flex-1">
-            <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-8">
-              <div className="px-4 lg:px-6">
+          <main className="flex-1 min-w-0 overflow-x-hidden">
+            <div className="flex min-w-0 flex-col gap-4 py-4 md:gap-6 md:py-8">
+              <div className="min-w-0 px-4 lg:px-6">
                 <AppRoutes />
               </div>
             </div>
@@ -79,13 +79,13 @@ export const MainApp: React.FC = () => {
           onDismiss={hideOfflineAlert}
           message={lastError || undefined}
         />
-        <div className="flex min-h-screen flex-col w-full bg-background">
+        <div className="flex min-h-screen w-full min-w-0 flex-col bg-background">
           <AppNavbar />
-          <div className="flex flex-1 overflow-hidden">
+          <div className="flex min-w-0 flex-1 overflow-hidden">
             <AppSidebar />
-            <main className="flex-1 overflow-y-auto">
-              <div className="flex flex-col gap-4 py-4 md:gap-6 md:py-8">
-                <div className="px-4 lg:px-6">
+            <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden">
+              <div className="flex min-w-0 flex-col gap-4 py-4 md:gap-6 md:py-8">
+                <div className="min-w-0 px-4 lg:px-6">
                   <AppRoutes />
                 </div>
               </div>

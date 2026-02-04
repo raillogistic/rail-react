@@ -75,7 +75,7 @@ export interface NavigationSection {
 const CORE_NAVIGATION_LINKS: NavigationSection[] = [
   {
     id: "home",
-    label: "Accueil",
+    label: "Table",
     items: [
       {
         id: "dashboard",
@@ -85,55 +85,48 @@ const CORE_NAVIGATION_LINKS: NavigationSection[] = [
         requiresAuth: true,
         description: "Vue synthèse des indicateurs",
         component: (
-          // <ModelTable appName="store" modelName="Product" />
           <>
-            {/* <FilterPanel
-              app="store"
-              model="Product"
-              onApply={(variables) => console.log(variables)}
-              persistKey="invoice_filters"
-              showPresets
-            /> */}
-
-            <div className="grid gap-2">
-              <ModelForm appName="store" modelName="Product" />
-              {/* <BaseModelTable
+            <div className="grid grid-cols-1 gap-2 min-w-0">
+              <BaseModelTable
                 app="store"
-                model="Order"
-                fields={["id", "status", "customer.desc"]}
-              /> */}
+                model="Product"
+                // ordering={{
+                //   mode: "multi",
+                //   requireModifier: true, // Shift+click to add levels
+                //   maxLevels: 3,
+                //   cycle: "asc-desc-none",
+                //   default: [
+                //     { id: "createdAt", desc: true },
+                //     { id: "customer", desc: false },
+                //   ],
+                //   map: {
+                //     customer: "customerName", // column id -> API order key
+                //   },
+                //   allow: ["createdAt", "customerName", "total"],
+                // }}
+              />
             </div>
-
-            {/* <ModelTableV2
-              app="store"
-              model="Order"
-              tableConfig={{
-                actionsLabel: "Actionsss",
-                addLabel: "",
-                columnsLabel: "dsdsd",
-                emptyState: "emptttttt",
-              }}
-              filterPanel={{
-                defaultFilters: [
-                  "category",
-                  "name",
-                  { name: "sku", operator: "contains" },
-                ],
-              }}
-            /> */}
           </>
-          // <FilterPanel
-          //   app="store"
-          //   model="Product"
-          //   layout="panel"
-          //   maxDepth={1}
-          //   onApply={(values) => console.log(values)}
-          //   showPresets
-          //   title="Filter Products"
-          // />
         ),
       },
+      {
+        id: "form-test",
+        path: "/form",
+        component: (
+          <>
+            <ModelForm appName="store" modelName="Product" />{" "}
+          </>
+        ),
+        description: "dd",
+        requiresAuth: true,
+        title: "Test Form",
+      },
     ],
+  },
+  {
+    id: "form",
+    label: "Form",
+    items: [],
   },
   {
     id: "settings",

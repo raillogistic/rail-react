@@ -13,7 +13,13 @@ import { FilterFormState } from "../../form/filters/types";
 type TableAction =
   | { type: "SET_PAGE"; page: number }
   | { type: "SET_PER_PAGE"; perPage: number }
-  | { type: "SET_TOTAL"; total: number }
+  | {
+      type: "SET_PAGE_INFO";
+      totalCount?: number | null;
+      pageCount?: number | null;
+      hasNextPage?: boolean | null;
+      hasPreviousPage?: boolean | null;
+    }
   | { type: "SET_SORTING"; sorting: SortingState[] }
   | { type: "SET_COLUMN_VISIBILITY"; visibility: ColumnVisibilityState }
   | { type: "SET_COLUMN_ORDER"; order: string[] }
@@ -34,6 +40,9 @@ const initialState: TableContextState = {
     perPage: 20,
     total: 0,
     numPages: 0,
+    totalKnown: true,
+    hasNextPage: false,
+    hasPreviousPage: false,
   },
   sorting: [],
   columnVisibility: {},
@@ -58,25 +67,56 @@ const initialState: TableContextState = {
   setQuickSearch: () => {},
   setAdvancedFilters: () => {},
   refresh: () => {},
-  _setTotal: () => {},
+  _setPageInfo: () => {},
   _setData: () => {},
 };
 
 function tableReducer(state: TableContextState, action: TableAction): TableContextState {
   switch (action.type) {
     case "SET_PAGE":
-      return { ...state, pagination: { ...state.pagination, page: action.page } };
-    case "SET_PER_PAGE":
-      return { ...state, pagination: { ...state.pagination, perPage: action.perPage, page: 1 } }; // Reset to page 1
-    case "SET_TOTAL":
       return {
         ...state,
         pagination: {
           ...state.pagination,
-          total: action.total,
-          numPages: Math.ceil(action.total / state.pagination.perPage)
-        }
+          page: action.page,
+          hasPreviousPage: state.pagination.totalKnown
+            ? state.pagination.hasPreviousPage
+            : action.page > 1,
+        },
       };
+    case "SET_PER_PAGE":
+      return {
+        ...state,
+        pagination: {
+          ...state.pagination,
+          perPage: action.perPage,
+          page: 1,
+          hasPreviousPage: state.pagination.totalKnown
+            ? state.pagination.hasPreviousPage
+            : false,
+        },
+      }; // Reset to page 1
+    case "SET_PAGE_INFO": {
+      const hasTotal = typeof action.totalCount === "number";
+      const totalCount = hasTotal ? action.totalCount ?? 0 : 0;
+      const pageCount = typeof action.pageCount === "number"
+        ? action.pageCount
+        : hasTotal
+          ? Math.ceil(totalCount / state.pagination.perPage)
+          : 0;
+      return {
+        ...state,
+        pagination: {
+          ...state.pagination,
+          total: totalCount,
+          numPages: pageCount ?? 0,
+          totalKnown: hasTotal,
+          hasNextPage: action.hasNextPage ?? state.pagination.hasNextPage,
+          hasPreviousPage:
+            action.hasPreviousPage ?? state.pagination.hasPreviousPage,
+        },
+      };
+    }
     case "SET_SORTING":
       return { ...state, sorting: action.sorting };
     case "SET_COLUMN_VISIBILITY":
@@ -135,7 +175,15 @@ export function TableProvider({ children, initialState: initialProps }: TablePro
     setAdvancedFilters: useCallback((filters: FilterFormState, variables?: Record<string, unknown>) => dispatch({ type: "SET_ADVANCED_FILTERS", filters, variables }), []),
     refresh: useCallback(() => dispatch({ type: "REFRESH" }), []),
     // Internal use for data hooks
-    _setTotal: useCallback((total: number) => dispatch({ type: "SET_TOTAL", total }), []),
+    _setPageInfo: useCallback(
+      (info: {
+        totalCount?: number | null;
+        pageCount?: number | null;
+        hasNextPage?: boolean | null;
+        hasPreviousPage?: boolean | null;
+      }) => dispatch({ type: "SET_PAGE_INFO", ...info }),
+      [],
+    ),
     _setData: useCallback((data: Record<string, unknown>[], loading: boolean, error?: Error) => dispatch({ type: "SET_DATA", data, loading, error }), []),
   };
 
@@ -164,7 +212,7 @@ export function useTableDispatch() {
     // Return explicit internal setters if needed, or just use the main context
     // This is a pattern to separate read vs write if context gets large, but for now reuse.
     return {
-        setTotal: context._setTotal,
+        setPageInfo: context._setPageInfo,
         setData: context._setData,
     };
 }

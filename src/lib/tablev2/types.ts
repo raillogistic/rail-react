@@ -192,6 +192,13 @@ export interface MutationSchema {
   requiresAuthentication?: boolean | null;
 }
 
+export interface RowMutationPermissions {
+  canUpdate?: boolean | null;
+  canDelete?: boolean | null;
+  updateReason?: string | null;
+  deleteReason?: string | null;
+}
+
 export interface ModelPermissions {
   canList: boolean;
   canRetrieve: boolean;
@@ -250,11 +257,32 @@ export interface PaginationState {
   perPage: number;
   total: number;
   numPages: number;
+  totalKnown: boolean;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
 }
 
 export interface SortingState {
   id: string; // field name
   desc: boolean;
+}
+
+export type TableOrderingMode = "single" | "multi";
+export type TableOrderingCycle = "asc-desc-none" | "asc-desc";
+export type OrderingMapValue =
+  | string
+  | {
+      id: string;
+    };
+
+export interface BaseModelTableOrderingConfig {
+  mode?: TableOrderingMode;
+  maxLevels?: number;
+  requireModifier?: boolean; // shift to add/remove when mode=multi
+  cycle?: TableOrderingCycle;
+  allow?: string[]; // allow-list of order keys sent to the API
+  map?: Record<string, OrderingMapValue>; // map column id -> order key
+  default?: SortingState[]; // applied when no persisted sorting
 }
 
 export interface ColumnVisibilityState {
@@ -297,7 +325,12 @@ export interface TableContextState {
   refresh: () => void;
 
   // Internal Data Fetching Hooks
-  _setTotal: (total: number) => void;
+  _setPageInfo: (info: {
+    totalCount?: number | null;
+    pageCount?: number | null;
+    hasNextPage?: boolean | null;
+    hasPreviousPage?: boolean | null;
+  }) => void;
   _setData: (data: Record<string, unknown>[], loading: boolean, error?: Error) => void;
 }
 

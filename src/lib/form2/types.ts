@@ -5,7 +5,7 @@ import type {
   FormSchema,
   FormSectionConfig,
   ChangeRecord,
-} from "../form/inputs/types";
+} from "./inputs/types";
 import type { UseFormReturn } from "@tanstack/react-form";
 import type {
   QueryHookOptions,
@@ -24,7 +24,7 @@ import type {
   UpdateMutationResponse,
   UpdateMutationVariables,
   MutationError,
-} from "../form/backend/types/mutations";
+} from "./mutations";
 
 export type { ModelSchema, FieldSchema, RelationshipSchema, MutationError };
 
@@ -110,7 +110,10 @@ export type ModelFormLayoutVariant<TValues extends Record<string, any>> =
 
 export type InlineCreateOverrides = {
   defaultEnabled?: boolean;
-  fields?: Record<string, import("../form/inputs/types").QueryChoiceInlineCreateConfig | boolean>;
+  fields?: Record<
+    string,
+    import("./inputs/types").QueryChoiceInlineCreateConfig | boolean
+  >;
 };
 
 export interface UseFormMetadataOptions {

@@ -21,8 +21,8 @@ import {
   type CreateMutationVariables,
   type UpdateMutationVariables,
   type MutationError,
-  toOperationField,
-} from "../../form/backend/types/mutations";
+  getMutationFieldName,
+} from "../mutations";
 import { buildFormSchema } from "../utils/schema-builders";
 import { buildDefaultsFromSchema } from "../utils/defaults";
 import {
@@ -100,11 +100,6 @@ export function useModelForm<
     } as TFormValues;
   }, [schema, initialValues]);
 
-  const mutationOperationField = React.useMemo(
-    () => toOperationField(modelName ?? ""),
-    [modelName]
-  );
-
   const resolveMutationPayload = React.useCallback(
     (
       data: Record<string, any> | undefined | null,
@@ -121,10 +116,13 @@ export function useModelForm<
       if (aliasPayload) {
         return aliasPayload;
       }
-      const fallbackKey = `${mode}_${mutationOperationField}`;
+      const fallbackKey = getMutationFieldName(
+        modelName ?? "",
+        mode === "update" ? "update" : "create"
+      );
       return (data as any)?.[fallbackKey] ?? null;
     },
-    [mutationOperationField]
+    [modelName]
   );
 
   const createDocument = React.useMemo(

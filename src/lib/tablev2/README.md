@@ -41,6 +41,34 @@ If you have multiple tables for the same model, provide a unique key to isolate 
 />
 ```
 
+### Ordering (multi-level + defaults)
+
+Use `ordering` to control sorting behavior, defaults, and mapping between column
+ids and backend order keys.
+
+```tsx
+<BaseModelTable
+  app="sales"
+  model="Invoice"
+  fields={["id", "number", "customer", "total", "createdAt"]}
+  relations={{ customer: { fields: ["name"], display: "name" } }}
+  ordering={{
+    mode: "multi",
+    requireModifier: true, // Shift+click to add levels
+    maxLevels: 3,
+    cycle: "asc-desc-none",
+    default: [
+      { id: "createdAt", desc: true },
+      { id: "customer", desc: false },
+    ],
+    map: {
+      customer: "customerName", // column id -> API order key
+    },
+    allow: ["createdAt", "customerName", "total"],
+  }}
+/>
+```
+
 ## Architecture
 
 The table is composed of several contexts and components:

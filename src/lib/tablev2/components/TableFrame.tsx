@@ -16,8 +16,13 @@ interface TableFrameProps {
 
 export function TableFrame({ children, className }: TableFrameProps) {
   return (
-    <div className={cn("rounded-md border", className)}>
-      <Table>
+    <div
+      className={cn(
+        "rounded-md border w-full max-w-full min-w-0 overflow-x-auto",
+        className,
+      )}
+    >
+      <Table className="min-w-max">
         {children}
       </Table>
     </div>

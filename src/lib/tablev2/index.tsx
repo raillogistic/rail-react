@@ -22,6 +22,7 @@ import { useTableFilters } from "./hooks/useTableFilters";
 import type {
   BaseModelTableColumnDef,
   BaseModelTableField,
+  BaseModelTableOrderingConfig,
   BaseModelTableRelationConfig,
   FieldSchema,
   RelationshipSchema,
@@ -137,6 +138,8 @@ type BaseTableContentProps = {
   hideTableOnMobile?: boolean;
   fields?: BaseModelTableField[];
   relations?: Record<string, BaseModelTableRelationConfig>;
+  ordering?: BaseModelTableOrderingConfig;
+  skipCount?: boolean;
 };
 
 function BaseTableContent({
@@ -147,6 +150,8 @@ function BaseTableContent({
   hideTableOnMobile,
   fields,
   relations,
+  ordering,
+  skipCount,
 }: BaseTableContentProps) {
   const {
     metadata,
@@ -156,6 +161,8 @@ function BaseTableContent({
     model,
   } = useMetadata();
   const {
+    sorting,
+    setSorting,
     columnOrder,
     setColumnOrder,
     setColumnVisibility,
@@ -167,11 +174,53 @@ function BaseTableContent({
 
   const effectiveKey = persistenceKey || `${app}-${model}`;
   useTablePersistence(effectiveKey);
+  const storageKey = `rail-table-v2:${effectiveKey}`;
+  const hasPersistedSorting = React.useMemo(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      const stored = localStorage.getItem(storageKey);
+      if (!stored) return false;
+      const parsed = JSON.parse(stored) as { sorting?: unknown };
+      return Array.isArray(parsed.sorting) && parsed.sorting.length > 0;
+    } catch {
+      return false;
+    }
+  }, [storageKey]);
+
   const queryConfig = React.useMemo(
-    () => ({ fields, relations }),
-    [fields, relations],
+    () => ({
+      fields,
+      relations,
+      ordering,
+      skipCount: skipCount ?? true,
+    }),
+    [fields, relations, ordering, skipCount],
   );
   useTableData(queryConfig);
+
+  const normalizedDefaultSorting = React.useMemo(() => {
+    const defaults = ordering?.default ?? [];
+    if (!defaults.length) return [];
+    const allow = ordering?.allow;
+    const map = ordering?.map;
+    return defaults
+      .map((entry) => {
+        const mapped = map?.[entry.id];
+        const id =
+          typeof mapped === "string"
+            ? mapped
+            : mapped?.id ?? entry.id;
+        return { id, desc: !!entry.desc };
+      })
+      .filter((entry) => !allow || allow.includes(entry.id));
+  }, [ordering]);
+
+  React.useEffect(() => {
+    if (!normalizedDefaultSorting.length) return;
+    if (sorting.length > 0) return;
+    if (hasPersistedSorting) return;
+    setSorting(normalizedDefaultSorting);
+  }, [normalizedDefaultSorting, sorting.length, hasPersistedSorting, setSorting]);
 
   const columnDefs = React.useMemo(() => {
     if (!metadata || !fields || fields.length === 0) return null;
@@ -329,48 +378,52 @@ function BaseTableContent({
   }
 
   return (
-    <div className="space-y-4">
-      {children}
-      {children}
-      {quickSearch && supportsQuick ? (
-        <div className="relative max-w-sm">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder={tableConfig?.searchPlaceholder ?? "Rechercher..."}
-            value={term}
-            onChange={(event) => setQuickSearch(event.target.value)}
-            className="pl-8"
-          />
+    <div className="flex h-full w-full max-w-full min-w-0 flex-col overflow-hidden">
+      <div className="flex-1 min-h-0 min-w-0 overflow-y-auto">
+        <div className="flex min-h-full min-w-0 flex-col gap-4">
+          {children}
+          {quickSearch && supportsQuick ? (
+            <div className="relative max-w-sm">
+              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder={tableConfig?.searchPlaceholder ?? "Rechercher..."}
+                value={term}
+                onChange={(event) => setQuickSearch(event.target.value)}
+                className="pl-8"
+              />
+            </div>
+          ) : null}
+          <div className={hideTableOnMobile ? "hidden md:block" : undefined}>
+            <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              <TableFrame className="w-full">
+                <SortableContext
+                  items={sortableColumnIds}
+                  strategy={horizontalListSortingStrategy}
+                >
+                  <TableHeader
+                    actionsLabel={tableConfig?.actionsLabel}
+                    columns={columnDefs ?? undefined}
+                    ordering={ordering}
+                  />
+                </SortableContext>
+                <TableBody>
+                  <TableRows
+                    emptyState={tableConfig?.emptyState}
+                    loadingText={tableConfig?.loadingText}
+                    columns={columnDefs ?? undefined}
+                  />
+                </TableBody>
+              </TableFrame>
+            </DndContext>
+          </div>
+          <TablePagination labels={tableConfig?.paginationLabels} />
+          {dataError && (
+            <div className="text-sm text-red-500 px-2">
+              Erreur de chargement des donnees : {dataError.message}
+            </div>
+          )}
         </div>
-      ) : null}
-      <div className={hideTableOnMobile ? "hidden md:block" : undefined}>
-        <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <TableFrame>
-            <SortableContext
-              items={sortableColumnIds}
-              strategy={horizontalListSortingStrategy}
-            >
-              <TableHeader
-                actionsLabel={tableConfig?.actionsLabel}
-                columns={columnDefs ?? undefined}
-              />
-            </SortableContext>
-            <TableBody>
-              <TableRows
-                emptyState={tableConfig?.emptyState}
-                loadingText={tableConfig?.loadingText}
-                columns={columnDefs ?? undefined}
-              />
-            </TableBody>
-          </TableFrame>
-        </DndContext>
       </div>
-      <TablePagination labels={tableConfig?.paginationLabels} />
-      {dataError && (
-        <div className="text-sm text-red-500 px-2">
-          Erreur de chargement des donnees : {dataError.message}
-        </div>
-      )}
     </div>
   );
 }
@@ -386,6 +439,8 @@ export interface BaseModelTableProps {
   hideTableOnMobile?: boolean;
   fields?: BaseModelTableField[];
   relations?: Record<string, BaseModelTableRelationConfig>;
+  ordering?: BaseModelTableOrderingConfig;
+  skipCount?: boolean;
 }
 
 export function BaseModelTable({
@@ -399,9 +454,11 @@ export function BaseModelTable({
   hideTableOnMobile,
   fields,
   relations,
+  ordering,
+  skipCount,
 }: BaseModelTableProps) {
   return (
-    <div className={className}>
+    <div className={className ? `h-full w-full ${className}` : "h-full w-full"}>
       <MetadataProvider app={app} model={model}>
         <TableProvider>
           <BaseTableContent
@@ -411,6 +468,8 @@ export function BaseModelTable({
             hideTableOnMobile={hideTableOnMobile}
             fields={fields}
             relations={relations}
+            ordering={ordering}
+            skipCount={skipCount}
           >
             {children}
           </BaseTableContent>
@@ -437,6 +496,8 @@ export function ModelTableV2({
       hideTableOnMobile={baseTable?.hideTableOnMobile ?? true}
       fields={baseTable?.fields}
       relations={baseTable?.relations}
+      ordering={baseTable?.ordering}
+      skipCount={baseTable?.skipCount}
     >
       <ModelTableV2Content
         filterPanel={filterPanel}

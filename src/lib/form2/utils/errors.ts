@@ -1,6 +1,6 @@
 import type { Dispatch, SetStateAction } from "react";
 import type { UseFormReturn } from "@tanstack/react-form";
-import type { MutationError } from "../../form/backend/types/mutations";
+import type { MutationError } from "../mutations";
 
 export function normalizeErrorFieldPath(field?: string | null): string | null {
   if (!field) return null;

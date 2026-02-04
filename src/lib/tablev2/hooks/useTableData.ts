@@ -2,6 +2,7 @@ import { useQuery, gql } from "@apollo/client";
 import { useMemo, useEffect } from "react";
 import { useTable } from "../context/TableContext";
 import { useMetadata } from "../context/MetadataContext";
+import { useDebouncedValue } from "./useDebouncedValue";
 import type {
   BaseModelTableField,
   BaseModelTableRelationConfig,
@@ -20,6 +21,11 @@ function buildDynamicQuery(
   fieldConfig?: {
     fields?: BaseModelTableField[];
     relations?: Record<string, BaseModelTableRelationConfig>;
+    ordering?: {
+      allow?: string[];
+      map?: Record<string, string | { id: string }>;
+    };
+    skipCount?: boolean;
   },
 ) {
   // Convert PascalCase model name to camelCase for the query name
@@ -150,6 +156,19 @@ function buildDynamicQuery(
         })()
       : buildDefaultFieldSelection();
 
+  const rowPermissionsSelection = `
+      rowPermissions {
+        canUpdate
+        canDelete
+        updateReason
+        deleteReason
+      }`;
+
+  const finalFieldSelection = [fieldSelection, rowPermissionsSelection]
+    .map((selection) => selection?.trim())
+    .filter((selection) => selection)
+    .join("\n      ");
+
   const whereType = filterConfig?.inputTypeName || `${model}WhereInput`;
   const supportsQuick = !!filterConfig?.supportsQuick;
 
@@ -162,6 +181,7 @@ function buildDynamicQuery(
       $where: ${whereType}
       $presets: [String]
       $distinctOn: [String]
+      $skipCount: Boolean
     ) {
       ${queryName}(
         page: $page
@@ -171,6 +191,7 @@ function buildDynamicQuery(
         where: $where
         presets: $presets
         distinctOn: $distinctOn
+        skipCount: $skipCount
       ) {
         pageInfo {
           totalCount
@@ -180,7 +201,7 @@ function buildDynamicQuery(
         }
         items {
           id
-          ${fieldSelection}
+          ${finalFieldSelection}
         }
       }
     }
@@ -190,6 +211,11 @@ function buildDynamicQuery(
 export function useTableData(config?: {
   fields?: BaseModelTableField[];
   relations?: Record<string, BaseModelTableRelationConfig>;
+  ordering?: {
+    allow?: string[];
+    map?: Record<string, string | { id: string }>;
+  };
+  skipCount?: boolean;
 }) {
   const { app, model, metadata } = useMetadata();
   const {
@@ -199,8 +225,9 @@ export function useTableData(config?: {
     filterVariables,
     refreshKey,
     _setData,
-    _setTotal
+    _setPageInfo
   } = useTable();
+  const debouncedQuickSearch = useDebouncedValue(quickSearch, 300);
 
   // 1. Construct Query
   const query = useMemo(() => {
@@ -217,7 +244,19 @@ export function useTableData(config?: {
 
   // 2. Prepare Variables
   const variables = useMemo(() => {
-    const orderBy = sorting.map(s => s.desc ? `-${s.id}` : s.id);
+    const allow = config?.ordering?.allow;
+    const map = config?.ordering?.map;
+    const normalizedSorting = sorting
+      .map((entry) => {
+        const mapped = map?.[entry.id];
+        const id =
+          typeof mapped === "string"
+            ? mapped
+            : mapped?.id ?? entry.id;
+        return { ...entry, id };
+      })
+      .filter((entry) => !allow || allow.includes(entry.id));
+    const orderBy = normalizedSorting.map((s) => (s.desc ? `-${s.id}` : s.id));
 
     // Merge filter variables if present
     const where = filterVariables?.where;
@@ -234,12 +273,23 @@ export function useTableData(config?: {
       page: pagination.page,
       perPage: pagination.perPage,
       orderBy: orderBy.length > 0 ? orderBy : undefined,
-      ...(supportsQuick ? { quick: quickSearch || undefined } : {}),
+      ...(supportsQuick ? { quick: debouncedQuickSearch || undefined } : {}),
       where,
       presets,
       distinctOn,
+      skipCount: config?.skipCount ?? false,
     };
-  }, [pagination.page, pagination.perPage, sorting, quickSearch, filterVariables, metadata?.filterConfig?.supportsQuick]);
+  }, [
+    pagination.page,
+    pagination.perPage,
+    sorting,
+    debouncedQuickSearch,
+    filterVariables,
+    metadata?.filterConfig?.supportsQuick,
+    config?.skipCount,
+    config?.ordering?.allow,
+    config?.ordering?.map,
+  ]);
 
   // 3. Execute Query
   const { data, loading, error, refetch } = useQuery(query || gql`query Skip { __typename }`, {
@@ -257,7 +307,12 @@ export function useTableData(config?: {
       const result = data[queryName];
       if (result) {
         _setData(result.items, loading, error);
-        _setTotal(result.pageInfo?.totalCount || 0);
+        _setPageInfo({
+          totalCount: result.pageInfo?.totalCount ?? null,
+          pageCount: result.pageInfo?.pageCount ?? null,
+          hasNextPage: result.pageInfo?.hasNextPage ?? null,
+          hasPreviousPage: result.pageInfo?.hasPreviousPage ?? null,
+        });
       }
     } else if (error) {
        _setData([], false, error);
@@ -268,7 +323,7 @@ export function useTableData(config?: {
          // _setData([], true, undefined); // Optional: clear data on load? Or keep stale?
          // Usually better to keep stale data and show loading indicator
      }
-  }, [data, loading, error, model, _setData, _setTotal]);
+  }, [data, loading, error, model, _setData, _setPageInfo]);
 
   useEffect(() => {
     if (!query) return;

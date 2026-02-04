@@ -12,7 +12,7 @@ import {
 import { useTable } from "../context/TableContext";
 import { useMetadata } from "../context/MetadataContext";
 import { Checkbox } from "@/lib/components/ui/checkbox";
-import type { BaseModelTableColumnDef } from "../types";
+import type { BaseModelTableColumnDef, BaseModelTableOrderingConfig } from "../types";
 
 interface DraggableHeadProps {
   id: string;
@@ -20,7 +20,7 @@ interface DraggableHeadProps {
   className?: string;
   isSortable?: boolean;
   sortDirection?: "asc" | "desc" | false;
-  onSort?: () => void;
+  onSort?: (event: React.MouseEvent<HTMLButtonElement>) => void;
 }
 
 function DraggableHead({
@@ -83,9 +83,11 @@ function DraggableHead({
 export function TableHeader({
   actionsLabel,
   columns,
+  ordering,
 }: {
   actionsLabel?: string;
   columns?: BaseModelTableColumnDef[];
+  ordering?: BaseModelTableOrderingConfig;
 }) {
   const { metadata } = useMetadata();
   const {
@@ -118,17 +120,52 @@ export function TableHeader({
       .filter((f) => f && columnVisibility[f.name]);
   })();
 
-  const handleSort = (field: string) => {
-    // Toggle sort: none -> asc -> desc -> none (or just asc/desc toggle)
-    // Simple implementation: toggle existing or set new
-    const current = sorting.find((s) => s.id === field);
-    if (!current) {
-      setSorting([{ id: field, desc: false }]); // Default asc
-    } else if (!current.desc) {
-      setSorting([{ id: field, desc: true }]); // Asc -> Desc
-    } else {
-      setSorting([]); // Desc -> Clear
+  const orderingMode = ordering?.mode ?? "single";
+  const orderingCycle = ordering?.cycle ?? "asc-desc-none";
+  const maxLevels = ordering?.maxLevels ?? 3;
+  const requireModifier = ordering?.requireModifier ?? true;
+  const allow = ordering?.allow ? new Set(ordering.allow) : null;
+  const map = ordering?.map ?? {};
+
+  const resolveSortKey = (columnId: string, fallback: string) => {
+    const mapped = map[columnId];
+    if (typeof mapped === "string") return mapped;
+    if (mapped && typeof mapped === "object" && mapped.id) return mapped.id;
+    return fallback;
+  };
+
+  const isAllowedSort = (sortKey: string) => !allow || allow.has(sortKey);
+
+  const nextSortState = (current: { id: string; desc: boolean } | undefined, sortKey: string) => {
+    if (!current) return { id: sortKey, desc: false };
+    if (!current.desc) return { id: sortKey, desc: true };
+    if (orderingCycle === "asc-desc") return { id: sortKey, desc: false };
+    return null;
+  };
+
+  const handleSort = (
+    sortKey: string,
+    event?: React.MouseEvent<HTMLButtonElement>,
+  ) => {
+    if (!isAllowedSort(sortKey)) return;
+    const current = sorting.find((s) => s.id === sortKey);
+    const next = nextSortState(current, sortKey);
+    const allowMulti =
+      orderingMode === "multi" && (!requireModifier || event?.shiftKey);
+
+    if (!allowMulti) {
+      setSorting(next ? [next] : []);
+      return;
     }
+
+    let nextSorting = sorting.filter((s) => s.id !== sortKey);
+    if (next) {
+      nextSorting = [...nextSorting, next];
+      if (maxLevels > 0 && nextSorting.length > maxLevels) {
+        nextSorting = nextSorting.slice(-maxLevels);
+      }
+    }
+    setSorting(nextSorting);
   };
 
   // Selection logic
@@ -164,8 +201,12 @@ export function TableHeader({
           if (!field) return null;
 
           if ("accessor" in field) {
-            const sortKey = field.sortKey ?? field.accessor;
-            const sortable = field.sortable ?? false;
+            const sortKey = resolveSortKey(
+              field.id,
+              field.sortKey ?? field.accessor,
+            );
+            const sortable =
+              (field.sortable ?? false) && isAllowedSort(sortKey);
             const sort = sorting.find((s) => s.id === sortKey);
             const direction = sort ? (sort.desc ? "desc" : "asc") : false;
 
@@ -175,23 +216,25 @@ export function TableHeader({
                 id={field.id}
                 isSortable={sortable}
                 sortDirection={direction}
-                onSort={sortable ? () => handleSort(sortKey) : undefined}
+                onSort={sortable ? (event) => handleSort(sortKey, event) : undefined}
               >
                 {field.title}
               </DraggableHead>
             );
           }
 
-          const sort = sorting.find((s) => s.id === field.name);
+          const sortKey = resolveSortKey(field.name, field.name);
+          const sortable = field.isIndexed && isAllowedSort(sortKey);
+          const sort = sorting.find((s) => s.id === sortKey);
           const direction = sort ? (sort.desc ? "desc" : "asc") : false;
 
           return (
             <DraggableHead
               key={field.name}
               id={field.name}
-              isSortable={field.isIndexed}
+              isSortable={sortable}
               sortDirection={direction}
-              onSort={() => handleSort(field.name)}
+              onSort={sortable ? (event) => handleSort(sortKey, event) : undefined}
             >
               {field.verboseName}
             </DraggableHead>

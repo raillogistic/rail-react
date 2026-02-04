@@ -3,7 +3,7 @@ import { useStore } from "@tanstack/react-form";
 import { toast } from "@/lib/components/ui/sonner";
 import { useModelTelemetry } from "@/lib/telemetry/useModelTelemetry";
 import { useAuditableAction } from "@/lib/security/useAuditableAction";
-import type { FormSchema, FormBuilderProps } from "../../form/inputs/types";
+import type { FormSchema, FormBuilderProps } from "../inputs/types";
 import { useModelForm } from "./useModelForm";
 import type {
   ModelFormProps,
