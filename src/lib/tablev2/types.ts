@@ -262,27 +262,15 @@ export interface PaginationState {
   hasPreviousPage: boolean;
 }
 
-export interface SortingState {
-  id: string; // field name
-  desc: boolean;
-}
+export type ColumnOrderingMode = "persisted" | "config";
+export type ColumnOrderingAppend = "start" | "end";
 
-export type TableOrderingMode = "single" | "multi";
-export type TableOrderingCycle = "asc-desc-none" | "asc-desc";
-export type OrderingMapValue =
-  | string
-  | {
-      id: string;
-    };
-
-export interface BaseModelTableOrderingConfig {
-  mode?: TableOrderingMode;
-  maxLevels?: number;
-  requireModifier?: boolean; // shift to add/remove when mode=multi
-  cycle?: TableOrderingCycle;
-  allow?: string[]; // allow-list of order keys sent to the API
-  map?: Record<string, OrderingMapValue>; // map column id -> order key
-  default?: SortingState[]; // applied when no persisted sorting
+export interface BaseModelTableColumnOrderingConfig {
+  order?: string[]; // preferred column order (by column id)
+  mode?: ColumnOrderingMode; // persisted (default) or config-first
+  append?: ColumnOrderingAppend; // where to place unspecified columns
+  draggable?: boolean; // allow drag-and-drop reordering
+  locked?: string[]; // columns that cannot be dragged
 }
 
 export interface ColumnVisibilityState {
@@ -302,7 +290,6 @@ export interface TableContextState {
 
   // State
   pagination: PaginationState;
-  sorting: SortingState[];
   columnVisibility: ColumnVisibilityState;
   columnOrder: string[];
   rowSelection: Record<string, boolean>;
@@ -316,7 +303,6 @@ export interface TableContextState {
   // Actions
   setPage: (page: number) => void;
   setPerPage: (perPage: number) => void;
-  setSorting: (sorting: SortingState[]) => void;
   setColumnVisibility: (visibility: ColumnVisibilityState) => void;
   setColumnOrder: (order: string[]) => void;
   setRowSelection: (selection: Record<string, boolean>) => void;
@@ -364,6 +350,4 @@ export type BaseModelTableColumnDef = {
     row: Record<string, unknown>,
     context: { accessor: string; columnId: string },
   ) => ReactNode;
-  sortable?: boolean;
-  sortKey?: string;
 };

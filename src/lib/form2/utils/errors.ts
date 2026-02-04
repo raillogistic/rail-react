@@ -97,17 +97,16 @@ export function applyServerErrors(
   form: UseFormReturn<any>,
   setMutationErrors: Dispatch<SetStateAction<MutationError[]>>
 ) {
-  const normalized =
-    errors
-      ?.filter((error): error is MutationError => Boolean(error))
-      .map((error) => ({
-        ...error,
-        field: normalizeErrorFieldPath(error.field),
-        message: error.message ?? "Une erreur est survenue.",
-      })) ?? [];
+  const normalized = normalizeMutationErrors(errors);
   setMutationErrors(normalized);
-  if (!normalized.length) return;
-  applyErrorsToFormFields(normalized, form);
+  if (!normalized.length) {
+    return { normalized, blocking: [] as MutationError[] };
+  }
+  const blocking = normalized.filter(isBlockingError);
+  if (blocking.length) {
+    applyErrorsToFormFields(blocking, form);
+  }
+  return { normalized, blocking };
 }
 
 export function getValueAtPath(source: Record<string, any>, path: string) {
@@ -137,6 +136,90 @@ export function hasValueChangedSinceError(
   const previous = errorSnapshots.get(fieldName);
   const current = getValueAtPath(values, fieldName);
   return !deepEqual(previous, current);
+}
+
+export function normalizeMutationErrors(
+  errors: MutationError[] | null | undefined
+): MutationError[] {
+  return (
+    errors
+      ?.filter((error): error is MutationError => Boolean(error))
+      .map((error) => ({
+        ...error,
+        field: normalizeErrorFieldPath(error.field),
+        message: error.message ?? "Une erreur est survenue.",
+        severity: normalizeSeverity(error.severity),
+      })) ?? []
+  );
+}
+
+export function isBlockingError(error: MutationError) {
+  return normalizeSeverity(error.severity) === "error";
+}
+
+export function extractMutationErrorsFromApolloError(error: unknown) {
+  const graphQLErrors =
+    (error as { graphQLErrors?: any[] })?.graphQLErrors ??
+    (error as { errors?: any[] })?.errors ??
+    [];
+  const networkErrors =
+    (error as { networkError?: any })?.networkError?.result?.errors ?? [];
+  return normalizeMutationErrors(
+    extractMutationErrorsFromGraphQLErrors([
+      ...(Array.isArray(graphQLErrors) ? graphQLErrors : []),
+      ...(Array.isArray(networkErrors) ? networkErrors : []),
+    ])
+  );
+}
+
+export function extractMutationErrorsFromGraphQLErrors(
+  graphQLErrors: Array<{
+    message?: string;
+    path?: Array<string | number> | null;
+    extensions?: Record<string, any> | null;
+  }>
+): MutationError[] {
+  const collected: MutationError[] = [];
+  graphQLErrors.forEach((error) => {
+    if (!error) return;
+    const extensions = error.extensions ?? {};
+    const details =
+      (extensions.details as Record<string, any> | undefined) ??
+      (extensions.exception as Record<string, any> | undefined);
+    const code = extensions.code ?? extensions.errorCode;
+    const field =
+      extensions.field ??
+      (Array.isArray(error.path) ? error.path.join(".") : undefined);
+    const validationErrors =
+      details?.validation_errors ??
+      extensions.validation_errors ??
+      extensions.validationErrors;
+
+    if (validationErrors && typeof validationErrors === "object") {
+      Object.entries(validationErrors).forEach(([name, messages]) => {
+        const list = Array.isArray(messages) ? messages : [messages];
+        list.forEach((message) => {
+          collected.push({
+            field: name,
+            message: String(message),
+            code,
+            severity: "error",
+            details,
+          });
+        });
+      });
+      return;
+    }
+
+    collected.push({
+      field,
+      message: error.message ?? "Une erreur est survenue.",
+      code,
+      severity: "error",
+      details,
+    });
+  });
+  return collected;
 }
 
 export function deepEqual(a: any, b: any): boolean {
@@ -170,4 +253,13 @@ export function deepEqual(a: any, b: any): boolean {
 
 function escapeRegex(value: string): string {
   return value.replace(/[-/\\^$+?.()|[\]{}]/g, "\\$&");
+}
+
+function normalizeSeverity(value: MutationError["severity"]) {
+  if (!value) return "error";
+  const normalized = String(value).toLowerCase();
+  if (normalized === "warning" || normalized === "info" || normalized === "error") {
+    return normalized as "warning" | "info" | "error";
+  }
+  return "error";
 }

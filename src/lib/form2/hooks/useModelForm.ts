@@ -26,8 +26,12 @@ import {
 import { buildFormSchema } from "../utils/schema-builders";
 import { buildDefaultsFromSchema } from "../utils/defaults";
 import {
+  applyErrorsToFormFields,
   applyServerErrors,
+  extractMutationErrorsFromApolloError,
+  isBlockingError,
   normalizeErrorFieldPath,
+  normalizeMutationErrors,
 } from "../utils/errors";
 import {
   stripUntouchedFieldValues,
@@ -242,10 +246,18 @@ export function useModelForm<
             throw new Error("Update mutation returned no data.");
           }
           if ((payload as any).errors?.length) {
-            applyServerErrors((payload as any).errors, form, setMutationErrors);
-            throw new Error(
-              (payload as any).errors?.[0]?.message ?? "Update failed."
+            const { blocking } = applyServerErrors(
+              (payload as any).errors,
+              form,
+              setMutationErrors
             );
+            const primaryError =
+              blocking?.[0]?.message ??
+              (payload as any).errors?.[0]?.message ??
+              "Update failed.";
+            if (blocking.length) {
+              throw new Error(primaryError);
+            }
           }
           applyServerErrors([], form, setMutationErrors);
           onCompleted?.(payload);
@@ -262,15 +274,32 @@ export function useModelForm<
             throw new Error("Create mutation returned no data.");
           }
           if ((payload as any).errors?.length) {
-            applyServerErrors((payload as any).errors, form, setMutationErrors);
-            throw new Error(
-              (payload as any).errors?.[0]?.message ?? "Create failed."
+            const { blocking } = applyServerErrors(
+              (payload as any).errors,
+              form,
+              setMutationErrors
             );
+            const primaryError =
+              blocking?.[0]?.message ??
+              (payload as any).errors?.[0]?.message ??
+              "Create failed.";
+            if (blocking.length) {
+              throw new Error(primaryError);
+            }
           }
           applyServerErrors([], form, setMutationErrors);
           onCompleted?.(payload);
         }
       } catch (submitError) {
+        const graphqlErrors = extractMutationErrorsFromApolloError(submitError);
+        if (graphqlErrors.length) {
+          const normalized = normalizeMutationErrors(graphqlErrors);
+          setMutationErrors(normalized);
+          const blocking = normalized.filter(isBlockingError);
+          if (blocking.length) {
+            applyErrorsToFormFields(blocking, form);
+          }
+        }
         onError?.(submitError);
         throw submitError;
       }

@@ -16,6 +16,7 @@ import {
   FormInputType,
 } from "./types";
 import { resolveInputComponent } from "./factory";
+import { resolveFieldErrors, resolveRequiredError } from "./common";
 import {
   Collapsible,
   CollapsibleContent,
@@ -520,6 +521,10 @@ const ListFieldRenderer = <TValues extends Record<string, any>>({
   const defaultValue = Array.isArray(config.defaultValue)
     ? config.defaultValue
     : [];
+  const validators = React.useMemo(
+    () => createValidators(config, form, path),
+    [config, form, path]
+  );
   const itemColumns = Math.max(config.columns ?? config.fields.length ?? 1, 1);
   const itemGridGapStyle = React.useMemo<
     React.CSSProperties | undefined
@@ -538,7 +543,11 @@ const ListFieldRenderer = <TValues extends Record<string, any>>({
     [config.itemClassName, itemColumns]
   );
   return (
-    <form.Field name={path as any} defaultValue={defaultValue}>
+    <form.Field
+      name={path as any}
+      defaultValue={defaultValue}
+      validators={validators}
+    >
       {(fieldApi: any) => (
         <ListFieldItems
           config={config}
@@ -574,19 +583,23 @@ const ListFieldItems = <TValues extends Record<string, any>>({
   form,
 }: ListFieldItemsProps<TValues>) => {
   const meta = fieldApi.state?.meta;
-  const submitCount = useStore(form.store, (state) => state.submitCount);
-  const rawListError =
-    meta?.touchedErrors?.[0] ??
-    meta?.errors?.[0] ??
-    (meta?.errorMap?.onSubmit ? meta.errorMap.onSubmit : undefined);
+  const submitCount = useStore(
+    form.store,
+    (state) => (state as any).submissionAttempts ?? (state as any).submitCount ?? 0
+  );
   const showListError =
     Boolean(meta?.isDirty) ||
     Boolean(meta?.isBlurred) ||
     submitCount > 0 ||
     Boolean(meta?.errorMap?.onSubmit);
-  const listError = showListError ? rawListError : undefined;
-
   const items = fieldApi.state.value ?? [];
+  const fieldErrors = resolveFieldErrors(meta, showListError);
+  const requiredError = resolveRequiredError(
+    config,
+    items,
+    showListError
+  );
+  const listError = fieldErrors ?? requiredError;
   const canAdd =
     !config.maxItems || (Array.isArray(items) && items.length < config.maxItems);
 
@@ -673,7 +686,17 @@ const ListFieldItems = <TValues extends Record<string, any>>({
         </Button>
       </div>
       {listError ? (
-        <p className="text-xs text-destructive">{listError}</p>
+        <div className="text-xs text-destructive">
+          {Array.isArray(listError) ? (
+            <ul className="space-y-1">
+              {listError.map((item, index) => (
+                <li key={`${path}-error-${index}`}>{item}</li>
+              ))}
+            </ul>
+          ) : (
+            <p>{listError}</p>
+          )}
+        </div>
       ) : null}
       {items.length === 0 ? (
         <p className="text-xs text-muted-foreground">

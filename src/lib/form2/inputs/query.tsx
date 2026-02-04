@@ -18,7 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/lib/components/ui/dialog";
-import { FieldWrapper } from "./common";
+import { FieldWrapper, resolveFieldErrors, resolveRequiredError } from "./common";
 import { cn } from "@/lib/utils";
 import { useModelPermissions } from "@/lib/auth/hooks/useModelPermissions";
 import type {
@@ -42,12 +42,15 @@ const LazyModelForm = React.lazy(() =>
 const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
   const meta = field.state.meta;
   const dirty = meta.isDirty;
-  const rawError = meta.touchedErrors?.[0] ?? meta.errors?.[0];
-  const submitCount = useStore(form.store, (state) => state.submitCount);
+  const submitCount = useStore(
+    form.store,
+    (state) => (state as any).submissionAttempts ?? (state as any).submitCount ?? 0
+  );
   const isSubmitted = submitCount > 0;
   const showError =
     dirty || meta.isBlurred || isSubmitted || Boolean(meta.errorMap?.onSubmit);
-  const error = showError ? rawError : undefined;
+  const fieldErrors = resolveFieldErrors(meta, showError);
+  const error = fieldErrors ?? resolveRequiredError(config, field.state.value, showError);
   const graphqlConfig = React.useMemo<
     QueryChoiceGraphQLConfig | undefined
   >(() => {

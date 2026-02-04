@@ -49,7 +49,7 @@ function RowActions({
         mutation ${deleteMutationName}($id: ID!) {
           response: ${deleteMutationName}(id: $id) {
             ok
-            errors { field message }
+            errors { field message code severity details }
           }
         }
       `,

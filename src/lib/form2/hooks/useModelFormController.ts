@@ -13,7 +13,7 @@ import type {
 } from "../types";
 import { parseCustomMetadata } from "../utils/metadata";
 import { filterValuesBySchema } from "../utils/schema-filters";
-import { applyErrorsToFormFields } from "../utils/errors";
+import { applyErrorsToFormFields, isBlockingError } from "../utils/errors";
 import { invokeSectionChangeHandlers } from "../utils/schema-sections";
 import { useFormSchemaState } from "./useFormSchemaState";
 import { useMutationFeedback } from "./useMutationFeedback";
@@ -286,10 +286,17 @@ export function useModelFormController<
     if (!mutationErrors.length) {
       return;
     }
-    applyErrorsToFormFields(mutationErrors, form);
+    const blockingErrors = mutationErrors.filter(isBlockingError);
+    if (!blockingErrors.length) {
+      return;
+    }
+    applyErrorsToFormFields(blockingErrors, form);
   }, [form, mutationErrors]);
 
-  const submitCount = useStore(form.store, (state) => state.submitCount);
+  const submitCount = useStore(
+    form.store,
+    (state) => (state as any).submissionAttempts ?? (state as any).submitCount ?? 0
+  );
   const isValid = useStore(form.store, (state) => state.isValid);
   const isSubmitting = useStore(form.store, (state) => state.isSubmitting);
   const isValidating = useStore(form.store, (state) => state.isValidating);

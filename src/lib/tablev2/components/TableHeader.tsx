@@ -1,9 +1,8 @@
 import React from "react";
-import { ArrowDown, ArrowUp, ChevronsUpDown, GripVertical } from "lucide-react";
+import { ArrowUpDown, ChevronDown, ChevronUp, GripVertical } from "lucide-react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@/lib/utils";
-import { Button } from "@/lib/components/ui/button";
 import {
   TableHead,
   ShadcnTableHeader,
@@ -12,27 +11,28 @@ import {
 import { useTable } from "../context/TableContext";
 import { useMetadata } from "../context/MetadataContext";
 import { Checkbox } from "@/lib/components/ui/checkbox";
-import type { BaseModelTableColumnDef, BaseModelTableOrderingConfig } from "../types";
+import type {
+  BaseModelTableColumnDef,
+  BaseModelTableColumnOrderingConfig,
+} from "../types";
 
 interface DraggableHeadProps {
   id: string;
   children: React.ReactNode;
   className?: string;
-  isSortable?: boolean;
-  sortDirection?: "asc" | "desc" | false;
-  onSort?: (event: React.MouseEvent<HTMLButtonElement>) => void;
+  draggable?: boolean;
+  ariaSort?: React.AriaAttributes["aria-sort"];
 }
 
 function DraggableHead({
   id,
   children,
   className,
-  isSortable,
-  sortDirection,
-  onSort,
+  draggable = true,
+  ariaSort,
 }: DraggableHeadProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id });
+    useSortable({ id, disabled: !draggable });
 
   const style = {
     transform: CSS.Translate.toString(transform),
@@ -45,36 +45,21 @@ function DraggableHead({
       ref={setNodeRef}
       style={style}
       className={cn("relative group", className)}
+      aria-sort={ariaSort}
     >
       <div className="flex items-center gap-2">
-        <button
-          {...attributes}
-          {...listeners}
-          className="cursor-move opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-muted rounded"
-          aria-label="Reordonner la colonne"
-        >
-          <GripVertical className="h-4 w-4 text-muted-foreground" />
-        </button>
-
-        {isSortable ? (
-          <Button
-            variant="ghost"
-            size="sm"
-            className="-ml-3 h-8 data-[state=open]:bg-accent"
-            onClick={onSort}
+        {draggable ? (
+          <button
+            {...attributes}
+            {...listeners}
+            className="cursor-move opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-muted rounded"
+            aria-label="Reordonner la colonne"
           >
-            {children}
-            {sortDirection === "asc" ? (
-              <ArrowUp className="ml-2 h-4 w-4" />
-            ) : sortDirection === "desc" ? (
-              <ArrowDown className="ml-2 h-4 w-4" />
-            ) : (
-              <ChevronsUpDown className="ml-2 h-4 w-4" />
-            )}
-          </Button>
-        ) : (
-          <span className="font-medium text-sm">{children}</span>
-        )}
+            <GripVertical className="h-4 w-4 text-muted-foreground" />
+          </button>
+        ) : null}
+
+        <span className="font-medium text-sm">{children}</span>
       </div>
     </TableHead>
   );
@@ -83,21 +68,24 @@ function DraggableHead({
 export function TableHeader({
   actionsLabel,
   columns,
-  ordering,
+  columnOrdering,
+  disableSorting,
 }: {
   actionsLabel?: string;
   columns?: BaseModelTableColumnDef[];
-  ordering?: BaseModelTableOrderingConfig;
+  columnOrdering?: BaseModelTableColumnOrderingConfig;
+  disableSorting?: boolean;
 }) {
   const { metadata } = useMetadata();
   const {
-    sorting,
-    setSorting,
     columnOrder,
     columnVisibility,
     data,
     rowSelection,
     setRowSelection,
+    advancedFilters,
+    filterVariables,
+    setAdvancedFilters,
   } = useTable();
 
   if (!metadata && !columns) return null;
@@ -120,53 +108,120 @@ export function TableHeader({
       .filter((f) => f && columnVisibility[f.name]);
   })();
 
-  const orderingMode = ordering?.mode ?? "single";
-  const orderingCycle = ordering?.cycle ?? "asc-desc-none";
-  const maxLevels = ordering?.maxLevels ?? 3;
-  const requireModifier = ordering?.requireModifier ?? true;
-  const allow = ordering?.allow ? new Set(ordering.allow) : null;
-  const map = ordering?.map ?? {};
+  const allowDrag = columnOrdering?.draggable !== false;
+  const locked = new Set(columnOrdering?.locked ?? []);
+  const sortingDisabled = disableSorting === true;
+  const orderBy = advancedFilters?.orderBy ?? [];
+  const distinctOn = advancedFilters?.distinctOn ?? [];
 
-  const resolveSortKey = (columnId: string, fallback: string) => {
-    const mapped = map[columnId];
-    if (typeof mapped === "string") return mapped;
-    if (mapped && typeof mapped === "object" && mapped.id) return mapped.id;
-    return fallback;
-  };
+  const normalizeSortKey = React.useCallback((value: string) => {
+    const trimmed = value.replace(/^-/, "");
+    return trimmed.replace(/\./g, "__");
+  }, []);
 
-  const isAllowedSort = (sortKey: string) => !allow || allow.has(sortKey);
+  const sortMap = React.useMemo(() => {
+    const map = new Map<string, { direction: "asc" | "desc"; index: number }>();
+    orderBy.forEach((entry, index) => {
+      if (!entry) return;
+      const direction = entry.startsWith("-") ? "desc" : "asc";
+      const key = normalizeSortKey(entry);
+      if (!key) return;
+      map.set(key, { direction, index });
+    });
+    return map;
+  }, [orderBy, normalizeSortKey]);
 
-  const nextSortState = (current: { id: string; desc: boolean } | undefined, sortKey: string) => {
-    if (!current) return { id: sortKey, desc: false };
-    if (!current.desc) return { id: sortKey, desc: true };
-    if (orderingCycle === "asc-desc") return { id: sortKey, desc: false };
-    return null;
-  };
+  const ensureDistinctOrderBy = React.useCallback(
+    (distinctFields: string[], nextOrderBy: string[]) => {
+      if (!distinctFields.length) return nextOrderBy;
+      const result: string[] = [];
+      const used = new Set<string>();
+      distinctFields.forEach((field) => {
+        const normalized = normalizeSortKey(field);
+        const existing = nextOrderBy.find(
+          (entry) => normalizeSortKey(entry) === normalized,
+        );
+        if (existing) {
+          result.push(existing);
+        } else if (field) {
+          result.push(normalized || field);
+        }
+        if (normalized) used.add(normalized);
+      });
+      nextOrderBy.forEach((entry) => {
+        const normalized = normalizeSortKey(entry);
+        if (!normalized || used.has(normalized)) return;
+        result.push(entry);
+        used.add(normalized);
+      });
+      return result;
+    },
+    [normalizeSortKey],
+  );
 
-  const handleSort = (
-    sortKey: string,
-    event?: React.MouseEvent<HTMLButtonElement>,
-  ) => {
-    if (!isAllowedSort(sortKey)) return;
-    const current = sorting.find((s) => s.id === sortKey);
-    const next = nextSortState(current, sortKey);
-    const allowMulti =
-      orderingMode === "multi" && (!requireModifier || event?.shiftKey);
-
-    if (!allowMulti) {
-      setSorting(next ? [next] : []);
-      return;
-    }
-
-    let nextSorting = sorting.filter((s) => s.id !== sortKey);
-    if (next) {
-      nextSorting = [...nextSorting, next];
-      if (maxLevels > 0 && nextSorting.length > maxLevels) {
-        nextSorting = nextSorting.slice(-maxLevels);
+  const buildNextOrderBy = React.useCallback(
+    (key: string, multi: boolean) => {
+      const normalizedKey = normalizeSortKey(key);
+      const current = orderBy ?? [];
+      const index = current.findIndex(
+        (entry) => normalizeSortKey(entry) === normalizedKey,
+      );
+      if (index === -1) {
+        return multi ? [...current, normalizedKey] : [normalizedKey];
       }
-    }
-    setSorting(nextSorting);
-  };
+      const existing = current[index];
+      const isDesc = existing.startsWith("-");
+      if (!isDesc) {
+        if (multi) {
+          const next = [...current];
+          next[index] = `-${normalizedKey}`;
+          return next;
+        }
+        return [`-${normalizedKey}`];
+      }
+      if (multi) {
+        const next = [...current];
+        next.splice(index, 1);
+        return next;
+      }
+      return [];
+    },
+    [normalizeSortKey, orderBy],
+  );
+
+  const handleSortToggle = React.useCallback(
+    (key: string, event: React.MouseEvent) => {
+      if (sortingDisabled) return;
+      const multiSortEnabled = true;
+      const multiSortOnPlainClick = true;
+      const multi =
+        multiSortEnabled &&
+        (multiSortOnPlainClick ||
+          event.shiftKey ||
+          event.ctrlKey ||
+          event.metaKey);
+      const nextOrderByRaw = buildNextOrderBy(key, multi);
+      const nextOrderBy = ensureDistinctOrderBy(distinctOn, nextOrderByRaw);
+      const nextFilters = {
+        ...advancedFilters,
+        orderBy: nextOrderBy,
+      };
+      const nextVariables = {
+        ...(filterVariables ?? {}),
+        orderBy: nextOrderBy.length > 0 ? nextOrderBy : undefined,
+      };
+      setAdvancedFilters(nextFilters, nextVariables);
+    },
+    [
+      advancedFilters,
+      buildNextOrderBy,
+      distinctOn,
+      ensureDistinctOrderBy,
+      filterVariables,
+      setAdvancedFilters,
+      sortingDisabled,
+    ],
+  );
 
   // Selection logic
   const allSelected = data.length > 0 && Object.keys(rowSelection).length === data.length;
@@ -201,42 +256,100 @@ export function TableHeader({
           if (!field) return null;
 
           if ("accessor" in field) {
-            const sortKey = resolveSortKey(
-              field.id,
-              field.sortKey ?? field.accessor,
-            );
-            const sortable =
-              (field.sortable ?? false) && isAllowedSort(sortKey);
-            const sort = sorting.find((s) => s.id === sortKey);
-            const direction = sort ? (sort.desc ? "desc" : "asc") : false;
-
+            const sortKey = field.id;
+            const normalizedKey = normalizeSortKey(sortKey);
+            const sortState = sortMap.get(normalizedKey);
+            const sortDirection = sortState?.direction;
+            const ariaSort: React.AriaAttributes["aria-sort"] = sortingDisabled
+              ? "none"
+              : sortDirection === "asc"
+                ? "ascending"
+                : sortDirection === "desc"
+                  ? "descending"
+                  : "none";
             return (
               <DraggableHead
                 key={field.id}
                 id={field.id}
-                isSortable={sortable}
-                sortDirection={direction}
-                onSort={sortable ? (event) => handleSort(sortKey, event) : undefined}
+                draggable={allowDrag && !locked.has(field.id)}
+                ariaSort={ariaSort}
               >
-                {field.title}
+                {sortingDisabled ? (
+                  <span className="font-medium text-sm">{field.title}</span>
+                ) : (
+                  <button
+                    type="button"
+                    className="flex items-center gap-1 text-left select-none"
+                    onClick={(event) => handleSortToggle(sortKey, event)}
+                    title="Click to sort"
+                  >
+                    <span className="font-medium text-sm">{field.title}</span>
+                    <span className="inline-flex items-center gap-1">
+                      {sortDirection === "asc" ? (
+                        <ChevronUp className="h-3.5 w-3.5 text-primary" />
+                      ) : sortDirection === "desc" ? (
+                        <ChevronDown className="h-3.5 w-3.5 text-primary" />
+                      ) : (
+                        <ArrowUpDown className="h-3.5 w-3.5 opacity-40" />
+                      )}
+                      {sortState ? (
+                        <span className="text-[10px] text-muted-foreground">
+                          {sortState.index + 1}
+                        </span>
+                      ) : null}
+                    </span>
+                  </button>
+                )}
               </DraggableHead>
             );
           }
 
-          const sortKey = resolveSortKey(field.name, field.name);
-          const sortable = field.isIndexed && isAllowedSort(sortKey);
-          const sort = sorting.find((s) => s.id === sortKey);
-          const direction = sort ? (sort.desc ? "desc" : "asc") : false;
-
+          const sortKey = field.name;
+          const normalizedKey = normalizeSortKey(sortKey);
+          const sortState = sortMap.get(normalizedKey);
+          const sortDirection = sortState?.direction;
+          const ariaSort: React.AriaAttributes["aria-sort"] = sortingDisabled
+            ? "none"
+            : sortDirection === "asc"
+              ? "ascending"
+              : sortDirection === "desc"
+                ? "descending"
+                : "none";
           return (
             <DraggableHead
               key={field.name}
               id={field.name}
-              isSortable={sortable}
-              sortDirection={direction}
-              onSort={sortable ? (event) => handleSort(sortKey, event) : undefined}
+              draggable={allowDrag && !locked.has(field.name)}
+              ariaSort={ariaSort}
             >
-              {field.verboseName}
+              {sortingDisabled ? (
+                <span className="font-medium text-sm">{field.verboseName}</span>
+              ) : (
+                <button
+                  type="button"
+                  className="flex items-center gap-1 text-left select-none"
+                  onClick={(event) => handleSortToggle(sortKey, event)}
+                  title="Click to sort"
+                >
+                  <span className="font-medium text-sm">
+                    {field.verboseName}
+                  </span>
+                  <span className="inline-flex items-center gap-1">
+                    {sortDirection === "asc" ? (
+                      <ChevronUp className="h-3.5 w-3.5 text-primary" />
+                    ) : sortDirection === "desc" ? (
+                      <ChevronDown className="h-3.5 w-3.5 text-primary" />
+                    ) : (
+                      <ArrowUpDown className="h-3.5 w-3.5 opacity-40" />
+                    )}
+                    {sortState ? (
+                      <span className="text-[10px] text-muted-foreground">
+                        {sortState.index + 1}
+                      </span>
+                    ) : null}
+                  </span>
+                </button>
+              )}
             </DraggableHead>
           );
         })}

@@ -9,7 +9,7 @@ A metadata-driven, headless-capable data table for Rail React, built on top of S
 - **Advanced Filtering**: Supports complex nested filters via `FilterPanel`.
 - **Filter Panel V2**: New inline/panel/toolbar modes via `useNewFilterUI` or `FilterPanel`.
 - **Responsive**: Switches to card view on mobile devices (`TableMobileCard`).
-- **Persisted State**: Saves column order, visibility, and sorting to `localStorage`.
+- **Persisted State**: Saves column order, visibility, and page size to `localStorage`.
 - **Compound Components**: Fully composable architecture.
 
 ## Usage
@@ -48,6 +48,13 @@ export function UserTable() {
 />
 ```
 
+Notes:
+- `order` can be partial; missing columns are appended (or prepended with `append: "start"`).
+- `mode: "persisted"` uses saved column order when available; `config` always uses `order`.
+- `locked` columns cannot be dragged.
+
+Row sorting via header clicks is intentionally disabled in `BaseModelTable`. Use filter `orderBy` if you need server-side ordering.
+
 **Notes**:
 - `filterPanel` merges FilterPanel props (e.g. `defaultFilters`, `fieldSelector`) with UI controls (`mode`, `side`, `widthClassName`, `defaultOpen`, `title`).
 - Drawer default width: full width on small screens, `50%` on `sm+` unless overridden.
@@ -64,30 +71,23 @@ If you have multiple tables for the same model, provide a unique key to isolate 
 />
 ```
 
-### Ordering (multi-level + defaults)
+### Column Ordering (custom + persisted)
 
-Use `ordering` to control sorting behavior, defaults, and mapping between column
-ids and backend order keys.
+Use `columnOrdering` to control how columns are ordered and whether drag-and-drop
+reordering is enabled. Ordering uses column ids (field names or accessors).
 
 ```tsx
 <BaseModelTable
   app="sales"
   model="Invoice"
-  fields={["id", "number", "customer", "total", "createdAt"]}
+  fields={["id", "number", "customer", "total", "created_at"]}
   relations={{ customer: { fields: ["name"], display: "name" } }}
-  ordering={{
-    mode: "multi",
-    requireModifier: true, // Shift+click to add levels
-    maxLevels: 3,
-    cycle: "asc-desc-none",
-    default: [
-      { id: "createdAt", desc: true },
-      { id: "customer", desc: false },
-    ],
-    map: {
-      customer: "customerName", // column id -> API order key
-    },
-    allow: ["createdAt", "customerName", "total"],
+  columnOrdering={{
+    order: ["number", "customer", "total", "created_at"],
+    append: "end",
+    mode: "persisted",
+    draggable: true,
+    locked: ["number"],
   }}
 />
 ```
@@ -97,7 +97,7 @@ ids and backend order keys.
 The table is composed of several contexts and components:
 
 - **MetadataContext**: Fetches and provides the model schema.
-- **TableContext**: Manages state (pagination, sorting, filters, data).
+- **TableContext**: Manages state (pagination, column order, filters, data).
 - **TableFrame**: The visual shell (shadcn table).
 - **TableToolbar**: Search and filter controls.
 

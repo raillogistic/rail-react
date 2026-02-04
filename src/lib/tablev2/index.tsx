@@ -22,7 +22,7 @@ import { useTableFilters } from "./hooks/useTableFilters";
 import type {
   BaseModelTableColumnDef,
   BaseModelTableField,
-  BaseModelTableOrderingConfig,
+  BaseModelTableColumnOrderingConfig,
   BaseModelTableRelationConfig,
   FieldSchema,
   RelationshipSchema,
@@ -138,7 +138,7 @@ type BaseTableContentProps = {
   hideTableOnMobile?: boolean;
   fields?: BaseModelTableField[];
   relations?: Record<string, BaseModelTableRelationConfig>;
-  ordering?: BaseModelTableOrderingConfig;
+  columnOrdering?: BaseModelTableColumnOrderingConfig;
   skipCount?: boolean;
 };
 
@@ -150,7 +150,7 @@ function BaseTableContent({
   hideTableOnMobile,
   fields,
   relations,
-  ordering,
+  columnOrdering,
   skipCount,
 }: BaseTableContentProps) {
   const {
@@ -161,8 +161,6 @@ function BaseTableContent({
     model,
   } = useMetadata();
   const {
-    sorting,
-    setSorting,
     columnOrder,
     setColumnOrder,
     setColumnVisibility,
@@ -174,53 +172,16 @@ function BaseTableContent({
 
   const effectiveKey = persistenceKey || `${app}-${model}`;
   useTablePersistence(effectiveKey);
-  const storageKey = `rail-table-v2:${effectiveKey}`;
-  const hasPersistedSorting = React.useMemo(() => {
-    if (typeof window === "undefined") return false;
-    try {
-      const stored = localStorage.getItem(storageKey);
-      if (!stored) return false;
-      const parsed = JSON.parse(stored) as { sorting?: unknown };
-      return Array.isArray(parsed.sorting) && parsed.sorting.length > 0;
-    } catch {
-      return false;
-    }
-  }, [storageKey]);
 
   const queryConfig = React.useMemo(
     () => ({
       fields,
       relations,
-      ordering,
       skipCount: skipCount ?? true,
     }),
-    [fields, relations, ordering, skipCount],
+    [fields, relations, skipCount],
   );
   useTableData(queryConfig);
-
-  const normalizedDefaultSorting = React.useMemo(() => {
-    const defaults = ordering?.default ?? [];
-    if (!defaults.length) return [];
-    const allow = ordering?.allow;
-    const map = ordering?.map;
-    return defaults
-      .map((entry) => {
-        const mapped = map?.[entry.id];
-        const id =
-          typeof mapped === "string"
-            ? mapped
-            : mapped?.id ?? entry.id;
-        return { id, desc: !!entry.desc };
-      })
-      .filter((entry) => !allow || allow.includes(entry.id));
-  }, [ordering]);
-
-  React.useEffect(() => {
-    if (!normalizedDefaultSorting.length) return;
-    if (sorting.length > 0) return;
-    if (hasPersistedSorting) return;
-    setSorting(normalizedDefaultSorting);
-  }, [normalizedDefaultSorting, sorting.length, hasPersistedSorting, setSorting]);
 
   const columnDefs = React.useMemo(() => {
     if (!metadata || !fields || fields.length === 0) return null;
@@ -247,25 +208,21 @@ function BaseTableContent({
       const isRelation = !!fieldMeta?.isRelation || !!relationMeta;
       const displayField = relations?.[root]?.display ?? "desc";
       const displayAccessor =
-        parts.length === 1 && isRelation ? `${accessor}.${displayField}` : accessor;
+        parts.length === 1 && isRelation
+          ? `${accessor}.${displayField}`
+          : accessor;
       const title =
         titleOverride ||
         fieldMeta?.verboseName ||
         relationMeta?.verboseName ||
         parts[parts.length - 1] ||
         accessor;
-      const sortable = !displayAccessor.includes(".") && !!fieldMeta?.isIndexed;
-      const sortKey = !displayAccessor.includes(".")
-        ? fieldMeta?.name || displayAccessor
-        : undefined;
 
       return {
         id: accessor,
         accessor: displayAccessor,
         title,
         render,
-        sortable,
-        sortKey,
       };
     };
 
@@ -284,8 +241,17 @@ function BaseTableContent({
     return columnOrder.filter((id) => ids.includes(id));
   }, [columnDefs, columnOrder]);
 
+  const allowColumnDrag = columnOrdering?.draggable !== false;
+  const lockedColumns = React.useMemo(
+    () => new Set(columnOrdering?.locked ?? []),
+    [columnOrdering?.locked],
+  );
+
   const handleDragEnd = (event: DragEndEvent) => {
+    if (!allowColumnDrag) return;
     const { active, over } = event;
+    if (!over) return;
+    if (lockedColumns.has(String(active.id))) return;
     if (active.id !== over?.id) {
       const oldIndex = columnOrder.indexOf(String(active.id));
       const newIndex = columnOrder.indexOf(String(over?.id));
@@ -293,20 +259,57 @@ function BaseTableContent({
     }
   };
 
+  const resolveColumnOrder = React.useCallback(
+    (availableIds: string[]) => {
+      const mode = columnOrdering?.mode ?? "persisted";
+      const append = columnOrdering?.append ?? "end";
+      const configOrder = columnOrdering?.order ?? [];
+      const baseOrder =
+        mode === "persisted" && columnOrder.length > 0
+          ? columnOrder
+          : configOrder.length > 0
+            ? configOrder
+            : availableIds;
+      const availableSet = new Set(availableIds);
+      const normalize = (entries: string[], valid: Set<string>) => {
+        const next: string[] = [];
+        const seen = new Set<string>();
+        entries.forEach((id) => {
+          if (!valid.has(id) || seen.has(id)) return;
+          next.push(id);
+          seen.add(id);
+        });
+        return next;
+      };
+      const baseNormalized = normalize(baseOrder, availableSet);
+      const baseSet = new Set(baseNormalized);
+      const missing = availableIds.filter((id) => !baseSet.has(id));
+      const missingSet = new Set(missing);
+      const preferredMissing = normalize(configOrder, missingSet);
+      const preferredSet = new Set(preferredMissing);
+      const remainingMissing = missing.filter((id) => !preferredSet.has(id));
+      const combined =
+        append === "start"
+          ? [...preferredMissing, ...remainingMissing, ...baseNormalized]
+          : [...baseNormalized, ...preferredMissing, ...remainingMissing];
+
+      const same =
+        combined.length === columnOrder.length &&
+        combined.every((id, index) => columnOrder[index] === id);
+      if (!same) {
+        setColumnOrder(combined);
+      }
+    },
+    [columnOrder, columnOrdering, setColumnOrder],
+  );
+
   React.useEffect(() => {
     if (!metadata?.fields) return;
 
     const targetColumns = columnDefs;
     if (targetColumns && targetColumns.length > 0) {
       const columnIds = targetColumns.map((column) => column.id);
-      const orderedIds = columnOrder.length ? columnOrder : [];
-      const missingIds = columnIds.filter((id) => !orderedIds.includes(id));
-
-      if (columnOrder.length === 0) {
-        setColumnOrder(columnIds);
-      } else if (missingIds.length > 0) {
-        setColumnOrder([...orderedIds, ...missingIds]);
-      }
+      resolveColumnOrder(columnIds);
 
       const nextVisibility: Record<string, boolean> = { ...columnVisibility };
       let visibilityChanged = false;
@@ -326,16 +329,7 @@ function BaseTableContent({
       (f) => f.visibility !== "hidden",
     );
     const visibleNames = visibleFields.map((field) => field.name);
-    const orderedNames = columnOrder.length ? columnOrder : [];
-    const missingNames = visibleNames.filter(
-      (name) => !orderedNames.includes(name),
-    );
-
-    if (columnOrder.length === 0) {
-      setColumnOrder(visibleNames);
-    } else if (missingNames.length > 0) {
-      setColumnOrder([...orderedNames, ...missingNames]);
-    }
+    resolveColumnOrder(visibleNames);
 
     const nextVisibility: Record<string, boolean> = { ...columnVisibility };
     let visibilityChanged = false;
@@ -351,10 +345,9 @@ function BaseTableContent({
   }, [
     metadata,
     columnDefs,
-    columnOrder,
     columnVisibility,
-    setColumnOrder,
     setColumnVisibility,
+    resolveColumnOrder,
   ]);
 
   if (metadataLoading) {
@@ -394,7 +387,10 @@ function BaseTableContent({
             </div>
           ) : null}
           <div className={hideTableOnMobile ? "hidden md:block" : undefined}>
-            <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+            <DndContext
+              collisionDetection={closestCenter}
+              onDragEnd={handleDragEnd}
+            >
               <TableFrame className="w-full">
                 <SortableContext
                   items={sortableColumnIds}
@@ -403,7 +399,7 @@ function BaseTableContent({
                   <TableHeader
                     actionsLabel={tableConfig?.actionsLabel}
                     columns={columnDefs ?? undefined}
-                    ordering={ordering}
+                    columnOrdering={columnOrdering}
                   />
                 </SortableContext>
                 <TableBody>
@@ -439,7 +435,7 @@ export interface BaseModelTableProps {
   hideTableOnMobile?: boolean;
   fields?: BaseModelTableField[];
   relations?: Record<string, BaseModelTableRelationConfig>;
-  ordering?: BaseModelTableOrderingConfig;
+  columnOrdering?: BaseModelTableColumnOrderingConfig;
   skipCount?: boolean;
 }
 
@@ -454,7 +450,7 @@ export function BaseModelTable({
   hideTableOnMobile,
   fields,
   relations,
-  ordering,
+  columnOrdering,
   skipCount,
 }: BaseModelTableProps) {
   return (
@@ -468,7 +464,7 @@ export function BaseModelTable({
             hideTableOnMobile={hideTableOnMobile}
             fields={fields}
             relations={relations}
-            ordering={ordering}
+            columnOrdering={columnOrdering}
             skipCount={skipCount}
           >
             {children}
@@ -496,7 +492,7 @@ export function ModelTableV2({
       hideTableOnMobile={baseTable?.hideTableOnMobile ?? true}
       fields={baseTable?.fields}
       relations={baseTable?.relations}
-      ordering={baseTable?.ordering}
+      columnOrdering={baseTable?.columnOrdering}
       skipCount={baseTable?.skipCount}
     >
       <ModelTableV2Content

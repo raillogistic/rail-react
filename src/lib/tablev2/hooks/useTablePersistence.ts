@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useTable } from "../context/TableContext";
-import { ColumnVisibilityState, SortingState } from "../types";
+import { ColumnVisibilityState } from "../types";
 
 const STORAGE_PREFIX = "rail-table-v2";
 
@@ -8,7 +8,6 @@ interface PersistedState {
   columnOrder: string[];
   columnVisibility: ColumnVisibilityState;
   perPage: number;
-  sorting: SortingState[];
 }
 
 export function useTablePersistence(key: string) {
@@ -16,11 +15,9 @@ export function useTablePersistence(key: string) {
     columnOrder,
     columnVisibility,
     pagination: { perPage },
-    sorting,
     setColumnOrder,
     setColumnVisibility,
     setPerPage,
-    setSorting,
   } = useTable();
 
   const storageKey = `${STORAGE_PREFIX}:${key}`;
@@ -41,14 +38,11 @@ export function useTablePersistence(key: string) {
         if (parsed.perPage) {
           setPerPage(parsed.perPage);
         }
-        if (parsed.sorting) {
-          setSorting(parsed.sorting);
-        }
       }
     } catch (e) {
       console.warn("Failed to load table state", e);
     }
-  }, [storageKey, setColumnOrder, setColumnVisibility, setPerPage, setSorting]);
+  }, [storageKey, setColumnOrder, setColumnVisibility, setPerPage]);
 
   // Save state on change
   useEffect(() => {
@@ -60,7 +54,6 @@ export function useTablePersistence(key: string) {
           columnOrder,
           columnVisibility,
           perPage,
-          sorting,
         };
         localStorage.setItem(storageKey, JSON.stringify(stateToSave));
       } catch (e) {
@@ -69,5 +62,5 @@ export function useTablePersistence(key: string) {
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [storageKey, columnOrder, columnVisibility, perPage, sorting]);
+  }, [storageKey, columnOrder, columnVisibility, perPage]);
 }

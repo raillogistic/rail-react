@@ -90,6 +90,24 @@ const CORE_NAVIGATION_LINKS: NavigationSection[] = [
               <BaseModelTable
                 app="store"
                 model="Product"
+                fields={[
+                  "sku",
+                  "name",
+                  "price",
+                  { accessor: "createdAt", title: "Created At" },
+                ]}
+                // columnOrdering={{
+                //   order: ["sku", "name"],
+                //   append: "end",
+                //   mode: "config", // "persisted" (default) or "config"
+                //   draggable: true,
+                //   locked: ["sku"],
+                // }}
+              />
+              {/* <BaseModelTable
+                app="store"
+                model="Product"
+            
                 // ordering={{
                 //   mode: "multi",
                 //   requireModifier: true, // Shift+click to add levels
@@ -104,7 +122,7 @@ const CORE_NAVIGATION_LINKS: NavigationSection[] = [
                 //   },
                 //   allow: ["createdAt", "customerName", "total"],
                 // }}
-              />
+              /> */}
             </div>
           </>
         ),

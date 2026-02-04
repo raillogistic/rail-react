@@ -70,23 +70,69 @@ export function ModelFormHeader() {
 }
 
 export function ModelFormErrors() {
-  const { globalMutationErrors, resolveFieldLabel } = useModelFormContext();
-  if (!globalMutationErrors.length) return null;
+  const { mutationErrors, resolveFieldLabel } = useModelFormContext();
+  if (!mutationErrors.length) return null;
+
+  const groups = mutationErrors.reduce<{
+    error: typeof mutationErrors;
+    warning: typeof mutationErrors;
+    info: typeof mutationErrors;
+  }>(
+    (acc, error) => {
+      const severity = String(error.severity ?? "error").toLowerCase();
+      if (severity === "warning") acc.warning.push(error);
+      else if (severity === "info") acc.info.push(error);
+      else acc.error.push(error);
+      return acc;
+    },
+    { error: [], warning: [], info: [] }
+  );
+
+  const renderList = (
+    label: string,
+    items: typeof mutationErrors,
+    tone: string
+  ) => {
+    if (!items.length) return null;
+    return (
+      <div className="space-y-2">
+        <p className={cn("text-xs font-semibold uppercase tracking-wide", tone)}>
+          {label} ({items.length})
+        </p>
+        <ul className="space-y-1 text-sm">
+          {items.map((error, index) => (
+            <li key={`${error.field ?? "form"}-${label}-${index}`}>
+              {error.field ? (
+                <span className="font-medium">
+                  {resolveFieldLabel?.(error.field) ?? error.field}:{" "}
+                </span>
+              ) : null}
+              {error.message}
+              {error.code ? (
+                <span className="ml-2 text-[10px] uppercase text-muted-foreground">
+                  {error.code}
+                </span>
+              ) : null}
+              {error.details && typeof error.details === "object" ? (
+                (error.details as Record<string, any>)?.hint ? (
+                  <span className="block text-xs text-muted-foreground">
+                    {(error.details as Record<string, any>).hint}
+                  </span>
+                ) : null
+              ) : null}
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  };
+
   return (
-    <Card className="space-y-2 border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
-      <p className="font-semibold">Server returned errors:</p>
-      <ul className="list-disc space-y-1 pl-5">
-        {globalMutationErrors.map((error, index) => (
-          <li key={`${error.field ?? "form"}-${index}`}>
-            {error.field ? (
-              <span className="font-medium">
-                {resolveFieldLabel?.(error.field) ?? error.field}: {" "}
-              </span>
-            ) : null}
-            {error.message}
-          </li>
-        ))}
-      </ul>
+    <Card className="space-y-3 border-destructive/40 bg-destructive/5 p-4 text-sm">
+      <p className="font-semibold">Server returned validation feedback:</p>
+      {renderList("Errors", groups.error, "text-destructive")}
+      {renderList("Warnings", groups.warning, "text-amber-700")}
+      {renderList("Info", groups.info, "text-muted-foreground")}
     </Card>
   );
 }

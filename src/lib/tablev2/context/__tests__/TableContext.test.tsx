@@ -14,7 +14,6 @@ describe('TableContext', () => {
 
     expect(result.current.pagination.page).toBe(1);
     expect(result.current.pagination.perPage).toBe(20);
-    expect(result.current.sorting).toEqual([]);
     expect(result.current.quickSearch).toBe('');
   });
 
@@ -31,15 +30,6 @@ describe('TableContext', () => {
     });
     expect(result.current.pagination.perPage).toBe(50);
     expect(result.current.pagination.page).toBe(1); // Should reset to page 1
-  });
-
-  it('should update sorting', () => {
-    const { result } = renderHook(() => useTable(), { wrapper });
-
-    act(() => {
-      result.current.setSorting([{ id: 'name', desc: true }]);
-    });
-    expect(result.current.sorting).toEqual([{ id: 'name', desc: true }]);
   });
 
   it('should update quick search and reset page', () => {

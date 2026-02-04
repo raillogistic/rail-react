@@ -2,7 +2,7 @@ import React from "react";
 import { useStore } from "@tanstack/react-form";
 import { Input } from "@/lib/components/ui/input";
 import { cn } from "@/lib/utils";
-import { FieldWrapper } from "./common";
+import { FieldWrapper, resolveFieldErrors, resolveRequiredError } from "./common";
 import type {
   FieldComponentProps,
   FileFieldConfig,
@@ -15,12 +15,15 @@ type Props = FieldComponentProps<TextFieldConfig | FileFieldConfig>;
 const TextInput: React.FC<Props> = ({ config, field, form }) => {
   const meta = field.state.meta;
   const dirty = meta.isDirty;
-  const rawError = meta.touchedErrors?.[0] ?? meta.errors?.[0];
-  const submitCount = useStore(form.store, (state) => state.submitCount);
+  const submitCount = useStore(
+    form.store,
+    (state) => (state as any).submissionAttempts ?? (state as any).submitCount ?? 0
+  );
   const isSubmitted = submitCount > 0;
   const showError =
     dirty || meta.isBlurred || isSubmitted || Boolean(meta.errorMap?.onSubmit);
-  const error = showError ? rawError : undefined;
+  const fieldErrors = resolveFieldErrors(meta, showError);
+  const error = fieldErrors ?? resolveRequiredError(config, field.state.value, showError);
 
   if (config.type === "textarea") {
     const value = (field.state.value as string) ?? "";

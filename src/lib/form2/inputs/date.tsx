@@ -12,7 +12,7 @@ import {
   PopoverTrigger,
 } from "@/lib/components/ui/popover";
 import { cn } from "@/lib/utils";
-import { FieldWrapper } from "./common";
+import { FieldWrapper, resolveFieldErrors, resolveRequiredError } from "./common";
 import type { DateFieldConfig, FieldComponentProps } from "./types";
 
 type Props = FieldComponentProps<DateFieldConfig, string>;
@@ -23,11 +23,14 @@ const STORAGE_FORMAT = "yyyy-MM-dd";
 const DateInput: React.FC<Props> = ({ config, field, form }) => {
   const meta = field.state.meta;
   const dirty = meta.isDirty;
-  const rawError = meta.touchedErrors?.[0] ?? meta.errors?.[0];
-  const submitCount = useStore(form.store, (state) => state.submitCount);
+  const submitCount = useStore(
+    form.store,
+    (state) => (state as any).submissionAttempts ?? (state as any).submitCount ?? 0
+  );
   const isSubmitted = submitCount > 0;
   const showError = dirty || meta.isBlurred || isSubmitted || Boolean(meta.errorMap?.onSubmit);
-  const error = showError ? rawError : undefined;
+  const fieldErrors = resolveFieldErrors(meta, showError);
+  const error = fieldErrors ?? resolveRequiredError(config, field.state.value, showError);
   const rawValue = (field.state.value as string) ?? "";
   const parsedValue = React.useMemo(() => parseDateValue(rawValue), [rawValue]);
   const [open, setOpen] = React.useState(false);

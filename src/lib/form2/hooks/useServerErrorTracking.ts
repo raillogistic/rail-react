@@ -2,7 +2,12 @@ import * as React from "react";
 import { toast } from "@/lib/components/ui/sonner";
 import type { UseFormReturn } from "@tanstack/react-form";
 import type { MutationError } from "../types";
-import { hasValueChangedSinceError, normalizeErrorFieldPath } from "../utils/errors";
+import {
+  getValueAtPath,
+  hasValueChangedSinceError,
+  isBlockingError,
+  normalizeErrorFieldPath,
+} from "../utils/errors";
 
 export function useServerErrorTracking(options: {
   form: UseFormReturn<any>;
@@ -16,13 +21,14 @@ export function useServerErrorTracking(options: {
   const lastServerErrorSignatureRef = React.useRef<string>("");
 
   React.useEffect(() => {
-    if (mutationErrors.length === 0) {
+    const blockingErrors = mutationErrors.filter(isBlockingError);
+    if (blockingErrors.length === 0) {
       serverErrorFieldsRef.current = new Set();
       lastServerErrorSignatureRef.current = "";
       serverErrorValuesRef.current = new Map();
       return;
     }
-    const normalizedErrorFields = mutationErrors
+    const normalizedErrorFields = blockingErrors
       .map((err) => normalizeErrorFieldPath(err.field))
       .filter((field): field is string => Boolean(field));
     serverErrorFieldsRef.current = new Set(normalizedErrorFields);
@@ -32,10 +38,10 @@ export function useServerErrorTracking(options: {
         : (form.store as any).state?.values ?? {};
     const snapshot = new Map<string, any>();
     normalizedErrorFields.forEach((fieldName) => {
-      snapshot.set(fieldName, valuesSnapshot?.[fieldName]);
+      snapshot.set(fieldName, getValueAtPath(valuesSnapshot, fieldName));
     });
     serverErrorValuesRef.current = snapshot;
-    const signature = mutationErrors
+    const signature = blockingErrors
       .map(
         (err) =>
           `${normalizeErrorFieldPath(err.field) ?? "form"}:${err.message}`

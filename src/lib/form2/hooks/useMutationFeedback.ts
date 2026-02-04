@@ -2,6 +2,7 @@ import * as React from "react";
 import { toast } from "@/lib/components/ui/sonner";
 import type { MutationResult } from "@apollo/client";
 import type { MutationError } from "../types";
+import { isBlockingError } from "../utils/errors";
 
 export function useMutationFeedback(options: {
   mutationErrors: MutationError[];
@@ -29,14 +30,18 @@ export function useMutationFeedback(options: {
 
   React.useEffect(() => {
     const networkError = createState.error ?? updateState.error;
+    const hasBlockingErrors = mutationErrors.some(isBlockingError);
     if (!networkError || lastNetworkErrorRef.current === networkError) {
+      return;
+    }
+    if (hasBlockingErrors) {
       return;
     }
     lastNetworkErrorRef.current = networkError;
     toast.error(
       (networkError as Error).message ?? "Network error while submitting the form."
     );
-  }, [createState.error, updateState.error]);
+  }, [createState.error, updateState.error, mutationErrors]);
 
   const successPayload = React.useMemo(() => {
     return (createState.data as any)?.response ?? (updateState.data as any)?.response ?? null;
@@ -44,7 +49,8 @@ export function useMutationFeedback(options: {
 
   React.useEffect(() => {
     const isMutating = createState.loading || updateState.loading;
-    if (!successPayload?.ok || isMutating || mutationErrors.length > 0) {
+    const hasBlockingErrors = mutationErrors.some(isBlockingError);
+    if (!successPayload?.ok || isMutating || hasBlockingErrors) {
       return;
     }
     if (lastSuccessDataRef.current === successPayload) {

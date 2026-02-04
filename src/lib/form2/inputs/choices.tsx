@@ -15,7 +15,7 @@ import {
 } from "@/lib/components/ui/dropdown-menu";
 import { Button } from "@/lib/components/ui/button";
 import { Checkbox } from "@/lib/components/ui/checkbox";
-import { FieldWrapper } from "./common";
+import { FieldWrapper, resolveFieldErrors, resolveRequiredError } from "./common";
 import type {
   ChoiceFieldConfig,
   FieldComponentProps,
@@ -27,11 +27,14 @@ type Props = FieldComponentProps<ChoiceFieldConfig>;
 const ChoiceInput: React.FC<Props> = ({ config, field, form }) => {
   const meta = field.state.meta;
   const dirty = meta.isDirty;
-  const rawError = meta.touchedErrors?.[0] ?? meta.errors?.[0];
-  const submitCount = useStore(form.store, (state) => state.submitCount);
+  const submitCount = useStore(
+    form.store,
+    (state) => (state as any).submissionAttempts ?? (state as any).submitCount ?? 0
+  );
   const isSubmitted = submitCount > 0;
   const showError = dirty || meta.isBlurred || isSubmitted || Boolean(meta.errorMap?.onSubmit);
-  const error = showError ? rawError : undefined;
+  const fieldErrors = resolveFieldErrors(meta, showError);
+  const error = fieldErrors ?? resolveRequiredError(config, field.state.value, showError);
 
   if (config.multiple) {
     const selectedValues = Array.isArray(field.state.value)

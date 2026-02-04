@@ -21,10 +21,6 @@ function buildDynamicQuery(
   fieldConfig?: {
     fields?: BaseModelTableField[];
     relations?: Record<string, BaseModelTableRelationConfig>;
-    ordering?: {
-      allow?: string[];
-      map?: Record<string, string | { id: string }>;
-    };
     skipCount?: boolean;
   },
 ) {
@@ -211,16 +207,11 @@ function buildDynamicQuery(
 export function useTableData(config?: {
   fields?: BaseModelTableField[];
   relations?: Record<string, BaseModelTableRelationConfig>;
-  ordering?: {
-    allow?: string[];
-    map?: Record<string, string | { id: string }>;
-  };
   skipCount?: boolean;
 }) {
   const { app, model, metadata } = useMetadata();
   const {
     pagination,
-    sorting,
     quickSearch,
     filterVariables,
     refreshKey,
@@ -244,35 +235,19 @@ export function useTableData(config?: {
 
   // 2. Prepare Variables
   const variables = useMemo(() => {
-    const allow = config?.ordering?.allow;
-    const map = config?.ordering?.map;
-    const normalizedSorting = sorting
-      .map((entry) => {
-        const mapped = map?.[entry.id];
-        const id =
-          typeof mapped === "string"
-            ? mapped
-            : mapped?.id ?? entry.id;
-        return { ...entry, id };
-      })
-      .filter((entry) => !allow || allow.includes(entry.id));
-    const orderBy = normalizedSorting.map((s) => (s.desc ? `-${s.id}` : s.id));
-
     // Merge filter variables if present
     const where = filterVariables?.where;
     const presets = filterVariables?.presets;
     const distinctOn = filterVariables?.distinctOn;
-    // Note: filterVariables might also have orderBy, but we prioritize table sorting or merge?
-    // Usually table sorting overrides filter sorting or appends.
-    // Here we let table sorting take precedence or just use table sorting.
-    // Let's stick to table sorting for now as the source of truth for the grid.
+    const orderBy = filterVariables?.orderBy;
+    // orderBy is driven by advanced filters (if provided).
 
     const supportsQuick = !!metadata?.filterConfig?.supportsQuick;
 
     return {
       page: pagination.page,
       perPage: pagination.perPage,
-      orderBy: orderBy.length > 0 ? orderBy : undefined,
+      orderBy: orderBy && orderBy.length > 0 ? orderBy : undefined,
       ...(supportsQuick ? { quick: debouncedQuickSearch || undefined } : {}),
       where,
       presets,
@@ -282,13 +257,10 @@ export function useTableData(config?: {
   }, [
     pagination.page,
     pagination.perPage,
-    sorting,
     debouncedQuickSearch,
     filterVariables,
     metadata?.filterConfig?.supportsQuick,
     config?.skipCount,
-    config?.ordering?.allow,
-    config?.ordering?.map,
   ]);
 
   // 3. Execute Query

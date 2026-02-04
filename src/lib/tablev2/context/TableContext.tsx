@@ -1,7 +1,6 @@
 import { createContext, useContext, useReducer, ReactNode, useCallback } from "react";
 import {
   TableContextState,
-  SortingState,
   ColumnVisibilityState
 } from "../types";
 import { FilterFormState } from "../../form/filters/types";
@@ -20,7 +19,6 @@ type TableAction =
       hasNextPage?: boolean | null;
       hasPreviousPage?: boolean | null;
     }
-  | { type: "SET_SORTING"; sorting: SortingState[] }
   | { type: "SET_COLUMN_VISIBILITY"; visibility: ColumnVisibilityState }
   | { type: "SET_COLUMN_ORDER"; order: string[] }
   | { type: "SET_ROW_SELECTION"; selection: Record<string, boolean> }
@@ -44,7 +42,6 @@ const initialState: TableContextState = {
     hasNextPage: false,
     hasPreviousPage: false,
   },
-  sorting: [],
   columnVisibility: {},
   columnOrder: [],
   rowSelection: {},
@@ -60,7 +57,6 @@ const initialState: TableContextState = {
   // Placeholders, will be overwritten by Provider
   setPage: () => {},
   setPerPage: () => {},
-  setSorting: () => {},
   setColumnVisibility: () => {},
   setColumnOrder: () => {},
   setRowSelection: () => {},
@@ -117,8 +113,6 @@ function tableReducer(state: TableContextState, action: TableAction): TableConte
         },
       };
     }
-    case "SET_SORTING":
-      return { ...state, sorting: action.sorting };
     case "SET_COLUMN_VISIBILITY":
       return { ...state, columnVisibility: action.visibility };
     case "SET_COLUMN_ORDER":
@@ -167,7 +161,6 @@ export function TableProvider({ children, initialState: initialProps }: TablePro
   const actions = {
     setPage: useCallback((page: number) => dispatch({ type: "SET_PAGE", page }), []),
     setPerPage: useCallback((perPage: number) => dispatch({ type: "SET_PER_PAGE", perPage }), []),
-    setSorting: useCallback((sorting: SortingState[]) => dispatch({ type: "SET_SORTING", sorting }), []),
     setColumnVisibility: useCallback((visibility: ColumnVisibilityState) => dispatch({ type: "SET_COLUMN_VISIBILITY", visibility }), []),
     setColumnOrder: useCallback((order: string[]) => dispatch({ type: "SET_COLUMN_ORDER", order }), []),
     setRowSelection: useCallback((selection: Record<string, boolean>) => dispatch({ type: "SET_ROW_SELECTION", selection }), []),

@@ -28,7 +28,7 @@ import type {
   FilterGroup,
   FilterQueryVariables,
 } from "../../form/filters/types";
-import type { ModelSchema, SortingState } from "../types";
+import type { ModelSchema } from "../types";
 import {
   ExportFieldTree,
   isReadableField,
@@ -54,19 +54,9 @@ const resolveAccessor = (metadata: ModelSchema, raw: string) => {
   return field?.fieldName || raw;
 };
 
-const buildOrderingPayload = (
-  metadata: ModelSchema,
-  sorting: SortingState[],
-  fallback?: string[],
-) => {
-  if (sorting.length > 0) {
-    return sorting.map((sort) => {
-      const accessor = resolveAccessor(metadata, sort.id);
-      return sort.desc ? `-${accessor}` : accessor;
-    });
-  }
-  if (fallback && fallback.length > 0) {
-    return fallback.map((entry) => {
+const buildOrderingPayload = (metadata: ModelSchema, orderBy?: string[]) => {
+  if (orderBy && orderBy.length > 0) {
+    return orderBy.map((entry) => {
       const desc = entry.startsWith("-");
       const raw = desc ? entry.slice(1) : entry;
       const accessor = resolveAccessor(metadata, raw);
@@ -148,7 +138,6 @@ export function ModelTableExportDialog({
   const {
     columnOrder,
     columnVisibility,
-    sorting,
     filterVariables,
     quickSearch,
     advancedFilters,
@@ -216,8 +205,8 @@ export function ModelTableExportDialog({
   );
   const orderingPayload = useMemo(() => {
     if (!metadata) return undefined;
-    return buildOrderingPayload(metadata, sorting, filterPayload?.orderBy);
-  }, [metadata, sorting, filterPayload?.orderBy]);
+    return buildOrderingPayload(metadata, filterPayload?.orderBy);
+  }, [metadata, filterPayload?.orderBy]);
 
   const buildExportPayload = useCallback(() => {
     if (!metadata || selectedCount === 0) return null;

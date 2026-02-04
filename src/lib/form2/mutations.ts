@@ -12,6 +12,9 @@ export type JsonValue =
 export type MutationError = {
   field?: string | null;
   message: string;
+  code?: string | null;
+  severity?: "error" | "warning" | "info" | string;
+  details?: Record<string, any> | null;
 };
 
 export type CreateMutationResponse<TModel> = {
@@ -119,7 +122,7 @@ export function build_create_mutation(
     `  response: ${field}(input: $input) {\n` +
     `    ok\n` +
     `    object { ${selection} }\n` +
-    `    errors { field message }\n` +
+    `    errors { field message code severity details }\n` +
     `  }\n` +
     `}`
   );
@@ -137,7 +140,7 @@ export function build_update_mutation(
     `  response: ${field}(input: $input) {\n` +
     `    ok\n` +
     `    object { ${selection} }\n` +
-    `    errors { field message }\n` +
+    `    errors { field message code severity details }\n` +
     `  }\n` +
     `}`
   );
@@ -157,7 +160,7 @@ export function build_delete_mutation(
     `  response: ${field}(id: $id) {\n` +
     `    ok\n` +
     objectSelection +
-    `    errors { field message }\n` +
+    `    errors { field message code severity details }\n` +
     `  }\n` +
     `}`
   );
@@ -175,7 +178,7 @@ export function build_bulk_create_mutation(
     `  response: ${field}(inputs: $inputs) {\n` +
     `    ok\n` +
     `    objects { ${selection} }\n` +
-    `    errors { field message }\n` +
+    `    errors { field message code severity details }\n` +
     `  }\n` +
     `}`
   );
@@ -193,7 +196,7 @@ export function build_bulk_update_mutation(
     `  response: ${field}(inputs: $inputs) {\n` +
     `    ok\n` +
     `    objects { ${selection} }\n` +
-    `    errors { field message }\n` +
+    `    errors { field message code severity details }\n` +
     `  }\n` +
     `}`
   );
@@ -210,7 +213,7 @@ export function build_bulk_delete_mutation(
     `  response: ${field}(ids: $ids) {\n` +
     `    ok\n` +
     `    objects { ${selection} }\n` +
-    `    errors { field message }\n` +
+    `    errors { field message code severity details }\n` +
     `  }\n` +
     `}`
   );
@@ -248,7 +251,7 @@ export function build_method_mutation(
     `  response: ${fieldName}${argDefs} {\n` +
     `    ok\n` +
     `    ${resultBlock}\n` +
-    `    errors { field message }\n` +
+    `    errors { field message code severity details }\n` +
     `  }\n` +
     `}`
   );
