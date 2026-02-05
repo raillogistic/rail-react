@@ -18,7 +18,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/lib/components/ui/dialog";
-import { FieldWrapper, resolveFieldErrors, resolveRequiredError } from "./common";
+import {
+  FieldWrapper,
+  resolveFieldErrors,
+  resolveRequiredError,
+} from "./common";
 import { cn } from "@/lib/utils";
 import { useModelPermissions } from "@/lib/auth/hooks/useModelPermissions";
 import type {
@@ -44,13 +48,15 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
   const dirty = meta.isDirty;
   const submitCount = useStore(
     form.store,
-    (state) => (state as any).submissionAttempts ?? (state as any).submitCount ?? 0
+    (state) =>
+      (state as any).submissionAttempts ?? (state as any).submitCount ?? 0,
   );
   const isSubmitted = submitCount > 0;
   const showError =
     dirty || meta.isBlurred || isSubmitted || Boolean(meta.errorMap?.onSubmit);
   const fieldErrors = resolveFieldErrors(meta, showError);
-  const error = fieldErrors ?? resolveRequiredError(config, field.state.value, showError);
+  const error =
+    fieldErrors ?? resolveRequiredError(config, field.state.value, showError);
   const graphqlConfig = React.useMemo<
     QueryChoiceGraphQLConfig | undefined
   >(() => {
@@ -1047,9 +1053,9 @@ function inferPropName(selection: string): string | undefined {
 
 function pluralizeModel(name: string) {
   if (!name) return "";
-  if (name.endsWith("s")) {
-    return `${name}es`;
-  }
+  // if (name.endsWith("s")) {
+  //   return `${name}es`;
+  // }
   return `${name}s`;
 }
 

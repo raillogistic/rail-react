@@ -2,10 +2,10 @@ import * as React from "react";
 import { gql, useQuery } from "@apollo/client";
 import type { TableFieldMetadataType } from "../tables/types";
 import { useFormMetadata } from "../form/backend/hooks";
-import type { form_relationship_metadata } from "../form/backend/types/meta";
+import type { RelationshipSchema } from "../tablev2/types";
 import { useModelTableMetadata } from "../tables/hooks";
 
-export type ModelMetadataRelationship = form_relationship_metadata;
+export type ModelMetadataRelationship = RelationshipSchema;
 
 function buildDetailSelection(fields: TableFieldMetadataType[]) {
   const parts: string[] = ["id", "desc"];
@@ -42,7 +42,7 @@ export function useGraphQLModelDetail(appName: string, modelName: string, id: st
   const relationshipCountFields = React.useMemo(() => {
     const relationships = formMeta.metadata?.relationships ?? [];
     return relationships
-      .filter((rel) => rel.relationship_type === "ManyToOneRel")
+      .filter((rel) => rel.relationType === "ManyToOneRel")
       .map((rel) => `${rel.name}_count`);
   }, [formMeta.metadata?.relationships]);
   const dataQuery = React.useMemo(() => {

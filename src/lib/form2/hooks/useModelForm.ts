@@ -36,6 +36,7 @@ import {
 import {
   stripUntouchedFieldValues,
   normalizeRelationshipInputValues,
+  normalizeNestedInputValues,
   sanitizeEmptyScalarValues,
   coerceNumericFieldValues,
 } from "../utils/values";
@@ -47,6 +48,7 @@ export function useModelForm<
     appName,
     modelName,
     nestedFields,
+    nestedFieldsControl,
     exclude,
     only,
     excludeRelationships,
@@ -65,11 +67,22 @@ export function useModelForm<
     skip,
   } = options;
 
+  const resolvedNestedFields = React.useMemo(() => {
+    const names = new Set<string>();
+    (nestedFields ?? []).forEach((name) => {
+      if (name) names.add(name);
+    });
+    Object.keys(nestedFieldsControl?.fields ?? {}).forEach((name) => {
+      if (name) names.add(name);
+    });
+    return Array.from(names);
+  }, [nestedFields, nestedFieldsControl?.fields]);
+
   const { metadata, nestedMetadata, loading, error, refetch } =
     useFormMetadata({
       appName,
       modelName,
-      nestedFields,
+      nestedFields: resolvedNestedFields,
       exclude,
       only,
       excludeRelationships,
@@ -88,21 +101,57 @@ export function useModelForm<
       metadata,
       nestedMetadata,
       initialValues ?? {},
-      formMode
+      formMode,
+      nestedFieldsControl
     );
-  }, [metadata, nestedMetadata, initialValues, formMode]);
+  }, [metadata, nestedMetadata, initialValues, formMode, nestedFieldsControl]);
 
   const computedDefaults = React.useMemo(() => {
     if (!schema) {
       return ((initialValues ?? {}) as TFormValues) ?? ({} as TFormValues);
     }
     const base = buildDefaultsFromSchema(schema);
-    return {
-      ...base,
-      ...(schema.initialValues ?? {}),
-      ...(initialValues ?? {}),
-    } as TFormValues;
+    // Deep merge nested initial values to ensure nested objects/arrays are properly set
+    return deepMergeDefaults(
+      base,
+      schema.initialValues ?? {},
+      initialValues ?? {}
+    ) as TFormValues;
   }, [schema, initialValues]);
+
+  // Deep merge function that properly handles nested objects and arrays
+  function deepMergeDefaults(
+    ...sources: Record<string, any>[]
+  ): Record<string, any> {
+    const result: Record<string, any> = {};
+    for (const source of sources) {
+      if (!source || typeof source !== "object") continue;
+      for (const key of Object.keys(source)) {
+        const sourceValue = source[key];
+        const resultValue = result[key];
+        // Arrays replace entirely (don't merge array items)
+        if (Array.isArray(sourceValue)) {
+          result[key] = sourceValue;
+        }
+        // Nested objects are recursively merged
+        else if (
+          sourceValue &&
+          typeof sourceValue === "object" &&
+          !Array.isArray(sourceValue) &&
+          resultValue &&
+          typeof resultValue === "object" &&
+          !Array.isArray(resultValue)
+        ) {
+          result[key] = deepMergeDefaults(resultValue, sourceValue);
+        }
+        // Primitives and null replace
+        else {
+          result[key] = sourceValue;
+        }
+      }
+    }
+    return result;
+  }
 
   const resolveMutationPayload = React.useCallback(
     (
@@ -210,8 +259,15 @@ export function useModelForm<
           );
         }
 
-        const relationshipNormalizedInput = normalizeRelationshipInputValues(
+        const nestedNormalizedInput = normalizeNestedInputValues(
           processedInput,
+          metadata,
+          nestedMetadata,
+          formMode,
+          nestedFieldsControl
+        );
+        const relationshipNormalizedInput = normalizeRelationshipInputValues(
+          nestedNormalizedInput,
           metadata,
           formMode
         );
@@ -306,9 +362,24 @@ export function useModelForm<
     },
   });
 
-  React.useEffect(() => {
+  // Track whether the form has been initialized with schema defaults
+  const [formReady, setFormReady] = React.useState(!!(schema));
+  const schemaIdRef = React.useRef<string | null>(null);
+
+  // Reset form when schema becomes available or changes
+  // Using useLayoutEffect ensures this runs before browser paint
+  React.useLayoutEffect(() => {
     if (schema) {
+      const schemaId = schema.id ?? `${metadata?.app}.${metadata?.model}`;
+      // Reset form when schema first loads or when schema identity changes
       form.reset(computedDefaults);
+      if (schemaIdRef.current !== schemaId) {
+        schemaIdRef.current = schemaId;
+      }
+      setFormReady(true);
+    } else {
+      setFormReady(false);
+      schemaIdRef.current = null;
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [schema, computedDefaults]);
@@ -317,7 +388,7 @@ export function useModelForm<
     metadata,
     nestedMetadata,
     schema,
-    loading,
+    loading: loading || !formReady,
     error,
     form,
     handleSubmit: form.handleSubmit,

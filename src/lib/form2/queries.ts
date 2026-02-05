@@ -116,6 +116,7 @@ export const GET_MODEL_FORM_SCHEMA = gql`
         readable
         writable
         canCreateInline
+        relationOperations
         customMetadata
       }
       mutations {

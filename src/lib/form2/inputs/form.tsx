@@ -29,7 +29,7 @@ type PrimitiveField = Exclude<
 >;
 const DEFAULT_COLUMNS = 2;
 const DynamicForm = <TValues extends Record<string, any> = Record<string, any>>(
-  props: FormBuilderProps<TValues>
+  props: FormBuilderProps<TValues>,
 ) => {
   const {
     schema,
@@ -52,12 +52,12 @@ const DynamicForm = <TValues extends Record<string, any> = Record<string, any>>(
   } = props;
   const computedDefaults = React.useMemo(
     () =>
-      ({
-        ...buildDefaultsFromSchema(schema),
-        ...(schema.initialValues ?? {}),
-        ...(defaultValues ?? {}),
-      } as TValues),
-    [schema, defaultValues]
+      deepMergeDefaults(
+        buildDefaultsFromSchema(schema),
+        schema.initialValues ?? {},
+        defaultValues ?? {}
+      ) as TValues,
+    [schema, defaultValues],
   );
   const internalForm = useForm<TValues>({
     defaultValues: computedDefaults,
@@ -66,6 +66,35 @@ const DynamicForm = <TValues extends Record<string, any> = Record<string, any>>(
     },
   });
   const form = externalForm ?? internalForm;
+
+  // When using an external form, ensure it has the correct initial values
+  // This must run synchronously on mount to prevent empty field flash
+  const hasInitializedRef = React.useRef(false);
+  if (externalForm && !hasInitializedRef.current) {
+    hasInitializedRef.current = true;
+    // Check if form values differ from computed defaults for nested fields
+    const currentValues = externalForm.state.values as Record<string, any>;
+    const needsReset = Object.keys(schema.initialValues ?? {}).some((key) => {
+      const initial = (schema.initialValues as Record<string, any>)?.[key];
+      const current = currentValues?.[key];
+      // Check if nested value is missing or empty when it shouldn't be
+      if (initial !== undefined && initial !== null) {
+        if (current === undefined || current === null) return true;
+        if (Array.isArray(initial) && Array.isArray(current) && initial.length > 0 && current.length === 0) return true;
+        if (typeof initial === 'object' && typeof current === 'object' && !Array.isArray(initial)) {
+          // Check if object is empty when it shouldn't be
+          const initialKeys = Object.keys(initial);
+          const currentKeys = Object.keys(current);
+          if (initialKeys.length > 0 && currentKeys.length === 0) return true;
+        }
+      }
+      return false;
+    });
+    if (needsReset) {
+      externalForm.reset(computedDefaults);
+    }
+  }
+
   React.useEffect(() => {
     onFormReady?.(form);
   }, [form, onFormReady]);
@@ -74,15 +103,16 @@ const DynamicForm = <TValues extends Record<string, any> = Record<string, any>>(
   const canSubmit = useStore(form.store, (state) => state.canSubmit);
   const fieldMeta = useStore(
     form.store,
-    (state) => (state as any).fieldMeta ?? {}
+    (state) => (state as any).fieldMeta ?? {},
   );
+
   const submitDiagnostics = React.useMemo(() => {
     const entries = Object.entries(fieldMeta as Record<string, any>);
     const hasServerErrors = entries.some(([, meta]) =>
-      Boolean((meta as any)?.errorMap?.onSubmit)
+      Boolean((meta as any)?.errorMap?.onSubmit),
     );
     const hasUserInteraction = entries.some(([, meta]) =>
-      Boolean(meta?.isBlurred || meta?.isDirty)
+      Boolean(meta?.isBlurred || meta?.isDirty),
     );
     const shouldSurfaceState = hasServerErrors || hasUserInteraction;
     if (!shouldSurfaceState) {
@@ -93,7 +123,7 @@ const DynamicForm = <TValues extends Record<string, any> = Record<string, any>>(
         ([, meta]) =>
           meta &&
           meta.isValid === false &&
-          (meta.isBlurred || meta.isDirty || (meta as any)?.errorMap?.onSubmit)
+          (meta.isBlurred || meta.isDirty || (meta as any)?.errorMap?.onSubmit),
       )
       .map(([name, meta]) => ({
         name,
@@ -145,8 +175,8 @@ const DynamicForm = <TValues extends Record<string, any> = Record<string, any>>(
     const resolvedSections = schema.sections?.length
       ? schema.sections
       : schema.fields?.length
-      ? [{ id: "default", fields: schema.fields }]
-      : [];
+        ? [{ id: "default", fields: schema.fields }]
+        : [];
     return resolvedSections.map((section) => normalizeSection(section));
   }, [schema.fields, schema.sections]);
   const handleSubmit = (event: React.FormEvent) => {
@@ -161,16 +191,13 @@ const DynamicForm = <TValues extends Record<string, any> = Record<string, any>>(
     inPopup
       ? "flex w-full flex-col gap-3"
       : "flex h-full w-full flex-col rounded-xl p-4",
-    className
+    className,
   );
   const actionsClass = inPopup
     ? "mt-3 flex flex-wrap items-center justify-end gap-2"
     : "mt-4 flex flex-wrap items-center justify-end gap-2 border-t pt-4";
   return (
-    <form
-      className={formWrapperClass}
-      onSubmit={handleSubmit}
-    >
+    <form className={formWrapperClass} onSubmit={handleSubmit}>
       <div className={formBodyClass}>
         {sections.map((section, index) => (
           <SectionRenderer
@@ -195,7 +222,7 @@ const DynamicForm = <TValues extends Record<string, any> = Record<string, any>>(
                   ? debugValueTransformer(formValues as TValues)
                   : formValues,
                 null,
-                2
+                2,
               )}
             </pre>
             <pre className="text-[11px] text-muted-foreground">
@@ -263,7 +290,7 @@ const SectionRenderer = <TValues extends Record<string, any>>({
 }: SectionRendererProps<TValues>) => {
   const responsiveClasses = React.useMemo(
     () => buildResponsiveGridClass(columns),
-    [columns]
+    [columns],
   );
   const ui = section.ui ?? {};
   const cardEnabled = ui.card ?? false;
@@ -281,7 +308,7 @@ const SectionRenderer = <TValues extends Record<string, any>>({
     }
   }, [defaultAccordionOpen]);
   const headerVisible = Boolean(
-    (section.title || section.description) && showHeaders
+    (section.title || section.description) && showHeaders,
   );
 
   const fieldsGrid = (
@@ -290,7 +317,7 @@ const SectionRenderer = <TValues extends Record<string, any>>({
         "grid gap-y-1",
         responsiveClasses,
         section.ui?.bodyClassName,
-        inPopup ? "px-0" : null
+        inPopup ? "px-0" : null,
       )}
     >
       {section.fields.map((field) => {
@@ -326,7 +353,7 @@ const SectionRenderer = <TValues extends Record<string, any>>({
           wrapperClass,
           !cardEnabled && "border-0 shadow-none bg-transparent p-0",
           section.ui?.className,
-          inPopup ? "p-0" : null
+          inPopup ? "p-0" : null,
         )}
       >
         {headerContent}
@@ -341,7 +368,7 @@ const SectionRenderer = <TValues extends Record<string, any>>({
     <div
       className={cn(
         "rounded-lg border border-border bg-transparent",
-        section.ui?.className
+        section.ui?.className,
       )}
     >
       <Collapsible
@@ -364,7 +391,7 @@ const SectionRenderer = <TValues extends Record<string, any>>({
             <ChevronDownIcon
               className={cn(
                 "size-5 transition-transform duration-200",
-                accordionOpen ? "rotate-180" : "rotate-0"
+                accordionOpen ? "rotate-180" : "rotate-0",
               )}
             />
           </button>
@@ -376,7 +403,7 @@ const SectionRenderer = <TValues extends Record<string, any>>({
             "space-y-3 p-4",
             {
               "bg-card": cardEnabled,
-            }
+            },
           )}
         >
           {fieldsGrid}
@@ -400,7 +427,7 @@ const FieldRenderer = <TValues extends Record<string, any>>({
   if (config.type === "object") {
     const nestedGridClass = cn(
       "grid gap-3",
-      buildResponsiveGridClass(config.columns ?? 1)
+      buildResponsiveGridClass(config.columns ?? 1),
     );
     return (
       <div
@@ -470,7 +497,7 @@ const FieldRenderer = <TValues extends Record<string, any>>({
     resolveInputComponent("text");
   const validators = React.useMemo(
     () => createValidators(normalizedConfig, form, path),
-    [normalizedConfig, form, path]
+    [normalizedConfig, form, path],
   );
   return (
     <form.Field
@@ -482,7 +509,7 @@ const FieldRenderer = <TValues extends Record<string, any>>({
         normalizedConfig.type === "time"
           ? undefined
           : getPrimitiveDefaultValue(
-              normalizedConfig.type as PrimitiveField["type"]
+              normalizedConfig.type as PrimitiveField["type"],
             ))
       }
       validators={validators}
@@ -523,7 +550,7 @@ const ListFieldRenderer = <TValues extends Record<string, any>>({
     : [];
   const validators = React.useMemo(
     () => createValidators(config, form, path),
-    [config, form, path]
+    [config, form, path],
   );
   const itemColumns = Math.max(config.columns ?? config.fields.length ?? 1, 1);
   const itemGridGapStyle = React.useMemo<
@@ -540,7 +567,7 @@ const ListFieldRenderer = <TValues extends Record<string, any>>({
   const itemGridClassName = React.useMemo(
     () =>
       cn("grid", buildResponsiveGridClass(itemColumns), config.itemClassName),
-    [config.itemClassName, itemColumns]
+    [config.itemClassName, itemColumns],
   );
   return (
     <form.Field
@@ -585,7 +612,8 @@ const ListFieldItems = <TValues extends Record<string, any>>({
   const meta = fieldApi.state?.meta;
   const submitCount = useStore(
     form.store,
-    (state) => (state as any).submissionAttempts ?? (state as any).submitCount ?? 0
+    (state) =>
+      (state as any).submissionAttempts ?? (state as any).submitCount ?? 0,
   );
   const showListError =
     Boolean(meta?.isDirty) ||
@@ -594,14 +622,11 @@ const ListFieldItems = <TValues extends Record<string, any>>({
     Boolean(meta?.errorMap?.onSubmit);
   const items = fieldApi.state.value ?? [];
   const fieldErrors = resolveFieldErrors(meta, showListError);
-  const requiredError = resolveRequiredError(
-    config,
-    items,
-    showListError
-  );
+  const requiredError = resolveRequiredError(config, items, showListError);
   const listError = fieldErrors ?? requiredError;
   const canAdd =
-    !config.maxItems || (Array.isArray(items) && items.length < config.maxItems);
+    !config.maxItems ||
+    (Array.isArray(items) && items.length < config.maxItems);
 
   const enforceOrdering = React.useCallback(
     (entries: any[]) => {
@@ -615,7 +640,7 @@ const ListFieldItems = <TValues extends Record<string, any>>({
         [targetField]: index,
       }));
     },
-    [config.ordering]
+    [config.ordering],
   );
 
   const handleAdd = React.useCallback(() => {
@@ -631,7 +656,7 @@ const ListFieldItems = <TValues extends Record<string, any>>({
       const next = (items ?? []).filter((_, idx) => idx !== index);
       fieldApi.setValue(enforceOrdering(next));
     },
-    [enforceOrdering, fieldApi, items]
+    [enforceOrdering, fieldApi, items],
   );
 
   const handleMove = React.useCallback(
@@ -646,7 +671,7 @@ const ListFieldItems = <TValues extends Record<string, any>>({
       next.splice(targetIndex, 0, moved);
       fieldApi.setValue(enforceOrdering(next));
     },
-    [config.ordering?.activate, enforceOrdering, fieldApi, items]
+    [config.ordering?.activate, enforceOrdering, fieldApi, items],
   );
 
   React.useEffect(() => {
@@ -657,7 +682,7 @@ const ListFieldItems = <TValues extends Record<string, any>>({
     if (!targetField) return;
     const needsOrdering = (items ?? []).some(
       (entry: Record<string, any>, index: number) =>
-        entry?.[targetField] !== index
+        entry?.[targetField] !== index,
     );
     if (!needsOrdering) {
       return;
@@ -669,7 +694,9 @@ const ListFieldItems = <TValues extends Record<string, any>>({
     <div
       className="space-y-3 rounded-lg border p-3"
       style={
-        colSpan ? { gridColumn: `span ${colSpan} / span ${colSpan}` } : undefined
+        colSpan
+          ? { gridColumn: `span ${colSpan} / span ${colSpan}` }
+          : undefined
       }
     >
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -704,7 +731,10 @@ const ListFieldItems = <TValues extends Record<string, any>>({
         </p>
       ) : (
         items.map((_: unknown, index: number) => (
-          <Card key={`${path}.${index}`} className="space-y-3 p-3 shadow-none border-0">
+          <Card
+            key={`${path}.${index}`}
+            className="space-y-3 p-3 shadow-none border-0"
+          >
             <div className="flex items-center justify-between gap-2">
               <span className="text-sm font-medium">
                 {config.itemLabel ?? "Élément"} #{index + 1}
@@ -817,7 +847,7 @@ function compareFieldOrder(
   a: FormFieldConfig,
   b: FormFieldConfig,
   indexA: number,
-  indexB: number
+  indexB: number,
 ) {
   const orderA = typeof a.order === "number" ? a.order : indexA;
   const orderB = typeof b.order === "number" ? b.order : indexB;
@@ -837,7 +867,7 @@ function arraysShallowEqual(a: FormFieldConfig[], b: FormFieldConfig[]) {
   return true;
 }
 function fieldHasChildFields(
-  field: FormFieldConfig
+  field: FormFieldConfig,
 ): field is ObjectFieldConfig | ListFieldConfig {
   return field.type === "object" || field.type === "list";
 }
@@ -856,8 +886,8 @@ function buildDefaultsFromSchema(schema: FormSchema): Record<string, any> {
   const sections = schema.sections?.length
     ? schema.sections
     : schema.fields
-    ? [{ fields: schema.fields }]
-    : [];
+      ? [{ fields: schema.fields }]
+      : [];
   sections.forEach((section) => {
     section.fields.forEach((field) => {
       assignDefaultValue(target, field);
@@ -866,7 +896,7 @@ function buildDefaultsFromSchema(schema: FormSchema): Record<string, any> {
   return target;
 }
 function buildDefaultsFromFields(
-  fields: FormFieldConfig[]
+  fields: FormFieldConfig[],
 ): Record<string, any> {
   const result: Record<string, any> = {};
   fields.forEach((field) => assignDefaultValue(result, field));
@@ -875,7 +905,7 @@ function buildDefaultsFromFields(
 function assignDefaultValue(
   target: Record<string, any>,
   field: FormFieldConfig,
-  basePath?: string
+  basePath?: string,
 ) {
   const path = basePath ? `${basePath}.${field.name}` : field.name;
   if (field.type === "object") {
@@ -895,7 +925,7 @@ function assignDefaultValue(
     target,
     path,
     field.defaultValue ??
-      getPrimitiveDefaultValue(field.type as PrimitiveField["type"])
+      getPrimitiveDefaultValue(field.type as PrimitiveField["type"]),
   );
 }
 function getPrimitiveDefaultValue(type: PrimitiveField["type"]) {
@@ -919,9 +949,7 @@ function getPrimitiveDefaultValue(type: PrimitiveField["type"]) {
       return "";
   }
 }
-function normalizeChoiceConfig(
-  config: FormFieldConfig
-): FormFieldConfig {
+function normalizeChoiceConfig(config: FormFieldConfig): FormFieldConfig {
   if (!isChoiceFieldConfig(config)) {
     return config;
   }
@@ -935,7 +963,7 @@ function normalizeChoiceConfig(
   };
 }
 function isChoiceFieldConfig(
-  config: FormFieldConfig
+  config: FormFieldConfig,
 ): config is ChoiceFieldConfig {
   return Array.isArray((config as ChoiceFieldConfig).options);
 }
@@ -954,13 +982,13 @@ function setValue(target: Record<string, any>, path: string, value: any) {
 function createValidators<TValues>(
   config: FormFieldConfig,
   form: UseFormReturn<TValues>,
-  path: string
+  path: string,
 ) {
   const validators = Array.isArray(config.validators)
     ? [...config.validators]
     : config.validators
-    ? [config.validators]
-    : [];
+      ? [config.validators]
+      : [];
   if (config.required) {
     const requiresTrue = config.type === "checkbox" || config.type === "switch";
     validators.unshift((value) => {
@@ -1047,7 +1075,7 @@ function diffValues(previous: any, next: any, path = ""): ChangeRecord[] {
     const keys = new Set([...Object.keys(previous), ...Object.keys(next)]);
     keys.forEach((key) => {
       changes.push(
-        ...diffValues(previous[key], next[key], path ? `${path}.${key}` : key)
+        ...diffValues(previous[key], next[key], path ? `${path}.${key}` : key),
       );
     });
     return changes;
@@ -1101,5 +1129,38 @@ function deepEqual(a: any, b: any): boolean {
     return true;
   }
   return false;
+}
+
+function deepMergeDefaults(
+  ...sources: Record<string, any>[]
+): Record<string, any> {
+  const result: Record<string, any> = {};
+  for (const source of sources) {
+    if (!source || typeof source !== "object") continue;
+    for (const key of Object.keys(source)) {
+      const sourceValue = source[key];
+      const resultValue = result[key];
+      // Arrays replace entirely (don't merge array items)
+      if (Array.isArray(sourceValue)) {
+        result[key] = sourceValue;
+      }
+      // Nested objects are recursively merged
+      else if (
+        sourceValue &&
+        typeof sourceValue === "object" &&
+        !Array.isArray(sourceValue) &&
+        resultValue &&
+        typeof resultValue === "object" &&
+        !Array.isArray(resultValue)
+      ) {
+        result[key] = deepMergeDefaults(resultValue, sourceValue);
+      }
+      // Primitives and null replace
+      else {
+        result[key] = sourceValue;
+      }
+    }
+  }
+  return result;
 }
 export default DynamicForm;

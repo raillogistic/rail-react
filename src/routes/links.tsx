@@ -15,15 +15,16 @@ import {
   Smartphone,
   Lock,
 } from "lucide-react";
-
 import { AccountSettingsPage } from "@/views/settings/AccountSettingsPage";
 import { AdminUISettingsPage } from "@/views/settings/AdminUISettingsPage";
 import { AppearanceSettingsPage } from "@/views/settings/AppearanceSettingsPage";
 import { LayoutSettingsPage } from "@/views/settings/LayoutSettingsPage";
 
 import { getAppDefaultRoute, getAppNavigationLinks } from "@/apps/routes";
-import { BaseModelTable, ModelTableV2 } from "@/lib/tablev2";
-import ModelForm from "@/lib/form2";
+// import ModelForm from "@/lib/form/backend/ModelForm";
+import { BaseModelTable } from "@/lib/tablev2";
+import { ModelForm } from "@/lib/form2";
+// import ModelForm    from "@/lib/form2";
 
 export const ROUTES = {
   LOGIN: "/login",
@@ -96,33 +97,7 @@ const CORE_NAVIGATION_LINKS: NavigationSection[] = [
                   "price",
                   { accessor: "createdAt", title: "Created At" },
                 ]}
-                // columnOrdering={{
-                //   order: ["sku", "name"],
-                //   append: "end",
-                //   mode: "config", // "persisted" (default) or "config"
-                //   draggable: true,
-                //   locked: ["sku"],
-                // }}
               />
-              {/* <BaseModelTable
-                app="store"
-                model="Product"
-            
-                // ordering={{
-                //   mode: "multi",
-                //   requireModifier: true, // Shift+click to add levels
-                //   maxLevels: 3,
-                //   cycle: "asc-desc-none",
-                //   default: [
-                //     { id: "createdAt", desc: true },
-                //     { id: "customer", desc: false },
-                //   ],
-                //   map: {
-                //     customer: "customerName", // column id -> API order key
-                //   },
-                //   allow: ["createdAt", "customerName", "total"],
-                // }}
-              /> */}
             </div>
           </>
         ),
@@ -132,12 +107,88 @@ const CORE_NAVIGATION_LINKS: NavigationSection[] = [
         path: "/form",
         component: (
           <>
-            <ModelForm appName="store" modelName="Product" />{" "}
+            <ModelForm
+              appName="store"
+              modelName="Order"
+              mutationMode={"create"}
+              onChange={(values) => {
+                console.log(values);
+              }}
+              // objectId={orderId}
+              nestedFields={["customer", "items"]}
+              initialValues={{
+                customer: {
+                  id: "c1",
+                  firstName: "Ada",
+                  lastName: "Ada",
+                  email: "ada@example.com",
+                },
+                items: [
+                  { id: "li1", product: "1", quantity: 2 },
+                  { product: "2", quantity: 1 }, // no id => create
+                ],
+              }}
+              // nestedFieldsControl={{
+              //   defaultMode: "auto",
+              //   defaultPruneEmpty: true,
+              //   defaultIdKeys: ["id", "uuid"],
+              //   defaultKeepRelationshipField: false,
+              //   fields: {
+              //     customer: {
+              //       mode: "auto",
+              //       // keepRelationshipField: false,
+              //       objectProps: { columns: 2, collapsible: true },
+              //       fieldOverrides: {
+              //         id: { hidden: true },
+              //         email: { required: true },
+              //       },
+              //     },
+              //     items: {
+              //       mode: "auto",
+              //       operations: {
+              //         connect: true,
+              //         create: true,
+              //         update: true,
+              //         disconnect: true,
+              //         set: true,
+              //       },
+              //       listProps: {
+              //         addLabel: "Add line item",
+              //         itemLabel: "Line",
+              //         columns: 3,
+              //       },
+              //       fieldOverrides: {
+              //         id: { hidden: true },
+              //         quantity: { type: "number", min: 1 },
+              //         product: { placeholder: "Select product" },
+              //       },
+              //     },
+              //   },
+              // }}
+            />
+            {/* <ModelForm appName="store" modelName="Product" />{" "} */}
           </>
         ),
         description: "dd",
         requiresAuth: true,
         title: "Test Form",
+      },
+      {
+        id: "old-form-test",
+        path: "/formold",
+        component: (
+          <>
+            {/* <ModelForm
+              appName="store"
+              modelName="Order"
+              nestedFields={["items"]}
+              ordering={{ trailingFields: ["items"] }}
+            /> */}
+          </>
+        ),
+        description: "old form",
+        requiresAuth: true,
+        title: "Old Form",
       },
     ],
   },

@@ -306,16 +306,53 @@ export function useModelFormController<
   );
   const submitCountRef = React.useRef(submitCount);
 
+  const resolveInvalidFieldLabels = React.useCallback(() => {
+    const labels: string[] = [];
+    const seen = new Set<string>();
+    Object.entries(fieldMeta).forEach(([name, meta]) => {
+      if (!meta) return;
+      const errorMap = (meta as any)?.errorMap ?? {};
+      const rawErrors = (meta as any)?.errors;
+      const hasError =
+        Boolean(errorMap.onSubmit) ||
+        Boolean(errorMap.onBlur) ||
+        Boolean(errorMap.onChange) ||
+        (Array.isArray(rawErrors) ? rawErrors.length > 0 : Boolean(rawErrors));
+      if (!hasError) return;
+      const label = resolveFieldLabel(name) ?? name;
+      if (!label || seen.has(label)) return;
+      seen.add(label);
+      labels.push(label);
+    });
+    return labels;
+  }, [fieldMeta, resolveFieldLabel]);
+
   React.useEffect(() => {
     if (submitCount > submitCountRef.current) {
       if (isSubmitting) {
         submitCountRef.current = submitCount;
       } else if (!isValid && !isValidating) {
-        toast.error("Please fill out the required fields.");
+        const invalidLabels = resolveInvalidFieldLabels();
+        if (invalidLabels.length) {
+          const preview = invalidLabels.slice(0, 3).join(", ");
+          const suffix =
+            invalidLabels.length > 3
+              ? ` (+${invalidLabels.length - 3} more)`
+              : "";
+          toast.error(`Please fill out: ${preview}${suffix}`);
+        } else {
+          toast.error("Please fill out the required fields.");
+        }
         submitCountRef.current = submitCount;
       }
     }
-  }, [submitCount, isValid, isSubmitting, isValidating]);
+  }, [
+    submitCount,
+    isValid,
+    isSubmitting,
+    isValidating,
+    resolveInvalidFieldLabels,
+  ]);
 
   const headingTitle = React.useMemo(() => {
     if (title) return title;

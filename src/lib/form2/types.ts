@@ -5,6 +5,8 @@ import type {
   FormSchema,
   FormSectionConfig,
   ChangeRecord,
+  ObjectFieldConfig,
+  ListFieldConfig,
 } from "./inputs/types";
 import type { UseFormReturn } from "@tanstack/react-form";
 import type {
@@ -116,6 +118,62 @@ export type InlineCreateOverrides = {
   >;
 };
 
+export type NestedRelationOperation =
+  | "connect"
+  | "create"
+  | "update"
+  | "disconnect"
+  | "set";
+
+export type NestedRelationOperationMap = Partial<
+  Record<NestedRelationOperation, boolean>
+>;
+
+export type NestedFieldMode =
+  | "auto"
+  | "create"
+  | "update"
+  | "connect"
+  | "set";
+
+export interface ModelFormNestedFieldConfig {
+  /** Controls how nested values are transformed into mutation input. */
+  mode?: NestedFieldMode;
+  /** Override allowed operations for this nested field. */
+  operations?: NestedRelationOperationMap;
+  /** Keep the relationship selector alongside the nested form. */
+  keepRelationshipField?: boolean;
+  /** Skip nested payloads when values are empty. */
+  pruneEmpty?: boolean;
+  /** Keys treated as identifiers when detecting existing records. */
+  idKeys?: string[];
+  /** UI overrides when the nested field is a list (to-many). */
+  listProps?: Partial<ListFieldConfig>;
+  /** UI overrides when the nested field is an object (to-one). */
+  objectProps?: Partial<ObjectFieldConfig>;
+  /** Overrides for nested child fields (dot notation supported). */
+  fieldOverrides?: Record<string, Partial<FormFieldConfig>>;
+  /** Custom transformer for this nested field. */
+  transform?: (value: any, ctx: {
+    mode: "create" | "update";
+    metadata: FormMetadata | null;
+    relation: RelationshipSchema;
+    nestedMetadata: FormMetadata | null;
+  }) => any;
+}
+
+export interface ModelFormNestedFieldsControl {
+  /** Defaults applied to every nested field. */
+  defaultMode?: NestedFieldMode;
+  defaultOperations?: NestedRelationOperationMap;
+  defaultKeepRelationshipField?: boolean;
+  defaultPruneEmpty?: boolean;
+  defaultIdKeys?: string[];
+  defaultListProps?: Partial<ListFieldConfig>;
+  defaultObjectProps?: Partial<ObjectFieldConfig>;
+  fields?: Record<string, ModelFormNestedFieldConfig>;
+}
+
 export interface UseFormMetadataOptions {
   appName: string;
   modelName: string;
@@ -143,6 +201,7 @@ export interface UseModelFormOptions<TFormValues extends Record<string, any>>
   mutationMode?: "create" | "update" | null;
   mutationSelection?: string;
   mutationId?: string;
+  nestedFieldsControl?: ModelFormNestedFieldsControl;
   transformInput?: (
     values: TFormValues,
     ctx: { metadata: FormMetadata }
@@ -233,4 +292,5 @@ export interface ModelFormProps<
   showSuccessToast?: boolean;
   layoutVariant?: ModelFormLayoutVariant<TFormValues>;
   inlineCreateOverrides?: InlineCreateOverrides;
+  nestedFieldsControl?: ModelFormNestedFieldsControl;
 }

@@ -5,11 +5,17 @@ import type {
   FormInputType,
   FormSchema,
   ListFieldConfig,
+  ObjectFieldConfig,
   NumberFieldConfig,
   QueryChoiceFieldConfig,
   TextFieldConfig,
 } from "../inputs/types";
-import type { FormMetadata, FieldSchema, RelationshipSchema } from "../types";
+import type {
+  FormMetadata,
+  FieldSchema,
+  RelationshipSchema,
+  ModelFormNestedFieldsControl,
+} from "../types";
 import { parseCustomMetadata } from "./metadata";
 
 export type SchemaBuildMode = "create" | "update";
@@ -23,9 +29,16 @@ export function buildFormSchema<TValues extends Record<string, any>>(
   metadata: FormMetadata,
   nestedMetadata: Record<string, FormMetadata>,
   initialValues: Partial<TValues>,
-  mode: SchemaBuildMode
+  mode: SchemaBuildMode,
+  nestedControl?: ModelFormNestedFieldsControl
 ): FormSchema<TValues> {
-  const combinedFields = collectFieldConfigs(metadata, nestedMetadata, mode);
+  const combinedFields = collectFieldConfigs(
+    metadata,
+    nestedMetadata,
+    mode,
+    {},
+    nestedControl
+  );
 
   return {
     id: `${metadata.app}.${metadata.model}`,
@@ -42,10 +55,15 @@ export function collectFieldConfigs(
   metadata: FormMetadata,
   nestedMetadata: Record<string, FormMetadata>,
   mode: SchemaBuildMode,
-  overrides: FieldOverrideConfig = {}
+  overrides: FieldOverrideConfig = {},
+  nestedControl?: ModelFormNestedFieldsControl
 ): FormFieldConfig[] {
   const readonly = overrides.readonlyFields ?? new Set();
   const excluded = overrides.excludedFields ?? new Set();
+  const nestedKeys = new Set(Object.keys(nestedMetadata ?? {}));
+  const nestedConfig = nestedControl?.fields ?? {};
+  const defaultKeepRelationship =
+    nestedControl?.defaultKeepRelationshipField ?? false;
 
   const primitiveFields = metadata.fields
     .filter((field) => {
@@ -72,6 +90,14 @@ export function collectFieldConfigs(
       if (excluded.has(rel.name) || excluded.has(rel.fieldName)) {
         return false;
       }
+      if (
+        (nestedKeys.has(rel.name) || nestedKeys.has(rel.fieldName)) &&
+        !(nestedConfig[rel.name]?.keepRelationshipField ??
+          nestedConfig[rel.fieldName]?.keepRelationshipField ??
+          defaultKeepRelationship)
+      ) {
+        return false;
+      }
       if (rel.readable === false) {
         return false;
       }
@@ -89,7 +115,14 @@ export function collectFieldConfigs(
       const relation = metadata.relationships.find(
         (rel) => rel.name === fieldName || rel.fieldName === fieldName,
       );
-      return mapNestedMetadata(fieldName, relation, nestedMeta, mode, overrides);
+      return mapNestedMetadata(
+        fieldName,
+        relation,
+        nestedMeta,
+        mode,
+        overrides,
+        nestedControl
+      );
     })
     .filter((field): field is FormFieldConfig => Boolean(field));
 
@@ -282,16 +315,41 @@ function mapNestedMetadata(
   relation: RelationshipSchema | undefined,
   nestedMeta: FormMetadata,
   mode: SchemaBuildMode,
-  overrides: FieldOverrideConfig
+  overrides: FieldOverrideConfig,
+  nestedControl?: ModelFormNestedFieldsControl
 ): FormFieldConfig | null {
   const nestedFields = collectFieldConfigs(
     nestedMeta,
     {},
     mode,
     overrides,
+    nestedControl
   );
   if (nestedFields.length === 0) {
     return null;
+  }
+  const fieldConfig =
+    nestedControl?.fields?.[fieldName] ??
+    (relation?.name
+      ? nestedControl?.fields?.[relation.name]
+      : undefined) ??
+    (relation?.fieldName
+      ? nestedControl?.fields?.[relation.fieldName]
+      : undefined);
+
+  const listOverrides = {
+    ...(nestedControl?.defaultListProps ?? {}),
+    ...(fieldConfig?.listProps ?? {}),
+  };
+  const objectOverrides = {
+    ...(nestedControl?.defaultObjectProps ?? {}),
+    ...(fieldConfig?.objectProps ?? {}),
+  };
+
+  const nestedOverrideFields = fieldConfig?.fieldOverrides;
+  let resolvedNestedFields = nestedFields;
+  if (nestedOverrideFields && Object.keys(nestedOverrideFields).length) {
+    resolvedNestedFields = applyFieldOverrides(nestedFields, nestedOverrideFields);
   }
   const label = nestedMeta.verboseName || fieldName;
   const description = undefined;
@@ -302,22 +360,31 @@ function mapNestedMetadata(
       label,
       description,
       type: "list",
-      fields: nestedFields,
+      fields: resolvedNestedFields,
       defaultValue: [],
       required: relation?.required ?? false,
       addLabel: label ? `Add ${label}` : undefined,
       itemLabel: label || undefined,
+      ...listOverrides,
     };
+    config.name = fieldName;
+    config.type = "list";
+    config.fields = resolvedNestedFields;
     return config;
   }
-  return {
+  const config: ObjectFieldConfig = {
     name: fieldName,
     label,
     description,
     type: "object",
-    fields: nestedFields,
+    fields: resolvedNestedFields,
     required: relation?.required ?? false,
+    ...objectOverrides,
   };
+  config.name = fieldName;
+  config.type = "object";
+  config.fields = resolvedNestedFields;
+  return config;
 }
 
 function resolveInlineCreateConfig(
@@ -421,4 +488,55 @@ function inferDecimalStep(
     return 1;
   }
   return undefined;
+}
+
+function applyFieldOverrides(
+  fields: FormFieldConfig[],
+  overrides: Record<string, Partial<FormFieldConfig>>
+): FormFieldConfig[] {
+  let mutated = false;
+  const nextFields = fields.map((field) => {
+    let nextField = field;
+    const override = overrides[field.name];
+    if (override) {
+      nextField = {
+        ...nextField,
+        ...override,
+      } as FormFieldConfig;
+    }
+    if (hasNestedFields(nextField) && nextField.fields?.length) {
+      const nestedOverrides = Object.entries(overrides)
+        .filter(([key]) => key.startsWith(`${nextField.name}.`))
+        .reduce<Record<string, Partial<FormFieldConfig>>>(
+          (acc, [key, value]) => {
+            acc[key.replace(`${nextField.name}.`, "")] = value;
+            return acc;
+          },
+          {}
+        );
+      if (Object.keys(nestedOverrides).length) {
+        const nestedFields = applyFieldOverrides(
+          nextField.fields,
+          nestedOverrides
+        );
+        if (nestedFields !== nextField.fields) {
+          nextField = {
+            ...nextField,
+            fields: nestedFields,
+          } as FormFieldConfig;
+        }
+      }
+    }
+    if (nextField !== field) {
+      mutated = true;
+    }
+    return nextField;
+  });
+  return mutated ? nextFields : fields;
+}
+
+function hasNestedFields(
+  field: FormFieldConfig
+): field is FormFieldConfig & { fields: FormFieldConfig[] } {
+  return field.type === "object" || field.type === "list";
 }

@@ -21,15 +21,6 @@ import type {
   ListFieldConfig,
 } from "../inputs/types";
 import {
-  model_form_metadata,
-  model_form_metadata_query_result,
-  model_form_metadata_variables,
-  build_model_form_metadata_variables,
-  form_field_metadata,
-  form_relationship_metadata,
-  relationship_type,
-} from "./types/meta";
-import {
   build_create_mutation,
   build_update_mutation,
   type CreateMutationResponse,
@@ -39,210 +30,141 @@ import {
   type MutationError,
   toOperationField,
 } from "./types/mutations";
+import { GET_MODEL_SCHEMA } from "@/lib/tablev2/queries";
+import type {
+  ModelSchema,
+  FieldSchema,
+  RelationshipSchema,
+} from "@/lib/tablev2/types";
 import {
   buildMetadataScopeKey,
   isCacheEntryFresh,
   stableSerialize,
+  readMetadataCacheEntry,
   useMetadataCacheEntry,
   writeMetadataCacheEntry,
   METADATA_CACHE_TTL_MS,
 } from "@/lib/metadata/cache";
 
 /* -------------------------------------------------------------------------- */
-/*                               GraphQL Query                                */
+/*                               Metadata types                               */
 /* -------------------------------------------------------------------------- */
 
-export const MODEL_FORM_META_QUERY = `
-query ModelFormMetadata($app_name: String!, $model_name: String!, $nested_fields: [String!] = [], $exclude: [String!] = [], $only: [String!] = [], $exclude_relationships: [String!] = [], $only_relationships: [String!] = []) {
-  model_form_metadata(
-    app_name: $app_name
-    model_name: $model_name
-    nested_fields: $nested_fields
-    exclude: $exclude
-    only: $only
-    exclude_relationships: $exclude_relationships
-    only_relationships: $only_relationships
-  ) {
-    metadataVersion
-    app_name
-    model_name
-    verbose_name
-    verbose_name_plural
-    form_title
-    form_description
-    fields {
-      name
-      field_type
-      is_required
-      verbose_name
-      help_text
-      widget_type
-      placeholder
-      default_value
-      choices {
-        value
-        label
-      }
-      max_length
-      min_length
-      decimal_places
-      max_digits
-      min_value
-      max_value
-      auto_now
-      auto_now_add
-      blank
-      null
-      unique
-      editable
-      validators
-      error_messages
-      disabled
-      readonly
-      css_classes
-      data_attributes
-      has_permission
-      permissions {
-        can_read
-        can_write
-        visibility
-        access_level
-        mask_value
-        reason
-      }
-    }
-    relationships {
-      name
-      relationship_type
-      verbose_name
-      help_text
-      widget_type
-      is_required
-      related_model
-      related_app
-      to_field
-      from_field
-      many_to_many
-      one_to_one
-      foreign_key
-      is_reverse
-      multiple
-      queryset_filters
-      empty_label
-      limit_choices_to
-      disabled
-      readonly
-      css_classes
-      data_attributes
-      permissions {
-        can_read
-        can_write
-        visibility
-        access_level
-        mask_value
-        reason
-      }
-    }
-    nested {
-      name
-      field_name
-      relationship_type
-      to_field
-      from_field
-      is_required
-      app_name
-      model_name
-      verbose_name
-      verbose_name_plural
-      form_title
-      form_description
-      fields {
-        name
-        field_type
-        is_required
-        verbose_name
-        help_text
-        widget_type
-        placeholder
-        default_value
-        choices {
-          value
-          label
-        }
-        max_length
-        min_length
-        decimal_places
-        max_digits
-        min_value
-        max_value
-        auto_now
-        auto_now_add
-        blank
-        null
-        unique
-        editable
-        validators
-        error_messages
-        disabled
-        readonly
-        css_classes
-        data_attributes
-        has_permission
-      }
-      relationships {
-        name
-        relationship_type
-        verbose_name
-        help_text
-        widget_type
-        is_required
-        related_model
-        related_app
-        to_field
-        from_field
-        many_to_many
-        one_to_one
-        foreign_key
-        is_reverse
-        multiple
-        queryset_filters
-        empty_label
-        limit_choices_to
-        disabled
-        readonly
-        css_classes
-        data_attributes
-      }
-      field_order
-      exclude_fields
-      readonly_fields
-      required_permissions
-      form_validation_rules
-      form_layout
-      css_classes
-      form_attributes
-    }
-    field_order
-    exclude_fields
-    readonly_fields
-    required_permissions
-    form_validation_rules
-    form_layout
-    css_classes
-    form_attributes
-    permissions {
-      can_create
-      can_update
-      can_delete
-      can_read
-      can_list
-      reasons
+export type FormMetadata = ModelSchema;
+
+type ModelSchemaQueryResult = { modelSchema: FormMetadata | null };
+type ModelSchemaQueryVariables = {
+  app: string;
+  model: string;
+  objectId?: string;
+};
+
+const DEFAULT_FETCH_POLICY: QueryHookOptions["fetchPolicy"] = "network-only";
+const EMPTY_STRING_ARRAY: string[] = [];
+const EMPTY_NESTED_TARGETS: Array<{ name: string; app: string; model: string }> =
+  [];
+
+function normalizeStringArray(value?: string[]) {
+  if (!value || value.length === 0) {
+    return EMPTY_STRING_ARRAY;
+  }
+  const filtered = value.filter(Boolean);
+  return filtered.length ? filtered : EMPTY_STRING_ARRAY;
+}
+
+function normalizeCustomStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((entry): entry is string => typeof entry === "string");
+}
+
+function parseCustomMetadata<T = Record<string, any>>(
+  value: unknown
+): T | null {
+  if (value === null || value === undefined) {
+    return null;
+  }
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    try {
+      return JSON.parse(trimmed) as T;
+    } catch {
+      return null;
     }
   }
+  if (typeof value === "object") {
+    return value as T;
+  }
+  return null;
 }
-`;
 
-const MODEL_FORM_META_DOCUMENT = gql(MODEL_FORM_META_QUERY);
+function resolveNestedTargets(
+  metadata: FormMetadata | null,
+  nestedFields: string[]
+) {
+  if (!metadata || nestedFields.length === 0) {
+    return EMPTY_NESTED_TARGETS;
+  }
+  return nestedFields
+    .map((fieldName) => {
+      const relation = metadata.relationships.find(
+        (rel) => rel.name === fieldName || rel.fieldName === fieldName
+      );
+      if (!relation) return null;
+      return {
+        name: fieldName,
+        app: relation.relatedApp,
+        model: relation.relatedModel,
+      };
+    })
+    .filter(
+      (value): value is { name: string; app: string; model: string } =>
+        Boolean(value)
+    );
+}
+
+function normalizeOrderingValue(value: string): string {
+  if (!value) return value;
+  return value.startsWith("-") ? value.slice(1) : value;
+}
+
+function resolveFormConfig(metadata: FormMetadata | null) {
+  const custom = parseCustomMetadata<Record<string, any>>(
+    metadata?.customMetadata
+  );
+  const form = (custom?.form ?? custom?.formConfig ?? {}) as Record<
+    string,
+    any
+  >;
+  const title =
+    form.title ?? form.formTitle ?? form.form_title ?? custom?.formTitle;
+  const description =
+    form.description ??
+    form.formDescription ??
+    form.form_description ??
+    custom?.formDescription ??
+    custom?.description;
+  const fieldOrder = normalizeCustomStringArray(
+    form.fieldOrder ?? form.field_order
+  );
+  const excludeFields = normalizeCustomStringArray(
+    form.excludeFields ?? form.exclude_fields
+  );
+  const readonlyFields = normalizeCustomStringArray(
+    form.readonlyFields ?? form.readonly_fields
+  );
+  const ordering =
+    fieldOrder.length > 0
+      ? fieldOrder
+      : (metadata?.ordering ?? []).map(normalizeOrderingValue);
+  return {
+    title,
+    description,
+    fieldOrder: ordering,
+    excludeFields,
+    readonlyFields,
+  };
+}
 
 /* -------------------------------------------------------------------------- */
 /*                             Metadata fetch hooks                           */
@@ -251,6 +173,7 @@ const MODEL_FORM_META_DOCUMENT = gql(MODEL_FORM_META_QUERY);
 export interface UseFormMetadataOptions {
   appName: string;
   modelName: string;
+  objectId?: string | null;
   nestedFields?: string[];
   exclude?: string[];
   only?: string[];
@@ -258,17 +181,23 @@ export interface UseFormMetadataOptions {
   onlyRelationships?: string[];
   skip?: boolean;
   queryOptions?: Omit<
-    QueryHookOptions<
-      model_form_metadata_query_result,
-      model_form_metadata_variables
-    >,
+    QueryHookOptions<ModelSchemaQueryResult, ModelSchemaQueryVariables>,
     "variables"
   >;
+}
+
+export interface UseFormMetadataResult {
+  metadata: FormMetadata | null;
+  nestedMetadata: Record<string, FormMetadata>;
+  loading: boolean;
+  error: ApolloError | undefined;
+  refetch: () => Promise<FormMetadata | null>;
 }
 
 export function useFormMetadata({
   appName,
   modelName,
+  objectId,
   nestedFields = [],
   exclude = [],
   only = [],
@@ -276,40 +205,72 @@ export function useFormMetadata({
   onlyRelationships = [],
   skip = false,
   queryOptions,
-}: UseFormMetadataOptions) {
+}: UseFormMetadataOptions): UseFormMetadataResult {
   const client = useApolloClient();
+  const nestedSignature = React.useMemo(
+    () => stableSerialize(nestedFields ?? EMPTY_STRING_ARRAY),
+    [nestedFields]
+  );
+  const excludeSignature = React.useMemo(
+    () => stableSerialize(exclude ?? EMPTY_STRING_ARRAY),
+    [exclude]
+  );
+  const onlySignature = React.useMemo(
+    () => stableSerialize(only ?? EMPTY_STRING_ARRAY),
+    [only]
+  );
+  const excludeRelSignature = React.useMemo(
+    () => stableSerialize(excludeRelationships ?? EMPTY_STRING_ARRAY),
+    [excludeRelationships]
+  );
+  const onlyRelSignature = React.useMemo(
+    () => stableSerialize(onlyRelationships ?? EMPTY_STRING_ARRAY),
+    [onlyRelationships]
+  );
+
+  const resolvedNestedFields = React.useMemo(
+    () => normalizeStringArray(nestedFields),
+    [nestedSignature]
+  );
+  const resolvedExclude = React.useMemo(
+    () => normalizeStringArray(exclude),
+    [excludeSignature]
+  );
+  const resolvedOnly = React.useMemo(
+    () => normalizeStringArray(only),
+    [onlySignature]
+  );
+  const resolvedExcludeRelationships = React.useMemo(
+    () => normalizeStringArray(excludeRelationships),
+    [excludeRelSignature]
+  );
+  const resolvedOnlyRelationships = React.useMemo(
+    () => normalizeStringArray(onlyRelationships),
+    [onlyRelSignature]
+  );
   const signature = React.useMemo(
     () =>
       stableSerialize({
-        nestedFields,
-        exclude,
-        only,
-        excludeRelationships,
-        onlyRelationships,
+        objectId: objectId ?? null,
       }),
-    [nestedFields, exclude, only, excludeRelationships, onlyRelationships]
+    [objectId]
   );
   const scopeKey = React.useMemo(
     () => buildMetadataScopeKey(appName, modelName, signature),
     [appName, modelName, signature]
   );
-  const cachedEntry = useMetadataCacheEntry<model_form_metadata>(
-    "form",
-    scopeKey
-  );
+  const cachedEntry = useMetadataCacheEntry<FormMetadata>("form", scopeKey);
   const variables = React.useMemo(
     () => ({
-      ...build_model_form_metadata_variables(appName, modelName, nestedFields),
-      exclude,
-      only,
-      exclude_relationships: excludeRelationships,
-      only_relationships: onlyRelationships,
+      app: appName,
+      model: modelName,
+      objectId: objectId ?? undefined,
     }),
-    [appName, modelName, signature]
+    [appName, modelName, objectId]
   );
   const metadataQueryOptions = React.useMemo(
     () => ({
-      fetchPolicy: queryOptions?.fetchPolicy ?? "network-only",
+      fetchPolicy: queryOptions?.fetchPolicy ?? DEFAULT_FETCH_POLICY,
       errorPolicy: queryOptions?.errorPolicy,
       context: queryOptions?.context,
     }),
@@ -330,16 +291,16 @@ export function useFormMetadata({
     !skip && !isCacheEntryFresh(cachedEntry, METADATA_CACHE_TTL_MS);
   const executeMetadataQuery = React.useCallback(async () => {
     const result = await client.query<
-      model_form_metadata_query_result,
-      model_form_metadata_variables
+      ModelSchemaQueryResult,
+      ModelSchemaQueryVariables
     >({
-      query: MODEL_FORM_META_DOCUMENT,
+      query: GET_MODEL_SCHEMA,
       variables,
       fetchPolicy: metadataQueryOptions.fetchPolicy,
       errorPolicy: metadataQueryOptions.errorPolicy,
       context: metadataQueryOptions.context,
     });
-    const payload = result.data?.model_form_metadata ?? null;
+    const payload = result.data?.modelSchema ?? null;
     if (payload) {
       writeMetadataCacheEntry(
         "form",
@@ -348,7 +309,7 @@ export function useFormMetadata({
         payload
       );
     }
-    return payload;
+    return payload as FormMetadata | null;
   }, [client, variables, metadataQueryOptions, scopeKey]);
 
   React.useEffect(() => {
@@ -387,13 +348,139 @@ export function useFormMetadata({
       });
   }, [skip, executeMetadataQuery]);
 
-  const metadata = skip ? null : cachedEntry?.data ?? null;
-  const loading = !skip && !metadata && (networkState.loading || shouldFetch);
-  const error = skip ? undefined : networkState.error;
+  const rawMetadata = skip ? null : cachedEntry?.data ?? null;
+  const hasFilters =
+    resolvedExclude.length > 0 ||
+    resolvedOnly.length > 0 ||
+    resolvedExcludeRelationships.length > 0 ||
+    resolvedOnlyRelationships.length > 0;
+  const metadata = React.useMemo(() => {
+    if (!rawMetadata) return null;
+    if (!hasFilters) return rawMetadata;
+    return applyMetadataFilters(rawMetadata, {
+      exclude: resolvedExclude,
+      only: resolvedOnly,
+      excludeRelationships: resolvedExcludeRelationships,
+      onlyRelationships: resolvedOnlyRelationships,
+    });
+  }, [
+    rawMetadata,
+    hasFilters,
+    resolvedExclude,
+    resolvedOnly,
+    resolvedExcludeRelationships,
+    resolvedOnlyRelationships,
+  ]);
+
+  const baseLoading =
+    !skip && !rawMetadata && (networkState.loading || shouldFetch);
+
+  const [nestedMetadata, setNestedMetadata] = React.useState<
+    Record<string, FormMetadata>
+  >({});
+  const [nestedLoading, setNestedLoading] = React.useState(false);
+  const [nestedError, setNestedError] = React.useState<ApolloError | undefined>(
+    undefined
+  );
+
+  const nestedTargets = React.useMemo(() => {
+    if (!rawMetadata || resolvedNestedFields.length === 0) {
+      return EMPTY_NESTED_TARGETS;
+    }
+    return resolveNestedTargets(rawMetadata, resolvedNestedFields);
+  }, [rawMetadata, resolvedNestedFields]);
+
+  React.useEffect(() => {
+    if (nestedTargets.length === 0) {
+      if (
+        nestedLoading ||
+        nestedError ||
+        Object.keys(nestedMetadata).length > 0
+      ) {
+        setNestedMetadata({});
+        setNestedLoading(false);
+        setNestedError(undefined);
+      }
+      return;
+    }
+
+    let cancelled = false;
+    setNestedLoading(true);
+    setNestedError(undefined);
+
+    const loadNested = async () => {
+      const results: Record<string, FormMetadata> = {};
+      for (const target of nestedTargets) {
+        const nestedSignature = stableSerialize({ objectId: null });
+        const nestedScopeKey = buildMetadataScopeKey(
+          target.app,
+          target.model,
+          nestedSignature
+        );
+        const cached = readMetadataCacheEntry<FormMetadata>(
+          "form",
+          nestedScopeKey
+        );
+        if (isCacheEntryFresh(cached, METADATA_CACHE_TTL_MS)) {
+          if (cached?.data) {
+            results[target.name] = cached.data;
+          }
+          continue;
+        }
+        const response = await client.query<
+          ModelSchemaQueryResult,
+          ModelSchemaQueryVariables
+        >({
+          query: GET_MODEL_SCHEMA,
+          variables: { app: target.app, model: target.model },
+          fetchPolicy: metadataQueryOptions.fetchPolicy,
+          errorPolicy: metadataQueryOptions.errorPolicy,
+          context: metadataQueryOptions.context,
+        });
+        const payload = response.data?.modelSchema ?? null;
+        if (payload) {
+          writeMetadataCacheEntry(
+            "form",
+            nestedScopeKey,
+            payload.metadataVersion,
+            payload
+          );
+          results[target.name] = payload as FormMetadata;
+        }
+      }
+      return results;
+    };
+
+    loadNested()
+      .then((results) => {
+        if (!cancelled) {
+          setNestedMetadata(results ?? {});
+          setNestedLoading(false);
+        }
+      })
+      .catch((error) => {
+        if (!cancelled) {
+          setNestedError(error as ApolloError);
+          setNestedLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    client,
+    metadataQueryOptions.context,
+    metadataQueryOptions.errorPolicy,
+    metadataQueryOptions.fetchPolicy,
+    nestedTargets,
+  ]);
+
   return {
     metadata,
-    loading,
-    error,
+    nestedMetadata,
+    loading: baseLoading || nestedLoading,
+    error: networkState.error ?? nestedError,
     refetch: refetchMetadata,
   };
 }
@@ -415,7 +502,7 @@ export interface UseModelFormOptions<
   mutationId?: string;
   transformInput?: (
     values: TFormValues,
-    ctx: { metadata: model_form_metadata }
+    ctx: { metadata: FormMetadata }
   ) => Record<string, any>;
   onCompleted?: (payload: any) => void;
   onError?: (error: unknown) => void;
@@ -429,7 +516,7 @@ export interface UseModelFormOptions<
 export interface UseModelFormSubmitContext<
   TFormValues extends Record<string, any>
 > {
-  metadata: model_form_metadata | null;
+  metadata: FormMetadata | null;
   createMutation: (
     variables: CreateMutationVariables<Record<string, any>>
   ) => Promise<any>;
@@ -441,7 +528,8 @@ export interface UseModelFormSubmitContext<
 }
 
 export interface UseModelFormResult<TFormValues extends Record<string, any>> {
-  metadata: model_form_metadata | null;
+  metadata: FormMetadata | null;
+  nestedMetadata: Record<string, FormMetadata>;
   schema: FormSchema<TFormValues> | null;
   loading: boolean;
   error: unknown;
@@ -460,6 +548,7 @@ export function useModelForm<
   const {
     appName,
     modelName,
+    objectId,
     nestedFields,
     exclude,
     only,
@@ -478,9 +567,11 @@ export function useModelForm<
     skip,
   } = options;
 
-  const { metadata, loading, error, refetch } = useFormMetadata({
+  const { metadata, nestedMetadata, loading, error, refetch } =
+    useFormMetadata({
     appName,
     modelName,
+    objectId,
     nestedFields,
     exclude,
     only,
@@ -493,16 +584,20 @@ export function useModelForm<
   const formMode: "create" | "update" =
     mutationMode === "update" ? "update" : "create";
 
-  const normalizedModelName = React.useMemo(() => modelName, [modelName]);
-
   const schema = React.useMemo<FormSchema<TFormValues> | null>(() => {
     if (!metadata) return null;
     return buildSchemaFromMetadata<TFormValues>(
       metadata,
+      nestedMetadata,
       initialValues ?? {},
       formMode
     );
-  }, [metadata, initialValues, formMode]);
+  }, [metadata, nestedMetadata, initialValues, formMode]);
+
+  const nestedFieldNames = React.useMemo(
+    () => normalizeStringArray(nestedFields),
+    [nestedFields]
+  );
 
   const computedDefaults = React.useMemo(() => {
     if (!schema) {
@@ -626,10 +721,15 @@ export function useModelForm<
            );
         }
         
-        const prefixedInput = applyNestedPrefix(processedInput, metadata);
+        const prefixedInput = applyNestedPrefix(
+          processedInput,
+          nestedFieldNames,
+          nestedMetadata
+        );
         const relationshipNormalizedInput = normalizeRelationshipInputValues(
           prefixedInput,
-          metadata
+          metadata,
+          nestedMetadata
         );
         const normalizedInput = sanitizeEmptyScalarValues(
           relationshipNormalizedInput,
@@ -713,6 +813,7 @@ export function useModelForm<
 
   return {
     metadata,
+    nestedMetadata,
     schema,
     loading,
     error,
@@ -730,19 +831,70 @@ export function useModelForm<
 /*                                 Utilities                                  */
 /* -------------------------------------------------------------------------- */
 
-function buildSchemaFromMetadata<TFormValues extends Record<string, any>>(
-  metadata: model_form_metadata,
+function applyMetadataFilters(
+  metadata: FormMetadata,
+  filters: {
+    exclude: string[];
+    only: string[];
+    excludeRelationships: string[];
+    onlyRelationships: string[];
+  }
+): FormMetadata {
+  const excludeSet = new Set(filters.exclude);
+  const onlySet = new Set(filters.only);
+  const excludeRelSet = new Set(filters.excludeRelationships);
+  const onlyRelSet = new Set(filters.onlyRelationships);
+
+  const filteredFields = metadata.fields.filter((field) => {
+    if (excludeSet.has(field.name) || excludeSet.has(field.fieldName)) {
+      return false;
+    }
+    if (onlySet.size > 0) {
+      return onlySet.has(field.name) || onlySet.has(field.fieldName);
+    }
+    return true;
+  });
+
+  const filteredRelationships = metadata.relationships.filter((relationship) => {
+    if (
+      excludeRelSet.has(relationship.name) ||
+      excludeRelSet.has(relationship.fieldName)
+    ) {
+      return false;
+    }
+    if (onlyRelSet.size > 0) {
+      return (
+        onlyRelSet.has(relationship.name) ||
+        onlyRelSet.has(relationship.fieldName)
+      );
+    }
+    return true;
+  });
+
+  return {
+    ...metadata,
+    fields: filteredFields,
+    relationships: filteredRelationships,
+  };
+}
+
+export function buildSchemaFromMetadata<TFormValues extends Record<string, any>>(
+  metadata: FormMetadata,
+  nestedMetadata: Record<string, FormMetadata>,
   initialValues: Partial<TFormValues>,
   mode: "create" | "update"
 ): FormSchema<TFormValues> {
-  const combinedFields = collectFieldConfigs(metadata, mode);
+  const combinedFields = collectFieldConfigs(metadata, nestedMetadata, mode);
+  const config = resolveFormConfig(metadata);
+  const sectionTitle = config.title ?? metadata.verboseName;
+  const sectionDescription = config.description ?? undefined;
 
   const sections: FormSectionConfig[] = combinedFields.length
     ? [
         {
           id: "primary",
-          title: metadata.form_title || metadata.verbose_name,
-          description: metadata.form_description ?? undefined,
+          title: sectionTitle,
+          description: sectionDescription,
           fields: combinedFields,
         },
       ]
@@ -750,37 +902,41 @@ function buildSchemaFromMetadata<TFormValues extends Record<string, any>>(
 
   if (sections.length === 0) {
     return {
-      id: `${metadata.app_name}.${metadata.model_name}`,
+      id: `${metadata.app}.${metadata.model}`,
       fields: [],
       initialValues,
       meta: {
-        appName: metadata.app_name,
-        modelName: metadata.model_name,
+        appName: metadata.app,
+        modelName: metadata.model,
       },
     };
   }
 
   return {
-    id: `${metadata.app_name}.${metadata.model_name}`,
+    id: `${metadata.app}.${metadata.model}`,
     sections,
     initialValues,
     meta: {
-      appName: metadata.app_name,
-      modelName: metadata.model_name,
+      appName: metadata.app,
+      modelName: metadata.model,
     },
   };
 }
 
-function collectFieldConfigs(
-  metadata: model_form_metadata,
+export function collectFieldConfigs(
+  metadata: FormMetadata,
+  nestedMetadata: Record<string, FormMetadata>,
   mode: "create" | "update"
 ): FormFieldConfig[] {
-  const readonly = new Set(metadata.readonly_fields ?? []);
-  const excluded = new Set(metadata.exclude_fields ?? []);
-
+  const config = resolveFormConfig(metadata);
+  const readonly = new Set(config.readonlyFields ?? []);
+  const excluded = new Set(config.excludeFields ?? []);
   const primitiveFields = metadata.fields
     .filter((field) => {
-      if (excluded.has(field.name) || field.has_permission === false) {
+      if (excluded.has(field.name) || excluded.has(field.fieldName)) {
+        return false;
+      }
+      if (field.readable === false) {
         return false;
       }
       if (mode === "create" && field.editable === false) {
@@ -788,52 +944,97 @@ function collectFieldConfigs(
       }
       return true;
     })
-    .map((field) => mapFieldMetadata(field, readonly))
+    .map((field) => mapFieldSchema(field, readonly))
     .filter((field): field is FormFieldConfig => Boolean(field));
 
   const relationshipFields = metadata.relationships
-    .map((relationship) => mapRelationshipMetadata(relationship))
+    .filter((relationship) => {
+      if (
+        excluded.has(relationship.name) ||
+        excluded.has(relationship.fieldName)
+      ) {
+        return false;
+      }
+      if (relationship.readable === false) {
+        return false;
+      }
+      if (relationship.editable === false || relationship.writable === false) {
+        return false;
+      }
+      return true;
+    })
+    .map((relationship) => mapRelationshipSchema(relationship, readonly))
     .filter((field): field is FormFieldConfig => Boolean(field));
 
-  const nestedFields =
-    metadata.nested
-      ?.map((nestedMeta) => mapNestedMetadata(nestedMeta, mode))
-      .filter((field): field is FormFieldConfig => Boolean(field)) ?? [];
+  const nestedFields = Object.entries(nestedMetadata)
+    .map(([fieldName, nestedMeta]) => {
+      const relation = metadata.relationships.find(
+        (rel) => rel.name === fieldName || rel.fieldName === fieldName
+      );
+      return mapNestedMetadata(fieldName, relation, nestedMeta, mode);
+    })
+    .filter((field): field is FormFieldConfig => Boolean(field));
 
-  const ordering = metadata.field_order ?? [];
+  const ordering = config.fieldOrder ?? [];
   return sortFieldsByOrder(
     [...primitiveFields, ...relationshipFields, ...nestedFields],
     ordering
   );
 }
 
-function mapFieldMetadata(
-  field: form_field_metadata,
+function mapFieldSchema(
+  field: FieldSchema,
   readonlyFields: Set<string>
 ): FormFieldConfig | null {
-  const type = inferInputType(field);
+  const custom = parseCustomMetadata<Record<string, any>>(field.customMetadata);
+  const inputType = resolveInputType(field, custom);
+  const placeholder = custom?.placeholder;
+  const className = custom?.className ?? custom?.class;
+  const dataAttributes = custom?.dataAttributes ?? custom?.data_attributes;
+  const order = typeof custom?.order === "number" ? custom.order : undefined;
+
+  const visibility = String(field.visibility ?? "").toLowerCase();
+  const hiddenFromVisibility =
+    visibility === "hidden" || visibility === "redacted";
+  const hiddenOverride = custom?.hidden ?? custom?.hide;
+  const isJsonField = Boolean(field.isJson) || field.fieldType === "JSONField";
+  const hidden =
+    hiddenFromVisibility ||
+    (hiddenOverride !== undefined ? Boolean(hiddenOverride) : isJsonField);
+
+  const readOnlyOverride = custom?.readOnly ?? custom?.readonly;
+  const resolvedReadOnly =
+    readOnlyOverride !== undefined
+      ? readOnlyOverride
+      : readonlyFields.has(field.name) ||
+        !field.editable ||
+        field.writable === false;
+
   const base = {
     name: field.name,
-    label: field.verbose_name || field.name,
-    description: field.help_text || undefined,
-    placeholder: field.placeholder || undefined,
-    required: field.is_required,
-    defaultValue: field.default_value,
-    disabled: field.disabled || !field.editable,
-    readOnly:
-      field.readonly || readonlyFields.has(field.name) || !field.editable,
-    className: field.css_classes || undefined,
+    label: field.verboseName || field.name,
+    description: field.helpText || undefined,
+    placeholder: placeholder || undefined,
+    required: field.required,
+    defaultValue: field.defaultValue,
+    disabled: custom?.disabled ?? !field.editable,
+    readOnly: resolvedReadOnly,
+    className,
+    dataAttributes,
+    order,
+    hidden: hidden || field.readable === false,
   };
 
-  if (field.choices?.length) {
+  const choiceOptions = normalizeChoiceOptions(field.choices);
+  if (choiceOptions.length) {
+    const multiple = Boolean(
+      custom?.multiple || custom?.multi || custom?.multiselect
+    );
     const config: ChoiceFieldConfig = {
       ...base,
-      type: type === "radio" ? "radio" : "select",
-      options: field.choices.map((choice) => ({
-        value: choice.value,
-        label: choice.label,
-      })),
-      multiple: field.widget_type === "multiselect",
+      type: inputType === "radio" ? "radio" : "select",
+      options: choiceOptions,
+      multiple,
     };
     if (config.multiple && config.defaultValue === undefined) {
       config.defaultValue = [];
@@ -842,101 +1043,145 @@ function mapFieldMetadata(
   }
 
   if (
-    type === "number" ||
-    type === "decimal" ||
-    type === "slider" ||
-    type === "range"
+    inputType === "number" ||
+    inputType === "decimal" ||
+    inputType === "slider" ||
+    inputType === "range"
   ) {
     const config: NumberFieldConfig = {
       ...base,
-      type,
-      min: field.min_value ?? undefined,
-      max: field.max_value ?? undefined,
-      step: inferDecimalStep(field.decimal_places, type),
+      type: inputType,
+      min: field.minValue ?? undefined,
+      max: field.maxValue ?? undefined,
+      step: inferDecimalStep(field.decimalPlaces, inputType),
     };
     return config;
   }
 
   if (
-    type === "text" ||
-    type === "textarea" ||
-    type === "email" ||
-    type === "password" ||
-    type === "json"
+    inputType === "text" ||
+    inputType === "textarea" ||
+    inputType === "email" ||
+    inputType === "password" ||
+    inputType === "json"
   ) {
     const config: TextFieldConfig = {
       ...base,
-      type,
-      minLength: field.min_length ?? undefined,
-      maxLength: field.max_length ?? undefined,
+      type: inputType,
+      minLength: field.minLength ?? undefined,
+      maxLength: field.maxLength ?? undefined,
     };
     return config;
   }
 
-  if (type === "checkbox" || type === "switch") {
+  if (inputType === "checkbox" || inputType === "switch") {
     return {
       ...base,
-      type,
+      type: inputType,
       defaultValue:
         typeof base.defaultValue === "boolean" ? base.defaultValue : false,
     };
   }
 
-  if (type === "file") {
+  if (inputType === "file") {
     return {
       ...base,
-      type,
+      type: inputType,
     };
   }
 
   return {
     ...base,
-    type,
+    type: inputType,
   };
 }
 
-function mapRelationshipMetadata(
-  relationship: form_relationship_metadata
-): FormFieldConfig | null {
-  if (!relationship.related_model) {
-    return null;
+function normalizeChoiceOptions(
+  choices: FieldSchema["choices"]
+): Array<{ value: string | number; label: string; disabled?: boolean }> {
+  if (!Array.isArray(choices) || choices.length === 0) {
+    return [];
   }
-  const multiple = shouldUseMultiSelect(relationship);
-  const relatedModel =
-    relationship.related_model?.toLowerCase() ?? relationship.related_model;
+  return choices
+    .map((choice) => {
+      if (!choice) return null;
+      const rawValue = (choice as { value?: unknown }).value;
+      if (rawValue === undefined || rawValue === null) {
+        return null;
+      }
+      const value =
+        typeof rawValue === "string" || typeof rawValue === "number"
+          ? rawValue
+          : String(rawValue);
+      const label =
+        typeof choice.label === "string" && choice.label.length > 0
+          ? choice.label
+          : String(value);
+      return {
+        value,
+        label,
+        disabled: choice.disabled,
+      };
+    })
+    .filter(
+      (
+        option
+      ): option is { value: string | number; label: string; disabled?: boolean } =>
+        Boolean(option)
+    );
+}
+
+function mapRelationshipSchema(
+  relationship: RelationshipSchema,
+  readonlyFields: Set<string>
+): FormFieldConfig | null {
+  const relatedModel = relationship.relatedApp
+    ? `${relationship.relatedApp}.${relationship.relatedModel}`
+    : relationship.relatedModel;
+  const custom = parseCustomMetadata<Record<string, any>>(
+    relationship.customMetadata
+  );
+  const inlineCreate = resolveInlineCreateConfig(relationship, custom);
+  const readOnlyOverride = custom?.readOnly ?? custom?.readonly;
+  const resolvedReadOnly =
+    readOnlyOverride !== undefined
+      ? readOnlyOverride
+      : readonlyFields.has(relationship.name) ||
+        !relationship.editable ||
+        relationship.writable === false;
+
   const config: QueryChoiceFieldConfig = {
     name: relationship.name,
-    label: relationship.verbose_name || relationship.name,
-    description: relationship.help_text || undefined,
+    label: relationship.verboseName || relationship.name,
+    description: relationship.helpText || undefined,
     type: "select-query",
-    multiple,
-    required: relationship.is_required,
-    defaultValue: multiple ? [] : null,
-    placeholder: relationship.empty_label || undefined,
+    multiple: relationship.isToMany,
+    required: relationship.required,
+    defaultValue: relationship.isToMany ? [] : null,
+    placeholder: custom?.placeholder || undefined,
     relatedModel,
-    disabled: relationship.disabled,
-    readOnly: relationship.readonly,
-    className: relationship.css_classes || undefined,
+    disabled: custom?.disabled ?? !relationship.editable,
+    readOnly: resolvedReadOnly,
+    className: custom?.className ?? custom?.class,
+    inlineCreate: inlineCreate ?? undefined,
+    hidden: relationship.readable === false,
   };
   return config;
 }
 
 function mapNestedMetadata(
-  nestedMeta: model_form_metadata,
+  fieldName: string,
+  relation: RelationshipSchema | undefined,
+  nestedMeta: FormMetadata,
   mode: "create" | "update"
 ): FormFieldConfig | null {
-  const fieldName =
-    nestedMeta.name ?? nestedMeta.field_name ?? nestedMeta.model_name;
-  if (!fieldName) {
-    return null;
-  }
-  const nestedFields = collectFieldConfigs(nestedMeta, mode);
+  const nestedFields = collectFieldConfigs(nestedMeta, {}, mode);
   if (nestedFields.length === 0) {
     return null;
   }
-  const label = nestedMeta.form_title || nestedMeta.verbose_name || fieldName;
-  const description = nestedMeta.form_description ?? undefined;
-  const multiple = isMultipleRelationship(nestedMeta.relationship_type);
+  const label = nestedMeta.verboseName || relation?.verboseName || fieldName;
+  const description = undefined;
+  const multiple = relation?.isToMany ?? false;
   if (multiple) {
     const config: ListFieldConfig = {
       name: fieldName,
@@ -945,11 +1190,9 @@ function mapNestedMetadata(
       type: "list",
       fields: nestedFields,
       defaultValue: [],
-      required: nestedMeta.is_required,
-      addLabel: nestedMeta.verbose_name
-        ? `Ajouter ${nestedMeta.verbose_name}`
-        : undefined,
-      itemLabel: nestedMeta.verbose_name ?? undefined,
+      required: relation?.required ?? false,
+      addLabel: label ? `Ajouter ${label}` : undefined,
+      itemLabel: label || undefined,
     };
     return config;
   }
@@ -959,29 +1202,51 @@ function mapNestedMetadata(
     description,
     type: "object",
     fields: nestedFields,
-    required: nestedMeta.is_required,
+    required: relation?.required ?? false,
   };
 }
 
-function inferInputType(field: form_field_metadata): FormInputType {
+function resolveInlineCreateConfig(
+  relationship: RelationshipSchema,
+  custom: Record<string, any> | null
+) {
+  if (custom?.inlineCreate === false) {
+    return { enabled: false };
+  }
+  if (custom?.inlineCreate && typeof custom.inlineCreate === "object") {
+    return { ...custom.inlineCreate };
+  }
+  if (relationship.canCreateInline) {
+    return { enabled: true };
+  }
+  return null;
+}
+
+function resolveInputType(
+  field: FieldSchema,
+  custom: Record<string, any> | null
+): FormInputType {
+  const customType = custom?.inputType ?? custom?.input_type;
+  if (customType) {
+    return customType as FormInputType;
+  }
+  const widget = custom?.widget ?? custom?.widgetType ?? custom?.widget_type;
   if (field.choices?.length) {
-    if (field.widget_type === "radio") return "radio";
+    if (widget === "radio") return "radio";
     return "select";
   }
-  switch (field.widget_type) {
+  switch (widget) {
     case "textarea":
       return "textarea";
     case "checkbox":
       return "checkbox";
     case "number":
-      return field.field_type === "DecimalField" ? "decimal" : "number";
+      return field.fieldType === "DecimalField" ? "decimal" : "number";
     case "date":
       return "date";
     case "datetime-local":
       return "datetime-local";
     case "multiselect":
-      return "select";
-    case "select":
       return "select";
     case "email":
       return "email";
@@ -990,9 +1255,10 @@ function inferInputType(field: form_field_metadata): FormInputType {
     default:
       break;
   }
-  switch (field.field_type) {
+  switch (field.fieldType) {
     case "DecimalField":
     case "FloatField":
+      return "decimal";
     case "IntegerField":
     case "SmallIntegerField":
     case "PositiveSmallIntegerField":
@@ -1054,41 +1320,6 @@ function sortFieldsByOrder(
   });
 }
 
-function isMultipleRelationship(value?: relationship_type | string | null) {
-  if (!value) return false;
-  const normalized = value.toString();
-  return (
-    normalized === "ManyToManyField" ||
-    normalized === "ReverseManyToMany" ||
-    normalized === "ReverseForeignKey" ||
-    normalized === "ManyToOneRel"
-  );
-}
-
-function shouldUseMultiSelect(
-  relationship: form_relationship_metadata
-): boolean {
-  if (
-    relationship.one_to_one ||
-    relationship.foreign_key ||
-    relationship.relationship_type === "ForeignKey" ||
-    relationship.relationship_type === "OneToOneField"
-  ) {
-    return false;
-  }
-  if (
-    relationship.multiple ||
-    relationship.many_to_many ||
-    relationship.relationship_type === "ManyToManyField" ||
-    relationship.relationship_type === "ReverseManyToMany"
-  ) {
-    return true;
-  }
-  if (relationship.relationship_type === "ManyToOneRel") {
-    return Boolean(relationship.many_to_many);
-  }
-  return false;
-}
 function buildDefaultsFromSchema(schema: FormSchema): Record<string, any> {
   const target: Record<string, any> = {};
   const sections = schema.sections?.length
@@ -1318,15 +1549,23 @@ function stripUntouchedFieldValues(
   return clone;
 }
 
+function resolveNestedFieldNames(
+  nestedFieldNames: string[],
+  nestedMetadata: Record<string, FormMetadata>
+) {
+  const keys = Object.keys(nestedMetadata ?? {});
+  return keys.length ? keys : nestedFieldNames;
+}
+
 function applyNestedPrefix(
   input: Record<string, any>,
-  metadata: model_form_metadata | null
+  nestedFieldNames: string[],
+  nestedMetadata: Record<string, FormMetadata>
 ): Record<string, any> {
-  if (!metadata?.nested) return input;
-  const nestedNames = metadata.nested
-    .map((n) => n.name ?? n.field_name ?? n.model_name)
-    .filter((n): n is string => Boolean(n));
-
+  const nestedNames = resolveNestedFieldNames(
+    nestedFieldNames,
+    nestedMetadata
+  );
   if (!nestedNames.length) return input;
 
   const clone = { ...input };
@@ -1341,34 +1580,33 @@ function applyNestedPrefix(
 
 function normalizeRelationshipInputValues(
   input: Record<string, any>,
-  metadata: model_form_metadata | null
+  metadata: FormMetadata | null,
+  nestedMetadata: Record<string, FormMetadata>
 ): Record<string, any> {
   if (!metadata) return input;
   const clone: Record<string, any> = { ...input };
 
-  (metadata.relationships ?? []).forEach((relationship) => {
+  metadata.relationships.forEach((relationship) => {
     const fieldName = relationship.name;
     if (!(fieldName in clone)) return;
     clone[fieldName] = normalizeRelationshipFieldValue(clone[fieldName]);
   });
 
-  (metadata.nested ?? []).forEach((nested) => {
+  const nestedNames = resolveNestedFieldNames([], nestedMetadata);
+  nestedNames.forEach((nestedName) => {
+    const nestedMeta = nestedMetadata[nestedName];
+    if (!nestedMeta) return;
     // Check for both prefixed and original names to be safe,
     // though at this point they should be prefixed if applyNestedPrefix was called.
-    const originalName =
-      nested.name ?? nested.field_name ?? nested.model_name;
-    if (!originalName) return;
-    
-    const prefixedName = `nested_${originalName}`;
-    
-    // Determine which key exists in the object
+    const prefixedName = `nested_${nestedName}`;
+
     let nestedKey: string | undefined;
     if (prefixedName in clone) {
       nestedKey = prefixedName;
-    } else if (originalName in clone) {
-      nestedKey = originalName;
+    } else if (nestedName in clone) {
+      nestedKey = nestedName;
     }
-    
+
     if (!nestedKey) return;
 
     const nestedValue = clone[nestedKey];
@@ -1377,7 +1615,8 @@ function normalizeRelationshipInputValues(
         entry && typeof entry === "object"
           ? normalizeRelationshipInputValues(
               entry as Record<string, any>,
-              nested
+              nestedMeta,
+              {}
             )
           : entry
       );
@@ -1386,7 +1625,8 @@ function normalizeRelationshipInputValues(
     if (nestedValue && typeof nestedValue === "object") {
       clone[nestedKey] = normalizeRelationshipInputValues(
         nestedValue as Record<string, any>,
-        nested
+        nestedMeta,
+        {}
       );
     }
   });
@@ -1417,7 +1657,7 @@ function normalizeRelationshipFieldValue(value: any): any {
 
 function sanitizeEmptyScalarValues(
   input: Record<string, any>,
-  metadata: model_form_metadata | null
+  metadata: FormMetadata | null
 ): Record<string, any> {
   if (!metadata) {
     return input;
@@ -1425,8 +1665,10 @@ function sanitizeEmptyScalarValues(
   const dateLikeFields = new Set(
     metadata.fields
       .filter((field) =>
+        field.isDate ||
+        field.isDatetime ||
         ["DateField", "DateTimeField", "TimeField"].includes(
-          field.field_type ?? ""
+          field.fieldType ?? ""
         )
       )
       .map((field) => field.name)
@@ -1449,7 +1691,8 @@ function sanitizeEmptyScalarValues(
  */
 function normalizeChoiceEnumValues(
   input: Record<string, any>,
-  metadata: model_form_metadata | null
+  metadata: FormMetadata | null,
+  nestedMetadata: Record<string, FormMetadata>
 ): Record<string, any> {
   if (!metadata) return input;
 
@@ -1465,20 +1708,20 @@ function normalizeChoiceEnumValues(
   });
 
   // Recurse into nested metadata to normalize inner structures
-  (metadata.nested ?? []).forEach((nested) => {
-    const nestedKey = nested.name ?? nested.field_name ?? nested.model_name;
+  Object.entries(nestedMetadata ?? {}).forEach(([nestedKey, nestedMeta]) => {
     if (!nestedKey || !(nestedKey in clone)) return;
     const nestedValue = clone[nestedKey];
     if (Array.isArray(nestedValue)) {
       clone[nestedKey] = nestedValue.map((entry) =>
         entry && typeof entry === "object"
-          ? normalizeChoiceEnumValues(entry as Record<string, any>, nested)
+          ? normalizeChoiceEnumValues(entry as Record<string, any>, nestedMeta, {})
           : entry
       );
     } else if (nestedValue && typeof nestedValue === "object") {
       clone[nestedKey] = normalizeChoiceEnumValues(
         nestedValue as Record<string, any>,
-        nested
+        nestedMeta,
+        {}
       );
     }
   });
@@ -1488,7 +1731,7 @@ function normalizeChoiceEnumValues(
 
 function coerceNumericFieldValues(
   input: Record<string, any>,
-  metadata: model_form_metadata | null
+  metadata: FormMetadata | null
 ): Record<string, any> {
   if (!metadata) return input;
 
@@ -1502,13 +1745,13 @@ function coerceNumericFieldValues(
         "BigIntegerField",
         "AutoField",
         "BigAutoField",
-      ].includes(field.field_type ?? "")
+      ].includes(field.fieldType ?? "")
     )
     .map((field) => field.name);
 
   const decimalFieldNames = metadata.fields
     .filter((field) =>
-      ["DecimalField", "FloatField"].includes(field.field_type ?? "")
+      ["DecimalField", "FloatField"].includes(field.fieldType ?? "")
     )
     .map((field) => field.name);
 

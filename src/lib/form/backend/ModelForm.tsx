@@ -22,12 +22,12 @@ import {
   normalizeErrorFieldPath,
   useModelForm,
   type UseModelFormOptions,
+  type FormMetadata,
 } from "./hooks";
 import { toOperationField, type MutationError } from "./types/mutations";
 import { ModelAccessContext, useModelAccess } from "@/lib/security/modelAccess";
 import { useModelTelemetry } from "@/lib/telemetry/useModelTelemetry";
 import { useAuditableAction } from "@/lib/security/useAuditableAction";
-import type { model_form_metadata } from "./types/meta";
 
 /**
  * Fallback loading state rendered while metadata is being fetched.
@@ -47,7 +47,7 @@ const DEFAULT_ERROR_MESSAGE = "Impossible de charger le formulaire.";
 
 type CustomFieldOrderValue =
   | string[]
-  | ((context: { metadata: model_form_metadata }) => string[]);
+  | ((context: { metadata: FormMetadata }) => string[]);
 
 /**
  * Backend hook options re-exposed by {@link ModelForm} once the ordering
@@ -481,6 +481,24 @@ function ModelForm<
     clearMutationErrors,
   } = useModelForm<TFormValues>(useModelFormOptions);
 
+  const customMeta = React.useMemo(
+    () => parseCustomMetadata<Record<string, any>>(metadata?.customMetadata),
+    [metadata?.customMetadata]
+  );
+  const metadataTitle =
+    customMeta?.form?.title ??
+    customMeta?.formConfig?.title ??
+    customMeta?.formTitle ??
+    customMeta?.form_title ??
+    undefined;
+  const metadataDescription =
+    customMeta?.form?.description ??
+    customMeta?.formConfig?.description ??
+    customMeta?.formDescription ??
+    customMeta?.form_description ??
+    customMeta?.description ??
+    undefined;
+
   const modelAccess = useModelAccess({
     appName: resolvedAppName,
     modelName: resolvedModelName,
@@ -517,12 +535,11 @@ function ModelForm<
   const headingTitle = React.useMemo(() => {
     if (title) return title;
     if (!metadata) return undefined;
-    const base =
-      metadata.verbose_name ?? metadata.form_title ?? metadata.model_name;
+    const base = metadataTitle ?? metadata.verboseName ?? metadata.model;
     if (!base) return undefined;
     const prefix = mutationMode === "update" ? "Mettre à jour" : "Création";
     return `${prefix} ${base}`;
-  }, [metadata, mutationMode, title]);
+  }, [metadata, metadataTitle, mutationMode, title]);
 
   const orderedSchema = React.useMemo(() => {
     if (!schema || !metadata || !resolvedCustomFieldOrder) {
@@ -917,14 +934,19 @@ function ModelForm<
       ModelFormLayoutVariant<TFormValues>,
       { variant: "accordion" }
     >;
-    formContent = (
-      <AccordionSectionsForm
-        sections={requiredSchema.sections}
-        form={form}
-        title={accordion?.title ?? headingTitle ?? metadata?.form_title}
-        formProps={accordionFormProps}
-      />
-    );
+        formContent = (
+          <AccordionSectionsForm
+            sections={requiredSchema.sections}
+            form={form}
+            title={
+              accordion?.title ??
+              headingTitle ??
+              metadataTitle ??
+              metadata?.verboseName
+            }
+            formProps={accordionFormProps}
+          />
+        );
   } else if (
     variant === "master-detail" &&
     requiredSchema.sections?.length &&
@@ -935,19 +957,24 @@ function ModelForm<
       ModelFormLayoutVariant<TFormValues>,
       { variant: "master-detail" }
     >;
-    formContent = (
-      <MasterDetailPreviewForm
-        schema={requiredSchema}
-        form={form}
-        title={masterDetail.title ?? headingTitle ?? metadata?.form_title}
-        className={masterDetail.className}
-        detailsCardClassName={masterDetail.detailsCardClassName}
-        previewCardClassName={masterDetail.previewCardClassName}
-        renderToolbar={masterDetail.renderToolbar}
-        renderPreview={masterDetail.renderPreview}
-        formProps={formPropsForVariant}
-      />
-    );
+        formContent = (
+          <MasterDetailPreviewForm
+            schema={requiredSchema}
+            form={form}
+            title={
+              masterDetail.title ??
+              headingTitle ??
+              metadataTitle ??
+              metadata?.verboseName
+            }
+            className={masterDetail.className}
+            detailsCardClassName={masterDetail.detailsCardClassName}
+            previewCardClassName={masterDetail.previewCardClassName}
+            renderToolbar={masterDetail.renderToolbar}
+            renderPreview={masterDetail.renderPreview}
+            formProps={formPropsForVariant}
+          />
+        );
   } else {
     formContent = (
       <DynamicForm
@@ -966,14 +993,14 @@ function ModelForm<
           containerClassName
         )}
       >
-        {showHeading && (headingTitle || metadata?.form_description) ? (
+        {showHeading && (headingTitle || metadataDescription) ? (
           <div className="space-y-1">
             {headingTitle ? (
               <h2 className="text-lg font-semibold">{headingTitle}</h2>
             ) : null}
-            {metadata?.form_description ? (
+            {metadataDescription ? (
               <p className="text-sm text-muted-foreground">
-                {metadata.form_description}
+                {metadataDescription}
               </p>
             ) : null}
           </div>
@@ -1014,6 +1041,52 @@ const MutationErrorList: React.FC<{
   </Card>
 );
 
+function parseCustomMetadata<T = Record<string, any>>(
+  value: unknown
+): T | null {
+  if (value === null || value === undefined) {
+    return null;
+  }
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return null;
+    try {
+      return JSON.parse(trimmed) as T;
+    } catch {
+      return null;
+    }
+  }
+  if (typeof value === "object") {
+    return value as T;
+  }
+  return null;
+}
+
+function normalizeCustomStringArray(value: unknown): string[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter((entry): entry is string => typeof entry === "string");
+}
+
+function normalizeOrderingValue(value: string): string {
+  if (!value) return value;
+  return value.startsWith("-") ? value.slice(1) : value;
+}
+
+function resolveMetadataFieldOrder(metadata: FormMetadata): string[] {
+  const custom = parseCustomMetadata<Record<string, any>>(metadata.customMetadata);
+  const form = (custom?.form ?? custom?.formConfig ?? {}) as Record<
+    string,
+    any
+  >;
+  const customOrder = normalizeCustomStringArray(
+    form.fieldOrder ?? form.field_order
+  );
+  if (customOrder.length) {
+    return customOrder;
+  }
+  return (metadata.ordering ?? []).map(normalizeOrderingValue);
+}
+
 type CustomFieldOrderFactoryConfig = Omit<
   ModelFormOrderingOptions,
   "customFieldOrder" | "sortRemainingFields"
@@ -1031,7 +1104,7 @@ function buildCustomFieldOrderFactory({
   trailingFields,
   sortRemaining,
 }: CustomFieldOrderFactoryConfig) {
-  return ({ metadata }: { metadata: model_form_metadata }) => {
+  return ({ metadata }: { metadata: FormMetadata }) => {
     const order: string[] = [];
     const push = (name?: string | null) => {
       if (!name) return;
@@ -1042,19 +1115,15 @@ function buildCustomFieldOrderFactory({
     pinnedFields?.forEach(push);
     fieldOrder?.forEach(push);
 
-    const backendOrder = metadata.field_order ?? [];
+    const backendOrder = resolveMetadataFieldOrder(metadata);
     backendOrder.forEach(push);
 
     const primitiveNames = metadata.fields.map((field) => field.name);
     const relationshipNames =
       metadata.relationships?.map((rel) => rel.name) ?? [];
-    const nestedNames =
-      metadata.nested
-        ?.map((nested) => nested.name ?? nested.field_name ?? nested.model_name)
-        .filter((value): value is string => Boolean(value)) ?? [];
 
     // Gather the remaining field names that were not explicitly mentioned.
-    const aggregate = [...primitiveNames, ...relationshipNames, ...nestedNames];
+    const aggregate = [...primitiveNames, ...relationshipNames];
     if (sortRemaining === "alphabetical") {
       Array.from(new Set(aggregate.filter((name) => !order.includes(name))))
         .sort((a, b) => a.localeCompare(b))
@@ -1079,7 +1148,7 @@ function buildCustomFieldOrderFactory({
 function applySectionOrderingToFields(
   fields: FormFieldConfig[],
   ordering?: ModelFormOrderingOptions,
-  metadata?: model_form_metadata | null
+  metadata?: FormMetadata | null
 ): FormFieldConfig[] {
   if (!ordering || fields.length === 0) {
     return fields;
@@ -1193,7 +1262,7 @@ type SectionChangeHandlerEntry<TValues extends Record<string, any>> = {
 function applySectionsControl<TValues extends Record<string, any>>(
   schema: FormSchema<TValues> | null,
   control?: ModelFormSectionsControl<TValues>,
-  metadata?: model_form_metadata | null
+  metadata?: FormMetadata | null
 ): {
   schema: FormSchema<TValues> | null;
   sectionChangeHandlers: Map<string, SectionChangeHandlerEntry<TValues>>;

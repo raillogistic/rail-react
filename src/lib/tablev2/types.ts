@@ -135,6 +135,9 @@ export interface RelationshipSchema {
   writable: boolean;
   canCreateInline: boolean;
 
+  // Nested operations metadata (JSON string)
+  relationOperations?: string;
+
   // Custom
   customMetadata?: string; // JSON string
 }
