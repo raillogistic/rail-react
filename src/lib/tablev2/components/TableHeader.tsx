@@ -8,6 +8,7 @@ import { useTable } from "../context/TableContext";
 import { useMetadata } from "../context/MetadataContext";
 import { Checkbox } from "@/lib/components/ui/checkbox";
 import { TableColumnMenu } from "./TableColumnMenu";
+import { ColumnFilter } from "./ColumnFilter";
 import type {
   BaseModelTableColumnDef,
   BaseModelTableColumnOrderingConfig,
@@ -203,11 +204,13 @@ export function TableHeader({
               >
                 <div className="flex items-center justify-between w-full">
                   <span className="truncate">{field.title}</span>
-                  <TableColumnMenu
-                    columnId={field.id}
-                    title={field.title}
-                    disabled={disableSorting}
-                  />
+                  <div className="flex items-center">
+                    <TableColumnMenu
+                        columnId={field.id}
+                        title={field.title}
+                        disabled={disableSorting}
+                    />
+                  </div>
                 </div>
               </DraggableHead>
             );
@@ -223,12 +226,15 @@ export function TableHeader({
             >
               <div className="flex items-center justify-between w-full">
                 <span className="truncate">{field.verboseName}</span>
-                <TableColumnMenu
-                  columnId={field.name}
-                  title={field.verboseName}
-                  field={field}
-                  disabled={disableSorting}
-                />
+                <div className="flex items-center">
+                    <ColumnFilter columnId={field.name} field={field} />
+                    <TableColumnMenu
+                        columnId={field.name}
+                        title={field.verboseName}
+                        field={field}
+                        disabled={disableSorting}
+                    />
+                </div>
               </div>
             </DraggableHead>
           );

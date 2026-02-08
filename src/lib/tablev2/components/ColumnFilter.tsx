@@ -1,0 +1,216 @@
+import React, { useMemo, useState } from "react";
+import { Filter } from "lucide-react";
+import { Button } from "@/lib/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/lib/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/lib/components/ui/select";
+import { Separator } from "@/lib/components/ui/separator";
+import { useMetadata } from "../context/MetadataContext";
+import { useTableFilters } from "../hooks/useTableFilters";
+import { FieldSchema } from "../types";
+import { ScalarFilterInput } from "../../form/filters/components/ScalarFilterInput";
+import type { FilterableField, FilterOperator, FilterBaseType } from "../../form/filters/types";
+import { cn } from "@/lib/utils";
+
+interface ColumnFilterProps {
+  columnId: string;
+  field?: FieldSchema;
+}
+
+export function ColumnFilter({ columnId, field }: ColumnFilterProps) {
+  const { metadata } = useMetadata();
+  const { addFilterCondition, advancedFilters, removeFilterCondition } = useTableFilters();
+  const [open, setOpen] = useState(false);
+
+  // 1. Resolve Filter Schema from Metadata
+  const filterMeta = useMemo(() => {
+    if (!metadata || !field) return null;
+    return metadata.filters.find((f) => f.fieldName === field.fieldName || f.name === field.name);
+  }, [metadata, field]);
+
+  // 2. Map to FilterableField for ScalarFilterInput
+  const filterableField = useMemo<FilterableField | null>(() => {
+    if (!field || !filterMeta) return null;
+
+    // Map base type
+    let baseType: FilterBaseType = "String";
+    if (field.isNumeric) baseType = "Number";
+    else if (field.isDate) baseType = "Date";
+    else if (field.isDatetime) baseType = "DateTime";
+    else if (field.isBoolean) baseType = "Boolean";
+    else if (field.isJson) baseType = "JSON";
+    else if (field.isRelation) baseType = "Relationship";
+
+    // Map operators
+    const operators: FilterOperator[] = filterMeta.options.map((opt) => ({
+      name: opt.name,
+      label: opt.label,
+      helpText: opt.helpText,
+      graphqlType: opt.graphqlType || "String",
+      isList: opt.isList || false,
+      choices: opt.choices,
+    }));
+
+    return {
+      name: field.name,
+      fieldName: field.fieldName,
+      fieldLabel: field.verboseName,
+      helpText: field.helpText,
+      baseType,
+      graphqlType: field.graphqlType,
+      filterInputType: filterMeta.filterInputType || "String",
+      operators,
+      defaultOperator: operators[0]?.name || "exact",
+      choices: field.choices, // Pass field choices
+      isRelation: field.isRelation,
+      relationConfig: field.isRelation ? {
+          relatedApp: "", // Need to fetch from relation schema if needed, usually scalar input handles choice based
+          relatedModel: "", 
+          lookupField: "id", 
+          searchFields: ["name"]
+      } : undefined,
+      uiHints: {
+        widget: "text", // Default, ScalarFilterInput auto-detects better
+      }
+    };
+  }, [field, filterMeta]);
+
+  // 3. Current Filter State
+  const activeCondition = useMemo(() => {
+    // Traverse root group to find condition for this field
+    // Simplified: Find first condition matching fieldName
+    const findCondition = (group: any): any => {
+      for (const cond of group.conditions) {
+        if (cond.type === "condition" && cond.fieldName === (field?.fieldName || field?.name)) {
+          return cond;
+        }
+        if (cond.type === "group") {
+          const found = findCondition(cond);
+          if (found) return found;
+        }
+      }
+      return null;
+    };
+    return findCondition(advancedFilters.root);
+  }, [advancedFilters.root, field]);
+
+  const [operator, setOperator] = useState<string>(activeCondition?.operator || filterableField?.defaultOperator || "exact");
+  const [value, setValue] = useState<any>(activeCondition?.value);
+
+  // Sync state when opening
+  React.useEffect(() => {
+    if (open && activeCondition) {
+      setOperator(activeCondition.operator);
+      setValue(activeCondition.value);
+    } else if (open && !activeCondition && filterableField) {
+       setOperator(filterableField.defaultOperator);
+       setValue(undefined);
+    }
+  }, [open, activeCondition, filterableField]);
+
+  if (!field || !filterMeta || !filterableField) return null;
+
+  const currentOperator = filterableField.operators.find(op => op.name === operator) || filterableField.operators[0];
+
+  const handleApply = () => {
+    addFilterCondition({
+      field: field.name, // Use name for GraphQL mapping usually
+      operator,
+      value,
+    });
+    setOpen(false);
+  };
+
+  const handleClear = () => {
+    if (activeCondition) {
+        // We need the ID to remove it cleanly, or we remove by field name?
+        // useTableFilters might not expose remove by field.
+        // Let's assume we can remove by ID if we have it.
+        removeFilterCondition(activeCondition.id);
+    }
+    setValue(undefined);
+    setOpen(false);
+  };
+
+  const isActive = !!activeCondition;
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="ghost"
+          size="sm"
+          className={cn(
+            "h-8 w-8 p-0 ml-1 data-[state=open]:bg-accent",
+            isActive ? "text-primary hover:text-primary" : "text-muted-foreground/50 hover:text-foreground"
+          )}
+        >
+          <Filter className={cn("h-3.5 w-3.5", isActive && "fill-current")} />
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-80 p-3" align="start" side="bottom">
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <h4 className="font-medium text-sm text-foreground">
+              Filtrer: {field.verboseName}
+            </h4>
+            {isActive && (
+                <Button variant="ghost" size="sm" className="h-6 px-2 text-xs text-destructive hover:bg-destructive/10" onClick={handleClear}>
+                    Effacer
+                </Button>
+            )}
+          </div>
+          
+          <div className="space-y-2">
+            <label className="text-xs text-muted-foreground font-medium">Opérateur</label>
+            <Select value={operator} onValueChange={setOperator}>
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {filterableField.operators.map((op) => (
+                  <SelectItem key={op.name} value={op.name} className="text-xs">
+                    {op.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="space-y-2">
+             <label className="text-xs text-muted-foreground font-medium">Valeur</label>
+             <div className="min-h-[32px]">
+                <ScalarFilterInput
+                    field={filterableField}
+                    operator={currentOperator}
+                    value={value}
+                    onChange={setValue}
+                    autoFocus
+                />
+             </div>
+          </div>
+
+          <Separator />
+          
+          <div className="flex justify-end gap-2 pt-1">
+            <Button size="sm" variant="ghost" onClick={() => setOpen(false)} className="h-7 text-xs">
+                Annuler
+            </Button>
+            <Button size="sm" onClick={handleApply} className="h-7 text-xs">
+                Appliquer
+            </Button>
+          </div>
+        </div>
+      </PopoverContent>
+    </Popover>
+  );
+}

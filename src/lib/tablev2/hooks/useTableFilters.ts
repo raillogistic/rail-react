@@ -1,6 +1,6 @@
 import { useCallback } from "react";
 import { useTable } from "../context/TableContext";
-import { FilterFormState } from "../../form/filters/types";
+import { FilterFormState, FilterCondition } from "../../form/filters/types";
 
 export function useTableFilters() {
   const {
@@ -35,6 +35,52 @@ export function useTableFilters() {
     });
   }, [setQuickSearch, setAdvancedFilters]);
 
+  const addFilterCondition = useCallback((condition: { field: string; operator: string; value: any }) => {
+    const root = advancedFilters.root;
+    // Check if condition exists in root group
+    const existingIndex = root.conditions.findIndex(
+        (c) => c.type === "condition" && c.fieldName === condition.field
+    );
+
+    let nextConditions = [...root.conditions];
+    
+    if (existingIndex >= 0) {
+        // Update existing
+        const existing = nextConditions[existingIndex] as FilterCondition;
+        nextConditions[existingIndex] = {
+            ...existing,
+            operator: condition.operator,
+            value: condition.value
+        };
+    } else {
+        // Add new
+        const newCondition: FilterCondition = {
+            id: Math.random().toString(36).substr(2, 9),
+            type: "condition",
+            fieldPath: [condition.field],
+            fieldName: condition.field,
+            operator: condition.operator,
+            value: condition.value
+        };
+        nextConditions.push(newCondition);
+    }
+
+    setAdvancedFilters({
+        ...advancedFilters,
+        root: { ...root, conditions: nextConditions }
+    });
+  }, [advancedFilters, setAdvancedFilters]);
+
+  const removeFilterCondition = useCallback((id: string) => {
+      const root = advancedFilters.root;
+      const nextConditions = root.conditions.filter((c) => c.id !== id);
+      
+      setAdvancedFilters({
+          ...advancedFilters,
+          root: { ...root, conditions: nextConditions }
+      });
+  }, [advancedFilters, setAdvancedFilters]);
+
   // Check if any filters are active
   const hasActiveFilters =
     !!quickSearch ||
@@ -48,5 +94,7 @@ export function useTableFilters() {
     setAdvancedFilters: handleAdvancedFiltersChange,
     clearAllFilters,
     hasActiveFilters,
+    addFilterCondition,
+    removeFilterCondition,
   };
 }
