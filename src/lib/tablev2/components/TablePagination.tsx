@@ -14,6 +14,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/lib/components/ui/select";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/lib/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 import { useTable } from "../context/TableContext";
 
 export function TablePagination({
@@ -62,16 +69,20 @@ export function TablePagination({
 
   const selectionText = totalKnown
     ? labels?.selectionStatus?.(selectedCount, total) ??
-      `${selectedCount} sur ${total} ligne(s) selectionnee(s).`
-    : `${selectedCount} ligne(s) selectionnee(s).`;
+      `${selectedCount} sur ${total} selectionnee${selectedCount > 1 ? "s" : ""}`
+    : `${selectedCount} selectionnee${selectedCount > 1 ? "s" : ""}`;
+
+  const rangeStart = Math.min((page - 1) * perPage + 1, total);
+  const rangeEnd = Math.min(page * perPage, total);
   const rangeText = totalKnown
     ? total === 0
       ? "0 ligne"
-      : `${Math.min((page - 1) * perPage + 1, total)}-${Math.min(page * perPage, total)} sur ${total}`
-    : `${data.length} ligne${data.length > 1 ? "s" : ""} chargee${data.length > 1 ? "s" : ""}`;
-  const leftText = enableSelection ? selectionText : rangeText;
+      : `${rangeStart}-${rangeEnd} sur ${total}`
+    : `${data.length} chargee${data.length > 1 ? "s" : ""}`;
+
+  const leftText = enableSelection && selectedCount > 0 ? selectionText : rangeText;
   const pageText = totalKnown
-    ? labels?.pageStatus?.(page, totalPages) ?? `Page ${page} sur ${totalPages}`
+    ? labels?.pageStatus?.(page, totalPages) ?? `${page} / ${totalPages}`
     : `Page ${page}`;
 
   const commitPageInput = () => {
@@ -88,96 +99,170 @@ export function TablePagination({
     setPage(Math.max(1, Math.trunc(parsed)));
   };
 
+  const canGoPrevious = totalKnown ? page > 1 : hasPreviousPage;
+  const canGoNext = totalKnown ? page < totalPages : hasNextPage;
+  const canGoFirst = page > 1;
+  const canGoLast = totalKnown && page < totalPages;
+
   return (
-    <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card/95 px-3 py-2 text-xs text-muted-foreground">
-      <div className="flex-1">
-        {leftText}
+    <TooltipProvider delayDuration={300}>
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/50 bg-card/80 px-3 py-2 backdrop-blur-sm">
+        {/* Left side - summary text */}
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">{leftText}</span>
+        </div>
+
+        {/* Right side - controls */}
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Rows per page */}
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground whitespace-nowrap">
+              {labels?.rowsPerPage ?? "par page"}
+            </span>
+            <Select
+              value={`${perPage}`}
+              onValueChange={(value) => {
+                setPerPage(Number(value));
+              }}
+            >
+              <SelectTrigger
+                className={cn(
+                  "h-7 w-[70px] border-border/50 bg-muted/30 text-xs",
+                  "focus:ring-1 focus:ring-primary/20",
+                )}
+              >
+                <SelectValue placeholder={perPage} />
+              </SelectTrigger>
+              <SelectContent side="top" align="center">
+                {pageSizeOptions.map((pageSize) => (
+                  <SelectItem key={pageSize} value={`${pageSize}`} className="text-xs">
+                    {pageSize}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Divider */}
+          <div className="h-4 w-px bg-border/40" />
+
+          {/* Page indicator */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-xs text-muted-foreground whitespace-nowrap">{pageText}</span>
+          </div>
+
+          {/* Divider */}
+          <div className="h-4 w-px bg-border/40" />
+
+          {/* Navigation buttons */}
+          <div className="flex items-center gap-0.5">
+            {/* First page */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={cn(
+                    "hidden h-7 w-7 rounded-md lg:flex",
+                    "hover:bg-muted/60",
+                    "disabled:opacity-30",
+                  )}
+                  onClick={() => setPage(1)}
+                  disabled={!canGoFirst}
+                >
+                  <ChevronsLeft className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="text-xs">
+                {labels?.firstPageAria ?? "Premiere page"}
+              </TooltipContent>
+            </Tooltip>
+
+            {/* Previous page */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={cn(
+                    "h-7 w-7 rounded-md",
+                    "hover:bg-muted/60",
+                    "disabled:opacity-30",
+                  )}
+                  onClick={() => setPage(page - 1)}
+                  disabled={!canGoPrevious}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="text-xs">
+                {labels?.previousPageAria ?? "Page precedente"}
+              </TooltipContent>
+            </Tooltip>
+
+            {/* Page input */}
+            <Input
+              value={pageInput}
+              onChange={(event) => setPageInput(event.target.value)}
+              onBlur={commitPageInput}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  commitPageInput();
+                }
+              }}
+              className={cn(
+                "h-7 w-12 border-border/50 bg-muted/30 px-2 text-center text-xs",
+                "focus:ring-1 focus:ring-primary/20",
+              )}
+              aria-label="Aller a la page"
+            />
+
+            {/* Next page */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={cn(
+                    "h-7 w-7 rounded-md",
+                    "hover:bg-muted/60",
+                    "disabled:opacity-30",
+                  )}
+                  onClick={() => setPage(page + 1)}
+                  disabled={!canGoNext}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="text-xs">
+                {labels?.nextPageAria ?? "Page suivante"}
+              </TooltipContent>
+            </Tooltip>
+
+            {/* Last page */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className={cn(
+                    "hidden h-7 w-7 rounded-md lg:flex",
+                    "hover:bg-muted/60",
+                    "disabled:opacity-30",
+                  )}
+                  onClick={() => setPage(numPages || 1)}
+                  disabled={!canGoLast}
+                >
+                  <ChevronsRight className="h-4 w-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="text-xs">
+                {labels?.lastPageAria ?? "Derniere page"}
+              </TooltipContent>
+            </Tooltip>
+          </div>
+        </div>
       </div>
-      <div className="flex flex-wrap items-center gap-3">
-        <div className="flex items-center space-x-2">
-          <p className="text-xs">
-            {labels?.rowsPerPage ?? "Lignes par page"}
-          </p>
-          <Select
-            value={`${perPage}`}
-            onValueChange={(value) => {
-              setPerPage(Number(value));
-            }}
-          >
-            <SelectTrigger size="sm">
-              <SelectValue placeholder={perPage} />
-            </SelectTrigger>
-            <SelectContent side="top">
-              {pageSizeOptions.map((pageSize) => (
-                <SelectItem key={pageSize} value={`${pageSize}`}>
-                  {pageSize}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="flex items-center justify-center text-xs whitespace-nowrap">
-          {pageText}
-        </div>
-        <div className="flex items-center gap-1">
-          <Input
-            value={pageInput}
-            onChange={(event) => setPageInput(event.target.value)}
-            onBlur={commitPageInput}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") {
-                commitPageInput();
-              }
-            }}
-            className="h-8 w-14 text-center"
-            aria-label="Aller a la page"
-          />
-          <Button
-            variant="outline"
-            className="hidden h-8 w-8 p-0 lg:flex"
-            onClick={() => setPage(1)}
-            disabled={page <= 1}
-          >
-            <span className="sr-only">
-              {labels?.firstPageAria ?? "Aller a la premiere page"}
-            </span>
-            <ChevronsLeft className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            className="h-8 w-8 p-0"
-            onClick={() => setPage(page - 1)}
-            disabled={totalKnown ? page <= 1 : !hasPreviousPage}
-          >
-            <span className="sr-only">
-              {labels?.previousPageAria ?? "Aller a la page precedente"}
-            </span>
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            className="h-8 w-8 p-0"
-            onClick={() => setPage(page + 1)}
-            disabled={totalKnown ? page >= (numPages || 1) : !hasNextPage}
-          >
-            <span className="sr-only">
-              {labels?.nextPageAria ?? "Aller a la page suivante"}
-            </span>
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            className="hidden h-8 w-8 p-0 lg:flex"
-            onClick={() => setPage(numPages || 1)}
-            disabled={!totalKnown || page >= (numPages || 1)}
-          >
-            <span className="sr-only">
-              {labels?.lastPageAria ?? "Aller a la derniere page"}
-            </span>
-            <ChevronsRight className="h-4 w-4" />
-          </Button>
-        </div>
-      </div>
-    </div>
+    </TooltipProvider>
   );
 }

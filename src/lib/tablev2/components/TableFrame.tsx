@@ -18,13 +18,19 @@ export function TableFrame({ children, className }: TableFrameProps) {
   return (
     <div
       className={cn(
-        "w-full max-w-full min-w-0 overflow-x-auto rounded-lg border border-border/70",
+        "group/table relative w-full max-w-full min-w-0 overflow-hidden rounded-lg",
+        "bg-card",
+        "border border-border/60",
+        "shadow-sm",
         className,
       )}
     >
-      <Table className="h-full min-w-max bg-card/70">
-        {children}
-      </Table>
+      {/* Inner scroll container */}
+      <div className="w-full overflow-x-auto">
+        <Table className="h-full min-w-max text-[13px]">
+          {children}
+        </Table>
+      </div>
     </div>
   );
 }

@@ -39,7 +39,6 @@ function DraggableHead({
   const style = {
     transform: CSS.Translate.toString(transform),
     transition,
-    opacity: isDragging ? 0.5 : 1,
   };
 
   return (
@@ -47,21 +46,31 @@ function DraggableHead({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "sticky top-0 z-20 whitespace-nowrap border-b bg-card/95 text-left font-semibold tracking-wide text-muted-foreground backdrop-blur supports-[backdrop-filter]:bg-card/80",
-        density === "compact" ? "text-[11px]" : "text-[12px]",
+        "group/col sticky top-0 z-20 whitespace-nowrap",
+        "border-b-2 border-border/70",
+        "bg-muted/60 text-left font-semibold uppercase tracking-wider text-muted-foreground",
+        "transition-colors duration-150",
+        density === "compact" ? "text-[10px] py-1.5 px-2.5" : density === "spacious" ? "text-[11px] py-3 px-3.5" : "text-[10px] py-2 px-3",
+        isDragging && "opacity-50 scale-[1.02] shadow-lg z-30",
+        "hover:bg-muted/80 hover:text-foreground",
         className,
       )}
       aria-sort={ariaSort}
     >
-      <div className="flex items-center gap-1">
+      <div className="flex items-center gap-1.5">
         {draggable ? (
           <button
             {...attributes}
             {...listeners}
-            className="mr-1 rounded p-0.5 hover:bg-muted"
+            className={cn(
+              "mr-0.5 rounded-md p-1 opacity-0 transition-all duration-200",
+              "hover:bg-background/60 hover:text-foreground",
+              "group-hover/col:opacity-60",
+              "focus-visible:opacity-100 focus-visible:ring-1 focus-visible:ring-primary/50",
+            )}
             aria-label="Reordonner la colonne"
           >
-            <GripVertical className="h-4 w-4 text-muted-foreground" />
+            <GripVertical className="h-3 w-3" />
           </button>
         ) : null}
 
@@ -259,16 +268,64 @@ export function TableHeader({
 
   if (!metadata && !columns) return null;
 
+  const renderSortButton = (sortKey: string, title: string) => {
+    const normalizedKey = normalizeSortKey(sortKey);
+    const sortState = sortMap.get(normalizedKey);
+    const sortDirection = sortState?.direction;
+
+    if (sortingDisabled) {
+      return <span className="select-none">{title}</span>;
+    }
+
+    return (
+      <button
+        type="button"
+        className={cn(
+          "group/sort flex items-center gap-1.5 text-left select-none rounded-md",
+          "transition-all duration-200",
+          "hover:text-foreground",
+        )}
+        onClick={(event) => handleSortToggle(sortKey, event)}
+        title="Click to sort"
+      >
+        <span className="transition-colors">{title}</span>
+        <span className="inline-flex items-center gap-0.5">
+          {sortDirection === "asc" ? (
+            <ChevronUp className="h-3.5 w-3.5 text-primary transition-transform duration-200" />
+          ) : sortDirection === "desc" ? (
+            <ChevronDown className="h-3.5 w-3.5 text-primary transition-transform duration-200" />
+          ) : (
+            <ArrowUpDown className="h-3 w-3 opacity-0 transition-all duration-200 group-hover/sort:opacity-40" />
+          )}
+          {sortState && orderBy.length > 1 ? (
+            <span className="ml-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary/10 text-[9px] font-semibold text-primary">
+              {sortState.index + 1}
+            </span>
+          ) : null}
+        </span>
+      </button>
+    );
+  };
+
   return (
     <ShadcnTableHeader>
-      <TableRow>
+      <TableRow className="border-b-0 hover:bg-transparent">
         {enableSelection ? (
-          <TableHead className="w-[40px] table-first-column sticky top-0 z-20 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
-            <Checkbox
-              checked={allSelected || (someSelected ? "indeterminate" : false)}
-              onCheckedChange={toggleSelectAll}
-              aria-label="Tout selectionner"
-            />
+          <TableHead className={cn(
+            "w-[40px] table-first-column sticky top-0 z-20",
+            "border-b-2 border-border/70",
+            "bg-muted/60",
+            "transition-colors duration-150",
+            density === "compact" ? "py-1.5 px-2" : density === "spacious" ? "py-3 px-3" : "py-2 px-2.5",
+          )}>
+            <div className="flex items-center justify-center">
+              <Checkbox
+                checked={allSelected || (someSelected ? "indeterminate" : false)}
+                onCheckedChange={toggleSelectAll}
+                aria-label="Tout selectionner"
+                className="transition-all duration-200 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+              />
+            </div>
           </TableHead>
         ) : null}
 
@@ -295,32 +352,7 @@ export function TableHeader({
                 ariaSort={ariaSort}
                 density={density}
               >
-                {sortingDisabled ? (
-                  <span>{field.title}</span>
-                ) : (
-                  <button
-                    type="button"
-                    className="flex items-center gap-1 text-left select-none"
-                    onClick={(event) => handleSortToggle(sortKey, event)}
-                    title="Click to sort"
-                  >
-                    <span>{field.title}</span>
-                    <span className="inline-flex items-center gap-1">
-                      {sortDirection === "asc" ? (
-                        <ChevronUp className="h-3.5 w-3.5 text-primary" />
-                      ) : sortDirection === "desc" ? (
-                        <ChevronDown className="h-3.5 w-3.5 text-primary" />
-                      ) : (
-                        <ArrowUpDown className="h-3.5 w-3.5 opacity-40" />
-                      )}
-                      {sortState ? (
-                        <span className="text-[10px] text-muted-foreground">
-                          {sortState.index + 1}
-                        </span>
-                      ) : null}
-                    </span>
-                  </button>
-                )}
+                {renderSortButton(sortKey, field.title)}
               </DraggableHead>
             );
           }
@@ -344,39 +376,21 @@ export function TableHeader({
               ariaSort={ariaSort}
               density={density}
             >
-              {sortingDisabled ? (
-                <span>{field.verboseName}</span>
-              ) : (
-                <button
-                  type="button"
-                  className="flex items-center gap-1 text-left select-none"
-                  onClick={(event) => handleSortToggle(sortKey, event)}
-                  title="Click to sort"
-                >
-                  <span>{field.verboseName}</span>
-                  <span className="inline-flex items-center gap-1">
-                    {sortDirection === "asc" ? (
-                      <ChevronUp className="h-3.5 w-3.5 text-primary" />
-                    ) : sortDirection === "desc" ? (
-                      <ChevronDown className="h-3.5 w-3.5 text-primary" />
-                    ) : (
-                      <ArrowUpDown className="h-3.5 w-3.5 opacity-40" />
-                    )}
-                    {sortState ? (
-                      <span className="text-[10px] text-muted-foreground">
-                        {sortState.index + 1}
-                      </span>
-                    ) : null}
-                  </span>
-                </button>
-              )}
+              {renderSortButton(sortKey, field.verboseName)}
             </DraggableHead>
           );
         })}
 
-        {/* Actions Column Placeholder */}
-        <TableHead className="w-[110px] sticky right-0 top-0 z-30 border-b bg-card/95 text-right table-last-column table-sticky-cell backdrop-blur supports-[backdrop-filter]:bg-card/80">
-          {actionsLabel ?? "Actions"}
+        {/* Actions Column */}
+        <TableHead className={cn(
+          "w-[80px] sticky right-0 top-0 z-30 text-right",
+          "border-b-2 border-border/70",
+          "bg-muted/60",
+          "table-last-column table-sticky-cell",
+          "font-semibold uppercase tracking-wider text-muted-foreground",
+          density === "compact" ? "text-[10px] py-1.5 px-2.5" : density === "spacious" ? "text-[11px] py-3 px-3.5" : "text-[10px] py-2 px-3",
+        )}>
+          <span>{actionsLabel ?? ""}</span>
         </TableHead>
       </TableRow>
     </ShadcnTableHeader>

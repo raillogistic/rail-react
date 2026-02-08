@@ -2,12 +2,15 @@ import { useMemo, useState } from "react";
 import {
   Check,
   Columns3Icon,
+  Download,
   Filter,
+  Layers,
   RefreshCw,
-  Rows3,
   Search,
+  Settings2,
   SlidersHorizontal,
   WrapText,
+  X,
 } from "lucide-react";
 import { Input } from "@/lib/components/ui/input";
 import { Button } from "@/lib/components/ui/button";
@@ -33,7 +36,14 @@ import {
   SheetTitle,
   SheetTrigger,
 } from "@/lib/components/ui/sheet";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/lib/components/ui/tooltip";
 import { Switch } from "@/lib/components/ui/switch";
+import { cn } from "@/lib/utils";
 import { useTable } from "../context/TableContext";
 import { useMetadata } from "../context/MetadataContext";
 import { useTableFilters } from "../hooks/useTableFilters";
@@ -101,6 +111,7 @@ export function TableToolbar({
 
   const [filterOpen, setFilterOpen] = useState(panelDefaults.defaultOpen);
   const [columnSearch, setColumnSearch] = useState("");
+  const [searchFocused, setSearchFocused] = useState(false);
 
   const supportsQuick = !!metadata?.filterConfig?.supportsQuick;
 
@@ -185,11 +196,6 @@ export function TableToolbar({
     variables: FilterQueryVariables,
     state: FilterFormState,
   ) => {
-    // variables contains the compiled GraphQL query variables (where, presets, etc.)
-    // state contains the UI state (FilterFormState)
-
-    // We update the context with the new filter state
-    // This will trigger useTableData to re-run
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     setAdvancedFilters(state, variables as any);
     setFilterOpen(false);
@@ -232,6 +238,7 @@ export function TableToolbar({
     });
     setGroupCollapsed(nextCollapsed);
   };
+
   const activeAdvancedFilterCount =
     advancedFilters.root.conditions.length +
     advancedFilters.selectedPresets.length +
@@ -249,295 +256,378 @@ export function TableToolbar({
   if (!metadata) return null;
 
   return (
-    <div className="mb-4 space-y-3 rounded-xl border bg-card/95 p-3 shadow-sm">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div className="flex flex-1 items-center gap-2">
+    <TooltipProvider delayDuration={300}>
+      <div className="mb-4 space-y-0 overflow-hidden rounded-xl border border-border/50 bg-card/80 shadow-sm backdrop-blur-sm">
+        {/* Main toolbar row */}
+        <div className="flex flex-wrap items-center gap-2 p-2.5">
+          {/* Search section */}
           {quickSearch !== false && supportsQuick ? (
-            <div className="relative">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <div
+              className={cn(
+                "group relative flex-1 min-w-[200px] max-w-md transition-all duration-300",
+                searchFocused && "max-w-lg",
+              )}
+            >
+              <Search
+                className={cn(
+                  "absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 transition-colors duration-200",
+                  searchFocused ? "text-primary" : "text-muted-foreground/50",
+                )}
+              />
               <Input
-                className="h-9 w-[240px] pl-8 md:w-[320px]"
+                className={cn(
+                  "h-9 w-full pl-9 pr-8 rounded-lg border-border/50 bg-muted/30",
+                  "placeholder:text-muted-foreground/40",
+                  "transition-all duration-200",
+                  "focus:bg-background focus:border-primary/30 focus:ring-2 focus:ring-primary/10",
+                )}
                 placeholder={tableConfig?.searchPlaceholder ?? "Recherche rapide..."}
                 value={quickSearchValue}
                 onChange={(event) => setQuickSearch(event.target.value)}
+                onFocus={() => setSearchFocused(true)}
+                onBlur={() => setSearchFocused(false)}
               />
+              {quickSearchValue && (
+                <button
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-md hover:bg-muted/60 transition-colors"
+                  onClick={() => setQuickSearch("")}
+                >
+                  <X className="h-3 w-3 text-muted-foreground" />
+                </button>
+              )}
             </div>
           ) : null}
-        </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <Button
-            variant="outline"
-            size="icon"
-            className="h-8 w-8"
-            title={tableConfig?.refreshLabel ?? "Rafraichir"}
-            aria-label={tableConfig?.refreshLabel ?? "Rafraichir"}
-            onClick={() => refresh()}
-          >
-            <RefreshCw className="h-4 w-4" />
-          </Button>
+          {/* Spacer */}
+          <div className="flex-1" />
 
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8"
-                title={tableConfig?.viewLabel ?? "Options d'affichage"}
-                aria-label={tableConfig?.viewLabel ?? "Options d'affichage"}
-              >
-                <SlidersHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-64">
-              <div className="px-2 py-1 text-xs text-muted-foreground">
-                {tableConfig?.densityLabel ?? "Densite des lignes"}
-              </div>
-              <DropdownMenuItem onClick={() => setDensity("compact")}>
-                <div className="flex items-center gap-2">
-                  {density === "compact" ? (
-                    <Check className="h-3.5 w-3.5" />
-                  ) : (
-                    <span className="inline-block h-3.5 w-3.5" />
-                  )}
-                  <span>{densityLabels.compact}</span>
-                </div>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setDensity("comfortable")}>
-                <div className="flex items-center gap-2">
-                  {density === "comfortable" ? (
-                    <Check className="h-3.5 w-3.5" />
-                  ) : (
-                    <span className="inline-block h-3.5 w-3.5" />
-                  )}
-                  <span>{densityLabels.comfortable}</span>
-                </div>
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setDensity("spacious")}>
-                <div className="flex items-center gap-2">
-                  {density === "spacious" ? (
-                    <Check className="h-3.5 w-3.5" />
-                  ) : (
-                    <span className="inline-block h-3.5 w-3.5" />
-                  )}
-                  <span>{densityLabels.spacious}</span>
-                </div>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <div className="flex items-center justify-between gap-2 px-2 py-2 text-sm">
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <WrapText className="h-4 w-4" />
-                  <span>{tableConfig?.wrapCellsLabel ?? "Retour a la ligne"}</span>
-                </div>
-                <Switch
-                  checked={wrapCells}
-                  onCheckedChange={(checked) => setWrapCells(Boolean(checked))}
-                />
-              </div>
-            </DropdownMenuContent>
-          </DropdownMenu>
-
-          {panelDefaults.mode === "modal" ? (
-            <Dialog open={filterOpen} onOpenChange={setFilterOpen}>
-              <DialogTrigger asChild>
+          {/* Action buttons group */}
+          <div className="flex items-center gap-1">
+            {/* Refresh */}
+            <Tooltip>
+              <TooltipTrigger asChild>
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="icon"
-                  className="relative h-8 w-8"
-                  title={panelDefaults.title}
-                  aria-label={panelDefaults.title}
+                  className="h-8 w-8 rounded-lg hover:bg-muted/60"
+                  onClick={() => refresh()}
                 >
-                  <Filter className="h-4 w-4" />
-                  {hasActiveFilters && (
-                    <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-primary" />
-                  )}
+                  <RefreshCw className="h-4 w-4" />
                 </Button>
-              </DialogTrigger>
-              <DialogContent
-                className={`max-h-[90vh] overflow-hidden p-0 flex flex-col ${panelWidthClassName}`}
-              >
-                <DialogHeader className="border-b px-4 py-3">
-                  <DialogTitle>{panelDefaults.title}</DialogTitle>
-                </DialogHeader>
-                {filterContent}
-              </DialogContent>
-            </Dialog>
-          ) : (
-            <Sheet open={filterOpen} onOpenChange={setFilterOpen}>
-              <SheetTrigger asChild>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="relative h-8 w-8"
-                  title={panelDefaults.title}
-                  aria-label={panelDefaults.title}
-                >
-                  <Filter className="h-4 w-4" />
-                  {hasActiveFilters && (
-                    <span className="absolute right-1 top-1 h-2 w-2 rounded-full bg-primary" />
-                  )}
-                </Button>
-              </SheetTrigger>
-              <SheetContent
-                side={panelDefaults.side}
-                className={`p-0 ${panelWidthClassName}`}
-              >
-                <SheetHeader className="border-b">
-                  <SheetTitle>{panelDefaults.title}</SheetTitle>
-                </SheetHeader>
-                {filterContent}
-              </SheetContent>
-            </Sheet>
-          )}
+              </TooltipTrigger>
+              <TooltipContent side="bottom" className="text-xs">
+                {tableConfig?.refreshLabel ?? "Rafraichir"}
+              </TooltipContent>
+            </Tooltip>
 
-          <DropdownMenu modal={false}>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8"
-                title="Regrouper les lignes"
-                aria-label="Regrouper les lignes"
-              >
-                <Rows3 className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-64">
-              <div className="px-2 py-1 text-xs text-muted-foreground">
-                Regrouper par
-              </div>
-              <DropdownMenuItem
-                onClick={() => {
-                  setGroupingField(null);
-                  setGroupCollapsed({});
-                }}
-              >
-                <div className="flex items-center gap-2">
+            {/* Divider */}
+            <div className="mx-1 h-5 w-px bg-border/50" />
+
+            {/* Filter button */}
+            {panelDefaults.mode === "modal" ? (
+              <Dialog open={filterOpen} onOpenChange={setFilterOpen}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <DialogTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className={cn(
+                          "relative h-8 w-8 rounded-lg hover:bg-muted/60",
+                          hasActiveFilters && "text-primary",
+                        )}
+                      >
+                        <Filter className="h-4 w-4" />
+                        {hasActiveFilters && (
+                          <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[9px] font-semibold text-primary-foreground">
+                            {activeAdvancedFilterCount}
+                          </span>
+                        )}
+                      </Button>
+                    </DialogTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="text-xs">
+                    {panelDefaults.title}
+                  </TooltipContent>
+                </Tooltip>
+                <DialogContent
+                  className={`max-h-[90vh] overflow-hidden p-0 flex flex-col ${panelWidthClassName}`}
+                >
+                  <DialogHeader className="border-b px-4 py-3">
+                    <DialogTitle>{panelDefaults.title}</DialogTitle>
+                  </DialogHeader>
+                  {filterContent}
+                </DialogContent>
+              </Dialog>
+            ) : (
+              <Sheet open={filterOpen} onOpenChange={setFilterOpen}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <SheetTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className={cn(
+                          "relative h-8 w-8 rounded-lg hover:bg-muted/60",
+                          hasActiveFilters && "text-primary",
+                        )}
+                      >
+                        <Filter className="h-4 w-4" />
+                        {hasActiveFilters && (
+                          <span className="absolute -right-0.5 -top-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[9px] font-semibold text-primary-foreground">
+                            {activeAdvancedFilterCount}
+                          </span>
+                        )}
+                      </Button>
+                    </SheetTrigger>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="text-xs">
+                    {panelDefaults.title}
+                  </TooltipContent>
+                </Tooltip>
+                <SheetContent
+                  side={panelDefaults.side}
+                  className={`p-0 ${panelWidthClassName}`}
+                >
+                  <SheetHeader className="border-b">
+                    <SheetTitle>{panelDefaults.title}</SheetTitle>
+                  </SheetHeader>
+                  {filterContent}
+                </SheetContent>
+              </Sheet>
+            )}
+
+            {/* Group by dropdown */}
+            <DropdownMenu modal={false}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className={cn(
+                        "h-8 w-8 rounded-lg hover:bg-muted/60",
+                        hasGroupedRows && "text-primary",
+                      )}
+                    >
+                      <Layers className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="text-xs">
+                  Regrouper
+                </TooltipContent>
+              </Tooltip>
+              <DropdownMenuContent align="end" className="w-56">
+                <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+                  Regrouper par
+                </div>
+                <DropdownMenuItem
+                  onClick={() => {
+                    setGroupingField(null);
+                    setGroupCollapsed({});
+                  }}
+                  className="gap-2"
+                >
                   {groupingField === null ? (
-                    <Check className="h-3.5 w-3.5" />
+                    <Check className="h-3.5 w-3.5 text-primary" />
                   ) : (
-                    <span className="inline-block h-3.5 w-3.5" />
+                    <span className="h-3.5 w-3.5" />
                   )}
                   <span>Aucun regroupement</span>
-                </div>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              {groupableFields.map((field) => (
-                <DropdownMenuItem
-                  key={field.value}
-                  onClick={() => setGroupingField(field.value)}
-                >
-                  <div className="flex items-center gap-2">
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                {groupableFields.map((field) => (
+                  <DropdownMenuItem
+                    key={field.value}
+                    onClick={() => setGroupingField(field.value)}
+                    className="gap-2"
+                  >
                     {groupingField === field.value ? (
-                      <Check className="h-3.5 w-3.5" />
+                      <Check className="h-3.5 w-3.5 text-primary" />
                     ) : (
-                      <span className="inline-block h-3.5 w-3.5" />
+                      <span className="h-3.5 w-3.5" />
                     )}
                     <span>{field.label}</span>
-                  </div>
-                </DropdownMenuItem>
-              ))}
-              <DropdownMenuSeparator />
-              <div className="flex items-center justify-between px-2 py-1 text-xs">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleExpandAllGroups}
-                  disabled={!groupingField}
-                >
-                  Tout ouvrir
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleCollapseAllGroups}
-                  disabled={!groupingField}
-                >
-                  Tout fermer
-                </Button>
-              </div>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                  </DropdownMenuItem>
+                ))}
+                {hasGroupedRows && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <div className="flex items-center gap-1 px-2 py-1.5">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 flex-1 text-xs"
+                        onClick={handleExpandAllGroups}
+                      >
+                        Tout ouvrir
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 flex-1 text-xs"
+                        onClick={handleCollapseAllGroups}
+                      >
+                        Tout fermer
+                      </Button>
+                    </div>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
 
-          <ModelTableExportDialog labels={tableConfig?.exportLabels} />
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                size="icon"
-                className="h-8 w-8"
-                title={tableConfig?.columnsLabel ?? "Selectionner les colonnes"}
-                aria-label={tableConfig?.columnsLabel ?? "Selectionner les colonnes"}
-              >
-                <Columns3Icon className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-64 p-2" align="end">
-              <div className="mb-2">
-                <Input
-                  placeholder="Rechercher une colonne..."
-                  value={columnSearch}
-                  onChange={(event) => setColumnSearch(event.target.value)}
-                />
-              </div>
-              <div className="mb-2 flex items-center justify-between gap-2 text-xs text-muted-foreground">
-                <label className="flex items-center gap-2 font-medium">
-                  <span>Afficher toutes les colonnes</span>
+            {/* Columns dropdown */}
+            <DropdownMenu>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 rounded-lg hover:bg-muted/60"
+                    >
+                      <Columns3Icon className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="text-xs">
+                  {tableConfig?.columnsLabel ?? "Colonnes"}
+                </TooltipContent>
+              </Tooltip>
+              <DropdownMenuContent className="w-64 p-2" align="end">
+                <div className="mb-2">
+                  <Input
+                    placeholder="Rechercher..."
+                    value={columnSearch}
+                    onChange={(event) => setColumnSearch(event.target.value)}
+                    className="h-8 text-sm"
+                  />
+                </div>
+                <div className="mb-2 flex items-center justify-between gap-2 px-1 text-xs">
+                  <span className="text-muted-foreground">Tout afficher</span>
                   <Switch
                     checked={allColumnsVisible}
                     onCheckedChange={(checked) =>
                       setAllColumnsVisibility(Boolean(checked))
                     }
                   />
-                </label>
-              </div>
-              <div className="max-h-64 overflow-auto pr-1">
-                {visibleColumns.map((column) => {
-                  const id = column.fieldName || column.name;
-                  return (
-                    <DropdownMenuCheckboxItem
-                      key={id}
-                      checked={columnVisibility[id] ?? true}
-                      onCheckedChange={(value) => toggleColumn(id, !!value)}
-                    >
-                      {column.verboseName || column.name}
-                    </DropdownMenuCheckboxItem>
-                  );
-                })}
-              </div>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        </div>
-      </div>
+                </div>
+                <DropdownMenuSeparator className="my-1" />
+                <div className="max-h-64 overflow-auto">
+                  {visibleColumns.map((column) => {
+                    const id = column.fieldName || column.name;
+                    return (
+                      <DropdownMenuCheckboxItem
+                        key={id}
+                        checked={columnVisibility[id] ?? true}
+                        onCheckedChange={(value) => toggleColumn(id, !!value)}
+                        className="text-sm"
+                      >
+                        {column.verboseName || column.name}
+                      </DropdownMenuCheckboxItem>
+                    );
+                  })}
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
-      <div className="flex flex-wrap items-center justify-between gap-2 border-t pt-2">
-        <div className="flex flex-wrap items-center gap-2 text-xs">
-          <span className="rounded-full border bg-background px-2 py-0.5 text-muted-foreground">
-            {totalLabel}
-          </span>
-          {hasGroupedRows ? (
-            <span className="rounded-full border bg-background px-2 py-0.5 text-muted-foreground">
-              Regroupement actif
-            </span>
-          ) : null}
-          {hasActiveFilters ? (
-            <span className="rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-primary">
-              {activeAdvancedFilterCount} filtre
-              {activeAdvancedFilterCount > 1 ? "s" : ""}
-            </span>
-          ) : null}
+            {/* View options dropdown */}
+            <DropdownMenu>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 rounded-lg hover:bg-muted/60"
+                    >
+                      <Settings2 className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="text-xs">
+                  {tableConfig?.viewLabel ?? "Affichage"}
+                </TooltipContent>
+              </Tooltip>
+              <DropdownMenuContent align="end" className="w-56">
+                <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+                  {tableConfig?.densityLabel ?? "Densite"}
+                </div>
+                <DropdownMenuItem onClick={() => setDensity("compact")} className="gap-2">
+                  {density === "compact" ? (
+                    <Check className="h-3.5 w-3.5 text-primary" />
+                  ) : (
+                    <span className="h-3.5 w-3.5" />
+                  )}
+                  <span>{densityLabels.compact}</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setDensity("comfortable")} className="gap-2">
+                  {density === "comfortable" ? (
+                    <Check className="h-3.5 w-3.5 text-primary" />
+                  ) : (
+                    <span className="h-3.5 w-3.5" />
+                  )}
+                  <span>{densityLabels.comfortable}</span>
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setDensity("spacious")} className="gap-2">
+                  {density === "spacious" ? (
+                    <Check className="h-3.5 w-3.5 text-primary" />
+                  ) : (
+                    <span className="h-3.5 w-3.5" />
+                  )}
+                  <span>{densityLabels.spacious}</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <div className="flex items-center justify-between gap-2 px-2 py-2">
+                  <div className="flex items-center gap-2 text-sm">
+                    <WrapText className="h-4 w-4 text-muted-foreground" />
+                    <span>{tableConfig?.wrapCellsLabel ?? "Retour ligne"}</span>
+                  </div>
+                  <Switch
+                    checked={wrapCells}
+                    onCheckedChange={(checked) => setWrapCells(Boolean(checked))}
+                  />
+                </div>
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Export */}
+            <ModelTableExportDialog labels={tableConfig?.exportLabels} />
+          </div>
         </div>
-        {hasActiveFilters ? (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => clearAllFilters()}
-            className="h-8 px-2 lg:px-3"
-          >
-            {tableConfig?.resetLabel ?? "Reinitialiser"}
-          </Button>
-        ) : null}
+
+        {/* Status bar */}
+        <div className="flex flex-wrap items-center justify-between gap-2 border-t border-border/30 bg-muted/20 px-3 py-1.5">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-xs text-muted-foreground">{totalLabel}</span>
+            {hasGroupedRows && (
+              <>
+                <span className="text-muted-foreground/30">|</span>
+                <span className="text-xs text-muted-foreground">Regroupe</span>
+              </>
+            )}
+            {hasActiveFilters && (
+              <>
+                <span className="text-muted-foreground/30">|</span>
+                <span className="inline-flex items-center gap-1 rounded-md bg-primary/10 px-1.5 py-0.5 text-xs text-primary">
+                  {activeAdvancedFilterCount} filtre{activeAdvancedFilterCount > 1 ? "s" : ""}
+                </span>
+              </>
+            )}
+          </div>
+          {hasActiveFilters && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => clearAllFilters()}
+              className="h-6 px-2 text-xs text-muted-foreground hover:text-foreground"
+            >
+              {tableConfig?.resetLabel ?? "Reinitialiser"}
+            </Button>
+          )}
+        </div>
       </div>
-    </div>
+    </TooltipProvider>
   );
 }

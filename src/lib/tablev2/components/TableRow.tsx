@@ -1,9 +1,16 @@
-﻿import React, { useMemo, useState } from "react";
-import { ChevronDown, ChevronRight, Loader2, Pencil, Trash2 } from "lucide-react";
+import React, { useMemo, useState } from "react";
+import { ChevronDown, ChevronRight, Loader2, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { gql, useMutation } from "@apollo/client";
 import { TableRow as ShadcnTableRow, TableCell } from "./TableFrame";
 import { Checkbox } from "@/lib/components/ui/checkbox";
 import { Button } from "@/lib/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/lib/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import {
   AlertDialog,
@@ -14,7 +21,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/lib/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { useTable } from "../context/TableContext";
@@ -100,48 +106,67 @@ function RowActions({
   }
 
   if (!canEdit && !canDelete) {
-    return <span className="text-xs text-muted-foreground">-</span>;
+    return <span className="text-xs text-muted-foreground/50">-</span>;
   }
 
   return (
-    <div className="flex items-center justify-end gap-1">
-      {canEdit && (
-        <Button size="icon" variant="ghost" aria-label="Modifier">
-          <Pencil className="h-4 w-4" />
-        </Button>
-      )}
-      {canDelete && (
-        <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-          <AlertDialogTrigger asChild>
-            <Button
-              size="icon"
-              variant="ghost"
-              aria-label="Supprimer"
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button
+            size="icon"
+            variant="ghost"
+            className={cn(
+              "h-7 w-7 rounded-lg opacity-0 transition-all duration-200",
+              "group-hover/row:opacity-100 focus-visible:opacity-100",
+              "hover:bg-muted/60 data-[state=open]:opacity-100 data-[state=open]:bg-muted/60",
+            )}
+            aria-label="Actions"
+          >
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-40">
+          {canEdit && (
+            <DropdownMenuItem className="gap-2">
+              <Pencil className="h-3.5 w-3.5" />
+              <span>Modifier</span>
+            </DropdownMenuItem>
+          )}
+          {canEdit && canDelete && <DropdownMenuSeparator />}
+          {canDelete && (
+            <DropdownMenuItem
+              className="gap-2 text-destructive focus:text-destructive"
+              onClick={() => setConfirmOpen(true)}
               disabled={deleting}
             >
-              <Trash2 className="h-4 w-4 text-red-500" />
-            </Button>
-          </AlertDialogTrigger>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>
-                Supprimer {metadata?.verboseName} ?
-              </AlertDialogTitle>
-              <AlertDialogDescription>
-                Cette action est irreversible. L'enregistrement sera supprime
-                definitivement.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel>Annuler</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDelete} disabled={deleting}>
-                Supprimer
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      )}
-    </div>
+              <Trash2 className="h-3.5 w-3.5" />
+              <span>Supprimer</span>
+            </DropdownMenuItem>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Supprimer {metadata?.verboseName} ?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action est irreversible. L'enregistrement sera supprime
+              definitivement.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} disabled={deleting}>
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
 
@@ -275,13 +300,15 @@ export function TableRows({
 
   const fixedColumnCount = (enableSelection ? 1 : 0) + 1;
   const rowHeight =
-    density === "compact" ? 40 : density === "spacious" ? 56 : 48;
+    density === "compact" ? 32 : density === "spacious" ? 48 : 40;
   const cellPadding =
     density === "compact"
-      ? "py-1 px-3"
+      ? "py-1 px-2.5"
       : density === "spacious"
         ? "py-3 px-3.5"
-        : "py-2 px-3";
+        : "py-1.5 px-3";
+  const cellTextSize =
+    density === "compact" ? "text-[12px]" : density === "spacious" ? "text-sm" : "text-[13px]";
   const cellTextClass = wrapCells
     ? "whitespace-normal break-words leading-snug"
     : "max-w-[24rem] overflow-hidden text-ellipsis whitespace-nowrap";
@@ -324,27 +351,30 @@ export function TableRows({
     const rowId = String(row.id);
     const isSelected = enableSelection && rowSelection[rowId];
     const rowPermissions = row.rowPermissions as RowMutationPermissions | undefined;
-    const rowStripe = rowIndex % 2 === 0 ? "even" : "odd";
+    const isEven = rowIndex % 2 === 0;
 
     return (
       <ShadcnTableRow
         key={rowId}
         data-state={isSelected ? "selected" : undefined}
-        data-row-stripe={rowStripe}
         className={cn(
-          "border-b border-muted/40 transition-colors group",
-          isSelected && "ring-1 ring-primary/40",
-          density === "compact" ? "h-10" : density === "spacious" ? "h-14" : "h-12",
+          "group/row relative border-b border-border/40 transition-colors duration-100",
+          isSelected && "bg-primary/10 border-l-2 border-l-primary",
+          !isSelected && isEven && "bg-card",
+          !isSelected && !isEven && "bg-muted/40",
+          "hover:bg-accent/50",
+          density === "compact" ? "h-8" : density === "spacious" ? "h-12" : "h-10",
         )}
-        style={
-          {
-            backgroundColor: "var(--row-bg)",
-          } as React.CSSProperties
-        }
       >
         {enableSelection ? (
           <TableCell
-            className={cn(cellPadding, "px-2 text-left transition-colors table-first-column")}
+            className={cn(
+              cellPadding,
+              "w-[40px] text-center transition-colors table-first-column",
+              !isSelected && !isEven && "bg-muted/40",
+              !isSelected && isEven && "bg-card",
+              isSelected && "bg-primary/10",
+            )}
           >
             <Checkbox
               checked={!!rowSelection[rowId]}
@@ -352,6 +382,7 @@ export function TableRows({
                 handleRowSelect(rowId, checked === true)
               }
               aria-label="Selectionner la ligne"
+              className="h-3.5 w-3.5"
             />
           </TableCell>
         ) : null}
@@ -365,7 +396,7 @@ export function TableRows({
               : undefined;
 
             return (
-              <TableCell key={field.id} className={cellPadding}>
+              <TableCell key={field.id} className={cn(cellPadding, cellTextSize, "text-foreground/90")}>
                 <div className={cellTextClass}>
                   {field.render
                     ? field.render(value, row, {
@@ -383,7 +414,7 @@ export function TableRows({
           }
 
           return (
-            <TableCell key={field.name} className={cellPadding}>
+            <TableCell key={field.name} className={cn(cellPadding, cellTextSize, "text-foreground/90")}>
               <div className={cellTextClass}>
                 {formatCellValue(row[field.name], field)}
               </div>
@@ -394,7 +425,12 @@ export function TableRows({
         <TableCell
           className={cn(
             cellPadding,
-            "w-px shrink-0 px-2 text-right sticky right-0 z-10 transition-colors table-last-column table-sticky-cell",
+            "w-[80px] shrink-0 px-2 text-right",
+            "sticky right-0 z-10",
+            "table-last-column table-sticky-cell",
+            !isSelected && !isEven && "bg-muted/40",
+            !isSelected && isEven && "bg-card",
+            isSelected && "bg-primary/10",
           )}
         >
           <RowActions rowId={rowId} permissions={rowPermissions} />
@@ -408,11 +444,14 @@ export function TableRows({
       <ShadcnTableRow>
         <TableCell
           colSpan={visibleColumns.length + fixedColumnCount}
-          className="h-24"
+          className="h-32"
         >
-          <div className="flex items-center justify-center py-12 text-muted-foreground">
-            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-            <span>{loadingText ?? "Chargement..."}</span>
+          <div className="flex flex-col items-center justify-center gap-3 py-12 text-muted-foreground">
+            <div className="relative">
+              <div className="absolute inset-0 rounded-full bg-primary/10 animate-ping" />
+              <Loader2 className="relative h-6 w-6 animate-spin text-primary/60" />
+            </div>
+            <span className="text-sm">{loadingText ?? "Chargement..."}</span>
           </div>
         </TableCell>
       </ShadcnTableRow>
@@ -424,10 +463,25 @@ export function TableRows({
       <ShadcnTableRow>
         <TableCell
           colSpan={visibleColumns.length + fixedColumnCount}
-          className="h-24"
+          className="h-32"
         >
-          <div className="flex items-center justify-center py-16 text-sm text-muted-foreground">
-            {emptyState ?? "Aucun resultat."}
+          <div className="flex flex-col items-center justify-center gap-2 py-16 text-muted-foreground">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted/50">
+              <svg
+                className="h-6 w-6 text-muted-foreground/50"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={1.5}
+                  d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+                />
+              </svg>
+            </div>
+            <span className="text-sm">{emptyState ?? "Aucun resultat."}</span>
           </div>
         </TableCell>
       </ShadcnTableRow>
@@ -450,31 +504,31 @@ export function TableRows({
 
           return (
             <React.Fragment key={`group-${group.key}`}>
-              <ShadcnTableRow className="bg-muted/40">
+              <ShadcnTableRow className="bg-muted/70 border-b border-border/50 hover:bg-muted/80 transition-colors">
                 <TableCell
                   colSpan={visibleColumns.length + fixedColumnCount}
-                  className="px-3 py-2"
+                  className="px-2.5 py-1.5"
                 >
                   <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
                       <Button
                         variant="ghost"
-                        size="icon-sm"
-                        className="h-7 w-7"
+                        size="icon"
+                        className="h-5 w-5 rounded hover:bg-background/60"
                         onClick={() => toggleGroup(group.key)}
                       >
                         {collapsed ? (
-                          <ChevronRight className="h-4 w-4" />
+                          <ChevronRight className="h-3.5 w-3.5" />
                         ) : (
-                          <ChevronDown className="h-4 w-4" />
+                          <ChevronDown className="h-3.5 w-3.5" />
                         )}
                       </Button>
-                      <div className="flex items-center gap-2 font-medium">
+                      <span className="text-xs font-semibold text-foreground">
                         {group.label}
-                      </div>
+                      </span>
                     </div>
-                    <span className="text-xs text-muted-foreground">
-                      {group.rows.length} element(s)
+                    <span className="rounded bg-background/60 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                      {group.rows.length}
                     </span>
                   </div>
                 </TableCell>
@@ -489,11 +543,11 @@ export function TableRows({
           <ShadcnTableRow>
             <TableCell
               colSpan={visibleColumns.length + fixedColumnCount}
-              className="py-3 text-center text-muted-foreground"
+              className="py-4 text-center"
             >
-              <span className="inline-flex items-center gap-2 text-xs">
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Chargement de lignes supplementaires...
+              <span className="inline-flex items-center gap-2 text-xs text-muted-foreground">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                Chargement...
               </span>
             </TableCell>
           </ShadcnTableRow>
@@ -551,11 +605,11 @@ export function TableRows({
         <ShadcnTableRow>
           <TableCell
             colSpan={visibleColumns.length + fixedColumnCount}
-            className="py-3 text-center text-muted-foreground"
+            className="py-4 text-center"
           >
-            <span className="inline-flex items-center gap-2 text-xs">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Chargement de lignes supplementaires...
+            <span className="inline-flex items-center gap-2 text-xs text-muted-foreground">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              Chargement...
             </span>
           </TableCell>
         </ShadcnTableRow>
@@ -563,5 +617,3 @@ export function TableRows({
     </>
   );
 }
-
-

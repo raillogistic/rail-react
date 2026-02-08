@@ -242,40 +242,52 @@ function ModelTableV2Content({
   return (
     <>
       {showTitle && resolvedTitle ? (
-        <div className="mb-4 overflow-hidden rounded-xl border bg-card shadow-sm">
-          <div className="pointer-events-none h-1 w-full bg-gradient-to-r from-primary/80 via-primary/30 to-transparent" />
-          <div className="flex flex-wrap items-center justify-between gap-3 p-4">
-            <div className="space-y-2">
-              <h2 className="text-lg font-semibold tracking-tight text-foreground">
+        <div className="group/header relative mb-4 overflow-hidden rounded-xl border border-border/50 bg-gradient-to-br from-card via-card to-card/95 shadow-sm transition-all duration-300 hover:shadow-md">
+          {/* Subtle accent gradient */}
+          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
+
+          {/* Header content */}
+          <div className="relative flex flex-wrap items-center justify-between gap-4 p-4 sm:p-5">
+            {/* Left side - Title and stats */}
+            <div className="flex-1 min-w-0 space-y-1.5">
+              <h2 className="text-base sm:text-lg font-semibold tracking-tight text-foreground truncate">
                 {resolvedTitle}
               </h2>
-              <div className="flex flex-wrap items-center gap-2 text-xs">
-                <span className="rounded-full border bg-background/70 px-2 py-0.5 text-muted-foreground">
-                  {rowSummary}
+              <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                <span className="inline-flex items-center gap-1 text-muted-foreground">
+                  <span className="font-medium text-foreground/70">{rowSummary}</span>
                 </span>
-                <span className="rounded-full border bg-background/70 px-2 py-0.5 text-muted-foreground">
-                  {visibleColumnCount} colonne{visibleColumnCount > 1 ? "s" : ""} visible
-                  {visibleColumnCount > 1 ? "s" : ""}
+                <span className="text-border">·</span>
+                <span className="text-muted-foreground">
+                  {visibleColumnCount} col.
                 </span>
-                {selectedCount > 0 ? (
-                  <span className="rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-primary">
-                    {selectedCount} selectionne{selectedCount > 1 ? "s" : ""}
-                  </span>
-                ) : null}
+                {selectedCount > 0 && (
+                  <>
+                    <span className="text-border">·</span>
+                    <span className="inline-flex items-center gap-1 rounded-md bg-primary/10 px-1.5 py-0.5 font-medium text-primary">
+                      {selectedCount} sel.
+                    </span>
+                  </>
+                )}
               </div>
             </div>
-            {resolvedTopActions.length > 0 ? (
-              <div className="flex flex-wrap items-center gap-2">
-                {resolvedTopActions.map((action) => (
+
+            {/* Right side - Actions */}
+            {resolvedTopActions.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5">
+                {resolvedTopActions.map((action, index) => (
                   <Button
                     key={action.key}
-                    variant={action.variant ?? "outline"}
+                    variant={action.variant ?? "ghost"}
                     size={action.size === "icon" ? "icon" : "sm"}
                     className={
                       action.size === "icon"
-                        ? "h-8 w-8"
-                        : "h-8 whitespace-nowrap"
+                        ? "h-8 w-8 rounded-lg hover:bg-muted/60"
+                        : "h-8 rounded-lg px-3 hover:bg-muted/60 whitespace-nowrap gap-1.5 text-sm font-medium"
                     }
+                    style={{
+                      animationDelay: `${index * 50}ms`,
+                    }}
                     onClick={() =>
                       action.on_click({
                         selected_rows: selectedRows,
@@ -289,7 +301,7 @@ function ModelTableV2Content({
                   </Button>
                 ))}
               </div>
-            ) : null}
+            )}
           </div>
         </div>
       ) : null}
@@ -665,7 +677,7 @@ function BaseTableContent({
         <div className="flex min-h-full min-w-0 flex-col gap-4">
           {children}
           <div className={hideTableOnMobile ? "hidden md:block" : undefined}>
-            <Card className="flex h-full min-h-0 flex-col overflow-hidden border shadow-sm">
+            <Card className="flex h-full min-h-0 flex-col overflow-hidden border-0 shadow-none bg-transparent">
               <CardContent
                 ref={tableScrollRef}
                 className={`flex-1 min-h-0 overflow-auto p-0 ${view?.maxBodyHeightClassName ?? "max-h-[70vh]"}`}
@@ -705,21 +717,21 @@ function BaseTableContent({
             </Card>
           </div>
           {isInfiniteMode ? (
-            <div className="mt-3 rounded-lg border bg-card/95 px-3 py-2 text-xs text-muted-foreground">
+            <div className="mt-3 flex items-center justify-between rounded-xl border border-border/50 bg-card/80 px-3 py-2 text-xs text-muted-foreground backdrop-blur-sm">
               <span>
                 {pagination.totalKnown
-                  ? `${data.length} sur ${pagination.total} ligne(s) chargee(s)`
-                  : `${data.length} ligne(s) chargee(s)`}
+                  ? `${data.length} sur ${pagination.total} chargee(s)`
+                  : `${data.length} chargee(s)`}
               </span>
               {tableLoading ? (
-                <span className="ml-2 inline-flex items-center gap-1">
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                <span className="inline-flex items-center gap-1.5 text-primary/70">
+                  <Loader2 className="h-3 w-3 animate-spin" />
                   Chargement...
                 </span>
               ) : pagination.hasNextPage ? (
-                <span className="ml-2">Defilez pour charger plus</span>
+                <span className="opacity-60">Defilez pour plus</span>
               ) : (
-                <span className="ml-2">Fin des resultats</span>
+                <span className="opacity-60">Fin</span>
               )}
             </div>
           ) : (
@@ -783,7 +795,7 @@ export function BaseModelTable({
       <MetadataProvider key={tableInstanceKey} app={app} model={model}>
         <TableProvider
           initialState={{
-            density: view?.defaultDensity ?? "comfortable",
+            density: view?.defaultDensity ?? "compact",
             wrapCells: view?.defaultWrapCells ?? false,
           }}
         >
