@@ -4,9 +4,9 @@ import { useTable } from "../context/TableContext";
 import { ColumnVisibilityState, TableDensity } from "../types";
 import { useAuthContext } from "@/auth/context";
 import {
-  UPDATE_USER_SETTINGS_MUTATION_RESOLVED,
-  type UpdateUserSettingsResponse,
-  type UpdateUserSettingsVariables,
+  UPSERT_USER_TABLE_CONFIG_MUTATION_RESOLVED,
+  type UpsertUserTableConfigResponse,
+  type UpsertUserTableConfigVariables,
 } from "@/graphql/mutations";
 
 const STORAGE_PREFIX = "rail-table-v2";
@@ -19,7 +19,8 @@ export interface PersistedTableState {
   wrapCells: boolean;
 }
 
-type TableConfigs = Record<string, PersistedTableState>;
+type TableConfigs = Record<string, unknown>;
+type PersistedTableStateInput = Partial<PersistedTableState>;
 
 const GET_USER_TABLE_CONFIGS = gql`
   query GetUserTableConfigs {
@@ -38,10 +39,118 @@ type UserTableConfigsResponse = {
     id?: string | null;
     settings?: {
       id?: string | null;
-      tableConfigs?: TableConfigs | null;
+      tableConfigs?: TableConfigs | string | null;
     } | null;
   } | null;
 };
+
+function parseJsonObject(value: unknown): Record<string, unknown> | null {
+  if (value == null) return null;
+
+  if (typeof value === "string") {
+    const raw = value.trim();
+    if (!raw) return null;
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        return parsed as Record<string, unknown>;
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }
+
+  if (typeof value === "object" && !Array.isArray(value)) {
+    return value as Record<string, unknown>;
+  }
+
+  return null;
+}
+
+function parsePersistedTableStateInput(
+  value: unknown,
+): PersistedTableStateInput | null {
+  const parsed = parseJsonObject(value);
+  if (!parsed) return null;
+
+  const next: PersistedTableStateInput = {};
+
+  if (Array.isArray(parsed.columnOrder)) {
+    const columnOrder = parsed.columnOrder.filter(
+      (entry): entry is string => typeof entry === "string",
+    );
+    if (columnOrder.length > 0) {
+      next.columnOrder = columnOrder;
+    }
+  }
+
+  if (typeof parsed.columnVisibility === "object" && parsed.columnVisibility) {
+    const visibility: ColumnVisibilityState = {};
+    Object.entries(parsed.columnVisibility as Record<string, unknown>).forEach(
+      ([columnId, visible]) => {
+        if (typeof visible === "boolean") {
+          visibility[columnId] = visible;
+        }
+      },
+    );
+    if (Object.keys(visibility).length > 0) {
+      next.columnVisibility = visibility;
+    }
+  }
+
+  if (typeof parsed.perPage === "number" && Number.isFinite(parsed.perPage)) {
+    next.perPage = parsed.perPage;
+  }
+
+  if (
+    parsed.density === "compact" ||
+    parsed.density === "comfortable" ||
+    parsed.density === "spacious"
+  ) {
+    next.density = parsed.density;
+  }
+
+  if (typeof parsed.wrapCells === "boolean") {
+    next.wrapCells = parsed.wrapCells;
+  }
+
+  if (!Object.keys(next).length) {
+    return null;
+  }
+
+  return next;
+}
+
+function parsePersistedTableState(value: unknown): PersistedTableState | null {
+  const parsed = parsePersistedTableStateInput(value);
+  if (!parsed) return null;
+
+  if (
+    !parsed.columnOrder ||
+    !parsed.columnVisibility ||
+    typeof parsed.perPage !== "number" ||
+    !parsed.density ||
+    typeof parsed.wrapCells !== "boolean"
+  ) {
+    return null;
+  }
+
+  return parsed as PersistedTableState;
+}
+
+export function decodeTableConfigs(value: unknown): TableConfigs | null {
+  return parseJsonObject(value);
+}
+
+function getConfigForKey(
+  key: string,
+  configsValue: unknown,
+): PersistedTableStateInput | null {
+  const configs = decodeTableConfigs(configsValue);
+  if (!configs) return null;
+  return parsePersistedTableStateInput(configs[key]);
+}
 
 /**
  * Loads persisted table state from user settings or localStorage.
@@ -49,20 +158,19 @@ type UserTableConfigsResponse = {
  */
 export function loadPersistedTableState(
   key: string,
-  userTableConfigs?: TableConfigs | null
+  userTableConfigs?: unknown,
 ): PersistedTableState | null {
-  // First try to load from user settings
-  if (userTableConfigs && userTableConfigs[key]) {
-    return userTableConfigs[key];
+  const userConfig = getConfigForKey(key, userTableConfigs);
+  if (userConfig) {
+    return parsePersistedTableState(userConfig);
   }
 
-  // Fall back to localStorage
   if (typeof window === "undefined") return null;
   const storageKey = `${STORAGE_PREFIX}:${key}`;
   try {
     const stored = localStorage.getItem(storageKey);
     if (!stored) return null;
-    return JSON.parse(stored) as PersistedTableState;
+    return parsePersistedTableState(stored);
   } catch (e) {
     console.warn("Failed to load table state from localStorage", e);
     return null;
@@ -86,42 +194,42 @@ export function useTablePersistence(key: string) {
   } = useTable();
 
   const storageKey = `${STORAGE_PREFIX}:${key}`;
-  const hasLoadedRef = useRef(false);
   const initialKeyRef = useRef(key);
-  const settingsIdRef = useRef<string | null>(null);
+  const hasHydratedRef = useRef(false);
+  const hasAppliedPersistedStateRef = useRef(false);
   const tableConfigsRef = useRef<TableConfigs | null>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Track current user settings ID
-  useEffect(() => {
-    const userSettings = user?.settings as { id?: string | number } | undefined;
-    if (userSettings?.id != null) {
-      settingsIdRef.current = String(userSettings.id);
-    }
-    // Also cache table configs from user settings
-    const tableConfigs = (user?.settings as { table_configs?: TableConfigs } | undefined)?.table_configs;
-    if (tableConfigs) {
-      tableConfigsRef.current = tableConfigs;
-    }
-  }, [user?.settings]);
-
-  const [updateUserSettings] = useMutation<
-    UpdateUserSettingsResponse,
-    UpdateUserSettingsVariables
-  >(UPDATE_USER_SETTINGS_MUTATION_RESOLVED, {
-    ignoreResults: true,
+  const [upsertUserTableConfig] = useMutation<
+    UpsertUserTableConfigResponse,
+    UpsertUserTableConfigVariables
+  >(UPSERT_USER_TABLE_CONFIG_MUTATION_RESOLVED, {
+    ignoreResults: false,
   });
 
-  // Apply parsed state to table context
+  const readTableConfigsFromSettings = useCallback(() => {
+    const settings = user?.settings as
+      | { table_configs?: unknown; tableConfigs?: unknown }
+      | undefined;
+    return settings?.table_configs ?? settings?.tableConfigs ?? null;
+  }, [user?.settings]);
+
+  useEffect(() => {
+    const parsed = decodeTableConfigs(readTableConfigsFromSettings());
+    if (parsed) {
+      tableConfigsRef.current = parsed;
+    }
+  }, [readTableConfigsFromSettings]);
+
   const applyParsedState = useCallback(
-    (parsed: Partial<PersistedTableState>) => {
+    (parsed: PersistedTableStateInput) => {
       if (parsed.columnOrder && Array.isArray(parsed.columnOrder)) {
         setColumnOrder(parsed.columnOrder);
       }
       if (parsed.columnVisibility) {
         setColumnVisibility(parsed.columnVisibility);
       }
-      if (parsed.perPage) {
+      if (typeof parsed.perPage === "number") {
         setPerPage(parsed.perPage);
       }
       if (
@@ -135,48 +243,60 @@ export function useTablePersistence(key: string) {
         setWrapCells(parsed.wrapCells);
       }
     },
-    [setColumnOrder, setColumnVisibility, setPerPage, setDensity, setWrapCells]
+    [setColumnOrder, setColumnVisibility, setPerPage, setDensity, setWrapCells],
   );
 
-  // Load state on mount (only once per key)
   useEffect(() => {
-    // Reset loaded flag if key changes
     if (initialKeyRef.current !== key) {
-      hasLoadedRef.current = false;
       initialKeyRef.current = key;
+      hasHydratedRef.current = false;
+      hasAppliedPersistedStateRef.current = false;
     }
 
-    if (hasLoadedRef.current) return;
-    hasLoadedRef.current = true;
+    if (hasHydratedRef.current) return;
 
-    // Try to load from user's table_configs first
-    const userTableConfigs = (user?.settings as { table_configs?: TableConfigs } | undefined)?.table_configs;
-    if (userTableConfigs && userTableConfigs[key]) {
-      applyParsedState(userTableConfigs[key]);
+    const userConfig = getConfigForKey(key, readTableConfigsFromSettings());
+    if (userConfig) {
+      applyParsedState(userConfig);
+      hasAppliedPersistedStateRef.current = true;
+      hasHydratedRef.current = true;
       return;
     }
 
-    // Fall back to localStorage
     try {
       const stored = localStorage.getItem(storageKey);
       if (stored) {
-        const parsed: Partial<PersistedTableState> = JSON.parse(stored);
-        applyParsedState(parsed);
+        const parsed = parsePersistedTableStateInput(stored);
+        if (parsed) {
+          applyParsedState(parsed);
+          hasAppliedPersistedStateRef.current = true;
+        }
       }
     } catch (e) {
       console.warn("Failed to load table state from localStorage", e);
     }
-  }, [key, storageKey, user?.settings, applyParsedState]);
 
-  // Fetch table configs from backend if not available in auth context
+    hasHydratedRef.current = true;
+  }, [
+    key,
+    storageKey,
+    readTableConfigsFromSettings,
+    applyParsedState,
+  ]);
+
   useEffect(() => {
     const userId = user?.id ? String(user.id) : null;
     if (!userId) return;
 
-    const userTableConfigs = (user?.settings as { table_configs?: TableConfigs } | undefined)?.table_configs;
-    if (userTableConfigs) {
-      // Already have table configs from auth context
-      return;
+    const settingsConfigsRaw = readTableConfigsFromSettings();
+    const settingsConfigs = decodeTableConfigs(settingsConfigsRaw);
+    if (settingsConfigs) {
+      tableConfigsRef.current = settingsConfigs;
+      const config = getConfigForKey(key, settingsConfigs);
+      if (config) {
+        applyParsedState(config);
+        hasAppliedPersistedStateRef.current = true;
+      }
     }
 
     let cancelled = false;
@@ -185,26 +305,24 @@ export function useTablePersistence(key: string) {
       try {
         const { data } = await apolloClient.query<UserTableConfigsResponse>({
           query: GET_USER_TABLE_CONFIGS,
-          fetchPolicy: "cache-first",
+          // Always refresh on startup/reload so cross-browser changes are applied.
+          fetchPolicy: "network-only",
         });
 
         if (cancelled) return;
 
-        const settings = data?.me?.settings;
-        if (settings?.id) {
-          settingsIdRef.current = String(settings.id);
-        }
-        if (settings?.tableConfigs) {
-          tableConfigsRef.current = settings.tableConfigs;
-          // Apply config for current key if found
-          const config = settings.tableConfigs[key];
-          if (config && !hasLoadedRef.current) {
-            applyParsedState(config);
-            hasLoadedRef.current = true;
-          }
+        const serverConfigs = decodeTableConfigs(data?.me?.settings?.tableConfigs);
+        if (!serverConfigs) return;
+
+        tableConfigsRef.current = serverConfigs;
+        const config = getConfigForKey(key, serverConfigs);
+        if (config) {
+          // Server value is authoritative and must override local fallback values.
+          applyParsedState(config);
+          hasAppliedPersistedStateRef.current = true;
         }
       } catch {
-        // Silently fail, localStorage fallback is already applied
+        // Silently fail, localStorage fallback is already applied.
       }
     };
 
@@ -213,49 +331,47 @@ export function useTablePersistence(key: string) {
     return () => {
       cancelled = true;
     };
-  }, [apolloClient, key, user?.id, user?.settings, applyParsedState]);
+  }, [
+    apolloClient,
+    key,
+    user?.id,
+    readTableConfigsFromSettings,
+    applyParsedState,
+  ]);
 
-  // Save state to backend (debounced)
   const saveToBackend = useCallback(
     async (stateToSave: PersistedTableState) => {
-      const settingsId = settingsIdRef.current;
-      if (!settingsId) {
-        // No settings record, save to localStorage only
-        return;
-      }
-
       try {
-        // Merge with existing table configs
-        const currentConfigs = tableConfigsRef.current || {};
-        const updatedConfigs: TableConfigs = {
-          ...currentConfigs,
-          [key]: stateToSave,
-        };
-
-        await updateUserSettings({
+        const response = await upsertUserTableConfig({
           variables: {
-            id: settingsId,
-            input: {
-              tableConfigs: updatedConfigs,
-            },
+            key,
+            tableConfig: stateToSave,
           },
         });
 
-        // Update local ref
-        tableConfigsRef.current = updatedConfigs;
+        const returnedConfigs = decodeTableConfigs(
+          response.data?.upsert_user_table_config?.table_configs,
+        );
+        if (returnedConfigs) {
+          tableConfigsRef.current = returnedConfigs;
+          return;
+        }
+
+        const currentConfigs = tableConfigsRef.current || {};
+        tableConfigsRef.current = {
+          ...currentConfigs,
+          [key]: stateToSave,
+        };
       } catch (e) {
         console.warn("Failed to save table state to backend", e);
       }
     },
-    [key, updateUserSettings]
+    [key, upsertUserTableConfig],
   );
 
-  // Save state on change (debounced)
   useEffect(() => {
-    // Skip saving during initial load
-    if (!hasLoadedRef.current) return;
+    if (!hasHydratedRef.current) return;
 
-    // Clear any pending save
     if (saveTimerRef.current) {
       clearTimeout(saveTimerRef.current);
     }
@@ -269,15 +385,13 @@ export function useTablePersistence(key: string) {
         wrapCells,
       };
 
-      // Always save to localStorage as fallback
       try {
         localStorage.setItem(storageKey, JSON.stringify(stateToSave));
       } catch (e) {
         console.warn("Failed to save table state to localStorage", e);
       }
 
-      // Also save to backend if user is authenticated
-      if (user?.id && settingsIdRef.current) {
+      if (user?.id) {
         void saveToBackend(stateToSave);
       }
     }, 500);
@@ -298,21 +412,17 @@ export function useTablePersistence(key: string) {
     saveToBackend,
   ]);
 
-  // Return a function to check if we have persisted state
   const hasPersistedState = useCallback(() => {
-    // Check user settings first
-    const userTableConfigs = (user?.settings as { table_configs?: TableConfigs } | undefined)?.table_configs;
-    if (userTableConfigs && userTableConfigs[key]) {
+    if (getConfigForKey(key, readTableConfigsFromSettings())) {
       return true;
     }
 
-    // Check localStorage
     try {
       return !!localStorage.getItem(storageKey);
     } catch {
       return false;
     }
-  }, [key, storageKey, user?.settings]);
+  }, [key, storageKey, readTableConfigsFromSettings]);
 
   return { hasPersistedState };
 }

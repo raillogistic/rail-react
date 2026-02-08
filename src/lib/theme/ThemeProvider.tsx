@@ -210,18 +210,29 @@ export function ThemeProvider({
       fontFamily?: string;
     } | undefined) ?? undefined;
 
-    // Fast path: settings already available from auth context, apply immediately.
-    if (userSettings) {
-      if (userSettings.id != null) {
-        settingsIdRef.current = String(userSettings.id);
+    const applyResolvedSettings = (settings: {
+      id?: string | number | null;
+      theme?: string | null;
+      mode?: string | null;
+      layout?: string | null;
+      sidebar_collapse_mode?: string | null;
+      font_size?: string | null;
+      font_family?: string | null;
+      sidebarCollapseMode?: string | null;
+      fontSize?: string | null;
+      fontFamily?: string | null;
+    }) => {
+      if (settings.id != null) {
+        settingsIdRef.current = String(settings.id);
       }
-      const resolvedTheme = userSettings.theme;
-      const resolvedMode = userSettings.mode;
-      const resolvedLayout = userSettings.layout;
+
+      const resolvedTheme = settings.theme;
+      const resolvedMode = settings.mode;
+      const resolvedLayout = settings.layout;
       const resolvedSidebar =
-        userSettings.sidebar_collapse_mode ?? userSettings.sidebarCollapseMode;
-      const resolvedFontSize = userSettings.font_size ?? userSettings.fontSize;
-      const resolvedFontFamily = userSettings.font_family ?? userSettings.fontFamily;
+        settings.sidebar_collapse_mode ?? settings.sidebarCollapseMode;
+      const resolvedFontSize = settings.font_size ?? settings.fontSize;
+      const resolvedFontFamily = settings.font_family ?? settings.fontFamily;
 
       if (resolvedTheme) {
         localStorage.setItem(`${storageKey}-theme`, resolvedTheme);
@@ -247,23 +258,22 @@ export function ThemeProvider({
         localStorage.setItem(`${storageKey}-font-family`, resolvedFontFamily);
         setFontFamilyState(resolvedFontFamily as FontFamily);
       }
+    };
 
-      hydratedUserIdRef.current = userId;
-      return;
-    }
+    // Apply quickly from in-memory context when available, but still refresh from server.
+    if (userSettings) {
+      applyResolvedSettings(userSettings);
+    } else {
+      // Apply local fallback immediately while waiting for server-authoritative values.
+      const persistedTheme = localStorage.getItem(`${storageKey}-theme`);
+      const persistedMode = localStorage.getItem(`${storageKey}-mode`);
+      const persistedLayout = localStorage.getItem(`${storageKey}-layout`);
+      const persistedSidebarCollapseMode = localStorage.getItem(`${storageKey}-sidebar-collapse`);
+      const persistedFontSize = localStorage.getItem(`${storageKey}-font-size`);
+      const persistedFontFamily = localStorage.getItem(`${storageKey}-font-family`);
+      const persistedLineHeight = localStorage.getItem(`${storageKey}-line-height`);
+      const persistedLetterSpacing = localStorage.getItem(`${storageKey}-letter-spacing`);
 
-    // If persisted user-specific settings exist, keep them without waiting for network.
-    const persistedTheme = localStorage.getItem(`${storageKey}-theme`);
-    const persistedMode = localStorage.getItem(`${storageKey}-mode`);
-    const persistedLayout = localStorage.getItem(`${storageKey}-layout`);
-    const persistedSidebarCollapseMode = localStorage.getItem(`${storageKey}-sidebar-collapse`);
-    const persistedFontSize = localStorage.getItem(`${storageKey}-font-size`);
-    const persistedFontFamily = localStorage.getItem(`${storageKey}-font-family`);
-    const persistedLineHeight = localStorage.getItem(`${storageKey}-line-height`);
-    const persistedLetterSpacing = localStorage.getItem(`${storageKey}-letter-spacing`);
-    const hasPersistedUserSettings =
-      !!persistedTheme || !!persistedMode || !!persistedLayout;
-    if (hasPersistedUserSettings) {
       if (persistedTheme) {
         setThemeState(persistedTheme as ThemeKey);
       }
@@ -288,8 +298,6 @@ export function ThemeProvider({
       if (persistedLetterSpacing) {
         setLetterSpacingState(persistedLetterSpacing as LetterSpacing);
       }
-      hydratedUserIdRef.current = userId;
-      return;
     }
 
     let cancelled = false;
@@ -298,8 +306,8 @@ export function ThemeProvider({
       try {
         const { data } = await apolloClient.query<CurrentUserSettingsRecordResponse>({
           query: GET_CURRENT_USER_SETTINGS_RECORD,
-          // Prefer cache first to avoid visible post-load switch when `me` is already cached.
-          fetchPolicy: 'cache-first',
+          // Always force latest server settings on refresh/startup.
+          fetchPolicy: 'network-only',
         });
 
         if (cancelled) {
@@ -308,42 +316,17 @@ export function ThemeProvider({
 
         const settings = data?.me?.settings;
         if (!settings) {
-          hydratedUserIdRef.current = userId;
           return;
         }
 
-        if (settings.id != null) {
-          settingsIdRef.current = String(settings.id);
-        }
-
-        if (settings.theme) {
-          localStorage.setItem(`${storageKey}-theme`, settings.theme);
-          setThemeState(settings.theme as ThemeKey);
-        }
-        if (settings.mode) {
-          localStorage.setItem(`${storageKey}-mode`, settings.mode);
-          setModeState(settings.mode as ThemeMode);
-        }
-        if (settings.layout) {
-          localStorage.setItem(`${storageKey}-layout`, settings.layout);
-          setLayoutState(settings.layout as Layout);
-        }
-        if (settings.sidebarCollapseMode) {
-          localStorage.setItem(`${storageKey}-sidebar-collapse`, settings.sidebarCollapseMode);
-          setSidebarCollapseModeState(settings.sidebarCollapseMode as SidebarCollapseMode);
-        }
-        if (settings.fontSize) {
-          localStorage.setItem(`${storageKey}-font-size`, settings.fontSize);
-          setFontSizeState(settings.fontSize as FontSize);
-        }
-        if (settings.fontFamily) {
-          localStorage.setItem(`${storageKey}-font-family`, settings.fontFamily);
-          setFontFamilyState(settings.fontFamily as FontFamily);
-        }
-
-        hydratedUserIdRef.current = userId;
+        // Server settings are authoritative and override local fallback.
+        applyResolvedSettings(settings);
       } catch {
         // keep local/default values when backend settings cannot be fetched
+      } finally {
+        if (!cancelled) {
+          hydratedUserIdRef.current = userId;
+        }
       }
     };
 

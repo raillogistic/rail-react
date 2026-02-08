@@ -8,7 +8,11 @@ import {
 } from "@dnd-kit/sortable";
 import { MetadataProvider, useMetadata } from "./context/MetadataContext";
 import { TableProvider, useTable } from "./context/TableContext";
-import { useTablePersistence, loadPersistedTableState, type PersistedTableState } from "./hooks/useTablePersistence";
+import {
+  useTablePersistence,
+  loadPersistedTableState,
+  decodeTableConfigs,
+} from "./hooks/useTablePersistence";
 import { useTableData } from "./hooks/useTableData";
 import { TableHeader } from "./components/TableHeader";
 import { TableRows } from "./components/TableRow";
@@ -307,7 +311,6 @@ function BaseTableContent({
   persistenceKey,
   children,
   tableConfig,
-  view,
   performance,
   hideTableOnMobile,
   fields,
@@ -342,11 +345,16 @@ function BaseTableContent({
   const locationPath =
     typeof window !== "undefined" ? window.location.pathname : "";
   const effectiveKey = persistenceKey || `${app}-${model}-${locationPath}`;
-  const { hasPersistedState } = useTablePersistence(effectiveKey);
+  useTablePersistence(effectiveKey);
 
   // Get user table configs from auth context
   const userTableConfigs = React.useMemo(() => {
-    return (user?.settings as { table_configs?: Record<string, PersistedTableState> } | undefined)?.table_configs ?? null;
+    const settings = user?.settings as
+      | { table_configs?: unknown; tableConfigs?: unknown }
+      | undefined;
+    return decodeTableConfigs(
+      settings?.table_configs ?? settings?.tableConfigs ?? null,
+    );
   }, [user?.settings]);
 
   // Check if we have persisted state for this table (loaded synchronously)

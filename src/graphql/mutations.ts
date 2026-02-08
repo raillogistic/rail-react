@@ -235,10 +235,27 @@ export const UPDATE_USER_SETTINGS_MUTATION = gql`
   }
 `;
 
+export const UPSERT_USER_TABLE_CONFIG_MUTATION = gql`
+  mutation UpsertUserTableConfig($key: String!, $tableConfig: GenericScalar!) {
+    upsert_user_table_config: upsertUserTableConfig(
+      key: $key
+      tableConfig: $tableConfig
+    ) {
+      ok
+      errors
+      settings_id: settingsId
+      table_configs: tableConfigs
+      table_config: tableConfig
+    }
+  }
+`;
+
 export const LOGIN_MUTATION_RESOLVED = LOGIN_MUTATION;
 export const REFRESH_TOKEN_MUTATION_RESOLVED = REFRESH_TOKEN_MUTATION;
 export const CREATE_USER_SETTINGS_MUTATION_RESOLVED = CREATE_USER_SETTINGS_MUTATION;
 export const UPDATE_USER_SETTINGS_MUTATION_RESOLVED = UPDATE_USER_SETTINGS_MUTATION;
+export const UPSERT_USER_TABLE_CONFIG_MUTATION_RESOLVED =
+  UPSERT_USER_TABLE_CONFIG_MUTATION;
 
 export interface MutationFieldError {
   field?: string | null;
@@ -272,6 +289,16 @@ export interface UpdateUserSettingsResponse {
   };
 }
 
+export interface UpsertUserTableConfigResponse {
+  upsert_user_table_config: {
+    ok: boolean;
+    errors?: string[] | null;
+    settings_id?: string | null;
+    table_configs?: Record<string, unknown> | string | null;
+    table_config?: Record<string, unknown> | string | null;
+  };
+}
+
 export interface UserSettingsInputPayload {
   theme?: string;
   mode?: string;
@@ -291,4 +318,9 @@ export interface CreateUserSettingsVariables {
 export interface UpdateUserSettingsVariables {
   id: string;
   input: UserSettingsInputPayload;
+}
+
+export interface UpsertUserTableConfigVariables {
+  key: string;
+  tableConfig: unknown;
 }
