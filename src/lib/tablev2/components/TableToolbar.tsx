@@ -446,6 +446,86 @@ export function TableToolbar({
                 </Sheet>
              )}
 
+            {/* Group by dropdown */}
+            <DropdownMenu modal={false}>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className={cn(
+                        "h-8 w-8 p-0",
+                        hasGroupedRows && "text-primary",
+                      )}
+                    >
+                      <Layers className="h-4 w-4 text-muted-foreground" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="text-xs">
+                  Regrouper
+                </TooltipContent>
+              </Tooltip>
+              <DropdownMenuContent align="end" className="w-56">
+                <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
+                  Regrouper par
+                </div>
+                <DropdownMenuItem
+                  onClick={() => {
+                    setGroupingField(null);
+                    setGroupCollapsed({});
+                  }}
+                  className="gap-2"
+                >
+                  {groupingField === null ? (
+                    <Check className="h-3.5 w-3.5 text-primary" />
+                  ) : (
+                    <span className="h-3.5 w-3.5" />
+                  )}
+                  <span>Aucun regroupement</span>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                {groupableFields.map((field) => (
+                  <DropdownMenuItem
+                    key={field.value}
+                    onClick={() => setGroupingField(field.value)}
+                    className="gap-2"
+                  >
+                    {groupingField === field.value ? (
+                      <Check className="h-3.5 w-3.5 text-primary" />
+                    ) : (
+                      <span className="h-3.5 w-3.5" />
+                    )}
+                    <span>{field.label}</span>
+                  </DropdownMenuItem>
+                ))}
+                {hasGroupedRows && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <div className="flex items-center gap-1 px-2 py-1.5">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 flex-1 text-xs"
+                        onClick={handleExpandAllGroups}
+                      >
+                        Tout ouvrir
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-7 flex-1 text-xs"
+                        onClick={handleCollapseAllGroups}
+                      >
+                        Tout fermer
+                      </Button>
+                    </div>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
             {/* Export */}
             <ModelTableExportDialog 
                labels={tableConfig?.exportLabels} 

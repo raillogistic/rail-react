@@ -106,7 +106,7 @@ export function TablePagination({
 
   return (
     <TooltipProvider delayDuration={300}>
-      <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-border/50 bg-card/80 px-3 py-2 backdrop-blur-sm">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-card px-4 py-2">
         {/* Left side - summary text */}
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground">{leftText}</span>
