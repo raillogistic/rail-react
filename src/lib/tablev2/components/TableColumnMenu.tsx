@@ -33,6 +33,7 @@ interface TableColumnMenuProps {
   title: React.ReactNode;
   field?: FieldSchema;
   disabled?: boolean;
+  fullWidthTrigger?: boolean;
 }
 
 export function TableColumnMenu({
@@ -40,7 +41,11 @@ export function TableColumnMenu({
   title,
   field,
   disabled,
+  fullWidthTrigger = false,
 }: TableColumnMenuProps) {
+  const triggerTitle =
+    typeof title === "string" ? title : "Options de colonne";
+
   const { metadata } = useMetadata();
   const {
     advancedFilters,
@@ -152,24 +157,40 @@ export function TableColumnMenu({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild disabled={disabled}>
-        <Button
-          variant="ghost"
-          size="sm"
-          className={cn(
-            "h-8 w-8 p-0 data-[state=open]:bg-accent data-[state=open]:text-accent-foreground ml-1",
-            currentSort
-              ? "text-primary"
-              : "text-muted-foreground/50 hover:text-foreground",
-          )}
-        >
-          {currentSort === "asc" && <ArrowUpAZ className="h-3.5 w-3.5" />}
-          {currentSort === "desc" && <ArrowDownAZ className="h-3.5 w-3.5" />}
-          {!currentSort && <MoreVertical className="h-3.5 w-3.5" />}
-        </Button>
+        {fullWidthTrigger ? (
+          <Button
+            variant="ghost"
+            size="sm"
+            className={cn(
+              "h-8 w-full justify-start px-2 data-[state=open]:bg-accent data-[state=open]:text-accent-foreground",
+              "font-medium",
+              currentSort
+                ? "text-primary"
+                : "text-foreground hover:text-foreground",
+            )}
+          >
+            <span className="truncate text-left">{triggerTitle}</span>
+          </Button>
+        ) : (
+          <Button
+            variant="ghost"
+            size="sm"
+            className={cn(
+              "h-8 w-8 p-0 data-[state=open]:bg-accent data-[state=open]:text-accent-foreground ml-1",
+              currentSort
+                ? "text-primary"
+                : "text-muted-foreground/50 hover:text-foreground",
+            )}
+          >
+            {currentSort === "asc" && <ArrowUpAZ className="h-3.5 w-3.5" />}
+            {currentSort === "desc" && <ArrowDownAZ className="h-3.5 w-3.5" />}
+            {!currentSort && <MoreVertical className="h-3.5 w-3.5" />}
+          </Button>
+        )}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-56">
         <div className="px-2 py-1.5 text-xs font-semibold text-foreground/70 border-b border-border/50 mb-1">
-          {typeof title === "string" ? title : "Options de colonne"}
+          {triggerTitle}
         </div>
 
         <DropdownMenuSub>

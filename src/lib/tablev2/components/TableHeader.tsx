@@ -8,7 +8,6 @@ import { useTable } from "../context/TableContext";
 import { useMetadata } from "../context/MetadataContext";
 import { Checkbox } from "@/lib/components/ui/checkbox";
 import { TableColumnMenu } from "./TableColumnMenu";
-import { ColumnFilter } from "./ColumnFilter";
 import type {
   BaseModelTableColumnDef,
   BaseModelTableColumnOrderingConfig,
@@ -202,17 +201,12 @@ export function TableHeader({
                 draggable={allowDrag && !locked.has(field.id)}
                 density={density}
               >
-                <div className="flex items-center justify-between w-full">
-                  <span className="truncate">{field.title}</span>
-                  <div className="flex items-center">
-                    <ColumnFilter columnId={field.id} />
-                    <TableColumnMenu
-                        columnId={field.id}
-                        title={field.title}
-                        disabled={disableSorting}
-                    />
-                  </div>
-                </div>
+                <TableColumnMenu
+                  columnId={field.id}
+                  title={field.title}
+                  disabled={disableSorting}
+                  fullWidthTrigger
+                />
               </DraggableHead>
             );
           }
@@ -225,18 +219,13 @@ export function TableHeader({
               draggable={allowDrag && !locked.has(field.name)}
               density={density}
             >
-              <div className="flex items-center justify-between w-full">
-                <span className="truncate">{field.verboseName}</span>
-                <div className="flex items-center">
-                    <ColumnFilter columnId={field.name} field={field} />
-                    <TableColumnMenu
-                        columnId={field.name}
-                        title={field.verboseName}
-                        field={field}
-                        disabled={disableSorting}
-                    />
-                </div>
-              </div>
+              <TableColumnMenu
+                columnId={field.name}
+                title={field.verboseName}
+                field={field}
+                disabled={disableSorting}
+                fullWidthTrigger
+              />
             </DraggableHead>
           );
         })}

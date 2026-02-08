@@ -83,10 +83,7 @@ const buildRootFieldSelection = (
   return selection;
 };
 
-const buildRootFieldOrder = (
-  metadata: ModelSchema,
-  columnOrder: string[],
-) => {
+const buildRootFieldOrder = (metadata: ModelSchema, columnOrder: string[]) => {
   const readableFields = metadata.fields.filter(isReadableField);
   const fieldNames = readableFields.map((field) => field.name);
   const ordered = columnOrder.length ? columnOrder : fieldNames;
@@ -164,12 +161,7 @@ export function ModelTableExportDialog({
     const initialOrder = buildRootFieldOrder(metadata, columnOrder);
     setFieldOrder(initialOrder);
     setSelectedFields(
-      buildRootFieldSelection(
-        metadata,
-        initialOrder,
-        columnVisibility,
-        false,
-      ),
+      buildRootFieldSelection(metadata, initialOrder, columnVisibility, false),
     );
     setExportFilename(metadata.verboseNamePlural || metadata.model || "export");
   }, [open, metadata, columnOrder, columnVisibility]);
@@ -338,7 +330,8 @@ export function ModelTableExportDialog({
       toast.success(`Export ${fileExtension.toUpperCase()} genere.`);
       setOpen(false);
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Echec de l'export.";
+      const message =
+        error instanceof Error ? error.message : "Echec de l'export.";
       setExportError(message);
       toast.error(message);
     } finally {
@@ -406,7 +399,7 @@ export function ModelTableExportDialog({
             </ScrollArea>
           </div>
           <div className="space-y-4">
-            <div className="rounded-md border p-3 space-y-3">
+            <div className="rounded-md grid grid-cols-2 gap-2 border p-3 space-y-3">
               <div>
                 <Label htmlFor="export-filename">
                   {labels?.filenameLabel ?? "Nom du fichier"}
@@ -437,31 +430,7 @@ export function ModelTableExportDialog({
                 </Select>
               </div>
             </div>
-            <div className="rounded-md border p-3 text-xs text-muted-foreground space-y-2">
-              <div className="flex items-center justify-between">
-                <span>
-                  {labels?.quickSearchLabel ??
-                    "Recherche rapide (table uniquement)"}
-                </span>
-                <span>
-                  {quickSearch
-                    ? labels?.quickSearchActive ?? "Actif"
-                    : labels?.quickSearchNone ?? "Aucun"}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span>{labels?.advancedFiltersLabel ?? "Filtres avances"}</span>
-                <span>{filterCount || labels?.advancedFiltersNone || "Aucun"}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span>{labels?.orderingLabel ?? "Tri"}</span>
-                <span>
-                  {orderingPayload?.length
-                    ? orderingPayload.join(", ")
-                    : labels?.orderingNone ?? "Aucun"}
-                </span>
-              </div>
-            </div>
+
             {exportError ? (
               <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
                 {exportError}
