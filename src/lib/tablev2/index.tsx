@@ -8,7 +8,7 @@ import {
 } from "@dnd-kit/sortable";
 import { MetadataProvider, useMetadata } from "./context/MetadataContext";
 import { TableProvider, useTable } from "./context/TableContext";
-import { useTablePersistence } from "./hooks/useTablePersistence";
+import { useTablePersistence, loadPersistedTableState, type PersistedTableState } from "./hooks/useTablePersistence";
 import { useTableData } from "./hooks/useTableData";
 import { TableHeader } from "./components/TableHeader";
 import { TableRows } from "./components/TableRow";
@@ -18,6 +18,7 @@ import { TableMobileCard } from "./components/TableMobileCard";
 import { TableFrame, TableBody } from "./components/TableFrame";
 import { Loader2, PlusCircle } from "lucide-react";
 import { Button } from "@/lib/components/ui/button";
+import { useAuthContext } from "@/auth/context";
 import type {
   BaseModelTableColumnDef,
   BaseModelTableFieldsInput,
@@ -316,6 +317,7 @@ function BaseTableContent({
   disableSorting,
   enableSelection,
 }: BaseTableContentProps) {
+  const { user } = useAuthContext();
   const {
     metadata,
     loading: metadataLoading,
@@ -337,8 +339,21 @@ function BaseTableContent({
   const tableScrollRef = React.useRef<HTMLDivElement>(null);
   const isInfiniteMode = performance?.dataMode === "infinite";
 
-  const effectiveKey = persistenceKey || `${app}-${model}`;
-  useTablePersistence(effectiveKey);
+  const locationPath =
+    typeof window !== "undefined" ? window.location.pathname : "";
+  const effectiveKey = persistenceKey || `${app}-${model}-${locationPath}`;
+  const { hasPersistedState } = useTablePersistence(effectiveKey);
+
+  // Get user table configs from auth context
+  const userTableConfigs = React.useMemo(() => {
+    return (user?.settings as { table_configs?: Record<string, PersistedTableState> } | undefined)?.table_configs ?? null;
+  }, [user?.settings]);
+
+  // Check if we have persisted state for this table (loaded synchronously)
+  const persistedStateRef = React.useRef<ReturnType<typeof loadPersistedTableState> | null | undefined>(undefined);
+  if (persistedStateRef.current === undefined) {
+    persistedStateRef.current = loadPersistedTableState(effectiveKey, userTableConfigs);
+  }
 
   const queryConfig = React.useMemo(
     () => ({
@@ -481,9 +496,17 @@ function BaseTableContent({
       const mode = columnOrdering?.mode ?? "persisted";
       const append = columnOrdering?.append ?? "end";
       const configOrder = columnOrdering?.order ?? [];
+
+      // Check persisted state first, then fall back to context columnOrder
+      const persistedOrder = persistedStateRef.current?.columnOrder;
+      const effectiveColumnOrder =
+        persistedOrder && persistedOrder.length > 0
+          ? persistedOrder
+          : columnOrder;
+
       const baseOrder =
-        mode === "persisted" && columnOrder.length > 0
-          ? columnOrder
+        mode === "persisted" && effectiveColumnOrder.length > 0
+          ? effectiveColumnOrder
           : configOrder.length > 0
             ? configOrder
             : availableIds;
@@ -523,12 +546,19 @@ function BaseTableContent({
   React.useEffect(() => {
     if (!metadata?.fields) return;
 
+    // Use persisted visibility if available, otherwise use current context
+    const persistedVisibility = persistedStateRef.current?.columnVisibility;
+    const effectiveVisibility =
+      persistedVisibility && Object.keys(persistedVisibility).length > 0
+        ? persistedVisibility
+        : columnVisibility;
+
     const targetColumns = columnDefs;
     if (targetColumns && targetColumns.length > 0) {
       const columnIds = targetColumns.map((column) => column.id);
       resolveColumnOrder(columnIds);
 
-      const nextVisibility: Record<string, boolean> = { ...columnVisibility };
+      const nextVisibility: Record<string, boolean> = { ...effectiveVisibility };
       let visibilityChanged = false;
       columnIds.forEach((id) => {
         if (nextVisibility[id] === undefined) {
@@ -536,7 +566,13 @@ function BaseTableContent({
           visibilityChanged = true;
         }
       });
-      if (visibilityChanged) {
+      // Only update if there was a change or if we need to apply persisted state
+      const needsUpdate =
+        visibilityChanged ||
+        (persistedVisibility &&
+          Object.keys(persistedVisibility).length > 0 &&
+          Object.keys(columnVisibility).length === 0);
+      if (needsUpdate) {
         setColumnVisibility(nextVisibility);
       }
       return;
@@ -548,7 +584,7 @@ function BaseTableContent({
     const visibleNames = visibleFields.map((field) => field.name);
     resolveColumnOrder(visibleNames);
 
-    const nextVisibility: Record<string, boolean> = { ...columnVisibility };
+    const nextVisibility: Record<string, boolean> = { ...effectiveVisibility };
     let visibilityChanged = false;
     visibleFields.forEach((field) => {
       if (nextVisibility[field.name] === undefined) {
@@ -556,7 +592,12 @@ function BaseTableContent({
         visibilityChanged = true;
       }
     });
-    if (visibilityChanged) {
+    const needsUpdate =
+      visibilityChanged ||
+      (persistedVisibility &&
+        Object.keys(persistedVisibility).length > 0 &&
+        Object.keys(columnVisibility).length === 0);
+    if (needsUpdate) {
       setColumnVisibility(nextVisibility);
     }
   }, [

@@ -62,6 +62,7 @@ export const GET_CURRENT_USER = gql`
         sidebar_collapse_mode: sidebarCollapseMode
         font_size: fontSize
         font_family: fontFamily
+        table_configs: tableConfigs
       }
     }
   }
@@ -106,6 +107,15 @@ export interface UserSettings {
   sidebar_collapse_mode: string;
   font_size: string;
   font_family: string;
+  table_configs?: Record<string, TableConfig>;
+}
+
+export interface TableConfig {
+  columnOrder: string[];
+  columnVisibility: Record<string, boolean>;
+  perPage: number;
+  density: string;
+  wrapCells: boolean;
 }
 
 export interface CurrentUserResponse {

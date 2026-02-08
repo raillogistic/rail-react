@@ -229,6 +229,7 @@ export const UPDATE_USER_SETTINGS_MUTATION = gql`
         sidebar_collapse_mode: sidebarCollapseMode
         font_size: fontSize
         font_family: fontFamily
+        table_configs: tableConfigs
       }
     }
   }
@@ -252,6 +253,7 @@ export interface UserSettingsMutationObject {
   sidebar_collapse_mode: string;
   font_size: string;
   font_family: string;
+  table_configs?: Record<string, unknown>;
 }
 
 export interface CreateUserSettingsResponse {
@@ -277,6 +279,7 @@ export interface UserSettingsInputPayload {
   sidebarCollapseMode?: string;
   fontSize?: string;
   fontFamily?: string;
+  tableConfigs?: Record<string, unknown>;
 }
 
 export interface CreateUserSettingsVariables {
