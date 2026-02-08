@@ -51,7 +51,7 @@ export function AccountSettingsPage() {
     email: authUser?.email || "",
   };
   const formUser = {
-    id: String(remoteUser?.id ?? fallbackUser.id ?? ""),
+    id: String(remoteUser?.id ?? ""),
     firstName:
       remoteUser?.firstName ?? remoteUser?.first_name ?? fallbackUser.firstName,
     lastName:

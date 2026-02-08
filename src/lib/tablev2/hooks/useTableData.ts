@@ -49,8 +49,7 @@ function buildDynamicQuery(
     fields.some(
       (field) =>
         (field.name === name || field.fieldName === name) && field.isRelation,
-    ) ||
-    relationLookup.has(name);
+    ) || relationLookup.has(name);
 
   const buildRelationSelection = (relationName: string) => {
     const relation =
@@ -96,83 +95,81 @@ function buildDynamicQuery(
   );
   const hasConfiguredDisplay = normalizedFieldsConfig.display !== undefined;
 
-  const fieldSelection =
-    hasConfiguredDisplay
-      ? (() => {
-          interface SelectionTree {
-            [key: string]: SelectionTree | true;
+  const fieldSelection = hasConfiguredDisplay
+    ? (() => {
+        interface SelectionTree {
+          [key: string]: SelectionTree | true;
+        }
+        const tree: SelectionTree = {};
+
+        const ensureObject = (node: SelectionTree, key: string) => {
+          if (!node[key] || node[key] === true) {
+            node[key] = {};
           }
-          const tree: SelectionTree = {};
+          return node[key] as SelectionTree;
+        };
 
-          const ensureObject = (node: SelectionTree, key: string) => {
-            if (!node[key] || node[key] === true) {
-              node[key] = {};
+        const addPathToTree = (node: SelectionTree, parts: string[]) => {
+          const [head, ...rest] = parts;
+          if (!head) return;
+          if (rest.length === 0) {
+            node[head] = true;
+            return;
+          }
+          const child = ensureObject(node, head);
+          addPathToTree(child, rest);
+        };
+
+        const addRelationDefaults = (relationName: string) => {
+          const relation = relationLookup.get(relationName);
+          const relationNode = ensureObject(tree, relationName);
+          const config = relationConfig[relationName];
+          const defaults = new Set<string>(config?.fields ?? []);
+          defaults.add("id");
+          defaults.add(config?.display ?? "desc");
+          if (
+            relation?.lookupField &&
+            relation.lookupField !== "id" &&
+            relation.lookupField !== "__str__"
+          ) {
+            defaults.add(relation.lookupField);
+          }
+          defaults.forEach((field) => addPathToTree(relationNode, [field]));
+        };
+
+        (configuredDisplayFields ?? []).forEach((entry) => {
+          const accessor = typeof entry === "string" ? entry : entry.accessor;
+          if (!accessor) return;
+          const parts = accessor.split(".");
+          const [root, ...rest] = parts;
+          if (!root) return;
+
+          if (rest.length === 0) {
+            if (isRelationField(root)) {
+              addRelationDefaults(root);
+            } else {
+              addPathToTree(tree, [root]);
             }
-            return node[key] as SelectionTree;
-          };
+            return;
+          }
 
-          const addPathToTree = (node: SelectionTree, parts: string[]) => {
-            const [head, ...rest] = parts;
-            if (!head) return;
-            if (rest.length === 0) {
-              node[head] = true;
-              return;
-            }
-            const child = ensureObject(node, head);
-            addPathToTree(child, rest);
-          };
+          addRelationDefaults(root);
+          const relationNode = ensureObject(tree, root);
+          addPathToTree(relationNode, rest);
+        });
 
-          const addRelationDefaults = (relationName: string) => {
-            const relation = relationLookup.get(relationName);
-            const relationNode = ensureObject(tree, relationName);
-            const config = relationConfig[relationName];
-            const defaults = new Set<string>(config?.fields ?? []);
-            defaults.add("id");
-            defaults.add(config?.display ?? "desc");
-            if (
-              relation?.lookupField &&
-              relation.lookupField !== "id" &&
-              relation.lookupField !== "__str__"
-            ) {
-              defaults.add(relation.lookupField);
-            }
-            defaults.forEach((field) => addPathToTree(relationNode, [field]));
-          };
+        const serializeTree = (node: SelectionTree): string =>
+          Object.entries(node)
+            .map(([key, value]) =>
+              value === true
+                ? key
+                : `${key} {\n        ${serializeTree(value)}\n      }`,
+            )
+            .join("\n      ");
 
-          (configuredDisplayFields ?? []).forEach((entry) => {
-            const accessor =
-              typeof entry === "string" ? entry : entry.accessor;
-            if (!accessor) return;
-            const parts = accessor.split(".");
-            const [root, ...rest] = parts;
-            if (!root) return;
-
-            if (rest.length === 0) {
-              if (isRelationField(root)) {
-                addRelationDefaults(root);
-              } else {
-                addPathToTree(tree, [root]);
-              }
-              return;
-            }
-
-            addRelationDefaults(root);
-            const relationNode = ensureObject(tree, root);
-            addPathToTree(relationNode, rest);
-          });
-
-          const serializeTree = (node: SelectionTree): string =>
-            Object.entries(node)
-              .map(([key, value]) =>
-                value === true
-                  ? key
-                  : `${key} {\n        ${serializeTree(value)}\n      }`,
-              )
-              .join("\n      ");
-
-          return serializeTree(tree);
-        })()
-      : buildDefaultFieldSelection();
+        return serializeTree(tree);
+      })()
+    : buildDefaultFieldSelection();
 
   const rowPermissionsSelection = `
       rowPermissions {
@@ -240,7 +237,7 @@ export function useTableData(config?: {
     filterVariables,
     refreshKey,
     _setData,
-    _setPageInfo
+    _setPageInfo,
   } = useTable();
   const debouncedQuickSearch = useDebouncedValue(quickSearch, 300);
 
@@ -290,12 +287,16 @@ export function useTableData(config?: {
       ? presetsRaw.filter((entry): entry is string => typeof entry === "string")
       : undefined;
     const distinctOn = Array.isArray(distinctOnRaw)
-      ? distinctOnRaw.filter((entry): entry is string => typeof entry === "string")
+      ? distinctOnRaw.filter(
+          (entry): entry is string => typeof entry === "string",
+        )
       : undefined;
     const orderBy = Array.isArray(orderByRaw)
       ? orderByRaw.filter((entry): entry is string => typeof entry === "string")
       : undefined;
-    const sanitizedOrderBy = orderBy?.filter((entry) => isAllowedOrderBy(entry));
+    const sanitizedOrderBy = orderBy?.filter((entry) =>
+      isAllowedOrderBy(entry),
+    );
     // orderBy is driven by advanced filters (if provided).
 
     const supportsQuick = !!metadata?.filterConfig?.supportsQuick;
@@ -303,9 +304,10 @@ export function useTableData(config?: {
     return {
       page: pagination.page,
       perPage: pagination.perPage,
-      orderBy: sanitizedOrderBy && sanitizedOrderBy.length > 0
-        ? sanitizedOrderBy
-        : undefined,
+      orderBy:
+        sanitizedOrderBy && sanitizedOrderBy.length > 0
+          ? sanitizedOrderBy
+          : undefined,
       ...(supportsQuick ? { quick: debouncedQuickSearch || undefined } : {}),
       where,
       presets,
@@ -323,35 +325,47 @@ export function useTableData(config?: {
   ]);
 
   // 3. Execute Query
-  const { data, loading, error, refetch } = useQuery(query || gql`query Skip { __typename }`, {
-    skip: !query,
-    variables,
-    fetchPolicy: "network-only", // Ensure fresh data for tables usually
-    notifyOnNetworkStatusChange: true,
-  });
+  const { data, loading, error, refetch } = useQuery(
+    query ||
+      gql`
+        query Skip {
+          __typename
+        }
+      `,
+    {
+      skip: !query,
+      variables,
+      fetchPolicy: "network-only", // Ensure fresh data for tables usually
+      notifyOnNetworkStatusChange: true,
+    },
+  );
 
   const mergeUniqueRows = useMemo(
-    () => (existing: Record<string, unknown>[], incoming: Record<string, unknown>[]) => {
-      const merged = [...existing];
-      const seen = new Set<string>();
-      existing.forEach((row) => {
-        if (row?.id !== undefined && row?.id !== null) {
-          seen.add(String(row.id));
-        }
-      });
-      incoming.forEach((row) => {
-        const rowId = row?.id;
-        if (rowId === undefined || rowId === null) {
+    () =>
+      (
+        existing: Record<string, unknown>[],
+        incoming: Record<string, unknown>[],
+      ) => {
+        const merged = [...existing];
+        const seen = new Set<string>();
+        existing.forEach((row) => {
+          if (row?.id !== undefined && row?.id !== null) {
+            seen.add(String(row.id));
+          }
+        });
+        incoming.forEach((row) => {
+          const rowId = row?.id;
+          if (rowId === undefined || rowId === null) {
+            merged.push(row);
+            return;
+          }
+          const key = String(rowId);
+          if (seen.has(key)) return;
+          seen.add(key);
           merged.push(row);
-          return;
-        }
-        const key = String(rowId);
-        if (seen.has(key)) return;
-        seen.add(key);
-        merged.push(row);
-      });
-      return merged;
-    },
+        });
+        return merged;
+      },
     [],
   );
 
@@ -377,14 +391,14 @@ export function useTableData(config?: {
         });
       }
     } else if (error) {
-       _setData([], false, error);
+      _setData([], false, error);
     }
-     // If loading is true and we have previous data, we might keep it or show loading overlay
-     // But strictly syncing loading state:
-     if (loading && !data) {
-         // _setData([], true, undefined); // Optional: clear data on load? Or keep stale?
-         // Usually better to keep stale data and show loading indicator
-     }
+    // If loading is true and we have previous data, we might keep it or show loading overlay
+    // But strictly syncing loading state:
+    if (loading && !data) {
+      // _setData([], true, undefined); // Optional: clear data on load? Or keep stale?
+      // Usually better to keep stale data and show loading indicator
+    }
   }, [
     config?.dataMode,
     currentData,

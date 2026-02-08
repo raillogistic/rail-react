@@ -68,13 +68,25 @@ interface AccountSettingsFormProps {
 }
 
 interface MutationError {
-  field: string;
+  field?: string | null;
   message: string;
 }
 
+interface GraphQLErrorLike {
+  message?: string;
+}
+
+interface ApolloLikeError {
+  message?: string;
+  graphQLErrors?: GraphQLErrorLike[];
+}
+
 const mapBackendFieldToFormField = (
-  field: string,
+  field?: string | null,
 ): keyof AccountFormValues | undefined => {
+  if (!field) {
+    return undefined;
+  }
   const normalized = field.replace(/_([a-z])/g, (_, c: string) =>
     c.toUpperCase(),
   );
@@ -86,6 +98,17 @@ const mapBackendFieldToFormField = (
     return normalized;
   }
   return undefined;
+};
+
+const getApolloErrorMessage = (error: unknown): string | null => {
+  const apolloError = error as ApolloLikeError | undefined;
+  if (apolloError?.graphQLErrors?.length) {
+    return apolloError.graphQLErrors[0]?.message ?? null;
+  }
+  if (apolloError?.message) {
+    return apolloError.message;
+  }
+  return null;
 };
 
 export function AccountSettingsForm({ user }: AccountSettingsFormProps) {
@@ -128,16 +151,28 @@ export function AccountSettingsForm({ user }: AccountSettingsFormProps) {
       const errors: MutationError[] | undefined =
         response.data?.updateUser?.errors;
       if (errors?.length) {
+        const globalMessages: string[] = [];
         errors.forEach((error) => {
           const fieldName = mapBackendFieldToFormField(error.field);
           if (fieldName) {
             form.setError(fieldName, { message: error.message });
+            return;
           }
+          globalMessages.push(error.message);
         });
-        toast.error("Erreur lors de la mise a jour du profil.");
+        if (globalMessages.length > 0) {
+          toast.error(globalMessages.join(" | "));
+        } else {
+          toast.error("Erreur lors de la mise a jour du profil.");
+        }
+        console.error("updateUser returned errors:", errors);
+        return;
       }
+      toast.error("Echec de la mise a jour du profil.");
+      console.error("updateUser failed without explicit errors:", response);
     } catch (error) {
-      toast.error("Une erreur est survenue.");
+      const backendMessage = getApolloErrorMessage(error);
+      toast.error(backendMessage ?? "Une erreur est survenue.");
       console.error(error);
     }
   }
