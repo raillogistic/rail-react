@@ -253,11 +253,41 @@ export function ThemeProvider({
     }
 
     // If persisted user-specific settings exist, keep them without waiting for network.
+    const persistedTheme = localStorage.getItem(`${storageKey}-theme`);
+    const persistedMode = localStorage.getItem(`${storageKey}-mode`);
+    const persistedLayout = localStorage.getItem(`${storageKey}-layout`);
+    const persistedSidebarCollapseMode = localStorage.getItem(`${storageKey}-sidebar-collapse`);
+    const persistedFontSize = localStorage.getItem(`${storageKey}-font-size`);
+    const persistedFontFamily = localStorage.getItem(`${storageKey}-font-family`);
+    const persistedLineHeight = localStorage.getItem(`${storageKey}-line-height`);
+    const persistedLetterSpacing = localStorage.getItem(`${storageKey}-letter-spacing`);
     const hasPersistedUserSettings =
-      !!localStorage.getItem(`${storageKey}-theme`) ||
-      !!localStorage.getItem(`${storageKey}-mode`) ||
-      !!localStorage.getItem(`${storageKey}-layout`);
+      !!persistedTheme || !!persistedMode || !!persistedLayout;
     if (hasPersistedUserSettings) {
+      if (persistedTheme) {
+        setThemeState(persistedTheme as ThemeKey);
+      }
+      if (persistedMode) {
+        setModeState(persistedMode as ThemeMode);
+      }
+      if (persistedLayout) {
+        setLayoutState(persistedLayout as Layout);
+      }
+      if (persistedSidebarCollapseMode) {
+        setSidebarCollapseModeState(persistedSidebarCollapseMode as SidebarCollapseMode);
+      }
+      if (persistedFontSize) {
+        setFontSizeState(persistedFontSize as FontSize);
+      }
+      if (persistedFontFamily) {
+        setFontFamilyState(persistedFontFamily as FontFamily);
+      }
+      if (persistedLineHeight) {
+        setLineHeightState(persistedLineHeight as LineHeight);
+      }
+      if (persistedLetterSpacing) {
+        setLetterSpacingState(persistedLetterSpacing as LetterSpacing);
+      }
       hydratedUserIdRef.current = userId;
       return;
     }
