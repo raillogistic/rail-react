@@ -22,8 +22,9 @@ import { LayoutSettingsPage } from "@/views/settings/LayoutSettingsPage";
 
 import { getAppDefaultRoute, getAppNavigationLinks } from "@/apps/routes";
 // import ModelForm from "@/lib/form/backend/ModelForm";
-import { BaseModelTable } from "@/lib/tablev2";
+import { BaseModelTable, ModelTableV2 } from "@/lib/tablev2";
 import { ModelForm } from "@/lib/form2";
+import ModelTable from "@/lib/tables/ModelTable";
 // import ModelForm    from "@/lib/form2";
 
 export const ROUTES = {
@@ -88,18 +89,28 @@ const CORE_NAVIGATION_LINKS: NavigationSection[] = [
         component: (
           <>
             <div className="grid grid-cols-1 gap-2 min-w-0">
-              <BaseModelTable
-                app="store"
-                model="Product"
-                fields={[
-                  "sku",
-                  "name",
-                  "price",
-                  { accessor: "createdAt", title: "Created At" },
-                ]}
-              />
+              <BaseModelTable app="store" model="Product" />
             </div>
           </>
+        ),
+      },
+      {
+        id: "orders-table-v2",
+        title: "Orders Table V2",
+        path: "/orders-table-v2",
+        icon: LayoutDashboard,
+        requiresAuth: true,
+        description: "Progress view for ModelTableV2 (store.Order)",
+        component: (
+          <div className="grid grid-cols-1 gap-2 min-w-0">
+            <ModelTableV2
+              app="store"
+              model="Product"
+              baseTable={{
+                quickSearch: true,
+              }}
+            />
+          </div>
         ),
       },
       {

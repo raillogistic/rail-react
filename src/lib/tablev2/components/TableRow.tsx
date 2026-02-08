@@ -19,7 +19,12 @@ import { toast } from "sonner";
 import { useTable } from "../context/TableContext";
 import { useMetadata } from "../context/MetadataContext";
 import { formatCellValue, findMutation, normalizeMutationType } from "../utils";
-import type { BaseModelTableColumnDef, RowMutationPermissions } from "../types";
+import type {
+  BaseModelTableColumnDef,
+  BaseModelTableRefetch,
+  FieldSchema,
+  RowMutationPermissions,
+} from "../types";
 
 function RowActions({
   rowId,
@@ -137,10 +142,14 @@ export function TableRows({
   loadingText,
   emptyState,
   columns,
+  enableSelection,
+  refetch,
 }: {
   loadingText?: string;
   emptyState?: string;
   columns?: BaseModelTableColumnDef[];
+  enableSelection?: boolean;
+  refetch?: BaseModelTableRefetch;
 }) {
   const { metadata } = useMetadata();
   const {
@@ -155,8 +164,8 @@ export function TableRows({
   if (!metadata && !columns) return null;
 
   const fieldLookup = useMemo(() => {
-    if (!metadata) return new Map<string, typeof metadata.fields[number]>();
-    const lookup = new Map<string, typeof metadata.fields[number]>();
+    if (!metadata) return new Map<string, FieldSchema>();
+    const lookup = new Map<string, FieldSchema>();
     metadata.fields.forEach((field) => {
       lookup.set(field.name, field);
       if (field.fieldName) lookup.set(field.fieldName, field);
@@ -198,21 +207,26 @@ export function TableRows({
     if (!metadata) return [];
     return columnOrder
       .map((colId) => metadata.fields.find((f) => f.name === colId))
-      .filter((f) => f && columnVisibility[f.name]);
+      .filter((field): field is FieldSchema => !!field && columnVisibility[field.name]);
   })();
 
   const handleRowSelect = (rowId: string, checked: boolean) => {
-    setRowSelection({
-      ...rowSelection,
-      [rowId]: checked,
-    });
+    const nextSelection = { ...rowSelection };
+    if (checked) {
+      nextSelection[rowId] = true;
+    } else {
+      delete nextSelection[rowId];
+    }
+    setRowSelection(nextSelection);
   };
+
+  const fixedColumnCount = (enableSelection ? 1 : 0) + 1;
 
   if (loading && data.length === 0) {
     return (
       <ShadcnTableRow>
         <TableCell
-          colSpan={visibleColumns.length + 2}
+          colSpan={visibleColumns.length + fixedColumnCount}
           className="h-24 text-center"
         >
           {loadingText ?? "Chargement..."}
@@ -225,7 +239,7 @@ export function TableRows({
     return (
       <ShadcnTableRow>
         <TableCell
-          colSpan={visibleColumns.length + 2}
+          colSpan={visibleColumns.length + fixedColumnCount}
           className="h-24 text-center"
         >
           {emptyState ?? "Aucun resultat."}
@@ -243,18 +257,19 @@ export function TableRows({
         return (
           <ShadcnTableRow
             key={rowId}
-            data-state={rowSelection[rowId] && "selected"}
+            data-state={enableSelection && rowSelection[rowId] ? "selected" : undefined}
           >
-            {/* Selection Cell */}
-            <TableCell>
-              <Checkbox
-                checked={!!rowSelection[rowId]}
-                onCheckedChange={(checked) =>
-                  handleRowSelect(rowId, checked as boolean)
-                }
-                aria-label="Selectionner la ligne"
-              />
-            </TableCell>
+            {enableSelection ? (
+              <TableCell>
+                <Checkbox
+                  checked={!!rowSelection[rowId]}
+                  onCheckedChange={(checked: boolean | "indeterminate") =>
+                    handleRowSelect(rowId, checked === true)
+                  }
+                  aria-label="Selectionner la ligne"
+                />
+              </TableCell>
+            ) : null}
 
             {/* Data Cells */}
             {visibleColumns.map((field) => {
@@ -271,6 +286,8 @@ export function TableRows({
                       ? field.render(value, row, {
                           accessor: field.accessor,
                           columnId: field.id,
+                          data,
+                          refetch,
                         })
                       : metaField
                         ? formatCellValue(value, metaField)
@@ -280,8 +297,8 @@ export function TableRows({
               }
 
               return (
-                <TableCell key={field!.name}>
-                  {formatCellValue(row[field!.name], field!)}
+                <TableCell key={field.name}>
+                  {formatCellValue(row[field.name], field)}
                 </TableCell>
               );
             })}

@@ -12,7 +12,7 @@ import {
 import { useTheme } from "@/lib/theme";
 
 export function ModeToggle() {
-  const { theme, mode, setTheme, setMode, toggleMode } = useTheme();
+  const { theme, mode, setTheme, toggleMode } = useTheme();
 
   const themes = [
     { value: "default", label: "Default", icon: Monitor },

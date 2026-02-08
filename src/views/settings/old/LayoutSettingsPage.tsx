@@ -1,4 +1,3 @@
-import React from "react";
 import { SettingsLayout } from "./SettingsLayout";
 import { LayoutSettings } from "./LayoutSettings";
 

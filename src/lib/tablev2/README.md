@@ -73,6 +73,37 @@ Row sorting via header clicks is enabled in `BaseModelTable` and updates the Gra
 <BaseModelTable app="sales" model="Invoice" disableSorting />
 ```
 
+### Selection + Field Helpers
+
+Row selection is now disabled by default. Enable it only when needed:
+
+```tsx
+<BaseModelTable app="sales" model="Invoice" enableSelection />
+```
+
+`fields` accepts either an array (legacy) or an object with helpers:
+
+```tsx
+<BaseModelTable
+  app="sales"
+  model="Invoice"
+  fields={{
+    display: ["number", "customer.name", "total", "status"],
+    exclude: ["internalNotes", "customer.secretCode"],
+    render: {
+      status: (value, row, data, refetch) => (
+        <StatusCell value={value} row={row} onRefresh={refetch} count={data.length} />
+      ),
+    },
+  }}
+/>
+```
+
+Notes:
+- `display` defines visible columns.
+- `exclude` removes fields/relations by accessor or root key.
+- `render` overrides cell rendering by column accessor/root.
+
 ## Architecture
 
 The table is composed of several contexts and components:

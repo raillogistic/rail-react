@@ -41,6 +41,55 @@ const splitModelKey = (modelKey: string): [string, string] => {
   return [modelKey.slice(0, dotIndex), modelKey.slice(dotIndex + 1)];
 };
 
+const DENIED_PERMISSIONS = {
+  canList: false,
+  canRetrieve: false,
+  canCreate: false,
+  canUpdate: false,
+  canDelete: false,
+  canBulkCreate: false,
+  canBulkUpdate: false,
+  canBulkDelete: false,
+  canExport: false,
+  denialReasons: JSON.stringify(["Persisted metadata strips permission overlays"]),
+};
+
+function sanitizePersistedModelSchema<T>(schema: T): T {
+  if (!schema || typeof schema !== "object") {
+    return schema;
+  }
+
+  const source = schema as Record<string, unknown>;
+  const fields = Array.isArray(source.fields)
+    ? source.fields.map((field) =>
+        field && typeof field === "object"
+          ? { ...(field as Record<string, unknown>), writable: false }
+          : field,
+      )
+    : source.fields;
+
+  const relationships = Array.isArray(source.relationships)
+    ? source.relationships.map((relation) =>
+        relation && typeof relation === "object"
+          ? {
+              ...(relation as Record<string, unknown>),
+              writable: false,
+              canCreateInline: false,
+            }
+          : relation,
+      )
+    : source.relationships;
+
+  return {
+    ...source,
+    fields,
+    relationships,
+    permissions: DENIED_PERMISSIONS,
+    mutations: [],
+    templates: [],
+  } as T;
+}
+
 const readLatestUserKey = (): string | null => {
   if (!isBrowser()) return null;
   try {
@@ -239,7 +288,17 @@ export const persistFilterMetadata = (
   const { userKey, store } = context;
   const key = buildModelKey(app, model);
   const entry = store.entries[key] ?? {};
-  entry.filter = { data, updatedAt: Date.now() };
+  const payload =
+    data && typeof data === "object"
+      ? (data as { modelSchema?: unknown; filterSchema?: unknown })
+      : {};
+  entry.filter = {
+    data: {
+      ...payload,
+      modelSchema: sanitizePersistedModelSchema(payload.modelSchema),
+    },
+    updatedAt: Date.now(),
+  };
   store.entries[key] = entry;
   writeStore(userKey, store);
 };
@@ -254,7 +313,17 @@ export const persistTableMetadata = (
   const { userKey, store } = context;
   const key = buildModelKey(app, model);
   const entry = store.entries[key] ?? {};
-  entry.table = { data, updatedAt: Date.now() };
+  const payload =
+    data && typeof data === "object"
+      ? (data as { modelSchema?: unknown })
+      : {};
+  entry.table = {
+    data: {
+      ...payload,
+      modelSchema: sanitizePersistedModelSchema(payload.modelSchema),
+    },
+    updatedAt: Date.now(),
+  };
   store.entries[key] = entry;
   writeStore(userKey, store);
 };

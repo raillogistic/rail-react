@@ -32,10 +32,23 @@ const METADATA_DEPLOY_VERSION_QUERY = gql`
 const DEFAULT_STALE_MS = 1000 * 60 * 60 * 6;
 const DEFAULT_PRIORITY_LIMIT = 12;
 const DEFAULT_CONCURRENCY = 3;
+const DEFAULT_PROFILES: MetadataProfileSlice[] = ["filter", "table"];
+
+type MetadataProfileSlice = "filter" | "table";
+
+type WarmupModelHint = {
+  app: string;
+  model: string;
+  profiles?: MetadataProfileSlice[];
+};
 
 type AvailableModel = {
   app: string;
   model: string;
+};
+
+type WarmupTarget = AvailableModel & {
+  profiles: MetadataProfileSlice[];
 };
 
 const buildModelKey = (app: string, model: string) => `${app}.${model}`;
@@ -81,20 +94,35 @@ const shouldFetchEntry = (
   return { needsFilter, needsTable };
 };
 
+const normalizeProfiles = (
+  profiles: MetadataProfileSlice[] | undefined,
+): MetadataProfileSlice[] => {
+  const candidate = profiles?.filter((entry): entry is MetadataProfileSlice =>
+    entry === "filter" || entry === "table",
+  );
+  if (!candidate || candidate.length === 0) {
+    return [...DEFAULT_PROFILES];
+  }
+  return Array.from(new Set(candidate));
+};
+
 const fetchMetadataForModel = async (
   client: ApolloClient<unknown>,
   app: string,
   model: string,
   ttlMs: number,
+  profiles: MetadataProfileSlice[],
 ): Promise<void> => {
   const { needsFilter, needsTable } = shouldFetchEntry(app, model, ttlMs);
-  if (!needsFilter && !needsTable) {
+  const wantsFilter = profiles.includes("filter");
+  const wantsTable = profiles.includes("table");
+  if ((!needsFilter || !wantsFilter) && (!needsTable || !wantsTable)) {
     return;
   }
 
   const tasks: Promise<void>[] = [];
 
-  if (needsFilter) {
+  if (needsFilter && wantsFilter) {
     tasks.push(
       client
         .query({
@@ -113,7 +141,7 @@ const fetchMetadataForModel = async (
     );
   }
 
-  if (needsTable) {
+  if (needsTable && wantsTable) {
     tasks.push(
       client
         .query({
@@ -154,6 +182,46 @@ const prioritizeModels = (
   });
 };
 
+const buildWarmupTargets = (
+  models: AvailableModel[],
+  recentKeys: string[],
+  globalProfiles: MetadataProfileSlice[],
+  routeHints?: WarmupModelHint[],
+): WarmupTarget[] => {
+  const availableByKey = new Map(
+    models.map((entry) => [buildModelKey(entry.app, entry.model), entry]),
+  );
+
+  const hintMap = new Map<string, MetadataProfileSlice[]>();
+  for (const hint of routeHints ?? []) {
+    const key = buildModelKey(hint.app, hint.model);
+    if (!availableByKey.has(key)) continue;
+    hintMap.set(key, normalizeProfiles(hint.profiles));
+  }
+
+  const prioritized = prioritizeModels(models, recentKeys);
+  const orderedKeys = [
+    ...Array.from(hintMap.keys()),
+    ...prioritized.map((entry) => buildModelKey(entry.app, entry.model)),
+  ];
+
+  const seen = new Set<string>();
+  const targets: WarmupTarget[] = [];
+  for (const key of orderedKeys) {
+    if (seen.has(key)) continue;
+    seen.add(key);
+
+    const model = availableByKey.get(key);
+    if (!model) continue;
+    targets.push({
+      ...model,
+      profiles: hintMap.get(key) ?? globalProfiles,
+    });
+  }
+
+  return targets;
+};
+
 export async function warmupMetadataCache(
   client: ApolloClient<unknown>,
   options: {
@@ -161,6 +229,8 @@ export async function warmupMetadataCache(
     staleMs?: number;
     priorityLimit?: number;
     concurrency?: number;
+    profiles?: MetadataProfileSlice[];
+    routeHints?: WarmupModelHint[];
   },
 ): Promise<void> {
   const { userKey } = options;
@@ -205,17 +275,28 @@ export async function warmupMetadataCache(
   if (!models.length) return;
 
   const recentKeys = getRecentModelKeys(userKey);
-  const ordered = prioritizeModels(models, recentKeys);
-
   const priorityLimit = options.priorityLimit ?? DEFAULT_PRIORITY_LIMIT;
   const concurrency = options.concurrency ?? DEFAULT_CONCURRENCY;
   const staleMs = options.staleMs ?? DEFAULT_STALE_MS;
+  const profiles = normalizeProfiles(options.profiles);
+  const targets = buildWarmupTargets(
+    models,
+    recentKeys,
+    profiles,
+    options.routeHints,
+  );
 
-  const priorityBatch = ordered.slice(0, priorityLimit);
-  const remainingBatch = ordered.slice(priorityLimit);
+  const priorityBatch = targets.slice(0, priorityLimit);
+  const remainingBatch = targets.slice(priorityLimit);
 
-  await runWithConcurrency(priorityBatch, concurrency, (model) =>
-    fetchMetadataForModel(client, model.app, model.model, staleMs),
+  await runWithConcurrency(priorityBatch, concurrency, (target) =>
+    fetchMetadataForModel(
+      client,
+      target.app,
+      target.model,
+      staleMs,
+      target.profiles,
+    ),
   );
 
   if (remainingBatch.length) {
@@ -223,8 +304,14 @@ export async function warmupMetadataCache(
       void runWithConcurrency(
         remainingBatch,
         Math.max(1, concurrency - 1),
-        (model) =>
-          fetchMetadataForModel(client, model.app, model.model, staleMs),
+        (target) =>
+          fetchMetadataForModel(
+            client,
+            target.app,
+            target.model,
+            staleMs,
+            target.profiles,
+          ),
       );
     });
   }

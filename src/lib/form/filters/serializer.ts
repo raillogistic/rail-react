@@ -111,7 +111,7 @@ function buildNestedFilter(
 
   for (const segment of fieldPath) {
     const relation = currentSchema?.relationFilters.find(
-      (r) => r.fieldName === segment
+      (r) => r.name === segment || r.fieldName === segment
     );
 
     pathInfo.push({ segment, relation });
@@ -145,10 +145,12 @@ function buildNestedFilter(
         // Ensure operator is camelCase suffix (e.g. "_some" -> "Some", "some" -> "Some")
         const opSuffix = normalizeOperator(rawOp);
 
-        const fieldWithOp = `${segment}${opSuffix}`;
+        const relationKey = relation.name || relation.fieldName || segment;
+        const fieldWithOp = `${relationKey}${opSuffix}`;
         result = { [fieldWithOp]: result };
       } else {
-        result = { [segment]: result };
+        const relationKey = relation.name || relation.fieldName || segment;
+        result = { [relationKey]: result };
       }
     } else {
       result = { [segment]: result };

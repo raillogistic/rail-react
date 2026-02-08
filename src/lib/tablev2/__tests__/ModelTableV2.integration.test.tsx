@@ -283,6 +283,7 @@ describe('ModelTableV2 Integration', () => {
 
     // Check for headers
     expect(screen.getByText('ID')).toBeInTheDocument();
+    expect(screen.queryByLabelText('Tout selectionner')).not.toBeInTheDocument();
 
     // Check for data rows (loaded from MOCK_DATA_QUERY)
     await waitFor(() => {

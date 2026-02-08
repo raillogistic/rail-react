@@ -1,8 +1,8 @@
 import { gql } from "@apollo/client";
 
 export const MODEL_METADATA_QUERY = gql`
-  query ModelMetadata($app: String!, $model: String!) {
-    modelSchema(app: $app, model: $model) {
+  query ModelMetadata($app: String!, $model: String!, $objectId: ID) {
+    modelSchema(app: $app, model: $model, objectId: $objectId) {
       app
       model
       verboseName
@@ -14,6 +14,7 @@ export const MODEL_METADATA_QUERY = gql`
       
       fields {
         name
+        fieldName
         verboseName
         helpText
         fieldType
@@ -77,6 +78,7 @@ export const MODEL_METADATA_QUERY = gql`
       
       relationships {
         name
+        fieldName
         verboseName
         helpText
         relatedApp
@@ -97,10 +99,12 @@ export const MODEL_METADATA_QUERY = gql`
         readable
         writable
         canCreateInline
+        relationOperations
         customMetadata
       }
       
       filters {
+        name
         fieldName
         fieldLabel
         baseType
@@ -114,12 +118,24 @@ export const MODEL_METADATA_QUERY = gql`
           choices {
             value
             label
+            group
+            disabled
           }
           graphqlType
           isList
         }
         filterInputType
         availableOperators
+        defaultOperator
+        preferredOperators
+        datePresets {
+          key
+          label
+          days
+          startOfPeriod
+        }
+        showInQuickFilter
+        priority
       }
       
       filterConfig {
@@ -130,22 +146,26 @@ export const MODEL_METADATA_QUERY = gql`
         supportsOr
         supportsNot
         dualModeEnabled
+        supportsQuick
         supportsFts
         supportsAggregation
         presets {
           name
+          presetName
           description
           filterJson
         }
         computedFilters {
           name
+          fieldName
           filterType
           description
         }
       }
       
       relationFilters {
-        relationName
+        name
+        fieldName
         relationType
         supportsSome
         supportsEvery
@@ -161,6 +181,7 @@ export const MODEL_METADATA_QUERY = gql`
         methodName
         inputFields {
           name
+          fieldName
           fieldType
           graphqlType
           required

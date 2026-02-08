@@ -16,6 +16,7 @@ import { useTable } from "../context/TableContext";
 
 export function TablePagination({
   labels,
+  enableSelection,
 }: {
   labels?: {
     rowsPerPage?: string;
@@ -26,6 +27,7 @@ export function TablePagination({
     nextPageAria?: string;
     lastPageAria?: string;
   };
+  enableSelection?: boolean;
 }) {
   const {
     pagination: {
@@ -49,6 +51,11 @@ export function TablePagination({
     ? labels?.selectionStatus?.(selectedCount, total) ??
       `${selectedCount} sur ${total} ligne(s) selectionnee(s).`
     : `${selectedCount} ligne(s) selectionnee(s).`;
+  const leftText = enableSelection
+    ? selectionText
+    : totalKnown
+      ? `${total} ligne(s)`
+      : "";
   const pageText = totalKnown
     ? labels?.pageStatus?.(page, totalPages) ?? `Page ${page} sur ${totalPages}`
     : `Page ${page}`;
@@ -56,7 +63,7 @@ export function TablePagination({
   return (
     <div className="flex items-center justify-between px-2 py-4">
       <div className="flex-1 text-sm text-muted-foreground">
-        {selectionText}
+        {leftText}
       </div>
       <div className="flex items-center space-x-6 lg:space-x-8">
         <div className="flex items-center space-x-2">

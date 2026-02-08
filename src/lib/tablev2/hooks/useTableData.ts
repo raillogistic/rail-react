@@ -4,11 +4,15 @@ import { useTable } from "../context/TableContext";
 import { useMetadata } from "../context/MetadataContext";
 import { useDebouncedValue } from "./useDebouncedValue";
 import type {
-  BaseModelTableField,
+  BaseModelTableFieldsInput,
   BaseModelTableRelationConfig,
   FieldSchema,
   RelationshipSchema,
 } from "../types";
+import {
+  isAccessorExcluded,
+  normalizeBaseModelTableFieldsInput,
+} from "../utils";
 
 // Helper to construct the dynamic query
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -19,7 +23,7 @@ function buildDynamicQuery(
   relationships: RelationshipSchema[] | undefined,
   filterConfig?: any,
   fieldConfig?: {
-    fields?: BaseModelTableField[];
+    fields?: BaseModelTableFieldsInput;
     relations?: Record<string, BaseModelTableRelationConfig>;
     skipCount?: boolean;
   },
@@ -36,6 +40,10 @@ function buildDynamicQuery(
   });
 
   const relationConfig = fieldConfig?.relations ?? {};
+  const normalizedFieldsConfig = normalizeBaseModelTableFieldsInput(
+    fieldConfig?.fields,
+  );
+  const excludedAccessors = new Set(normalizedFieldsConfig.exclude);
 
   const isRelationField = (name: string) =>
     fields.some(
@@ -67,7 +75,11 @@ function buildDynamicQuery(
 
   const buildDefaultFieldSelection = () =>
     fields
-      .filter((f) => f.visibility !== "hidden")
+      .filter((f) => {
+        if (f.visibility === "hidden") return false;
+        const accessor = f.fieldName || f.name;
+        return !isAccessorExcluded(accessor, excludedAccessors);
+      })
       .map((field) => {
         if (!field.isRelation) {
           return field.name;
@@ -76,10 +88,20 @@ function buildDynamicQuery(
       })
       .join("\n      ");
 
+  const configuredDisplayFields = normalizedFieldsConfig.display?.filter(
+    (entry) => {
+      const accessor = typeof entry === "string" ? entry : entry.accessor;
+      return !isAccessorExcluded(accessor, excludedAccessors);
+    },
+  );
+  const hasConfiguredDisplay = normalizedFieldsConfig.display !== undefined;
+
   const fieldSelection =
-    fieldConfig?.fields && fieldConfig.fields.length > 0
+    hasConfiguredDisplay
       ? (() => {
-          type SelectionTree = Record<string, SelectionTree | true>;
+          interface SelectionTree {
+            [key: string]: SelectionTree | true;
+          }
           const tree: SelectionTree = {};
 
           const ensureObject = (node: SelectionTree, key: string) => {
@@ -117,7 +139,7 @@ function buildDynamicQuery(
             defaults.forEach((field) => addPathToTree(relationNode, [field]));
           };
 
-          fieldConfig.fields.forEach((entry) => {
+          (configuredDisplayFields ?? []).forEach((entry) => {
             const accessor =
               typeof entry === "string" ? entry : entry.accessor;
             if (!accessor) return;
@@ -139,7 +161,7 @@ function buildDynamicQuery(
             addPathToTree(relationNode, rest);
           });
 
-          const serializeTree = (node: SelectionTree) =>
+          const serializeTree = (node: SelectionTree): string =>
             Object.entries(node)
               .map(([key, value]) =>
                 value === true
@@ -205,7 +227,7 @@ function buildDynamicQuery(
 }
 
 export function useTableData(config?: {
-  fields?: BaseModelTableField[];
+  fields?: BaseModelTableFieldsInput;
   relations?: Record<string, BaseModelTableRelationConfig>;
   skipCount?: boolean;
 }) {
@@ -219,6 +241,28 @@ export function useTableData(config?: {
     _setPageInfo
   } = useTable();
   const debouncedQuickSearch = useDebouncedValue(quickSearch, 300);
+
+  const isAllowedOrderBy = useMemo(() => {
+    const fieldRoots = new Set<string>();
+    const relationRoots = new Set<string>();
+
+    metadata?.fields.forEach((field) => {
+      if (field.name) fieldRoots.add(field.name);
+      if (field.fieldName) fieldRoots.add(field.fieldName);
+    });
+
+    metadata?.relationships?.forEach((relation) => {
+      if (relation.name) relationRoots.add(relation.name);
+      if (relation.fieldName) relationRoots.add(relation.fieldName);
+    });
+
+    return (value: string) => {
+      if (!value) return false;
+      const normalized = value.replace(/^-/, "");
+      const root = normalized.split("__")[0];
+      return fieldRoots.has(root) || relationRoots.has(root);
+    };
+  }, [metadata?.fields, metadata?.relationships]);
 
   // 1. Construct Query
   const query = useMemo(() => {
@@ -237,9 +281,19 @@ export function useTableData(config?: {
   const variables = useMemo(() => {
     // Merge filter variables if present
     const where = filterVariables?.where;
-    const presets = filterVariables?.presets;
-    const distinctOn = filterVariables?.distinctOn;
-    const orderBy = filterVariables?.orderBy;
+    const presetsRaw = filterVariables?.presets;
+    const distinctOnRaw = filterVariables?.distinctOn;
+    const orderByRaw = filterVariables?.orderBy;
+    const presets = Array.isArray(presetsRaw)
+      ? presetsRaw.filter((entry): entry is string => typeof entry === "string")
+      : undefined;
+    const distinctOn = Array.isArray(distinctOnRaw)
+      ? distinctOnRaw.filter((entry): entry is string => typeof entry === "string")
+      : undefined;
+    const orderBy = Array.isArray(orderByRaw)
+      ? orderByRaw.filter((entry): entry is string => typeof entry === "string")
+      : undefined;
+    const sanitizedOrderBy = orderBy?.filter((entry) => isAllowedOrderBy(entry));
     // orderBy is driven by advanced filters (if provided).
 
     const supportsQuick = !!metadata?.filterConfig?.supportsQuick;
@@ -247,7 +301,9 @@ export function useTableData(config?: {
     return {
       page: pagination.page,
       perPage: pagination.perPage,
-      orderBy: orderBy && orderBy.length > 0 ? orderBy : undefined,
+      orderBy: sanitizedOrderBy && sanitizedOrderBy.length > 0
+        ? sanitizedOrderBy
+        : undefined,
       ...(supportsQuick ? { quick: debouncedQuickSearch || undefined } : {}),
       where,
       presets,
@@ -259,6 +315,7 @@ export function useTableData(config?: {
     pagination.perPage,
     debouncedQuickSearch,
     filterVariables,
+    isAllowedOrderBy,
     metadata?.filterConfig?.supportsQuick,
     config?.skipCount,
   ]);

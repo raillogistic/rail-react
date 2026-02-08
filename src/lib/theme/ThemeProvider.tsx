@@ -13,6 +13,17 @@ import {
   LetterSpacing
 } from './types';
 import { themes } from './themes';
+import {
+  DEFAULT_THEME,
+  DEFAULT_MODE,
+  DEFAULT_LAYOUT,
+  DEFAULT_SIDEBAR_COLLAPSE_MODE,
+  DEFAULT_FONT_SIZE,
+  DEFAULT_FONT_FAMILY,
+  DEFAULT_LINE_HEIGHT,
+  DEFAULT_LETTER_SPACING,
+  DEFAULT_STORAGE_KEY
+} from './constants';
 import { 
   UPDATE_MY_SETTINGS_MUTATION_RESOLVED, 
   type UpdateMySettingsResponse, 
@@ -55,23 +66,23 @@ type ThemeProviderState = {
 };
 
 const initialState: ThemeProviderState = {
-  theme: 'default',
-  mode: 'light',
-  layout: 'vertical',
-  sidebarCollapseMode: 'offcanvas',
-  fontSize: 'md',
-  fontFamily: 'inter',
-  lineHeight: 'normal',
-  letterSpacing: 'normal',
-  setTheme: () => null,
-  setMode: () => null,
-  toggleMode: () => null,
-  setLayout: () => null,
-  setSidebarCollapseMode: () => null,
-  setFontSize: () => null,
-  setFontFamily: () => null,
-  setLineHeight: () => null,
-  setLetterSpacing: () => null,
+  theme: DEFAULT_THEME,
+  mode: DEFAULT_MODE,
+  layout: DEFAULT_LAYOUT,
+  sidebarCollapseMode: DEFAULT_SIDEBAR_COLLAPSE_MODE,
+  fontSize: DEFAULT_FONT_SIZE,
+  fontFamily: DEFAULT_FONT_FAMILY,
+  lineHeight: DEFAULT_LINE_HEIGHT,
+  letterSpacing: DEFAULT_LETTER_SPACING,
+  setTheme: () => {},
+  setMode: () => {},
+  toggleMode: () => {},
+  setLayout: () => {},
+  setSidebarCollapseMode: () => {},
+  setFontSize: () => {},
+  setFontFamily: () => {},
+  setLineHeight: () => {},
+  setLetterSpacing: () => {},
   availableThemes: [],
 };
 
@@ -79,15 +90,15 @@ export const ThemeProviderContext = createContext<ThemeProviderState>(initialSta
 
 export function ThemeProvider({
   children,
-  defaultTheme = 'default',
-  defaultMode = 'light',
-  defaultLayout = 'vertical',
-  defaultSidebarCollapseMode = 'offcanvas',
-  defaultFontSize = 'md',
-  defaultFontFamily = 'inter',
-  defaultLineHeight = 'normal',
-  defaultLetterSpacing = 'normal',
-  storageKey = 'vite-ui-theme',
+  defaultTheme = DEFAULT_THEME,
+  defaultMode = DEFAULT_MODE,
+  defaultLayout = DEFAULT_LAYOUT,
+  defaultSidebarCollapseMode = DEFAULT_SIDEBAR_COLLAPSE_MODE,
+  defaultFontSize = DEFAULT_FONT_SIZE,
+  defaultFontFamily = DEFAULT_FONT_FAMILY,
+  defaultLineHeight = DEFAULT_LINE_HEIGHT,
+  defaultLetterSpacing = DEFAULT_LETTER_SPACING,
+  storageKey = DEFAULT_STORAGE_KEY,
   ...props
 }: ThemeProviderProps) {
   const [theme, setThemeState] = useState<ThemeKey>(() => {
@@ -131,9 +142,9 @@ export function ThemeProvider({
   );
 
   const saveSetting = (variables: UpdateMySettingsVariables) => {
-    updateSettings({ variables }).catch(err => {
+    updateSettings({ variables }).catch(() => {
       // Silently fail if not authenticated or network error
-      // console.warn("Failed to save settings:", err); 
+      // Settings will remain in localStorage and sync on next successful mutation
     });
   };
 
@@ -181,56 +192,46 @@ export function ThemeProvider({
   const setLineHeight = (height: LineHeight) => {
     localStorage.setItem(`${storageKey}-line-height`, height);
     setLineHeightState(height);
-    // Note: Assuming backend supports these fields. If not, saveSetting might need adjustment or backend update.
-    // Since the user asked for "features", I'm assuming frontend-only for now unless told otherwise, 
-    // but I'll try to save them if the GQL mutation supports dynamic fields or json.
-    // Checking mutations.ts later. For now, I'll skip saveSetting for these new fields if not sure, 
-    // or I can add them to the input type if I control the backend. 
-    // Given previous interactions, I should check backend support. 
-    // But for now, let's implement frontend logic.
+    // Note: Backend may not support these fields yet. Settings saved to localStorage only.
+    // TODO: Add backend support for line_height and letter_spacing in UpdateMySettingsVariables
   };
 
   const setLetterSpacing = (spacing: LetterSpacing) => {
     localStorage.setItem(`${storageKey}-letter-spacing`, spacing);
     setLetterSpacingState(spacing);
+    // Note: Backend may not support these fields yet. Settings saved to localStorage only.
+    // TODO: Add backend support for line_height and letter_spacing in UpdateMySettingsVariables
   };
 
   useEffect(() => {
-    if (defaultTheme && defaultTheme !== 'default') setThemeState(defaultTheme);
-    if (defaultMode && defaultMode !== 'light') setModeState(defaultMode);
-    if (defaultLayout && defaultLayout !== 'vertical') setLayoutState(defaultLayout);
-    if (defaultSidebarCollapseMode && defaultSidebarCollapseMode !== 'offcanvas') setSidebarCollapseModeState(defaultSidebarCollapseMode);
-    if (defaultFontSize && defaultFontSize !== 'md') setFontSizeState(defaultFontSize);
-    if (defaultFontFamily && defaultFontFamily !== 'inter') setFontFamilyState(defaultFontFamily);
-    if (defaultLineHeight && defaultLineHeight !== 'normal') setLineHeightState(defaultLineHeight);
-    if (defaultLetterSpacing && defaultLetterSpacing !== 'normal') setLetterSpacingState(defaultLetterSpacing);
+    if (defaultTheme && defaultTheme !== DEFAULT_THEME) setThemeState(defaultTheme);
+    if (defaultMode && defaultMode !== DEFAULT_MODE) setModeState(defaultMode);
+    if (defaultLayout && defaultLayout !== DEFAULT_LAYOUT) setLayoutState(defaultLayout);
+    if (defaultSidebarCollapseMode && defaultSidebarCollapseMode !== DEFAULT_SIDEBAR_COLLAPSE_MODE) setSidebarCollapseModeState(defaultSidebarCollapseMode);
+    if (defaultFontSize && defaultFontSize !== DEFAULT_FONT_SIZE) setFontSizeState(defaultFontSize);
+    if (defaultFontFamily && defaultFontFamily !== DEFAULT_FONT_FAMILY) setFontFamilyState(defaultFontFamily);
+    if (defaultLineHeight && defaultLineHeight !== DEFAULT_LINE_HEIGHT) setLineHeightState(defaultLineHeight);
+    if (defaultLetterSpacing && defaultLetterSpacing !== DEFAULT_LETTER_SPACING) setLetterSpacingState(defaultLetterSpacing);
   }, [defaultTheme, defaultMode, defaultLayout, defaultSidebarCollapseMode, defaultFontSize, defaultFontFamily, defaultLineHeight, defaultLetterSpacing]);
 
   useEffect(() => {
     const root = window.document.documentElement;
-    const themeDef = themes[theme] || themes['default'];
-    const colors = themeDef[mode];
+    const themeDef = themes[theme];
+    
+    // Validate theme exists, fallback to default with warning
+    if (!themeDef) {
+      console.warn(`Theme "${theme}" not found, falling back to default theme`);
+      const defaultThemeDef = themes[DEFAULT_THEME];
+      const colors = defaultThemeDef[mode];
+      applyThemeColors(root, colors, defaultThemeDef.radius);
+    } else {
+      const colors = themeDef[mode];
+      applyThemeColors(root, colors, themeDef.radius);
+    }
 
     // Mode Class
     root.classList.remove('light', 'dark');
     root.classList.add(mode);
-
-    // Helper to set CSS Prop
-    const setProperty = (key: string, value: string) => {
-      root.style.setProperty(key, value);
-    };
-
-    // Helper to convert camelCase to kebab-case
-    const toKebabCase = (str: string) => str.replace(/[A-Z]/g, letter => `-${letter.toLowerCase()}`);
-
-    // Set Colors
-    Object.entries(colors).forEach(([key, value]) => {
-      const cssVar = `--${toKebabCase(key)}`;
-      setProperty(cssVar, value);
-    });
-
-    // Set Radius
-    setProperty('--radius', themeDef.radius);
     
     // Set Font attributes/vars
     root.setAttribute('data-font-size', fontSize);
@@ -242,6 +243,31 @@ export function ThemeProvider({
     root.style.colorScheme = mode;
 
   }, [theme, mode, fontSize, fontFamily, lineHeight, letterSpacing]);
+
+  // Helper function to apply theme colors
+  const applyThemeColors = (root: HTMLElement, colors: ThemeColors, radius: string) => {
+    // Helper to set CSS Prop
+    const setProperty = (key: string, value: string) => {
+      root.style.setProperty(key, value);
+    };
+
+    // Helper to convert camelCase to kebab-case, handling numbers correctly
+    const toKebabCase = (str: string) => {
+      return str
+        .replace(/([a-z])([A-Z])/g, '$1-$2')  // Insert hyphen between lowercase and uppercase
+        .replace(/([a-z])(\d)/g, '$1-$2')      // Insert hyphen between letter and number
+        .toLowerCase();
+    };
+
+    // Set Colors
+    Object.entries(colors).forEach(([key, value]) => {
+      const cssVar = `--${toKebabCase(key)}`;
+      setProperty(cssVar, value);
+    });
+
+    // Set Radius
+    setProperty('--radius', radius);
+  };
 
   const value = {
     theme,

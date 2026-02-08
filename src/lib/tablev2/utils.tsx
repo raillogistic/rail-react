@@ -1,6 +1,14 @@
 import { format } from "date-fns";
 import { Check, X } from "lucide-react";
-import { FieldSchema, ModelSchema, MutationSchema, RelationshipSchema } from "./types";
+import {
+  BaseModelTableField,
+  BaseModelTableFieldRenderMap,
+  BaseModelTableFieldsInput,
+  FieldSchema,
+  ModelSchema,
+  MutationSchema,
+  RelationshipSchema,
+} from "./types";
 
 // Helper to format cell value
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -157,6 +165,51 @@ export function mergeModelSchemaWithRelationships(
     ...metadata,
     fields: [...mergedFields, ...relationshipFields],
   };
+}
+
+export type ResolvedBaseModelTableFieldsConfig = {
+  display?: BaseModelTableField[];
+  exclude: string[];
+  render: BaseModelTableFieldRenderMap;
+};
+
+export function normalizeBaseModelTableFieldsInput(
+  input?: BaseModelTableFieldsInput,
+): ResolvedBaseModelTableFieldsConfig {
+  if (!input) {
+    return {
+      display: undefined,
+      exclude: [],
+      render: {},
+    };
+  }
+
+  if (Array.isArray(input)) {
+    return {
+      display: input,
+      exclude: [],
+      render: {},
+    };
+  }
+
+  return {
+    display: input.display ?? input.include,
+    exclude: (input.exclude ?? []).map((entry) => entry.trim()).filter(Boolean),
+    render: input.render ?? {},
+  };
+}
+
+export function isAccessorExcluded(
+  accessor: string,
+  excludedAccessors: Set<string>,
+): boolean {
+  if (!accessor) return false;
+  if (excludedAccessors.has(accessor)) return true;
+
+  const dotRoot = accessor.split(".")[0];
+  const dunderRoot = accessor.split("__")[0];
+
+  return excludedAccessors.has(dotRoot) || excludedAccessors.has(dunderRoot);
 }
 
 export function normalizeMutationType(mutation: MutationSchema): string {

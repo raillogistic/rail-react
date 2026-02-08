@@ -21,12 +21,16 @@ import { Input } from "@/lib/components/ui/input";
 import { useTableFilters } from "./hooks/useTableFilters";
 import type {
   BaseModelTableColumnDef,
-  BaseModelTableField,
+  BaseModelTableFieldsInput,
   BaseModelTableColumnOrderingConfig,
   BaseModelTableRelationConfig,
   FieldSchema,
   RelationshipSchema,
 } from "./types";
+import {
+  isAccessorExcluded,
+  normalizeBaseModelTableFieldsInput,
+} from "./utils";
 
 // ============================================================================
 // Inner Component (Inside Contexts)
@@ -136,11 +140,12 @@ type BaseTableContentProps = {
   children?: React.ReactNode;
   tableConfig?: ModelTableV2TableConfig;
   hideTableOnMobile?: boolean;
-  fields?: BaseModelTableField[];
+  fields?: BaseModelTableFieldsInput;
   relations?: Record<string, BaseModelTableRelationConfig>;
   columnOrdering?: BaseModelTableColumnOrderingConfig;
   skipCount?: boolean;
   disableSorting?: boolean;
+  enableSelection?: boolean;
 };
 
 function BaseTableContent({
@@ -154,6 +159,7 @@ function BaseTableContent({
   columnOrdering,
   skipCount,
   disableSorting,
+  enableSelection,
 }: BaseTableContentProps) {
   const {
     metadata,
@@ -183,10 +189,20 @@ function BaseTableContent({
     }),
     [fields, relations, skipCount],
   );
-  useTableData(queryConfig);
+  const { refetch } = useTableData(queryConfig);
+
+  const normalizedFieldsConfig = React.useMemo(
+    () => normalizeBaseModelTableFieldsInput(fields),
+    [fields],
+  );
+  const excludedAccessors = React.useMemo(
+    () => new Set(normalizedFieldsConfig.exclude),
+    [normalizedFieldsConfig.exclude],
+  );
 
   const columnDefs = React.useMemo(() => {
-    if (!metadata || !fields || fields.length === 0) return null;
+    if (!metadata) return null;
+
     const fieldLookup = new Map<string, FieldSchema>();
     metadata.fields.forEach((field) => {
       fieldLookup.set(field.name, field);
@@ -228,13 +244,49 @@ function BaseTableContent({
       };
     };
 
-    return fields.map((entry) => {
-      if (typeof entry === "string") {
-        return buildColumnDef(entry);
-      }
-      return buildColumnDef(entry.accessor, entry.title, entry.render);
+    const configuredDisplay = normalizedFieldsConfig.display?.filter((entry) => {
+      const accessor = typeof entry === "string" ? entry : entry.accessor;
+      if (!accessor) return false;
+      return !isAccessorExcluded(accessor, excludedAccessors);
     });
-  }, [metadata, fields, relations]);
+    const hasConfiguredDisplay = normalizedFieldsConfig.display !== undefined;
+
+    const defaultDisplay = metadata.fields
+      .filter((field) => field.visibility !== "hidden")
+      .map((field) => field.fieldName || field.name)
+      .filter((accessor) => !isAccessorExcluded(accessor, excludedAccessors));
+
+    const displayEntries =
+      hasConfiguredDisplay ? (configuredDisplay ?? []) : defaultDisplay;
+
+    return displayEntries.map((entry) => {
+      if (typeof entry === "string") {
+        const renderOverride =
+          normalizedFieldsConfig.render[entry] ??
+          normalizedFieldsConfig.render[entry.split(".")[0]];
+        return buildColumnDef(
+          entry,
+          undefined,
+          renderOverride
+            ? (value, row, context) =>
+                renderOverride(value, row, context.data, context.refetch)
+            : undefined,
+        );
+      }
+      const renderOverride =
+        normalizedFieldsConfig.render[entry.accessor] ??
+        normalizedFieldsConfig.render[entry.accessor.split(".")[0]];
+      return buildColumnDef(
+        entry.accessor,
+        entry.title ?? entry.display,
+        entry.render ??
+          (renderOverride
+            ? (value, row, context) =>
+                renderOverride(value, row, context.data, context.refetch)
+            : undefined),
+      );
+    });
+  }, [excludedAccessors, metadata, normalizedFieldsConfig, relations]);
 
   const sortableColumnIds = React.useMemo(() => {
     if (!columnDefs || columnDefs.length === 0) return columnOrder;
@@ -403,6 +455,7 @@ function BaseTableContent({
                     columns={columnDefs ?? undefined}
                     columnOrdering={columnOrdering}
                     disableSorting={disableSorting}
+                    enableSelection={enableSelection}
                   />
                 </SortableContext>
                 <TableBody>
@@ -410,12 +463,17 @@ function BaseTableContent({
                     emptyState={tableConfig?.emptyState}
                     loadingText={tableConfig?.loadingText}
                     columns={columnDefs ?? undefined}
+                    enableSelection={enableSelection}
+                    refetch={refetch}
                   />
                 </TableBody>
               </TableFrame>
             </DndContext>
           </div>
-          <TablePagination labels={tableConfig?.paginationLabels} />
+          <TablePagination
+            labels={tableConfig?.paginationLabels}
+            enableSelection={enableSelection}
+          />
           {dataError && (
             <div className="text-sm text-red-500 px-2">
               Erreur de chargement des donnees : {dataError.message}
@@ -436,11 +494,12 @@ export interface BaseModelTableProps {
   children?: React.ReactNode;
   tableConfig?: ModelTableV2TableConfig;
   hideTableOnMobile?: boolean;
-  fields?: BaseModelTableField[];
+  fields?: BaseModelTableFieldsInput;
   relations?: Record<string, BaseModelTableRelationConfig>;
   columnOrdering?: BaseModelTableColumnOrderingConfig;
   skipCount?: boolean;
   disableSorting?: boolean;
+  enableSelection?: boolean;
 }
 
 export function BaseModelTable({
@@ -457,10 +516,13 @@ export function BaseModelTable({
   columnOrdering,
   skipCount,
   disableSorting,
+  enableSelection = false,
 }: BaseModelTableProps) {
+  const tableInstanceKey = `${app}:${model}`;
+
   return (
     <div className={className ? `h-full w-full ${className}` : "h-full w-full"}>
-      <MetadataProvider app={app} model={model}>
+      <MetadataProvider key={tableInstanceKey} app={app} model={model}>
         <TableProvider>
           <BaseTableContent
             persistenceKey={persistenceKey}
@@ -472,6 +534,7 @@ export function BaseModelTable({
             columnOrdering={columnOrdering}
             skipCount={skipCount}
             disableSorting={disableSorting}
+            enableSelection={enableSelection}
           >
             {children}
           </BaseTableContent>
@@ -501,6 +564,7 @@ export function ModelTableV2({
       columnOrdering={baseTable?.columnOrdering}
       skipCount={baseTable?.skipCount}
       disableSorting={baseTable?.disableSorting}
+      enableSelection={baseTable?.enableSelection}
     >
       <ModelTableV2Content
         filterPanel={filterPanel}

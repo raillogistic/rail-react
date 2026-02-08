@@ -1,4 +1,3 @@
-import React from "react";
 import { useAuth } from "@/auth/hooks/useAuth";
 import { gql, useQuery } from "@apollo/client";
 import { AdminUISettings } from "./AdminUISettings";
@@ -10,11 +9,11 @@ const GET_USER_PERMISSIONS = gql`
       id
       is_superuser: isSuperuser
       model_permissions: modelPermissions {
-        model_name
-        verbose_name
-        can_update
-        can_create
-        can_delete
+        model_name: modelName
+        verbose_name: verboseName
+        can_update: canUpdate
+        can_create: canCreate
+        can_delete: canDelete
       }
     }
   }
@@ -42,7 +41,7 @@ export function AdminUISettingsPage() {
     (p) =>
       (p.model_name.toLowerCase() === "core.uicomponentconfig" ||
         p.model_name === "UIComponentConfig") &&
-      (p.can_update || p.can_create),
+      (p.can_update || p.can_create)
   );
 
   const canManageUI =

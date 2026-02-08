@@ -70,11 +70,13 @@ export function TableHeader({
   columns,
   columnOrdering,
   disableSorting,
+  enableSelection,
 }: {
   actionsLabel?: string;
   columns?: BaseModelTableColumnDef[];
   columnOrdering?: BaseModelTableColumnOrderingConfig;
   disableSorting?: boolean;
+  enableSelection?: boolean;
 }) {
   const { metadata } = useMetadata();
   const {
@@ -224,8 +226,12 @@ export function TableHeader({
   );
 
   // Selection logic
-  const allSelected = data.length > 0 && Object.keys(rowSelection).length === data.length;
-  const someSelected = Object.keys(rowSelection).length > 0 && !allSelected;
+  const selectedOnPage = data.reduce((count, row) => {
+    const rowId = String(row.id);
+    return rowSelection[rowId] ? count + 1 : count;
+  }, 0);
+  const allSelected = data.length > 0 && selectedOnPage === data.length;
+  const someSelected = selectedOnPage > 0 && !allSelected;
 
   const toggleSelectAll = () => {
     if (allSelected) {
@@ -243,14 +249,15 @@ export function TableHeader({
   return (
     <ShadcnTableHeader>
       <TableRow>
-        {/* Selection Column */}
-        <TableHead className="w-[40px]">
-          <Checkbox
-            checked={allSelected || (someSelected ? "indeterminate" : false)}
-            onCheckedChange={toggleSelectAll}
-            aria-label="Tout selectionner"
-          />
-        </TableHead>
+        {enableSelection ? (
+          <TableHead className="w-[40px]">
+            <Checkbox
+              checked={allSelected || (someSelected ? "indeterminate" : false)}
+              onCheckedChange={toggleSelectAll}
+              aria-label="Tout selectionner"
+            />
+          </TableHead>
+        ) : null}
 
         {visibleColumns.map((field) => {
           if (!field) return null;

@@ -23,6 +23,7 @@ export interface FSMTransition {
 
 export interface FieldMetadata {
   name: string;
+  fieldName?: string;
   verboseName: string;
   helpText?: string;
   
@@ -79,6 +80,7 @@ export interface FieldMetadata {
 
 export interface RelationshipMetadata {
   name: string;
+  fieldName?: string;
   verboseName: string;
   helpText?: string;
   
@@ -111,6 +113,7 @@ export interface RelationshipMetadata {
 
 export interface MutationInputField {
   name: string;
+  fieldName?: string;
   fieldType: string;
   graphqlType: string;
   required: boolean;
@@ -164,6 +167,7 @@ export interface FilterOption {
 }
 
 export interface FilterSchema {
+  name?: string;
   fieldName: string;
   fieldLabel: string;
   baseType?: string;
@@ -177,12 +181,14 @@ export interface FilterSchema {
 
 export interface FilterPreset {
   name: string;
+  presetName?: string;
   description?: string;
   filterJson: string; // JSON string
 }
 
 export interface ComputedFilter {
   name: string;
+  fieldName?: string;
   filterType: string;
   description?: string;
 }
@@ -203,7 +209,9 @@ export interface FilterConfig {
 }
 
 export interface RelationFilter {
-  relationName: string;
+  name?: string;
+  fieldName?: string;
+  relationName?: string;
   relationType: string;
   supportsSome: boolean;
   supportsEvery: boolean;

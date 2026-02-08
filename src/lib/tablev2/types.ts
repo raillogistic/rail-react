@@ -327,17 +327,52 @@ export interface TableContextState {
 // BaseModelTable Configuration Types
 // ============================================================================
 
+export type BaseModelTableRefetch = (
+  variables?: Record<string, unknown>,
+) => Promise<unknown>;
+
+export type BaseModelTableRenderContext = {
+  accessor: string;
+  columnId: string;
+  data: Record<string, unknown>[];
+  refetch?: BaseModelTableRefetch;
+};
+
+export type BaseModelTableFieldRender = (
+  value: unknown,
+  row: Record<string, unknown>,
+  context: BaseModelTableRenderContext,
+) => ReactNode;
+
+export type BaseModelTableFieldRenderMap = Record<
+  string,
+  (
+    value: unknown,
+    row: Record<string, unknown>,
+    data: Record<string, unknown>[],
+    refetch?: BaseModelTableRefetch,
+  ) => ReactNode
+>;
+
 export type BaseModelTableField =
   | string
   | {
       accessor: string;
       title?: string;
-      render?: (
-        value: unknown,
-        row: Record<string, unknown>,
-        context: { accessor: string; columnId: string },
-      ) => ReactNode;
+      display?: string;
+      render?: BaseModelTableFieldRender;
     };
+
+export type BaseModelTableFieldsConfig = {
+  display?: BaseModelTableField[];
+  include?: BaseModelTableField[];
+  exclude?: string[];
+  render?: BaseModelTableFieldRenderMap;
+};
+
+export type BaseModelTableFieldsInput =
+  | BaseModelTableField[]
+  | BaseModelTableFieldsConfig;
 
 export type BaseModelTableRelationConfig = {
   fields?: string[];
@@ -348,9 +383,5 @@ export type BaseModelTableColumnDef = {
   id: string;
   accessor: string;
   title: string;
-  render?: (
-    value: unknown,
-    row: Record<string, unknown>,
-    context: { accessor: string; columnId: string },
-  ) => ReactNode;
+  render?: BaseModelTableFieldRender;
 };

@@ -1,15 +1,13 @@
 import * as React from "react";
 import type { ApolloError, QueryHookOptions } from "@apollo/client";
 import { useApolloClient } from "@apollo/client";
-import { GET_MODEL_FORM_SCHEMA } from "../queries";
 import {
-  buildMetadataScopeKey,
-  isCacheEntryFresh,
-  METADATA_CACHE_TTL_MS,
-  readMetadataCacheEntry,
+  fetchMetadataSnapshot,
+  normalizeMetadataError,
+  useMetadata,
+} from "@/lib/metadata/gateway";
+import {
   stableSerialize,
-  useMetadataCacheEntry,
-  writeMetadataCacheEntry,
 } from "@/lib/metadata/cache";
 import type { FormMetadata, UseFormMetadataOptions, UseFormMetadataResult } from "../types";
 
@@ -101,26 +99,6 @@ export function useFormMetadata({
     () => normalizeStringArray(onlyRelationships),
     [onlyRelSignature],
   );
-  const signature = React.useMemo(
-    () =>
-      stableSerialize({
-        objectId: objectId ?? null,
-      }),
-    [objectId],
-  );
-  const scopeKey = React.useMemo(
-    () => buildMetadataScopeKey(appName, modelName, signature),
-    [appName, modelName, signature],
-  );
-  const cachedEntry = useMetadataCacheEntry<FormMetadata>("form", scopeKey);
-  const variables = React.useMemo(
-    () => ({
-      app: appName,
-      model: modelName,
-      objectId: objectId ?? undefined,
-    }),
-    [appName, modelName, objectId],
-  );
   const metadataQueryOptions = React.useMemo(
     () => ({
       fetchPolicy: queryOptions?.fetchPolicy ?? DEFAULT_FETCH_POLICY,
@@ -130,74 +108,20 @@ export function useFormMetadata({
     [queryOptions?.context, queryOptions?.errorPolicy, queryOptions?.fetchPolicy],
   );
 
-  const [networkState, setNetworkState] = React.useState<{
-    loading: boolean;
-    error: ApolloError | undefined;
-  }>({
-    loading: false,
-    error: undefined,
+  const {
+    metadata: rawMetadata,
+    loading: gatewayLoading,
+    error: gatewayError,
+    refetch,
+  } = useMetadata({
+    app: appName,
+    model: modelName,
+    profile: "form",
+    objectId,
+    skip,
+    queryOptions: metadataQueryOptions,
   });
 
-  const shouldFetch =
-    !skip && !isCacheEntryFresh(cachedEntry, METADATA_CACHE_TTL_MS);
-
-  const executeMetadataQuery = React.useCallback(async () => {
-    const result = await client.query({
-      query: GET_MODEL_FORM_SCHEMA,
-      variables,
-      fetchPolicy: metadataQueryOptions.fetchPolicy,
-      errorPolicy: metadataQueryOptions.errorPolicy,
-      context: metadataQueryOptions.context,
-    });
-    const payload = result.data?.modelSchema ?? null;
-    if (payload) {
-      writeMetadataCacheEntry(
-        "form",
-        scopeKey,
-        payload.metadataVersion,
-        payload,
-      );
-    }
-    return payload as FormMetadata | null;
-  }, [client, variables, metadataQueryOptions, scopeKey]);
-
-  React.useEffect(() => {
-    if (!shouldFetch) return;
-    let ignore = false;
-    setNetworkState({ loading: true, error: undefined });
-    executeMetadataQuery()
-      .then(() => {
-        if (!ignore) {
-          setNetworkState({ loading: false, error: undefined });
-        }
-      })
-      .catch((error) => {
-        if (!ignore) {
-          setNetworkState({ loading: false, error: error as ApolloError });
-        }
-      });
-    return () => {
-      ignore = true;
-    };
-  }, [shouldFetch, executeMetadataQuery]);
-
-  const refetch = React.useCallback(() => {
-    if (skip) {
-      return Promise.resolve(null);
-    }
-    setNetworkState({ loading: true, error: undefined });
-    return executeMetadataQuery()
-      .then((payload) => {
-        setNetworkState({ loading: false, error: undefined });
-        return payload;
-      })
-      .catch((error) => {
-        setNetworkState({ loading: false, error: error as ApolloError });
-        throw error;
-      });
-  }, [executeMetadataQuery, skip]);
-
-  const rawMetadata = skip ? null : cachedEntry?.data ?? null;
   const hasFilters =
     resolvedExclude.length > 0 ||
     resolvedOnly.length > 0 ||
@@ -221,8 +145,7 @@ export function useFormMetadata({
     resolvedOnlyRelationships,
   ]);
 
-  const baseLoading =
-    !skip && !rawMetadata && (networkState.loading || shouldFetch);
+  const baseLoading = !skip && !rawMetadata && gatewayLoading;
 
   const [nestedMetadata, setNestedMetadata] = React.useState<
     Record<string, FormMetadata>
@@ -260,37 +183,19 @@ export function useFormMetadata({
     const loadNested = async () => {
       const results: Record<string, FormMetadata> = {};
       for (const target of nestedTargets) {
-        const nestedSignature = stableSerialize({ objectId: null });
-        const nestedScopeKey = buildMetadataScopeKey(
-          target.app,
-          target.model,
-          nestedSignature,
+        const payload = await fetchMetadataSnapshot(
+          client,
+          {
+            app: target.app,
+            model: target.model,
+            profile: "form",
+            objectId: null,
+            skip: false,
+            queryOptions: metadataQueryOptions,
+          },
+          { forceNetwork: false, queryOptions: metadataQueryOptions },
         );
-        const cached = readMetadataCacheEntry<FormMetadata>(
-          "form",
-          nestedScopeKey,
-        );
-        if (isCacheEntryFresh(cached, METADATA_CACHE_TTL_MS)) {
-          if (cached?.data) {
-            results[target.name] = cached.data;
-          }
-          continue;
-        }
-        const response = await client.query({
-          query: GET_MODEL_FORM_SCHEMA,
-          variables: { app: target.app, model: target.model },
-          fetchPolicy: metadataQueryOptions.fetchPolicy,
-          errorPolicy: metadataQueryOptions.errorPolicy,
-          context: metadataQueryOptions.context,
-        });
-        const payload = response.data?.modelSchema ?? null;
         if (payload) {
-          writeMetadataCacheEntry(
-            "form",
-            nestedScopeKey,
-            payload.metadataVersion,
-            payload,
-          );
           results[target.name] = payload as FormMetadata;
         }
       }
@@ -306,7 +211,7 @@ export function useFormMetadata({
       })
       .catch((error) => {
         if (!cancelled) {
-          setNestedError(error as ApolloError);
+          setNestedError(normalizeMetadataError(error) as ApolloError);
           setNestedLoading(false);
         }
       });
@@ -326,7 +231,7 @@ export function useFormMetadata({
     metadata,
     nestedMetadata,
     loading: baseLoading || nestedLoading,
-    error: networkState.error ?? nestedError,
+    error: (gatewayError as ApolloError | undefined) ?? nestedError,
     refetch,
   };
 }

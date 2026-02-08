@@ -11,6 +11,12 @@ import { warmupMetadataCache } from "./warmup";
 export function useMetadataWarmup(options: {
   enabled: boolean;
   userKey: string | null;
+  profiles?: Array<"filter" | "table">;
+  routeHints?: Array<{
+    app: string;
+    model: string;
+    profiles?: Array<"filter" | "table">;
+  }>;
 }) {
   const client = useApolloClient();
   const [hydrated, setHydrated] = useState(false);
@@ -43,7 +49,11 @@ export function useMetadataWarmup(options: {
     }
 
     setWarming(true);
-    void warmupMetadataCache(client, { userKey: options.userKey })
+    void warmupMetadataCache(client, {
+      userKey: options.userKey,
+      profiles: options.profiles,
+      routeHints: options.routeHints,
+    })
       .catch(() => undefined)
       .finally(() => {
         if (!cancelled) {
@@ -58,7 +68,13 @@ export function useMetadataWarmup(options: {
     return () => {
       cancelled = true;
     };
-  }, [client, options.enabled, options.userKey]);
+  }, [
+    client,
+    options.enabled,
+    options.profiles,
+    options.routeHints,
+    options.userKey,
+  ]);
 
   return { hydrated, warming };
 }

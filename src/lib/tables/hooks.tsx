@@ -164,7 +164,7 @@ export function mapV2MetadataToTableMetadata(
     },
     filterConfig: modelSchema.filterConfig as any, // Cast due to strict type matching if needed
     relationFilters: (modelSchema.relationFilters ?? []).map(rf => ({
-        relationName: rf.relationName,
+        relationName: rf.relationName ?? rf.name ?? rf.fieldName ?? "",
         relationType: rf.relationType,
         supportsSome: rf.supportsSome,
         supportsEvery: rf.supportsEvery,
@@ -295,9 +295,13 @@ export function mapTableMetadataToFilterSchema(
     requiresOrderBy: false
   }));
 
-  const relationFilters: RelationFilter[] = metadata.relationFilters.map((rf) => ({
-    fieldName: rf.relationName,
-    fieldLabel: rf.relationName,
+  const relationFilters: RelationFilter[] = metadata.relationFilters.map((rf) => {
+    const relationRecord = rf as any;
+    const relationName =
+      relationRecord.relationName ?? relationRecord.name ?? relationRecord.fieldName ?? "";
+    return {
+    fieldName: relationName,
+    fieldLabel: relationName,
     relationType: rf.relationType as "FOREIGN_KEY" | "MANY_TO_MANY" | "REVERSE_FK" | "ONE_TO_ONE",
     relatedApp: "",
     relatedModel: "",
@@ -308,7 +312,8 @@ export function mapTableMetadataToFilterSchema(
     supportsNone: rf.supportsNone,
     supportsCount: rf.supportsCount,
     supportsIsNull: false,
-  }));
+  };
+  });
 
   const fieldGroups: FieldGroup[] = metadata.fieldGroups;
 
