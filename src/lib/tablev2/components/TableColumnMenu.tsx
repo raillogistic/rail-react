@@ -25,7 +25,6 @@ import {
 import { Button } from "@/lib/components/ui/button";
 import { useTable } from "../context/TableContext";
 import { useMetadata } from "../context/MetadataContext";
-import { useTableFilters } from "../hooks/useTableFilters";
 import { FieldSchema } from "../types";
 import { cn } from "@/lib/utils";
 
@@ -53,8 +52,9 @@ export function TableColumnMenu({
     setGroupingField,
     setGroupCollapsed,
     setColumnOrder,
+    setActiveColumnFilter,
   } = useTable();
-  const { addFilterCondition } = useTableFilters();
+
   const resolvedField = useMemo(() => {
     if (field) return field;
     if (!metadata) return undefined;
@@ -63,7 +63,6 @@ export function TableColumnMenu({
     );
   }, [field, metadata, columnId]);
 
-  // Sort logic
   const normalizeSortKey = (value: string) => {
     return value.replace(/^-/, "").replace(/\./g, "__");
   };
@@ -86,7 +85,7 @@ export function TableColumnMenu({
 
     if (direction) {
       const prefix = direction === "desc" ? "-" : "";
-      nextOrderBy = [`${prefix}${sortKey}`, ...nextOrderBy]; // Add to front for primary sort
+      nextOrderBy = [`${prefix}${sortKey}`, ...nextOrderBy];
     }
 
     setAdvancedFilters(
@@ -98,7 +97,6 @@ export function TableColumnMenu({
     );
   };
 
-  // Group logic
   const isGrouped =
     groupingField === (resolvedField?.fieldName || resolvedField?.name);
   const canGroup =
@@ -120,7 +118,6 @@ export function TableColumnMenu({
     }
   };
 
-  // Hide logic
   const handleHide = () => {
     setColumnVisibility({
       ...columnVisibility,
@@ -133,7 +130,6 @@ export function TableColumnMenu({
     setColumnOrder([]);
   };
 
-  // Filter Logic
   const filterSchema = useMemo(() => {
     if (!metadata) return null;
 
@@ -146,25 +142,10 @@ export function TableColumnMenu({
     );
   }, [metadata, resolvedField, columnId]);
 
-  const handleAddFilter = (operator: string) => {
-    const filterFieldName =
-      resolvedField?.name || resolvedField?.fieldName || columnId;
-    if (!filterFieldName) return;
-    // Add a basic condition. In a real app, this would open a dialog to capture the value.
-    // For now, we'll rely on the main filter panel or add an 'empty' filter that the user can fill.
-    // Since we don't have a way to pop a dialog here easily without creating more components,
-    // we will just open the filter panel? No, the user wants "use the field filter options".
-    // We will add a condition with a null value, which might prompt the UI to show it?
-    // Or we can just log it for now as "Feature pending" or trigger the main panel.
-    // Let's try to add it to the state.
-    addFilterCondition({
-      field: filterFieldName,
-      operator: operator,
-      value: null,
-    });
+  const handleOpenFilter = () => {
+    setActiveColumnFilter(columnId);
   };
 
-  // Aggregation Logic
   const supportsAggregation =
     metadata?.filterConfig?.supportsAggregation && resolvedField?.isNumeric;
 
@@ -190,7 +171,7 @@ export function TableColumnMenu({
         <div className="px-2 py-1.5 text-xs font-semibold text-foreground/70 border-b border-border/50 mb-1">
           {typeof title === "string" ? title : "Options de colonne"}
         </div>
-        {/* Sorting Submenu */}
+
         <DropdownMenuSub>
           <DropdownMenuSubTrigger>
             <ArrowUpAZ className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
@@ -221,27 +202,14 @@ export function TableColumnMenu({
             </DropdownMenuItem>
           </DropdownMenuSubContent>
         </DropdownMenuSub>
-        {/* Filter Submenu */}
 
         {filterSchema && filterSchema.options.length > 0 && (
-          <DropdownMenuSub>
-            <DropdownMenuSubTrigger>
-              <Filter className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
-              <span>Filtrer</span>
-            </DropdownMenuSubTrigger>
-            <DropdownMenuSubContent className="max-h-[300px] overflow-y-auto">
-              {filterSchema.options.map((opt) => (
-                <DropdownMenuItem
-                  key={opt.name}
-                  onClick={() => handleAddFilter(opt.name)}
-                >
-                  <span>{opt.label}</span>
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuSubContent>
-          </DropdownMenuSub>
+          <DropdownMenuItem onClick={handleOpenFilter}>
+            <Filter className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
+            <span>Filtrer</span>
+          </DropdownMenuItem>
         )}
-        {/* Aggregation Submenu */}
+
         {supportsAggregation && (
           <DropdownMenuSub>
             <DropdownMenuSubTrigger>
@@ -264,8 +232,9 @@ export function TableColumnMenu({
             </DropdownMenuSubContent>
           </DropdownMenuSub>
         )}
+
         <DropdownMenuSeparator />
-        {/* Grouping */}
+
         {canGroup && (
           <DropdownMenuItem onClick={handleGroup}>
             <Layers className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
@@ -273,13 +242,14 @@ export function TableColumnMenu({
             {isGrouped && <Check className="ml-auto h-3.5 w-3.5" />}
           </DropdownMenuItem>
         )}
-        {/* Auto Resize (Mock) */}
+
         <DropdownMenuItem onClick={() => console.log("Auto resize")}>
           <Scaling className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
           <span>Ajuster la largeur</span>
         </DropdownMenuItem>
+
         <DropdownMenuSeparator />
-        {/* Visibility */}
+
         <DropdownMenuItem onClick={handleHide}>
           <EyeOff className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
           <span>Masquer</span>

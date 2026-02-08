@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import { Filter } from "lucide-react";
 import { Button } from "@/lib/components/ui/button";
 import {
@@ -16,6 +16,7 @@ import {
 import { Separator } from "@/lib/components/ui/separator";
 import { useMetadata } from "../context/MetadataContext";
 import { useTableFilters } from "../hooks/useTableFilters";
+import { useTable } from "../context/TableContext";
 import { FieldSchema } from "../types";
 import { ScalarFilterInput } from "../../form/filters/components/ScalarFilterInput";
 import type { FilterableField, FilterOperator, FilterBaseType } from "../../form/filters/types";
@@ -28,27 +29,43 @@ interface ColumnFilterProps {
 
 export function ColumnFilter({ columnId, field }: ColumnFilterProps) {
   const { metadata } = useMetadata();
+  const { activeColumnFilter, setActiveColumnFilter } = useTable();
   const { addFilterCondition, advancedFilters, removeFilterCondition } = useTableFilters();
   const [open, setOpen] = useState(false);
+  const openedAtRef = useRef(0);
+  const openedFromMenuRef = useRef(false);
+  const resolvedField = useMemo(() => {
+    if (field) return field;
+    if (!metadata) return undefined;
+    return metadata.fields.find(
+      (f) => f.name === columnId || f.fieldName === columnId,
+    );
+  }, [field, metadata, columnId]);
 
   // 1. Resolve Filter Schema from Metadata
   const filterMeta = useMemo(() => {
-    if (!metadata || !field) return null;
-    return metadata.filters.find((f) => f.fieldName === field.fieldName || f.name === field.name);
-  }, [metadata, field]);
+    if (!metadata) return null;
+    return metadata.filters.find(
+      (f) =>
+        f.fieldName === resolvedField?.fieldName ||
+        f.name === resolvedField?.name ||
+        f.fieldName === columnId ||
+        f.name === columnId,
+    );
+  }, [metadata, resolvedField, columnId]);
 
   // 2. Map to FilterableField for ScalarFilterInput
   const filterableField = useMemo<FilterableField | null>(() => {
-    if (!field || !filterMeta) return null;
+    if (!resolvedField || !filterMeta) return null;
 
     // Map base type
     let baseType: FilterBaseType = "String";
-    if (field.isNumeric) baseType = "Number";
-    else if (field.isDate) baseType = "Date";
-    else if (field.isDatetime) baseType = "DateTime";
-    else if (field.isBoolean) baseType = "Boolean";
-    else if (field.isJson) baseType = "JSON";
-    else if (field.isRelation) baseType = "Relationship";
+    if (resolvedField.isNumeric) baseType = "Number";
+    else if (resolvedField.isDate) baseType = "Date";
+    else if (resolvedField.isDatetime) baseType = "DateTime";
+    else if (resolvedField.isBoolean) baseType = "Boolean";
+    else if (resolvedField.isJson) baseType = "JSON";
+    else if (resolvedField.isRelation) baseType = "Relationship";
 
     // Map operators
     const operators: FilterOperator[] = filterMeta.options.map((opt) => ({
@@ -61,18 +78,18 @@ export function ColumnFilter({ columnId, field }: ColumnFilterProps) {
     }));
 
     return {
-      name: field.name,
-      fieldName: field.fieldName,
-      fieldLabel: field.verboseName,
-      helpText: field.helpText,
+      name: resolvedField.name,
+      fieldName: resolvedField.fieldName,
+      fieldLabel: resolvedField.verboseName,
+      helpText: resolvedField.helpText,
       baseType,
-      graphqlType: field.graphqlType,
+      graphqlType: resolvedField.graphqlType,
       filterInputType: filterMeta.filterInputType || "String",
       operators,
       defaultOperator: operators[0]?.name || "exact",
-      choices: field.choices, // Pass field choices
-      isRelation: field.isRelation,
-      relationConfig: field.isRelation ? {
+      choices: resolvedField.choices, // Pass field choices
+      isRelation: resolvedField.isRelation,
+      relationConfig: resolvedField.isRelation ? {
           relatedApp: "", // Need to fetch from relation schema if needed, usually scalar input handles choice based
           relatedModel: "", 
           lookupField: "id", 
@@ -82,7 +99,7 @@ export function ColumnFilter({ columnId, field }: ColumnFilterProps) {
         widget: "text", // Default, ScalarFilterInput auto-detects better
       }
     };
-  }, [field, filterMeta]);
+  }, [resolvedField, filterMeta]);
 
   // 3. Current Filter State
   const activeCondition = useMemo(() => {
@@ -90,7 +107,7 @@ export function ColumnFilter({ columnId, field }: ColumnFilterProps) {
     // Simplified: Find first condition matching fieldName
     const findCondition = (group: any): any => {
       for (const cond of group.conditions) {
-        if (cond.type === "condition" && cond.fieldName === (field?.fieldName || field?.name)) {
+        if (cond.type === "condition" && cond.fieldName === (resolvedField?.fieldName || resolvedField?.name || columnId)) {
           return cond;
         }
         if (cond.type === "group") {
@@ -101,7 +118,7 @@ export function ColumnFilter({ columnId, field }: ColumnFilterProps) {
       return null;
     };
     return findCondition(advancedFilters.root);
-  }, [advancedFilters.root, field]);
+  }, [advancedFilters.root, resolvedField, columnId]);
 
   const [operator, setOperator] = useState<string>(activeCondition?.operator || filterableField?.defaultOperator || "exact");
   const [value, setValue] = useState<any>(activeCondition?.value);
@@ -117,16 +134,29 @@ export function ColumnFilter({ columnId, field }: ColumnFilterProps) {
     }
   }, [open, activeCondition, filterableField]);
 
-  if (!field || !filterMeta || !filterableField) return null;
+  React.useEffect(() => {
+    if (activeColumnFilter === columnId) {
+      setActiveColumnFilter(null);
+      window.setTimeout(() => {
+        openedAtRef.current = Date.now();
+        openedFromMenuRef.current = true;
+        setOpen(true);
+      }, 0);
+    }
+  }, [activeColumnFilter, columnId, setActiveColumnFilter]);
+
+  if (!resolvedField || !filterMeta || !filterableField) return null;
 
   const currentOperator = filterableField.operators.find(op => op.name === operator) || filterableField.operators[0];
 
   const handleApply = () => {
+    const fieldName = resolvedField.name || resolvedField.fieldName || columnId;
     addFilterCondition({
-      field: field.name, // Use name for GraphQL mapping usually
+      field: fieldName, // Use name for GraphQL mapping usually
       operator,
       value,
     });
+    openedFromMenuRef.current = false;
     setOpen(false);
   };
 
@@ -138,17 +168,33 @@ export function ColumnFilter({ columnId, field }: ColumnFilterProps) {
         removeFilterCondition(activeCondition.id);
     }
     setValue(undefined);
+    openedFromMenuRef.current = false;
     setOpen(false);
   };
 
   const isActive = !!activeCondition;
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen && openedFromMenuRef.current) {
+          return;
+        }
+        if (!nextOpen && Date.now() - openedAtRef.current < 150) {
+          return;
+        }
+        setOpen(nextOpen);
+        if (!nextOpen) setActiveColumnFilter(null);
+      }}
+    >
       <PopoverTrigger asChild>
         <Button
           variant="ghost"
           size="sm"
+          onClick={() => {
+            openedFromMenuRef.current = false;
+          }}
           className={cn(
             "h-8 w-8 p-0 ml-1 data-[state=open]:bg-accent",
             isActive ? "text-primary hover:text-primary" : "text-muted-foreground/50 hover:text-foreground"
@@ -161,7 +207,7 @@ export function ColumnFilter({ columnId, field }: ColumnFilterProps) {
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <h4 className="font-medium text-sm text-foreground">
-              Filtrer: {field.verboseName}
+              Filtrer: {resolvedField.verboseName}
             </h4>
             {isActive && (
                 <Button variant="ghost" size="sm" className="h-6 px-2 text-xs text-destructive hover:bg-destructive/10" onClick={handleClear}>
@@ -202,7 +248,15 @@ export function ColumnFilter({ columnId, field }: ColumnFilterProps) {
           <Separator />
           
           <div className="flex justify-end gap-2 pt-1">
-            <Button size="sm" variant="ghost" onClick={() => setOpen(false)} className="h-7 text-xs">
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                openedFromMenuRef.current = false;
+                setOpen(false);
+              }}
+              className="h-7 text-xs"
+            >
                 Annuler
             </Button>
             <Button size="sm" onClick={handleApply} className="h-7 text-xs">

@@ -25,6 +25,7 @@ type TableAction =
   | { type: "SET_ROW_SELECTION"; selection: Record<string, boolean> }
   | { type: "SET_GROUPING_FIELD"; field: string | null }
   | { type: "SET_GROUP_COLLAPSED"; collapsed: Record<string, boolean> }
+  | { type: "SET_ACTIVE_COLUMN_FILTER"; columnId: string | null }
   | { type: "SET_DENSITY"; density: TableDensity }
   | { type: "SET_WRAP_CELLS"; wrapCells: boolean }
   | { type: "SET_QUICK_SEARCH"; term: string }
@@ -52,6 +53,7 @@ const initialState: TableContextState = {
   rowSelection: {},
   groupingField: null,
   groupCollapsed: {},
+  activeColumnFilter: null,
   density: "comfortable",
   wrapCells: false,
   refreshKey: 0,
@@ -71,6 +73,7 @@ const initialState: TableContextState = {
   setRowSelection: () => {},
   setGroupingField: () => {},
   setGroupCollapsed: () => {},
+  setActiveColumnFilter: () => {},
   setDensity: () => {},
   setWrapCells: () => {},
   setQuickSearch: () => {},
@@ -140,6 +143,8 @@ function tableReducer(state: TableContextState, action: TableAction): TableConte
       };
     case "SET_GROUP_COLLAPSED":
       return { ...state, groupCollapsed: action.collapsed };
+    case "SET_ACTIVE_COLUMN_FILTER":
+      return { ...state, activeColumnFilter: action.columnId };
     case "SET_DENSITY":
       return { ...state, density: action.density };
     case "SET_WRAP_CELLS":
@@ -191,6 +196,7 @@ export function TableProvider({ children, initialState: initialProps }: TablePro
     setRowSelection: useCallback((selection: Record<string, boolean>) => dispatch({ type: "SET_ROW_SELECTION", selection }), []),
     setGroupingField: useCallback((field: string | null) => dispatch({ type: "SET_GROUPING_FIELD", field }), []),
     setGroupCollapsed: useCallback((collapsed: Record<string, boolean>) => dispatch({ type: "SET_GROUP_COLLAPSED", collapsed }), []),
+    setActiveColumnFilter: useCallback((columnId: string | null) => dispatch({ type: "SET_ACTIVE_COLUMN_FILTER", columnId }), []),
     setDensity: useCallback((density: TableDensity) => dispatch({ type: "SET_DENSITY", density }), []),
     setWrapCells: useCallback((wrapCells: boolean) => dispatch({ type: "SET_WRAP_CELLS", wrapCells }), []),
     setQuickSearch: useCallback((term: string) => dispatch({ type: "SET_QUICK_SEARCH", term }), []),

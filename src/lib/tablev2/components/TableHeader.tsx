@@ -205,6 +205,7 @@ export function TableHeader({
                 <div className="flex items-center justify-between w-full">
                   <span className="truncate">{field.title}</span>
                   <div className="flex items-center">
+                    <ColumnFilter columnId={field.id} />
                     <TableColumnMenu
                         columnId={field.id}
                         title={field.title}
