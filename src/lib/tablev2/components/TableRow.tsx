@@ -1,16 +1,9 @@
 import React, { useMemo, useState } from "react";
-import { ChevronDown, ChevronRight, Loader2, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { ChevronDown, ChevronRight, Loader2, Pencil, Trash2 } from "lucide-react";
 import { gql, useMutation } from "@apollo/client";
 import { TableRow as ShadcnTableRow, TableCell } from "./TableFrame";
 import { Checkbox } from "@/lib/components/ui/checkbox";
 import { Button } from "@/lib/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/lib/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import {
   AlertDialog,
@@ -21,7 +14,14 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/lib/components/ui/alert-dialog";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/lib/components/ui/tooltip";
 import { toast } from "sonner";
 import { useTable } from "../context/TableContext";
 import { useMetadata } from "../context/MetadataContext";
@@ -106,67 +106,75 @@ function RowActions({
   }
 
   if (!canEdit && !canDelete) {
-    return <span className="text-xs text-muted-foreground/50">-</span>;
+    return null;
   }
 
   return (
-    <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            size="icon"
-            variant="ghost"
-            className={cn(
-              "h-7 w-7 rounded-lg opacity-0 transition-all duration-200",
-              "group-hover/row:opacity-100 focus-visible:opacity-100",
-              "hover:bg-muted/60 data-[state=open]:opacity-100 data-[state=open]:bg-muted/60",
-            )}
-            aria-label="Actions"
-          >
-            <MoreHorizontal className="h-4 w-4" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-40">
-          {canEdit && (
-            <DropdownMenuItem className="gap-2">
-              <Pencil className="h-3.5 w-3.5" />
-              <span>Modifier</span>
-            </DropdownMenuItem>
-          )}
-          {canEdit && canDelete && <DropdownMenuSeparator />}
-          {canDelete && (
-            <DropdownMenuItem
-              className="gap-2 text-destructive focus:text-destructive"
-              onClick={() => setConfirmOpen(true)}
-              disabled={deleting}
-            >
-              <Trash2 className="h-3.5 w-3.5" />
-              <span>Supprimer</span>
-            </DropdownMenuItem>
-          )}
-        </DropdownMenuContent>
-      </DropdownMenu>
+    <TooltipProvider delayDuration={400}>
+      <div className="flex items-center justify-end gap-0.5">
+        {canEdit && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-6 w-6 rounded text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-950/50"
+                aria-label="Modifier"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="top" className="text-xs">
+              Modifier
+            </TooltipContent>
+          </Tooltip>
+        )}
 
-      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              Supprimer {metadata?.verboseName} ?
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              Cette action est irreversible. L'enregistrement sera supprime
-              definitivement.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} disabled={deleting}>
-              Supprimer
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
+        {canDelete && (
+          <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-6 w-6 rounded text-red-500 hover:text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-950/50"
+                    aria-label="Supprimer"
+                    disabled={deleting}
+                  >
+                    {deleting ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-3.5 w-3.5" />
+                    )}
+                  </Button>
+                </AlertDialogTrigger>
+              </TooltipTrigger>
+              <TooltipContent side="top" className="text-xs">
+                Supprimer
+              </TooltipContent>
+            </Tooltip>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>
+                  Supprimer {metadata?.verboseName} ?
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                  Cette action est irreversible. L'enregistrement sera supprime
+                  definitivement.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Annuler</AlertDialogCancel>
+                <AlertDialogAction onClick={handleDelete} disabled={deleting}>
+                  Supprimer
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        )}
+      </div>
+    </TooltipProvider>
   );
 }
 

@@ -1,13 +1,14 @@
 import React from "react";
-import { ArrowUpDown, ChevronDown, ChevronUp, GripVertical } from "lucide-react";
+import {
+  ArrowUpDown,
+  ChevronDown,
+  ChevronUp,
+  GripVertical,
+} from "lucide-react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@/lib/utils";
-import {
-  TableHead,
-  ShadcnTableHeader,
-  TableRow,
-} from "./TableFrame";
+import { TableHead, ShadcnTableHeader, TableRow } from "./TableFrame";
 import { useTable } from "../context/TableContext";
 import { useMetadata } from "../context/MetadataContext";
 import { Checkbox } from "@/lib/components/ui/checkbox";
@@ -33,8 +34,14 @@ function DraggableHead({
   ariaSort,
   density = "comfortable",
 }: DraggableHeadProps) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
-    useSortable({ id, disabled: !draggable });
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id, disabled: !draggable });
 
   const style = {
     transform: CSS.Translate.toString(transform),
@@ -50,7 +57,11 @@ function DraggableHead({
         "border-b-2 border-border/70",
         "bg-muted/60 text-left font-semibold uppercase tracking-wider text-muted-foreground",
         "transition-colors duration-150",
-        density === "compact" ? "text-[10px] py-1.5 px-2.5" : density === "spacious" ? "text-[11px] py-3 px-3.5" : "text-[10px] py-2 px-3",
+        density === "compact"
+          ? "text-[10px] py-1.5 px-2.5"
+          : density === "spacious"
+            ? "text-[11px] py-3 px-3.5"
+            : "text-[10px] py-2 px-3",
         isDragging && "opacity-50 scale-[1.02] shadow-lg z-30",
         "hover:bg-muted/80 hover:text-foreground",
         className,
@@ -281,7 +292,7 @@ export function TableHeader({
       <button
         type="button"
         className={cn(
-          "group/sort flex items-center gap-1.5 text-left select-none rounded-md",
+          "group/sort flex items-center gap-1.5 text-left select-none rounded-md text-[11px] font-bold",
           "transition-all duration-200",
           "hover:text-foreground",
         )}
@@ -298,7 +309,7 @@ export function TableHeader({
             <ArrowUpDown className="h-3 w-3 opacity-0 transition-all duration-200 group-hover/sort:opacity-40" />
           )}
           {sortState && orderBy.length > 1 ? (
-            <span className="ml-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary/10 text-[9px] font-semibold text-primary">
+            <span className="ml-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary/10 text-[13px] font-bold text-primary">
               {sortState.index + 1}
             </span>
           ) : null}
@@ -311,16 +322,24 @@ export function TableHeader({
     <ShadcnTableHeader>
       <TableRow className="border-b-0 hover:bg-transparent">
         {enableSelection ? (
-          <TableHead className={cn(
-            "w-[40px] table-first-column sticky top-0 z-20",
-            "border-b-2 border-border/70",
-            "bg-muted/60",
-            "transition-colors duration-150",
-            density === "compact" ? "py-1.5 px-2" : density === "spacious" ? "py-3 px-3" : "py-2 px-2.5",
-          )}>
+          <TableHead
+            className={cn(
+              "w-[40px] table-first-column sticky top-0 z-20",
+              "border-b-2 border-border/70",
+              "bg-muted/60",
+              "transition-colors duration-150",
+              density === "compact"
+                ? "py-1.5 px-2"
+                : density === "spacious"
+                  ? "py-3 px-3"
+                  : "py-2 px-2.5",
+            )}
+          >
             <div className="flex items-center justify-center">
               <Checkbox
-                checked={allSelected || (someSelected ? "indeterminate" : false)}
+                checked={
+                  allSelected || (someSelected ? "indeterminate" : false)
+                }
                 onCheckedChange={toggleSelectAll}
                 aria-label="Tout selectionner"
                 className="transition-all duration-200 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
@@ -382,14 +401,20 @@ export function TableHeader({
         })}
 
         {/* Actions Column */}
-        <TableHead className={cn(
-          "w-[80px] sticky right-0 top-0 z-30 text-right",
-          "border-b-2 border-border/70",
-          "bg-muted/60",
-          "table-last-column table-sticky-cell",
-          "font-semibold uppercase tracking-wider text-muted-foreground",
-          density === "compact" ? "text-[10px] py-1.5 px-2.5" : density === "spacious" ? "text-[11px] py-3 px-3.5" : "text-[10px] py-2 px-3",
-        )}>
+        <TableHead
+          className={cn(
+            "w-[80px] sticky right-0 top-0 z-30 text-right",
+            "border-b-2 border-border/70",
+            "bg-muted/60",
+            "table-last-column table-sticky-cell",
+            "font-semibold uppercase tracking-wider text-muted-foreground",
+            density === "compact"
+              ? "text-[10px] py-1.5 px-2.5"
+              : density === "spacious"
+                ? "text-[11px] py-3 px-3.5"
+                : "text-[10px] py-2 px-3",
+          )}
+        >
           <span>{actionsLabel ?? ""}</span>
         </TableHead>
       </TableRow>

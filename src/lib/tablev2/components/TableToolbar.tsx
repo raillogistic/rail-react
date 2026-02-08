@@ -52,7 +52,10 @@ import {
   FilterFormState,
   FilterQueryVariables,
 } from "../../form/filters/types";
-import type { ModelTableFilterPanelProps, ModelTableV2TableConfig } from "../index";
+import type {
+  ModelTableFilterPanelProps,
+  ModelTableV2TableConfig,
+} from "../index";
 import { resolveGroupingKey } from "../utils";
 import { ModelTableExportDialog } from "./ExportDialog";
 
@@ -281,7 +284,9 @@ export function TableToolbar({
                   "transition-all duration-200",
                   "focus:bg-background focus:border-primary/30 focus:ring-2 focus:ring-primary/10",
                 )}
-                placeholder={tableConfig?.searchPlaceholder ?? "Recherche rapide..."}
+                placeholder={
+                  tableConfig?.searchPlaceholder ?? "Recherche rapide..."
+                }
                 value={quickSearchValue}
                 onChange={(event) => setQuickSearch(event.target.value)}
                 onFocus={() => setSearchFocused(true)}
@@ -554,7 +559,10 @@ export function TableToolbar({
                 <div className="px-2 py-1.5 text-xs font-medium text-muted-foreground">
                   {tableConfig?.densityLabel ?? "Densite"}
                 </div>
-                <DropdownMenuItem onClick={() => setDensity("compact")} className="gap-2">
+                <DropdownMenuItem
+                  onClick={() => setDensity("compact")}
+                  className="gap-2"
+                >
                   {density === "compact" ? (
                     <Check className="h-3.5 w-3.5 text-primary" />
                   ) : (
@@ -562,7 +570,10 @@ export function TableToolbar({
                   )}
                   <span>{densityLabels.compact}</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setDensity("comfortable")} className="gap-2">
+                <DropdownMenuItem
+                  onClick={() => setDensity("comfortable")}
+                  className="gap-2"
+                >
                   {density === "comfortable" ? (
                     <Check className="h-3.5 w-3.5 text-primary" />
                   ) : (
@@ -570,7 +581,10 @@ export function TableToolbar({
                   )}
                   <span>{densityLabels.comfortable}</span>
                 </DropdownMenuItem>
-                <DropdownMenuItem onClick={() => setDensity("spacious")} className="gap-2">
+                <DropdownMenuItem
+                  onClick={() => setDensity("spacious")}
+                  className="gap-2"
+                >
                   {density === "spacious" ? (
                     <Check className="h-3.5 w-3.5 text-primary" />
                   ) : (
@@ -586,7 +600,9 @@ export function TableToolbar({
                   </div>
                   <Switch
                     checked={wrapCells}
-                    onCheckedChange={(checked) => setWrapCells(Boolean(checked))}
+                    onCheckedChange={(checked) =>
+                      setWrapCells(Boolean(checked))
+                    }
                   />
                 </div>
               </DropdownMenuContent>
@@ -611,7 +627,8 @@ export function TableToolbar({
               <>
                 <span className="text-muted-foreground/30">|</span>
                 <span className="inline-flex items-center gap-1 rounded-md bg-primary/10 px-1.5 py-0.5 text-xs text-primary">
-                  {activeAdvancedFilterCount} filtre{activeAdvancedFilterCount > 1 ? "s" : ""}
+                  {activeAdvancedFilterCount} filtre
+                  {activeAdvancedFilterCount > 1 ? "s" : ""}
                 </span>
               </>
             )}
