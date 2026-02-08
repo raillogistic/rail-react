@@ -26,6 +26,7 @@ type TableAction =
   | { type: "SET_GROUPING_FIELD"; field: string | null }
   | { type: "SET_GROUP_COLLAPSED"; collapsed: Record<string, boolean> }
   | { type: "SET_ACTIVE_COLUMN_FILTER"; columnId: string | null }
+  | { type: "SET_DRAG_MODE_ENABLED"; enabled: boolean }
   | { type: "SET_DENSITY"; density: TableDensity }
   | { type: "SET_WRAP_CELLS"; wrapCells: boolean }
   | { type: "SET_QUICK_SEARCH"; term: string }
@@ -54,6 +55,7 @@ const initialState: TableContextState = {
   groupingField: null,
   groupCollapsed: {},
   activeColumnFilter: null,
+  dragModeEnabled: false,
   density: "comfortable",
   wrapCells: false,
   refreshKey: 0,
@@ -74,6 +76,7 @@ const initialState: TableContextState = {
   setGroupingField: () => {},
   setGroupCollapsed: () => {},
   setActiveColumnFilter: () => {},
+  setDragModeEnabled: () => {},
   setDensity: () => {},
   setWrapCells: () => {},
   setQuickSearch: () => {},
@@ -145,6 +148,8 @@ function tableReducer(state: TableContextState, action: TableAction): TableConte
       return { ...state, groupCollapsed: action.collapsed };
     case "SET_ACTIVE_COLUMN_FILTER":
       return { ...state, activeColumnFilter: action.columnId };
+    case "SET_DRAG_MODE_ENABLED":
+      return { ...state, dragModeEnabled: action.enabled };
     case "SET_DENSITY":
       return { ...state, density: action.density };
     case "SET_WRAP_CELLS":
@@ -197,6 +202,7 @@ export function TableProvider({ children, initialState: initialProps }: TablePro
     setGroupingField: useCallback((field: string | null) => dispatch({ type: "SET_GROUPING_FIELD", field }), []),
     setGroupCollapsed: useCallback((collapsed: Record<string, boolean>) => dispatch({ type: "SET_GROUP_COLLAPSED", collapsed }), []),
     setActiveColumnFilter: useCallback((columnId: string | null) => dispatch({ type: "SET_ACTIVE_COLUMN_FILTER", columnId }), []),
+    setDragModeEnabled: useCallback((enabled: boolean) => dispatch({ type: "SET_DRAG_MODE_ENABLED", enabled }), []),
     setDensity: useCallback((density: TableDensity) => dispatch({ type: "SET_DENSITY", density }), []),
     setWrapCells: useCallback((wrapCells: boolean) => dispatch({ type: "SET_WRAP_CELLS", wrapCells }), []),
     setQuickSearch: useCallback((term: string) => dispatch({ type: "SET_QUICK_SEARCH", term }), []),

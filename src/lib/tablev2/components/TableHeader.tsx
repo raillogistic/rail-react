@@ -58,10 +58,10 @@ function DraggableHead({
         // Colored accent line on top
         "before:absolute before:left-0 before:top-0 before:h-[2px] before:w-full before:bg-primary/0 before:transition-colors hover:before:bg-primary",
         density === "compact"
-          ? "h-8 py-0 px-2 text-xs"
+          ? "h-8 p-0 text-xs"
           : density === "spacious"
-            ? "h-12 py-0 px-4 text-sm"
-            : "h-10 py-0 px-3 text-sm",
+            ? "h-12 p-0 text-sm"
+            : "h-10 p-0 text-sm",
         isDragging && "opacity-50 scale-[1.02] shadow-lg z-30 ring-1 ring-primary/20",
         "hover:bg-muted/60 hover:text-foreground",
         isActions && "bg-muted/60 backdrop-blur-sm",
@@ -69,25 +69,31 @@ function DraggableHead({
       )}
       aria-sort={ariaSort}
     >
-      <div className="flex items-center justify-between gap-2 h-full">
-        <div className="flex items-center gap-1.5 flex-1 min-w-0">
-          {draggable ? (
-            <button
-              {...attributes}
-              {...listeners}
-              className={cn(
-                "mr-0.5 rounded-sm p-0.5 opacity-0 transition-all duration-200 cursor-grab active:cursor-grabbing",
-                "hover:bg-primary/10 hover:text-primary",
-                "group-hover/col:opacity-100",
-                "focus-visible:opacity-100 focus-visible:ring-1 focus-visible:ring-primary/50",
-              )}
-              aria-label="Reordonner la colonne"
-            >
-              <GripVertical className="h-3.5 w-3.5" />
-            </button>
-          ) : null}
+      <div
+        className={cn(
+          "flex items-stretch justify-between gap-0 h-full",
+        )}
+      >
+        <div className="flex items-stretch gap-0 flex-1 min-w-0 h-full">
           {children}
         </div>
+        {draggable ? (
+          <button
+            type="button"
+            aria-label="Reordonner la colonne"
+            className={cn(
+              "h-full px-2 border-l border-border/60",
+              "text-muted-foreground hover:text-foreground hover:bg-accent/60",
+              "cursor-grab active:cursor-grabbing",
+              "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50",
+            )}
+            {...attributes}
+            {...listeners}
+            onClick={(event) => event.stopPropagation()}
+          >
+            <GripVertical className="h-3.5 w-3.5" />
+          </button>
+        ) : null}
       </div>
     </TableHead>
   );
@@ -114,6 +120,7 @@ export function TableHeader({
     rowSelection,
     setRowSelection,
     density,
+    dragModeEnabled,
   } = useTable();
 
   // Determine visible columns in order
@@ -198,7 +205,7 @@ export function TableHeader({
               <DraggableHead
                 key={field.id}
                 id={field.id}
-                draggable={allowDrag && !locked.has(field.id)}
+                draggable={allowDrag && dragModeEnabled && !locked.has(field.id)}
                 density={density}
               >
                 <TableColumnMenu
@@ -216,7 +223,7 @@ export function TableHeader({
             <DraggableHead
               key={field.name}
               id={field.name}
-              draggable={allowDrag && !locked.has(field.name)}
+              draggable={allowDrag && dragModeEnabled && !locked.has(field.name)}
               density={density}
             >
               <TableColumnMenu

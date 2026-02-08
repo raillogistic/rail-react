@@ -5,6 +5,7 @@ import {
   Check,
   EyeOff,
   Filter,
+  GripVertical,
   Layers,
   MoreVertical,
   RotateCcw,
@@ -58,6 +59,8 @@ export function TableColumnMenu({
     setGroupCollapsed,
     setColumnOrder,
     setActiveColumnFilter,
+    dragModeEnabled,
+    setDragModeEnabled,
   } = useTable();
 
   const resolvedField = useMemo(() => {
@@ -135,6 +138,10 @@ export function TableColumnMenu({
     setColumnOrder([]);
   };
 
+  const handleToggleDragMode = () => {
+    setDragModeEnabled(!dragModeEnabled);
+  };
+
   const filterSchema = useMemo(() => {
     if (!metadata) return null;
 
@@ -162,14 +169,19 @@ export function TableColumnMenu({
             variant="ghost"
             size="sm"
             className={cn(
-              "h-8 w-full justify-start px-2 data-[state=open]:bg-accent data-[state=open]:text-accent-foreground",
+              "h-full w-full m-0 rounded-none justify-between px-0 py-0 data-[state=open]:bg-accent data-[state=open]:text-accent-foreground",
               "font-medium",
               currentSort
                 ? "text-primary"
                 : "text-foreground hover:text-foreground",
             )}
           >
-            <span className="truncate text-left">{triggerTitle}</span>
+            <span className="truncate text-left px-2">{triggerTitle}</span>
+            {currentSort && (
+              <span className="px-2 text-xs font-semibold" aria-hidden="true">
+                {currentSort === "asc" ? "↑" : "↓"}
+              </span>
+            )}
           </Button>
         ) : (
           <Button
@@ -253,6 +265,18 @@ export function TableColumnMenu({
             </DropdownMenuSubContent>
           </DropdownMenuSub>
         )}
+
+        <DropdownMenuSeparator />
+
+        <DropdownMenuItem onClick={handleToggleDragMode}>
+          <GripVertical className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
+          <span>
+            {dragModeEnabled
+              ? "Desactiver glisser-deposer"
+              : "Activer glisser-deposer"}
+          </span>
+          {dragModeEnabled && <Check className="ml-auto h-3.5 w-3.5" />}
+        </DropdownMenuItem>
 
         <DropdownMenuSeparator />
 

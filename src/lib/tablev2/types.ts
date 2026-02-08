@@ -301,6 +301,7 @@ export interface TableContextState {
   groupingField: string | null;
   groupCollapsed: Record<string, boolean>;
   activeColumnFilter: string | null;
+  dragModeEnabled: boolean;
   density: TableDensity;
   wrapCells: boolean;
   refreshKey: number;
@@ -319,6 +320,7 @@ export interface TableContextState {
   setGroupingField: (field: string | null) => void;
   setGroupCollapsed: (collapsed: Record<string, boolean>) => void;
   setActiveColumnFilter: (columnId: string | null) => void;
+  setDragModeEnabled: (enabled: boolean) => void;
   setDensity: (density: TableDensity) => void;
   setWrapCells: (wrap: boolean) => void;
   setQuickSearch: (term: string) => void;
