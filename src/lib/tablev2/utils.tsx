@@ -43,7 +43,25 @@ export function formatCellValue(value: any, field: FieldSchema) {
 
   if (field.isDate || field.isDatetime) {
     try {
-      return format(new Date(value), field.isDatetime ? "PP p" : "PP");
+      if (typeof value === "string") {
+        if (field.isDate) {
+          const dateOnly = value.match(/^(\d{4}-\d{2}-\d{2})/);
+          if (dateOnly?.[1]) return dateOnly[1];
+        }
+        if (field.isDatetime) {
+          const dateTime = value.match(
+            /^(\d{4}-\d{2}-\d{2})[T\s](\d{2}):(\d{2})/,
+          );
+          if (dateTime) {
+            return `${dateTime[1]} ${dateTime[2]}:${dateTime[3]}`;
+          }
+        }
+      }
+
+      return format(
+        new Date(value),
+        field.isDatetime ? "yyyy-MM-dd HH:mm" : "yyyy-MM-dd",
+      );
     } catch {
       return String(value);
     }
@@ -245,6 +263,41 @@ export function resolveGroupingKey(
   }
 
   return String(value);
+}
+
+function toCamelCase(value: string): string {
+  return value.replace(/_([a-z])/g, (_, letter: string) => letter.toUpperCase());
+}
+
+function toSnakeCase(value: string): string {
+  return value
+    .replace(/([A-Z])/g, "_$1")
+    .toLowerCase()
+    .replace(/^_/, "");
+}
+
+export function resolveFieldValue(
+  row: Record<string, unknown>,
+  field: Pick<FieldSchema, "name" | "fieldName">,
+): unknown {
+  const candidates = new Set<string>();
+  const addCandidate = (candidate?: string) => {
+    if (!candidate) return;
+    candidates.add(candidate);
+    candidates.add(toCamelCase(candidate));
+    candidates.add(toSnakeCase(candidate));
+  };
+
+  addCandidate(field.name);
+  addCandidate(field.fieldName);
+
+  for (const key of candidates) {
+    if (Object.prototype.hasOwnProperty.call(row, key)) {
+      return row[key];
+    }
+  }
+
+  return undefined;
 }
 
 export function resolveGroupingLabel(

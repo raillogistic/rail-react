@@ -339,6 +339,7 @@ export function useTableData(config?: {
       notifyOnNetworkStatusChange: true,
     },
   );
+  console.log(data);
 
   const mergeUniqueRows = useMemo(
     () =>

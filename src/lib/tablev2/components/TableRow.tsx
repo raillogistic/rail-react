@@ -29,6 +29,7 @@ import {
   formatCellValue,
   findMutation,
   normalizeMutationType,
+  resolveFieldValue,
   resolveGroupingKey,
   resolveGroupingLabel,
 } from "../utils";
@@ -231,7 +232,24 @@ export function TableRows({
   const resolveValue = (row: Record<string, unknown>, accessor: string) =>
     accessor.split(".").reduce<unknown>((acc, key) => {
       if (!acc || typeof acc !== "object") return undefined;
-      return (acc as Record<string, unknown>)[key];
+      const record = acc as Record<string, unknown>;
+      if (Object.prototype.hasOwnProperty.call(record, key)) {
+        return record[key];
+      }
+      const camelKey = key.replace(/_([a-z])/g, (_, letter: string) =>
+        letter.toUpperCase(),
+      );
+      if (Object.prototype.hasOwnProperty.call(record, camelKey)) {
+        return record[camelKey];
+      }
+      const snakeKey = key
+        .replace(/([A-Z])/g, "_$1")
+        .toLowerCase()
+        .replace(/^_/, "");
+      if (Object.prototype.hasOwnProperty.call(record, snakeKey)) {
+        return record[snakeKey];
+      }
+      return undefined;
     }, row);
 
   const formatFallbackValue = (value: unknown) => {
@@ -444,7 +462,7 @@ export function TableRows({
               )}
             >
               <div className={cn(cellTextClass, "flex items-center h-full")}>
-                {formatCellValue(row[field.name], field)}
+                {formatCellValue(resolveFieldValue(row, field), field)}
               </div>
             </TableCell>
           );

@@ -10,7 +10,7 @@ import {
 import { Skeleton } from "@/lib/components/ui/skeleton";
 import { useTable } from "../context/TableContext";
 import { useMetadata } from "../context/MetadataContext";
-import { formatCellValue } from "../utils";
+import { formatCellValue, resolveFieldValue } from "../utils";
 
 const MOBILE_BATCH_SIZE = 24;
 
@@ -96,7 +96,7 @@ export function TableMobileCard({
             <CardHeader className="pb-2">
               <CardTitle className={wrapCells ? "text-base" : "truncate text-base"}>
                 {titleField
-                  ? formatCellValue(row[titleField.name], titleField)
+                  ? formatCellValue(resolveFieldValue(row, titleField), titleField)
                   : metadata?.verboseName || "Element"}
               </CardTitle>
               <CardDescription className="text-xs font-mono">ID: {rowId}</CardDescription>
@@ -111,7 +111,7 @@ export function TableMobileCard({
                     {field.verboseName}:
                   </span>
                   <span className={valueClass}>
-                    {formatCellValue(row[field.name], field)}
+                    {formatCellValue(resolveFieldValue(row, field), field)}
                   </span>
                 </div>
               ))}
