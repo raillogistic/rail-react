@@ -1,6 +1,7 @@
-import React, { createContext, useEffect, useState } from 'react';
+import React, { createContext, useCallback, useEffect, useRef, useState } from 'react';
+import { gql, useApolloClient } from '@apollo/client';
 import { useMutation } from '@apollo/client/react';
-import { 
+import {
   ThemeDefinition, 
   ThemeKey, 
   ThemeMode, 
@@ -25,11 +26,15 @@ import {
   DEFAULT_STORAGE_KEY
 } from './constants';
 import { 
-  UPDATE_MY_SETTINGS_MUTATION_RESOLVED, 
-  type UpdateMySettingsResponse, 
-  type UpdateMySettingsVariables 
+  CREATE_USER_SETTINGS_MUTATION_RESOLVED,
+  UPDATE_USER_SETTINGS_MUTATION_RESOLVED,
+  type CreateUserSettingsResponse,
+  type CreateUserSettingsVariables,
+  type UpdateUserSettingsResponse,
+  type UpdateUserSettingsVariables,
+  type UserSettingsInputPayload,
 } from '@/graphql/mutations';
-import client from '@/graphql/apollo-client';
+import { useAuthContext } from '@/auth/context';
 
 type ThemeProviderProps = {
   children: React.ReactNode;
@@ -88,6 +93,38 @@ const initialState: ThemeProviderState = {
 
 export const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
 
+const GET_CURRENT_USER_SETTINGS_RECORD = gql`
+  query GetCurrentUserSettingsRecord {
+    me {
+      id
+      settings {
+        id
+        theme
+        mode
+        layout
+        sidebarCollapseMode
+        fontSize
+        fontFamily
+      }
+    }
+  }
+`;
+
+type CurrentUserSettingsRecordResponse = {
+  me?: {
+    id?: string | null;
+    settings?: {
+      id?: string | null;
+      theme?: string | null;
+      mode?: string | null;
+      layout?: string | null;
+      sidebarCollapseMode?: string | null;
+      fontSize?: string | null;
+      fontFamily?: string | null;
+    } | null;
+  } | null;
+};
+
 export function ThemeProvider({
   children,
   defaultTheme = DEFAULT_THEME,
@@ -101,6 +138,8 @@ export function ThemeProvider({
   storageKey = DEFAULT_STORAGE_KEY,
   ...props
 }: ThemeProviderProps) {
+  const apolloClient = useApolloClient();
+  const { user } = useAuthContext();
   const [theme, setThemeState] = useState<ThemeKey>(() => {
     return (localStorage.getItem(`${storageKey}-theme`) as ThemeKey) || defaultTheme;
   });
@@ -133,31 +172,308 @@ export function ThemeProvider({
     return (localStorage.getItem(`${storageKey}-letter-spacing`) as LetterSpacing) || defaultLetterSpacing;
   });
 
-  const [updateSettings] = useMutation<UpdateMySettingsResponse, UpdateMySettingsVariables>(
-    UPDATE_MY_SETTINGS_MUTATION_RESOLVED,
-    { 
-      client,
-      ignoreResults: true // We don't need the response to update UI, as we update state optimistically
+  const settingsIdRef = useRef<string | null>(null);
+  const currentUserIdRef = useRef<string | null>(null);
+  const hydratedUserIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (user?.id) {
+      currentUserIdRef.current = String(user.id);
+    }
+
+    const userSettings = (user?.settings as { id?: string | number } | undefined) ?? undefined;
+    if (userSettings?.id != null) {
+      settingsIdRef.current = String(userSettings.id);
+    }
+  }, [user?.id, user?.settings]);
+
+  useEffect(() => {
+    const userId = user?.id ? String(user.id) : null;
+    if (!userId) {
+      hydratedUserIdRef.current = null;
+      return;
+    }
+    if (hydratedUserIdRef.current === userId) {
+      return;
+    }
+
+    const userSettings = (user?.settings as {
+      id?: string | number;
+      theme?: string;
+      mode?: string;
+      layout?: string;
+      sidebar_collapse_mode?: string;
+      font_size?: string;
+      font_family?: string;
+      sidebarCollapseMode?: string;
+      fontSize?: string;
+      fontFamily?: string;
+    } | undefined) ?? undefined;
+
+    // Fast path: settings already available from auth context, apply immediately.
+    if (userSettings) {
+      if (userSettings.id != null) {
+        settingsIdRef.current = String(userSettings.id);
+      }
+      const resolvedTheme = userSettings.theme;
+      const resolvedMode = userSettings.mode;
+      const resolvedLayout = userSettings.layout;
+      const resolvedSidebar =
+        userSettings.sidebar_collapse_mode ?? userSettings.sidebarCollapseMode;
+      const resolvedFontSize = userSettings.font_size ?? userSettings.fontSize;
+      const resolvedFontFamily = userSettings.font_family ?? userSettings.fontFamily;
+
+      if (resolvedTheme) {
+        localStorage.setItem(`${storageKey}-theme`, resolvedTheme);
+        setThemeState(resolvedTheme as ThemeKey);
+      }
+      if (resolvedMode) {
+        localStorage.setItem(`${storageKey}-mode`, resolvedMode);
+        setModeState(resolvedMode as ThemeMode);
+      }
+      if (resolvedLayout) {
+        localStorage.setItem(`${storageKey}-layout`, resolvedLayout);
+        setLayoutState(resolvedLayout as Layout);
+      }
+      if (resolvedSidebar) {
+        localStorage.setItem(`${storageKey}-sidebar-collapse`, resolvedSidebar);
+        setSidebarCollapseModeState(resolvedSidebar as SidebarCollapseMode);
+      }
+      if (resolvedFontSize) {
+        localStorage.setItem(`${storageKey}-font-size`, resolvedFontSize);
+        setFontSizeState(resolvedFontSize as FontSize);
+      }
+      if (resolvedFontFamily) {
+        localStorage.setItem(`${storageKey}-font-family`, resolvedFontFamily);
+        setFontFamilyState(resolvedFontFamily as FontFamily);
+      }
+
+      hydratedUserIdRef.current = userId;
+      return;
+    }
+
+    // If persisted user-specific settings exist, keep them without waiting for network.
+    const hasPersistedUserSettings =
+      !!localStorage.getItem(`${storageKey}-theme`) ||
+      !!localStorage.getItem(`${storageKey}-mode`) ||
+      !!localStorage.getItem(`${storageKey}-layout`);
+    if (hasPersistedUserSettings) {
+      hydratedUserIdRef.current = userId;
+      return;
+    }
+
+    let cancelled = false;
+
+    const hydrateFromBackend = async () => {
+      try {
+        const { data } = await apolloClient.query<CurrentUserSettingsRecordResponse>({
+          query: GET_CURRENT_USER_SETTINGS_RECORD,
+          // Prefer cache first to avoid visible post-load switch when `me` is already cached.
+          fetchPolicy: 'cache-first',
+        });
+
+        if (cancelled) {
+          return;
+        }
+
+        const settings = data?.me?.settings;
+        if (!settings) {
+          hydratedUserIdRef.current = userId;
+          return;
+        }
+
+        if (settings.id != null) {
+          settingsIdRef.current = String(settings.id);
+        }
+
+        if (settings.theme) {
+          localStorage.setItem(`${storageKey}-theme`, settings.theme);
+          setThemeState(settings.theme as ThemeKey);
+        }
+        if (settings.mode) {
+          localStorage.setItem(`${storageKey}-mode`, settings.mode);
+          setModeState(settings.mode as ThemeMode);
+        }
+        if (settings.layout) {
+          localStorage.setItem(`${storageKey}-layout`, settings.layout);
+          setLayoutState(settings.layout as Layout);
+        }
+        if (settings.sidebarCollapseMode) {
+          localStorage.setItem(`${storageKey}-sidebar-collapse`, settings.sidebarCollapseMode);
+          setSidebarCollapseModeState(settings.sidebarCollapseMode as SidebarCollapseMode);
+        }
+        if (settings.fontSize) {
+          localStorage.setItem(`${storageKey}-font-size`, settings.fontSize);
+          setFontSizeState(settings.fontSize as FontSize);
+        }
+        if (settings.fontFamily) {
+          localStorage.setItem(`${storageKey}-font-family`, settings.fontFamily);
+          setFontFamilyState(settings.fontFamily as FontFamily);
+        }
+
+        hydratedUserIdRef.current = userId;
+      } catch {
+        // keep local/default values when backend settings cannot be fetched
+      }
+    };
+
+    void hydrateFromBackend();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [apolloClient, storageKey, user?.id, user?.settings]);
+
+  const [createUserSettings] = useMutation<
+    CreateUserSettingsResponse,
+    CreateUserSettingsVariables
+  >(
+    CREATE_USER_SETTINGS_MUTATION_RESOLVED,
+    {
+      ignoreResults: true,
     }
   );
 
-  const saveSetting = (variables: UpdateMySettingsVariables) => {
-    updateSettings({ variables }).catch(() => {
-      // Silently fail if not authenticated or network error
-      // Settings will remain in localStorage and sync on next successful mutation
-    });
-  };
+  const [updateUserSettings] = useMutation<
+    UpdateUserSettingsResponse,
+    UpdateUserSettingsVariables
+  >(
+    UPDATE_USER_SETTINGS_MUTATION_RESOLVED,
+    {
+      ignoreResults: true,
+    }
+  );
+
+  const buildSettingsInput = useCallback(
+    (
+      payload: Partial<{
+        theme: string;
+        mode: string;
+        layout: string;
+        sidebar_collapse_mode: string;
+        font_size: string;
+        font_family: string;
+      }>
+    ): UserSettingsInputPayload => {
+      const input: UserSettingsInputPayload = {};
+      if (payload.theme !== undefined) input.theme = payload.theme;
+      if (payload.mode !== undefined) input.mode = payload.mode;
+      if (payload.layout !== undefined) input.layout = payload.layout;
+      if (payload.sidebar_collapse_mode !== undefined) {
+        input.sidebarCollapseMode = payload.sidebar_collapse_mode;
+      }
+      if (payload.font_size !== undefined) {
+        input.fontSize = payload.font_size;
+      }
+      if (payload.font_family !== undefined) {
+        input.fontFamily = payload.font_family;
+      }
+      return input;
+    },
+    []
+  );
+
+  const resolveSettingsContext = useCallback(async () => {
+    const localUserId = user?.id ? String(user.id) : null;
+    if (localUserId) {
+      currentUserIdRef.current = localUserId;
+    }
+    if (currentUserIdRef.current && settingsIdRef.current) {
+      return {
+        userId: currentUserIdRef.current,
+        settingsId: settingsIdRef.current,
+      };
+    }
+
+    try {
+      const { data } = await apolloClient.query<CurrentUserSettingsRecordResponse>({
+        query: GET_CURRENT_USER_SETTINGS_RECORD,
+        fetchPolicy: 'network-only',
+      });
+
+      const resolvedUserId = data?.me?.id ? String(data.me.id) : currentUserIdRef.current;
+      const resolvedSettingsId = data?.me?.settings?.id
+        ? String(data.me.settings.id)
+        : settingsIdRef.current;
+
+      if (resolvedUserId) {
+        currentUserIdRef.current = resolvedUserId;
+      }
+      if (resolvedSettingsId) {
+        settingsIdRef.current = resolvedSettingsId;
+      }
+    } catch {
+      // keep local refs only
+    }
+
+    return {
+      userId: currentUserIdRef.current,
+      settingsId: settingsIdRef.current,
+    };
+  }, [apolloClient, user?.id]);
+
+  const saveSetting = useCallback(
+    async (
+      payload: Partial<{
+        theme: string;
+        mode: string;
+        layout: string;
+        sidebar_collapse_mode: string;
+        font_size: string;
+        font_family: string;
+      }>
+    ) => {
+      const inputPayload = buildSettingsInput(payload);
+      if (!Object.keys(inputPayload).length) {
+        return;
+      }
+
+      const { userId, settingsId } = await resolveSettingsContext();
+      if (!userId) {
+        return;
+      }
+
+      try {
+        if (settingsId) {
+          await updateUserSettings({
+            variables: {
+              id: settingsId,
+              input: inputPayload,
+            },
+          });
+          return;
+        }
+
+        const response = await createUserSettings({
+          variables: {
+            input: {
+              user: userId,
+              ...inputPayload,
+            },
+          },
+        });
+
+        const createdSettingsId = response.data?.create_user_settings?.object?.id;
+        if (createdSettingsId) {
+          settingsIdRef.current = String(createdSettingsId);
+        }
+      } catch {
+        // Silently fail if not authenticated or network error.
+      }
+    },
+    [buildSettingsInput, createUserSettings, resolveSettingsContext, updateUserSettings]
+  );
 
   const setTheme = (newTheme: ThemeKey) => {
     localStorage.setItem(`${storageKey}-theme`, newTheme);
     setThemeState(newTheme);
-    saveSetting({ theme: newTheme });
+    void saveSetting({ theme: newTheme });
   };
 
   const setMode = (newMode: ThemeMode) => {
     localStorage.setItem(`${storageKey}-mode`, newMode);
     setModeState(newMode);
-    saveSetting({ mode: newMode });
+    void saveSetting({ mode: newMode });
   };
 
   const toggleMode = () => {
@@ -168,39 +484,39 @@ export function ThemeProvider({
   const setLayout = (newLayout: Layout) => {
     localStorage.setItem(`${storageKey}-layout`, newLayout);
     setLayoutState(newLayout);
-    saveSetting({ layout: newLayout });
+    void saveSetting({ layout: newLayout });
   };
 
   const setSidebarCollapseMode = (newMode: SidebarCollapseMode) => {
     localStorage.setItem(`${storageKey}-sidebar-collapse`, newMode);
     setSidebarCollapseModeState(newMode);
-    saveSetting({ sidebar_collapse_mode: newMode });
+    void saveSetting({ sidebar_collapse_mode: newMode });
   };
 
   const setFontSize = (newSize: FontSize) => {
     localStorage.setItem(`${storageKey}-font-size`, newSize);
     setFontSizeState(newSize);
-    saveSetting({ font_size: newSize });
+    void saveSetting({ font_size: newSize });
   };
 
   const setFontFamily = (newFamily: FontFamily) => {
     localStorage.setItem(`${storageKey}-font-family`, newFamily);
     setFontFamilyState(newFamily);
-    saveSetting({ font_family: newFamily });
+    void saveSetting({ font_family: newFamily });
   };
 
   const setLineHeight = (height: LineHeight) => {
     localStorage.setItem(`${storageKey}-line-height`, height);
     setLineHeightState(height);
     // Note: Backend may not support these fields yet. Settings saved to localStorage only.
-    // TODO: Add backend support for line_height and letter_spacing in UpdateMySettingsVariables
+    // TODO: Add backend support for line_height and letter_spacing in UserSettings model input.
   };
 
   const setLetterSpacing = (spacing: LetterSpacing) => {
     localStorage.setItem(`${storageKey}-letter-spacing`, spacing);
     setLetterSpacingState(spacing);
     // Note: Backend may not support these fields yet. Settings saved to localStorage only.
-    // TODO: Add backend support for line_height and letter_spacing in UpdateMySettingsVariables
+    // TODO: Add backend support for line_height and letter_spacing in UserSettings model input.
   };
 
   useEffect(() => {

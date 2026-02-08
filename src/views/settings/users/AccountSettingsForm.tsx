@@ -25,8 +25,8 @@ import {
 } from "@/lib/components/ui/card";
 
 const UPDATE_USER_MUTATION = gql`
-  mutation UpdateUser($input: UpdateUserInput!) {
-    updateUser(input: $input) {
+  mutation UpdateUser($id: ID!, $input: UpdateUserInput!) {
+    updateUser(id: $id, input: $input) {
       ok
       errors {
         field
@@ -115,10 +115,8 @@ export function AccountSettingsForm({ user }: AccountSettingsFormProps) {
     try {
       const response = await updateUser({
         variables: {
-          input: {
-            id: user.id,
-            ...data,
-          },
+          id: user.id,
+          input: data,
         },
       });
 

@@ -23,10 +23,8 @@ export type MethodMutationResponse<TResult> = { ok: boolean; result: TResult | n
 
 export type CreateMutationVariables<TInput extends Record<string, JsonValue>> = { input: TInput };
 export type UpdateMutationVariables<TInput extends Record<string, JsonValue>> = {
-  /**
-   * Mutation input payload containing the record identifier.
-   */
-  input: TInput & { id: string };
+  id: string;
+  input: TInput;
 };
 export type BulkCreateMutationVariables<TInput extends Record<string, JsonValue>> = { inputs: TInput[] };
 export type BulkUpdateItem<TInput extends Record<string, JsonValue>> = { id: string; data: TInput };
@@ -77,8 +75,8 @@ export function build_update_mutation(modelName: string, selection = 'id'): stri
   const inputType = getInputType('Update', modelName);
   const operation = `update_${field}`;
   return (
-    `mutation ${operation}($input: ${inputType}!) {\n` +
-    `  response: update_${field}(input: $input) {\n` +
+    `mutation ${operation}($id: ID!, $input: ${inputType}!) {\n` +
+    `  response: update_${field}(id: $id, input: $input) {\n` +
     `    ok\n` +
     `    object { ${selection} }\n` +
     `    errors { field message }\n` +

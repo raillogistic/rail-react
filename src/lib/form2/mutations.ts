@@ -44,10 +44,8 @@ export type CreateMutationVariables<TInput extends Record<string, JsonValue>> =
   { input: TInput };
 export type UpdateMutationVariables<TInput extends Record<string, JsonValue>> =
   {
-    /**
-     * Mutation input payload containing the record identifier.
-     */
-    input: TInput & { id: string };
+    id: string;
+    input: TInput;
   };
 export type BulkCreateMutationVariables<TInput extends Record<string, JsonValue>> =
   { inputs: TInput[] };
@@ -136,8 +134,8 @@ export function build_update_mutation(
   const inputType = getInputType("Update", modelName);
   const operation = field || "update";
   return (
-    `mutation ${operation}($input: ${inputType}!) {\n` +
-    `  response: ${field}(input: $input) {\n` +
+    `mutation ${operation}($id: ID!, $input: ${inputType}!) {\n` +
+    `  response: ${field}(id: $id, input: $input) {\n` +
     `    ok\n` +
     `    object { ${selection} }\n` +
     `    errors { field message code severity details }\n` +

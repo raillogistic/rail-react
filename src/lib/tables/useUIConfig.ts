@@ -34,8 +34,8 @@ const CREATE_UI_CONFIG = gql`
 `;
 
 const UPDATE_UI_CONFIG = gql`
-  mutation UpdateUIConfig($input: UpdateUiComponentConfigInput!) {
-    updateUiComponentConfig(input: $input) {
+  mutation UpdateUIConfig($id: ID!, $input: UpdateUiComponentConfigInput!) {
+    updateUiComponentConfig(id: $id, input: $input) {
       object {
         id
         configuration
@@ -93,8 +93,8 @@ export function useUIConfig(componentId: string, userId?: string) {
         if (userConfig) {
           await updateConfig({
             variables: {
+              id: userConfig.id,
               input: {
-                id: userConfig.id,
                 configuration: newConfig,
               },
             },

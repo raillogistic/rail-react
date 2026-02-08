@@ -749,12 +749,13 @@ export function useModelForm<
               "Un identifiant est requis pour mettre à jour cet objet."
             );
           }
-          const updateInput = {
-            ...numericNormalizedInput,
-            id: String(targetId),
-          };
+          const { id: _ignoredId, ...updateInput } =
+            (numericNormalizedInput ?? {}) as Record<string, any>;
           const result = await runUpdateMutation({
-            variables: { input: updateInput },
+            variables: {
+              id: String(targetId),
+              input: updateInput,
+            },
           });
 
           const payload = resolveMutationPayload(

@@ -86,8 +86,8 @@ export const CREATE_GROUP = gql`
 `;
 
 export const UPDATE_GROUP = gql`
-  mutation UpdateGroup($input: UpdateGroupInput!) {
-    update_group: updateGroup(input: $input) {
+  mutation UpdateGroup($id: ID!, $input: UpdateGroupInput!) {
+    update_group: updateGroup(id: $id, input: $input) {
       response: object {
         id
         name
@@ -116,8 +116,8 @@ export const DELETE_GROUP = gql`
 `;
 
 export const UPDATE_USER_GROUPS = gql`
-  mutation UpdateUserGroups($input: UpdateUserInput!) {
-    update_user: updateUser(input: $input) {
+  mutation UpdateUserGroups($id: ID!, $input: UpdateUserInput!) {
+    update_user: updateUser(id: $id, input: $input) {
       response: object {
         id
         groups {
@@ -134,8 +134,8 @@ export const UPDATE_USER_GROUPS = gql`
 `;
 
 export const REMOVE_USER_FROM_GROUP = gql`
-  mutation RemoveUserFromGroup($input: UpdateUserInput!) {
-    update_user: updateUser(input: $input) {
+  mutation RemoveUserFromGroup($id: ID!, $input: UpdateUserInput!) {
+    update_user: updateUser(id: $id, input: $input) {
         response: object {
             id
             groups {

@@ -286,12 +286,13 @@ export function useModelForm<
           if (!targetId) {
             throw new Error("An id is required to update this record.");
           }
-          const updateInput = {
-            ...numericNormalizedInput,
-            id: String(targetId),
-          };
+          const { id: _ignoredId, ...updateInput } =
+            (numericNormalizedInput ?? {}) as Record<string, any>;
           const result = await runUpdateMutation({
-            variables: { input: updateInput },
+            variables: {
+              id: String(targetId),
+              input: updateInput,
+            },
           });
 
           const payload = resolveMutationPayload(

@@ -192,26 +192,37 @@ export const DISABLE_MFA_MUTATION = gql`
   }
 `;
 
-export const UPDATE_MY_SETTINGS_MUTATION = gql`
-  mutation UpdateMySettings(
-    $theme: String
-    $mode: String
-    $layout: String
-    $sidebar_collapse_mode: String
-    $font_size: String
-    $font_family: String
-  ) {
-    update_my_settings: updateMySettings(
-      theme: $theme
-      mode: $mode
-      layout: $layout
-      sidebarCollapseMode: $sidebar_collapse_mode
-      fontSize: $font_size
-      fontFamily: $font_family
-    ) {
+export const CREATE_USER_SETTINGS_MUTATION = gql`
+  mutation CreateUserSettings($input: CreateUserSettingsInput!) {
+    create_user_settings: createUserSettings(input: $input) {
       ok
-      errors
-      settings {
+      errors {
+        field
+        message
+      }
+      object {
+        id
+        theme
+        mode
+        layout
+        sidebar_collapse_mode: sidebarCollapseMode
+        font_size: fontSize
+        font_family: fontFamily
+      }
+    }
+  }
+`;
+
+export const UPDATE_USER_SETTINGS_MUTATION = gql`
+  mutation UpdateUserSettings($id: ID!, $input: UpdateUserSettingsInput!) {
+    update_user_settings: updateUserSettings(id: $id, input: $input) {
+      ok
+      errors {
+        field
+        message
+      }
+      object {
+        id
         theme
         mode
         layout
@@ -225,28 +236,56 @@ export const UPDATE_MY_SETTINGS_MUTATION = gql`
 
 export const LOGIN_MUTATION_RESOLVED = LOGIN_MUTATION;
 export const REFRESH_TOKEN_MUTATION_RESOLVED = REFRESH_TOKEN_MUTATION;
-export const UPDATE_MY_SETTINGS_MUTATION_RESOLVED = UPDATE_MY_SETTINGS_MUTATION;
+export const CREATE_USER_SETTINGS_MUTATION_RESOLVED = CREATE_USER_SETTINGS_MUTATION;
+export const UPDATE_USER_SETTINGS_MUTATION_RESOLVED = UPDATE_USER_SETTINGS_MUTATION;
 
-export interface UpdateMySettingsResponse {
-  update_my_settings: {
+export interface MutationFieldError {
+  field?: string | null;
+  message?: string | null;
+}
+
+export interface UserSettingsMutationObject {
+  id: string;
+  theme: string;
+  mode: string;
+  layout: string;
+  sidebar_collapse_mode: string;
+  font_size: string;
+  font_family: string;
+}
+
+export interface CreateUserSettingsResponse {
+  create_user_settings: {
     ok: boolean;
-    errors: string[];
-    settings: {
-      theme: string;
-      mode: string;
-      layout: string;
-      sidebar_collapse_mode: string;
-      font_size: string;
-      font_family: string;
-    } | null;
+    errors?: MutationFieldError[] | null;
+    object?: UserSettingsMutationObject | null;
   };
 }
 
-export interface UpdateMySettingsVariables {
+export interface UpdateUserSettingsResponse {
+  update_user_settings: {
+    ok: boolean;
+    errors?: MutationFieldError[] | null;
+    object?: UserSettingsMutationObject | null;
+  };
+}
+
+export interface UserSettingsInputPayload {
   theme?: string;
   mode?: string;
   layout?: string;
-  sidebar_collapse_mode?: string;
-  font_size?: string;
-  font_family?: string;
+  sidebarCollapseMode?: string;
+  fontSize?: string;
+  fontFamily?: string;
+}
+
+export interface CreateUserSettingsVariables {
+  input: UserSettingsInputPayload & {
+    user: string;
+  };
+}
+
+export interface UpdateUserSettingsVariables {
+  id: string;
+  input: UserSettingsInputPayload;
 }

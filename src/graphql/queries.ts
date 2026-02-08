@@ -55,6 +55,7 @@ export const GET_CURRENT_USER = gql`
       }
       permissions
       settings {
+        id
         theme
         mode
         layout
@@ -98,6 +99,7 @@ export interface Role {
 }
 
 export interface UserSettings {
+  id?: string;
   theme: string;
   mode: string;
   layout: string;

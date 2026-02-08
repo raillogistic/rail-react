@@ -208,7 +208,12 @@ export function ReportingStudio(): JSX.Element {
     };
 
     if (saveDraft.id) {
-      const { data } = await updateVisualization({ variables: { input: { ...input, id: saveDraft.id } } });
+      const { data } = await updateVisualization({
+        variables: {
+          id: saveDraft.id,
+          input,
+        },
+      });
       const payload = data?.response;
       if (payload?.ok) {
         toast.success("Widget mis à jour.");

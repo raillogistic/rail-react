@@ -293,7 +293,15 @@ export function ReportingDashboardStudio(): JSX.Element {
       return;
     }
     if (reportDraft.id) {
-      const { data } = await updateReport({ variables: { input: { id: reportDraft.id, code: reportDraft.code, title: reportDraft.title } } });
+      const { data } = await updateReport({
+        variables: {
+          id: reportDraft.id,
+          input: {
+            code: reportDraft.code,
+            title: reportDraft.title,
+          },
+        },
+      });
       if (data?.response?.ok) {
         toast.success("Dashboard mis à jour.");
         await refetchReports?.();
@@ -319,8 +327,8 @@ export function ReportingDashboardStudio(): JSX.Element {
     for (const block of blocks) {
       await updateBlock({
         variables: {
+          id: block.id,
           input: {
-            id: block.id,
             position: block.position,
             layout: block.layout,
           },

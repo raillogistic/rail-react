@@ -481,7 +481,10 @@ export const ModelBiPanel = forwardRef<ModelBiPanelHandle, ModelBiPanelProps>(
       };
       const mutation = editingDataset ? updateDataset : createDataset;
       const variables = editingDataset
-        ? { input: { id: editingDataset.id ?? editingDataset.code, ...input } }
+        ? {
+            id: String(editingDataset.id ?? editingDataset.code),
+            input,
+          }
         : { input };
 
       const { data } = await mutation({ variables });
