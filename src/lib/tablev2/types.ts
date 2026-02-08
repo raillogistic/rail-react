@@ -296,6 +296,8 @@ export interface TableContextState {
   columnVisibility: ColumnVisibilityState;
   columnOrder: string[];
   rowSelection: Record<string, boolean>;
+  groupingField: string | null;
+  groupCollapsed: Record<string, boolean>;
   refreshKey: number;
 
   // Filters
@@ -309,6 +311,8 @@ export interface TableContextState {
   setColumnVisibility: (visibility: ColumnVisibilityState) => void;
   setColumnOrder: (order: string[]) => void;
   setRowSelection: (selection: Record<string, boolean>) => void;
+  setGroupingField: (field: string | null) => void;
+  setGroupCollapsed: (collapsed: Record<string, boolean>) => void;
   setQuickSearch: (term: string) => void;
   setAdvancedFilters: (filters: FilterFormState, variables?: Record<string, unknown>) => void;
   refresh: () => void;

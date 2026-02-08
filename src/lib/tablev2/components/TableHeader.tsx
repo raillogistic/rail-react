@@ -44,22 +44,25 @@ function DraggableHead({
     <TableHead
       ref={setNodeRef}
       style={style}
-      className={cn("relative group", className)}
+      className={cn(
+        "whitespace-nowrap text-left text-[12px] font-semibold tracking-wide text-muted-foreground",
+        className,
+      )}
       aria-sort={ariaSort}
     >
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1">
         {draggable ? (
           <button
             {...attributes}
             {...listeners}
-            className="cursor-move opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-muted rounded"
+            className="mr-1 rounded p-0.5 hover:bg-muted"
             aria-label="Reordonner la colonne"
           >
             <GripVertical className="h-4 w-4 text-muted-foreground" />
           </button>
         ) : null}
 
-        <span className="font-medium text-sm">{children}</span>
+        {children}
       </div>
     </TableHead>
   );
@@ -90,8 +93,6 @@ export function TableHeader({
     setAdvancedFilters,
   } = useTable();
 
-  if (!metadata && !columns) return null;
-
   // Determine visible columns in order
   const visibleColumns = (() => {
     if (columns && columns.length > 0) {
@@ -113,8 +114,14 @@ export function TableHeader({
   const allowDrag = columnOrdering?.draggable !== false;
   const locked = new Set(columnOrdering?.locked ?? []);
   const sortingDisabled = disableSorting === true;
-  const orderBy = advancedFilters?.orderBy ?? [];
-  const distinctOn = advancedFilters?.distinctOn ?? [];
+  const orderBy = React.useMemo(
+    () => advancedFilters?.orderBy ?? [],
+    [advancedFilters?.orderBy],
+  );
+  const distinctOn = React.useMemo(
+    () => advancedFilters?.distinctOn ?? [],
+    [advancedFilters?.distinctOn],
+  );
 
   const normalizeSortKey = React.useCallback((value: string) => {
     const trimmed = value.replace(/^-/, "");
@@ -246,11 +253,13 @@ export function TableHeader({
     }
   };
 
+  if (!metadata && !columns) return null;
+
   return (
-    <ShadcnTableHeader>
+    <ShadcnTableHeader className="bg-muted/50">
       <TableRow>
         {enableSelection ? (
-          <TableHead className="w-[40px]">
+          <TableHead className="w-[40px] table-first-column">
             <Checkbox
               checked={allSelected || (someSelected ? "indeterminate" : false)}
               onCheckedChange={toggleSelectAll}
@@ -282,7 +291,7 @@ export function TableHeader({
                 ariaSort={ariaSort}
               >
                 {sortingDisabled ? (
-                  <span className="font-medium text-sm">{field.title}</span>
+                  <span>{field.title}</span>
                 ) : (
                   <button
                     type="button"
@@ -290,7 +299,7 @@ export function TableHeader({
                     onClick={(event) => handleSortToggle(sortKey, event)}
                     title="Click to sort"
                   >
-                    <span className="font-medium text-sm">{field.title}</span>
+                    <span>{field.title}</span>
                     <span className="inline-flex items-center gap-1">
                       {sortDirection === "asc" ? (
                         <ChevronUp className="h-3.5 w-3.5 text-primary" />
@@ -330,7 +339,7 @@ export function TableHeader({
               ariaSort={ariaSort}
             >
               {sortingDisabled ? (
-                <span className="font-medium text-sm">{field.verboseName}</span>
+                <span>{field.verboseName}</span>
               ) : (
                 <button
                   type="button"
@@ -338,9 +347,7 @@ export function TableHeader({
                   onClick={(event) => handleSortToggle(sortKey, event)}
                   title="Click to sort"
                 >
-                  <span className="font-medium text-sm">
-                    {field.verboseName}
-                  </span>
+                  <span>{field.verboseName}</span>
                   <span className="inline-flex items-center gap-1">
                     {sortDirection === "asc" ? (
                       <ChevronUp className="h-3.5 w-3.5 text-primary" />
@@ -362,7 +369,7 @@ export function TableHeader({
         })}
 
         {/* Actions Column Placeholder */}
-        <TableHead className="w-[110px] sticky right-0 bg-background z-10 text-right">
+        <TableHead className="w-[110px] sticky right-0 z-10 bg-muted/50 text-right table-last-column table-sticky-cell">
           {actionsLabel ?? "Actions"}
         </TableHead>
       </TableRow>

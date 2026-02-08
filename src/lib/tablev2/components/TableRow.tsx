@@ -1,9 +1,10 @@
-import { useMemo, useState } from "react";
-import { Pencil, Trash2 } from "lucide-react";
+﻿import React, { useMemo, useState } from "react";
+import { ChevronDown, ChevronRight, Loader2, Pencil, Trash2 } from "lucide-react";
 import { gql, useMutation } from "@apollo/client";
 import { TableRow as ShadcnTableRow, TableCell } from "./TableFrame";
 import { Checkbox } from "@/lib/components/ui/checkbox";
 import { Button } from "@/lib/components/ui/button";
+import { cn } from "@/lib/utils";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,7 +19,13 @@ import {
 import { toast } from "sonner";
 import { useTable } from "../context/TableContext";
 import { useMetadata } from "../context/MetadataContext";
-import { formatCellValue, findMutation, normalizeMutationType } from "../utils";
+import {
+  formatCellValue,
+  findMutation,
+  normalizeMutationType,
+  resolveGroupingKey,
+  resolveGroupingLabel,
+} from "../utils";
 import type {
   BaseModelTableColumnDef,
   BaseModelTableRefetch,
@@ -93,13 +100,13 @@ function RowActions({
   }
 
   if (!canEdit && !canDelete) {
-    return <span className="text-xs text-muted-foreground">—</span>;
+    return <span className="text-xs text-muted-foreground">-</span>;
   }
 
   return (
-    <div className="flex justify-end gap-2">
+    <div className="flex items-center justify-end gap-1">
       {canEdit && (
-        <Button size="sm" variant="ghost" aria-label="Modifier">
+        <Button size="icon" variant="ghost" aria-label="Modifier">
           <Pencil className="h-4 w-4" />
         </Button>
       )}
@@ -107,7 +114,7 @@ function RowActions({
         <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
           <AlertDialogTrigger asChild>
             <Button
-              size="sm"
+              size="icon"
               variant="ghost"
               aria-label="Supprimer"
               disabled={deleting}
@@ -159,9 +166,10 @@ export function TableRows({
     columnVisibility,
     rowSelection,
     setRowSelection,
+    groupingField,
+    groupCollapsed,
+    setGroupCollapsed,
   } = useTable();
-
-  if (!metadata && !columns) return null;
 
   const fieldLookup = useMemo(() => {
     if (!metadata) return new Map<string, FieldSchema>();
@@ -180,7 +188,7 @@ export function TableRows({
     }, row);
 
   const formatFallbackValue = (value: unknown) => {
-    if (value === null || value === undefined) return "—";
+    if (value === null || value === undefined) return "-";
     if (typeof value === "string" || typeof value === "number") {
       return String(value);
     }
@@ -193,7 +201,7 @@ export function TableRows({
     }
   };
 
-  const visibleColumns = (() => {
+  const visibleColumns = useMemo(() => {
     if (columns && columns.length > 0) {
       const byId = new Map(columns.map((column) => [column.id, column]));
       const orderedIds =
@@ -207,8 +215,39 @@ export function TableRows({
     if (!metadata) return [];
     return columnOrder
       .map((colId) => metadata.fields.find((f) => f.name === colId))
-      .filter((field): field is FieldSchema => !!field && columnVisibility[field.name]);
-  })();
+      .filter(
+        (field): field is FieldSchema => !!field && columnVisibility[field.name],
+      );
+  }, [columnOrder, columnVisibility, columns, metadata]);
+
+  const groupedData = useMemo(() => {
+    if (!groupingField) return null;
+
+    const groups = new Map<
+      string,
+      {
+        key: string;
+        label: string;
+        rows: Record<string, unknown>[];
+      }
+    >();
+
+    data.forEach((row) => {
+      const key = resolveGroupingKey(row, groupingField);
+      const existing = groups.get(key);
+      if (existing) {
+        existing.rows.push(row);
+        return;
+      }
+      groups.set(key, {
+        key,
+        label: resolveGroupingLabel(row, groupingField),
+        rows: [row],
+      });
+    });
+
+    return Array.from(groups.values());
+  }, [data, groupingField]);
 
   const handleRowSelect = (rowId: string, checked: boolean) => {
     const nextSelection = { ...rowSelection };
@@ -221,15 +260,100 @@ export function TableRows({
   };
 
   const fixedColumnCount = (enableSelection ? 1 : 0) + 1;
+  const cellPadding = "py-0 px-3";
+
+  const renderDataRow = (
+    row: Record<string, unknown>,
+    rowIndex: number,
+  ): React.ReactNode => {
+    const rowId = String(row.id);
+    const isSelected = enableSelection && rowSelection[rowId];
+    const rowPermissions = row.rowPermissions as RowMutationPermissions | undefined;
+    const rowStripe = rowIndex % 2 === 0 ? "even" : "odd";
+
+    return (
+      <ShadcnTableRow
+        key={rowId}
+        data-state={isSelected ? "selected" : undefined}
+        data-row-stripe={rowStripe}
+        className={cn(
+          "border-b border-muted/40 transition-colors group",
+          isSelected && "ring-1 ring-primary/40",
+        )}
+        style={
+          {
+            backgroundColor: "var(--row-bg)",
+          } as React.CSSProperties
+        }
+      >
+        {enableSelection ? (
+          <TableCell
+            className={cn(cellPadding, "px-2 text-left transition-colors table-first-column")}
+          >
+            <Checkbox
+              checked={!!rowSelection[rowId]}
+              onCheckedChange={(checked: boolean | "indeterminate") =>
+                handleRowSelect(rowId, checked === true)
+              }
+              aria-label="Selectionner la ligne"
+            />
+          </TableCell>
+        ) : null}
+
+        {visibleColumns.map((field) => {
+          if ("accessor" in field) {
+            const value = resolveValue(row, field.accessor);
+            const isSimpleAccessor = !field.accessor.includes(".");
+            const metaField = isSimpleAccessor
+              ? fieldLookup.get(field.accessor)
+              : undefined;
+
+            return (
+              <TableCell key={field.id} className={cellPadding}>
+                {field.render
+                  ? field.render(value, row, {
+                      accessor: field.accessor,
+                      columnId: field.id,
+                      data,
+                      refetch,
+                    })
+                  : metaField
+                    ? formatCellValue(value, metaField)
+                    : formatFallbackValue(value)}
+              </TableCell>
+            );
+          }
+
+          return (
+            <TableCell key={field.name} className={cellPadding}>
+              {formatCellValue(row[field.name], field)}
+            </TableCell>
+          );
+        })}
+
+        <TableCell
+          className={cn(
+            cellPadding,
+            "w-px shrink-0 px-2 text-right sticky right-0 z-10 transition-colors table-last-column table-sticky-cell",
+          )}
+        >
+          <RowActions rowId={rowId} permissions={rowPermissions} />
+        </TableCell>
+      </ShadcnTableRow>
+    );
+  };
 
   if (loading && data.length === 0) {
     return (
       <ShadcnTableRow>
         <TableCell
           colSpan={visibleColumns.length + fixedColumnCount}
-          className="h-24 text-center"
+          className="h-24"
         >
-          {loadingText ?? "Chargement..."}
+          <div className="flex items-center justify-center py-12 text-muted-foreground">
+            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+            <span>{loadingText ?? "Chargement..."}</span>
+          </div>
         </TableCell>
       </ShadcnTableRow>
     );
@@ -240,76 +364,72 @@ export function TableRows({
       <ShadcnTableRow>
         <TableCell
           colSpan={visibleColumns.length + fixedColumnCount}
-          className="h-24 text-center"
+          className="h-24"
         >
-          {emptyState ?? "Aucun resultat."}
+          <div className="flex items-center justify-center py-16 text-sm text-muted-foreground">
+            {emptyState ?? "Aucun resultat."}
+          </div>
         </TableCell>
       </ShadcnTableRow>
     );
   }
 
-  return (
-    <>
-      {data.map((row) => {
-        const rowId = String(row.id);
-        const rowPermissions = (row as Record<string, unknown>)
-          .rowPermissions as RowMutationPermissions | undefined;
-        return (
-          <ShadcnTableRow
-            key={rowId}
-            data-state={enableSelection && rowSelection[rowId] ? "selected" : undefined}
-          >
-            {enableSelection ? (
-              <TableCell>
-                <Checkbox
-                  checked={!!rowSelection[rowId]}
-                  onCheckedChange={(checked: boolean | "indeterminate") =>
-                    handleRowSelect(rowId, checked === true)
-                  }
-                  aria-label="Selectionner la ligne"
-                />
-              </TableCell>
-            ) : null}
+  const toggleGroup = (groupKey: string) => {
+    const nextCollapsed = { ...groupCollapsed };
+    const current = nextCollapsed[groupKey] ?? false;
+    nextCollapsed[groupKey] = !current;
+    setGroupCollapsed(nextCollapsed);
+  };
 
-            {/* Data Cells */}
-            {visibleColumns.map((field) => {
-              if ("accessor" in field) {
-                const value = resolveValue(row, field.accessor);
-                const isSimpleAccessor = !field.accessor.includes(".");
-                const metaField = isSimpleAccessor
-                  ? fieldLookup.get(field.accessor)
-                  : undefined;
+  if (groupedData && groupedData.length > 0) {
+    let renderedIndex = 0;
+    return (
+      <>
+        {groupedData.map((group) => {
+          const collapsed = groupCollapsed[group.key] ?? false;
 
-                return (
-                  <TableCell key={field.id}>
-                    {field.render
-                      ? field.render(value, row, {
-                          accessor: field.accessor,
-                          columnId: field.id,
-                          data,
-                          refetch,
-                        })
-                      : metaField
-                        ? formatCellValue(value, metaField)
-                        : formatFallbackValue(value)}
-                  </TableCell>
-                );
-              }
-
-              return (
-                <TableCell key={field.name}>
-                  {formatCellValue(row[field.name], field)}
+          return (
+            <React.Fragment key={`group-${group.key}`}>
+              <ShadcnTableRow className="bg-muted/40">
+                <TableCell
+                  colSpan={visibleColumns.length + fixedColumnCount}
+                  className="px-3 py-2"
+                >
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <Button
+                        variant="ghost"
+                        size="icon-sm"
+                        className="h-7 w-7"
+                        onClick={() => toggleGroup(group.key)}
+                      >
+                        {collapsed ? (
+                          <ChevronRight className="h-4 w-4" />
+                        ) : (
+                          <ChevronDown className="h-4 w-4" />
+                        )}
+                      </Button>
+                      <div className="flex items-center gap-2 font-medium">
+                        {group.label}
+                      </div>
+                    </div>
+                    <span className="text-xs text-muted-foreground">
+                      {group.rows.length} element(s)
+                    </span>
+                  </div>
                 </TableCell>
-              );
-            })}
+              </ShadcnTableRow>
+              {!collapsed
+                ? group.rows.map((row) => renderDataRow(row, renderedIndex++))
+                : null}
+            </React.Fragment>
+          );
+        })}
+      </>
+    );
+  }
 
-            {/* Actions Cell */}
-            <TableCell className="sticky right-0 bg-background">
-              <RowActions rowId={rowId} permissions={rowPermissions} />
-            </TableCell>
-          </ShadcnTableRow>
-        );
-      })}
-    </>
-  );
+  return <>{data.map((row, index) => renderDataRow(row, index))}</>;
 }
+
+

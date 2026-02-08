@@ -352,6 +352,7 @@ export function ModelTableExportDialog({
         <Button
           variant="outline"
           size="icon"
+          className="h-8 w-8"
           aria-label={labels?.buttonAria ?? "Exporter les donnees"}
         >
           <Download className="h-4 w-4" />

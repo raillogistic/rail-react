@@ -1,4 +1,4 @@
-/* eslint-disable react-refresh/only-export-components */
+﻿/* eslint-disable react-refresh/only-export-components */
 import React from "react";
 import { DndContext, closestCenter, DragEndEvent } from "@dnd-kit/core";
 import {
@@ -16,18 +16,20 @@ import { TablePagination } from "./components/TablePagination";
 import { TableToolbar } from "./components/TableToolbar";
 import { TableMobileCard } from "./components/TableMobileCard";
 import { TableFrame, TableBody } from "./components/TableFrame";
-import { Loader2, Search } from "lucide-react";
-import { Input } from "@/lib/components/ui/input";
-import { useTableFilters } from "./hooks/useTableFilters";
+import { Loader2, PlusCircle } from "lucide-react";
+import { Card, CardContent } from "@/lib/components/ui/card";
+import { Button } from "@/lib/components/ui/button";
 import type {
   BaseModelTableColumnDef,
   BaseModelTableFieldsInput,
   BaseModelTableColumnOrderingConfig,
   BaseModelTableRelationConfig,
   FieldSchema,
+  ModelSchema,
   RelationshipSchema,
 } from "./types";
 import {
+  findMutation,
   isAccessorExcluded,
   normalizeBaseModelTableFieldsInput,
 } from "./utils";
@@ -48,6 +50,32 @@ export interface FilterPanelOptions {
 
 export type ModelTableFilterPanelProps = FilterPanelOptions &
   Partial<import("../form/filters/FilterPanel").FilterPanelProps>;
+
+export type ModelTableV2TopAction = {
+  key: string;
+  label: string;
+  icon?: React.ReactNode;
+  variant?: "default" | "outline" | "destructive";
+  size?: "sm" | "md" | "lg" | "icon";
+  order?: number;
+  show_when?: "always" | "has_selection";
+  dataAttributes?: Record<string, string | number | boolean | undefined>;
+  on_click: (ctx: {
+    selected_rows: Record<string, unknown>[];
+    selection_state: Record<string, boolean>;
+  }) => void;
+};
+
+export type ModelTableV2TopActionsInput =
+  | ModelTableV2TopAction[]
+  | ((ctx: {
+      app: string;
+      model: string;
+      metadata?: ModelSchema;
+      items: Record<string, unknown>[];
+      selected_rows: Record<string, unknown>[];
+      selection_state: Record<string, boolean>;
+    }) => ModelTableV2TopAction[] | undefined);
 
 export type ModelTableV2TableConfig = {
   showTitle?: boolean;
@@ -96,23 +124,144 @@ export type ModelTableV2TableConfig = {
 function ModelTableV2Content({
   filterPanel,
   tableConfig,
+  quickSearch,
+  topActions,
 }: {
   filterPanel?: ModelTableFilterPanelProps;
   tableConfig?: ModelTableV2TableConfig;
+  quickSearch?: boolean;
+  topActions?: ModelTableV2TopActionsInput;
 }) {
-  const { metadata } = useMetadata();
+  const { metadata, app, model } = useMetadata();
+  const { pagination, columnVisibility, data, rowSelection } = useTable();
   const showTitle = tableConfig?.showTitle !== false;
   const resolvedTitle =
     tableConfig?.title || metadata?.verboseNamePlural || metadata?.model;
+  const selectedRows = React.useMemo(
+    () =>
+      data.filter((row) => {
+        const rowId = String(row.id);
+        return !!rowSelection[rowId];
+      }),
+    [data, rowSelection],
+  );
+  const createMutation = findMutation(metadata?.mutations, "create");
+  const canCreate = !!createMutation?.allowed;
+  const addAction = React.useMemo<ModelTableV2TopAction | undefined>(() => {
+    if (!canCreate) return undefined;
+
+    return {
+      key: "add",
+      label:
+        tableConfig?.addLabel ??
+        `Ajouter ${metadata?.verboseName || metadata?.model || ""}`.trim(),
+      icon: <PlusCircle className="mr-1 h-4 w-4" />,
+      variant: "outline",
+      size: "sm",
+      order: -1,
+      show_when: "always",
+      on_click: () => {
+        console.info("add item");
+      },
+    };
+  }, [canCreate, metadata?.model, metadata?.verboseName, tableConfig?.addLabel]);
+  const resolvedTopActions = React.useMemo(() => {
+    const userActions =
+      typeof topActions === "function"
+        ? topActions({
+            app,
+            model,
+            metadata,
+            items: data,
+            selected_rows: selectedRows,
+            selection_state: rowSelection,
+          })
+        : topActions;
+    const combined = [...(userActions ?? [])];
+    if (addAction) {
+      combined.unshift(addAction);
+    }
+
+    const hasSelection = selectedRows.length > 0;
+    return combined
+      .filter((action) => action.show_when !== "has_selection" || hasSelection)
+      .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+  }, [
+    addAction,
+    app,
+    data,
+    metadata,
+    model,
+    rowSelection,
+    selectedRows,
+    topActions,
+  ]);
+  const visibleColumnCount = React.useMemo(() => {
+    if (!metadata?.fields?.length) return 0;
+
+    return metadata.fields.filter((field) => {
+      if (field.visibility === "hidden") return false;
+      const id = field.fieldName || field.name;
+      return columnVisibility[id] ?? true;
+    }).length;
+  }, [columnVisibility, metadata?.fields]);
+  const rowSummary = React.useMemo(() => {
+    if (pagination.totalKnown) {
+      const total = pagination.total;
+      return `${total} ligne${total > 1 ? "s" : ""}`;
+    }
+    const loadedCount = data.length;
+    return `${loadedCount} ligne${loadedCount > 1 ? "s" : ""} chargee${loadedCount > 1 ? "s" : ""}`;
+  }, [data.length, pagination.total, pagination.totalKnown]);
 
   return (
     <>
       {showTitle && resolvedTitle ? (
-        <div className="px-2">
-          <h2 className="text-lg font-semibold">{resolvedTitle}</h2>
+        <div className="mb-4 rounded-lg bg-card/60 p-4 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="space-y-1">
+              <h2 className="text-lg font-semibold tracking-wide text-foreground">
+                {resolvedTitle}
+              </h2>
+              <p className="text-xs text-muted-foreground">
+                {rowSummary} · {visibleColumnCount} colonne
+                {visibleColumnCount > 1 ? "s" : ""} visibles
+              </p>
+            </div>
+            {resolvedTopActions.length > 0 ? (
+              <div className="flex flex-wrap items-center gap-2">
+                {resolvedTopActions.map((action) => (
+                  <Button
+                    key={action.key}
+                    variant={action.variant ?? "outline"}
+                    size={action.size === "icon" ? "icon" : "sm"}
+                    className={
+                      action.size === "icon"
+                        ? "h-8 w-8"
+                        : "h-8 whitespace-nowrap"
+                    }
+                    onClick={() =>
+                      action.on_click({
+                        selected_rows: selectedRows,
+                        selection_state: rowSelection,
+                      })
+                    }
+                    {...(action.dataAttributes ?? {})}
+                  >
+                    {action.icon}
+                    {action.size === "icon" ? null : <span>{action.label}</span>}
+                  </Button>
+                ))}
+              </div>
+            ) : null}
+          </div>
         </div>
       ) : null}
-      <TableToolbar filterPanel={filterPanel} tableConfig={tableConfig} />
+      <TableToolbar
+        filterPanel={filterPanel}
+        tableConfig={tableConfig}
+        quickSearch={quickSearch}
+      />
       <TableMobileCard emptyState={tableConfig?.emptyState} />
     </>
   );
@@ -136,7 +285,6 @@ export interface ModelTableV2Props {
 
 type BaseTableContentProps = {
   persistenceKey?: string;
-  quickSearch?: boolean;
   children?: React.ReactNode;
   tableConfig?: ModelTableV2TableConfig;
   hideTableOnMobile?: boolean;
@@ -150,7 +298,6 @@ type BaseTableContentProps = {
 
 function BaseTableContent({
   persistenceKey,
-  quickSearch,
   children,
   tableConfig,
   hideTableOnMobile,
@@ -175,8 +322,6 @@ function BaseTableContent({
     columnVisibility,
     error: dataError,
   } = useTable();
-  const { quickSearch: term, setQuickSearch } = useTableFilters();
-  const supportsQuick = !!metadata?.filterConfig?.supportsQuick;
 
   const effectiveKey = persistenceKey || `${app}-${model}`;
   useTablePersistence(effectiveKey);
@@ -244,11 +389,13 @@ function BaseTableContent({
       };
     };
 
-    const configuredDisplay = normalizedFieldsConfig.display?.filter((entry) => {
-      const accessor = typeof entry === "string" ? entry : entry.accessor;
-      if (!accessor) return false;
-      return !isAccessorExcluded(accessor, excludedAccessors);
-    });
+    const configuredDisplay = normalizedFieldsConfig.display?.filter(
+      (entry) => {
+        const accessor = typeof entry === "string" ? entry : entry.accessor;
+        if (!accessor) return false;
+        return !isAccessorExcluded(accessor, excludedAccessors);
+      },
+    );
     const hasConfiguredDisplay = normalizedFieldsConfig.display !== undefined;
 
     const defaultDisplay = metadata.fields
@@ -256,8 +403,9 @@ function BaseTableContent({
       .map((field) => field.fieldName || field.name)
       .filter((accessor) => !isAccessorExcluded(accessor, excludedAccessors));
 
-    const displayEntries =
-      hasConfiguredDisplay ? (configuredDisplay ?? []) : defaultDisplay;
+    const displayEntries = hasConfiguredDisplay
+      ? (configuredDisplay ?? [])
+      : defaultDisplay;
 
     return displayEntries.map((entry) => {
       if (typeof entry === "string") {
@@ -429,46 +577,39 @@ function BaseTableContent({
       <div className="flex-1 min-h-0 min-w-0 overflow-y-auto">
         <div className="flex min-h-full min-w-0 flex-col gap-4">
           {children}
-          {quickSearch && supportsQuick ? (
-            <div className="relative max-w-sm">
-              <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder={tableConfig?.searchPlaceholder ?? "Rechercher..."}
-                value={term}
-                onChange={(event) => setQuickSearch(event.target.value)}
-                className="pl-8"
-              />
-            </div>
-          ) : null}
           <div className={hideTableOnMobile ? "hidden md:block" : undefined}>
-            <DndContext
-              collisionDetection={closestCenter}
-              onDragEnd={handleDragEnd}
-            >
-              <TableFrame className="w-full">
-                <SortableContext
-                  items={sortableColumnIds}
-                  strategy={horizontalListSortingStrategy}
+            <Card className="flex h-full min-h-0 flex-col shadow-sm">
+              <CardContent className="flex-1 min-h-0 overflow-auto p-0">
+                <DndContext
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd}
                 >
-                  <TableHeader
-                    actionsLabel={tableConfig?.actionsLabel}
-                    columns={columnDefs ?? undefined}
-                    columnOrdering={columnOrdering}
-                    disableSorting={disableSorting}
-                    enableSelection={enableSelection}
-                  />
-                </SortableContext>
-                <TableBody>
-                  <TableRows
-                    emptyState={tableConfig?.emptyState}
-                    loadingText={tableConfig?.loadingText}
-                    columns={columnDefs ?? undefined}
-                    enableSelection={enableSelection}
-                    refetch={refetch}
-                  />
-                </TableBody>
-              </TableFrame>
-            </DndContext>
+                  <TableFrame className="w-full">
+                    <SortableContext
+                      items={sortableColumnIds}
+                      strategy={horizontalListSortingStrategy}
+                    >
+                      <TableHeader
+                        actionsLabel={tableConfig?.actionsLabel}
+                        columns={columnDefs ?? undefined}
+                        columnOrdering={columnOrdering}
+                        disableSorting={disableSorting}
+                        enableSelection={enableSelection}
+                      />
+                    </SortableContext>
+                    <TableBody>
+                      <TableRows
+                        emptyState={tableConfig?.emptyState}
+                        loadingText={tableConfig?.loadingText}
+                        columns={columnDefs ?? undefined}
+                        enableSelection={enableSelection}
+                        refetch={refetch}
+                      />
+                    </TableBody>
+                  </TableFrame>
+                </DndContext>
+              </CardContent>
+            </Card>
           </div>
           <TablePagination
             labels={tableConfig?.paginationLabels}
@@ -491,6 +632,7 @@ export interface BaseModelTableProps {
   className?: string;
   persistenceKey?: string;
   quickSearch?: boolean;
+  topActions?: ModelTableV2TopActionsInput;
   children?: React.ReactNode;
   tableConfig?: ModelTableV2TableConfig;
   hideTableOnMobile?: boolean;
@@ -507,7 +649,6 @@ export function BaseModelTable({
   model,
   className,
   persistenceKey,
-  quickSearch,
   children,
   tableConfig,
   hideTableOnMobile,
@@ -526,7 +667,6 @@ export function BaseModelTable({
         <TableProvider>
           <BaseTableContent
             persistenceKey={persistenceKey}
-            quickSearch={quickSearch}
             tableConfig={tableConfig}
             hideTableOnMobile={hideTableOnMobile}
             fields={fields}
@@ -556,7 +696,6 @@ export function ModelTableV2({
       model={model}
       className={baseTable?.className}
       persistenceKey={baseTable?.persistenceKey}
-      quickSearch={baseTable?.quickSearch}
       tableConfig={baseTable?.tableConfig}
       hideTableOnMobile={baseTable?.hideTableOnMobile ?? true}
       fields={baseTable?.fields}
@@ -569,6 +708,8 @@ export function ModelTableV2({
       <ModelTableV2Content
         filterPanel={filterPanel}
         tableConfig={baseTable?.tableConfig}
+        quickSearch={baseTable?.quickSearch ?? true}
+        topActions={baseTable?.topActions}
       />
     </BaseModelTable>
   );
@@ -602,3 +743,4 @@ export * from "./components/ExportDialog";
 
 // Utils
 export * from "./utils";
+

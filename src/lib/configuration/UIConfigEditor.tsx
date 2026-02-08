@@ -119,12 +119,12 @@ export function UIConfigEditor({
   const componentId = useStore(
     form.store,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (state: any) => state.values.component_id
+    (state: any) => state.values.component_id,
   );
   const targetModel = useStore(
     form.store,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (state: any) => state.values.target_model
+    (state: any) => state.values.target_model,
   );
   const value = field.state.value as UIConfigState | undefined;
 
@@ -221,7 +221,7 @@ export function UIConfigEditor({
   const handleArrayToggle = (
     key: keyof UIConfigState,
     item: string,
-    checked: boolean
+    checked: boolean,
   ) => {
     const currentList = (value?.[key] as string[]) || [];
     let newList;
@@ -243,7 +243,7 @@ export function UIConfigEditor({
   const toggleAll = (
     key: keyof UIConfigState,
     items: string[],
-    checked: boolean
+    checked: boolean,
   ) => {
     field.handleChange({
       ...value,
@@ -254,7 +254,7 @@ export function UIConfigEditor({
   const handleOrderingToggle = (fieldName: string) => {
     const currentOrdering = (value?.ordering as string[]) || [];
     const existingIndex = currentOrdering.findIndex(
-      (o) => o === fieldName || o === `-${fieldName}`
+      (o) => o === fieldName || o === `-${fieldName}`,
     );
 
     const newOrdering = [...currentOrdering];
@@ -277,7 +277,7 @@ export function UIConfigEditor({
   const removeOrdering = (fieldName: string) => {
     const currentOrdering = (value?.ordering as string[]) || [];
     const newOrdering = currentOrdering.filter(
-      (o) => o !== fieldName && o !== `-${fieldName}`
+      (o) => o !== fieldName && o !== `-${fieldName}`,
     );
     field.handleChange({ ...value, ordering: newOrdering });
   };
@@ -297,7 +297,7 @@ export function UIConfigEditor({
 
   const filteredModels = selectedApp
     ? availableModels.filter((m: ModelPermission) =>
-        m.model_name.startsWith(`${selectedApp}.`)
+        m.model_name.startsWith(`${selectedApp}.`),
       )
     : [];
 
@@ -347,7 +347,7 @@ export function UIConfigEditor({
                 >
                   {selectedModel
                     ? availableModels.find(
-                        (model) => model.model_name === selectedModel
+                        (model) => model.model_name === selectedModel,
                       )?.verbose_name || selectedModel
                     : "Sélectionner un modèle..."}
                   <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -365,7 +365,9 @@ export function UIConfigEditor({
                           value={model.model_name}
                           onSelect={(currentValue) => {
                             setSelectedModel(
-                              currentValue === selectedModel ? "" : currentValue
+                              currentValue === selectedModel
+                                ? ""
+                                : currentValue,
                             );
                             setOpen(false);
                           }}
@@ -375,7 +377,7 @@ export function UIConfigEditor({
                               "mr-2 h-4 w-4",
                               selectedModel === model.model_name
                                 ? "opacity-100"
-                                : "opacity-0"
+                                : "opacity-0",
                             )}
                           />
                           {model.verbose_name} ({model.model_name.split(".")[1]}
@@ -437,6 +439,7 @@ export function UIConfigEditor({
               <Card>
                 <CardHeader>
                   <CardTitle>Colonnes visibles</CardTitle>
+
                   <CardDescription>
                     Sélectionnez les colonnes à afficher dans le tableau.
                   </CardDescription>
@@ -451,7 +454,7 @@ export function UIConfigEditor({
                         toggleAll(
                           "columnVisibility",
                           fields.map((f) => f.name),
-                          checked as boolean
+                          checked as boolean,
                         )
                       }
                     />
@@ -471,7 +474,7 @@ export function UIConfigEditor({
                               handleArrayToggle(
                                 "columnVisibility",
                                 f.name,
-                                checked as boolean
+                                checked as boolean,
                               )
                             }
                           />
@@ -500,7 +503,7 @@ export function UIConfigEditor({
                         toggleAll(
                           "filters",
                           filters.map((f) => f.field_name),
-                          checked as boolean
+                          checked as boolean,
                         )
                       }
                     />
@@ -520,7 +523,7 @@ export function UIConfigEditor({
                               handleArrayToggle(
                                 "filters",
                                 f.field_name,
-                                checked as boolean
+                                checked as boolean,
                               )
                             }
                           />
@@ -548,7 +551,7 @@ export function UIConfigEditor({
                       .filter((f) => f.sortable)
                       .map((f) => {
                         const orderState = value?.ordering?.find(
-                          (o) => o === f.name || o === `-${f.name}`
+                          (o) => o === f.name || o === `-${f.name}`,
                         );
                         const isAsc = orderState === f.name;
                         const isDesc = orderState === `-${f.name}`;
@@ -638,7 +641,7 @@ export function UIConfigEditor({
                               handleArrayToggle(
                                 "readOnlyFields",
                                 f.name,
-                                checked
+                                checked,
                               )
                             }
                           />

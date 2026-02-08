@@ -22,6 +22,8 @@ type TableAction =
   | { type: "SET_COLUMN_VISIBILITY"; visibility: ColumnVisibilityState }
   | { type: "SET_COLUMN_ORDER"; order: string[] }
   | { type: "SET_ROW_SELECTION"; selection: Record<string, boolean> }
+  | { type: "SET_GROUPING_FIELD"; field: string | null }
+  | { type: "SET_GROUP_COLLAPSED"; collapsed: Record<string, boolean> }
   | { type: "SET_QUICK_SEARCH"; term: string }
   | { type: "SET_ADVANCED_FILTERS"; filters: FilterFormState; variables?: Record<string, unknown> }
   | { type: "SET_DATA"; data: Record<string, unknown>[]; loading: boolean; error?: Error | null }
@@ -45,6 +47,8 @@ const initialState: TableContextState = {
   columnVisibility: {},
   columnOrder: [],
   rowSelection: {},
+  groupingField: null,
+  groupCollapsed: {},
   refreshKey: 0,
   quickSearch: "",
   advancedFilters: {
@@ -60,6 +64,8 @@ const initialState: TableContextState = {
   setColumnVisibility: () => {},
   setColumnOrder: () => {},
   setRowSelection: () => {},
+  setGroupingField: () => {},
+  setGroupCollapsed: () => {},
   setQuickSearch: () => {},
   setAdvancedFilters: () => {},
   refresh: () => {},
@@ -119,6 +125,14 @@ function tableReducer(state: TableContextState, action: TableAction): TableConte
       return { ...state, columnOrder: action.order };
     case "SET_ROW_SELECTION":
       return { ...state, rowSelection: action.selection };
+    case "SET_GROUPING_FIELD":
+      return {
+        ...state,
+        groupingField: action.field,
+        groupCollapsed: {},
+      };
+    case "SET_GROUP_COLLAPSED":
+      return { ...state, groupCollapsed: action.collapsed };
     case "SET_QUICK_SEARCH":
       return { ...state, quickSearch: action.term, pagination: { ...state.pagination, page: 1 } };
     case "SET_ADVANCED_FILTERS":
@@ -164,6 +178,8 @@ export function TableProvider({ children, initialState: initialProps }: TablePro
     setColumnVisibility: useCallback((visibility: ColumnVisibilityState) => dispatch({ type: "SET_COLUMN_VISIBILITY", visibility }), []),
     setColumnOrder: useCallback((order: string[]) => dispatch({ type: "SET_COLUMN_ORDER", order }), []),
     setRowSelection: useCallback((selection: Record<string, boolean>) => dispatch({ type: "SET_ROW_SELECTION", selection }), []),
+    setGroupingField: useCallback((field: string | null) => dispatch({ type: "SET_GROUPING_FIELD", field }), []),
+    setGroupCollapsed: useCallback((collapsed: Record<string, boolean>) => dispatch({ type: "SET_GROUP_COLLAPSED", collapsed }), []),
     setQuickSearch: useCallback((term: string) => dispatch({ type: "SET_QUICK_SEARCH", term }), []),
     setAdvancedFilters: useCallback((filters: FilterFormState, variables?: Record<string, unknown>) => dispatch({ type: "SET_ADVANCED_FILTERS", filters, variables }), []),
     refresh: useCallback(() => dispatch({ type: "REFRESH" }), []),

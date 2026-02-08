@@ -61,13 +61,13 @@ export function TablePagination({
     : `Page ${page}`;
 
   return (
-    <div className="flex items-center justify-between px-2 py-4">
-      <div className="flex-1 text-sm text-muted-foreground">
+    <div className="mt-3 flex items-center justify-between gap-4 px-1 text-xs text-muted-foreground">
+      <div className="flex-1">
         {leftText}
       </div>
-      <div className="flex items-center space-x-6 lg:space-x-8">
+      <div className="flex items-center gap-4">
         <div className="flex items-center space-x-2">
-          <p className="text-sm font-medium">
+          <p className="text-xs">
             {labels?.rowsPerPage ?? "Lignes par page"}
           </p>
           <Select
@@ -76,7 +76,7 @@ export function TablePagination({
               setPerPage(Number(value));
             }}
           >
-            <SelectTrigger className="h-8 w-[70px]">
+            <SelectTrigger size="sm">
               <SelectValue placeholder={perPage} />
             </SelectTrigger>
             <SelectContent side="top">
@@ -88,7 +88,7 @@ export function TablePagination({
             </SelectContent>
           </Select>
         </div>
-        <div className="flex w-[100px] items-center justify-center text-sm font-medium">
+        <div className="flex items-center justify-center text-xs">
           {pageText}
         </div>
         <div className="flex items-center space-x-2">
