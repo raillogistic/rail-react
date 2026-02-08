@@ -1,6 +1,6 @@
 import { useEffect } from "react";
 import { useTable } from "../context/TableContext";
-import { ColumnVisibilityState } from "../types";
+import { ColumnVisibilityState, TableDensity } from "../types";
 
 const STORAGE_PREFIX = "rail-table-v2";
 
@@ -8,6 +8,8 @@ interface PersistedState {
   columnOrder: string[];
   columnVisibility: ColumnVisibilityState;
   perPage: number;
+  density: TableDensity;
+  wrapCells: boolean;
 }
 
 export function useTablePersistence(key: string) {
@@ -15,9 +17,13 @@ export function useTablePersistence(key: string) {
     columnOrder,
     columnVisibility,
     pagination: { perPage },
+    density,
+    wrapCells,
     setColumnOrder,
     setColumnVisibility,
     setPerPage,
+    setDensity,
+    setWrapCells,
   } = useTable();
 
   const storageKey = `${STORAGE_PREFIX}:${key}`;
@@ -38,11 +44,28 @@ export function useTablePersistence(key: string) {
         if (parsed.perPage) {
           setPerPage(parsed.perPage);
         }
+        if (
+          parsed.density === "compact" ||
+          parsed.density === "comfortable" ||
+          parsed.density === "spacious"
+        ) {
+          setDensity(parsed.density);
+        }
+        if (typeof parsed.wrapCells === "boolean") {
+          setWrapCells(parsed.wrapCells);
+        }
       }
     } catch (e) {
       console.warn("Failed to load table state", e);
     }
-  }, [storageKey, setColumnOrder, setColumnVisibility, setPerPage]);
+  }, [
+    storageKey,
+    setColumnOrder,
+    setColumnVisibility,
+    setPerPage,
+    setDensity,
+    setWrapCells,
+  ]);
 
   // Save state on change
   useEffect(() => {
@@ -54,6 +77,8 @@ export function useTablePersistence(key: string) {
           columnOrder,
           columnVisibility,
           perPage,
+          density,
+          wrapCells,
         };
         localStorage.setItem(storageKey, JSON.stringify(stateToSave));
       } catch (e) {
@@ -62,5 +87,5 @@ export function useTablePersistence(key: string) {
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [storageKey, columnOrder, columnVisibility, perPage]);
+  }, [storageKey, columnOrder, columnVisibility, perPage, density, wrapCells]);
 }

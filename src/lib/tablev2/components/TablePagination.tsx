@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from "react";
 import {
   ChevronLeft,
   ChevronRight,
@@ -5,6 +6,7 @@ import {
   ChevronsRight,
 } from "lucide-react";
 import { Button } from "@/lib/components/ui/button";
+import { Input } from "@/lib/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -42,30 +44,56 @@ export function TablePagination({
     setPage,
     setPerPage,
     rowSelection,
+    data,
   } = useTable();
+  const [pageInput, setPageInput] = useState(String(page));
 
   const selectedCount = Object.keys(rowSelection).length;
   const totalPages = numPages || 1;
+  const maxPage = totalKnown ? totalPages : undefined;
+  const pageSizeOptions = useMemo(
+    () => Array.from(new Set([10, 20, 30, 40, 50, 100, 200, perPage])).sort((a, b) => a - b),
+    [perPage],
+  );
+
+  useEffect(() => {
+    setPageInput(String(page));
+  }, [page]);
 
   const selectionText = totalKnown
     ? labels?.selectionStatus?.(selectedCount, total) ??
       `${selectedCount} sur ${total} ligne(s) selectionnee(s).`
     : `${selectedCount} ligne(s) selectionnee(s).`;
-  const leftText = enableSelection
-    ? selectionText
-    : totalKnown
-      ? `${total} ligne(s)`
-      : "";
+  const rangeText = totalKnown
+    ? total === 0
+      ? "0 ligne"
+      : `${Math.min((page - 1) * perPage + 1, total)}-${Math.min(page * perPage, total)} sur ${total}`
+    : `${data.length} ligne${data.length > 1 ? "s" : ""} chargee${data.length > 1 ? "s" : ""}`;
+  const leftText = enableSelection ? selectionText : rangeText;
   const pageText = totalKnown
     ? labels?.pageStatus?.(page, totalPages) ?? `Page ${page} sur ${totalPages}`
     : `Page ${page}`;
 
+  const commitPageInput = () => {
+    const parsed = Number(pageInput);
+    if (!Number.isFinite(parsed)) {
+      setPageInput(String(page));
+      return;
+    }
+    if (maxPage) {
+      const nextPage = Math.max(1, Math.min(maxPage, Math.trunc(parsed)));
+      setPage(nextPage);
+      return;
+    }
+    setPage(Math.max(1, Math.trunc(parsed)));
+  };
+
   return (
-    <div className="mt-3 flex items-center justify-between gap-4 px-1 text-xs text-muted-foreground">
+    <div className="mt-3 flex flex-wrap items-center justify-between gap-3 rounded-xl border bg-card/95 px-3 py-2 text-xs text-muted-foreground">
       <div className="flex-1">
         {leftText}
       </div>
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center space-x-2">
           <p className="text-xs">
             {labels?.rowsPerPage ?? "Lignes par page"}
@@ -80,7 +108,7 @@ export function TablePagination({
               <SelectValue placeholder={perPage} />
             </SelectTrigger>
             <SelectContent side="top">
-              {[10, 20, 30, 40, 50].map((pageSize) => (
+              {pageSizeOptions.map((pageSize) => (
                 <SelectItem key={pageSize} value={`${pageSize}`}>
                   {pageSize}
                 </SelectItem>
@@ -88,10 +116,22 @@ export function TablePagination({
             </SelectContent>
           </Select>
         </div>
-        <div className="flex items-center justify-center text-xs">
+        <div className="flex items-center justify-center text-xs whitespace-nowrap">
           {pageText}
         </div>
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center gap-1">
+          <Input
+            value={pageInput}
+            onChange={(event) => setPageInput(event.target.value)}
+            onBlur={commitPageInput}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                commitPageInput();
+              }
+            }}
+            className="h-8 w-14 text-center"
+            aria-label="Aller a la page"
+          />
           <Button
             variant="outline"
             className="hidden h-8 w-8 p-0 lg:flex"

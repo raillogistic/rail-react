@@ -22,6 +22,7 @@ interface DraggableHeadProps {
   className?: string;
   draggable?: boolean;
   ariaSort?: React.AriaAttributes["aria-sort"];
+  density?: "compact" | "comfortable" | "spacious";
 }
 
 function DraggableHead({
@@ -30,6 +31,7 @@ function DraggableHead({
   className,
   draggable = true,
   ariaSort,
+  density = "comfortable",
 }: DraggableHeadProps) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } =
     useSortable({ id, disabled: !draggable });
@@ -45,7 +47,8 @@ function DraggableHead({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "whitespace-nowrap text-left text-[12px] font-semibold tracking-wide text-muted-foreground",
+        "sticky top-0 z-20 whitespace-nowrap border-b bg-card/95 text-left font-semibold tracking-wide text-muted-foreground backdrop-blur supports-[backdrop-filter]:bg-card/80",
+        density === "compact" ? "text-[11px]" : "text-[12px]",
         className,
       )}
       aria-sort={ariaSort}
@@ -88,6 +91,7 @@ export function TableHeader({
     data,
     rowSelection,
     setRowSelection,
+    density,
     advancedFilters,
     filterVariables,
     setAdvancedFilters,
@@ -256,10 +260,10 @@ export function TableHeader({
   if (!metadata && !columns) return null;
 
   return (
-    <ShadcnTableHeader className="bg-muted/50">
+    <ShadcnTableHeader>
       <TableRow>
         {enableSelection ? (
-          <TableHead className="w-[40px] table-first-column">
+          <TableHead className="w-[40px] table-first-column sticky top-0 z-20 border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
             <Checkbox
               checked={allSelected || (someSelected ? "indeterminate" : false)}
               onCheckedChange={toggleSelectAll}
@@ -289,6 +293,7 @@ export function TableHeader({
                 id={field.id}
                 draggable={allowDrag && !locked.has(field.id)}
                 ariaSort={ariaSort}
+                density={density}
               >
                 {sortingDisabled ? (
                   <span>{field.title}</span>
@@ -337,6 +342,7 @@ export function TableHeader({
               id={field.name}
               draggable={allowDrag && !locked.has(field.name)}
               ariaSort={ariaSort}
+              density={density}
             >
               {sortingDisabled ? (
                 <span>{field.verboseName}</span>
@@ -369,7 +375,7 @@ export function TableHeader({
         })}
 
         {/* Actions Column Placeholder */}
-        <TableHead className="w-[110px] sticky right-0 z-10 bg-muted/50 text-right table-last-column table-sticky-cell">
+        <TableHead className="w-[110px] sticky right-0 top-0 z-30 border-b bg-card/95 text-right table-last-column table-sticky-cell backdrop-blur supports-[backdrop-filter]:bg-card/80">
           {actionsLabel ?? "Actions"}
         </TableHead>
       </TableRow>

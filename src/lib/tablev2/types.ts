@@ -265,6 +265,8 @@ export interface PaginationState {
   hasPreviousPage: boolean;
 }
 
+export type TableDensity = "compact" | "comfortable" | "spacious";
+
 export type ColumnOrderingMode = "persisted" | "config";
 export type ColumnOrderingAppend = "start" | "end";
 
@@ -298,6 +300,8 @@ export interface TableContextState {
   rowSelection: Record<string, boolean>;
   groupingField: string | null;
   groupCollapsed: Record<string, boolean>;
+  density: TableDensity;
+  wrapCells: boolean;
   refreshKey: number;
 
   // Filters
@@ -313,6 +317,8 @@ export interface TableContextState {
   setRowSelection: (selection: Record<string, boolean>) => void;
   setGroupingField: (field: string | null) => void;
   setGroupCollapsed: (collapsed: Record<string, boolean>) => void;
+  setDensity: (density: TableDensity) => void;
+  setWrapCells: (wrap: boolean) => void;
   setQuickSearch: (term: string) => void;
   setAdvancedFilters: (filters: FilterFormState, variables?: Record<string, unknown>) => void;
   refresh: () => void;

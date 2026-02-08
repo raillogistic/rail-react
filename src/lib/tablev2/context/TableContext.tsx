@@ -1,7 +1,8 @@
 import { createContext, useContext, useReducer, ReactNode, useCallback } from "react";
 import {
   TableContextState,
-  ColumnVisibilityState
+  ColumnVisibilityState,
+  TableDensity,
 } from "../types";
 import { FilterFormState } from "../../form/filters/types";
 
@@ -24,6 +25,8 @@ type TableAction =
   | { type: "SET_ROW_SELECTION"; selection: Record<string, boolean> }
   | { type: "SET_GROUPING_FIELD"; field: string | null }
   | { type: "SET_GROUP_COLLAPSED"; collapsed: Record<string, boolean> }
+  | { type: "SET_DENSITY"; density: TableDensity }
+  | { type: "SET_WRAP_CELLS"; wrapCells: boolean }
   | { type: "SET_QUICK_SEARCH"; term: string }
   | { type: "SET_ADVANCED_FILTERS"; filters: FilterFormState; variables?: Record<string, unknown> }
   | { type: "SET_DATA"; data: Record<string, unknown>[]; loading: boolean; error?: Error | null }
@@ -49,6 +52,8 @@ const initialState: TableContextState = {
   rowSelection: {},
   groupingField: null,
   groupCollapsed: {},
+  density: "comfortable",
+  wrapCells: false,
   refreshKey: 0,
   quickSearch: "",
   advancedFilters: {
@@ -66,6 +71,8 @@ const initialState: TableContextState = {
   setRowSelection: () => {},
   setGroupingField: () => {},
   setGroupCollapsed: () => {},
+  setDensity: () => {},
+  setWrapCells: () => {},
   setQuickSearch: () => {},
   setAdvancedFilters: () => {},
   refresh: () => {},
@@ -133,6 +140,10 @@ function tableReducer(state: TableContextState, action: TableAction): TableConte
       };
     case "SET_GROUP_COLLAPSED":
       return { ...state, groupCollapsed: action.collapsed };
+    case "SET_DENSITY":
+      return { ...state, density: action.density };
+    case "SET_WRAP_CELLS":
+      return { ...state, wrapCells: action.wrapCells };
     case "SET_QUICK_SEARCH":
       return { ...state, quickSearch: action.term, pagination: { ...state.pagination, page: 1 } };
     case "SET_ADVANCED_FILTERS":
@@ -180,6 +191,8 @@ export function TableProvider({ children, initialState: initialProps }: TablePro
     setRowSelection: useCallback((selection: Record<string, boolean>) => dispatch({ type: "SET_ROW_SELECTION", selection }), []),
     setGroupingField: useCallback((field: string | null) => dispatch({ type: "SET_GROUPING_FIELD", field }), []),
     setGroupCollapsed: useCallback((collapsed: Record<string, boolean>) => dispatch({ type: "SET_GROUP_COLLAPSED", collapsed }), []),
+    setDensity: useCallback((density: TableDensity) => dispatch({ type: "SET_DENSITY", density }), []),
+    setWrapCells: useCallback((wrapCells: boolean) => dispatch({ type: "SET_WRAP_CELLS", wrapCells }), []),
     setQuickSearch: useCallback((term: string) => dispatch({ type: "SET_QUICK_SEARCH", term }), []),
     setAdvancedFilters: useCallback((filters: FilterFormState, variables?: Record<string, unknown>) => dispatch({ type: "SET_ADVANCED_FILTERS", filters, variables }), []),
     refresh: useCallback(() => dispatch({ type: "REFRESH" }), []),

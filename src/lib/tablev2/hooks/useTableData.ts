@@ -7,6 +7,7 @@ import type {
   BaseModelTableFieldsInput,
   BaseModelTableRelationConfig,
   FieldSchema,
+  FilterConfig,
   RelationshipSchema,
 } from "../types";
 import {
@@ -15,13 +16,12 @@ import {
 } from "../utils";
 
 // Helper to construct the dynamic query
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function buildDynamicQuery(
   _app: string,
   model: string,
   fields: FieldSchema[],
   relationships: RelationshipSchema[] | undefined,
-  filterConfig?: any,
+  filterConfig?: FilterConfig,
   fieldConfig?: {
     fields?: BaseModelTableFieldsInput;
     relations?: Record<string, BaseModelTableRelationConfig>;
@@ -230,10 +230,12 @@ export function useTableData(config?: {
   fields?: BaseModelTableFieldsInput;
   relations?: Record<string, BaseModelTableRelationConfig>;
   skipCount?: boolean;
+  dataMode?: "pagination" | "infinite";
 }) {
   const { app, model, metadata } = useMetadata();
   const {
     pagination,
+    data: currentData,
     quickSearch,
     filterVariables,
     refreshKey,
@@ -328,6 +330,31 @@ export function useTableData(config?: {
     notifyOnNetworkStatusChange: true,
   });
 
+  const mergeUniqueRows = useMemo(
+    () => (existing: Record<string, unknown>[], incoming: Record<string, unknown>[]) => {
+      const merged = [...existing];
+      const seen = new Set<string>();
+      existing.forEach((row) => {
+        if (row?.id !== undefined && row?.id !== null) {
+          seen.add(String(row.id));
+        }
+      });
+      incoming.forEach((row) => {
+        const rowId = row?.id;
+        if (rowId === undefined || rowId === null) {
+          merged.push(row);
+          return;
+        }
+        const key = String(rowId);
+        if (seen.has(key)) return;
+        seen.add(key);
+        merged.push(row);
+      });
+      return merged;
+    },
+    [],
+  );
+
   // 4. Sync to Context
   useEffect(() => {
     if (data) {
@@ -335,7 +362,13 @@ export function useTableData(config?: {
       const queryName = `${lowerCaseModel}Pages`;
       const result = data[queryName];
       if (result) {
-        _setData(result.items, loading, error);
+        const nextItems = Array.isArray(result.items) ? result.items : [];
+        const shouldAppend =
+          config?.dataMode === "infinite" && pagination.page > 1;
+        const syncedItems = shouldAppend
+          ? mergeUniqueRows(currentData, nextItems)
+          : nextItems;
+        _setData(syncedItems, loading, error);
         _setPageInfo({
           totalCount: result.pageInfo?.totalCount ?? null,
           pageCount: result.pageInfo?.pageCount ?? null,
@@ -352,7 +385,18 @@ export function useTableData(config?: {
          // _setData([], true, undefined); // Optional: clear data on load? Or keep stale?
          // Usually better to keep stale data and show loading indicator
      }
-  }, [data, loading, error, model, _setData, _setPageInfo]);
+  }, [
+    config?.dataMode,
+    currentData,
+    data,
+    error,
+    loading,
+    mergeUniqueRows,
+    model,
+    pagination.page,
+    _setData,
+    _setPageInfo,
+  ]);
 
   useEffect(() => {
     if (!query) return;

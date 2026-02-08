@@ -9,6 +9,8 @@ A metadata-driven, headless-capable data table for Rail React, built on top of S
 - **Advanced Filtering**: Supports complex nested filters via `FilterPanel`.
 - **Responsive**: Switches to card view on mobile devices (`TableMobileCard`).
 - **Persisted State**: Saves column order, visibility, and page size to `localStorage`.
+- **High-Volume Ready**: Optional virtualized row rendering for large pages, density controls, and wrapped-cell mode.
+- **Enhanced UX**: Refresh action, view options, page jump input, and richer status chips.
 - **Compound Components**: Fully composable architecture.
 
 ## Usage
@@ -103,6 +105,33 @@ Notes:
 - `display` defines visible columns.
 - `exclude` removes fields/relations by accessor or root key.
 - `render` overrides cell rendering by column accessor/root.
+
+### View + Performance Options
+
+```tsx
+<BaseModelTable
+  app="sales"
+  model="Invoice"
+  view={{
+    defaultDensity: "comfortable",
+    defaultWrapCells: false,
+    maxBodyHeightClassName: "max-h-[72vh]",
+  }}
+  performance={{
+    enableVirtualization: true,
+    virtualizeThreshold: 80,
+    overscan: 8,
+    dataMode: "pagination", // default
+  }}
+/>
+```
+
+Notes:
+- `view` controls row density, wrap behavior, and scroll viewport size.
+- `performance` controls table body virtualization for large datasets.
+- `performance.dataMode` can be `"pagination"` (default) or `"infinite"`.
+- In `"infinite"` mode, scrolling near the bottom loads the next page and rows are appended.
+- Grouped rows and wrapped-cell mode automatically disable virtualization for correct layout.
 
 ## Architecture
 

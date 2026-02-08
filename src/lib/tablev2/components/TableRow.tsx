@@ -151,12 +151,22 @@ export function TableRows({
   columns,
   enableSelection,
   refetch,
+  performance,
+  scrollContainerRef,
+  infiniteMode,
 }: {
   loadingText?: string;
   emptyState?: string;
   columns?: BaseModelTableColumnDef[];
   enableSelection?: boolean;
   refetch?: BaseModelTableRefetch;
+  performance?: {
+    enableVirtualization?: boolean;
+    virtualizeThreshold?: number;
+    overscan?: number;
+  };
+  scrollContainerRef?: React.RefObject<HTMLDivElement | null>;
+  infiniteMode?: boolean;
 }) {
   const { metadata } = useMetadata();
   const {
@@ -169,7 +179,11 @@ export function TableRows({
     groupingField,
     groupCollapsed,
     setGroupCollapsed,
+    density,
+    wrapCells,
   } = useTable();
+  const [scrollTop, setScrollTop] = useState(0);
+  const [viewportHeight, setViewportHeight] = useState(0);
 
   const fieldLookup = useMemo(() => {
     if (!metadata) return new Map<string, FieldSchema>();
@@ -260,7 +274,48 @@ export function TableRows({
   };
 
   const fixedColumnCount = (enableSelection ? 1 : 0) + 1;
-  const cellPadding = "py-0 px-3";
+  const rowHeight =
+    density === "compact" ? 40 : density === "spacious" ? 56 : 48;
+  const cellPadding =
+    density === "compact"
+      ? "py-1 px-3"
+      : density === "spacious"
+        ? "py-3 px-3.5"
+        : "py-2 px-3";
+  const cellTextClass = wrapCells
+    ? "whitespace-normal break-words leading-snug"
+    : "max-w-[24rem] overflow-hidden text-ellipsis whitespace-nowrap";
+
+  React.useEffect(() => {
+    const container = scrollContainerRef?.current;
+    if (!container) return;
+
+    const updateMetrics = () => {
+      setViewportHeight(container.clientHeight);
+      setScrollTop(container.scrollTop);
+    };
+
+    let rafId: number | null = null;
+    const onScroll = () => {
+      if (rafId !== null) return;
+      rafId = window.requestAnimationFrame(() => {
+        rafId = null;
+        setScrollTop(container.scrollTop);
+      });
+    };
+
+    updateMetrics();
+    container.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", updateMetrics);
+
+    return () => {
+      container.removeEventListener("scroll", onScroll);
+      window.removeEventListener("resize", updateMetrics);
+      if (rafId !== null) {
+        window.cancelAnimationFrame(rafId);
+      }
+    };
+  }, [scrollContainerRef]);
 
   const renderDataRow = (
     row: Record<string, unknown>,
@@ -279,6 +334,7 @@ export function TableRows({
         className={cn(
           "border-b border-muted/40 transition-colors group",
           isSelected && "ring-1 ring-primary/40",
+          density === "compact" ? "h-10" : density === "spacious" ? "h-14" : "h-12",
         )}
         style={
           {
@@ -310,23 +366,27 @@ export function TableRows({
 
             return (
               <TableCell key={field.id} className={cellPadding}>
-                {field.render
-                  ? field.render(value, row, {
-                      accessor: field.accessor,
-                      columnId: field.id,
-                      data,
-                      refetch,
-                    })
-                  : metaField
-                    ? formatCellValue(value, metaField)
-                    : formatFallbackValue(value)}
+                <div className={cellTextClass}>
+                  {field.render
+                    ? field.render(value, row, {
+                        accessor: field.accessor,
+                        columnId: field.id,
+                        data,
+                        refetch,
+                      })
+                    : metaField
+                      ? formatCellValue(value, metaField)
+                      : formatFallbackValue(value)}
+                </div>
               </TableCell>
             );
           }
 
           return (
             <TableCell key={field.name} className={cellPadding}>
-              {formatCellValue(row[field.name], field)}
+              <div className={cellTextClass}>
+                {formatCellValue(row[field.name], field)}
+              </div>
             </TableCell>
           );
         })}
@@ -425,11 +485,83 @@ export function TableRows({
             </React.Fragment>
           );
         })}
+        {infiniteMode && loading ? (
+          <ShadcnTableRow>
+            <TableCell
+              colSpan={visibleColumns.length + fixedColumnCount}
+              className="py-3 text-center text-muted-foreground"
+            >
+              <span className="inline-flex items-center gap-2 text-xs">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Chargement de lignes supplementaires...
+              </span>
+            </TableCell>
+          </ShadcnTableRow>
+        ) : null}
       </>
     );
   }
 
-  return <>{data.map((row, index) => renderDataRow(row, index))}</>;
+  const enableVirtualization =
+    (performance?.enableVirtualization ?? true) &&
+    !wrapCells &&
+    !groupingField &&
+    data.length >= (performance?.virtualizeThreshold ?? 80) &&
+    viewportHeight > 0;
+  const overscan = Math.max(2, performance?.overscan ?? 8);
+  const startIndex = enableVirtualization
+    ? Math.max(0, Math.floor(scrollTop / rowHeight) - overscan)
+    : 0;
+  const visibleCount = enableVirtualization
+    ? Math.ceil(viewportHeight / rowHeight) + overscan * 2
+    : data.length;
+  const endIndex = enableVirtualization
+    ? Math.min(data.length, startIndex + visibleCount)
+    : data.length;
+  const topSpacerHeight = enableVirtualization ? startIndex * rowHeight : 0;
+  const bottomSpacerHeight = enableVirtualization
+    ? Math.max(0, (data.length - endIndex) * rowHeight)
+    : 0;
+  const visibleRows = data.slice(startIndex, endIndex);
+
+  return (
+    <>
+      {enableVirtualization && topSpacerHeight > 0 ? (
+        <ShadcnTableRow aria-hidden="true">
+          <TableCell
+            colSpan={visibleColumns.length + fixedColumnCount}
+            style={{ height: `${topSpacerHeight}px` }}
+            className="border-0 p-0"
+          />
+        </ShadcnTableRow>
+      ) : null}
+      {(enableVirtualization ? visibleRows : data).map((row, index) =>
+        renderDataRow(row, enableVirtualization ? startIndex + index : index),
+      )}
+      {enableVirtualization && bottomSpacerHeight > 0 ? (
+        <ShadcnTableRow aria-hidden="true">
+          <TableCell
+            colSpan={visibleColumns.length + fixedColumnCount}
+            style={{ height: `${bottomSpacerHeight}px` }}
+            className="border-0 p-0"
+          />
+        </ShadcnTableRow>
+      ) : null}
+      {infiniteMode && loading ? (
+        <ShadcnTableRow>
+          <TableCell
+            colSpan={visibleColumns.length + fixedColumnCount}
+            className="py-3 text-center text-muted-foreground"
+          >
+            <span className="inline-flex items-center gap-2 text-xs">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Chargement de lignes supplementaires...
+            </span>
+          </TableCell>
+        </ShadcnTableRow>
+      ) : null}
+    </>
+  );
 }
 
 

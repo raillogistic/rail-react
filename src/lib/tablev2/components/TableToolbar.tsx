@@ -1,5 +1,14 @@
 import { useMemo, useState } from "react";
-import { Check, Columns3Icon, Filter, Rows3, Search } from "lucide-react";
+import {
+  Check,
+  Columns3Icon,
+  Filter,
+  RefreshCw,
+  Rows3,
+  Search,
+  SlidersHorizontal,
+  WrapText,
+} from "lucide-react";
 import { Input } from "@/lib/components/ui/input";
 import { Button } from "@/lib/components/ui/button";
 import {
@@ -52,9 +61,15 @@ export function TableToolbar({
     setColumnVisibility,
     columnOrder,
     data,
+    pagination,
     groupingField,
     setGroupingField,
     setGroupCollapsed,
+    density,
+    setDensity,
+    wrapCells,
+    setWrapCells,
+    refresh,
   } = useTable();
   const {
     quickSearch: quickSearchValue,
@@ -217,18 +232,31 @@ export function TableToolbar({
     });
     setGroupCollapsed(nextCollapsed);
   };
+  const activeAdvancedFilterCount =
+    advancedFilters.root.conditions.length +
+    advancedFilters.selectedPresets.length +
+    (quickSearchValue ? 1 : 0);
+  const hasGroupedRows = !!groupingField;
+  const totalLabel = pagination.totalKnown
+    ? `${pagination.total} ligne${pagination.total > 1 ? "s" : ""}`
+    : `${data.length} chargee${data.length > 1 ? "s" : ""}`;
+  const densityLabels = {
+    compact: tableConfig?.densityOptions?.compact ?? "Compact",
+    comfortable: tableConfig?.densityOptions?.comfortable ?? "Confort",
+    spacious: tableConfig?.densityOptions?.spacious ?? "Large",
+  };
 
   if (!metadata) return null;
 
   return (
-    <div className="mb-4 space-y-3 rounded-lg bg-card/60 p-3 shadow-sm">
+    <div className="mb-4 space-y-3 rounded-xl border bg-card/95 p-3 shadow-sm">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-1 items-center gap-2">
           {quickSearch !== false && supportsQuick ? (
             <div className="relative">
               <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input
-                className="h-8 w-64 pl-8 focus-visible:z-10"
+                className="h-9 w-[240px] pl-8 md:w-[320px]"
                 placeholder={tableConfig?.searchPlaceholder ?? "Recherche rapide..."}
                 value={quickSearchValue}
                 onChange={(event) => setQuickSearch(event.target.value)}
@@ -238,6 +266,77 @@ export function TableToolbar({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8"
+            title={tableConfig?.refreshLabel ?? "Rafraichir"}
+            aria-label={tableConfig?.refreshLabel ?? "Rafraichir"}
+            onClick={() => refresh()}
+          >
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                title={tableConfig?.viewLabel ?? "Options d'affichage"}
+                aria-label={tableConfig?.viewLabel ?? "Options d'affichage"}
+              >
+                <SlidersHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-64">
+              <div className="px-2 py-1 text-xs text-muted-foreground">
+                {tableConfig?.densityLabel ?? "Densite des lignes"}
+              </div>
+              <DropdownMenuItem onClick={() => setDensity("compact")}>
+                <div className="flex items-center gap-2">
+                  {density === "compact" ? (
+                    <Check className="h-3.5 w-3.5" />
+                  ) : (
+                    <span className="inline-block h-3.5 w-3.5" />
+                  )}
+                  <span>{densityLabels.compact}</span>
+                </div>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setDensity("comfortable")}>
+                <div className="flex items-center gap-2">
+                  {density === "comfortable" ? (
+                    <Check className="h-3.5 w-3.5" />
+                  ) : (
+                    <span className="inline-block h-3.5 w-3.5" />
+                  )}
+                  <span>{densityLabels.comfortable}</span>
+                </div>
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setDensity("spacious")}>
+                <div className="flex items-center gap-2">
+                  {density === "spacious" ? (
+                    <Check className="h-3.5 w-3.5" />
+                  ) : (
+                    <span className="inline-block h-3.5 w-3.5" />
+                  )}
+                  <span>{densityLabels.spacious}</span>
+                </div>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <div className="flex items-center justify-between gap-2 px-2 py-2 text-sm">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <WrapText className="h-4 w-4" />
+                  <span>{tableConfig?.wrapCellsLabel ?? "Retour a la ligne"}</span>
+                </div>
+                <Switch
+                  checked={wrapCells}
+                  onCheckedChange={(checked) => setWrapCells(Boolean(checked))}
+                />
+              </div>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
           {panelDefaults.mode === "modal" ? (
             <Dialog open={filterOpen} onOpenChange={setFilterOpen}>
               <DialogTrigger asChild>
@@ -410,8 +509,25 @@ export function TableToolbar({
           </DropdownMenu>
         </div>
       </div>
-      {hasActiveFilters && (
-        <div>
+
+      <div className="flex flex-wrap items-center justify-between gap-2 border-t pt-2">
+        <div className="flex flex-wrap items-center gap-2 text-xs">
+          <span className="rounded-full border bg-background px-2 py-0.5 text-muted-foreground">
+            {totalLabel}
+          </span>
+          {hasGroupedRows ? (
+            <span className="rounded-full border bg-background px-2 py-0.5 text-muted-foreground">
+              Regroupement actif
+            </span>
+          ) : null}
+          {hasActiveFilters ? (
+            <span className="rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-primary">
+              {activeAdvancedFilterCount} filtre
+              {activeAdvancedFilterCount > 1 ? "s" : ""}
+            </span>
+          ) : null}
+        </div>
+        {hasActiveFilters ? (
           <Button
             variant="ghost"
             size="sm"
@@ -420,8 +536,8 @@ export function TableToolbar({
           >
             {tableConfig?.resetLabel ?? "Reinitialiser"}
           </Button>
-        </div>
-      )}
+        ) : null}
+      </div>
     </div>
   );
 }

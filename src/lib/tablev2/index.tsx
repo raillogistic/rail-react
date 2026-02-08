@@ -27,6 +27,7 @@ import type {
   FieldSchema,
   ModelSchema,
   RelationshipSchema,
+  TableDensity,
 } from "./types";
 import {
   findMutation,
@@ -88,6 +89,15 @@ export type ModelTableV2TableConfig = {
   addLabel?: string;
   columnsLabel?: string;
   toggleColumnsLabel?: string;
+  viewLabel?: string;
+  wrapCellsLabel?: string;
+  densityLabel?: string;
+  densityOptions?: {
+    compact?: string;
+    comfortable?: string;
+    spacious?: string;
+  };
+  refreshLabel?: string;
   paginationLabels?: {
     rowsPerPage?: string;
     pageStatus?: (page: number, totalPages: number) => string;
@@ -119,6 +129,20 @@ export type ModelTableV2TableConfig = {
     cancel?: string;
     download?: string;
   };
+};
+
+export type ModelTableV2PerformanceOptions = {
+  enableVirtualization?: boolean;
+  virtualizeThreshold?: number;
+  overscan?: number;
+  dataMode?: "pagination" | "infinite";
+  infiniteScrollThresholdPx?: number;
+};
+
+export type ModelTableV2ViewOptions = {
+  defaultDensity?: TableDensity;
+  defaultWrapCells?: boolean;
+  maxBodyHeightClassName?: string;
 };
 
 function ModelTableV2Content({
@@ -213,20 +237,32 @@ function ModelTableV2Content({
     const loadedCount = data.length;
     return `${loadedCount} ligne${loadedCount > 1 ? "s" : ""} chargee${loadedCount > 1 ? "s" : ""}`;
   }, [data.length, pagination.total, pagination.totalKnown]);
+  const selectedCount = selectedRows.length;
 
   return (
     <>
       {showTitle && resolvedTitle ? (
-        <div className="mb-4 rounded-lg bg-card/60 p-4 shadow-sm">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="space-y-1">
-              <h2 className="text-lg font-semibold tracking-wide text-foreground">
+        <div className="mb-4 overflow-hidden rounded-xl border bg-card shadow-sm">
+          <div className="pointer-events-none h-1 w-full bg-gradient-to-r from-primary/80 via-primary/30 to-transparent" />
+          <div className="flex flex-wrap items-center justify-between gap-3 p-4">
+            <div className="space-y-2">
+              <h2 className="text-lg font-semibold tracking-tight text-foreground">
                 {resolvedTitle}
               </h2>
-              <p className="text-xs text-muted-foreground">
-                {rowSummary} · {visibleColumnCount} colonne
-                {visibleColumnCount > 1 ? "s" : ""} visibles
-              </p>
+              <div className="flex flex-wrap items-center gap-2 text-xs">
+                <span className="rounded-full border bg-background/70 px-2 py-0.5 text-muted-foreground">
+                  {rowSummary}
+                </span>
+                <span className="rounded-full border bg-background/70 px-2 py-0.5 text-muted-foreground">
+                  {visibleColumnCount} colonne{visibleColumnCount > 1 ? "s" : ""} visible
+                  {visibleColumnCount > 1 ? "s" : ""}
+                </span>
+                {selectedCount > 0 ? (
+                  <span className="rounded-full border border-primary/30 bg-primary/10 px-2 py-0.5 text-primary">
+                    {selectedCount} selectionne{selectedCount > 1 ? "s" : ""}
+                  </span>
+                ) : null}
+              </div>
             </div>
             {resolvedTopActions.length > 0 ? (
               <div className="flex flex-wrap items-center gap-2">
@@ -287,6 +323,8 @@ type BaseTableContentProps = {
   persistenceKey?: string;
   children?: React.ReactNode;
   tableConfig?: ModelTableV2TableConfig;
+  view?: ModelTableV2ViewOptions;
+  performance?: ModelTableV2PerformanceOptions;
   hideTableOnMobile?: boolean;
   fields?: BaseModelTableFieldsInput;
   relations?: Record<string, BaseModelTableRelationConfig>;
@@ -300,6 +338,8 @@ function BaseTableContent({
   persistenceKey,
   children,
   tableConfig,
+  view,
+  performance,
   hideTableOnMobile,
   fields,
   relations,
@@ -320,8 +360,14 @@ function BaseTableContent({
     setColumnOrder,
     setColumnVisibility,
     columnVisibility,
+    pagination,
+    loading: tableLoading,
+    data,
+    setPage,
     error: dataError,
   } = useTable();
+  const tableScrollRef = React.useRef<HTMLDivElement>(null);
+  const isInfiniteMode = performance?.dataMode === "infinite";
 
   const effectiveKey = persistenceKey || `${app}-${model}`;
   useTablePersistence(effectiveKey);
@@ -331,8 +377,9 @@ function BaseTableContent({
       fields,
       relations,
       skipCount: skipCount ?? true,
+      dataMode: performance?.dataMode ?? "pagination",
     }),
-    [fields, relations, skipCount],
+    [fields, relations, skipCount, performance?.dataMode],
   );
   const { refetch } = useTableData(queryConfig);
 
@@ -552,6 +599,46 @@ function BaseTableContent({
     resolveColumnOrder,
   ]);
 
+  React.useEffect(() => {
+    if (!isInfiniteMode) return;
+    const container = tableScrollRef.current;
+    if (!container) return;
+
+    const threshold = performance?.infiniteScrollThresholdPx ?? 200;
+    let ticking = false;
+
+    const maybeLoadMore = () => {
+      if (tableLoading) return;
+      if (!pagination.hasNextPage) return;
+      const distanceToBottom =
+        container.scrollHeight - container.scrollTop - container.clientHeight;
+      if (distanceToBottom > threshold) return;
+      setPage(pagination.page + 1);
+    };
+
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      window.requestAnimationFrame(() => {
+        ticking = false;
+        maybeLoadMore();
+      });
+    };
+
+    container.addEventListener("scroll", onScroll, { passive: true });
+
+    return () => {
+      container.removeEventListener("scroll", onScroll);
+    };
+  }, [
+    isInfiniteMode,
+    pagination.hasNextPage,
+    pagination.page,
+    performance?.infiniteScrollThresholdPx,
+    setPage,
+    tableLoading,
+  ]);
+
   if (metadataLoading) {
     return (
       <div
@@ -578,8 +665,11 @@ function BaseTableContent({
         <div className="flex min-h-full min-w-0 flex-col gap-4">
           {children}
           <div className={hideTableOnMobile ? "hidden md:block" : undefined}>
-            <Card className="flex h-full min-h-0 flex-col shadow-sm">
-              <CardContent className="flex-1 min-h-0 overflow-auto p-0">
+            <Card className="flex h-full min-h-0 flex-col overflow-hidden border shadow-sm">
+              <CardContent
+                ref={tableScrollRef}
+                className={`flex-1 min-h-0 overflow-auto p-0 ${view?.maxBodyHeightClassName ?? "max-h-[70vh]"}`}
+              >
                 <DndContext
                   collisionDetection={closestCenter}
                   onDragEnd={handleDragEnd}
@@ -604,6 +694,9 @@ function BaseTableContent({
                         columns={columnDefs ?? undefined}
                         enableSelection={enableSelection}
                         refetch={refetch}
+                        performance={performance}
+                        scrollContainerRef={tableScrollRef}
+                        infiniteMode={isInfiniteMode}
                       />
                     </TableBody>
                   </TableFrame>
@@ -611,10 +704,30 @@ function BaseTableContent({
               </CardContent>
             </Card>
           </div>
-          <TablePagination
-            labels={tableConfig?.paginationLabels}
-            enableSelection={enableSelection}
-          />
+          {isInfiniteMode ? (
+            <div className="mt-3 rounded-lg border bg-card/95 px-3 py-2 text-xs text-muted-foreground">
+              <span>
+                {pagination.totalKnown
+                  ? `${data.length} sur ${pagination.total} ligne(s) chargee(s)`
+                  : `${data.length} ligne(s) chargee(s)`}
+              </span>
+              {tableLoading ? (
+                <span className="ml-2 inline-flex items-center gap-1">
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  Chargement...
+                </span>
+              ) : pagination.hasNextPage ? (
+                <span className="ml-2">Defilez pour charger plus</span>
+              ) : (
+                <span className="ml-2">Fin des resultats</span>
+              )}
+            </div>
+          ) : (
+            <TablePagination
+              labels={tableConfig?.paginationLabels}
+              enableSelection={enableSelection}
+            />
+          )}
           {dataError && (
             <div className="text-sm text-red-500 px-2">
               Erreur de chargement des donnees : {dataError.message}
@@ -635,6 +748,8 @@ export interface BaseModelTableProps {
   topActions?: ModelTableV2TopActionsInput;
   children?: React.ReactNode;
   tableConfig?: ModelTableV2TableConfig;
+  view?: ModelTableV2ViewOptions;
+  performance?: ModelTableV2PerformanceOptions;
   hideTableOnMobile?: boolean;
   fields?: BaseModelTableFieldsInput;
   relations?: Record<string, BaseModelTableRelationConfig>;
@@ -651,6 +766,8 @@ export function BaseModelTable({
   persistenceKey,
   children,
   tableConfig,
+  view,
+  performance,
   hideTableOnMobile,
   fields,
   relations,
@@ -664,10 +781,17 @@ export function BaseModelTable({
   return (
     <div className={className ? `h-full w-full ${className}` : "h-full w-full"}>
       <MetadataProvider key={tableInstanceKey} app={app} model={model}>
-        <TableProvider>
+        <TableProvider
+          initialState={{
+            density: view?.defaultDensity ?? "comfortable",
+            wrapCells: view?.defaultWrapCells ?? false,
+          }}
+        >
           <BaseTableContent
             persistenceKey={persistenceKey}
             tableConfig={tableConfig}
+            view={view}
+            performance={performance}
             hideTableOnMobile={hideTableOnMobile}
             fields={fields}
             relations={relations}
@@ -697,6 +821,8 @@ export function ModelTableV2({
       className={baseTable?.className}
       persistenceKey={baseTable?.persistenceKey}
       tableConfig={baseTable?.tableConfig}
+      view={baseTable?.view}
+      performance={baseTable?.performance}
       hideTableOnMobile={baseTable?.hideTableOnMobile ?? true}
       fields={baseTable?.fields}
       relations={baseTable?.relations}

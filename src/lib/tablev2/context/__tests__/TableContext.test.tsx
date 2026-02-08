@@ -48,4 +48,16 @@ describe('TableContext', () => {
     expect(result.current.quickSearch).toBe('test');
     expect(result.current.pagination.page).toBe(1); // Should reset to page 1
   });
+
+  it('should update view settings', () => {
+    const { result } = renderHook(() => useTable(), { wrapper });
+
+    act(() => {
+      result.current.setDensity('compact');
+      result.current.setWrapCells(true);
+    });
+
+    expect(result.current.density).toBe('compact');
+    expect(result.current.wrapCells).toBe(true);
+  });
 });
