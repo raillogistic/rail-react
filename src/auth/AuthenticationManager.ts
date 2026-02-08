@@ -6,7 +6,6 @@ import { SessionService } from "./services/SessionService";
 import { PermissionService } from "./services/PermissionService";
 import { DeviceService } from "./services/DeviceService";
 import { MFAService } from "./services/MFAService";
-import { AuditService } from "./services/AuditService";
 import type {
   AuthConfig,
   AuthState,
@@ -16,8 +15,14 @@ import type {
   LogoutOptions,
   TokenPair,
   TokenPayload,
+  AuthErrorCode,
+  AuthEventType,
+  AuthEventPayloads,
 } from "./types";
-import { DEFAULT_AUTH_CONFIG, mergeConfig } from "./constants/config";
+import { mergeConfig } from "./constants/config";
+
+const LEGACY_ACCESS_TOKEN_KEY = "access_token";
+const LEGACY_REFRESH_TOKEN_KEY = "refresh_token";
 
 export class AuthenticationManager {
   private config: AuthConfig;
@@ -29,7 +34,6 @@ export class AuthenticationManager {
   private permissionService: PermissionService;
   public deviceService: DeviceService;
   public mfaService: MFAService;
-  private auditService: AuditService;
 
   private state: AuthState = {
     status: "idle",
@@ -75,7 +79,6 @@ export class AuthenticationManager {
     this.permissionService = new PermissionService();
     this.deviceService = new DeviceService(deviceStorage, this.eventBus);
     this.mfaService = new MFAService(this.storage, this.eventBus);
-    this.auditService = new AuditService(this.eventBus);
 
     this.setupEventHandlers();
   }
@@ -87,17 +90,24 @@ export class AuthenticationManager {
     // Check default storage first
     let accessToken = this.tokenService.getAccessToken();
 
-    // If not found, check LocalStorage (Handle "Remember Me" persistence)
+    // Only fall back to LocalStorage when an explicit remember-me session is active.
     if (!accessToken) {
-      this.storage.updateConfig({ type: "local" });
-      const localToken = this.tokenService.getAccessToken();
+      if (this.shouldUseRememberMeFallback()) {
+        this.storage.updateConfig({ type: "local" });
+        const localToken = this.tokenService.getAccessToken();
 
-      if (localToken) {
-        accessToken = localToken;
-        // Keep config as 'local' to maintain "Remember Me" session
+        if (localToken) {
+          accessToken = localToken;
+          // Keep config as 'local' to maintain "Remember Me" session
+        } else {
+          // Revert to default config
+          this.storage.updateConfig({ type: this.config.token.storageType });
+          this.persistRememberMeFlag(false);
+        }
       } else {
-        // Revert to default config
-        this.storage.updateConfig({ type: this.config.token.storageType });
+        // Defensive cleanup for stale local tokens from older builds.
+        this.clearStorageTokens("local");
+        this.persistRememberMeFlag(false);
       }
     }
 
@@ -117,11 +127,20 @@ export class AuthenticationManager {
     if (isValid) {
       const payload = this.tokenService.decodeToken(accessToken);
       if (payload) {
+        const userFromToken = this.extractUserFromPayload(payload);
+        if (!userFromToken.id) {
+          this.tokenService.clearTokens();
+          this.updateState({
+            status: "unauthenticated",
+            isLoading: false,
+          });
+          return;
+        }
         this.updateState({
           status: "authenticated",
           isAuthenticated: true,
           isLoading: false,
-          user: this.extractUserFromPayload(payload),
+          user: userFromToken,
         });
         return;
       }
@@ -200,13 +219,18 @@ export class AuthenticationManager {
           throw new Error("Login successful but no user data returned");
         }
 
+        const rememberMeEnabled = credentials.rememberMe === true;
+
         // Handle Remember Me - switch storage persistence if requested
-        if (credentials.rememberMe) {
+        if (rememberMeEnabled) {
           this.storage.updateConfig({ type: "local" });
+          this.clearStorageTokens("session");
         } else {
-          // Revert to default config if not remember me (or ensure it's session/memory)
+          // Revert to configured default storage and clear persistent local remnants.
           this.storage.updateConfig({ type: this.config.token.storageType });
+          this.clearStorageTokens("local");
         }
+        this.persistRememberMeFlag(rememberMeEnabled);
 
         // Success
         this.rateLimiter.reset(username);
@@ -235,7 +259,7 @@ export class AuthenticationManager {
     } catch (error) {
       // Determine error details
       let message = 'Invalid username or password';
-      let code: import('../types').AuthErrorCode = 'INVALID_CREDENTIALS';
+      let code: AuthErrorCode = 'INVALID_CREDENTIALS';
       let recoverable = true;
 
       if (error instanceof Error) {
@@ -338,7 +362,7 @@ export class AuthenticationManager {
       this.eventBus.emit("auth:login_success", { user, sessionId });
       return { success: true, user };
     } catch (error) {
-      let code: import('../types').AuthErrorCode = 'MFA_INVALID';
+      let code: AuthErrorCode = 'MFA_INVALID';
       let message = 'Invalid verification code';
 
       if (error instanceof Error) {
@@ -382,6 +406,9 @@ export class AuthenticationManager {
     const reason = options.reason || "user_initiated";
 
     this.tokenService.clearTokens();
+    this.clearStorageTokens("session");
+    this.clearStorageTokens("local");
+    this.persistRememberMeFlag(false);
     this.sessionService.endSession(reason);
     this.permissionService.invalidate();
 
@@ -424,9 +451,9 @@ export class AuthenticationManager {
   }
 
   // Event subscription
-  on<T extends import("../types").AuthEventType>(
+  on<T extends AuthEventType>(
     event: T,
-    handler: (payload: import("../types").AuthEventPayloads[T]) => void,
+    handler: (payload: AuthEventPayloads[T]) => void,
   ): () => void {
     return this.eventBus.on(event, handler);
   }
@@ -458,11 +485,84 @@ export class AuthenticationManager {
   }
 
   private extractUserFromPayload(payload: TokenPayload): AuthUser {
+    const payloadUserId =
+      payload.user_id ?? payload.userId ?? payload.id ?? payload.sub;
     return {
-      id: payload.sub,
+      id: payloadUserId != null ? String(payloadUserId) : "",
       email: payload.email || "",
+      username: payload.username || "",
+      first_name: payload.first_name || "",
+      last_name: payload.last_name || "",
       roles: payload.roles || [],
       permissions: payload.permissions || [],
     };
+  }
+
+  private shouldUseRememberMeFallback(): boolean {
+    if (this.config.token.storageType === "local") {
+      return true;
+    }
+
+    if (typeof window === "undefined") {
+      return false;
+    }
+
+    try {
+      return (
+        window.localStorage.getItem(this.getRememberMeKey()) === "true"
+      );
+    } catch {
+      return false;
+    }
+  }
+
+  private persistRememberMeFlag(enabled: boolean): void {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    try {
+      const key = this.getRememberMeKey();
+      if (enabled) {
+        window.localStorage.setItem(key, "true");
+      } else {
+        window.localStorage.removeItem(key);
+      }
+    } catch {
+      // ignore storage failures
+    }
+  }
+
+  private clearStorageTokens(storageType: "session" | "local"): void {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const storage =
+      storageType === "session" ? window.sessionStorage : window.localStorage;
+    const prefix = this.config.token.storagePrefix;
+    const prefixedKeys = [
+      `${prefix}access_token`,
+      `${prefix}refresh_token`,
+      `${prefix}access_expires`,
+      `${prefix}refresh_expires`,
+    ];
+
+    try {
+      for (const key of prefixedKeys) {
+        storage.removeItem(key);
+      }
+
+      if (storageType === "local") {
+        storage.removeItem(LEGACY_ACCESS_TOKEN_KEY);
+        storage.removeItem(LEGACY_REFRESH_TOKEN_KEY);
+      }
+    } catch {
+      // ignore storage failures
+    }
+  }
+
+  private getRememberMeKey(): string {
+    return `${this.config.token.storagePrefix}remember_me`;
   }
 }

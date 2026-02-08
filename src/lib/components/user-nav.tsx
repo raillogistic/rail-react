@@ -1,6 +1,5 @@
 import { Link } from "react-router-dom";
 import {
-  IconDotsVertical,
   IconLogout,
   IconUserCircle,
   IconSettings,
@@ -24,23 +23,39 @@ import { Button } from "@/lib/components/ui/button";
 
 export function UserNav() {
   const { user, logout } = useAuthContext();
+  const userAvatar = user?.avatar || user?.avatarUrl;
+  const displayName =
+    user?.first_name ||
+    user?.last_name ||
+    user?.firstName ||
+    user?.lastName
+      ? `${user?.first_name || user?.firstName || ""} ${user?.last_name || user?.lastName || ""}`.trim()
+      : user?.displayName || user?.username || "Utilisateur";
+  const primaryIdentity = displayName || user?.username || user?.email || "Utilisateur";
+  const secondaryIdentity = user?.email || user?.username || "Compte";
+  const avatarFallback = primaryIdentity
+    .split(" ")
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((segment) => segment[0]?.toUpperCase() ?? "")
+    .join("") || "U";
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-8 w-8">
-            <AvatarImage src={user?.avatar} alt={user?.username} />
-            <AvatarFallback>CN</AvatarFallback>
+            <AvatarImage src={userAvatar} alt={user?.username} />
+            <AvatarFallback>{avatarFallback}</AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{user?.username}</p>
+            <p className="text-sm font-medium leading-none">{primaryIdentity}</p>
             <p className="text-xs leading-none text-muted-foreground">
-              {user?.email}
+              {secondaryIdentity}
             </p>
           </div>
         </DropdownMenuLabel>

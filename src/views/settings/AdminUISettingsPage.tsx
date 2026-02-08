@@ -1,4 +1,3 @@
-import React from "react";
 import { useAuth } from "@/auth/hooks/useAuth";
 import { gql, useQuery } from "@apollo/client";
 import { AdminUISettings } from "./AdminUISettings";
@@ -8,24 +7,24 @@ const GET_USER_PERMISSIONS = gql`
   query GetUserPermissions {
     me {
       id
-      is_superuser: isSuperuser
-      model_permissions: modelPermissions {
-        model_name
-        verbose_name
-        can_update
-        can_create
-        can_delete
+      isSuperuser
+      modelPermissions {
+        modelName
+        verboseName
+        canUpdate
+        canCreate
+        canDelete
       }
     }
   }
 `;
 
 interface ModelPermission {
-  model_name: string;
-  verbose_name: string;
-  can_update: boolean;
-  can_create: boolean;
-  can_delete: boolean;
+  modelName: string;
+  verboseName: string;
+  canUpdate: boolean;
+  canCreate: boolean;
+  canDelete: boolean;
 }
 
 export function AdminUISettingsPage() {
@@ -36,17 +35,16 @@ export function AdminUISettingsPage() {
   });
 
   const remoteUser = userData?.me;
-  const permissions: ModelPermission[] = remoteUser?.model_permissions || [];
+  const permissions: ModelPermission[] = remoteUser?.modelPermissions || [];
 
   const hasUIPermission = permissions.some(
     (p) =>
-      (p.model_name.toLowerCase() === "core.uicomponentconfig" ||
-        p.model_name === "UIComponentConfig") &&
-      (p.can_update || p.can_create),
+      (p.modelName.toLowerCase() === "core.uicomponentconfig" ||
+        p.modelName === "UIComponentConfig") &&
+      (p.canUpdate || p.canCreate),
   );
 
-  const canManageUI =
-    user?.is_superuser || remoteUser?.is_superuser || hasUIPermission;
+  const canManageUI = remoteUser?.isSuperuser || hasUIPermission;
 
   if (!canManageUI) {
     return (

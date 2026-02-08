@@ -1,7 +1,9 @@
-import React from "react";
-import { zodResolver } from "@hookform/resolvers/zod";
+﻿import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
+import { gql, useMutation } from "@apollo/client";
+import { toast } from "sonner";
+
 import { Button } from "@/lib/components/ui/button";
 import {
   Form,
@@ -12,27 +14,33 @@ import {
   FormMessage,
 } from "@/lib/components/ui/form";
 import { Input } from "@/lib/components/ui/input";
-import { toast } from "sonner";
-import { gql, useMutation } from "@apollo/client";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/lib/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/lib/components/ui/card";
 
 const CHANGE_PASSWORD_MUTATION = gql`
   mutation ChangePassword($oldPassword: String!, $newPassword: String!) {
-    change_password(old_password: $oldPassword, new_password: $newPassword) {
+    changePassword(oldPassword: $oldPassword, newPassword: $newPassword) {
       ok
       errors
     }
   }
 `;
 
-const passwordFormSchema = z.object({
-  old_password: z.string().min(1, "L'ancien mot de passe est requis."),
-  new_password: z.string().min(8, "Le mot de passe doit contenir au moins 8 caractères."),
-  confirm_password: z.string().min(1, "La confirmation est requise."),
-}).refine((data) => data.new_password === data.confirm_password, {
-  message: "Les mots de passe ne correspondent pas.",
-  path: ["confirm_password"],
-});
+const passwordFormSchema = z
+  .object({
+    oldPassword: z.string().min(1, "L'ancien mot de passe est requis."),
+    newPassword: z.string().min(8, "Le mot de passe doit contenir au moins 8 caracteres."),
+    confirmPassword: z.string().min(1, "La confirmation est requise."),
+  })
+  .refine((data) => data.newPassword === data.confirmPassword, {
+    message: "Les mots de passe ne correspondent pas.",
+    path: ["confirmPassword"],
+  });
 
 type PasswordFormValues = z.infer<typeof passwordFormSchema>;
 
@@ -42,9 +50,9 @@ export function ChangePasswordForm() {
   const form = useForm<PasswordFormValues>({
     resolver: zodResolver(passwordFormSchema),
     defaultValues: {
-      old_password: "",
-      new_password: "",
-      confirm_password: "",
+      oldPassword: "",
+      newPassword: "",
+      confirmPassword: "",
     },
   });
 
@@ -52,21 +60,22 @@ export function ChangePasswordForm() {
     try {
       const response = await changePassword({
         variables: {
-          oldPassword: data.old_password,
-          newPassword: data.new_password,
+          oldPassword: data.oldPassword,
+          newPassword: data.newPassword,
         },
       });
 
-      if (response.data?.change_password?.ok) {
-        toast.success("Mot de passe modifié avec succès.");
+      if (response.data?.changePassword?.ok) {
+        toast.success("Mot de passe modifie avec succes.");
         form.reset();
+        return;
+      }
+
+      const errors = response.data?.changePassword?.errors;
+      if (errors?.length) {
+        toast.error(errors[0]);
       } else {
-        const errors = response.data?.change_password?.errors;
-        if (errors && errors.length > 0) {
-          toast.error(errors[0]); // Display first error
-        } else {
-          toast.error("Erreur lors du changement de mot de passe.");
-        }
+        toast.error("Erreur lors du changement de mot de passe.");
       }
     } catch (error) {
       toast.error("Une erreur est survenue.");
@@ -78,54 +87,54 @@ export function ChangePasswordForm() {
     <Card className="mt-6">
       <CardHeader>
         <CardTitle>Mot de passe</CardTitle>
-        <CardDescription>
-          Modifiez votre mot de passe.
-        </CardDescription>
+        <CardDescription>Modifiez votre mot de passe.</CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <FormField
               control={form.control}
-              name="old_password"
+              name="oldPassword"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Ancien mot de passe</FormLabel>
                   <FormControl>
-                    <Input type="password" placeholder="••••••••" {...field} />
+                    <Input type="password" placeholder="********" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
+
             <div className="grid grid-cols-2 gap-4">
-                <FormField
+              <FormField
                 control={form.control}
-                name="new_password"
+                name="newPassword"
                 render={({ field }) => (
-                    <FormItem>
+                  <FormItem>
                     <FormLabel>Nouveau mot de passe</FormLabel>
                     <FormControl>
-                        <Input type="password" placeholder="••••••••" {...field} />
+                      <Input type="password" placeholder="********" {...field} />
                     </FormControl>
                     <FormMessage />
-                    </FormItem>
+                  </FormItem>
                 )}
-                />
-                <FormField
+              />
+              <FormField
                 control={form.control}
-                name="confirm_password"
+                name="confirmPassword"
                 render={({ field }) => (
-                    <FormItem>
+                  <FormItem>
                     <FormLabel>Confirmer le mot de passe</FormLabel>
                     <FormControl>
-                        <Input type="password" placeholder="••••••••" {...field} />
+                      <Input type="password" placeholder="********" {...field} />
                     </FormControl>
                     <FormMessage />
-                    </FormItem>
+                  </FormItem>
                 )}
-                />
+              />
             </div>
+
             <Button type="submit" disabled={loading}>
               {loading ? "Modification..." : "Modifier le mot de passe"}
             </Button>

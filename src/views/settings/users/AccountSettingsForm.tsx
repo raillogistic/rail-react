@@ -1,7 +1,10 @@
-import React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
+import { gql, useMutation } from "@apollo/client";
+import { toast } from "sonner";
+
 import { Button } from "@/lib/components/ui/button";
 import {
   Form,
@@ -13,9 +16,6 @@ import {
   FormMessage,
 } from "@/lib/components/ui/form";
 import { Input } from "@/lib/components/ui/input";
-import { Textarea } from "@/lib/components/ui/textarea";
-import { toast } from "sonner";
-import { gql, useMutation } from "@apollo/client";
 import {
   Card,
   CardContent,
@@ -26,7 +26,7 @@ import {
 
 const UPDATE_USER_MUTATION = gql`
   mutation UpdateUser($input: UpdateUserInput!) {
-    update_user(input: $input) {
+    updateUser(input: $input) {
       ok
       errors {
         field
@@ -34,8 +34,8 @@ const UPDATE_USER_MUTATION = gql`
       }
       object {
         id
-        first_name
-        last_name
+        firstName
+        lastName
         email
       }
     }
@@ -43,11 +43,11 @@ const UPDATE_USER_MUTATION = gql`
 `;
 
 const accountFormSchema = z.object({
-  first_name: z.string().min(2, {
-    message: "Le prénom doit contenir au moins 2 caractères.",
+  firstName: z.string().min(2, {
+    message: "Le prenom doit contenir au moins 2 caracteres.",
   }),
-  last_name: z.string().min(2, {
-    message: "Le nom doit contenir au moins 2 caractères.",
+  lastName: z.string().min(2, {
+    message: "Le nom doit contenir au moins 2 caracteres.",
   }),
   email: z.string().email({
     message: "Veuillez entrer une adresse email valide.",
@@ -57,20 +57,59 @@ const accountFormSchema = z.object({
 type AccountFormValues = z.infer<typeof accountFormSchema>;
 
 interface AccountSettingsFormProps {
-  user: any;
+  user: {
+    id: string;
+    firstName?: string | null;
+    lastName?: string | null;
+    first_name?: string | null;
+    last_name?: string | null;
+    email?: string | null;
+  };
 }
+
+interface MutationError {
+  field: string;
+  message: string;
+}
+
+const mapBackendFieldToFormField = (
+  field: string,
+): keyof AccountFormValues | undefined => {
+  const normalized = field.replace(/_([a-z])/g, (_, c: string) =>
+    c.toUpperCase(),
+  );
+  if (
+    normalized === "firstName" ||
+    normalized === "lastName" ||
+    normalized === "email"
+  ) {
+    return normalized;
+  }
+  return undefined;
+};
 
 export function AccountSettingsForm({ user }: AccountSettingsFormProps) {
   const [updateUser, { loading }] = useMutation(UPDATE_USER_MUTATION);
+  const resolvedFirstName = user?.firstName ?? user?.first_name ?? "";
+  const resolvedLastName = user?.lastName ?? user?.last_name ?? "";
+  const resolvedEmail = user?.email ?? "";
 
   const form = useForm<AccountFormValues>({
     resolver: zodResolver(accountFormSchema),
     defaultValues: {
-      first_name: user?.first_name || "",
-      last_name: user?.last_name || "",
-      email: user?.email || "",
+      firstName: resolvedFirstName,
+      lastName: resolvedLastName,
+      email: resolvedEmail,
     },
   });
+
+  useEffect(() => {
+    form.reset({
+      firstName: resolvedFirstName,
+      lastName: resolvedLastName,
+      email: resolvedEmail,
+    });
+  }, [form, resolvedFirstName, resolvedLastName, resolvedEmail]);
 
   async function onSubmit(data: AccountFormValues) {
     try {
@@ -83,16 +122,21 @@ export function AccountSettingsForm({ user }: AccountSettingsFormProps) {
         },
       });
 
-      if (response.data?.update_user?.ok) {
-        toast.success("Profil mis à jour avec succès.");
-      } else {
-        const errors = response.data?.update_user?.errors;
-        if (errors) {
-          errors.forEach((e: any) => {
-            form.setError(e.field as any, { message: e.message });
-          });
-          toast.error("Erreur lors de la mise à jour du profil.");
-        }
+      if (response.data?.updateUser?.ok) {
+        toast.success("Profil mis a jour avec succes.");
+        return;
+      }
+
+      const errors: MutationError[] | undefined =
+        response.data?.updateUser?.errors;
+      if (errors?.length) {
+        errors.forEach((error) => {
+          const fieldName = mapBackendFieldToFormField(error.field);
+          if (fieldName) {
+            form.setError(fieldName, { message: error.message });
+          }
+        });
+        toast.error("Erreur lors de la mise a jour du profil.");
       }
     } catch (error) {
       toast.error("Une erreur est survenue.");
@@ -105,7 +149,7 @@ export function AccountSettingsForm({ user }: AccountSettingsFormProps) {
       <CardHeader>
         <CardTitle>Profil</CardTitle>
         <CardDescription>
-          Mettez à jour vos informations personnelles.
+          Mettez a jour vos informations personnelles.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -114,12 +158,12 @@ export function AccountSettingsForm({ user }: AccountSettingsFormProps) {
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}
-                name="first_name"
+                name="firstName"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Prénom</FormLabel>
+                    <FormLabel>Prenom</FormLabel>
                     <FormControl>
-                      <Input placeholder="Votre prénom" {...field} />
+                      <Input placeholder="Votre prenom" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -127,7 +171,7 @@ export function AccountSettingsForm({ user }: AccountSettingsFormProps) {
               />
               <FormField
                 control={form.control}
-                name="last_name"
+                name="lastName"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Nom</FormLabel>
@@ -150,17 +194,17 @@ export function AccountSettingsForm({ user }: AccountSettingsFormProps) {
                     <Input placeholder="votre@email.com" {...field} />
                   </FormControl>
                   <FormDescription>
-                    Ceci est l'email utilisé pour la connexion et les
+                    Ceci est l&apos;email utilise pour la connexion et les
                     notifications.
                   </FormDescription>
-                                    <FormMessage />
-                                  </FormItem>
-                                )}
-                              />
-                              <Button type="submit" disabled={loading}>
-                                  {loading ? "Enregistrement..." : "Mettre à jour le profil"}
-                              </Button>
-                  
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <Button type="submit" disabled={loading}>
+              {loading ? "Enregistrement..." : "Mettre a jour le profil"}
+            </Button>
           </form>
         </Form>
       </CardContent>

@@ -8,7 +8,13 @@ export interface TokenPair {
 }
 
 export interface TokenPayload {
-  sub: string;
+  sub?: string;
+  user_id?: string | number;
+  userId?: string | number;
+  id?: string | number;
+  username?: string;
+  first_name?: string;
+  last_name?: string;
   email?: string;
   roles?: string[];
   permissions?: string[];

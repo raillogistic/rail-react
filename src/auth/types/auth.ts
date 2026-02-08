@@ -2,10 +2,26 @@ export interface AuthUser {
   id: string;
   email: string;
   username?: string;
+  first_name?: string;
+  last_name?: string;
+  firstName?: string;
+  lastName?: string;
+  is_staff?: boolean;
+  is_superuser?: boolean;
   displayName?: string;
+  avatar?: string;
   avatarUrl?: string;
   roles: string[];
   permissions: string[];
+  settings?: {
+    theme?: string;
+    mode?: string;
+    layout?: string;
+    sidebar_collapse_mode?: string;
+    font_size?: string;
+    font_family?: string;
+    [key: string]: unknown;
+  };
   metadata?: Record<string, unknown>;
 }
 

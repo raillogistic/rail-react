@@ -1,9 +1,9 @@
-import { gql } from '@apollo/client';
+import { gql } from "@apollo/client";
 
 /**
  * Default ordering applied to paginated queries so the newest records appear first.
  */
-export const DEFAULT_PAGINATION_ORDERING: ReadonlyArray<string> = ['-id'];
+export const DEFAULT_PAGINATION_ORDERING: ReadonlyArray<string> = ["-id"];
 
 /**
  * Purpose: GraphQL query to get current authenticated user information with roles and permissions
@@ -81,7 +81,6 @@ export const GET_CURRENT_USER_RESOLVED = GET_CURRENT_USER;
  * Purpose: GraphQL query to verify token validity with user roles
  * Returns: Token verification status with user roles and permissions
  */
-
 
 /**
  * TypeScript interfaces for query responses with roles and permissions
@@ -177,146 +176,145 @@ export interface User {
  */
 // Enhanced Metadata Query
 export const model_metadata = gql`
+  query ModelMetadata($app_name: String!, $model_name: String!) {
+    model_metadata: modelMetadata(appName: $app_name, modelName: $model_name) {
+      # Basic model information
+      app_name: appName
+      model_name: modelName
+      verbose_name: verboseName
+      verbose_name_plural: verboseNamePlural
+      table_name: tableName
+      primary_key_field: primaryKeyField
 
-query ModelMetadata($app_name: String!, $model_name: String!) {
-  model_metadata: modelMetadata(appName: $app_name, modelName: $model_name) {
-        # Basic model information
-    app_name: appName
-    model_name: modelName
-    verbose_name: verboseName
-    verbose_name_plural: verboseNamePlural
-    table_name: tableName
-    primary_key_field: primaryKeyField
-    
-    # Model configuration
-    abstract
-    proxy
-    managed
-    ordering
-    unique_together: uniqueTogether
-    
-    # Fields metadata
-    fields {
-      name
-      field_type: fieldType
-      is_required: isRequired
-      is_nullable: isNullable
-      null
-      default_value: defaultValue
-      help_text: helpText
-      max_length: maxLength
-      choices {
-        value
-        label
-      }
-      is_primary_key: isPrimaryKey
-      is_foreign_key: isForeignKey
-      is_unique: isUnique
-      is_indexed: isIndexed
-      has_auto_now: hasAutoNow
-      has_auto_now_add: hasAutoNowAdd
-      blank
-      editable
-      verbose_name: verboseName
-      has_permission: hasPermission
-    }
-    
-    # Relationships metadata
-    relationships {
-      name
-      relationship_type: relationshipType
-      related_model: relatedModel {
-        app_name: appName
-        model_name: modelName
-        verbose_name: verboseName
-        verbose_name_plural: verboseNamePlural
-        table_name: tableName
-        primary_key_field: primaryKeyField
-        abstract
-        proxy
-        managed
-        ordering
-        unique_together: uniqueTogether
-        fields {
-          name
-          field_type: fieldType
-          is_required: isRequired
-          verbose_name: verboseName
-          is_primary_key: isPrimaryKey
-          is_foreign_key: isForeignKey
-          is_unique: isUnique
-        }
-      }
-      related_app: relatedApp
-      to_field: toField
-      from_field: fromField
-      is_reverse: isReverse
-      is_required: isRequired
-      many_to_many: manyToMany
-      one_to_one: oneToOne
-      foreign_key: foreignKey
-      on_delete: onDelete
-      related_name: relatedName
-      has_permission: hasPermission
-      verbose_name: verboseName
-    }
-    
-    # Permissions and security
-    permissions
-    
-    # Database indexes
-    indexes
-    
-    # Filtering capabilities
-    filters {
-      field_name: fieldName
-      is_nested: isNested
-      related_model: relatedModel
-      is_custom: isCustom
-      options {
-        name
-        lookup_expr: lookupExpr
-        help_text: helpText
-        filter_type: filterType
-      }
-    }
-    
-    # Available mutations
-    mutations {
-      name
-      description
-      input_fields: inputFields {
+      # Model configuration
+      abstract
+      proxy
+      managed
+      ordering
+      unique_together: uniqueTogether
+
+      # Fields metadata
+      fields {
         name
         field_type: fieldType
-        required
+        is_required: isRequired
+        is_nullable: isNullable
+        null
         default_value: defaultValue
-        description
-        choices
-        validation_rules: validationRules
-        widget_type: widgetType
-        placeholder
         help_text: helpText
-        min_length: minLength
         max_length: maxLength
-        min_value: minValue
-        max_value: maxValue
-        pattern
-        related_model: relatedModel
-        multiple
+        choices {
+          value
+          label
+        }
+        is_primary_key: isPrimaryKey
+        is_foreign_key: isForeignKey
+        is_unique: isUnique
+        is_indexed: isIndexed
+        has_auto_now: hasAutoNow
+        has_auto_now_add: hasAutoNowAdd
+        blank
+        editable
+        verbose_name: verboseName
+        has_permission: hasPermission
       }
-      return_type: returnType
-      requires_authentication: requiresAuthentication
-      required_permissions: requiredPermissions
-      mutation_type: mutationType
-      model_name: modelName
-      form_config: formConfig
-      validation_schema: validationSchema
-      success_message: successMessage
-      error_messages: errorMessages
+
+      # Relationships metadata
+      relationships {
+        name
+        relationship_type: relationshipType
+        related_model: relatedModel {
+          app_name: appName
+          model_name: modelName
+          verbose_name: verboseName
+          verbose_name_plural: verboseNamePlural
+          table_name: tableName
+          primary_key_field: primaryKeyField
+          abstract
+          proxy
+          managed
+          ordering
+          unique_together: uniqueTogether
+          fields {
+            name
+            field_type: fieldType
+            is_required: isRequired
+            verbose_name: verboseName
+            is_primary_key: isPrimaryKey
+            is_foreign_key: isForeignKey
+            is_unique: isUnique
+          }
+        }
+        related_app: relatedApp
+        to_field: toField
+        from_field: fromField
+        is_reverse: isReverse
+        is_required: isRequired
+        many_to_many: manyToMany
+        one_to_one: oneToOne
+        foreign_key: foreignKey
+        on_delete: onDelete
+        related_name: relatedName
+        has_permission: hasPermission
+        verbose_name: verboseName
+      }
+
+      # Permissions and security
+      permissions
+
+      # Database indexes
+      indexes
+
+      # Filtering capabilities
+      filters {
+        field_name: fieldName
+        is_nested: isNested
+        related_model: relatedModel
+        is_custom: isCustom
+        options {
+          name
+          lookup_expr: lookupExpr
+          help_text: helpText
+          filter_type: filterType
+        }
+      }
+
+      # Available mutations
+      mutations {
+        name
+        description
+        input_fields: inputFields {
+          name
+          field_type: fieldType
+          required
+          default_value: defaultValue
+          description
+          choices
+          validation_rules: validationRules
+          widget_type: widgetType
+          placeholder
+          help_text: helpText
+          min_length: minLength
+          max_length: maxLength
+          min_value: minValue
+          max_value: maxValue
+          pattern
+          related_model: relatedModel
+          multiple
+        }
+        return_type: returnType
+        requires_authentication: requiresAuthentication
+        required_permissions: requiredPermissions
+        mutation_type: mutationType
+        model_name: modelName
+        form_config: formConfig
+        validation_schema: validationSchema
+        success_message: successMessage
+        error_messages: errorMessages
+      }
     }
-  }  
-}
-`/**
+  }
+`; /**
  ```json
 {
   "data": {
@@ -513,17 +511,6 @@ query ModelMetadata($app_name: String!, $model_name: String!) {
  
  */
 
-
-
-
-
-
-
-
-
-
-
-
 export const model_table = gql`
   query form_table(
     $app_name: String!
@@ -589,108 +576,26 @@ export const model_table = gql`
   }
 `;
 
-
-
 export const model_form_metadata = gql`
-query get_model_form_metadata($app_name: String!, $model_name: String!, $nested_fields: [String]) {
-  model_form_metadata: modelFormMetadata(
-    appName: $app_name
-    modelName: $model_name
-    nestedFields: $nested_fields
+  query get_model_form_metadata(
+    $app_name: String!
+    $model_name: String!
+    $nested_fields: [String]
   ) {
-    # Basic model information
-    app_name: appName
-    model_name: modelName
-    verbose_name: verboseName
-    verbose_name_plural: verboseNamePlural
-    form_title: formTitle
-    form_description: formDescription
-    
-    # Form fields
-    fields {
-      name
-      field_type: fieldType
-      is_required: isRequired
-      verbose_name: verboseName
-      help_text: helpText
-      widget_type: widgetType
-      placeholder
-      default_value: defaultValue
-      choices {
-        value
-        label
-      }
-      max_length: maxLength
-      min_length: minLength
-      decimal_places: decimalPlaces
-      max_digits: maxDigits
-      min_value: minValue
-      max_value: maxValue
-      auto_now: autoNow
-      auto_now_add: autoNowAdd
-      blank
-      null
-      unique
-      editable
-      validators
-      error_messages: errorMessages
-      disabled
-      readonly
-      css_classes: cssClasses
-      data_attributes: dataAttributes
-      has_permission: hasPermission
-      permissions {
-        can_read: canRead
-        can_write: canWrite
-        visibility
-        access_level: accessLevel
-        mask_value: maskValue
-        reason
-      }
-    }
-    
-    # Relationship fields
-    relationships {
-      name
-      relationship_type: relationshipType
-      verbose_name: verboseName
-      help_text: helpText
-      widget_type: widgetType
-      is_required: isRequired
-      related_model: relatedModel
-      related_app: relatedApp
-      to_field: toField
-      from_field: fromField
-      many_to_many: manyToMany
-      one_to_one: oneToOne
-      foreign_key: foreignKey
-      is_reverse: isReverse
-      multiple
-      queryset_filters: querysetFilters
-      empty_label: emptyLabel
-      limit_choices_to: limitChoicesTo
-      disabled
-      readonly
-      css_classes: cssClasses
-      data_attributes: dataAttributes
-      permissions {
-        can_read: canRead
-        can_write: canWrite
-        visibility
-        access_level: accessLevel
-        mask_value: maskValue
-        reason
-      }
-    }
-    
-    # Nested form metadata
-    nested {
+    model_form_metadata: modelFormMetadata(
+      appName: $app_name
+      modelName: $model_name
+      nestedFields: $nested_fields
+    ) {
+      # Basic model information
       app_name: appName
       model_name: modelName
       verbose_name: verboseName
       verbose_name_plural: verboseNamePlural
       form_title: formTitle
       form_description: formDescription
+
+      # Form fields
       fields {
         name
         field_type: fieldType
@@ -698,41 +603,120 @@ query get_model_form_metadata($app_name: String!, $model_name: String!, $nested_
         verbose_name: verboseName
         help_text: helpText
         widget_type: widgetType
+        placeholder
+        default_value: defaultValue
+        choices {
+          value
+          label
+        }
+        max_length: maxLength
+        min_length: minLength
+        decimal_places: decimalPlaces
+        max_digits: maxDigits
+        min_value: minValue
+        max_value: maxValue
+        auto_now: autoNow
+        auto_now_add: autoNowAdd
+        blank
+        null
+        unique
+        editable
+        validators
+        error_messages: errorMessages
+        disabled
+        readonly
+        css_classes: cssClasses
+        data_attributes: dataAttributes
+        has_permission: hasPermission
+        permissions {
+          can_read: canRead
+          can_write: canWrite
+          visibility
+          access_level: accessLevel
+          mask_value: maskValue
+          reason
+        }
       }
+
+      # Relationship fields
       relationships {
         name
         relationship_type: relationshipType
         verbose_name: verboseName
+        help_text: helpText
+        widget_type: widgetType
+        is_required: isRequired
         related_model: relatedModel
         related_app: relatedApp
+        to_field: toField
+        from_field: fromField
+        many_to_many: manyToMany
+        one_to_one: oneToOne
+        foreign_key: foreignKey
+        is_reverse: isReverse
+        multiple
+        queryset_filters: querysetFilters
+        empty_label: emptyLabel
+        limit_choices_to: limitChoicesTo
+        disabled
+        readonly
+        css_classes: cssClasses
+        data_attributes: dataAttributes
+        permissions {
+          can_read: canRead
+          can_write: canWrite
+          visibility
+          access_level: accessLevel
+          mask_value: maskValue
+          reason
+        }
+      }
+
+      # Nested form metadata
+      nested {
+        app_name: appName
+        model_name: modelName
+        verbose_name: verboseName
+        verbose_name_plural: verboseNamePlural
+        form_title: formTitle
+        form_description: formDescription
+        fields {
+          name
+          field_type: fieldType
+          is_required: isRequired
+          verbose_name: verboseName
+          help_text: helpText
+          widget_type: widgetType
+        }
+        relationships {
+          name
+          relationship_type: relationshipType
+          verbose_name: verboseName
+          related_model: relatedModel
+          related_app: relatedApp
+        }
+      }
+
+      # Form configuration
+      field_order: fieldOrder
+      exclude_fields: excludeFields
+      readonly_fields: readonlyFields
+      required_permissions: requiredPermissions
+      form_validation_rules: formValidationRules
+      form_layout: formLayout
+      css_classes: cssClasses
+      form_attributes: formAttributes
+      permissions {
+        can_create: canCreate
+        can_update: canUpdate
+        can_delete: canDelete
+        can_read: canRead
+        can_list: canList
+        reasons
       }
     }
-    
-    # Form configuration
-    field_order: fieldOrder
-    exclude_fields: excludeFields
-    readonly_fields: readonlyFields
-    required_permissions: requiredPermissions
-    form_validation_rules: formValidationRules
-    form_layout: formLayout
-    css_classes: cssClasses
-    form_attributes: formAttributes
-    permissions {
-      can_create: canCreate
-      can_update: canUpdate
-      can_delete: canDelete
-      can_read: canRead
-      can_list: canList
-      reasons
-    }
   }
-}
-`
-
-
-
-
-
+`;
 
 /***
  Result example 

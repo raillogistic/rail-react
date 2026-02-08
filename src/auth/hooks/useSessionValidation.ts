@@ -11,7 +11,10 @@
 import { useCallback, useState } from "react";
 import { useLazyQuery } from "@apollo/client/react";
 import { tokenStorage } from "../utils/token-storage";
-import { GET_CURRENT_USER_RESOLVED, type CurrentUserResponse } from "@/graphql/queries";
+import {
+  GET_CURRENT_USER_RESOLVED,
+  type CurrentUserResponse,
+} from "@/graphql/queries";
 import client from "@/graphql/apollo-client";
 
 interface UseSessionValidationReturn {
@@ -31,11 +34,14 @@ export const useSessionValidation = (): UseSessionValidationReturn => {
   const [wasAborted, setWasAborted] = useState(false);
 
   // Lazy query for current user (me query)
-  const [getCurrentUser] = useLazyQuery<CurrentUserResponse>(GET_CURRENT_USER_RESOLVED, {
-    client: client,
-    errorPolicy: "all",
-    fetchPolicy: "network-only", // Always fetch from network for validation
-  });
+  const [getCurrentUser] = useLazyQuery<CurrentUserResponse>(
+    GET_CURRENT_USER_RESOLVED,
+    {
+      client: client,
+      errorPolicy: "all",
+      fetchPolicy: "network-only", // Always fetch from network for validation
+    },
+  );
   // console.log("access token", tokenStorage.getAccessToken());
 
   /**
@@ -61,6 +67,7 @@ export const useSessionValidation = (): UseSessionValidationReturn => {
 
     try {
       const { data, error } = await getCurrentUser();
+      console.log("getCurrentUser", data);
 
       if (error) {
         console.warn("Session validation failed:", error.message);
@@ -71,7 +78,7 @@ export const useSessionValidation = (): UseSessionValidationReturn => {
             (err) =>
               err.extensions?.code === "UNAUTHENTICATED" ||
               err.message.includes("authentication") ||
-              err.message.includes("unauthorized")
+              err.message.includes("unauthorized"),
           )
         ) {
           // Clear invalid tokens
@@ -82,7 +89,7 @@ export const useSessionValidation = (): UseSessionValidationReturn => {
 
         // Network or other errors - don't clear tokens
         setValidationError(
-          "Unable to validate session. Please check your connection."
+          "Unable to validate session. Please check your connection.",
         );
         return null;
       }
@@ -100,7 +107,7 @@ export const useSessionValidation = (): UseSessionValidationReturn => {
       // Handle AbortError specifically (occurs when request is cancelled)
       if (error.name === "AbortError" || error.message?.includes("aborted")) {
         console.log(
-          "Session validation was aborted (likely due to component unmount or navigation)"
+          "Session validation was aborted (likely due to component unmount or navigation)",
         );
         setWasAborted(true);
         return null;

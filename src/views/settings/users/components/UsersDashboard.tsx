@@ -1,5 +1,4 @@
-import * as React from "react";
-import { gql, useQuery } from "@apollo/client";
+﻿import { gql, useQuery } from "@apollo/client";
 import {
   Card,
   CardContent,
@@ -10,11 +9,11 @@ import {
 
 const USERS_DASHBOARD_QUERY = gql`
   query UsersDashboardStats {
-    dashboard_stats {
+    dashboardStats {
       users {
-        total_users
-        staff_users
-        total_profiles
+        totalUsers
+        staffUsers
+        totalProfiles
       }
     }
   }
@@ -24,23 +23,23 @@ const numberFormatter = new Intl.NumberFormat("fr-FR");
 
 export function UsersDashboard() {
   const { data, loading } = useQuery(USERS_DASHBOARD_QUERY);
-  const stats = data?.dashboard_stats?.users;
+  const stats = data?.dashboardStats?.users;
 
   const cards = [
     {
       label: "Utilisateurs",
       description: "Comptes actifs",
-      value: stats?.total_users,
+      value: stats?.totalUsers,
     },
     {
       label: "Staff",
-      description: "Accès administration",
-      value: stats?.staff_users,
+      description: "Acces administration",
+      value: stats?.staffUsers,
     },
     {
       label: "Profils",
-      description: "Profils métiers",
-      value: stats?.total_profiles,
+      description: "Profils metiers",
+      value: stats?.totalProfiles,
     },
   ];
 

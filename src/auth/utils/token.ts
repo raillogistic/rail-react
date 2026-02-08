@@ -13,6 +13,8 @@ import { tokenStorage } from "./token-storage";
 
 export interface DecodedToken {
   user_id?: string | number;
+  userId?: string | number;
+  id?: string | number;
   username?: string;
   first_name?: string;
   last_name?: string;
