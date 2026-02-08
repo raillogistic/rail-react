@@ -1,10 +1,5 @@
 import React from "react";
-import {
-  ArrowUpDown,
-  ChevronDown,
-  ChevronUp,
-  GripVertical,
-} from "lucide-react";
+import { GripVertical } from "lucide-react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import { cn } from "@/lib/utils";
@@ -12,6 +7,7 @@ import { TableHead, ShadcnTableHeader, TableRow } from "./TableFrame";
 import { useTable } from "../context/TableContext";
 import { useMetadata } from "../context/MetadataContext";
 import { Checkbox } from "@/lib/components/ui/checkbox";
+import { TableColumnMenu } from "./TableColumnMenu";
 import type {
   BaseModelTableColumnDef,
   BaseModelTableColumnOrderingConfig,
@@ -24,6 +20,7 @@ interface DraggableHeadProps {
   draggable?: boolean;
   ariaSort?: React.AriaAttributes["aria-sort"];
   density?: "compact" | "comfortable" | "spacious";
+  isActions?: boolean;
 }
 
 function DraggableHead({
@@ -33,6 +30,7 @@ function DraggableHead({
   draggable = true,
   ariaSort,
   density = "comfortable",
+  isActions = false,
 }: DraggableHeadProps) {
   const {
     attributes,
@@ -54,38 +52,42 @@ function DraggableHead({
       style={style}
       className={cn(
         "group/col sticky top-0 z-20 whitespace-nowrap",
-        "border-b-2 border-border/70",
-        "bg-muted/60 text-left font-semibold uppercase tracking-wider text-muted-foreground",
+        "border-b border-border",
+        "bg-muted/40 text-left font-semibold text-muted-foreground",
         "transition-colors duration-150",
+        // Colored accent line on top
+        "before:absolute before:left-0 before:top-0 before:h-[2px] before:w-full before:bg-primary/0 before:transition-colors hover:before:bg-primary",
         density === "compact"
-          ? "text-[10px] py-1.5 px-2.5"
+          ? "h-8 py-0 px-2 text-xs"
           : density === "spacious"
-            ? "text-[11px] py-3 px-3.5"
-            : "text-[10px] py-2 px-3",
-        isDragging && "opacity-50 scale-[1.02] shadow-lg z-30",
-        "hover:bg-muted/80 hover:text-foreground",
+            ? "h-12 py-0 px-4 text-sm"
+            : "h-10 py-0 px-3 text-sm",
+        isDragging && "opacity-50 scale-[1.02] shadow-lg z-30 ring-1 ring-primary/20",
+        "hover:bg-muted/60 hover:text-foreground",
+        isActions && "bg-muted/60 backdrop-blur-sm",
         className,
       )}
       aria-sort={ariaSort}
     >
-      <div className="flex items-center gap-1.5">
-        {draggable ? (
-          <button
-            {...attributes}
-            {...listeners}
-            className={cn(
-              "mr-0.5 rounded-md p-1 opacity-0 transition-all duration-200",
-              "hover:bg-background/60 hover:text-foreground",
-              "group-hover/col:opacity-60",
-              "focus-visible:opacity-100 focus-visible:ring-1 focus-visible:ring-primary/50",
-            )}
-            aria-label="Reordonner la colonne"
-          >
-            <GripVertical className="h-3 w-3" />
-          </button>
-        ) : null}
-
-        {children}
+      <div className="flex items-center justify-between gap-2 h-full">
+        <div className="flex items-center gap-1.5 flex-1 min-w-0">
+          {draggable ? (
+            <button
+              {...attributes}
+              {...listeners}
+              className={cn(
+                "mr-0.5 rounded-sm p-0.5 opacity-0 transition-all duration-200 cursor-grab active:cursor-grabbing",
+                "hover:bg-primary/10 hover:text-primary",
+                "group-hover/col:opacity-100",
+                "focus-visible:opacity-100 focus-visible:ring-1 focus-visible:ring-primary/50",
+              )}
+              aria-label="Reordonner la colonne"
+            >
+              <GripVertical className="h-3.5 w-3.5" />
+            </button>
+          ) : null}
+          {children}
+        </div>
       </div>
     </TableHead>
   );
@@ -112,9 +114,6 @@ export function TableHeader({
     rowSelection,
     setRowSelection,
     density,
-    advancedFilters,
-    filterVariables,
-    setAdvancedFilters,
   } = useTable();
 
   // Determine visible columns in order
@@ -137,124 +136,6 @@ export function TableHeader({
 
   const allowDrag = columnOrdering?.draggable !== false;
   const locked = new Set(columnOrdering?.locked ?? []);
-  const sortingDisabled = disableSorting === true;
-  const orderBy = React.useMemo(
-    () => advancedFilters?.orderBy ?? [],
-    [advancedFilters?.orderBy],
-  );
-  const distinctOn = React.useMemo(
-    () => advancedFilters?.distinctOn ?? [],
-    [advancedFilters?.distinctOn],
-  );
-
-  const normalizeSortKey = React.useCallback((value: string) => {
-    const trimmed = value.replace(/^-/, "");
-    return trimmed.replace(/\./g, "__");
-  }, []);
-
-  const sortMap = React.useMemo(() => {
-    const map = new Map<string, { direction: "asc" | "desc"; index: number }>();
-    orderBy.forEach((entry, index) => {
-      if (!entry) return;
-      const direction = entry.startsWith("-") ? "desc" : "asc";
-      const key = normalizeSortKey(entry);
-      if (!key) return;
-      map.set(key, { direction, index });
-    });
-    return map;
-  }, [orderBy, normalizeSortKey]);
-
-  const ensureDistinctOrderBy = React.useCallback(
-    (distinctFields: string[], nextOrderBy: string[]) => {
-      if (!distinctFields.length) return nextOrderBy;
-      const result: string[] = [];
-      const used = new Set<string>();
-      distinctFields.forEach((field) => {
-        const normalized = normalizeSortKey(field);
-        const existing = nextOrderBy.find(
-          (entry) => normalizeSortKey(entry) === normalized,
-        );
-        if (existing) {
-          result.push(existing);
-        } else if (field) {
-          result.push(normalized || field);
-        }
-        if (normalized) used.add(normalized);
-      });
-      nextOrderBy.forEach((entry) => {
-        const normalized = normalizeSortKey(entry);
-        if (!normalized || used.has(normalized)) return;
-        result.push(entry);
-        used.add(normalized);
-      });
-      return result;
-    },
-    [normalizeSortKey],
-  );
-
-  const buildNextOrderBy = React.useCallback(
-    (key: string, multi: boolean) => {
-      const normalizedKey = normalizeSortKey(key);
-      const current = orderBy ?? [];
-      const index = current.findIndex(
-        (entry) => normalizeSortKey(entry) === normalizedKey,
-      );
-      if (index === -1) {
-        return multi ? [...current, normalizedKey] : [normalizedKey];
-      }
-      const existing = current[index];
-      const isDesc = existing.startsWith("-");
-      if (!isDesc) {
-        if (multi) {
-          const next = [...current];
-          next[index] = `-${normalizedKey}`;
-          return next;
-        }
-        return [`-${normalizedKey}`];
-      }
-      if (multi) {
-        const next = [...current];
-        next.splice(index, 1);
-        return next;
-      }
-      return [];
-    },
-    [normalizeSortKey, orderBy],
-  );
-
-  const handleSortToggle = React.useCallback(
-    (key: string, event: React.MouseEvent) => {
-      if (sortingDisabled) return;
-      const multiSortEnabled = true;
-      const multiSortOnPlainClick = true;
-      const multi =
-        multiSortEnabled &&
-        (multiSortOnPlainClick ||
-          event.shiftKey ||
-          event.ctrlKey ||
-          event.metaKey);
-      const nextOrderByRaw = buildNextOrderBy(key, multi);
-      const nextOrderBy = ensureDistinctOrderBy(distinctOn, nextOrderByRaw);
-      const nextFilters = {
-        ...advancedFilters,
-        orderBy: nextOrderBy,
-      };
-      const nextVariables = {
-        ...(filterVariables ?? {}),
-        orderBy: nextOrderBy.length > 0 ? nextOrderBy : undefined,
-      };
-      setAdvancedFilters(nextFilters, nextVariables);
-    },
-    [
-      advancedFilters,
-      buildNextOrderBy,
-      distinctOn,
-      ensureDistinctOrderBy,
-      filterVariables,
-      setAdvancedFilters,
-      sortingDisabled,
-    ],
-  );
 
   // Selection logic
   const selectedOnPage = data.reduce((count, row) => {
@@ -279,63 +160,23 @@ export function TableHeader({
 
   if (!metadata && !columns) return null;
 
-  const renderSortButton = (sortKey: string, title: string) => {
-    const normalizedKey = normalizeSortKey(sortKey);
-    const sortState = sortMap.get(normalizedKey);
-    const sortDirection = sortState?.direction;
-
-    if (sortingDisabled) {
-      return <span className="select-none">{title}</span>;
-    }
-
-    return (
-      <button
-        type="button"
-        className={cn(
-          "group/sort flex items-center gap-1.5 text-left select-none rounded-md text-[11px] font-bold",
-          "transition-all duration-200",
-          "hover:text-foreground",
-        )}
-        onClick={(event) => handleSortToggle(sortKey, event)}
-        title="Click to sort"
-      >
-        <span className="transition-colors">{title}</span>
-        <span className="inline-flex items-center gap-0.5">
-          {sortDirection === "asc" ? (
-            <ChevronUp className="h-3.5 w-3.5 text-primary transition-transform duration-200" />
-          ) : sortDirection === "desc" ? (
-            <ChevronDown className="h-3.5 w-3.5 text-primary transition-transform duration-200" />
-          ) : (
-            <ArrowUpDown className="h-3 w-3 opacity-0 transition-all duration-200 group-hover/sort:opacity-40" />
-          )}
-          {sortState && orderBy.length > 1 ? (
-            <span className="ml-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary/10 text-[13px] font-bold text-primary">
-              {sortState.index + 1}
-            </span>
-          ) : null}
-        </span>
-      </button>
-    );
-  };
-
   return (
-    <ShadcnTableHeader>
+    <ShadcnTableHeader className="bg-muted/40">
       <TableRow className="border-b-0 hover:bg-transparent">
         {enableSelection ? (
           <TableHead
             className={cn(
               "w-[40px] table-first-column sticky top-0 z-20",
-              "border-b-2 border-border/70",
-              "bg-muted/60",
+              "border-b border-border bg-muted/40",
               "transition-colors duration-150",
               density === "compact"
-                ? "py-1.5 px-2"
+                ? "py-0 px-2 h-8"
                 : density === "spacious"
-                  ? "py-3 px-3"
-                  : "py-2 px-2.5",
+                  ? "py-0 px-3 h-12"
+                  : "py-0 px-2.5 h-10",
             )}
           >
-            <div className="flex items-center justify-center">
+            <div className="flex items-center justify-center h-full">
               <Checkbox
                 checked={
                   allSelected || (someSelected ? "indeterminate" : false)
@@ -352,71 +193,57 @@ export function TableHeader({
           if (!field) return null;
 
           if ("accessor" in field) {
-            const sortKey = field.id;
-            const normalizedKey = normalizeSortKey(sortKey);
-            const sortState = sortMap.get(normalizedKey);
-            const sortDirection = sortState?.direction;
-            const ariaSort: React.AriaAttributes["aria-sort"] = sortingDisabled
-              ? "none"
-              : sortDirection === "asc"
-                ? "ascending"
-                : sortDirection === "desc"
-                  ? "descending"
-                  : "none";
+             // Custom column def
             return (
               <DraggableHead
                 key={field.id}
                 id={field.id}
                 draggable={allowDrag && !locked.has(field.id)}
-                ariaSort={ariaSort}
                 density={density}
               >
-                {renderSortButton(sortKey, field.title)}
+                <div className="flex items-center justify-between w-full">
+                  <span className="truncate">{field.title}</span>
+                  <TableColumnMenu
+                    columnId={field.id}
+                    title={field.title}
+                    disabled={disableSorting}
+                  />
+                </div>
               </DraggableHead>
             );
           }
 
-          const sortKey = field.name;
-          const normalizedKey = normalizeSortKey(sortKey);
-          const sortState = sortMap.get(normalizedKey);
-          const sortDirection = sortState?.direction;
-          const ariaSort: React.AriaAttributes["aria-sort"] = sortingDisabled
-            ? "none"
-            : sortDirection === "asc"
-              ? "ascending"
-              : sortDirection === "desc"
-                ? "descending"
-                : "none";
+          // Metadata field
           return (
             <DraggableHead
               key={field.name}
               id={field.name}
               draggable={allowDrag && !locked.has(field.name)}
-              ariaSort={ariaSort}
               density={density}
             >
-              {renderSortButton(sortKey, field.verboseName)}
+              <div className="flex items-center justify-between w-full">
+                <span className="truncate">{field.verboseName}</span>
+                <TableColumnMenu
+                  columnId={field.name}
+                  title={field.verboseName}
+                  field={field}
+                  disabled={disableSorting}
+                />
+              </div>
             </DraggableHead>
           );
         })}
 
         {/* Actions Column */}
-        <TableHead
-          className={cn(
-            "w-[80px] sticky right-0 top-0 z-30 text-right",
-            "border-b-2 border-border/70",
-            "bg-muted/60",
-            "table-last-column table-sticky-cell",
-            "font-semibold uppercase tracking-wider text-muted-foreground",
-            density === "compact"
-              ? "text-[10px] py-1.5 px-2.5"
-              : density === "spacious"
-                ? "text-[11px] py-3 px-3.5"
-                : "text-[10px] py-2 px-3",
-          )}
+        <DraggableHead
+          id="actions"
+          draggable={false}
+          className="w-[60px] text-right sticky right-0 z-30 table-last-column"
+          density={density}
+          isActions
         >
-          <span>{actionsLabel ?? ""}</span>
-        </TableHead>
+          <span className="block w-full pr-2">{actionsLabel ?? ""}</span>
+        </DraggableHead>
       </TableRow>
     </ShadcnTableHeader>
   );

@@ -103,13 +103,7 @@ const CORE_NAVIGATION_LINKS: NavigationSection[] = [
         description: "Progress view for ModelTableV2 (store.Order)",
         component: (
           <div className="grid grid-cols-1 gap-2 min-w-0">
-            <ModelTableV2
-              app="store"
-              model="Product"
-              baseTable={{
-                quickSearch: true,
-              }}
-            />
+            <ModelTableV2 app="store" model="Product" />
           </div>
         ),
       },

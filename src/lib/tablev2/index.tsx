@@ -1,4 +1,4 @@
-﻿/* eslint-disable react-refresh/only-export-components */
+/* eslint-disable react-refresh/only-export-components */
 import React from "react";
 import { DndContext, closestCenter, DragEndEvent } from "@dnd-kit/core";
 import {
@@ -17,7 +17,6 @@ import { TableToolbar } from "./components/TableToolbar";
 import { TableMobileCard } from "./components/TableMobileCard";
 import { TableFrame, TableBody } from "./components/TableFrame";
 import { Loader2, PlusCircle } from "lucide-react";
-import { Card, CardContent } from "@/lib/components/ui/card";
 import { Button } from "@/lib/components/ui/button";
 import type {
   BaseModelTableColumnDef,
@@ -157,10 +156,11 @@ function ModelTableV2Content({
   topActions?: ModelTableV2TopActionsInput;
 }) {
   const { metadata, app, model } = useMetadata();
-  const { pagination, columnVisibility, data, rowSelection } = useTable();
+  const { data, rowSelection } = useTable();
   const showTitle = tableConfig?.showTitle !== false;
   const resolvedTitle =
     tableConfig?.title || metadata?.verboseNamePlural || metadata?.model;
+  
   const selectedRows = React.useMemo(
     () =>
       data.filter((row) => {
@@ -169,8 +169,10 @@ function ModelTableV2Content({
       }),
     [data, rowSelection],
   );
+
   const createMutation = findMutation(metadata?.mutations, "create");
   const canCreate = !!createMutation?.allowed;
+  
   const addAction = React.useMemo<ModelTableV2TopAction | undefined>(() => {
     if (!canCreate) return undefined;
 
@@ -178,9 +180,9 @@ function ModelTableV2Content({
       key: "add",
       label:
         tableConfig?.addLabel ??
-        `Ajouter ${metadata?.verboseName || metadata?.model || ""}`.trim(),
-      icon: <PlusCircle className="mr-1 h-4 w-4" />,
-      variant: "outline",
+        `Ajouter`,
+      icon: <PlusCircle className="mr-2 h-4 w-4" />,
+      variant: "default",
       size: "sm",
       order: -1,
       show_when: "always",
@@ -188,7 +190,8 @@ function ModelTableV2Content({
         console.info("add item");
       },
     };
-  }, [canCreate, metadata?.model, metadata?.verboseName, tableConfig?.addLabel]);
+  }, [canCreate, tableConfig?.addLabel]);
+
   const resolvedTopActions = React.useMemo(() => {
     const userActions =
       typeof topActions === "function"
@@ -220,74 +223,28 @@ function ModelTableV2Content({
     selectedRows,
     topActions,
   ]);
-  const visibleColumnCount = React.useMemo(() => {
-    if (!metadata?.fields?.length) return 0;
-
-    return metadata.fields.filter((field) => {
-      if (field.visibility === "hidden") return false;
-      const id = field.fieldName || field.name;
-      return columnVisibility[id] ?? true;
-    }).length;
-  }, [columnVisibility, metadata?.fields]);
-  const rowSummary = React.useMemo(() => {
-    if (pagination.totalKnown) {
-      const total = pagination.total;
-      return `${total} ligne${total > 1 ? "s" : ""}`;
-    }
-    const loadedCount = data.length;
-    return `${loadedCount} ligne${loadedCount > 1 ? "s" : ""} chargee${loadedCount > 1 ? "s" : ""}`;
-  }, [data.length, pagination.total, pagination.totalKnown]);
-  const selectedCount = selectedRows.length;
 
   return (
-    <>
-      {showTitle && resolvedTitle ? (
-        <div className="group/header relative mb-4 overflow-hidden rounded-xl border border-border/50 bg-gradient-to-br from-card via-card to-card/95 shadow-sm transition-all duration-300 hover:shadow-md">
-          {/* Subtle accent gradient */}
-          <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
-
-          {/* Header content */}
-          <div className="relative flex flex-wrap items-center justify-between gap-4 p-4 sm:p-5">
-            {/* Left side - Title and stats */}
-            <div className="flex-1 min-w-0 space-y-1.5">
-              <h2 className="text-base sm:text-lg font-semibold tracking-tight text-foreground truncate">
-                {resolvedTitle}
-              </h2>
-              <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
-                <span className="inline-flex items-center gap-1 text-muted-foreground">
-                  <span className="font-medium text-foreground/70">{rowSummary}</span>
-                </span>
-                <span className="text-border">·</span>
-                <span className="text-muted-foreground">
-                  {visibleColumnCount} col.
-                </span>
-                {selectedCount > 0 && (
-                  <>
-                    <span className="text-border">·</span>
-                    <span className="inline-flex items-center gap-1 rounded-md bg-primary/10 px-1.5 py-0.5 font-medium text-primary">
-                      {selectedCount} sel.
-                    </span>
-                  </>
-                )}
-              </div>
+    <div className="flex flex-col gap-2 h-full">
+      {/* Top Header Area: Title & Actions */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1">
+        {showTitle && resolvedTitle && (
+            <div className="flex items-center gap-2">
+                <h1 className="text-xl font-bold tracking-tight text-foreground">
+                    {resolvedTitle}
+                </h1>
+                 {/* Optional: Add breadcrumbs or stats here if needed */}
             </div>
-
-            {/* Right side - Actions */}
-            {resolvedTopActions.length > 0 && (
-              <div className="flex flex-wrap items-center gap-1.5">
-                {resolvedTopActions.map((action, index) => (
+        )}
+        
+        {/* Actions Area */}
+        <div className="flex items-center gap-2 ml-auto">
+             {resolvedTopActions.map((action) => (
                   <Button
                     key={action.key}
-                    variant={action.variant ?? "ghost"}
+                    variant={action.variant ?? "outline"}
                     size={action.size === "icon" ? "icon" : "sm"}
-                    className={
-                      action.size === "icon"
-                        ? "h-8 w-8 rounded-lg hover:bg-muted/60"
-                        : "h-8 rounded-lg px-3 hover:bg-muted/60 whitespace-nowrap gap-1.5 text-sm font-medium"
-                    }
-                    style={{
-                      animationDelay: `${index * 50}ms`,
-                    }}
+                    className={action.size === "icon" ? "h-8 w-8" : "h-8"}
                     onClick={() =>
                       action.on_click({
                         selected_rows: selectedRows,
@@ -300,18 +257,17 @@ function ModelTableV2Content({
                     {action.size === "icon" ? null : <span>{action.label}</span>}
                   </Button>
                 ))}
-              </div>
-            )}
-          </div>
         </div>
-      ) : null}
+      </div>
+
       <TableToolbar
         filterPanel={filterPanel}
         tableConfig={tableConfig}
         quickSearch={quickSearch}
       />
+      
       <TableMobileCard emptyState={tableConfig?.emptyState} />
-    </>
+    </div>
   );
 }
 
@@ -676,48 +632,47 @@ function BaseTableContent({
       <div className="flex-1 min-h-0 min-w-0 overflow-y-auto">
         <div className="flex min-h-full min-w-0 flex-col gap-4">
           {children}
-          <div className={hideTableOnMobile ? "hidden md:block" : undefined}>
-            <Card className="flex h-full min-h-0 flex-col overflow-hidden border-0 shadow-none bg-transparent">
-              <CardContent
-                ref={tableScrollRef}
-                className={`flex-1 min-h-0 overflow-auto p-0 ${view?.maxBodyHeightClassName ?? "max-h-[70vh]"}`}
-              >
-                <DndContext
-                  collisionDetection={closestCenter}
-                  onDragEnd={handleDragEnd}
-                >
-                  <TableFrame className="w-full">
-                    <SortableContext
-                      items={sortableColumnIds}
-                      strategy={horizontalListSortingStrategy}
+          
+          <div className={hideTableOnMobile ? "hidden md:block h-full" : "h-full"}>
+              <div className="flex h-full flex-col overflow-hidden rounded-md border bg-card">
+                  <div className="flex-1 min-h-0 overflow-auto" ref={tableScrollRef}>
+                    <DndContext
+                      collisionDetection={closestCenter}
+                      onDragEnd={handleDragEnd}
                     >
-                      <TableHeader
-                        actionsLabel={tableConfig?.actionsLabel}
-                        columns={columnDefs ?? undefined}
-                        columnOrdering={columnOrdering}
-                        disableSorting={disableSorting}
-                        enableSelection={enableSelection}
-                      />
-                    </SortableContext>
-                    <TableBody>
-                      <TableRows
-                        emptyState={tableConfig?.emptyState}
-                        loadingText={tableConfig?.loadingText}
-                        columns={columnDefs ?? undefined}
-                        enableSelection={enableSelection}
-                        refetch={refetch}
-                        performance={performance}
-                        scrollContainerRef={tableScrollRef}
-                        infiniteMode={isInfiniteMode}
-                      />
-                    </TableBody>
-                  </TableFrame>
-                </DndContext>
-              </CardContent>
-            </Card>
+                      <TableFrame className="w-full relative">
+                        <SortableContext
+                          items={sortableColumnIds}
+                          strategy={horizontalListSortingStrategy}
+                        >
+                          <TableHeader
+                            actionsLabel={tableConfig?.actionsLabel}
+                            columns={columnDefs ?? undefined}
+                            columnOrdering={columnOrdering}
+                            disableSorting={disableSorting}
+                            enableSelection={enableSelection}
+                          />
+                        </SortableContext>
+                        <TableBody>
+                          <TableRows
+                            emptyState={tableConfig?.emptyState}
+                            loadingText={tableConfig?.loadingText}
+                            columns={columnDefs ?? undefined}
+                            enableSelection={enableSelection}
+                            refetch={refetch}
+                            performance={performance}
+                            scrollContainerRef={tableScrollRef}
+                            infiniteMode={isInfiniteMode}
+                          />
+                        </TableBody>
+                      </TableFrame>
+                    </DndContext>
+                  </div>
+              </div>
           </div>
+
           {isInfiniteMode ? (
-            <div className="mt-3 flex items-center justify-between rounded-xl border border-border/50 bg-card/80 px-3 py-2 text-xs text-muted-foreground backdrop-blur-sm">
+            <div className="mt-auto flex items-center justify-between border-t bg-muted/20 px-4 py-2 text-xs text-muted-foreground">
               <span>
                 {pagination.totalKnown
                   ? `${data.length} sur ${pagination.total} chargee(s)`
@@ -735,10 +690,12 @@ function BaseTableContent({
               )}
             </div>
           ) : (
-            <TablePagination
-              labels={tableConfig?.paginationLabels}
-              enableSelection={enableSelection}
-            />
+            <div className="mt-auto border-t bg-card/50">
+                <TablePagination
+                  labels={tableConfig?.paginationLabels}
+                  enableSelection={enableSelection}
+                />
+            </div>
           )}
           {dataError && (
             <div className="text-sm text-red-500 px-2">
@@ -881,4 +838,3 @@ export * from "./components/ExportDialog";
 
 // Utils
 export * from "./utils";
-

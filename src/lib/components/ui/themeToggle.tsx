@@ -1,4 +1,4 @@
-import { Moon, MoonIcon, Sun, SunIcon, Palette, Monitor } from "lucide-react";
+import { Check, Moon, MoonIcon, Sun, SunIcon } from "lucide-react";
 
 import { Button } from "@/lib/components/ui/button";
 import {
@@ -12,27 +12,7 @@ import {
 import { useTheme } from "@/lib/theme";
 
 export function ModeToggle() {
-  const { theme, mode, setTheme, toggleMode } = useTheme();
-
-  const themes = [
-    { value: "default", label: "Default", icon: Monitor },
-    { value: "nature", label: "nature", icon: Monitor },
-    { value: "avatar", label: "Avatar", icon: Palette },
-    { value: "dracula", label: "Dracula", icon: Palette },
-    { value: "Amber", label: "Amber", icon: Palette },
-    { value: "rose", label: "Rose", icon: Palette },
-    { value: "modern", label: "modern", icon: Palette },
-    { value: "brutalist", label: "brutalist", icon: Palette },
-    { value: "pastel", label: "pastel", icon: Palette },
-    { value: "corporate", label: "corporate", icon: Palette },
-    { value: "cyberpunk", label: "cyberpunk", icon: Palette },
-    { value: "organic", label: "organic", icon: Palette },
-    { value: "accessible", label: "accessible", icon: Palette },
-    { value: "vibrant", label: "vibrant", icon: Palette },
-    { value: "mono", label: "mono", icon: Palette },
-    { value: "warmth", label: "warmth", icon: Palette },
-    { value: "solar", label: "solar", icon: Palette },
-  ] as const;
+  const { theme, mode, setTheme, toggleMode, availableThemes } = useTheme();
 
   return (
     <DropdownMenu>
@@ -46,11 +26,10 @@ export function ModeToggle() {
           <span className="sr-only">Toggle theme and mode</span>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end" className="w-48">
+      <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel>Theme & Mode</DropdownMenuLabel>
         <DropdownMenuSeparator />
 
-        {/* Mode Toggle */}
         <DropdownMenuItem onClick={toggleMode} className="cursor-pointer">
           {mode === "light" ? (
             <>
@@ -68,25 +47,20 @@ export function ModeToggle() {
         <DropdownMenuSeparator />
         <DropdownMenuLabel>Themes</DropdownMenuLabel>
 
-        {/* Theme Selection */}
-        {themes.map((themeOption: any) => {
-          const IconComponent = themeOption.icon;
-          return (
-            <DropdownMenuItem
-              key={themeOption.value}
-              onClick={() => setTheme(themeOption.value)}
-              className={`cursor-pointer ${
-                theme === themeOption.value ? "bg-accent" : ""
-              }`}
-            >
-              <IconComponent className="mr-2 h-4 w-4" />
-              {themeOption.label}
-              {theme === themeOption.value && (
-                <span className="ml-auto text-xs">✓</span>
-              )}
-            </DropdownMenuItem>
-          );
-        })}
+        {availableThemes.map((themeOption) => (
+          <DropdownMenuItem
+            key={themeOption.name}
+            onClick={() => setTheme(themeOption.name)}
+            className={`cursor-pointer ${
+              theme === themeOption.name ? "bg-accent" : ""
+            }`}
+          >
+            {themeOption.label}
+            {theme === themeOption.name && (
+              <Check className="ml-auto h-4 w-4" />
+            )}
+          </DropdownMenuItem>
+        ))}
       </DropdownMenuContent>
     </DropdownMenu>
   );

@@ -110,6 +110,7 @@ const buildRootFieldOrder = (
 
 export function ModelTableExportDialog({
   labels,
+  trigger,
 }: {
   labels?: {
     buttonAria?: string;
@@ -133,6 +134,7 @@ export function ModelTableExportDialog({
     cancel?: string;
     download?: string;
   };
+  trigger?: React.ReactNode;
 }) {
   const { metadata } = useMetadata();
   const {
@@ -349,14 +351,16 @@ export function ModelTableExportDialog({
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button
-          variant="outline"
-          size="icon"
-          className="h-8 w-8"
-          aria-label={labels?.buttonAria ?? "Exporter les donnees"}
-        >
-          <Download className="h-4 w-4" />
-        </Button>
+        {trigger ?? (
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8"
+            aria-label={labels?.buttonAria ?? "Exporter les donnees"}
+          >
+            <Download className="h-4 w-4" />
+          </Button>
+        )}
       </DialogTrigger>
       <DialogContent className="max-w-5xl">
         <DialogHeader>

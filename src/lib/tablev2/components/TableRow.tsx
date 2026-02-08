@@ -111,14 +111,14 @@ function RowActions({
 
   return (
     <TooltipProvider delayDuration={400}>
-      <div className="flex items-center justify-end gap-0.5">
+      <div className="flex items-center justify-end gap-1 opacity-0 group-hover/row:opacity-100 transition-opacity duration-200">
         {canEdit && (
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
                 size="icon"
                 variant="ghost"
-                className="h-6 w-6 rounded text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-950/50"
+                className="h-6 w-6 rounded-md hover:bg-blue-50 text-muted-foreground hover:text-blue-600 dark:hover:bg-blue-900/20"
                 aria-label="Modifier"
               >
                 <Pencil className="h-3.5 w-3.5" />
@@ -138,7 +138,7 @@ function RowActions({
                   <Button
                     size="icon"
                     variant="ghost"
-                    className="h-6 w-6 rounded text-red-500 hover:text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-950/50"
+                    className="h-6 w-6 rounded-md hover:bg-red-50 text-muted-foreground hover:text-red-600 dark:hover:bg-red-900/20"
                     aria-label="Supprimer"
                     disabled={deleting}
                   >
@@ -311,15 +311,15 @@ export function TableRows({
     density === "compact" ? 32 : density === "spacious" ? 48 : 40;
   const cellPadding =
     density === "compact"
-      ? "py-1 px-2.5"
+      ? "py-0 px-2.5"
       : density === "spacious"
-        ? "py-3 px-3.5"
-        : "py-1.5 px-3";
+        ? "py-0 px-4"
+        : "py-0 px-3";
   const cellTextSize =
-    density === "compact" ? "text-[12px]" : density === "spacious" ? "text-sm" : "text-[13px]";
+    density === "compact" ? "text-xs" : density === "spacious" ? "text-sm" : "text-sm";
   const cellTextClass = wrapCells
-    ? "whitespace-normal break-words leading-snug"
-    : "max-w-[24rem] overflow-hidden text-ellipsis whitespace-nowrap";
+    ? "whitespace-normal break-words leading-snug py-1"
+    : "truncate";
 
   React.useEffect(() => {
     const container = scrollContainerRef?.current;
@@ -366,11 +366,12 @@ export function TableRows({
         key={rowId}
         data-state={isSelected ? "selected" : undefined}
         className={cn(
-          "group/row relative border-b border-border/40 transition-colors duration-100",
-          isSelected && "bg-primary/10 border-l-2 border-l-primary",
-          !isSelected && isEven && "bg-card",
-          !isSelected && !isEven && "bg-muted/40",
-          "hover:bg-accent/50",
+          "group/row relative border-b border-border/50 transition-colors duration-75",
+          // Selection state
+          isSelected && "bg-primary/5 hover:bg-primary/10",
+          !isSelected && "hover:bg-muted/30",
+          !isSelected && isEven && "bg-white dark:bg-card",
+          !isSelected && !isEven && "bg-slate-50/50 dark:bg-muted/10",
           density === "compact" ? "h-8" : density === "spacious" ? "h-12" : "h-10",
         )}
       >
@@ -378,20 +379,23 @@ export function TableRows({
           <TableCell
             className={cn(
               cellPadding,
-              "w-[40px] text-center transition-colors table-first-column",
-              !isSelected && !isEven && "bg-muted/40",
-              !isSelected && isEven && "bg-card",
-              isSelected && "bg-primary/10",
+              "w-[40px] text-center table-first-column border-r border-border/30",
+              isSelected && "text-primary",
             )}
           >
-            <Checkbox
-              checked={!!rowSelection[rowId]}
-              onCheckedChange={(checked: boolean | "indeterminate") =>
-                handleRowSelect(rowId, checked === true)
-              }
-              aria-label="Selectionner la ligne"
-              className="h-3.5 w-3.5"
-            />
+            <div className="flex h-full items-center justify-center">
+              <Checkbox
+                checked={!!rowSelection[rowId]}
+                onCheckedChange={(checked: boolean | "indeterminate") =>
+                  handleRowSelect(rowId, checked === true)
+                }
+                aria-label="Selectionner la ligne"
+                className={cn(
+                  "h-4 w-4 rounded-sm border-muted-foreground/40 data-[state=checked]:border-primary",
+                  "transition-all duration-200"
+                )}
+              />
+            </div>
           </TableCell>
         ) : null}
 
@@ -404,8 +408,16 @@ export function TableRows({
               : undefined;
 
             return (
-              <TableCell key={field.id} className={cn(cellPadding, cellTextSize, "text-foreground/90")}>
-                <div className={cellTextClass}>
+              <TableCell 
+                key={field.id} 
+                className={cn(
+                  cellPadding, 
+                  cellTextSize, 
+                  "text-foreground/80 border-r border-border/30 last:border-0",
+                  "group-hover/row:text-foreground transition-colors"
+                )}
+              >
+                <div className={cn(cellTextClass, "flex items-center h-full")}>
                   {field.render
                     ? field.render(value, row, {
                         accessor: field.accessor,
@@ -422,8 +434,16 @@ export function TableRows({
           }
 
           return (
-            <TableCell key={field.name} className={cn(cellPadding, cellTextSize, "text-foreground/90")}>
-              <div className={cellTextClass}>
+            <TableCell 
+              key={field.name} 
+              className={cn(
+                cellPadding, 
+                cellTextSize, 
+                "text-foreground/80 border-r border-border/30 last:border-0",
+                "group-hover/row:text-foreground transition-colors"
+              )}
+            >
+              <div className={cn(cellTextClass, "flex items-center h-full")}>
                 {formatCellValue(row[field.name], field)}
               </div>
             </TableCell>
@@ -433,12 +453,12 @@ export function TableRows({
         <TableCell
           className={cn(
             cellPadding,
-            "w-[80px] shrink-0 px-2 text-right",
+            "w-[60px] shrink-0 px-2 text-right",
             "sticky right-0 z-10",
             "table-last-column table-sticky-cell",
-            !isSelected && !isEven && "bg-muted/40",
-            !isSelected && isEven && "bg-card",
-            isSelected && "bg-primary/10",
+            // Sticky background needs to match row
+            isSelected ? "bg-primary/5" : isEven ? "bg-white dark:bg-card" : "bg-slate-50/50 dark:bg-muted/10",
+            "group-hover/row:bg-muted/30" // Simple approximation for hover on sticky
           )}
         >
           <RowActions rowId={rowId} permissions={rowPermissions} />
@@ -452,14 +472,14 @@ export function TableRows({
       <ShadcnTableRow>
         <TableCell
           colSpan={visibleColumns.length + fixedColumnCount}
-          className="h-32"
+          className="h-48"
         >
           <div className="flex flex-col items-center justify-center gap-3 py-12 text-muted-foreground">
             <div className="relative">
               <div className="absolute inset-0 rounded-full bg-primary/10 animate-ping" />
               <Loader2 className="relative h-6 w-6 animate-spin text-primary/60" />
             </div>
-            <span className="text-sm">{loadingText ?? "Chargement..."}</span>
+            <span className="text-sm font-medium">{loadingText ?? "Chargement..."}</span>
           </div>
         </TableCell>
       </ShadcnTableRow>
@@ -471,12 +491,12 @@ export function TableRows({
       <ShadcnTableRow>
         <TableCell
           colSpan={visibleColumns.length + fixedColumnCount}
-          className="h-32"
+          className="h-48"
         >
           <div className="flex flex-col items-center justify-center gap-2 py-16 text-muted-foreground">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted/50">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-muted/50 mb-2">
               <svg
-                className="h-6 w-6 text-muted-foreground/50"
+                className="h-6 w-6 text-muted-foreground/60"
                 fill="none"
                 viewBox="0 0 24 24"
                 stroke="currentColor"
@@ -489,7 +509,7 @@ export function TableRows({
                 />
               </svg>
             </div>
-            <span className="text-sm">{emptyState ?? "Aucun resultat."}</span>
+            <span className="text-sm font-medium">{emptyState ?? "Aucun resultat."}</span>
           </div>
         </TableCell>
       </ShadcnTableRow>
@@ -512,30 +532,34 @@ export function TableRows({
 
           return (
             <React.Fragment key={`group-${group.key}`}>
-              <ShadcnTableRow className="bg-muted/70 border-b border-border/50 hover:bg-muted/80 transition-colors">
+              <ShadcnTableRow 
+                className="bg-muted/40 border-b border-border hover:bg-muted/50 transition-colors"
+                onClick={() => toggleGroup(group.key)}
+              >
                 <TableCell
                   colSpan={visibleColumns.length + fixedColumnCount}
-                  className="px-2.5 py-1.5"
+                  className="px-2 py-1.5 cursor-pointer"
                 >
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-1.5">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-5 w-5 rounded hover:bg-background/60"
-                        onClick={() => toggleGroup(group.key)}
-                      >
-                        {collapsed ? (
-                          <ChevronRight className="h-3.5 w-3.5" />
-                        ) : (
-                          <ChevronDown className="h-3.5 w-3.5" />
-                        )}
-                      </Button>
-                      <span className="text-xs font-semibold text-foreground">
-                        {group.label}
-                      </span>
-                    </div>
-                    <span className="rounded bg-background/60 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6 rounded-sm hover:bg-background/80"
+                      onClick={(e) => {
+                         e.stopPropagation();
+                         toggleGroup(group.key);
+                      }}
+                    >
+                      {collapsed ? (
+                        <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </Button>
+                    <span className="text-sm font-semibold text-foreground/80">
+                      {group.label}
+                    </span>
+                    <span className="ml-2 rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
                       {group.rows.length}
                     </span>
                   </div>
