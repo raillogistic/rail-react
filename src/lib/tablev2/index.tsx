@@ -360,6 +360,7 @@ function BaseTableContent({
     setColumnOrder,
     setColumnVisibility,
     columnVisibility,
+    groupingField,
     pagination,
     loading: tableLoading,
     data,
@@ -408,20 +409,9 @@ function BaseTableContent({
     persistedStateRef.current = loadPersistedTableState(
       effectiveKey,
       userTableConfigs,
-      { allowLocalFallback: !user?.id },
+      { allowLocalFallback: true },
     );
   }
-
-  const queryConfig = React.useMemo(
-    () => ({
-      fields,
-      relations,
-      skipCount: skipCount ?? true,
-      dataMode: performance?.dataMode ?? "pagination",
-    }),
-    [fields, relations, skipCount, performance?.dataMode],
-  );
-  const { refetch } = useTableData(queryConfig);
 
   const normalizedFieldsConfig = React.useMemo(
     () => normalizeBaseModelTableFieldsInput(fields),
@@ -465,6 +455,141 @@ function BaseTableContent({
     });
     return hidden;
   }, [explicitlyAddedAccessors, hasConfiguredInclude, metadata]);
+
+  const queryVisibleAccessors = React.useMemo(() => {
+    if (!metadata) return undefined;
+
+    const persistedVisibility = persistedStateRef.current?.columnVisibility ?? {};
+    const visibilitySource =
+      Object.keys(columnVisibility).length > 0
+        ? columnVisibility
+        : persistedVisibility;
+    const hasVisibilityOverrides = Object.keys(visibilitySource).length > 0;
+
+    const fieldCanonicalByKey = new Map<string, string>();
+    metadata.fields.forEach((field) => {
+      const canonicalName = toGraphqlFieldName(field.name || field.fieldName);
+      if (!canonicalName) return;
+      [
+        field.name,
+        field.fieldName,
+        canonicalName,
+        toSnakeCase(canonicalName),
+        toCamelCase(canonicalName),
+      ]
+        .filter((entry): entry is string => !!entry)
+        .forEach((entry) => fieldCanonicalByKey.set(entry, canonicalName));
+    });
+
+    const relationCanonicalByKey = new Map<string, string>();
+    metadata.relationships.forEach((relation) => {
+      const canonicalName = toGraphqlFieldName(
+        relation.name || relation.fieldName,
+      );
+      if (!canonicalName) return;
+      [
+        relation.name,
+        relation.fieldName,
+        canonicalName,
+        toSnakeCase(canonicalName),
+        toCamelCase(canonicalName),
+      ]
+        .filter((entry): entry is string => !!entry)
+        .forEach((entry) => relationCanonicalByKey.set(entry, canonicalName));
+    });
+
+    const canonicalizeRoot = (root: string) =>
+      relationCanonicalByKey.get(root) ??
+      fieldCanonicalByKey.get(root) ??
+      toGraphqlFieldName(root);
+
+    const canonicalizeAccessor = (accessor: string) => {
+      const parts = accessor.replace(/__/g, ".").split(".").filter(Boolean);
+      if (parts.length === 0) return "";
+      const [root, ...rest] = parts;
+      const normalizedRoot = canonicalizeRoot(root);
+      if (!normalizedRoot) return "";
+      const normalizedRest = rest.map((segment) => toGraphqlFieldName(segment));
+      return [normalizedRoot, ...normalizedRest.filter(Boolean)].join(".");
+    };
+
+    const defaultDisplay = metadata.fields
+      .filter((field) => field.visibility !== "hidden")
+      .map((field) => toGraphqlFieldName(field.name || field.fieldName))
+      .filter(Boolean)
+      .filter((accessor) => !isAccessorExcluded(accessor, excludedAccessors));
+
+    const includeEntries = mergeBaseModelTableFields({
+      include: normalizedFieldsConfig.include,
+      defaults: defaultDisplay,
+      add: normalizedFieldsConfig.add,
+      excludedAccessors,
+    })
+      .map((entry) =>
+        canonicalizeAccessor(typeof entry === "string" ? entry : entry.accessor),
+      )
+      .filter(Boolean);
+
+    const uniqueAccessors = Array.from(new Set(includeEntries));
+
+    const resolveVisibility = (accessor: string): boolean | undefined => {
+      const candidates = [
+        accessor,
+        toSnakeCase(accessor),
+        toCamelCase(accessor),
+        accessor.split(".")[0],
+        toSnakeCase(accessor.split(".")[0]),
+        toCamelCase(accessor.split(".")[0]),
+      ];
+      for (const candidate of candidates) {
+        const value = visibilitySource[candidate];
+        if (typeof value === "boolean") return value;
+      }
+      return undefined;
+    };
+
+    return uniqueAccessors.filter((accessor) => {
+      const explicitVisibility = resolveVisibility(accessor);
+      if (explicitVisibility === false) return false;
+      if (explicitVisibility === true) return true;
+      if (hasVisibilityOverrides) return true;
+      if (hasConfiguredInclude) return true;
+      return !defaultHiddenColumnIds.has(accessor);
+    });
+  }, [
+    columnVisibility,
+    defaultHiddenColumnIds,
+    excludedAccessors,
+    hasConfiguredInclude,
+    metadata,
+    normalizedFieldsConfig.add,
+    normalizedFieldsConfig.include,
+  ]);
+
+  const requiredDataAccessors = React.useMemo(() => {
+    if (!groupingField) return [];
+    return [groupingField];
+  }, [groupingField]);
+
+  const queryConfig = React.useMemo(
+    () => ({
+      fields,
+      relations,
+      skipCount: skipCount ?? true,
+      dataMode: performance?.dataMode ?? "pagination",
+      visibleAccessors: queryVisibleAccessors,
+      requiredAccessors: requiredDataAccessors,
+    }),
+    [
+      fields,
+      performance?.dataMode,
+      queryVisibleAccessors,
+      relations,
+      requiredDataAccessors,
+      skipCount,
+    ],
+  );
+  const { refetch } = useTableData(queryConfig);
 
   const columnDefs = React.useMemo(() => {
     if (!metadata) return null;

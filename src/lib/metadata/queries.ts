@@ -1,5 +1,130 @@
 import { gql } from "@apollo/client";
 
+export const TABLE_MODEL_METADATA_QUERY = gql`
+  query TableModelMetadata($app: String!, $model: String!, $objectId: ID) {
+    modelSchema(app: $app, model: $model, objectId: $objectId) {
+      app
+      model
+      verboseName
+      verboseNamePlural
+      primaryKey
+      ordering
+      fields {
+        name
+        fieldName
+        verboseName
+        helpText
+        fieldType
+        graphqlType
+        required
+        nullable
+        blank
+        editable
+        unique
+        choices {
+          value
+          label
+          group
+          disabled
+        }
+        defaultValue
+        hasDefault
+        autoNow
+        autoNowAdd
+        readable
+        writable
+        visibility
+        isPrimaryKey
+        isIndexed
+        isRelation
+        isComputed
+        isFile
+        isImage
+        isJson
+        isDate
+        isDatetime
+        isNumeric
+        isBoolean
+        isText
+        isRichText
+        customMetadata
+      }
+      relationships {
+        name
+        fieldName
+        verboseName
+        helpText
+        relatedApp
+        relatedModel
+        relatedModelVerbose
+        relationType
+        isReverse
+        isToOne
+        isToMany
+        required
+        nullable
+        editable
+        lookupField
+        searchFields
+        readable
+        writable
+        canCreateInline
+        customMetadata
+      }
+      filterConfig {
+        style
+        argumentName
+        inputTypeName
+        supportsAnd
+        supportsOr
+        supportsNot
+        dualModeEnabled
+        supportsQuick
+        supportsFts
+        supportsAggregation
+        presets {
+          name
+          presetName
+          description
+          filterJson
+        }
+        computedFilters {
+          name
+          fieldName
+          filterType
+          description
+        }
+      }
+      mutations {
+        name
+        operation
+        description
+        methodName
+        allowed
+        requiredPermissions
+        reason
+        mutationType
+        modelName
+        requiresAuthentication
+      }
+      permissions {
+        canList
+        canRetrieve
+        canCreate
+        canUpdate
+        canDelete
+        canBulkCreate
+        canBulkUpdate
+        canBulkDelete
+        canExport
+        denialReasons
+      }
+      metadataVersion
+      customMetadata
+    }
+  }
+`;
+
 export const MODEL_METADATA_QUERY = gql`
   query ModelMetadata($app: String!, $model: String!, $objectId: ID) {
     modelSchema(app: $app, model: $model, objectId: $objectId) {

@@ -1,4 +1,10 @@
-import { MODEL_METADATA_QUERY } from "@/lib/metadata/queries";
+import {
+  MODEL_METADATA_QUERY,
+  TABLE_MODEL_METADATA_QUERY,
+} from "@/lib/metadata/queries";
 
-// Backward-compatible alias during migration to the metadata gateway.
-export const GET_MODEL_SCHEMA = MODEL_METADATA_QUERY;
+// Table metadata query (lean payload optimized for table rendering).
+export const GET_MODEL_SCHEMA = TABLE_MODEL_METADATA_QUERY;
+
+// Full metadata query (forms and advanced metadata consumers).
+export const GET_MODEL_SCHEMA_FULL = MODEL_METADATA_QUERY;

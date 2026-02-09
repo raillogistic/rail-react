@@ -30,6 +30,7 @@ interface ColumnFilterProps {
 
 export function ColumnFilter({ columnId, field, hideTrigger = false }: ColumnFilterProps) {
   const { metadata } = useMetadata();
+  const metadataFilters = metadata?.filters ?? [];
   const { activeColumnFilter, setActiveColumnFilter } = useTable();
   const { addFilterCondition, advancedFilters, removeFilterCondition } = useTableFilters();
   const [open, setOpen] = useState(false);
@@ -46,14 +47,14 @@ export function ColumnFilter({ columnId, field, hideTrigger = false }: ColumnFil
   // 1. Resolve Filter Schema from Metadata
   const filterMeta = useMemo(() => {
     if (!metadata) return null;
-    return metadata.filters.find(
+    return metadataFilters.find(
       (f) =>
         f.fieldName === resolvedField?.fieldName ||
         f.name === resolvedField?.name ||
         f.fieldName === columnId ||
         f.name === columnId,
     );
-  }, [metadata, resolvedField, columnId]);
+  }, [metadata, metadataFilters, resolvedField, columnId]);
 
   const filterFieldName = useMemo(
     () =>

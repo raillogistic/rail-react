@@ -15,12 +15,21 @@ vi.mock('../components/TableToolbar', () => ({
   TableToolbar: () => <div data-testid="table-toolbar-mock">Toolbar</div>
 }));
 
+vi.mock('@/auth/context', () => ({
+  useAuthContext: () => ({
+    user: null,
+  }),
+}));
+
 // Mock UI components that cause sideOffset warnings or other issues in JSDOM
 vi.mock('@/lib/components/ui/dropdown-menu', () => ({
   DropdownMenu: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   DropdownMenuTrigger: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   DropdownMenuContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   DropdownMenuItem: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  DropdownMenuSub: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  DropdownMenuSubTrigger: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  DropdownMenuSubContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   DropdownMenuLabel: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   DropdownMenuSeparator: () => null,
 }));
@@ -158,7 +167,6 @@ const MOCK_METADATA_QUERY = {
           },
         ],
         relationships: [],
-        filters: [],
         mutations: [],
         metadataVersion: '2.0',
         customMetadata: null,
@@ -167,8 +175,7 @@ const MOCK_METADATA_QUERY = {
   },
 };
 
-// Data Query Mock (Dynamic based on metadata fields)
-// The hook constructs items { id, id, username } because id is in metadata and explicitly added.
+// Data Query Mock (dynamic based on visible table fields).
 const MOCK_DATA_QUERY = {
   request: {
     query: gql`
@@ -199,7 +206,6 @@ const MOCK_DATA_QUERY = {
             hasPreviousPage
           }
           items {
-            id
             id
             username
             rowPermissions {
@@ -278,11 +284,11 @@ describe('ModelTableV2 Integration', () => {
 
     // Wait for metadata to load and headers to appear
     await waitFor(() => {
-        expect(screen.getByText('Username')).toBeInTheDocument();
+        expect(screen.getAllByText('Username').length).toBeGreaterThan(0);
     });
 
-    // Check for headers
-    expect(screen.getByText('ID')).toBeInTheDocument();
+    // Check for headers/state
+    expect(screen.queryByText('ID')).not.toBeInTheDocument();
     expect(screen.queryByLabelText('Tout selectionner')).not.toBeInTheDocument();
 
     // Check for data rows (loaded from MOCK_DATA_QUERY)

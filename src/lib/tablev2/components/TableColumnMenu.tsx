@@ -187,6 +187,7 @@ export function TableColumnMenu({
     dragModeEnabled,
     setDragModeEnabled,
   } = useTable();
+  const metadataFilters = metadata?.filters ?? [];
 
   const resolvedField = useMemo(() => {
     if (field) return field;
@@ -270,14 +271,14 @@ export function TableColumnMenu({
   const filterSchema = useMemo(() => {
     if (!metadata) return null;
 
-    return metadata.filters.find(
+    return metadataFilters.find(
       (f) =>
         f.fieldName === resolvedField?.fieldName ||
         f.name === resolvedField?.name ||
         f.fieldName === columnId ||
         f.name === columnId,
     );
-  }, [metadata, resolvedField, columnId]);
+  }, [metadata, metadataFilters, resolvedField, columnId]);
 
   const handleOpenFilter = () => {
     setActiveColumnFilter(columnId);
@@ -320,7 +321,7 @@ export function TableColumnMenu({
   const resolveFilterSchemaByName = (name?: string) => {
     if (!metadata || !name) return undefined;
     const snakeName = toSnakeCase(name);
-    return metadata.filters.find(
+    return metadataFilters.find(
       (f) =>
         f.name === name ||
         f.fieldName === name ||

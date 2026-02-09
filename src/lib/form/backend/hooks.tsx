@@ -30,7 +30,7 @@ import {
   type MutationError,
   toOperationField,
 } from "./types/mutations";
-import { GET_MODEL_SCHEMA } from "@/lib/tablev2/queries";
+import { GET_MODEL_SCHEMA_FULL } from "@/lib/tablev2/queries";
 import type {
   ModelSchema,
   FieldSchema,
@@ -294,7 +294,7 @@ export function useFormMetadata({
       ModelSchemaQueryResult,
       ModelSchemaQueryVariables
     >({
-      query: GET_MODEL_SCHEMA,
+      query: GET_MODEL_SCHEMA_FULL,
       variables,
       fetchPolicy: metadataQueryOptions.fetchPolicy,
       errorPolicy: metadataQueryOptions.errorPolicy,
@@ -431,7 +431,7 @@ export function useFormMetadata({
           ModelSchemaQueryResult,
           ModelSchemaQueryVariables
         >({
-          query: GET_MODEL_SCHEMA,
+          query: GET_MODEL_SCHEMA_FULL,
           variables: { app: target.app, model: target.model },
           fetchPolicy: metadataQueryOptions.fetchPolicy,
           errorPolicy: metadataQueryOptions.errorPolicy,

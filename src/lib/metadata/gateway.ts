@@ -4,7 +4,7 @@ import {
   type ApolloError,
   type QueryHookOptions,
 } from "@apollo/client";
-import { MODEL_METADATA_QUERY } from "./queries";
+import { MODEL_METADATA_QUERY, TABLE_MODEL_METADATA_QUERY } from "./queries";
 import type { ModelMetadata } from "./types";
 import {
   buildMetadataScopeKey,
@@ -138,11 +138,15 @@ export async function fetchMetadataSnapshot(
   if (inFlight) {
     return inFlight;
   }
+  const queryDocument =
+    params.profile === "table"
+      ? TABLE_MODEL_METADATA_QUERY
+      : MODEL_METADATA_QUERY;
 
   const startedAt = Date.now();
   const queryPromise = client
     .query<ModelMetadataQueryData>({
-      query: MODEL_METADATA_QUERY,
+      query: queryDocument,
       variables: {
         app: params.app,
         model: params.model,

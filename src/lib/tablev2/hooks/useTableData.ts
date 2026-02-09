@@ -47,6 +47,8 @@ function buildDynamicQuery(
     fields?: BaseModelTableFieldsInput;
     relations?: Record<string, BaseModelTableRelationConfig>;
     skipCount?: boolean;
+    visibleAccessors?: string[];
+    requiredAccessors?: string[];
   },
 ) {
   // Convert PascalCase model name to camelCase for the query name
@@ -231,6 +233,70 @@ function buildDynamicQuery(
     add: normalizedFieldsConfig.add,
     excludedAccessors,
   });
+  const normalizedVisibleAccessors = (
+    fieldConfig?.visibleAccessors ?? []
+  )
+    .map((entry) => canonicalizeAccessor(entry))
+    .filter(Boolean);
+  const visibleAccessorSet =
+    normalizedVisibleAccessors.length > 0
+      ? new Set(normalizedVisibleAccessors)
+      : null;
+  const normalizedRequiredAccessors = (
+    fieldConfig?.requiredAccessors ?? []
+  )
+    .map((entry) => canonicalizeAccessor(entry))
+    .filter(Boolean);
+
+  const resolvedQueryFields = (() => {
+    const nextFields: BaseModelTableField[] = [];
+    const seen = new Set<string>();
+
+    const pushField = (entry: BaseModelTableField) => {
+      const accessor = canonicalizeAccessor(
+        typeof entry === "string" ? entry : entry.accessor,
+      );
+      if (!accessor || seen.has(accessor)) return;
+      seen.add(accessor);
+      if (typeof entry === "string") {
+        nextFields.push(accessor);
+        return;
+      }
+      nextFields.push({
+        ...entry,
+        accessor,
+      });
+    };
+
+    resolvedIncludeFields.forEach((entry) => {
+      if (!visibleAccessorSet) {
+        pushField(entry);
+        return;
+      }
+      const rawAccessor = typeof entry === "string" ? entry : entry.accessor;
+      const accessor = canonicalizeAccessor(rawAccessor);
+      if (!accessor || !visibleAccessorSet.has(accessor)) return;
+      pushField(entry);
+    });
+
+    normalizedRequiredAccessors.forEach((accessor) => {
+      pushField(accessor);
+    });
+
+    if (visibleAccessorSet) {
+      normalizedVisibleAccessors.forEach((accessor) => {
+        pushField(accessor);
+      });
+      if (
+        nextFields.length === 0 &&
+        normalizedVisibleAccessors.length > 0
+      ) {
+        return resolvedIncludeFields;
+      }
+    }
+
+    return nextFields;
+  })();
 
   const fieldSelection = (() => {
     interface SelectionTree {
@@ -276,7 +342,7 @@ function buildDynamicQuery(
       defaults.forEach((field) => addPathToTree(relationNode, [field]));
     };
 
-    resolvedIncludeFields.forEach((entry) => {
+    resolvedQueryFields.forEach((entry) => {
       const rawAccessor = typeof entry === "string" ? entry : entry.accessor;
       if (!rawAccessor) return;
       const accessor = canonicalizeAccessor(rawAccessor);
@@ -371,6 +437,8 @@ export function useTableData(config?: {
   relations?: Record<string, BaseModelTableRelationConfig>;
   skipCount?: boolean;
   dataMode?: "pagination" | "infinite";
+  visibleAccessors?: string[];
+  requiredAccessors?: string[];
 }) {
   const { app, model, metadata } = useMetadata();
   const {
@@ -508,7 +576,9 @@ export function useTableData(config?: {
     {
       skip: !query,
       variables,
-      fetchPolicy: "network-only", // Ensure fresh data for tables usually
+      fetchPolicy: "cache-and-network",
+      nextFetchPolicy: "cache-first",
+      returnPartialData: true,
       notifyOnNetworkStatusChange: true,
     },
   );

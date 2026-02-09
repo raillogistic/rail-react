@@ -208,7 +208,7 @@ export function TableToolbar({
     }
   };
 
-  const filterContent = (
+  const renderFilterContent = () => (
     <FilterPanel
       app={app}
       model={model}
@@ -441,7 +441,7 @@ export function TableToolbar({
                     <DialogHeader className="border-b px-4 py-3">
                       <DialogTitle>{panelDefaults.title}</DialogTitle>
                     </DialogHeader>
-                    {filterContent}
+                    {filterOpen ? renderFilterContent() : null}
                  </DialogContent>
               </Dialog>
              ) : (
@@ -465,7 +465,7 @@ export function TableToolbar({
                       <SheetHeader className="border-b">
                         <SheetTitle>{panelDefaults.title}</SheetTitle>
                       </SheetHeader>
-                      {filterContent}
+                      {filterOpen ? renderFilterContent() : null}
                    </SheetContent>
                 </Sheet>
              )}
