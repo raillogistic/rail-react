@@ -58,9 +58,14 @@ export function MFASetupPage({
 
   const mfaEnabled = mfaStatus?.me?.mfa_enabled;
 
-  const [setupMfa, { loading: loadingSetup }] = useMutation(SETUP_MFA_MUTATION);
+  const [setupMfa, { loading: loadingSetup }] = useMutation(SETUP_MFA_MUTATION, {
+    context: { useAuthEndpoint: true },
+  });
   const [verifyMfaSetup, { loading: loadingVerify }] = useMutation(
     VERIFY_MFA_SETUP_MUTATION,
+    {
+      context: { useAuthEndpoint: true },
+    },
   );
 
   useEffect(() => {

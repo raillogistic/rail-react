@@ -332,6 +332,9 @@ const createErrorLink = () => {
 
 const authOperationNames = new Set<string>([
   'Login',
+  'SetupMFA',
+  'VerifyMFASetup',
+  'VerifyMFALogin',
 ]);
 
 const createEndpointLink = () => {
