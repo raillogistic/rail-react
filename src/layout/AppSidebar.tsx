@@ -20,9 +20,10 @@ import { useTheme } from "@/lib/theme";
 import LogoMark from "@/assets/logos/logo.png";
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { sidebarCollapseMode, layout } = useTheme();
+  const { layout } = useTheme();
   const { state } = useSidebar();
-  const collapsibleMode = sidebarCollapseMode ?? "offcanvas";
+  const collapsibleMode: React.ComponentProps<typeof Sidebar>["collapsible"] =
+    "offcanvas";
   const isCollapsed = state === "collapsed";
   const sidebarRef = useRef<HTMLDivElement>(null);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
@@ -49,7 +50,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       collapsible={collapsibleMode}
       {...props}
       className={cn(
-        "relative overflow-hidden border-r border-sidebar-border/40 bg-sidebar/95 text-sidebar-foreground backdrop-blur-xl transition-all duration-300",
+        "overflow-hidden border-r border-sidebar-border/40 bg-sidebar/95 text-sidebar-foreground backdrop-blur-xl transition-all duration-300",
         layout === "mixed" && "top-[3.5rem] h-[calc(100svh-3.5rem)]",
       )}
     >

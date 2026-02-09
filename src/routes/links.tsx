@@ -5,6 +5,7 @@
  * sidebar, header, and routing table all share the same source of truth.
  */
 
+import type { ComponentType, ReactNode } from "react";
 import { MFASetupPage } from "@/auth/pages/MFASetupPage";
 import { SessionsPage } from "@/auth/pages/SessionsPage";
 import {
@@ -24,7 +25,6 @@ import { getAppDefaultRoute, getAppNavigationLinks } from "@/apps/routes";
 // import ModelForm from "@/lib/form/backend/ModelForm";
 import { BaseModelTable, ModelTableV2 } from "@/lib/tablev2";
 import { ModelForm } from "@/lib/form2";
-import ModelTable from "@/lib/tables/ModelTable";
 // import ModelForm    from "@/lib/form2";
 
 export const ROUTES = {
@@ -203,62 +203,66 @@ const CORE_NAVIGATION_LINKS: NavigationSection[] = [
     items: [],
   },
   {
-    id: "settings",
-    label: "Paramètres",
+    id: "parametre",
+    label: "parametre",
     items: [
       {
-        id: "settings-account",
-        title: "Compte",
+        id: "parametre",
+        title: "parametre",
         path: ROUTES.SETTINGS_ACCOUNT,
-        icon: User,
-        requiresAuth: true,
-        component: <AccountSettingsPage />,
-        description: "Gérer votre profil",
-      },
-      {
-        id: "settings-appearance",
-        title: "Apparence",
-        path: ROUTES.SETTINGS_APPEARANCE,
         icon: Settings,
         requiresAuth: true,
-        component: <AppearanceSettingsPage />,
-        description: "Thème et affichage",
-      },
-      {
-        id: "settings-layout",
-        title: "Disposition",
-        path: ROUTES.SETTINGS_LAYOUT,
-        icon: LayoutDashboard,
-        requiresAuth: true,
-        component: <LayoutSettingsPage />,
-        description: "Disposition de l'interface",
-      },
-      {
-        id: "settings-admin",
-        title: "Administration UI",
-        path: ROUTES.SETTINGS_ADMIN,
-        icon: Shield,
-        requiresAuth: true,
-        component: <AdminUISettingsPage />,
-        description: "Configuration globale UI",
-      },
-      {
-        id: "settings-sessions",
-        title: "Sessions",
-        path: ROUTES.SETTINGS_SESSIONS,
-        icon: Smartphone, // Using Smartphone as proxy for devices/sessions
-        requiresAuth: true,
-        component: <SessionsPage />,
-        description: "Gérer vos sessions actives",
-      },
-      {
-        id: "settings-mfa",
-        title: "Authentification à deux facteurs",
-        path: ROUTES.SETTINGS_MFA,
-        icon: Lock,
-        requiresAuth: true,
-        component: <MFASetupPage />,
-        description: "Sécuriser votre compte",
+        description: "Accéder aux paramètres",
+        children: [
+          {
+            title: "Compte",
+            path: ROUTES.SETTINGS_ACCOUNT,
+            icon: User,
+            requiresAuth: true,
+            component: <AccountSettingsPage />,
+            description: "Gérer votre profil",
+          },
+          {
+            title: "Apparence",
+            path: ROUTES.SETTINGS_APPEARANCE,
+            icon: Settings,
+            requiresAuth: true,
+            component: <AppearanceSettingsPage />,
+            description: "Thème et affichage",
+          },
+          {
+            title: "Disposition",
+            path: ROUTES.SETTINGS_LAYOUT,
+            icon: LayoutDashboard,
+            requiresAuth: true,
+            component: <LayoutSettingsPage />,
+            description: "Disposition de l'interface",
+          },
+          {
+            title: "Administration UI",
+            path: ROUTES.SETTINGS_ADMIN,
+            icon: Shield,
+            requiresAuth: true,
+            component: <AdminUISettingsPage />,
+            description: "Configuration globale UI",
+          },
+          {
+            title: "Sessions",
+            path: ROUTES.SETTINGS_SESSIONS,
+            icon: Smartphone,
+            requiresAuth: true,
+            component: <SessionsPage />,
+            description: "Gérer vos sessions actives",
+          },
+          {
+            title: "Authentification à deux facteurs",
+            path: ROUTES.SETTINGS_MFA,
+            icon: Lock,
+            requiresAuth: true,
+            component: <MFASetupPage />,
+            description: "Sécuriser votre compte",
+          },
+        ],
       },
     ],
   },

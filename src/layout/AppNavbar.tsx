@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import { IconInnerShadowTop, IconMenu2 } from "@tabler/icons-react";
-import { NAVIGATION_LINKS } from "@/routes/links";
+import { NAVIGATION_LINKS, type NavigationSection } from "@/routes/links";
 import { UserNav } from "@/lib/components/user-nav";
 import Logo from "@/assets/logos/logo.png";
 import { useTheme } from "@/lib/theme";
@@ -42,6 +42,36 @@ const RouterLink = React.forwardRef<
 });
 RouterLink.displayName = "RouterLink";
 
+type NavigationMenuEntry = {
+  title: string;
+  path: string;
+  description?: string;
+};
+
+const getSectionEntries = (section: NavigationSection): NavigationMenuEntry[] =>
+  section.items.flatMap((item): NavigationMenuEntry[] => {
+    const visibleChildren = item.children?.filter((child) => !child.hidden) ?? [];
+    if (visibleChildren.length > 0) {
+      return visibleChildren.map((child) => ({
+        title: child.title,
+        path: child.path,
+        description: child.description,
+      }));
+    }
+
+    if (item.hidden) {
+      return [];
+    }
+
+    return [
+      {
+        title: item.title,
+        path: item.path,
+        description: item.description,
+      },
+    ];
+  });
+
 const AppNavMenu = ({
   layout,
   location,
@@ -53,7 +83,9 @@ const AppNavMenu = ({
 }) => (
   <NavigationMenu viewport={false} className={className}>
     <NavigationMenuList>
-      {NAVIGATION_LINKS.map((section, index) => {
+      {NAVIGATION_LINKS.map((section) => {
+        const sectionEntries = getSectionEntries(section);
+
         // Check if any item in this section is active
         const isActive = section.items.some(
           (item) =>
@@ -66,7 +98,7 @@ const AppNavMenu = ({
         // Mixed mode: Render sections as simple links (no dropdowns)
         if (layout === "mixed") {
           // Navigate to the first available item's path
-          const firstPath = section.items[0]?.path || "#";
+          const firstPath = sectionEntries[0]?.path || "#";
           return (
             <NavigationMenuItem key={section.id}>
               <RouterLink
@@ -85,22 +117,19 @@ const AppNavMenu = ({
         // Standard Horizontal mode: Render dropdowns for sections
         return (
           <NavigationMenuItem key={section.id}>
-            {section.items.length === 1 && !section.items[0].children ? (
+            {sectionEntries.length === 1 ? (
               <RouterLink
-                to={section.items[0].path}
+                to={sectionEntries[0].path}
                 className={navigationMenuTriggerStyle()}
               >
-                {section.items[0].title}
+                {sectionEntries[0].title}
               </RouterLink>
             ) : (
               <>
                 <NavigationMenuTrigger>{section.label}</NavigationMenuTrigger>
-                <NavigationMenuContent
-                  side="bottom"
-                  align={index >= NAVIGATION_LINKS.length - 2 ? "end" : "start"}
-                >
+                <NavigationMenuContent>
                   <ul className="grid gap-3 p-4 md:w-[400px] lg:w-[500px] lg:grid-cols-[.75fr_1fr]">
-                    {section.items.map((item) => (
+                    {sectionEntries.map((item) => (
                       <ListItem
                         key={item.path}
                         title={item.title}
@@ -238,28 +267,32 @@ function MobileNav() {
           </SheetTitle>
         </SheetHeader>
         <nav className="flex flex-col gap-1 px-4 py-4">
-          {NAVIGATION_LINKS.map((section) => (
-            <div key={section.id} className="space-y-1">
-              <p className="text-xs font-semibold uppercase text-muted-foreground">
-                {section.label}
-              </p>
-              <div className="flex flex-col">
-                {section.items.map((item) => (
-                  <Link
-                    key={item.path}
-                    to={item.path}
-                    className={cn(
-                      "rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
-                      location.pathname === item.path &&
-                        "bg-accent text-accent-foreground"
-                    )}
-                  >
-                    {item.title}
-                  </Link>
-                ))}
+          {NAVIGATION_LINKS.map((section) => {
+            const sectionEntries = getSectionEntries(section);
+
+            return (
+              <div key={section.id} className="space-y-1">
+                <p className="text-xs font-semibold uppercase text-muted-foreground">
+                  {section.label}
+                </p>
+                <div className="flex flex-col">
+                  {sectionEntries.map((item) => (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      className={cn(
+                        "rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
+                        location.pathname === item.path &&
+                          "bg-accent text-accent-foreground"
+                      )}
+                    >
+                      {item.title}
+                    </Link>
+                  ))}
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </nav>
       </SheetContent>
     </Sheet>

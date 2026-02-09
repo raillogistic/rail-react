@@ -171,6 +171,8 @@ const Sidebar = React.forwardRef<
     ref
   ) => {
     const { isMobile, state, openMobile, setOpenMobile } = useSidebar();
+    const isOffcanvasCollapsed =
+      state === "collapsed" && collapsible === "offcanvas";
 
     if (collapsible === "none") {
       return (
@@ -234,6 +236,7 @@ const Sidebar = React.forwardRef<
             ? "group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4)))]"
             : "group-data-[collapsible=icon]:w-(--sidebar-width-icon)"
         )}
+        style={isOffcanvasCollapsed ? { width: 0 } : undefined}
       />
       <div
         data-slot="sidebar-container"

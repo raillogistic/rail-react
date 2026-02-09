@@ -29,16 +29,21 @@ export const MainApp: React.FC = () => {
 
     window.addEventListener(
       "backend-offline",
-      handleBackendOffline as EventListener
+      handleBackendOffline as EventListener,
     );
 
     return () => {
       window.removeEventListener(
         "backend-offline",
-        handleBackendOffline as EventListener
+        handleBackendOffline as EventListener,
       );
     };
   }, [showOfflineAlert]);
+
+  const sidebarProviderStyle = {
+    "--sidebar-width": "calc(var(--spacing) * 70)",
+    "--header-height": "calc(var(--spacing) * 13)",
+  } as React.CSSProperties;
 
   if (layout === "horizontal") {
     return (
@@ -65,14 +70,7 @@ export const MainApp: React.FC = () => {
 
   if (layout === "mixed") {
     return (
-      <SidebarProvider
-        style={
-          {
-            "--sidebar-width": "calc(var(--spacing) * 70)",
-            "--header-height": "calc(var(--spacing) * 13)",
-          } as React.CSSProperties
-        }
-      >
+      <SidebarProvider style={sidebarProviderStyle}>
         <OfflineAlert
           isVisible={showAlert}
           onRetry={retryConnection}
@@ -83,7 +81,7 @@ export const MainApp: React.FC = () => {
           <AppNavbar />
           <div className="flex min-w-0 flex-1 overflow-hidden">
             <AppSidebar />
-            <main className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden">
+            <main className="w-0 flex-1 min-w-0 overflow-y-auto overflow-x-hidden">
               <div className="flex min-w-0 flex-col gap-4 py-4 md:gap-6 md:py-8">
                 <div className="min-w-0 px-4 lg:px-6">
                   <AppRoutes />
@@ -97,14 +95,7 @@ export const MainApp: React.FC = () => {
   }
 
   return (
-    <SidebarProvider
-      style={
-        {
-          "--sidebar-width": "calc(var(--spacing) * 70)",
-          "--header-height": "calc(var(--spacing) * 13)",
-        } as React.CSSProperties
-      }
-    >
+    <SidebarProvider style={sidebarProviderStyle}>
       <OfflineAlert
         isVisible={showAlert}
         onRetry={retryConnection}
