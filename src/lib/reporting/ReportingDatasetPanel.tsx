@@ -1,4 +1,4 @@
-import type { JSX } from "react";
+﻿import type { JSX } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { gql, useMutation } from "@apollo/client";
 import { BookOpen, RefreshCcw, Save } from "lucide-react";
@@ -9,8 +9,8 @@ import { Input } from "@/lib/components/ui/input";
 import { Textarea } from "@/lib/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/lib/components/ui/card";
 import { Separator } from "@/lib/components/ui/separator";
-import { ModelAdvancedFiltersControl, type FilterSeedSpec } from "@/lib/tables/components/filtering";
-import type { ComplexFilterInput } from "@/lib/tables/types";
+import { ModelAdvancedFiltersControl, type FilterSeedSpec } from "@/lib/tablev2/components/filtering";
+import type { ComplexFilterInput } from "@/lib/tablev2/compat/types";
 import {
   build_create_mutation,
   type CreateMutationResponse,
@@ -190,8 +190,8 @@ export function ReportingDatasetPanel({
   sourceAppLabel,
   sourceModel,
   hideSourceInputs = false,
-  title = "Créer un dataset BI",
-  description = "Définissez la source (modèle Django) puis les dimensions/mesures. Le dataset devient exécutable via GraphQL (preview/run_query).",
+  title = "CrÃ©er un dataset BI",
+  description = "DÃ©finissez la source (modÃ¨le Django) puis les dimensions/mesures. Le dataset devient exÃ©cutable via GraphQL (preview/run_query).",
 }: ReportingDatasetPanelProps): JSX.Element {
   const [draft, setDraft] = useState(() => ({
     code: "dataset-custom",
@@ -301,17 +301,17 @@ export function ReportingDatasetPanel({
     if (!input) return;
     const { data } = await createDataset({ variables: { input } });
     if (data?.response?.ok && data.response.object?.id) {
-      toast.success("Dataset BI créé.");
+      toast.success("Dataset BI crÃ©Ã©.");
       onCreated?.(data.response.object.id);
       return;
     }
     toast.error(
-      data?.response?.errors?.map((e) => e?.message).join(", ") || "Création impossible.",
+      data?.response?.errors?.map((e) => e?.message).join(", ") || "CrÃ©ation impossible.",
     );
   }, [buildInput, createDataset, onCreated]);
 
   /**
-   * A small “cheatsheet” example to help first-time users.
+   * A small â€œcheatsheetâ€ example to help first-time users.
    */
   const cheatsheet = useMemo(
     () => (
@@ -324,7 +324,7 @@ export function ReportingDatasetPanel({
             Time-series: dimension transform <code>trunc:month</code> sur <code>created_at</code>
           </li>
           <li>
-            Mesure conditionnelle: ajoutez <code>filter</code> dans une métrique (count filtré)
+            Mesure conditionnelle: ajoutez <code>filter</code> dans une mÃ©trique (count filtrÃ©)
           </li>
           <li>
             Limites/caching: configurez <code>metadata.max_limit</code> et <code>metadata.cache_ttl_seconds</code>
@@ -487,7 +487,7 @@ export function ReportingDatasetPanel({
                   buttonSize="sm"
                   buttonVariant="outline"
                   showChips={false}
-                  popupTitle="Composer les filtres par défaut"
+                  popupTitle="Composer les filtres par dÃ©faut"
                   dialogSizing={{ width: "90vw", maxWidth: 900, maxHeight: "80vh" }}
                   seedSpecs={parseJsonField<Array<FilterSeedSpec>>(draft.default_filters, [])}
                   onApply={(filters) => {
@@ -496,7 +496,7 @@ export function ReportingDatasetPanel({
                       ...p,
                       default_filters: JSON.stringify(specs, null, 2),
                     }));
-                    toast.success("Filtres par défaut mis à jour depuis le builder.");
+                    toast.success("Filtres par dÃ©faut mis Ã  jour depuis le builder.");
                   }}
                 />
               </div>
@@ -522,7 +522,7 @@ export function ReportingDatasetPanel({
               size="sm"
               onClick={() => {
                 setDraft((p) => ({ ...p }));
-                toast.message("Conseil: exécutez ensuite un preview/run_query depuis la table ou le studio.");
+                toast.message("Conseil: exÃ©cutez ensuite un preview/run_query depuis la table ou le studio.");
               }}
             >
               <RefreshCcw className="mr-2 h-4 w-4" />
@@ -535,7 +535,7 @@ export function ReportingDatasetPanel({
               disabled={creating}
             >
               <Save className="mr-2 h-4 w-4" />
-              {creating ? "Création..." : "Créer le dataset"}
+              {creating ? "CrÃ©ation..." : "CrÃ©er le dataset"}
             </Button>
           </div>
         </CardContent>
@@ -543,3 +543,4 @@ export function ReportingDatasetPanel({
     </div>
   );
 }
+

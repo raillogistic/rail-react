@@ -1,4 +1,4 @@
-import type { JSX } from "react";
+﻿import type { JSX } from "react";
 import React, {
   forwardRef,
   useCallback,
@@ -22,23 +22,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/lib/components/ui/select";
-import { FormOverlay } from "../tables/components/ModelTableOverlays";
+import { FormOverlay } from "../tablev2/components/ModelTableOverlays";
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
 } from "@/lib/components/ui/tabs";
-import { useModelTableMetadata } from "@/lib/tables/hooks";
-import { useAdvancedFiltering } from "@/lib/tables/components/filtering";
-import { FilterGroupEditor } from "@/lib/tables/components/filtering/FilterGroupEditor";
-import type { FilterSeedSpec } from "@/lib/tables/components/filtering/types";
+import { useModelTableMetadata } from "@/lib/tablev2/compat/hooks";
+import { useAdvancedFiltering } from "@/lib/tablev2/components/filtering";
+import { FilterGroupEditor } from "@/lib/tablev2/components/filtering/FilterGroupEditor";
+import type { FilterSeedSpec } from "@/lib/tablev2/components/filtering/types";
 import {
   build_create_mutation,
   build_update_mutation,
   build_delete_mutation,
 } from "../form/backend/types/mutations";
-import type { TableFieldMetadataType } from "@/lib/tables/types";
+import type { TableFieldMetadataType } from "@/lib/tablev2/compat/types";
 
 /**
  * Props used to render the reusable BI panel linked to a business model.
@@ -174,7 +174,7 @@ export const ModelBiPanel = forwardRef<ModelBiPanelHandle, ModelBiPanelProps>(
       error,
       onRefresh,
       onEnable,
-      title = "Datasets BI liés au modèle",
+      title = "Datasets BI liÃ©s au modÃ¨le",
       description,
     }: ModelBiPanelProps,
     ref
@@ -230,7 +230,7 @@ export const ModelBiPanel = forwardRef<ModelBiPanelHandle, ModelBiPanelProps>(
     const filtersController = useAdvancedFiltering({
       filtersMeta: sourceMeta?.filters ?? [],
       displayMode: "dialog",
-      title: "Filtres BI par défaut",
+      title: "Filtres BI par dÃ©faut",
       onApply: () => undefined,
     });
 
@@ -492,7 +492,7 @@ export const ModelBiPanel = forwardRef<ModelBiPanelHandle, ModelBiPanelProps>(
       if (!payload?.ok || !payload.object?.id) {
         const message =
           payload?.errors?.map((e: any) => e?.message).join(", ") ||
-          "Création/édition BI impossible";
+          "CrÃ©ation/Ã©dition BI impossible";
         toast.error(message);
         return;
       }
@@ -523,11 +523,11 @@ export const ModelBiPanel = forwardRef<ModelBiPanelHandle, ModelBiPanelProps>(
             )
           );
           toast.success(
-            `Visualisations liées (${visualDrafts.length}) créées avec le dataset.`
+            `Visualisations liÃ©es (${visualDrafts.length}) crÃ©Ã©es avec le dataset.`
           );
         } catch (err) {
           toast.error(
-            "Dataset créé, mais les visualisations n'ont pas été créées."
+            "Dataset crÃ©Ã©, mais les visualisations n'ont pas Ã©tÃ© crÃ©Ã©es."
           );
         }
       } else {
@@ -558,8 +558,8 @@ export const ModelBiPanel = forwardRef<ModelBiPanelHandle, ModelBiPanelProps>(
     const emptyCard = useMemo(
       () => (
         <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
-          Aucun dataset BI associé. Utilisez le bouton “Nouvel élément BI” pour
-          en créer un lié à {modelName}.
+          Aucun dataset BI associÃ©. Utilisez le bouton â€œNouvel Ã©lÃ©ment BIâ€ pour
+          en crÃ©er un liÃ© Ã  {modelName}.
         </div>
       ),
       [modelName]
@@ -592,12 +592,12 @@ export const ModelBiPanel = forwardRef<ModelBiPanelHandle, ModelBiPanelProps>(
             {metaError ? (
               <p className="text-xs text-destructive">
                 {metaError.message ||
-                  "Impossible de charger les métadonnées du modèle"}
+                  "Impossible de charger les mÃ©tadonnÃ©es du modÃ¨le"}
               </p>
             ) : null}
             {error ? (
               <p className="text-xs text-destructive">
-                {error.message || "Erreur de chargement des éléments BI"}
+                {error.message || "Erreur de chargement des Ã©lÃ©ments BI"}
               </p>
             ) : null}
           </div>
@@ -608,7 +608,7 @@ export const ModelBiPanel = forwardRef<ModelBiPanelHandle, ModelBiPanelProps>(
             disabled={saving}
           >
             <PanelTop className="mr-2 h-4 w-4" />
-            Nouvel élément BI
+            Nouvel Ã©lÃ©ment BI
           </Button>
         </div>
         {loading ? (
@@ -675,7 +675,7 @@ export const ModelBiPanel = forwardRef<ModelBiPanelHandle, ModelBiPanelProps>(
                       }
                       try {
                         await deleteDataset({ variables: { id } });
-                        toast.success("Dataset supprimé");
+                        toast.success("Dataset supprimÃ©");
                         onRefresh();
                       } catch (err) {
                         toast.error("Suppression impossible");
@@ -761,7 +761,7 @@ export const ModelBiPanel = forwardRef<ModelBiPanelHandle, ModelBiPanelProps>(
                         description: e.target.value,
                       }))
                     }
-                    placeholder="Objectif de ce jeu de données BI"
+                    placeholder="Objectif de ce jeu de donnÃ©es BI"
                   />
                 </div>
               </TabsContent>
@@ -790,20 +790,20 @@ export const ModelBiPanel = forwardRef<ModelBiPanelHandle, ModelBiPanelProps>(
                         variant="outline"
                         onClick={() => filtersController.resetBuilder()}
                       >
-                        Réinitialiser
+                        RÃ©initialiser
                       </Button>
                       {filtersController.chips.length > 0 ? (
                         <span className="text-xs text-muted-foreground">
-                          {filtersController.chips.length} filtre(s) appliqué(s)
+                          {filtersController.chips.length} filtre(s) appliquÃ©(s)
                         </span>
                       ) : null}
                     </div>
                   </div>
                 ) : (
                   <p className="text-xs text-muted-foreground">
-                    Aucun filtre déclaré pour ce modèle. Vous pouvez toujours
-                    fournir un JSON de filtres par défaut dans l’onglet Schéma
-                    si nécessaire.
+                    Aucun filtre dÃ©clarÃ© pour ce modÃ¨le. Vous pouvez toujours
+                    fournir un JSON de filtres par dÃ©faut dans lâ€™onglet SchÃ©ma
+                    si nÃ©cessaire.
                   </p>
                 )}
               </TabsContent>
@@ -883,7 +883,7 @@ export const ModelBiPanel = forwardRef<ModelBiPanelHandle, ModelBiPanelProps>(
                       </div>
                       <div className="col-span-3 space-y-1">
                         <label className="text-[11px] font-semibold text-muted-foreground">
-                          Libellé
+                          LibellÃ©
                         </label>
                         <Input
                           value={row.label}
@@ -1007,7 +1007,7 @@ export const ModelBiPanel = forwardRef<ModelBiPanelHandle, ModelBiPanelProps>(
                       </div>
                       <div className="col-span-2 space-y-1">
                         <label className="text-[11px] font-semibold text-muted-foreground">
-                          Agrégation
+                          AgrÃ©gation
                         </label>
                         <Select
                           value={row.aggregation}
@@ -1020,7 +1020,7 @@ export const ModelBiPanel = forwardRef<ModelBiPanelHandle, ModelBiPanelProps>(
                           }
                         >
                           <SelectTrigger>
-                            <SelectValue placeholder="Agrégation" />
+                            <SelectValue placeholder="AgrÃ©gation" />
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="sum">Somme</SelectItem>
@@ -1033,7 +1033,7 @@ export const ModelBiPanel = forwardRef<ModelBiPanelHandle, ModelBiPanelProps>(
                       </div>
                       <div className="col-span-3 space-y-1">
                         <label className="text-[11px] font-semibold text-muted-foreground">
-                          Libellé
+                          LibellÃ©
                         </label>
                         <Input
                           value={row.label}
@@ -1068,7 +1068,7 @@ export const ModelBiPanel = forwardRef<ModelBiPanelHandle, ModelBiPanelProps>(
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <p className="text-xs font-semibold text-muted-foreground">
-                      Champs calculés
+                      Champs calculÃ©s
                     </p>
                     <Button
                       size="sm"
@@ -1130,7 +1130,7 @@ export const ModelBiPanel = forwardRef<ModelBiPanelHandle, ModelBiPanelProps>(
                       </div>
                       <div className="col-span-2 space-y-1">
                         <label className="text-[11px] font-semibold text-muted-foreground">
-                          Libellé
+                          LibellÃ©
                         </label>
                         <Input
                           value={row.label ?? ""}
@@ -1165,7 +1165,7 @@ export const ModelBiPanel = forwardRef<ModelBiPanelHandle, ModelBiPanelProps>(
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <p className="text-xs font-semibold text-muted-foreground">
-                      Tri par défaut
+                      Tri par dÃ©faut
                     </p>
                     <Button
                       size="sm"
@@ -1224,7 +1224,7 @@ export const ModelBiPanel = forwardRef<ModelBiPanelHandle, ModelBiPanelProps>(
               <TabsContent value="visuals" className="space-y-3">
                 <div className="flex items-center justify-between">
                   <p className="text-xs text-muted-foreground">
-                    Préparez des visualisations à créer automatiquement après le
+                    PrÃ©parez des visualisations Ã  crÃ©er automatiquement aprÃ¨s le
                     dataset.
                   </p>
                   <Button
@@ -1248,8 +1248,8 @@ export const ModelBiPanel = forwardRef<ModelBiPanelHandle, ModelBiPanelProps>(
                 </div>
                 {visualDrafts.length === 0 ? (
                   <p className="text-xs text-muted-foreground">
-                    Aucune visualisation préparée. Ajoutez-en pour les créer
-                    après le dataset.
+                    Aucune visualisation prÃ©parÃ©e. Ajoutez-en pour les crÃ©er
+                    aprÃ¨s le dataset.
                   </p>
                 ) : (
                   <div className="space-y-2">
@@ -1390,3 +1390,4 @@ export const ModelBiPanel = forwardRef<ModelBiPanelHandle, ModelBiPanelProps>(
     );
   }
 );
+

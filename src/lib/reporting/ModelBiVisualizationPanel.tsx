@@ -1,4 +1,4 @@
-import type { JSX } from "react";
+﻿import type { JSX } from "react";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { gql, useMutation } from "@apollo/client";
 import { BarChart3, RefreshCcw } from "lucide-react";
@@ -6,7 +6,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/lib/components/ui/button";
 import { Input } from "@/lib/components/ui/input";
-import { useGraphQLModelTable } from "@/lib/tables/hooks";
+import { useGraphQLModelTable } from "@/lib/tablev2/compat/hooks";
 import {
   build_method_mutation,
   type MethodMutationResponse,
@@ -109,9 +109,9 @@ const buildAutoVisualizations = (
   const base: ReportingVisualization[] = [
     {
       code: "auto-table",
-      title: "Aperçu (table)",
+      title: "AperÃ§u (table)",
       kind: "table",
-      description: "Visualisation générée automatiquement.",
+      description: "Visualisation gÃ©nÃ©rÃ©e automatiquement.",
     },
   ];
 
@@ -121,28 +121,28 @@ const buildAutoVisualizations = (
         code: "auto-bar",
         title: "Histogramme",
         kind: "bar",
-        description: "Visualisation générée automatiquement.",
+        description: "Visualisation gÃ©nÃ©rÃ©e automatiquement.",
         config: { x: dimension, series: [metric] },
       },
       {
         code: "auto-line",
         title: "Courbe",
         kind: "line",
-        description: "Visualisation générée automatiquement.",
+        description: "Visualisation gÃ©nÃ©rÃ©e automatiquement.",
         config: { x: dimension, series: [metric] },
       },
       {
         code: "auto-pie",
-        title: "Répartition",
+        title: "RÃ©partition",
         kind: "pie",
-        description: "Visualisation générée automatiquement.",
+        description: "Visualisation gÃ©nÃ©rÃ©e automatiquement.",
         config: { label_field: dimension, value_field: metric },
       },
       {
         code: "auto-kpi",
         title: "Indicateur",
         kind: "kpi",
-        description: "Visualisation générée automatiquement.",
+        description: "Visualisation gÃ©nÃ©rÃ©e automatiquement.",
         config: { y: metric },
       }
     );
@@ -268,7 +268,7 @@ export function ModelBiVisualizationPanel({
         if (!response?.ok) {
           const message =
             response?.errors?.map((e) => e.message).join(", ") ||
-            "Impossible d'exécuter l'aperçu.";
+            "Impossible d'exÃ©cuter l'aperÃ§u.";
           toast.error(message);
           setPreviewPayload(null);
           return;
@@ -279,13 +279,13 @@ export function ModelBiVisualizationPanel({
             ? (JSON.parse(rawResult) as DatasetPreviewPayload)
             : (rawResult as DatasetPreviewPayload | null);
         if (!result || !Array.isArray(result.rows) || !Array.isArray(result.columns)) {
-          toast.error("Aperçu invalide: format inattendu.");
+          toast.error("AperÃ§u invalide: format inattendu.");
           setPreviewPayload(null);
           return;
         }
         setPreviewPayload(result);
       } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Erreur d'aperçu BI.");
+        toast.error(err instanceof Error ? err.message : "Erreur d'aperÃ§u BI.");
         setPreviewPayload(null);
       }
     },
@@ -348,7 +348,7 @@ export function ModelBiVisualizationPanel({
           Visualisations BI
         </p>
         <p className="text-xs text-muted-foreground">
-          Sélectionnez un dataset BI pour rendre ses visualisations (tableaux,
+          SÃ©lectionnez un dataset BI pour rendre ses visualisations (tableaux,
           graphiques, KPI).
         </p>
         {error ? (
@@ -376,7 +376,7 @@ export function ModelBiVisualizationPanel({
             void runPreview({ datasetId: selectedDatasetId, quick, limit });
           }
         }}
-          title="Rafraîchir"
+          title="RafraÃ®chir"
           disabled={loading || visualizationsLoading || previewLoading}
         >
           <RefreshCcw className="h-4 w-4" />
@@ -391,7 +391,7 @@ export function ModelBiVisualizationPanel({
           disabled={!selectedDatasetId || previewLoading}
         >
           <BarChart3 className="mr-2 h-4 w-4" />
-          Exécuter
+          ExÃ©cuter
         </Button>
       </div>
     </div>
@@ -441,7 +441,7 @@ export function ModelBiVisualizationPanel({
           <Input
             value={quick}
             onChange={(e) => setQuick(e.target.value)}
-            placeholder="Filtrer l'aperçu..."
+            placeholder="Filtrer l'aperÃ§u..."
           />
         </div>
 
@@ -463,18 +463,19 @@ export function ModelBiVisualizationPanel({
         <p className="text-xs text-muted-foreground">Chargement...</p>
       ) : !hasDatasets ? (
         <p className="text-xs text-muted-foreground">
-          Aucun dataset BI pour {appName}.{modelName}. Créez-en un dans l'onglet
-          “Datasets”.
+          Aucun dataset BI pour {appName}.{modelName}. CrÃ©ez-en un dans l'onglet
+          â€œDatasetsâ€.
         </p>
       ) : previewLoading ? (
-        <p className="text-xs text-muted-foreground">Exécution en cours...</p>
+        <p className="text-xs text-muted-foreground">ExÃ©cution en cours...</p>
       ) : datasetViewPayload ? (
         <ReportingDatasetView dataset={datasetViewPayload} visualizations={visualizations} />
       ) : (
         <p className="text-xs text-muted-foreground">
-          Sélectionnez un dataset puis exécutez un aperçu.
+          SÃ©lectionnez un dataset puis exÃ©cutez un aperÃ§u.
         </p>
       )}
     </div>
   );
 }
+

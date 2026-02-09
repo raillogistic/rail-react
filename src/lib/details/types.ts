@@ -1,10 +1,6 @@
-import type React from "react";
+﻿import type React from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import type { FilterFieldType } from "../tables/types";
-import type {
-  ModelTableCreationFormProps,
-  ModelTableProps,
-} from "../tables/ModelTable";
+import type { FilterFieldType } from "../tablev2/compat/types";
 import type { ModelFormProps } from "../form/backend/ModelForm";
 
 export type DetailFieldConfig = {
@@ -116,7 +112,7 @@ export type NestedDetailConfig = {
   height?: string;
   fields?: string[];
   allowUpdate?: boolean;
-  updateForm?: ModelTableCreationFormProps<Record<string, unknown>>;
+  updateForm?: Partial<ModelFormProps<Record<string, unknown>>>;
 };
 
 export type NestedDetailReference = string | Record<string, NestedDetailConfig>;
@@ -216,7 +212,16 @@ export type RelatedTableSimpleConfig = {
 };
 
 export type RelatedTableConfig = {
-  mode?: "simple" | "model-table";
   simple?: RelatedTableSimpleConfig;
-  modelTableProps?: Partial<ModelTableProps<Record<string, unknown>>>;
+  modelTableProps?: {
+    hookOptions?: {
+      initVariables?: Record<string, unknown>;
+      initialPageSize?: number;
+      order_by?: string | string[];
+      per_page?: number;
+      page?: number;
+      filters?: Record<string, unknown>;
+    };
+  };
 };
+

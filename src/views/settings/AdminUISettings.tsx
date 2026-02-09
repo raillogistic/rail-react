@@ -1,4 +1,4 @@
-import { useState } from "react";
+﻿import { useState } from "react";
 import {
   Card,
   CardContent,
@@ -8,7 +8,7 @@ import {
 } from "@/lib/components/ui/card";
 import { Button } from "@/lib/components/ui/button";
 import { Plus } from "lucide-react";
-import ModelTable from "@/lib/tables/ModelTable";
+import { ModelTableV2 } from "@/lib/tablev2";
 import {
   Drawer,
   DrawerContent,
@@ -19,11 +19,11 @@ import {
 import { UIConfigForm } from "@/lib/configuration/UIConfigForm";
 
 export function AdminUISettings() {
-  const [editingConfig, setEditingConfig] = useState<any>(null);
+  const [editingConfig, setEditingConfig] = useState<Record<string, unknown> | null>(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
-  const handleEdit = (row: any) => {
+  const handleEdit = (row: Record<string, unknown>) => {
     setEditingConfig(row);
     setIsEditOpen(true);
   };
@@ -35,7 +35,7 @@ export function AdminUISettings() {
           <div>
             <CardTitle>Administration UI</CardTitle>
             <CardDescription>
-              Gérez les configurations globales de l'interface utilisateur.
+              GÃ©rez les configurations globales de l'interface utilisateur.
             </CardDescription>
           </div>
           <Button onClick={() => setIsCreateOpen(true)}>
@@ -44,13 +44,20 @@ export function AdminUISettings() {
           </Button>
         </CardHeader>
         <CardContent>
-          <ModelTable
-            appName="core"
-            modelName="UIComponentConfig"
-            title="Configurations UI"
-            enableQuickSearch={true}
-            rowActions={{
-              on_edit: handleEdit,
+          <ModelTableV2
+            app="core"
+            model="UIComponentConfig"
+            baseTable={{
+              tableConfig: {
+                title: "Configurations UI",
+              },
+              columnActions: [
+                {
+                  key: "edit-config",
+                  label: "Modifier",
+                  onClick: ({ row }) => handleEdit(row),
+                },
+              ],
             }}
           />
         </CardContent>
@@ -61,7 +68,7 @@ export function AdminUISettings() {
           <DrawerHeader>
             <DrawerTitle>Modifier la configuration</DrawerTitle>
             <DrawerDescription>
-              Modifiez les paramètres du composant {editingConfig?.component_id}.
+              Modifiez les paramÃ¨tres du composant {String(editingConfig?.component_id ?? "")}.
             </DrawerDescription>
           </DrawerHeader>
           <div className="p-4 pb-0 h-[80vh] overflow-y-auto">
@@ -81,7 +88,7 @@ export function AdminUISettings() {
           <DrawerHeader>
             <DrawerTitle>Nouvelle configuration</DrawerTitle>
             <DrawerDescription>
-              Créez une nouvelle configuration d'interface.
+              CrÃ©ez une nouvelle configuration d'interface.
             </DrawerDescription>
           </DrawerHeader>
           <div className="p-4 pb-0 h-[80vh] overflow-y-auto">
@@ -95,3 +102,4 @@ export function AdminUISettings() {
     </div>
   );
 }
+

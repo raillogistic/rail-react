@@ -1,8 +1,8 @@
-import * as React from "react";
+﻿import * as React from "react";
 import { useFormMetadata } from "@/lib/form2/hooks/useFormMetadata";
 import type { FormMetadata } from "@/lib/form2/types";
-import { useModelTableMetadata } from "@/lib/tables/hooks";
-import type { ModelTableType, FieldPermissionSnapshot } from "@/lib/tables/types";
+import { useModelTableMetadata } from "@/lib/tablev2/compat/hooks";
+import type { ModelTableType, FieldPermissionSnapshot } from "@/lib/tablev2/compat/types";
 import { useModelPermissions, type ModelPermissions } from "@/lib/auth/hooks/useModelPermissions";
 import { normalizeFieldPermission, type NormalizedFieldPermission } from "@/lib/modelMetadata/types";
 
@@ -225,3 +225,4 @@ export function useModelAccessContext(): ModelAccessSnapshot {
   }
   return ctx;
 }
+

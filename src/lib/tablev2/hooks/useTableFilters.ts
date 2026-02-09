@@ -1,5 +1,6 @@
 import { useCallback } from "react";
 import { useTable } from "../context/TableContext";
+import { isRecord } from "../utils";
 import {
   FilterFormState,
   FilterCondition,
@@ -8,10 +9,6 @@ import {
 
 const HEADER_RELATION_FILTERS_KEY = "__headerRelationFilters";
 const HEADER_BASE_WHERE_KEY = "__baseWhere";
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return !!value && typeof value === "object" && !Array.isArray(value);
-}
 
 function mergeWhereWithRelationFragments(
   baseWhere: Record<string, unknown> | undefined,

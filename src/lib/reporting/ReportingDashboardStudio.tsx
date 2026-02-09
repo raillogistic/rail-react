@@ -1,4 +1,4 @@
-import type { JSX } from "react";
+﻿import type { JSX } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { gql, useMutation } from "@apollo/client";
 import {
@@ -33,7 +33,7 @@ import {
   type DeleteMutationResponse,
   type UpdateMutationResponse,
 } from "@/lib/form/backend/types/mutations";
-import { useGraphQLModelTable } from "@/lib/tables/hooks";
+import { useGraphQLModelTable } from "@/lib/tablev2/compat/hooks";
 import { useReportingReportBuildPayload } from "@/lib/reporting/graphql";
 import type { ReportingChartSpec, ReportingQueryResult, ReportingVisualizationConfig } from "@/lib/reporting/types";
 import { ReportingWidgetCard } from "@/lib/reporting/components/ReportingWidgetCard";
@@ -115,7 +115,7 @@ function SortableBlockRow({ block, onRemove, onResize }: SortableBlockRowProps):
             className="cursor-grab rounded border px-2 py-1 text-xs text-muted-foreground"
             {...attributes}
             {...listeners}
-            aria-label="Déplacer"
+            aria-label="DÃ©placer"
           >
             Drag
           </button>
@@ -303,22 +303,22 @@ export function ReportingDashboardStudio(): JSX.Element {
         },
       });
       if (data?.response?.ok) {
-        toast.success("Dashboard mis à jour.");
+        toast.success("Dashboard mis Ã  jour.");
         await refetchReports?.();
       } else {
-        toast.error(data?.response?.errors?.map((e) => e?.message).join(", ") || "Mise à jour impossible.");
+        toast.error(data?.response?.errors?.map((e) => e?.message).join(", ") || "Mise Ã  jour impossible.");
       }
       return;
     }
     const { data } = await createReport({ variables: { input: { code: reportDraft.code, title: reportDraft.title, description: "", layout: [], filters: [] } } });
     if (data?.response?.ok && data.response.object?.id) {
-      toast.success("Dashboard créé.");
+      toast.success("Dashboard crÃ©Ã©.");
       const createdId = String(data.response.object.id);
       setSelectedReportId(createdId);
       setReportDraft((prev) => ({ ...prev, id: createdId }));
       await refetchReports?.();
     } else {
-      toast.error(data?.response?.errors?.map((e) => e?.message).join(", ") || "Création impossible.");
+      toast.error(data?.response?.errors?.map((e) => e?.message).join(", ") || "CrÃ©ation impossible.");
     }
   }, [createReport, refetchReports, reportDraft, updateReport]);
 
@@ -335,7 +335,7 @@ export function ReportingDashboardStudio(): JSX.Element {
         },
       });
     }
-    toast.success("Layout sauvegardé.");
+    toast.success("Layout sauvegardÃ©.");
     await loadReport(selectedReportId);
   }, [blocks, loadReport, selectedReportId, updateBlock]);
 
@@ -353,7 +353,7 @@ export function ReportingDashboardStudio(): JSX.Element {
       },
     });
     if (data?.response?.ok) {
-      toast.success("Widget ajouté au dashboard.");
+      toast.success("Widget ajoutÃ© au dashboard.");
       setSelectedVisualizationToAdd("");
       await loadReport(selectedReportId);
     } else {
@@ -364,7 +364,7 @@ export function ReportingDashboardStudio(): JSX.Element {
   const removeBlockById = useCallback(async (blockId: string) => {
     const { data } = await deleteBlock({ variables: { id: blockId } });
     if (data?.response?.ok) {
-      toast.success("Bloc supprimé.");
+      toast.success("Bloc supprimÃ©.");
       setBlocks((prev) => prev.filter((b) => b.id !== blockId).map((b, idx) => ({ ...b, position: idx + 1 })));
     } else {
       toast.error(data?.response?.errors?.map((e) => e?.message).join(", ") || "Suppression impossible.");
@@ -398,7 +398,7 @@ export function ReportingDashboardStudio(): JSX.Element {
                 disabled={busy}
               >
                 <RefreshCcw className="mr-2 h-4 w-4" />
-                Rafraîchir
+                RafraÃ®chir
               </Button>
               <Button variant="default" size="sm" onClick={() => void saveLayout()} disabled={!selectedReportId || busy}>
                 <Save className="mr-2 h-4 w-4" />
@@ -424,14 +424,14 @@ export function ReportingDashboardStudio(): JSX.Element {
                 setBlocks([]);
               }}
             >
-              <option value="">Sélectionner...</option>
+              <option value="">SÃ©lectionner...</option>
               {reportOptions.map((report) => (
                 <option key={report.id} value={report.id}>
                   {report.label}
                 </option>
               ))}
             </select>
-            <p className="text-[11px] text-muted-foreground">Ou créez-en un ci-dessous.</p>
+            <p className="text-[11px] text-muted-foreground">Ou crÃ©ez-en un ci-dessous.</p>
           </div>
 
           <div className="space-y-2">
@@ -440,7 +440,7 @@ export function ReportingDashboardStudio(): JSX.Element {
             <label className="text-xs font-semibold text-muted-foreground">Titre</label>
             <Input value={reportDraft.title} onChange={(e) => setReportDraft((p) => ({ ...p, title: e.target.value }))} />
             <Button variant="outline" size="sm" onClick={() => void createOrUpdateReport()} disabled={busy}>
-              {reportDraft.id ? "Mettre à jour" : "Créer dashboard"}
+              {reportDraft.id ? "Mettre Ã  jour" : "CrÃ©er dashboard"}
             </Button>
           </div>
 
@@ -467,7 +467,7 @@ export function ReportingDashboardStudio(): JSX.Element {
       </Card>
 
       {!selectedReportId ? (
-        <p className="text-xs text-muted-foreground">Sélectionnez un dashboard pour charger ses widgets.</p>
+        <p className="text-xs text-muted-foreground">SÃ©lectionnez un dashboard pour charger ses widgets.</p>
       ) : blocks.length === 0 ? (
         <p className="text-xs text-muted-foreground">Aucun widget pour ce dashboard. Ajoutez-en un.</p>
       ) : (
@@ -489,3 +489,4 @@ export function ReportingDashboardStudio(): JSX.Element {
     </div>
   );
 }
+

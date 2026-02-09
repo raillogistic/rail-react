@@ -1,11 +1,13 @@
-import * as React from "react";
+﻿import * as React from "react";
 import { gql, useQuery } from "@apollo/client";
-import type { TableFieldMetadataType } from "../tables/types";
+import type {
+  ModelTableType,
+  TableFieldMetadataType,
+} from "../tablev2/compat/types";
 import { useFormMetadata } from "../form/backend/hooks";
-import type { RelationshipSchema } from "../tablev2/types";
-import { useModelTableMetadata } from "../tables/hooks";
+import { useModelTableMetadata } from "../tablev2/compat/hooks";
 
-export type ModelMetadataRelationship = RelationshipSchema;
+export type ModelMetadataRelationship = Record<string, any>;
 
 function buildDetailSelection(fields: TableFieldMetadataType[]) {
   const parts: string[] = ["id", "desc"];
@@ -60,7 +62,7 @@ export function useGraphQLModelDetail(appName: string, modelName: string, id: st
 
   return {
     metadata: formMeta.metadata,
-    tableMeta: tableMeta.metadata ?? null,
+    tableMeta: (tableMeta.metadata as ModelTableType | null) ?? null,
     item,
     loading: formMeta.loading || tableMeta.loading || dataQ.loading,
     error: formMeta.error || tableMeta.error || dataQ.error,
@@ -88,3 +90,4 @@ export function useLazyRelatedTable(
   const vars = React.useMemo(() => ({ filters, page: 1, per_page: 10 }), [filters]);
   return { relatedApp, relatedModel, initVariables: vars };
 }
+

@@ -1,4 +1,4 @@
-import type { ModelTableType, FieldPermissionSnapshot } from "@/lib/tables/types";
+﻿import type { ModelTableType, FieldPermissionSnapshot } from "@/lib/tablev2/compat/types";
 import type { FormMetadata } from "@/lib/form2/types";
 
 export type GraphQLModelMetadataResource =
@@ -47,3 +47,4 @@ export const normalizeFieldPermission = (
     reason: "reason" in permission ? permission.reason : undefined,
   };
 };
+

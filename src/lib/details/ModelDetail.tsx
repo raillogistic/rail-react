@@ -1,4 +1,4 @@
-import * as React from "react";
+﻿import * as React from "react";
 import BaseDetail from "./BaseDetail";
 import type {
   DetailPanelConfig,
@@ -7,7 +7,6 @@ import type {
   ModelDetailProps,
   ModelDetailUpdateFormConfig,
   NestedDetailConfig,
-  NestedDetailReference,
   RelatedTableConfig,
 } from "./types";
 import {
@@ -15,8 +14,6 @@ import {
   useLazyRelatedTable,
   type ModelMetadataRelationship,
 } from "./hooks";
-import ModelTable from "../tables/ModelTable";
-import type { ModelTableProps } from "../tables/ModelTable";
 import type { SortingState } from "@tanstack/react-table";
 import { Button } from "@/lib/components/ui/button";
 import { Input } from "@/lib/components/ui/input";
@@ -28,7 +25,7 @@ import {
 } from "@/lib/components/ui/dialog";
 import ModelForm, { type ModelFormProps } from "../form/backend/ModelForm";
 import { Pencil, Trash2 } from "lucide-react";
-import { useGraphQLModelTable } from "../tables/hooks";
+import { useGraphQLModelTable } from "../tablev2/compat/hooks";
 import { Drawer, DrawerContent } from "@/lib/components/ui/drawer";
 import { cn } from "../utils";
 import { toast } from "@/lib/components/ui/sonner";
@@ -395,7 +392,7 @@ export default function ModelDetail({
     return [
       {
         key: "overview",
-        label: "Détails",
+        label: "DÃ©tails",
         sections: [{ type: "list", panels: overviewPanels }],
       },
     ];
@@ -462,7 +459,7 @@ export default function ModelDetail({
   if (!item) {
     return (
       <ModelAccessContext.Provider value={modelAccess}>
-        <div className={className}>Aucun élément</div>
+        <div className={className}>Aucun Ã©lÃ©ment</div>
       </ModelAccessContext.Provider>
     );
   }
@@ -506,7 +503,6 @@ export default function ModelDetail({
                 parentApp={appName}
                 parentItem={item}
                 parentId={id}
-                parentRefetch={refetch}
                 onParentUpdated={() => onUpdate?.(item ?? {})}
               />
             ) : null
@@ -588,7 +584,7 @@ function RelatedItemsSection({
         </div>
       ) : (
         <div className="pt-3 text-sm text-muted-foreground">
-          Cliquez sur “Afficher” pour charger les données.
+          Cliquez sur â€œAfficherâ€ pour charger les donnÃ©es.
         </div>
       )}
     </div>
@@ -619,21 +615,6 @@ function RelatedItemsTable({
     parentId,
     relation.to_field ?? undefined
   );
-  const mode = config?.mode ?? "simple";
-  if (mode === "model-table") {
-    return (
-      <RelatedItemsModelTable
-        targetApp={targetApp}
-        targetModel={targetModel}
-        lazyVariables={lazy.initVariables}
-        config={config}
-        relationName={relation.name}
-        onCountChange={onCountChange}
-        relation={relation}
-        parentId={parentId}
-      />
-    );
-  }
   return (
     <SimpleRelatedItemsTable
       relation={relation}
@@ -642,72 +623,7 @@ function RelatedItemsTable({
       lazyVariables={lazy.initVariables}
       config={config?.simple}
       modelTableProps={config?.modelTableProps}
-      relateToField={relation.to_field ?? relation.from_field ?? relation.name}
-      parentId={parentId}
       onCountChange={onCountChange}
-    />
-  );
-}
-
-type ModelTableComponentProps = ModelTableProps<Record<string, unknown>>;
-
-function RelatedItemsModelTable({
-  targetApp,
-  targetModel,
-  lazyVariables,
-  config,
-  relationName,
-  onCountChange,
-}: {
-  targetApp: string;
-  targetModel: string;
-  lazyVariables: Record<string, unknown>;
-  config: RelatedTableConfig;
-  relationName: string;
-  onCountChange: (relation: string, count?: number) => void;
-}) {
-  const sanitizedProps = {
-    ...(config.modelTableProps ?? {}),
-  } as Partial<ModelTableComponentProps>;
-  delete sanitizedProps.appName;
-  delete sanitizedProps.modelName;
-  const {
-    hookOptions: overrideHookOptions,
-    options: overrideOptions,
-    onContextReady,
-    ...restProps
-  } = sanitizedProps;
-
-  const mergedHookOptions = {
-    ...(overrideHookOptions ?? {}),
-    initVariables: {
-      ...((overrideHookOptions?.initVariables as Record<string, unknown>) ??
-        {}),
-      ...lazyVariables,
-    },
-  };
-
-  const mergedOptions: ModelTableComponentProps["options"] = {
-    compact: true,
-    enable_column_drag: false,
-    enable_multi_sort: true,
-    ...(overrideOptions ?? {}),
-  };
-
-  return (
-    <ModelTable
-      appName={targetApp}
-      modelName={targetModel}
-      hookOptions={mergedHookOptions}
-      options={mergedOptions}
-      onContextReady={(ctx) => {
-        onContextReady?.(ctx);
-        onCountChange(relationName, ctx.pageInfo?.total_count);
-      }}
-      {...(restProps as Omit<
-        ModelTableComponentProps,
-        "appName" | "modelName" | "hookOptions" | "options"
-      >)}
     />
   );
 }
@@ -727,8 +643,7 @@ function SimpleRelatedItemsTable({
   targetModel: string;
   lazyVariables: Record<string, unknown>;
   config?: RelatedTableConfig["simple"];
-  modelTableProps?: Partial<ModelTableProps<Record<string, unknown>>>;
-  parentId: string | number;
+  modelTableProps?: RelatedTableConfig["modelTableProps"];
   onCountChange: (relation: string, count?: number) => void;
 }) {
   const simpleConfig = config ?? {};
@@ -868,13 +783,13 @@ function SimpleRelatedItemsTable({
       <div className="rounded-md border">
         {hasError ? (
           <div className="p-4 text-sm text-destructive">
-            Erreur lors du chargement des éléments liés.
+            Erreur lors du chargement des Ã©lÃ©ments liÃ©s.
           </div>
         ) : tableHook.loading ? (
           <div className="p-4 text-sm text-muted-foreground">Chargement...</div>
         ) : rows.length === 0 ? (
           <div className="p-4 text-sm text-muted-foreground">
-            Aucun élément associé.
+            Aucun Ã©lÃ©ment associÃ©.
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -896,8 +811,8 @@ function SimpleRelatedItemsTable({
                         {col.label}
                         {activeSort?.id === col.key
                           ? activeSort.desc
-                            ? "↓"
-                            : "↑"
+                            ? "â†“"
+                            : "â†‘"
                           : null}
                       </button>
                     </th>
@@ -986,8 +901,8 @@ function SimpleRelatedItemsTable({
       </div>
       <div className="flex items-center justify-between text-xs text-muted-foreground">
         <span>
-          Page {currentPage} / {totalPages} ·{" "}
-          {pageInfo?.total_count ?? rows.length} élément
+          Page {currentPage} / {totalPages} Â·{" "}
+          {pageInfo?.total_count ?? rows.length} Ã©lÃ©ment
           {(pageInfo?.total_count ?? rows.length) > 1 ? "s" : ""}
         </span>
         <div className="flex items-center gap-2">
@@ -997,7 +912,7 @@ function SimpleRelatedItemsTable({
             disabled={tableHook.loading || currentPage <= 1}
             onClick={tableHook.setters.previousPage}
           >
-            Précédent
+            PrÃ©cÃ©dent
           </Button>
           <Button
             variant="outline"
@@ -1020,7 +935,6 @@ type NestedDetailCardProps = {
   parentItem: Record<string, unknown> | null;
   parentId: string | number;
   onParentUpdated?: () => void;
-  parentRefetch: () => Promise<any>;
 };
 
 function NestedDetailCard({
@@ -1029,7 +943,6 @@ function NestedDetailCard({
   parentApp,
   parentItem,
   parentId,
-  parentRefetch,
   onParentUpdated,
 }: NestedDetailCardProps) {
   const targetApp = relation.related_app ?? parentApp;
@@ -1292,7 +1205,7 @@ function UpdateRecordButton({
   } = userFormProps;
 
   const titleLabel =
-    title ?? userFormTitle ?? `Modifier ${entityLabel ?? "l'élément"}`;
+    title ?? userFormTitle ?? `Modifier ${entityLabel ?? "l'Ã©lÃ©ment"}`;
   const descriptionLabel = description ?? userFormDescription ?? null;
 
   const handleOpen = React.useCallback(() => {
@@ -1563,7 +1476,7 @@ function UpdateRecordButton({
       onCompleted={(payload) => {
         userOnCompleted?.(payload);
         onUpdated?.(payload);
-        toast.success(`${entityLabel ?? "Enregistrement"} mis à jour.`);
+        toast.success(`${entityLabel ?? "Enregistrement"} mis Ã  jour.`);
         setOpen(false);
       }}
       onError={(error) => {
@@ -1571,7 +1484,7 @@ function UpdateRecordButton({
         toast.error(
           error instanceof Error
             ? error.message
-            : "Échec de la mise à jour. Merci de réessayer."
+            : "Ã‰chec de la mise Ã  jour. Merci de rÃ©essayer."
         );
       }}
     />
@@ -1633,3 +1546,4 @@ function UpdateRecordButton({
     </>
   );
 }
+

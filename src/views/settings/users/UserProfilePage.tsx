@@ -1,5 +1,5 @@
-import ModelTable from "@/lib/tables/ModelTable";
+import { ModelTableV2 } from "@/lib/tablev2";
 
 export function UserProfilePage() {
-  return <ModelTable appName="users" modelName="UserProfile" />;
+  return <ModelTableV2 app="users" model="UserProfile" />;
 }

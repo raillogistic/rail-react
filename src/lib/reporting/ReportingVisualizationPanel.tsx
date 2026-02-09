@@ -1,4 +1,4 @@
-import type { JSX } from "react";
+﻿import type { JSX } from "react";
 import React, { useCallback, useMemo, useState } from "react";
 import { gql, useMutation } from "@apollo/client";
 import { Layers, RefreshCcw, Sparkles } from "lucide-react";
@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/lib/components/ui/button";
 import { Input } from "@/lib/components/ui/input";
 import { Textarea } from "@/lib/components/ui/textarea";
-import { useGraphQLModelTable } from "../tables/hooks";
+import { useGraphQLModelTable } from "../tablev2/compat/hooks";
 import { build_create_mutation } from "../form/backend/types/mutations";
 
 /**
@@ -58,8 +58,8 @@ const VISUALIZATION_KINDS: Array<{ value: string; label: string }> = [
  */
 export function ReportingVisualizationPanel({
   onCreated,
-  title = "Créer une visualisation",
-  description = "Associez cette visualisation à un dataset BI existant puis définissez son type et sa configuration.",
+  title = "CrÃ©er une visualisation",
+  description = "Associez cette visualisation Ã  un dataset BI existant puis dÃ©finissez son type et sa configuration.",
 }: ReportingVisualizationPanelProps): JSX.Element {
   const [draft, setDraft] = useState<VisualizationDraft>(() => ({
     datasetId: "",
@@ -104,14 +104,14 @@ export function ReportingVisualizationPanel({
     try {
       return JSON.parse(value || "null") ?? fallback;
     } catch (err) {
-      toast.error("JSON invalide, merci de corriger avant de créer.");
+      toast.error("JSON invalide, merci de corriger avant de crÃ©er.");
       return fallback;
     }
   }, []);
 
   const handleSubmit = useCallback(async () => {
     if (!draft.datasetId) {
-      toast.error("Sélectionnez un dataset BI pour lier la visualisation.");
+      toast.error("SÃ©lectionnez un dataset BI pour lier la visualisation.");
       return;
     }
     const input = {
@@ -128,19 +128,19 @@ export function ReportingVisualizationPanel({
     const { data } = await createVisualization({ variables: { input } });
     const payload = data?.response;
     if (payload?.ok) {
-      toast.success("Visualisation créée et liée au dataset.");
+      toast.success("Visualisation crÃ©Ã©e et liÃ©e au dataset.");
       onCreated?.();
     } else {
       const message =
         payload?.errors?.map((e: any) => e?.message).join(", ") ||
-        "Création impossible";
+        "CrÃ©ation impossible";
       toast.error(message);
     }
   }, [createVisualization, draft, onCreated, parseJsonField]);
 
   const selectedDatasetLabel = useMemo(() => {
     const option = datasetOptions.find((opt) => opt.value === draft.datasetId);
-    return option?.label ?? "Aucun dataset sélectionné";
+    return option?.label ?? "Aucun dataset sÃ©lectionnÃ©";
   }, [datasetOptions, draft.datasetId]);
 
   return (
@@ -162,7 +162,7 @@ export function ReportingVisualizationPanel({
             onClick={() => {
               refetchDatasets?.();
             }}
-            title="Rafraîchir la liste des datasets"
+            title="RafraÃ®chir la liste des datasets"
             disabled={datasetsLoading}
           >
             <RefreshCcw className="h-4 w-4" />
@@ -174,7 +174,7 @@ export function ReportingVisualizationPanel({
             disabled={creating || !draft.datasetId || !draft.code}
           >
             <Sparkles className="mr-2 h-4 w-4" />
-            Créer la visualisation
+            CrÃ©er la visualisation
           </Button>
         </div>
       </div>
@@ -197,7 +197,7 @@ export function ReportingVisualizationPanel({
               setDraft((prev) => ({ ...prev, datasetId: e.target.value }))
             }
           >
-            <option value="">Sélectionner...</option>
+            <option value="">SÃ©lectionner...</option>
             {datasetOptions.map((opt) => (
               <option key={opt.value} value={opt.value}>
                 {opt.label}
@@ -259,12 +259,12 @@ export function ReportingVisualizationPanel({
             onChange={(e) =>
               setDraft((prev) => ({ ...prev, description: e.target.value }))
             }
-            placeholder="Objectif / KPI visualisé"
+            placeholder="Objectif / KPI visualisÃ©"
           />
         </div>
         <div className="space-y-2">
           <label className="text-xs font-semibold text-muted-foreground">
-            Par défaut ?
+            Par dÃ©faut ?
           </label>
           <div className="flex items-center gap-2 rounded-md border px-3 py-2">
             <input
@@ -275,7 +275,7 @@ export function ReportingVisualizationPanel({
               }
             />
             <span className="text-xs text-muted-foreground">
-              Marquer comme visualisation par défaut pour ce dataset
+              Marquer comme visualisation par dÃ©faut pour ce dataset
             </span>
           </div>
         </div>
@@ -296,13 +296,13 @@ export function ReportingVisualizationPanel({
             placeholder='{"x":"date","y":"count","type":"bar"}'
           />
           <p className="text-[11px] text-muted-foreground">
-            Définissez axes/colonnes, légende, couleurs, seuils. Le backend
-            renverra cette config telle quelle au frontend après rendu.
+            DÃ©finissez axes/colonnes, lÃ©gende, couleurs, seuils. Le backend
+            renverra cette config telle quelle au frontend aprÃ¨s rendu.
           </p>
         </div>
         <div className="space-y-2">
           <label className="text-xs font-semibold text-muted-foreground">
-            Filtres par défaut (JSON array)
+            Filtres par dÃ©faut (JSON array)
           </label>
           <Textarea
             className="font-mono text-xs"
@@ -330,3 +330,4 @@ export function ReportingVisualizationPanel({
     </div>
   );
 }
+

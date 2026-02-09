@@ -1,4 +1,4 @@
-import type { JSX } from "react";
+﻿import type { JSX } from "react";
 import { useCallback, useMemo, useState } from "react";
 import { gql, useMutation } from "@apollo/client";
 import { RefreshCcw, Save, Sparkles } from "lucide-react";
@@ -8,7 +8,7 @@ import { Button } from "@/lib/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/lib/components/ui/card";
 import { Input } from "@/lib/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/lib/components/ui/tabs";
-import { useGraphQLModelTable } from "@/lib/tables/hooks";
+import { useGraphQLModelTable } from "@/lib/tablev2/compat/hooks";
 import {
   build_create_mutation,
   build_update_mutation,
@@ -81,7 +81,7 @@ export type ReportingStudioSaveDraft = {
 /**
  * Reporting Studio: build + preview + save reporting widgets.
  *
- * This component is the “wiring layer” between UI builders and the backend
+ * This component is the â€œwiring layerâ€ between UI builders and the backend
  * reporting engine. Users can:
  * - select a dataset
  * - build a query spec (builder or raw JSON)
@@ -159,7 +159,7 @@ export function ReportingStudio(): JSX.Element {
       if (!datasetId) return;
       const payload = await describeDataset(datasetId, true);
       if (!payload) {
-        toast.error("Impossible de décrire le dataset (droits ou configuration).");
+        toast.error("Impossible de dÃ©crire le dataset (droits ou configuration).");
         return;
       }
       setDatasetDescription(payload);
@@ -175,7 +175,7 @@ export function ReportingStudio(): JSX.Element {
       limit: spec.limit ?? 200,
     });
     if (!payload) {
-      toast.error("Exécution impossible (voir permissions / warnings).");
+      toast.error("ExÃ©cution impossible (voir permissions / warnings).");
       return;
     }
     setResult(payload);
@@ -183,7 +183,7 @@ export function ReportingStudio(): JSX.Element {
 
   const saveWidget = useCallback(async () => {
     if (!saveDraft.datasetId) {
-      toast.error("Sélectionnez un dataset.");
+      toast.error("SÃ©lectionnez un dataset.");
       return;
     }
     if (!saveDraft.code.trim()) {
@@ -216,10 +216,10 @@ export function ReportingStudio(): JSX.Element {
       });
       const payload = data?.response;
       if (payload?.ok) {
-        toast.success("Widget mis à jour.");
+        toast.success("Widget mis Ã  jour.");
         await refetchVisualizations?.();
       } else {
-        toast.error(payload?.errors?.map((e: any) => e?.message).join(", ") || "Mise à jour impossible.");
+        toast.error(payload?.errors?.map((e: any) => e?.message).join(", ") || "Mise Ã  jour impossible.");
       }
       return;
     }
@@ -227,10 +227,10 @@ export function ReportingStudio(): JSX.Element {
     const { data } = await createVisualization({ variables: { input } });
     const payload = data?.response;
     if (payload?.ok) {
-      toast.success("Widget enregistré (ReportingVisualization).");
+      toast.success("Widget enregistrÃ© (ReportingVisualization).");
       await refetchVisualizations?.();
     } else {
-      toast.error(payload?.errors?.map((e: any) => e?.message).join(", ") || "Création impossible.");
+      toast.error(payload?.errors?.map((e: any) => e?.message).join(", ") || "CrÃ©ation impossible.");
     }
   }, [chart, createVisualization, refetchVisualizations, saveDraft, spec, updateVisualization]);
 
@@ -256,7 +256,7 @@ export function ReportingStudio(): JSX.Element {
           <div>
             <CardTitle className="text-base">Reporting Studio</CardTitle>
             <CardDescription>
-              Construisez, prévisualisez et sauvegardez vos widgets BI (Recharts + exports).
+              Construisez, prÃ©visualisez et sauvegardez vos widgets BI (Recharts + exports).
             </CardDescription>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -270,11 +270,11 @@ export function ReportingStudio(): JSX.Element {
               disabled={datasetsLoading || visualizationsLoading}
             >
               <RefreshCcw className="mr-2 h-4 w-4" />
-              Rafraîchir
+              RafraÃ®chir
             </Button>
             <Button variant="default" size="sm" onClick={() => void runPreview()} disabled={!selectedDatasetId || running}>
               <Sparkles className="mr-2 h-4 w-4" />
-              Prévisualiser
+              PrÃ©visualiser
             </Button>
           </div>
         </div>
@@ -297,7 +297,7 @@ export function ReportingStudio(): JSX.Element {
             }}
             disabled={datasetsLoading}
           >
-            <option value="">Sélectionner...</option>
+            <option value="">SÃ©lectionner...</option>
             {datasetOptions.map((opt) => (
               <option key={opt.id} value={opt.id}>
                 {opt.label}
@@ -331,7 +331,7 @@ export function ReportingStudio(): JSX.Element {
               const cfg = found.config as any;
               if (cfg?.query) setSpec(cfg.query);
               if (cfg?.chart) setChart(cfg.chart);
-              toast.message("Widget chargé pour édition.");
+              toast.message("Widget chargÃ© pour Ã©dition.");
             }}
             disabled={!selectedDatasetId}
           >
@@ -349,7 +349,7 @@ export function ReportingStudio(): JSX.Element {
             disabled={creating || updating || !selectedDatasetId}
           >
             <Save className="mr-2 h-4 w-4" />
-            {saveDraft.id ? (updating ? "Mise à jour..." : "Mettre à jour") : creating ? "Enregistrement..." : "Enregistrer"}
+            {saveDraft.id ? (updating ? "Mise Ã  jour..." : "Mettre Ã  jour") : creating ? "Enregistrement..." : "Enregistrer"}
           </Button>
         </div>
       </CardContent>
@@ -362,12 +362,12 @@ export function ReportingStudio(): JSX.Element {
 
       {!datasetDescription ? (
         <p className="text-xs text-muted-foreground">
-          Sélectionnez un dataset pour charger son semantic layer et construire une requête.
+          SÃ©lectionnez un dataset pour charger son semantic layer et construire une requÃªte.
         </p>
       ) : (
         <Tabs defaultValue="query">
           <TabsList>
-            <TabsTrigger value="query">Requête</TabsTrigger>
+            <TabsTrigger value="query">RequÃªte</TabsTrigger>
             <TabsTrigger value="chart">Graphique</TabsTrigger>
             <TabsTrigger value="preview">Preview</TabsTrigger>
           </TabsList>
@@ -385,7 +385,7 @@ export function ReportingStudio(): JSX.Element {
           <TabsContent value="preview">
             {!result ? (
               <p className="text-xs text-muted-foreground">
-                Cliquez sur “Prévisualiser” pour exécuter la requête.
+                Cliquez sur â€œPrÃ©visualiserâ€ pour exÃ©cuter la requÃªte.
               </p>
             ) : (
               <ReportingWidgetCard
@@ -401,3 +401,4 @@ export function ReportingStudio(): JSX.Element {
     </div>
   );
 }
+
