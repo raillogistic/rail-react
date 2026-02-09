@@ -1,4 +1,4 @@
-import { ModelTableV2 } from "@/lib/tablev2";
+import { ModelTableV2 } from "@/lib/table";
 
 export function UserPage() {
   return <ModelTableV2 app="users" model="User" />;

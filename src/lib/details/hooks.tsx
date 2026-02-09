@@ -1,11 +1,11 @@
-﻿import * as React from "react";
+import * as React from "react";
 import { gql, useQuery } from "@apollo/client";
 import type {
   ModelTableType,
   TableFieldMetadataType,
-} from "../tablev2/compat/types";
+} from "../table/compat/types";
 import { useFormMetadata } from "../form/backend/hooks";
-import { useModelTableMetadata } from "../tablev2/compat/hooks";
+import { useModelTableMetadata } from "../table/compat/hooks";
 
 export type ModelMetadataRelationship = Record<string, any>;
 

@@ -1,4 +1,4 @@
-﻿import * as React from "react";
+import * as React from "react";
 import BaseDetail from "./BaseDetail";
 import type {
   DetailPanelConfig,
@@ -25,7 +25,7 @@ import {
 } from "@/lib/components/ui/dialog";
 import ModelForm, { type ModelFormProps } from "../form/backend/ModelForm";
 import { Pencil, Trash2 } from "lucide-react";
-import { useGraphQLModelTable } from "../tablev2/compat/hooks";
+import { useGraphQLModelTable } from "../table/compat/hooks";
 import { Drawer, DrawerContent } from "@/lib/components/ui/drawer";
 import { cn } from "../utils";
 import { toast } from "@/lib/components/ui/sonner";

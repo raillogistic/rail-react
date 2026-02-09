@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import type { FieldSchema, ModelSchema } from "@/lib/tablev2/types";
+import type { FieldSchema, ModelSchema } from "@/lib/table/types";
 import { buildSchemaFromMetadata } from "../hooks";
 
 const baseField = (overrides: Partial<FieldSchema> = {}): FieldSchema => ({

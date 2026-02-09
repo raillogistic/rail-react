@@ -17,7 +17,7 @@ A metadata-driven, headless-capable data table for Rail React, built on top of S
 ### Basic
 
 ```tsx
-import { ModelTableV2 } from "@/lib/tablev2";
+import { ModelTableV2 } from "@/lib/table";
 
 export function UserTable() {
   return (

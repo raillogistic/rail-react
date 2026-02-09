@@ -1,4 +1,4 @@
-﻿import type { JSX } from "react";
+import type { JSX } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { gql, useMutation } from "@apollo/client";
 import {
@@ -33,7 +33,7 @@ import {
   type DeleteMutationResponse,
   type UpdateMutationResponse,
 } from "@/lib/form/backend/types/mutations";
-import { useGraphQLModelTable } from "@/lib/tablev2/compat/hooks";
+import { useGraphQLModelTable } from "@/lib/table/compat/hooks";
 import { useReportingReportBuildPayload } from "@/lib/reporting/graphql";
 import type { ReportingChartSpec, ReportingQueryResult, ReportingVisualizationConfig } from "@/lib/reporting/types";
 import { ReportingWidgetCard } from "@/lib/reporting/components/ReportingWidgetCard";

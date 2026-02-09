@@ -1,4 +1,4 @@
-﻿import type { JSX } from "react";
+import type { JSX } from "react";
 import React, {
   forwardRef,
   useCallback,
@@ -22,23 +22,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/lib/components/ui/select";
-import { FormOverlay } from "../tablev2/components/ModelTableOverlays";
+import { FormOverlay } from "../table/components/ModelTableOverlays";
 import {
   Tabs,
   TabsContent,
   TabsList,
   TabsTrigger,
 } from "@/lib/components/ui/tabs";
-import { useModelTableMetadata } from "@/lib/tablev2/compat/hooks";
-import { useAdvancedFiltering } from "@/lib/tablev2/components/filtering";
-import { FilterGroupEditor } from "@/lib/tablev2/components/filtering/FilterGroupEditor";
-import type { FilterSeedSpec } from "@/lib/tablev2/components/filtering/types";
+import { useModelTableMetadata } from "@/lib/table/compat/hooks";
+import { useAdvancedFiltering } from "@/lib/table/components/filtering";
+import { FilterGroupEditor } from "@/lib/table/components/filtering/FilterGroupEditor";
+import type { FilterSeedSpec } from "@/lib/table/components/filtering/types";
 import {
   build_create_mutation,
   build_update_mutation,
   build_delete_mutation,
 } from "../form/backend/types/mutations";
-import type { TableFieldMetadataType } from "@/lib/tablev2/compat/types";
+import type { TableFieldMetadataType } from "@/lib/table/compat/types";
 
 /**
  * Props used to render the reusable BI panel linked to a business model.

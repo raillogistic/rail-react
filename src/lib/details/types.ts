@@ -1,6 +1,6 @@
-﻿import type React from "react";
+import type React from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import type { FilterFieldType } from "../tablev2/compat/types";
+import type { FilterFieldType } from "../table/compat/types";
 import type { ModelFormProps } from "../form/backend/ModelForm";
 
 export type DetailFieldConfig = {

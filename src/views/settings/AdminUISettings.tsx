@@ -1,4 +1,4 @@
-﻿import { useState } from "react";
+import { useState } from "react";
 import {
   Card,
   CardContent,
@@ -8,7 +8,7 @@ import {
 } from "@/lib/components/ui/card";
 import { Button } from "@/lib/components/ui/button";
 import { Plus } from "lucide-react";
-import { ModelTableV2 } from "@/lib/tablev2";
+import { ModelTableV2 } from "@/lib/table";
 import {
   Drawer,
   DrawerContent,

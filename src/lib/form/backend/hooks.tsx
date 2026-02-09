@@ -30,12 +30,12 @@ import {
   type MutationError,
   toOperationField,
 } from "./types/mutations";
-import { GET_MODEL_SCHEMA_FULL } from "@/lib/tablev2/queries";
+import { GET_MODEL_SCHEMA_FULL } from "@/lib/table/queries";
 import type {
   ModelSchema,
   FieldSchema,
   RelationshipSchema,
-} from "@/lib/tablev2/types";
+} from "@/lib/table/types";
 import {
   buildMetadataScopeKey,
   isCacheEntryFresh,

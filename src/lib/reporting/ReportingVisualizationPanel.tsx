@@ -1,4 +1,4 @@
-﻿import type { JSX } from "react";
+import type { JSX } from "react";
 import React, { useCallback, useMemo, useState } from "react";
 import { gql, useMutation } from "@apollo/client";
 import { Layers, RefreshCcw, Sparkles } from "lucide-react";
@@ -7,7 +7,7 @@ import { toast } from "sonner";
 import { Button } from "@/lib/components/ui/button";
 import { Input } from "@/lib/components/ui/input";
 import { Textarea } from "@/lib/components/ui/textarea";
-import { useGraphQLModelTable } from "../tablev2/compat/hooks";
+import { useGraphQLModelTable } from "../table/compat/hooks";
 import { build_create_mutation } from "../form/backend/types/mutations";
 
 /**

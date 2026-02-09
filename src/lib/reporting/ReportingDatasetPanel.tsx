@@ -1,4 +1,4 @@
-﻿import type { JSX } from "react";
+import type { JSX } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { gql, useMutation } from "@apollo/client";
 import { BookOpen, RefreshCcw, Save } from "lucide-react";
@@ -9,8 +9,8 @@ import { Input } from "@/lib/components/ui/input";
 import { Textarea } from "@/lib/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/lib/components/ui/card";
 import { Separator } from "@/lib/components/ui/separator";
-import { ModelAdvancedFiltersControl, type FilterSeedSpec } from "@/lib/tablev2/components/filtering";
-import type { ComplexFilterInput } from "@/lib/tablev2/compat/types";
+import { ModelAdvancedFiltersControl, type FilterSeedSpec } from "@/lib/table/components/filtering";
+import type { ComplexFilterInput } from "@/lib/table/compat/types";
 import {
   build_create_mutation,
   type CreateMutationResponse,

@@ -5,7 +5,7 @@ import {
   normalizeBaseModelTableFieldsInput,
 } from "../utils";
 
-describe("tablev2 field config helpers", () => {
+describe("table field config helpers", () => {
   it("normalizes legacy array syntax", () => {
     const result = normalizeBaseModelTableFieldsInput(["name", "email"]);
     expect(result.include).toEqual(["name", "email"]);

@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-This document outlines a comprehensive refactoring strategy for the `tablev2` module. The primary goals are:
+This document outlines a comprehensive refactoring strategy for the `table` module. The primary goals are:
 
 1. **Split large files** to stay under 500 lines each
 2. **Improve separation of concerns**
@@ -51,7 +51,7 @@ This document outlines a comprehensive refactoring strategy for the `tablev2` mo
 **Proposed Structure:**
 
 ```
-src/lib/tablev2/
+src/lib/table/
 ├── index.tsx                          # Re-exports only (~50 lines)
 ├── components/
 │   ├── ModelTableV2.tsx               # Public ModelTableV2 component (~80 lines)
@@ -135,7 +135,7 @@ export { BaseModelTable } from "./components/BaseModelTable";
 **Proposed Structure:**
 
 ```
-src/lib/tablev2/components/
+src/lib/table/components/
 ├── TableRow.tsx                       # Main export, TableRows component (~350 lines)
 ├── row/
 │   ├── index.ts                       # Barrel export
@@ -213,7 +213,7 @@ export { TableRows } from "./TableRows";
 **Proposed Structure:**
 
 ```
-src/lib/tablev2/components/
+src/lib/table/components/
 ├── TableColumnMenu.tsx                # Main menu (~300 lines)
 ├── column-menu/
 │   ├── index.ts
@@ -270,7 +270,7 @@ export function TableColumnMenu(props: TableColumnMenuProps)
 **Proposed Structure:**
 
 ```
-src/lib/tablev2/hooks/
+src/lib/table/hooks/
 ├── useTableData.ts                    # Main hook (~200 lines)
 └── data/
     ├── index.ts
@@ -323,7 +323,7 @@ export function useTableData(config?: TableDataConfig)
 **Proposed Structure:**
 
 ```
-src/lib/tablev2/components/
+src/lib/table/components/
 ├── TableToolbar.tsx                   # Main toolbar layout (~150 lines)
 ├── toolbar/
 │   ├── index.ts
@@ -386,7 +386,7 @@ export function TableToolbar(props: TableToolbarProps)
 **Proposed Structure:**
 
 ```
-src/lib/tablev2/
+src/lib/table/
 ├── utils.tsx                          # Re-exports all utils (~30 lines)
 ├── utils/
 │   ├── index.ts
@@ -512,7 +512,7 @@ export function isRecord(value: unknown): value is Record<string, unknown> {
 ## Proposed Final Directory Structure
 
 ```
-src/lib/tablev2/
+src/lib/table/
 ├── index.tsx                              # Barrel exports (~50 lines)
 ├── queries.ts                             # GraphQL queries (~15 lines)
 │
@@ -673,7 +673,7 @@ src/lib/tablev2/
 
 ## Migration Notes
 
-- All existing imports from `@/lib/tablev2` will continue to work
+- All existing imports from `@/lib/table` will continue to work
 - Internal imports may need updates as files are split
 - Add deprecation warnings if public API changes (unlikely needed)
 - Run linter after each phase to catch any import issues

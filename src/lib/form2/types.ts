@@ -19,7 +19,7 @@ import type {
   ModelSchema,
   FieldSchema,
   RelationshipSchema,
-} from "../tablev2/types";
+} from "../table/types";
 import type {
   CreateMutationResponse,
   CreateMutationVariables,

@@ -1,4 +1,4 @@
-﻿import type { JSX } from "react";
+import type { JSX } from "react";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { gql, useMutation } from "@apollo/client";
 import { BarChart3, RefreshCcw } from "lucide-react";
@@ -6,7 +6,7 @@ import { toast } from "sonner";
 
 import { Button } from "@/lib/components/ui/button";
 import { Input } from "@/lib/components/ui/input";
-import { useGraphQLModelTable } from "@/lib/tablev2/compat/hooks";
+import { useGraphQLModelTable } from "@/lib/table/compat/hooks";
 import {
   build_method_mutation,
   type MethodMutationResponse,

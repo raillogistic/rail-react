@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Centralized route and navigation definitions shared by the core UI and app modules.
  *
  * Purpose: keep navigation, layout labels, and router targets in one place so the
@@ -23,7 +23,7 @@ import { LayoutSettingsPage } from "@/views/settings/LayoutSettingsPage";
 
 import { getAppDefaultRoute, getAppNavigationLinks } from "@/apps/routes";
 // import ModelForm from "@/lib/form/backend/ModelForm";
-import { BaseModelTable, ModelTableV2 } from "@/lib/tablev2";
+import { BaseModelTable, ModelTableV2 } from "@/lib/table";
 import { ModelForm } from "@/lib/form2";
 // import ModelForm    from "@/lib/form2";
 

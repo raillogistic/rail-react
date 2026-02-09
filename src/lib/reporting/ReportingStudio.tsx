@@ -1,4 +1,4 @@
-﻿import type { JSX } from "react";
+import type { JSX } from "react";
 import { useCallback, useMemo, useState } from "react";
 import { gql, useMutation } from "@apollo/client";
 import { RefreshCcw, Save, Sparkles } from "lucide-react";
@@ -8,7 +8,7 @@ import { Button } from "@/lib/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/lib/components/ui/card";
 import { Input } from "@/lib/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/lib/components/ui/tabs";
-import { useGraphQLModelTable } from "@/lib/tablev2/compat/hooks";
+import { useGraphQLModelTable } from "@/lib/table/compat/hooks";
 import {
   build_create_mutation,
   build_update_mutation,
