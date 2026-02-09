@@ -1,5 +1,20 @@
 import React, { useCallback, useMemo, useRef, useState, useEffect } from "react";
-import { AlertTriangle } from "lucide-react";
+import { 
+  AlertTriangle, 
+  Filter, 
+  Save, 
+  RotateCcw, 
+  Plus, 
+  Command, 
+  ChevronRight, 
+  ListFilter,
+  History,
+  Bookmark,
+  Settings2,
+  X,
+  Search,
+  Layers
+} from "lucide-react";
 import { Button } from "@/lib/components/ui/button";
 import { Card, CardContent } from "@/lib/components/ui/card";
 import { Skeleton } from "@/lib/components/ui/skeleton";
@@ -9,6 +24,16 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/lib/components/ui/popover";
+import { Badge } from "@/lib/components/ui/badge";
+import { Separator } from "@/lib/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/lib/components/ui/tabs";
+import { ScrollArea } from "@/lib/components/ui/scroll-area";
+import { 
+  Tooltip, 
+  TooltipContent, 
+  TooltipProvider, 
+  TooltipTrigger 
+} from "@/lib/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 import { useFilterMetadata } from "./hooks/useFilterMetadata";
@@ -33,30 +58,51 @@ import { DEFAULT_NESTED_CONFIG } from "./types";
 import type { UnifiedFilterSchema } from "./types";
 import { createCondition, createGroup } from "./tree/operations";
 
-// ============================================================================
-// FilterPanel Props
-// ============================================================================
-
+/**
+ * Interface pour les propriétés du composant FilterPanel.
+ * Gère la configuration globale de l'interface de filtrage.
+ */
 export interface FilterPanelProps {
+  /** Nom de l'application Django */
   app: string;
+  /** Nom du modèle Django */
   model: string;
+  /** Profondeur maximale des filtres imbriqués */
   maxDepth?: number;
+  /** Callback appelé lors de l'application des filtres */
   onApply: (variables: FilterQueryVariables, state: FilterFormState) => void;
+  /** Inclure les filtres sauvegardés */
   includeSavedFilters?: boolean;
+  /** Afficher le sélecteur "Distinct On" */
   showDistinct?: boolean;
+  /** Afficher les presets */
   showPresets?: boolean;
+  /** Autoriser la sauvegarde de filtres */
   allowSaveFilter?: boolean;
+  /** Disposition du composant */
   layout?: "panel" | "popover" | "inline" | "toolbar";
+  /** État initial des filtres */
   initialState?: FilterFormState;
+  /** Filtres par défaut à appliquer au chargement */
   defaultFilters?: DefaultFilterSpec[];
+  /** Options du sélecteur de champs */
   fieldSelector?: FieldSelectorOptions;
+  /** Configuration personnalisée pour les filtres imbriqués */
   config?: Partial<NestedFilterConfig>;
+  /** Désactive l'édition */
   disabled?: boolean;
+  /** Titre affiché */
   title?: string;
+  /** Afficher les indices de raccourcis clavier */
   showKeyboardHints?: boolean;
+  /** Clé pour la persistance locale */
   persistKey?: string;
 }
 
+/**
+ * FilterPanel - Un panneau de filtrage complexe et moderne pour les applications ERP.
+ * Permet de construire des requêtes GraphQL sophistiquées avec une interface intuitive.
+ */
 export const FilterPanel: React.FC<FilterPanelProps> = ({
   app,
   model,
@@ -73,7 +119,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
   config: configOverrides,
   disabled,
   title = "Filters",
-  showKeyboardHints = false,
+  showKeyboardHints = true,
   persistKey,
 }) => {
   const config: NestedFilterConfig = useMemo(
@@ -125,6 +171,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [editingPreset, setEditingPreset] = useState<FilterPreset | null>(null);
   const [popoverOpen, setPopoverOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState<string>("builder");
 
   const handleApply = useCallback(() => {
     if (!schema) return;
@@ -137,7 +184,10 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
       maxDepth,
     });
     onApply(variables, state);
-  }, [schema, state, maxDepth, onApply]);
+    if (layout === "popover" || layout === "toolbar") {
+      setPopoverOpen(false);
+    }
+  }, [schema, state, maxDepth, onApply, layout]);
 
   const handleApplyPreset = useCallback(
     (preset: FilterPreset) => {
@@ -160,6 +210,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
         }),
         { ...state, root: newRoot },
       );
+      setActiveTab("builder");
     },
     [schema, state, setRoot, onApply, maxDepth],
   );
@@ -292,11 +343,21 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
 
   if (loading) {
     return (
-      <Card className="border-muted">
+      <Card className="border-muted shadow-sm overflow-hidden">
+        <div className="p-4 border-b flex items-center justify-between bg-muted/30">
+          <Skeleton className="h-5 w-32" />
+          <Skeleton className="h-8 w-24 rounded-md" />
+        </div>
         <CardContent className="p-6 space-y-4">
-          <Skeleton className="h-8 w-32" />
-          <Skeleton className="h-12 w-full rounded-lg" />
-          <Skeleton className="h-20 w-full" />
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-full opacity-60" />
+            <Skeleton className="h-4 w-[90%] opacity-40" />
+          </div>
+          <div className="pt-4 space-y-3">
+            <Skeleton className="h-12 w-full rounded-lg" />
+            <Skeleton className="h-12 w-full rounded-lg opacity-80" />
+            <Skeleton className="h-12 w-full rounded-lg opacity-60" />
+          </div>
         </CardContent>
       </Card>
     );
@@ -304,16 +365,17 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
 
   if (error || !schema) {
     return (
-      <Alert variant="destructive">
+      <Alert variant="destructive" className="border-destructive/20 bg-destructive/5">
         <AlertTriangle className="h-4 w-4" />
-        <AlertDescription className="flex items-center justify-between">
-          <span>{error?.message ?? "Failed to load"}</span>
+        <AlertDescription className="flex items-center justify-between w-full">
+          <span className="font-medium">{error?.message ?? "Failed to load filter schema"}</span>
           <Button
-            variant="link"
+            variant="ghost"
             size="sm"
             onClick={() => refetch()}
-            className="h-auto p-0"
+            className="h-8 hover:bg-destructive/10"
           >
+            <RotateCcw className="mr-2 h-3.5 w-3.5" />
             Retry
           </Button>
         </AlertDescription>
@@ -322,119 +384,246 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
   }
 
   const filterContent = (
-    <div className="flex flex-col gap-4 h-full">
-      <div className="sr-only" aria-live="polite">
-        {activeCount} active filter{activeCount !== 1 ? "s" : ""}
-      </div>
-      <div className="flex items-center gap-3">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">{title}</span>
-          {activeCount > 0 && (
-            <span className="text-xs text-muted-foreground">
-              {activeCount} active
-            </span>
-          )}
-        </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="ml-auto h-8"
-          onClick={clearAll}
-          disabled={disabled || activeCount === 0}
-        >
-          Clear all
-        </Button>
-      </div>
-
-      {showDistinct && schema.distinctFields.length > 0 && (
-        <div className="flex flex-wrap items-center gap-2">
-          <DistinctOnSelector
-            distinctFields={schema.distinctFields}
-            selectedFields={state.distinctOn}
-            orderBy={state.orderBy}
-            onChange={setDistinctOn}
-            onOrderByRequired={setOrderBy}
-            disabled={disabled}
-          />
-        </div>
-      )}
-
-      <div className="flex-1 min-h-0 flex flex-col gap-2">
-        <div className="flex-1 overflow-auto pr-1">
-          <FilterGroupComponent
-            group={state.root}
-            schema={schema}
-            config={config}
-            onChange={(updates) => setRoot({ ...state.root, ...updates })}
-            onAddCondition={(groupId, fieldPath, fieldName, operator) =>
-              addCondition(fieldPath, fieldName, operator, groupId)
-            }
-            onAddGroup={addGroup}
-            onUpdateCondition={updateCondition}
-            onRemoveItem={removeCondition}
-            isRoot
-            depth={0}
-            recentFields={recentFields}
-            favoriteFields={favoriteFields}
-            fieldSelector={fieldSelector}
-            onLoadRelationSchema={loadSchemaForRelation}
-            getRelationSchema={getSchemaForRelation}
-          />
-        </div>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-3 pt-3 border-t">
-        <div className="flex flex-wrap items-center gap-2">
-          {showPresets && schema.presets.length > 0 && (
-            <>
-              <span className="text-xs text-muted-foreground">Saved:</span>
-              <PresetManager
-                presets={schema.presets}
-                selectedPresets={state.selectedPresets}
-                onTogglePreset={togglePreset}
-                onApplyPreset={handleApplyPreset}
-                onEditPreset={handleEditPreset}
-                onDeletePreset={handleDeletePreset}
-                onSharePreset={handleSharePreset}
-                disabled={disabled}
-                label="My Filters"
-              />
-            </>
-          )}
-        </div>
-        <div className="ml-auto flex items-center gap-2">
-          {allowSaveFilter && (
+    <div className="flex flex-col h-[520px] sm:h-[600px] overflow-hidden bg-background">
+      {/* Dynamic Header */}
+      <div className="flex flex-col border-b bg-muted/10">
+        <div className="flex items-center justify-between px-4 py-3">
+          <div className="flex items-center gap-2.5">
+            <div className="p-1.5 rounded-md bg-primary/10 text-primary">
+              <Filter className="h-4 w-4" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-sm leading-none tracking-tight">{title}</h3>
+              <p className="text-[11px] text-muted-foreground mt-1">
+                {activeCount > 0 ? (
+                  <span className="flex items-center gap-1 text-primary animate-in fade-in slide-in-from-left-1">
+                    <Layers className="h-2.5 w-2.5" />
+                    {activeCount} active filter{activeCount !== 1 ? "s" : ""}
+                  </span>
+                ) : (
+                  "Configure and apply data filters"
+                )}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5">
+            {activeCount > 0 && (
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                      onClick={clearAll}
+                      disabled={disabled}
+                    >
+                      <RotateCcw className="h-4 w-4" />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" align="end">
+                    <p className="text-xs">Reset all filters</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
             <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setEditingPreset(null);
-                setSaveDialogOpen(true);
-              }}
-              disabled={disabled}
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 sm:hidden"
+              onClick={() => setPopoverOpen(false)}
             >
-              Save current
+              <X className="h-4 w-4" />
             </Button>
-          )}
-          <Button onClick={handleApply} disabled={disabled} className="h-9">
-            Apply
-          </Button>
+          </div>
         </div>
+
+        <Tabs 
+          value={activeTab} 
+          onValueChange={setActiveTab} 
+          className="w-full px-4"
+        >
+          <TabsList className="h-9 w-full justify-start bg-transparent p-0 border-b-0 space-x-6">
+            <TabsTrigger 
+              value="builder"
+              className="relative h-9 rounded-none border-b-2 border-b-transparent bg-transparent px-1 pb-3 pt-2 text-xs font-medium text-muted-foreground data-[state=active]:border-b-primary data-[state=active]:text-foreground data-[state=active]:shadow-none transition-none"
+            >
+              <Settings2 className="mr-2 h-3.5 w-3.5" />
+              Condition Builder
+            </TabsTrigger>
+            <TabsTrigger 
+              value="presets"
+              className="relative h-9 rounded-none border-b-2 border-b-transparent bg-transparent px-1 pb-3 pt-2 text-xs font-medium text-muted-foreground data-[state=active]:border-b-primary data-[state=active]:text-foreground data-[state=active]:shadow-none transition-none"
+            >
+              <Bookmark className="mr-2 h-3.5 w-3.5" />
+              Saved Views
+              {schema.presets.length > 0 && (
+                <Badge variant="secondary" className="ml-2 h-4 min-w-4 px-1 text-[10px]">
+                  {schema.presets.length}
+                </Badge>
+              )}
+            </TabsTrigger>
+          </TabsList>
+        </Tabs>
       </div>
 
-      {showKeyboardHints && !disabled && (
-        <div className="text-[10px] text-muted-foreground">
-          Ctrl+Enter Apply | Ctrl+N Add filter | Esc Clear
+      {/* Main Body */}
+      <div className="flex-1 overflow-hidden relative">
+        <Tabs value={activeTab} className="h-full flex flex-col">
+          <TabsContent value="builder" className="m-0 p-0 flex-1 overflow-hidden">
+            <ScrollArea className="h-full px-4 pt-4 pb-6">
+              <div className="space-y-6">
+                {showDistinct && schema.distinctFields.length > 0 && (
+                  <div className="bg-muted/30 p-3 rounded-lg border border-border/50">
+                    <div className="flex items-center gap-2 mb-2">
+                      <ListFilter className="h-3.5 w-3.5 text-muted-foreground" />
+                      <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Optimization</span>
+                    </div>
+                    <DistinctOnSelector
+                      distinctFields={schema.distinctFields}
+                      selectedFields={state.distinctOn}
+                      orderBy={state.orderBy}
+                      onChange={setDistinctOn}
+                      onOrderByRequired={setOrderBy}
+                      disabled={disabled}
+                    />
+                  </div>
+                )}
+
+                <div className="pb-12">
+                  <FilterGroupComponent
+                    group={state.root}
+                    schema={schema}
+                    config={config}
+                    onChange={(updates) => setRoot({ ...state.root, ...updates })}
+                    onAddCondition={(groupId, fieldPath, fieldName, operator) =>
+                      addCondition(fieldPath, fieldName, operator, groupId)
+                    }
+                    onAddGroup={addGroup}
+                    onUpdateCondition={updateCondition}
+                    onRemoveItem={removeCondition}
+                    isRoot
+                    depth={0}
+                    recentFields={recentFields}
+                    favoriteFields={favoriteFields}
+                    fieldSelector={fieldSelector}
+                    onLoadRelationSchema={loadSchemaForRelation}
+                    getRelationSchema={getSchemaForRelation}
+                  />
+                  
+                  {state.root.conditions.length === 0 && (
+                    <div className="flex flex-col items-center justify-center py-12 text-center">
+                      <div className="h-16 w-16 rounded-full bg-muted/20 flex items-center justify-center mb-4 border-2 border-dashed border-muted">
+                        <Plus className="h-8 w-8 text-muted-foreground/40" />
+                      </div>
+                      <h4 className="text-sm font-medium text-foreground">No filters added yet</h4>
+                      <p className="text-xs text-muted-foreground mt-1 max-w-[200px]">
+                        Add conditions to narrow down your data results
+                      </p>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="mt-4 h-8 border-dashed"
+                        onClick={() => addCondition([], "", "eq")}
+                      >
+                        <Plus className="mr-2 h-3.5 w-3.5" />
+                        Add First Condition
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </ScrollArea>
+          </TabsContent>
+
+          <TabsContent value="presets" className="m-0 p-0 flex-1 overflow-hidden">
+            <ScrollArea className="h-full px-4 py-4">
+              <div className="space-y-4">
+                {showPresets && (
+                  <PresetManager
+                    presets={schema.presets}
+                    selectedPresets={state.selectedPresets}
+                    onTogglePreset={togglePreset}
+                    onApplyPreset={handleApplyPreset}
+                    onEditPreset={handleEditPreset}
+                    onDeletePreset={handleDeletePreset}
+                    onSharePreset={handleSharePreset}
+                    disabled={disabled}
+                    layout="grid"
+                  />
+                )}
+                
+                {schema.presets.length === 0 && (
+                  <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
+                    <Bookmark className="h-12 w-12 mb-4 opacity-10" />
+                    <p className="text-sm">You haven't saved any views yet.</p>
+                    <p className="text-xs mt-1">Save your current filters to access them later.</p>
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+          </TabsContent>
+        </Tabs>
+        
+        {/* Subtle Bottom Gradient */}
+        <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-background to-transparent pointer-events-none z-10" />
+      </div>
+
+      {/* Footer Actions */}
+      <div className="border-t bg-muted/30 p-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {showKeyboardHints && !disabled && (
+              <div className="hidden sm:flex items-center gap-3 text-[10px] text-muted-foreground/70 font-medium">
+                <span className="flex items-center gap-1">
+                  <kbd className="px-1 py-0.5 rounded border bg-background text-[9px] font-sans">Ctrl</kbd> + <kbd className="px-1 py-0.5 rounded border bg-background text-[9px] font-sans">Enter</kbd>
+                  Apply
+                </span>
+                <span className="flex items-center gap-1">
+                  <kbd className="px-1 py-0.5 rounded border bg-background text-[9px] font-sans">Esc</kbd>
+                  Clear
+                </span>
+              </div>
+            )}
+          </div>
+          
+          <div className="flex items-center gap-2">
+            {allowSaveFilter && activeCount > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-9 px-4 text-xs font-medium hover:bg-background transition-colors"
+                onClick={() => {
+                  setEditingPreset(null);
+                  setSaveDialogOpen(true);
+                }}
+                disabled={disabled}
+              >
+                <Save className="mr-2 h-3.5 w-3.5 text-primary" />
+                Save Current
+              </Button>
+            )}
+            <Button 
+              onClick={handleApply} 
+              disabled={disabled} 
+              className="h-9 px-6 text-xs font-semibold shadow-sm active:scale-95 transition-all"
+            >
+              Apply Filters
+              <ChevronRight className="ml-1.5 h-3.5 w-3.5" />
+            </Button>
+          </div>
         </div>
-      )}
+      </div>
     </div>
   );
+
+  const containerStyles = "w-full max-w-full sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl p-0 border shadow-2xl overflow-hidden rounded-xl animate-in zoom-in-95 duration-200";
 
   return (
     <>
       {layout === "toolbar" ? (
         <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
-          <div className="space-y-3">
+          <div className="flex flex-col gap-2">
             <ActiveFiltersBar
               state={state}
               schema={schema}
@@ -443,11 +632,19 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
               onAddFilter={() => setPopoverOpen(true)}
             />
             <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="h-8">
-                {title}
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className={cn(
+                  "h-8 text-xs font-medium border-dashed px-3 hover:border-primary/50 hover:bg-primary/5 transition-all",
+                  activeCount > 0 && "border-primary/30 bg-primary/5 text-primary"
+                )}
+              >
+                <Plus className="mr-2 h-3.5 w-3.5" />
+                Add More Filters
               </Button>
             </PopoverTrigger>
-            <PopoverContent className="w-[95vw] max-w-[95vw] sm:w-[480px] sm:max-w-[480px] p-4" align="start">
+            <PopoverContent className={containerStyles} align="start" sideOffset={8}>
               {filterContent}
             </PopoverContent>
           </div>
@@ -460,33 +657,40 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
             <Button
               variant="outline"
               size="sm"
-              className={cn("gap-1.5 h-8", activeCount > 0 && "border-primary")}
+              className={cn(
+                "gap-2 h-9 px-4 rounded-lg font-medium transition-all duration-200", 
+                activeCount > 0 
+                  ? "border-primary bg-primary/5 text-primary shadow-sm" 
+                  : "hover:border-primary/30"
+              )}
             >
+              <Filter className={cn("h-4 w-4", activeCount > 0 && "fill-primary/20")} />
               {title}
               {activeCount > 0 && (
-                <span className="ml-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
+                <Badge 
+                  variant="default" 
+                  className="ml-1 h-5 min-w-5 flex items-center justify-center rounded-full p-0 text-[10px] font-bold"
+                >
                   {activeCount}
-                </span>
+                </Badge>
               )}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-[95vw] max-w-[95vw] sm:w-[480px] sm:max-w-[480px] p-4" align="start">
+          <PopoverContent className={containerStyles} align="start" sideOffset={8}>
             {filterContent}
           </PopoverContent>
         </Popover>
       ) : null}
 
       {layout === "inline" ? (
-        <div className="border rounded-xl bg-card overflow-hidden">
-          <div className="p-4">{filterContent}</div>
+        <div className="border rounded-2xl bg-card shadow-lg shadow-primary/5 overflow-hidden transition-all hover:shadow-primary/10">
+          {filterContent}
         </div>
       ) : null}
 
       {layout === "panel" ? (
-        <Card className="h-full flex flex-col border shadow-none">
-          <CardContent className="flex-1 overflow-hidden flex flex-col p-4">
-            {filterContent}
-          </CardContent>
+        <Card className="h-full flex flex-col border shadow-none bg-background rounded-xl overflow-hidden">
+          {filterContent}
         </Card>
       ) : null}
 

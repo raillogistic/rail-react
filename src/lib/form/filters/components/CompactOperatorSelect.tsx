@@ -1,5 +1,6 @@
 /**
- * CompactOperatorSelect - Operator dropdown with grouped categories.
+ * CompactOperatorSelect - Sélecteur d'opérateurs groupés par catégories.
+ * Optimisé pour une utilisation intensive dans les interfaces de filtrage.
  */
 
 import React, { useMemo } from "react";
@@ -15,12 +16,19 @@ import {
 import type { FilterableField } from "../types";
 
 export interface CompactOperatorSelectProps {
+  /** Le champ pour lequel afficher les opérateurs */
   field: FilterableField;
+  /** L'opérateur actuellement sélectionné */
   value: string;
+  /** Callback lors du changement d'opérateur */
   onChange: (value: string) => void;
+  /** Désactive la sélection */
   disabled?: boolean;
 }
 
+/**
+ * CompactOperatorSelect - Un sélecteur d'opérateur compact avec groupement logique.
+ */
 export const CompactOperatorSelect: React.FC<CompactOperatorSelectProps> = ({
   field,
   value,
@@ -40,15 +48,16 @@ export const CompactOperatorSelect: React.FC<CompactOperatorSelectProps> = ({
     const operators = applyPreferredOperatorOrdering(field);
 
     operators.forEach((op) => {
-      if (["eq", "neq"].includes(op.name)) {
+      const name = op.name;
+      if (["eq", "neq", "isnull"].includes(name)) {
         groups["Equality"].push(op);
-      } else if (["gt", "gte", "lt", "lte", "between"].includes(op.name)) {
+      } else if (["gt", "gte", "lt", "lte", "between"].includes(name)) {
         groups["Comparison"].push(op);
-      } else if (["contains", "icontains", "startsWith", "endsWith", "regex", "iregex"].includes(op.name)) {
+      } else if (["contains", "icontains", "startsWith", "endsWith", "regex", "iregex", "exact", "iexact"].includes(name)) {
         groups["Text Search"].push(op);
-      } else if (["in", "notIn"].includes(op.name)) {
+      } else if (["in", "notIn"].includes(name)) {
         groups["List"].push(op);
-      } else if (["year", "month", "day", "weekDay", "hour"].includes(op.name)) {
+      } else if (["year", "month", "day", "weekDay", "hour"].includes(name)) {
         groups["Date"].push(op);
       } else {
         groups["Other"].push(op);
@@ -62,15 +71,24 @@ export const CompactOperatorSelect: React.FC<CompactOperatorSelectProps> = ({
 
   return (
     <Select value={value} onValueChange={onChange} disabled={disabled}>
-      <SelectTrigger className="h-8 w-32 text-xs" aria-label="Operator">
-        <SelectValue />
+      <SelectTrigger 
+        className="h-8 w-[130px] text-[11px] font-semibold bg-muted/40 border-transparent hover:border-border/50 hover:bg-muted/60 transition-all rounded-lg focus:ring-0" 
+        aria-label="Operator"
+      >
+        <SelectValue placeholder="Opérateur" />
       </SelectTrigger>
-      <SelectContent>
+      <SelectContent className="rounded-xl border-border/50 shadow-xl max-h-[400px]">
         {Object.entries(groupedOperators).map(([group, operators]) => (
           <SelectGroup key={group}>
-            <SelectLabel className="text-xs">{group}</SelectLabel>
+            <SelectLabel className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/60 px-2 py-1.5">
+              {group}
+            </SelectLabel>
             {operators.map((op) => (
-              <SelectItem key={op.name} value={op.name} className="text-xs">
+              <SelectItem 
+                key={op.name} 
+                value={op.name} 
+                className="text-xs font-medium py-2 focus:bg-primary/5 focus:text-primary transition-colors"
+              >
                 {op.label}
               </SelectItem>
             ))}
@@ -81,6 +99,9 @@ export const CompactOperatorSelect: React.FC<CompactOperatorSelectProps> = ({
   );
 };
 
+/**
+ * Ordonne les opérateurs selon les préférences du champ, puis les autres.
+ */
 function applyPreferredOperatorOrdering(field: FilterableField) {
   if (!field.preferredOperators || field.preferredOperators.length === 0) {
     return field.operators;
