@@ -6,6 +6,35 @@ import {
   FilterGroup,
 } from "../../form/filters/types";
 
+const HEADER_RELATION_FILTERS_KEY = "__headerRelationFilters";
+const HEADER_BASE_WHERE_KEY = "__baseWhere";
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === "object" && !Array.isArray(value);
+}
+
+function mergeWhereWithRelationFragments(
+  baseWhere: Record<string, unknown> | undefined,
+  fragmentsMap: Record<string, unknown>,
+): Record<string, unknown> | undefined {
+  const fragments = Object.values(fragmentsMap).filter((entry) => isRecord(entry));
+  const clauses: Record<string, unknown>[] = [];
+
+  if (baseWhere && Object.keys(baseWhere).length > 0) {
+    clauses.push(baseWhere);
+  }
+
+  fragments.forEach((fragment) => {
+    if (Object.keys(fragment).length > 0) {
+      clauses.push(fragment);
+    }
+  });
+
+  if (clauses.length === 0) return undefined;
+  if (clauses.length === 1) return clauses[0];
+  return { AND: clauses };
+}
+
 function serializeCondition(condition: FilterCondition): Record<string, unknown> | null {
   const { value, operator, fieldPath } = condition;
   if (
@@ -70,6 +99,7 @@ export function useTableFilters() {
   const {
     quickSearch,
     advancedFilters,
+    filterVariables,
     setQuickSearch,
     setAdvancedFilters: setAdvancedFiltersRaw,
     // pagination often needed to reset page on filter change (handled in reducer)
@@ -84,9 +114,30 @@ export function useTableFilters() {
 
   const handleAdvancedFiltersChange = useCallback(
     (value: FilterFormState, variables?: Record<string, unknown>) => {
-      setAdvancedFiltersRaw(value, variables ?? buildFallbackVariables(value));
+      const nextVariables = variables ?? buildFallbackVariables(value);
+      const existingVars = isRecord(filterVariables) ? filterVariables : {};
+      const relationFragments = isRecord(existingVars[HEADER_RELATION_FILTERS_KEY])
+        ? (existingVars[HEADER_RELATION_FILTERS_KEY] as Record<string, unknown>)
+        : undefined;
+
+      if (!relationFragments || Object.keys(relationFragments).length === 0) {
+        setAdvancedFiltersRaw(value, nextVariables);
+        return;
+      }
+
+      const baseWhere = isRecord(nextVariables.where)
+        ? (nextVariables.where as Record<string, unknown>)
+        : undefined;
+      const mergedWhere = mergeWhereWithRelationFragments(baseWhere, relationFragments);
+
+      setAdvancedFiltersRaw(value, {
+        ...nextVariables,
+        [HEADER_BASE_WHERE_KEY]: baseWhere ?? {},
+        [HEADER_RELATION_FILTERS_KEY]: relationFragments,
+        where: mergedWhere,
+      });
     },
-    [setAdvancedFiltersRaw]
+    [filterVariables, setAdvancedFiltersRaw]
   );
 
   const clearAllFilters = useCallback(() => {
