@@ -78,7 +78,11 @@ import {
   ColumnFilterAgTrigger,
   ColumnFilterValue,
 } from "./components/filtering";
-import type { ComplexFilterInput, FilterFieldType, FilterOptionType } from "./types";
+import type {
+  ComplexFilterInput,
+  FilterFieldType,
+  FilterOptionType,
+} from "./types";
 
 // --- Types ---
 
@@ -125,12 +129,18 @@ type TableContextType<TData> = {
   columnOverrides?: Record<string, Partial<ColumnDef<TData>>>;
   // State for filtering
   columnFiltersState: Record<string, ColumnFilterValue>;
-  setColumnFilterValue: (colId: string, val: ColumnFilterValue | undefined, immediate?: boolean) => void;
+  setColumnFilterValue: (
+    colId: string,
+    val: ColumnFilterValue | undefined,
+    immediate?: boolean,
+  ) => void;
   columnFilterMetaMap: Map<string, FilterFieldType>;
   columnFiltersMode: "devextreme" | "ag-grid";
 };
 
-const TableContext = React.createContext<TableContextType<any> | undefined>(undefined);
+const TableContext = React.createContext<TableContextType<any> | undefined>(
+  undefined,
+);
 
 function useTableContext<TData>() {
   const ctx = React.useContext(TableContext);
@@ -140,7 +150,15 @@ function useTableContext<TData>() {
 
 // --- Helpers ---
 
-function SortableHead({ id, disabled, children }: { id: string; disabled?: boolean; children: React.ReactNode }) {
+function SortableHead({
+  id,
+  disabled,
+  children,
+}: {
+  id: string;
+  disabled?: boolean;
+  children: React.ReactNode;
+}) {
   const {
     attributes,
     listeners,
@@ -229,8 +247,12 @@ function TableRoot<TData>({
   };
 
   // --- Filtering Logic ---
-  const [columnFiltersState, setColumnFiltersState] = React.useState<Record<string, ColumnFilterValue>>({});
-  const [debouncedState, setDebouncedState] = React.useState<Record<string, ColumnFilterValue>>({});
+  const [columnFiltersState, setColumnFiltersState] = React.useState<
+    Record<string, ColumnFilterValue>
+  >({});
+  const [debouncedState, setDebouncedState] = React.useState<
+    Record<string, ColumnFilterValue>
+  >({});
 
   const columnFilterMetaMap = React.useMemo(() => {
     const map = new Map<string, FilterFieldType>();
@@ -239,7 +261,10 @@ function TableRoot<TData>({
   }, [availableFilters]);
 
   React.useEffect(() => {
-    const handler = setTimeout(() => setDebouncedState(columnFiltersState), 400);
+    const handler = setTimeout(
+      () => setDebouncedState(columnFiltersState),
+      400,
+    );
     return () => clearTimeout(handler);
   }, [columnFiltersState]);
 
@@ -253,7 +278,7 @@ function TableRoot<TData>({
         return next;
       });
     },
-    []
+    [],
   );
 
   // Notify parent of filter changes (simplified logic for brevity, assuming standard AND composition)
@@ -277,7 +302,7 @@ function TableRoot<TData>({
       const savedVis = localStorage.getItem(storageKey);
       if (savedVis) {
         const parsedIds: string[] = JSON.parse(savedVis);
-        cols.forEach(c => c.toggleVisibility(parsedIds.includes(c.id)));
+        cols.forEach((c) => c.toggleVisibility(parsedIds.includes(c.id)));
       }
     } catch {}
 
@@ -296,7 +321,10 @@ function TableRoot<TData>({
   const colVisibility = table.getState().columnVisibility;
   React.useEffect(() => {
     if (!storageKey) return;
-    const visibleIds = table.getAllLeafColumns().filter(c => c.getIsVisible()).map(c => c.id);
+    const visibleIds = table
+      .getAllLeafColumns()
+      .filter((c) => c.getIsVisible())
+      .map((c) => c.id);
     localStorage.setItem(storageKey, JSON.stringify(visibleIds));
     onColumnVisibilityChange?.(visibleIds);
   }, [colVisibility, storageKey, table, onColumnVisibilityChange]);
@@ -306,28 +334,33 @@ function TableRoot<TData>({
     if (!orderKey || !mergedOptions.enable_column_drag) return;
     localStorage.setItem(orderKey, JSON.stringify(colOrder));
     onColumnOrderChange?.(colOrder);
-  }, [colOrder, orderKey, mergedOptions.enable_column_drag, onColumnOrderChange]);
+  }, [
+    colOrder,
+    orderKey,
+    mergedOptions.enable_column_drag,
+    onColumnOrderChange,
+  ]);
 
   // --- Side Effects ---
   const sorting = table.getState().sorting;
   React.useEffect(() => {
     onSortingChange?.(sorting);
     if (onOrderingChange) {
-       const allColumns = table.getAllColumns();
-       const ordering = sorting.map((s) => {
-          const col = allColumns.find((c) => c.id === s.id);
-          const display = (col?.columnDef?.meta as any)?.display ?? s.id;
-          return s.desc ? `-${display}` : display;
-       });
-       onOrderingChange(ordering);
+      const allColumns = table.getAllColumns();
+      const ordering = sorting.map((s) => {
+        const col = allColumns.find((c) => c.id === s.id);
+        const display = (col?.columnDef?.meta as any)?.display ?? s.id;
+        return s.desc ? `-${display}` : display;
+      });
+      onOrderingChange(ordering);
     }
   }, [sorting, onSortingChange, onOrderingChange, table]);
 
   const rowSelection = table.getState().rowSelection;
   React.useEffect(() => {
     if (onSelectionChange) {
-        const rows = table.getSelectedRowModel().rows.map(r => r.original);
-        onSelectionChange(rows, rowSelection);
+      const rows = table.getSelectedRowModel().rows.map((r) => r.original);
+      onSelectionChange(rows, rowSelection);
     }
   }, [rowSelection, onSelectionChange, table]);
 
@@ -346,7 +379,9 @@ function TableRoot<TData>({
     columnFiltersMode: columnFiltersMode ?? "devextreme",
   };
 
-  return <TableContext.Provider value={ctxValue}>{children}</TableContext.Provider>;
+  return (
+    <TableContext.Provider value={ctxValue}>{children}</TableContext.Provider>
+  );
 }
 
 // ----------------------------------------------------------------------------
@@ -362,25 +397,49 @@ function TableHeaderSection({
   className?: string;
 }) {
   return (
-    <div className={cn("mb-4 rounded-lg shadow-sm bg-card/60 p-4 flex flex-wrap items-center justify-between gap-3", className)}>
+    <div
+      className={cn(
+        "mb-4 rounded-lg shadow-sm bg-card/60 p-4 flex flex-wrap items-center justify-between gap-3",
+        className,
+      )}
+    >
       {children}
     </div>
   );
 }
 
-function TableTitle({ title, subtitle }: { title: React.ReactNode; subtitle?: React.ReactNode }) {
+function TableTitle({
+  title,
+  subtitle,
+}: {
+  title: React.ReactNode;
+  subtitle?: React.ReactNode;
+}) {
   return (
     <div className="space-y-1">
-      <div className="text-lg font-semibold tracking-wide text-foreground">{title}</div>
+      <div className="text-lg font-semibold tracking-wide text-foreground">
+        {title}
+      </div>
       {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
     </div>
   );
 }
 
 // --- Toolbar Section ---
-function TableToolbar({ children, className }: { children: React.ReactNode; className?: string }) {
+function TableToolbar({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
   return (
-    <div className={cn("mb-4 rounded-lg shadow-sm bg-card/60 p-3 space-y-3", className)}>
+    <div
+      className={cn(
+        "mb-4 rounded-lg shadow-sm bg-card/60 p-3 space-y-3",
+        className,
+      )}
+    >
       <div className="flex flex-wrap items-center gap-3 justify-between">
         {children}
       </div>
@@ -426,28 +485,38 @@ function TableColumnToggle({ className }: { className?: string }) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" size="icon" className={cn("h-8 w-8", className)} title="Colonnes">
+        <Button
+          variant="outline"
+          size="icon"
+          className={cn("h-8 w-8", className)}
+          title="Colonnes"
+        >
           <Columns3Icon className="h-4 w-4" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-64 p-2">
-         <div className="mb-2">
-            <Input placeholder="Search..." value={search} onChange={e => setSearch(e.target.value)} className="h-8" />
-         </div>
-         <div className="max-h-64 overflow-auto">
-             {table.getAllLeafColumns()
-                .filter(c => c.id.toLowerCase().includes(search.toLowerCase()))
-                .map(col => (
-                    <DropdownMenuCheckboxItem
-                        key={col.id}
-                        checked={col.getIsVisible()}
-                        onCheckedChange={val => col.toggleVisibility(!!val)}
-                    >
-                        {col.columnDef.header?.toString() || col.id}
-                    </DropdownMenuCheckboxItem>
-                ))
-             }
-         </div>
+        <div className="mb-2">
+          <Input
+            placeholder="Search..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="h-8"
+          />
+        </div>
+        <div className="max-h-64 overflow-auto">
+          {table
+            .getAllLeafColumns()
+            .filter((c) => c.id.toLowerCase().includes(search.toLowerCase()))
+            .map((col) => (
+              <DropdownMenuCheckboxItem
+                key={col.id}
+                checked={col.getIsVisible()}
+                onCheckedChange={(val) => col.toggleVisibility(!!val)}
+              >
+                {col.columnDef.header?.toString() || col.id}
+              </DropdownMenuCheckboxItem>
+            ))}
+        </div>
       </DropdownMenuContent>
     </DropdownMenu>
   );
@@ -473,231 +542,360 @@ function TableContent({ className }: { className?: string }) {
 
   const sensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
-    useSensor(TouchSensor, { activationConstraint: { delay: 150, tolerance: 5 } }),
-    useSensor(KeyboardSensor)
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 150, tolerance: 5 },
+    }),
+    useSensor(KeyboardSensor),
   );
 
   const cellPadding = options.compact ? "py-0 px-3" : "py-1 px-3";
 
   // Actions Renderer
-  const renderActions = React.useCallback((row: any) => {
-    if (!rowActions) return null;
-    if (rowActions.render_cell) return rowActions.render_cell(row);
-    
-    return (
+  const renderActions = React.useCallback(
+    (row: any) => {
+      if (!rowActions) return null;
+      if (rowActions.render_cell) return rowActions.render_cell(row);
+
+      return (
         <div className="flex items-center justify-end gap-1">
-             {rowActions.on_edit && (
-                <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); rowActions.on_edit?.(row); }}>
-                    <Pencil className="h-4 w-4" />
+          {rowActions.on_edit && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={(e) => {
+                e.stopPropagation();
+                rowActions.on_edit?.(row);
+              }}
+            >
+              <Pencil className="h-4 w-4" />
+            </Button>
+          )}
+          {rowActions.on_delete && (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={(e) => {
+                e.stopPropagation();
+                rowActions.on_delete?.(row);
+              }}
+            >
+              <Trash className="h-4 w-4 text-destructive" />
+            </Button>
+          )}
+          {rowActions.menu_items && (
+            <DropdownMenu modal={false}>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="icon">
+                  <MoreHorizontal className="h-4 w-4" />
                 </Button>
-             )}
-             {rowActions.on_delete && (
-                <Button variant="ghost" size="icon" onClick={(e) => { e.stopPropagation(); rowActions.on_delete?.(row); }}>
-                    <Trash className="h-4 w-4 text-destructive" />
-                </Button>
-             )}
-             {rowActions.menu_items && (
-                 <DropdownMenu modal={false}>
-                    <DropdownMenuTrigger asChild>
-                         <Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4" /></Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        {rowActions.menu_items.map(item => (
-                            <DropdownMenuItem key={item.key} onClick={(e) => { e.stopPropagation(); item.on_click(row); }} variant={item.variant}>
-                                {item.icon} {item.label}
-                            </DropdownMenuItem>
-                        ))}
-                    </DropdownMenuContent>
-                 </DropdownMenu>
-             )}
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                {rowActions.menu_items.map((item) => (
+                  <DropdownMenuItem
+                    key={item.key}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      item.on_click(row);
+                    }}
+                    variant={item.variant}
+                  >
+                    {item.icon} {item.label}
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
         </div>
-    );
-  }, [rowActions]);
+      );
+    },
+    [rowActions],
+  );
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
     if (active.id !== over?.id && options.enable_column_drag) {
-        const currentOrder = table.getState().columnOrder;
-        const keys = table.getAllLeafColumns().map(c => c.id);
-        const oldIndex = (currentOrder.length ? currentOrder : keys).indexOf(String(active.id));
-        const newIndex = (currentOrder.length ? currentOrder : keys).indexOf(String(over!.id));
-        
-        const newOrder = [...(currentOrder.length ? currentOrder : keys)];
-        newOrder.splice(oldIndex, 1);
-        newOrder.splice(newIndex, 0, String(active.id));
-        table.setColumnOrder(newOrder);
+      const currentOrder = table.getState().columnOrder;
+      const keys = table.getAllLeafColumns().map((c) => c.id);
+      const oldIndex = (currentOrder.length ? currentOrder : keys).indexOf(
+        String(active.id),
+      );
+      const newIndex = (currentOrder.length ? currentOrder : keys).indexOf(
+        String(over!.id),
+      );
+
+      const newOrder = [...(currentOrder.length ? currentOrder : keys)];
+      newOrder.splice(oldIndex, 1);
+      newOrder.splice(newIndex, 0, String(active.id));
+      table.setColumnOrder(newOrder);
     }
   };
 
   const TableBlock = (
     <UITable className="h-full bg-primary/20">
       <TableHeader className="bg-muted/50">
-        {table.getHeaderGroups().map(headerGroup => (
-            <React.Fragment key={headerGroup.id}>
-                <TableRow>
-                     {/* Selection */}
-                     {options.enable_row_selection && options.selection_position !== "end" && (
-                         <TableHead className="w-px px-2"><Checkbox checked={table.getIsAllRowsSelected()} onCheckedChange={v => table.toggleAllRowsSelected(!!v)} /></TableHead>
-                     )}
-                     {/* Expander */}
-                     {expandable && expandable.position !== "end" && <TableHead className="w-px" />}
-                     {/* Row Actions Start */}
-                     {rowActions && rowActions.position === "start" && <TableHead className="w-px" />}
-                     
-                     {/* Columns */}
-                     <SortableContext items={headerGroup.headers.map(h => h.id)} strategy={horizontalListSortingStrategy}>
-                        {headerGroup.headers.filter(h => h.column.getIsVisible()).map(header => {
-                             const isSorted = header.column.getIsSorted();
-                             const canSort = header.column.getCanSort();
-                             
-                             return (
-                                 <TableHead key={header.id} className="whitespace-nowrap font-semibold">
-                                     <SortableHead id={header.id} disabled={!options.enable_column_drag}>
-                                         <div className="flex items-center gap-1 cursor-pointer" onClick={header.column.getToggleSortingHandler()}>
-                                             {flexRender(header.column.columnDef.header, header.getContext())}
-                                             {canSort && (
-                                                 isSorted === 'asc' ? <ChevronUp className="h-3 w-3" /> : isSorted === 'desc' ? <ChevronDown className="h-3 w-3" /> : <ArrowUpDown className="h-3 w-3 opacity-50" />
-                                             )}
-                                         </div>
-                                         {/* AG Grid Filter Trigger would go here */}
-                                         {columnFiltersMode === 'ag-grid' && columnFilterMetaMap.has(header.column.id) && (
-                                              <ColumnFilterAgTrigger 
-                                                columnId={header.column.id}
-                                                meta={columnFilterMetaMap.get(header.column.id)!}
-                                                value={columnFiltersState[header.column.id]}
-                                                onChange={(val) => setColumnFilterValue(header.column.id, val)}
-                                              />
-                                         )}
-                                     </SortableHead>
-                                 </TableHead>
-                             );
-                        })}
-                     </SortableContext>
-
-                     {/* Trailing Columns */}
-                     {rowActions && rowActions.position === "end" && <TableHead className="w-px sticky right-0 bg-muted/50" />}
-                     {expandable && expandable.position === "end" && <TableHead className="w-px" />}
-                     {options.enable_row_selection && options.selection_position === "end" && <TableHead className="w-px px-2" />}
-                </TableRow>
-                
-                {/* Filter Row (DevExtreme Mode) */}
-                {columnFiltersMode === 'devextreme' && (
-                    <TableRow className="bg-muted/30">
-                         {options.enable_row_selection && options.selection_position !== "end" && <TableHead />}
-                         {expandable && expandable.position !== "end" && <TableHead />}
-                         {rowActions && rowActions.position === "start" && <TableHead />}
-                         
-                         {headerGroup.headers.filter(h => h.column.getIsVisible()).map(header => {
-                             const meta = columnFilterMetaMap.get(header.column.id);
-                             return (
-                                 <TableHead key={header.id} className="p-1">
-                                     {meta ? (
-                                         <ColumnFilterInput 
-                                            columnId={header.column.id} 
-                                            meta={meta}
-                                            value={columnFiltersState[header.column.id]}
-                                            onChange={(val) => setColumnFilterValue(header.column.id, val)}
-                                         />
-                                     ) : null}
-                                 </TableHead>
-                             );
-                         })}
-
-                         {rowActions && rowActions.position === "end" && <TableHead />}
-                         {expandable && expandable.position === "end" && <TableHead />}
-                         {options.enable_row_selection && options.selection_position === "end" && <TableHead />}
-                    </TableRow>
+        {table.getHeaderGroups().map((headerGroup) => (
+          <React.Fragment key={headerGroup.id}>
+            <TableRow>
+              {/* Selection */}
+              {options.enable_row_selection &&
+                options.selection_position !== "end" && (
+                  <TableHead className="w-px px-2">
+                    <Checkbox
+                      checked={table.getIsAllRowsSelected()}
+                      onCheckedChange={(v) => table.toggleAllRowsSelected(!!v)}
+                    />
+                  </TableHead>
                 )}
-            </React.Fragment>
+              {/* Expander */}
+              {expandable && expandable.position !== "end" && (
+                <TableHead className="w-px" />
+              )}
+              {/* Row Actions Start */}
+              {rowActions && rowActions.position === "start" && (
+                <TableHead className="w-px" />
+              )}
+
+              {/* Columns */}
+              <SortableContext
+                items={headerGroup.headers.map((h) => h.id)}
+                strategy={horizontalListSortingStrategy}
+              >
+                {headerGroup.headers
+                  .filter((h) => h.column.getIsVisible())
+                  .map((header) => {
+                    const isSorted = header.column.getIsSorted();
+                    const canSort = header.column.getCanSort();
+
+                    return (
+                      <TableHead
+                        key={header.id}
+                        className="whitespace-nowrap font-semibold"
+                      >
+                        <SortableHead
+                          id={header.id}
+                          disabled={!options.enable_column_drag}
+                        >
+                          <div
+                            className="flex items-center gap-1 cursor-pointer"
+                            onClick={header.column.getToggleSortingHandler()}
+                          >
+                            {flexRender(
+                              header.column.columnDef.header,
+                              header.getContext(),
+                            )}
+                            {canSort &&
+                              (isSorted === "asc" ? (
+                                <ChevronUp className="h-3 w-3" />
+                              ) : isSorted === "desc" ? (
+                                <ChevronDown className="h-3 w-3" />
+                              ) : (
+                                <ArrowUpDown className="h-3 w-3 opacity-50" />
+                              ))}
+                          </div>
+                          {/* AG Grid Filter Trigger would go here */}
+                          {columnFiltersMode === "ag-grid" &&
+                            columnFilterMetaMap.has(header.column.id) && (
+                              <ColumnFilterAgTrigger
+                                columnId={header.column.id}
+                                meta={
+                                  columnFilterMetaMap.get(header.column.id)!
+                                }
+                                value={columnFiltersState[header.column.id]}
+                                onChange={(val) =>
+                                  setColumnFilterValue(header.column.id, val)
+                                }
+                              />
+                            )}
+                        </SortableHead>
+                      </TableHead>
+                    );
+                  })}
+              </SortableContext>
+
+              {/* Trailing Columns */}
+              {rowActions && rowActions.position === "end" && (
+                <TableHead className="w-px sticky right-0 bg-muted/50" />
+              )}
+              {expandable && expandable.position === "end" && (
+                <TableHead className="w-px" />
+              )}
+              {options.enable_row_selection &&
+                options.selection_position === "end" && (
+                  <TableHead className="w-px px-2" />
+                )}
+            </TableRow>
+
+            {/* Filter Row (DevExtreme Mode) */}
+            {columnFiltersMode === "devextreme" && (
+              <TableRow className="bg-muted/30">
+                {options.enable_row_selection &&
+                  options.selection_position !== "end" && <TableHead />}
+                {expandable && expandable.position !== "end" && <TableHead />}
+                {rowActions && rowActions.position === "start" && <TableHead />}
+
+                {headerGroup.headers
+                  .filter((h) => h.column.getIsVisible())
+                  .map((header) => {
+                    const meta = columnFilterMetaMap.get(header.column.id);
+                    return (
+                      <TableHead key={header.id} className="p-1">
+                        {meta ? (
+                          <ColumnFilterInput
+                            columnId={header.column.id}
+                            meta={meta}
+                            value={columnFiltersState[header.column.id]}
+                            onChange={(val) =>
+                              setColumnFilterValue(header.column.id, val)
+                            }
+                          />
+                        ) : null}
+                      </TableHead>
+                    );
+                  })}
+
+                {rowActions && rowActions.position === "end" && <TableHead />}
+                {expandable && expandable.position === "end" && <TableHead />}
+                {options.enable_row_selection &&
+                  options.selection_position === "end" && <TableHead />}
+              </TableRow>
+            )}
+          </React.Fragment>
         ))}
       </TableHeader>
-      
+
       <TableBody>
-         {loading && (
-             <TableRow>
-                 <TableCell colSpan={99} className="h-24 text-center">
-                     <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
-                 </TableCell>
-             </TableRow>
-         )}
-         {!loading && table.getRowModel().rows.length === 0 && (
-             <TableRow>
-                 <TableCell colSpan={99} className="h-24 text-center text-muted-foreground">
-                     {emptyMessage}
-                 </TableCell>
-             </TableRow>
-         )}
-         {!loading && table.getRowModel().rows.map(row => (
-             <React.Fragment key={row.id}>
-                 <TableRow 
-                    data-state={row.getIsSelected() ? "selected" : undefined}
-                    className={cn("hover:bg-muted/50", onRowClick && "cursor-pointer")}
-                    onClick={() => onRowClick?.(row.original)}
-                 >
-                     {/* Selection */}
-                     {options.enable_row_selection && options.selection_position !== "end" && (
-                         <TableCell className={cn(cellPadding, "w-px")} onClick={e => e.stopPropagation()}>
-                             <Checkbox checked={row.getIsSelected()} onCheckedChange={v => row.toggleSelected(!!v)} />
-                         </TableCell>
-                     )}
-                     {/* Expander */}
-                     {expandable && expandable.position !== "end" && (
-                         <TableCell className={cn(cellPadding, "w-px")} onClick={e => e.stopPropagation()}>
-                             <Button variant="ghost" size="sm" onClick={() => row.toggleExpanded()}>
-                                 {row.getIsExpanded() ? <ChevronDown className="h-4 w-4"/> : <ChevronRight className="h-4 w-4"/>}
-                             </Button>
-                         </TableCell>
-                     )}
-                     {/* Row Actions */}
-                     {rowActions && rowActions.position === "start" && (
-                         <TableCell className={cn(cellPadding, "w-px whitespace-nowrap")}>
-                             {renderActions(row.original)}
-                         </TableCell>
-                     )}
+        {loading && (
+          <TableRow>
+            <TableCell colSpan={99} className="h-24 text-center">
+              <Loader2 className="h-6 w-6 animate-spin mx-auto text-muted-foreground" />
+            </TableCell>
+          </TableRow>
+        )}
+        {!loading && table.getRowModel().rows.length === 0 && (
+          <TableRow>
+            <TableCell
+              colSpan={99}
+              className="h-24 text-center text-muted-foreground"
+            >
+              {emptyMessage}
+            </TableCell>
+          </TableRow>
+        )}
+        {!loading &&
+          table.getRowModel().rows.map((row) => (
+            <React.Fragment key={row.id}>
+              <TableRow
+                data-state={row.getIsSelected() ? "selected" : undefined}
+                className={cn(
+                  "hover:bg-muted/50",
+                  onRowClick && "cursor-pointer",
+                )}
+                onClick={() => onRowClick?.(row.original)}
+              >
+                {/* Selection */}
+                {options.enable_row_selection &&
+                  options.selection_position !== "end" && (
+                    <TableCell
+                      className={cn(cellPadding, "w-px")}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <Checkbox
+                        checked={row.getIsSelected()}
+                        onCheckedChange={(v) => row.toggleSelected(!!v)}
+                      />
+                    </TableCell>
+                  )}
+                {/* Expander */}
+                {expandable && expandable.position !== "end" && (
+                  <TableCell
+                    className={cn(cellPadding, "w-px")}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => row.toggleExpanded()}
+                    >
+                      {row.getIsExpanded() ? (
+                        <ChevronDown className="h-4 w-4" />
+                      ) : (
+                        <ChevronRight className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </TableCell>
+                )}
+                {/* Row Actions */}
+                {rowActions && rowActions.position === "start" && (
+                  <TableCell
+                    className={cn(cellPadding, "w-px whitespace-nowrap")}
+                  >
+                    {renderActions(row.original)}
+                  </TableCell>
+                )}
 
-                     {/* Data Cells */}
-                     {row.getVisibleCells().map(cell => {
-                         const override = columnOverrides?.[cell.column.id];
-                         return (
-                             <TableCell key={cell.id} className={cellPadding}>
-                                 {flexRender(override?.cell ?? cell.column.columnDef.cell, cell.getContext())}
-                             </TableCell>
-                         );
-                     })}
+                {/* Data Cells */}
+                {row.getVisibleCells().map((cell) => {
+                  const override = columnOverrides?.[cell.column.id];
+                  return (
+                    <TableCell key={cell.id} className={cellPadding}>
+                      {flexRender(
+                        override?.cell ?? cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
+                    </TableCell>
+                  );
+                })}
 
-                     {/* Trailing */}
-                     {rowActions && rowActions.position === "end" && (
-                         <TableCell className={cn(cellPadding, "w-px whitespace-nowrap sticky right-0 bg-background/80 backdrop-blur-sm")}>
-                             {renderActions(row.original)}
-                         </TableCell>
-                     )}
-                     {expandable && expandable.position === "end" && <TableCell className="w-px" />}
-                     {options.enable_row_selection && options.selection_position === "end" && <TableCell className="w-px" />}
-                 </TableRow>
-                 
-                 {/* Expanded Content */}
-                 {row.getIsExpanded() && expandable && (
-                     <TableRow className="bg-muted/10">
-                         <TableCell colSpan={99}>
-                             {expandable.render(row.original)}
-                         </TableCell>
-                     </TableRow>
-                 )}
-             </React.Fragment>
-         ))}
+                {/* Trailing */}
+                {rowActions && rowActions.position === "end" && (
+                  <TableCell
+                    className={cn(
+                      cellPadding,
+                      "w-px whitespace-nowrap sticky right-0 bg-background/80 backdrop-blur-sm",
+                    )}
+                  >
+                    {renderActions(row.original)}
+                  </TableCell>
+                )}
+                {expandable && expandable.position === "end" && (
+                  <TableCell className="w-px" />
+                )}
+                {options.enable_row_selection &&
+                  options.selection_position === "end" && (
+                    <TableCell className="w-px" />
+                  )}
+              </TableRow>
+
+              {/* Expanded Content */}
+              {row.getIsExpanded() && expandable && (
+                <TableRow className="bg-muted/10">
+                  <TableCell colSpan={99}>
+                    {expandable.render(row.original)}
+                  </TableCell>
+                </TableRow>
+              )}
+            </React.Fragment>
+          ))}
       </TableBody>
     </UITable>
   );
 
   return (
     <Card className={cn("flex flex-col shadow-sm h-full min-h-0", className)}>
-        <CardContent className="flex-1 min-h-0 overflow-auto p-0">
-            {options.enable_column_drag ? (
-                <DndContext sensors={sensors} collisionDetection={closestCenter} modifiers={[restrictToHorizontalAxis]} onDragEnd={handleDragEnd}>
-                    {TableBlock}
-                </DndContext>
-            ) : TableBlock}
-        </CardContent>
+      <CardContent className="flex-1 min-h-0 overflow-auto p-0">
+        {options.enable_column_drag ? (
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            modifiers={[restrictToHorizontalAxis]}
+            onDragEnd={handleDragEnd}
+          >
+            {TableBlock}
+          </DndContext>
+        ) : (
+          TableBlock
+        )}
+      </CardContent>
     </Card>
   );
 }
@@ -710,26 +908,74 @@ function TablePagination({ className }: { className?: string }) {
   const pageCount = table.getPageCount();
 
   return (
-    <div className={cn("mt-3 flex items-center justify-between gap-4 text-xs text-muted-foreground", className)}>
-        <div className="flex items-center gap-2">
-            <span>Lignes par page</span>
-            <Select value={String(pageSize)} onValueChange={val => table.setPageSize(Number(val))}>
-                <SelectTrigger className="h-8 w-[70px]"><SelectValue /></SelectTrigger>
-                <SelectContent>
-                    {[10, 20, 50, 100].map(s => <SelectItem key={s} value={String(s)}>{s}</SelectItem>)}
-                </SelectContent>
-            </Select>
+    <div
+      className={cn(
+        "mt-3 flex items-center justify-between gap-4 text-xs text-muted-foreground",
+        className,
+      )}
+    >
+      <div className="flex items-center gap-2">
+        <span>Lignes par page</span>
+        <Select
+          value={String(pageSize)}
+          onValueChange={(val) => table.setPageSize(Number(val))}
+        >
+          <SelectTrigger className="h-8 w-[70px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {[10, 20, 50, 100].map((s) => (
+              <SelectItem key={s} value={String(s)}>
+                {s}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <div className="flex items-center gap-2">
+        <span>
+          Page {pageIndex + 1} sur {pageCount || 1}
+        </span>
+        <div className="flex items-center gap-1">
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8"
+            disabled={!table.getCanPreviousPage()}
+            onClick={() => table.setPageIndex(0)}
+          >
+            <ChevronsLeft className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8"
+            disabled={!table.getCanPreviousPage()}
+            onClick={() => table.previousPage()}
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8"
+            disabled={!table.getCanNextPage()}
+            onClick={() => table.nextPage()}
+          >
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            className="h-8 w-8"
+            disabled={!table.getCanNextPage()}
+            onClick={() => table.setPageIndex(pageCount - 1)}
+          >
+            <ChevronsRight className="h-4 w-4" />
+          </Button>
         </div>
-        
-        <div className="flex items-center gap-2">
-             <span>Page {pageIndex + 1} sur {pageCount || 1}</span>
-             <div className="flex items-center gap-1">
-                 <Button variant="outline" size="icon" className="h-8 w-8" disabled={!table.getCanPreviousPage()} onClick={() => table.setPageIndex(0)}><ChevronsLeft className="h-4 w-4" /></Button>
-                 <Button variant="outline" size="icon" className="h-8 w-8" disabled={!table.getCanPreviousPage()} onClick={() => table.previousPage()}><ChevronLeft className="h-4 w-4" /></Button>
-                 <Button variant="outline" size="icon" className="h-8 w-8" disabled={!table.getCanNextPage()} onClick={() => table.nextPage()}><ChevronRight className="h-4 w-4" /></Button>
-                 <Button variant="outline" size="icon" className="h-8 w-8" disabled={!table.getCanNextPage()} onClick={() => table.setPageIndex(pageCount - 1)}><ChevronsRight className="h-4 w-4" /></Button>
-             </div>
-        </div>
+      </div>
     </div>
   );
 }

@@ -24,6 +24,7 @@ import { Loader2, PlusCircle } from "lucide-react";
 import { Button } from "@/lib/components/ui/button";
 import { useAuthContext } from "@/auth/context";
 import type {
+  BaseModelTableColumnActionsInput,
   BaseModelTableColumnDef,
   BaseModelTableFieldsInput,
   BaseModelTableColumnOrderingConfig,
@@ -35,6 +36,7 @@ import type {
 } from "./types";
 import {
   findMutation,
+  getSyntheticRelationCountSource,
   isAccessorExcluded,
   normalizeBaseModelTableFieldsInput,
 } from "./utils";
@@ -305,6 +307,7 @@ type BaseTableContentProps = {
   skipCount?: boolean;
   disableSorting?: boolean;
   enableSelection?: boolean;
+  columnActions?: BaseModelTableColumnActionsInput;
 };
 
 function BaseTableContent({
@@ -319,6 +322,7 @@ function BaseTableContent({
   skipCount,
   disableSorting,
   enableSelection,
+  columnActions,
 }: BaseTableContentProps) {
   const { user } = useAuthContext();
   const {
@@ -358,9 +362,31 @@ function BaseTableContent({
   }, [user?.settings]);
 
   // Check if we have persisted state for this table (loaded synchronously)
-  const persistedStateRef = React.useRef<ReturnType<typeof loadPersistedTableState> | null | undefined>(undefined);
-  if (persistedStateRef.current === undefined) {
-    persistedStateRef.current = loadPersistedTableState(effectiveKey, userTableConfigs);
+  const persistedStateRef = React.useRef<
+    ReturnType<typeof loadPersistedTableState> | null | undefined
+  >(undefined);
+  const persistedSeedRef = React.useRef<{
+    key: string;
+    userId: string | null;
+    settingsRef: unknown;
+  } | null>(null);
+  const currentUserId = user?.id ? String(user.id) : null;
+  const shouldRefreshPersistedSeed =
+    !persistedSeedRef.current ||
+    persistedSeedRef.current.key !== effectiveKey ||
+    persistedSeedRef.current.userId !== currentUserId ||
+    persistedSeedRef.current.settingsRef !== userTableConfigs;
+  if (shouldRefreshPersistedSeed) {
+    persistedSeedRef.current = {
+      key: effectiveKey,
+      userId: currentUserId,
+      settingsRef: userTableConfigs,
+    };
+    persistedStateRef.current = loadPersistedTableState(
+      effectiveKey,
+      userTableConfigs,
+      { allowLocalFallback: !user?.id },
+    );
   }
 
   const queryConfig = React.useMemo(
@@ -382,6 +408,83 @@ function BaseTableContent({
     () => new Set(normalizedFieldsConfig.exclude),
     [normalizedFieldsConfig.exclude],
   );
+  const hasConfiguredDisplay = normalizedFieldsConfig.display !== undefined;
+
+  const relationLookupForDefaults = React.useMemo(() => {
+    const lookup = new Map<string, RelationshipSchema>();
+    metadata?.relationships?.forEach((relation) => {
+      if (relation.name) lookup.set(relation.name, relation);
+      if (relation.fieldName) lookup.set(relation.fieldName, relation);
+    });
+    return lookup;
+  }, [metadata?.relationships]);
+
+  const defaultHiddenColumnIds = React.useMemo(() => {
+    const hidden = new Set<string>();
+    if (hasConfiguredDisplay || !metadata?.fields) {
+      return hidden;
+    }
+
+    const normalizeKey = (value: string) =>
+      value.replace(/[_-]/g, "").toLowerCase();
+    const toCamelCase = (value: string) =>
+      value.replace(/_([a-z])/g, (_, letter: string) => letter.toUpperCase());
+    const toSnakeCase = (value: string) =>
+      value
+        .replace(/([A-Z])/g, "_$1")
+        .toLowerCase()
+        .replace(/^_/, "");
+
+    const resolveRelationCountSource = (accessor: string, field: FieldSchema) => {
+      const syntheticSource = getSyntheticRelationCountSource(field);
+      if (syntheticSource) return syntheticSource;
+      const stripped = accessor.replace(/count$/i, "");
+      if (!stripped || stripped === accessor) return null;
+      const candidates = new Set<string>([
+        stripped,
+        toCamelCase(stripped),
+        toSnakeCase(stripped),
+      ]);
+      for (const candidate of candidates) {
+        if (relationLookupForDefaults.has(candidate)) return candidate;
+      }
+      return null;
+    };
+
+    metadata.fields.forEach((field) => {
+      const accessor = field.fieldName || field.name;
+      const normalized = normalizeKey(accessor);
+      const relation =
+        relationLookupForDefaults.get(field.name) ??
+        relationLookupForDefaults.get(field.fieldName || "");
+      const relationType = relation?.relationType?.toLowerCase() || "";
+      const isRelationCount = !!resolveRelationCountSource(accessor, field);
+      const isTimestamp =
+        normalized === "createdat" ||
+        normalized === "updatedat" ||
+        normalized === "updateat";
+      const hideByDefault =
+        field.isPrimaryKey ||
+        normalized === "id" ||
+        field.isJson ||
+        field.fieldType === "TextField" ||
+        isTimestamp ||
+        isRelationCount ||
+        (!!relation &&
+          (relation.isToMany ||
+            relation.isReverse ||
+            relationType.includes("many_to_many") ||
+            relationType.includes("manytomany") ||
+            relationType.includes("reverse_fk")));
+
+      if (hideByDefault) {
+        hidden.add(accessor);
+        hidden.add(field.name);
+      }
+    });
+
+    return hidden;
+  }, [hasConfiguredDisplay, metadata?.fields, relationLookupForDefaults]);
 
   const columnDefs = React.useMemo(() => {
     if (!metadata) return null;
@@ -396,6 +499,39 @@ function BaseTableContent({
       if (relation.name) relationLookup.set(relation.name, relation);
       if (relation.fieldName) relationLookup.set(relation.fieldName, relation);
     });
+    const toCamelCase = (value: string) =>
+      value.replace(/_([a-z])/g, (_, letter: string) => letter.toUpperCase());
+    const toSnakeCase = (value: string) =>
+      value
+        .replace(/([A-Z])/g, "_$1")
+        .toLowerCase()
+        .replace(/^_/, "");
+    const resolveRelationCountSource = (accessor: string, field?: FieldSchema) => {
+      const syntheticSource = field
+        ? getSyntheticRelationCountSource(field)
+        : undefined;
+      if (syntheticSource) return syntheticSource;
+      const stripped = accessor.replace(/count$/i, "");
+      if (!stripped || stripped === accessor) return null;
+      const candidates = new Set<string>([
+        stripped,
+        toCamelCase(stripped),
+        toSnakeCase(stripped),
+      ]);
+      for (const candidate of candidates) {
+        if (relationLookup.has(candidate)) return candidate;
+      }
+      return null;
+    };
+    const resolveRootValue = (row: Record<string, unknown>, root: string) => {
+      const candidates = [root, toCamelCase(root), toSnakeCase(root)];
+      for (const key of candidates) {
+        if (Object.prototype.hasOwnProperty.call(row, key)) {
+          return row[key];
+        }
+      }
+      return undefined;
+    };
 
     const buildColumnDef = (
       accessor: string,
@@ -407,11 +543,23 @@ function BaseTableContent({
       const fieldMeta = fieldLookup.get(root);
       const relationMeta = relationLookup.get(root);
       const isRelation = !!fieldMeta?.isRelation || !!relationMeta;
+      const isToManyRelation = !!relationMeta?.isToMany;
+      const relationCountSource = resolveRelationCountSource(accessor, fieldMeta);
       const displayField = relations?.[root]?.display ?? "desc";
       const displayAccessor =
-        parts.length === 1 && isRelation
+        parts.length === 1 && isRelation && !isToManyRelation
           ? `${accessor}.${displayField}`
-          : accessor;
+          : isToManyRelation && parts.length > 1
+            ? root
+            : accessor;
+      const relationCountRender: BaseModelTableColumnDef["render"] | undefined =
+        relationCountSource
+          ? (_value, row) => {
+              const relationValue = resolveRootValue(row, relationCountSource);
+              if (Array.isArray(relationValue)) return relationValue.length;
+              return 0;
+            }
+          : undefined;
       const title =
         titleOverride ||
         fieldMeta?.verboseName ||
@@ -423,7 +571,7 @@ function BaseTableContent({
         id: accessor,
         accessor: displayAccessor,
         title,
-        render,
+        render: render ?? relationCountRender,
       };
     };
 
@@ -434,8 +582,6 @@ function BaseTableContent({
         return !isAccessorExcluded(accessor, excludedAccessors);
       },
     );
-    const hasConfiguredDisplay = normalizedFieldsConfig.display !== undefined;
-
     const defaultDisplay = metadata.fields
       .filter((field) => field.visibility !== "hidden")
       .map((field) => field.fieldName || field.name)
@@ -556,10 +702,18 @@ function BaseTableContent({
 
     // Use persisted visibility if available, otherwise use current context
     const persistedVisibility = persistedStateRef.current?.columnVisibility;
-    const effectiveVisibility =
-      persistedVisibility && Object.keys(persistedVisibility).length > 0
-        ? persistedVisibility
-        : columnVisibility;
+    const persistedVisibilityVersion =
+      persistedStateRef.current?.visibilityVersion ?? 0;
+    const shouldHydrateFromPersistedVisibility =
+      !!persistedVisibility &&
+      Object.keys(persistedVisibility).length > 0 &&
+      Object.keys(columnVisibility).length === 0;
+    const effectiveVisibility = shouldHydrateFromPersistedVisibility
+      ? persistedVisibility
+      : columnVisibility;
+    const shouldForceLegacyHiddenDefaults =
+      shouldHydrateFromPersistedVisibility &&
+      persistedVisibilityVersion < 3;
 
     const targetColumns = columnDefs;
     if (targetColumns && targetColumns.length > 0) {
@@ -570,16 +724,21 @@ function BaseTableContent({
       let visibilityChanged = false;
       columnIds.forEach((id) => {
         if (nextVisibility[id] === undefined) {
-          nextVisibility[id] = true;
+          nextVisibility[id] = !defaultHiddenColumnIds.has(id);
+          visibilityChanged = true;
+          return;
+        }
+        if (
+          shouldForceLegacyHiddenDefaults &&
+          defaultHiddenColumnIds.has(id) &&
+          nextVisibility[id] !== false
+        ) {
+          nextVisibility[id] = false;
           visibilityChanged = true;
         }
       });
       // Only update if there was a change or if we need to apply persisted state
-      const needsUpdate =
-        visibilityChanged ||
-        (persistedVisibility &&
-          Object.keys(persistedVisibility).length > 0 &&
-          Object.keys(columnVisibility).length === 0);
+      const needsUpdate = visibilityChanged || shouldHydrateFromPersistedVisibility;
       if (needsUpdate) {
         setColumnVisibility(nextVisibility);
       }
@@ -589,22 +748,30 @@ function BaseTableContent({
     const visibleFields = metadata.fields.filter(
       (f) => f.visibility !== "hidden",
     );
-    const visibleNames = visibleFields.map((field) => field.name);
+    const visibleNames = visibleFields.map(
+      (field) => field.fieldName || field.name,
+    );
     resolveColumnOrder(visibleNames);
 
     const nextVisibility: Record<string, boolean> = { ...effectiveVisibility };
     let visibilityChanged = false;
     visibleFields.forEach((field) => {
-      if (nextVisibility[field.name] === undefined) {
-        nextVisibility[field.name] = true;
+      const accessor = field.fieldName || field.name;
+      if (nextVisibility[accessor] === undefined) {
+        nextVisibility[accessor] = !defaultHiddenColumnIds.has(accessor);
+        visibilityChanged = true;
+        return;
+      }
+        if (
+          shouldForceLegacyHiddenDefaults &&
+          defaultHiddenColumnIds.has(accessor) &&
+          nextVisibility[accessor] !== false
+        ) {
+        nextVisibility[accessor] = false;
         visibilityChanged = true;
       }
     });
-    const needsUpdate =
-      visibilityChanged ||
-      (persistedVisibility &&
-        Object.keys(persistedVisibility).length > 0 &&
-        Object.keys(columnVisibility).length === 0);
+    const needsUpdate = visibilityChanged || shouldHydrateFromPersistedVisibility;
     if (needsUpdate) {
       setColumnVisibility(nextVisibility);
     }
@@ -614,6 +781,7 @@ function BaseTableContent({
     columnVisibility,
     setColumnVisibility,
     resolveColumnOrder,
+    defaultHiddenColumnIds,
   ]);
 
   React.useEffect(() => {
@@ -709,6 +877,7 @@ function BaseTableContent({
                             columns={columnDefs ?? undefined}
                             enableSelection={enableSelection}
                             refetch={refetch}
+                            columnActions={columnActions}
                             performance={performance}
                             scrollContainerRef={tableScrollRef}
                             infiniteMode={isInfiniteMode}
@@ -775,6 +944,7 @@ export interface BaseModelTableProps {
   skipCount?: boolean;
   disableSorting?: boolean;
   enableSelection?: boolean;
+  columnActions?: BaseModelTableColumnActionsInput;
 }
 
 export function BaseModelTable({
@@ -793,6 +963,7 @@ export function BaseModelTable({
   skipCount,
   disableSorting,
   enableSelection = false,
+  columnActions,
 }: BaseModelTableProps) {
   const tableInstanceKey = `${app}:${model}`;
 
@@ -817,6 +988,7 @@ export function BaseModelTable({
             skipCount={skipCount}
             disableSorting={disableSorting}
             enableSelection={enableSelection}
+            columnActions={columnActions}
           >
             {children}
           </BaseTableContent>
@@ -848,6 +1020,7 @@ export function ModelTableV2({
       skipCount={baseTable?.skipCount}
       disableSorting={baseTable?.disableSorting}
       enableSelection={baseTable?.enableSelection}
+      columnActions={baseTable?.columnActions}
     >
       <ModelTableV2Content
         filterPanel={filterPanel}

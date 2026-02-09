@@ -11,6 +11,7 @@ import type {
   RelationshipSchema,
 } from "../types";
 import {
+  getSyntheticRelationCountSource,
   isAccessorExcluded,
   normalizeBaseModelTableFieldsInput,
 } from "../utils";
@@ -38,12 +39,37 @@ function buildDynamicQuery(
     if (relation.name) relationLookup.set(relation.name, relation);
     if (relation.fieldName) relationLookup.set(relation.fieldName, relation);
   });
+  const relationCountSourceLookup = new Map<string, string>();
+  fields.forEach((field) => {
+    const source = getSyntheticRelationCountSource(field);
+    if (!source) return;
+    if (field.name) relationCountSourceLookup.set(field.name, source);
+    if (field.fieldName) relationCountSourceLookup.set(field.fieldName, source);
+  });
 
   const relationConfig = fieldConfig?.relations ?? {};
   const normalizedFieldsConfig = normalizeBaseModelTableFieldsInput(
     fieldConfig?.fields,
   );
   const excludedAccessors = new Set(normalizedFieldsConfig.exclude);
+
+  const resolveRelationNameForCountAccessor = (accessor: string) => {
+    const explicit = relationCountSourceLookup.get(accessor);
+    if (explicit) return explicit;
+    const stripped = accessor.replace(/count$/i, "");
+    if (!stripped || stripped === accessor) return null;
+    const candidates = new Set<string>([
+      stripped,
+      stripped.charAt(0).toLowerCase() + stripped.slice(1),
+      stripped.charAt(0).toUpperCase() + stripped.slice(1),
+      stripped.replace(/([A-Z])/g, "_$1").toLowerCase().replace(/^_/, ""),
+      stripped.replace(/_([a-z])/g, (_, letter: string) => letter.toUpperCase()),
+    ]);
+    for (const candidate of candidates) {
+      if (relationLookup.has(candidate)) return candidate;
+    }
+    return null;
+  };
 
   const isRelationField = (name: string) =>
     fields.some(
@@ -57,10 +83,9 @@ function buildDynamicQuery(
     const config = relationConfig[relationName];
     const selections = new Set<string>(config?.fields ?? []);
     selections.add("id");
+    selections.add("desc");
     if (config?.display) {
       selections.add(config.display);
-    } else {
-      selections.add("desc");
     }
     if (
       relation?.lookupField &&
@@ -72,20 +97,35 @@ function buildDynamicQuery(
     return `${relationName} {\n        ${Array.from(selections).join("\n        ")}\n      }`;
   };
 
-  const buildDefaultFieldSelection = () =>
+  const buildDefaultFieldSelection = () => {
+    const selections: string[] = [];
+    const seenSelections = new Set<string>();
+    const pushSelection = (selection: string) => {
+      if (!selection || seenSelections.has(selection)) return;
+      seenSelections.add(selection);
+      selections.push(selection);
+    };
     fields
       .filter((f) => {
         if (f.visibility === "hidden") return false;
         const accessor = f.fieldName || f.name;
         return !isAccessorExcluded(accessor, excludedAccessors);
       })
-      .map((field) => {
-        if (!field.isRelation) {
-          return field.name;
+      .forEach((field) => {
+        const accessor = field.fieldName || field.name;
+        const countSource = resolveRelationNameForCountAccessor(accessor);
+        if (countSource) {
+          pushSelection(buildRelationSelection(countSource));
+          return;
         }
-        return buildRelationSelection(field.name);
-      })
-      .join("\n      ");
+        if (field.isRelation) {
+          pushSelection(buildRelationSelection(field.name));
+          return;
+        }
+        pushSelection(field.name);
+      });
+    return selections.join("\n      ");
+  };
 
   const configuredDisplayFields = normalizedFieldsConfig.display?.filter(
     (entry) => {
@@ -126,7 +166,10 @@ function buildDynamicQuery(
           const config = relationConfig[relationName];
           const defaults = new Set<string>(config?.fields ?? []);
           defaults.add("id");
-          defaults.add(config?.display ?? "desc");
+          defaults.add("desc");
+          if (config?.display) {
+            defaults.add(config.display);
+          }
           if (
             relation?.lookupField &&
             relation.lookupField !== "id" &&
@@ -145,6 +188,11 @@ function buildDynamicQuery(
           if (!root) return;
 
           if (rest.length === 0) {
+            const countSource = resolveRelationNameForCountAccessor(root);
+            if (countSource) {
+              addRelationDefaults(countSource);
+              return;
+            }
             if (isRelationField(root)) {
               addRelationDefaults(root);
             } else {

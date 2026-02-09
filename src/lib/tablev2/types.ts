@@ -345,6 +345,43 @@ export type BaseModelTableRefetch = (
   variables?: Record<string, unknown>,
 ) => Promise<unknown>;
 
+export type BaseModelTableColumnActionContext = {
+  row: Record<string, unknown>;
+  data: Record<string, unknown>[];
+  refetch?: BaseModelTableRefetch;
+};
+
+type BaseModelTableColumnActionBase = {
+  key?: string;
+  icon?: ReactNode;
+  variant?: "default" | "destructive";
+  className?: string;
+  disabled?: boolean;
+};
+
+export type BaseModelTableColumnActionRender =
+  BaseModelTableColumnActionBase & {
+    render: (context: BaseModelTableColumnActionContext) => ReactNode;
+  };
+
+export type BaseModelTableColumnActionClick =
+  BaseModelTableColumnActionBase & {
+    label: string;
+    onClick: (
+      context: BaseModelTableColumnActionContext,
+    ) => void | Promise<void>;
+  };
+
+export type BaseModelTableColumnAction =
+  | BaseModelTableColumnActionRender
+  | BaseModelTableColumnActionClick;
+
+export type BaseModelTableColumnActionsInput =
+  | BaseModelTableColumnAction[]
+  | ((context: BaseModelTableColumnActionContext) =>
+      | BaseModelTableColumnAction[]
+      | undefined);
+
 export type BaseModelTableRenderContext = {
   accessor: string;
   columnId: string;

@@ -10,6 +10,7 @@ import {
 } from "@/graphql/mutations";
 
 const STORAGE_PREFIX = "rail-table-v2";
+const VISIBILITY_SCHEMA_VERSION = 3;
 
 export interface PersistedTableState {
   columnOrder: string[];
@@ -17,6 +18,7 @@ export interface PersistedTableState {
   perPage: number;
   density: TableDensity;
   wrapCells: boolean;
+  visibilityVersion?: number;
 }
 
 type TableConfigs = Record<string, unknown>;
@@ -114,6 +116,12 @@ function parsePersistedTableStateInput(
   if (typeof parsed.wrapCells === "boolean") {
     next.wrapCells = parsed.wrapCells;
   }
+  if (
+    typeof parsed.visibilityVersion === "number" &&
+    Number.isFinite(parsed.visibilityVersion)
+  ) {
+    next.visibilityVersion = parsed.visibilityVersion;
+  }
 
   if (!Object.keys(next).length) {
     return null;
@@ -159,11 +167,16 @@ function getConfigForKey(
 export function loadPersistedTableState(
   key: string,
   userTableConfigs?: unknown,
+  options?: {
+    allowLocalFallback?: boolean;
+  },
 ): PersistedTableState | null {
+  const allowLocalFallback = options?.allowLocalFallback ?? true;
   const userConfig = getConfigForKey(key, userTableConfigs);
   if (userConfig) {
     return parsePersistedTableState(userConfig);
   }
+  if (!allowLocalFallback) return null;
 
   if (typeof window === "undefined") return null;
   const storageKey = `${STORAGE_PREFIX}:${key}`;
@@ -263,17 +276,20 @@ export function useTablePersistence(key: string) {
       return;
     }
 
-    try {
-      const stored = localStorage.getItem(storageKey);
-      if (stored) {
-        const parsed = parsePersistedTableStateInput(stored);
-        if (parsed) {
-          applyParsedState(parsed);
-          hasAppliedPersistedStateRef.current = true;
+    const isAuthenticated = !!user?.id;
+    if (!isAuthenticated) {
+      try {
+        const stored = localStorage.getItem(storageKey);
+        if (stored) {
+          const parsed = parsePersistedTableStateInput(stored);
+          if (parsed) {
+            applyParsedState(parsed);
+            hasAppliedPersistedStateRef.current = true;
+          }
         }
+      } catch (e) {
+        console.warn("Failed to load table state from localStorage", e);
       }
-    } catch (e) {
-      console.warn("Failed to load table state from localStorage", e);
     }
 
     hasHydratedRef.current = true;
@@ -282,6 +298,7 @@ export function useTablePersistence(key: string) {
     storageKey,
     readTableConfigsFromSettings,
     applyParsedState,
+    user?.id,
   ]);
 
   useEffect(() => {
@@ -383,6 +400,7 @@ export function useTablePersistence(key: string) {
         perPage,
         density,
         wrapCells,
+        visibilityVersion: VISIBILITY_SCHEMA_VERSION,
       };
 
       try {
@@ -416,13 +434,14 @@ export function useTablePersistence(key: string) {
     if (getConfigForKey(key, readTableConfigsFromSettings())) {
       return true;
     }
+    if (user?.id) return false;
 
     try {
       return !!localStorage.getItem(storageKey);
     } catch {
       return false;
     }
-  }, [key, storageKey, readTableConfigsFromSettings]);
+  }, [key, storageKey, readTableConfigsFromSettings, user?.id]);
 
   return { hasPersistedState };
 }

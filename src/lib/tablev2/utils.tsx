@@ -10,6 +10,11 @@ import {
   RelationshipSchema,
 } from "./types";
 
+type SyntheticRelationCountMetadata = {
+  synthetic?: string;
+  relation?: string;
+};
+
 // Helper to format cell value
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function formatCellValue(value: any, field: FieldSchema) {
@@ -28,7 +33,19 @@ export function formatCellValue(value: any, field: FieldSchema) {
           return item.name ?? item.id ?? JSON.stringify(item);
         })
         .filter((item) => item !== undefined && item !== null && item !== "");
-      return rendered.length ? rendered.join(", ") : "-";
+      if (!rendered.length) return "-";
+      return (
+        <span className="inline-flex flex-wrap items-center gap-1">
+          {rendered.map((item, index) => (
+            <span
+              key={`${String(item)}-${index}`}
+              className="inline-flex items-center rounded-md border border-border/60 bg-muted px-1.5 py-0 text-[11px] leading-4 text-foreground"
+            >
+              {String(item)}
+            </span>
+          ))}
+        </span>
+      );
     }
     return JSON.stringify(value);
   }
@@ -90,6 +107,30 @@ export function formatCellValue(value: any, field: FieldSchema) {
   return String(value);
 }
 
+function parseJsonObject(value?: string): Record<string, unknown> | null {
+  if (!value) return null;
+  try {
+    const parsed = JSON.parse(value);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return null;
+    }
+    return parsed as Record<string, unknown>;
+  } catch {
+    return null;
+  }
+}
+
+export function getSyntheticRelationCountSource(
+  field: Pick<FieldSchema, "customMetadata">,
+): string | undefined {
+  const metadata = parseJsonObject(
+    field.customMetadata,
+  ) as SyntheticRelationCountMetadata | null;
+  if (!metadata) return undefined;
+  if (metadata.synthetic !== "relation_count") return undefined;
+  return metadata.relation;
+}
+
 function buildRelationshipField(relation: RelationshipSchema): FieldSchema {
   const name = relation.name || relation.fieldName;
   const fieldName = relation.fieldName || relation.name;
@@ -130,6 +171,48 @@ function buildRelationshipField(relation: RelationshipSchema): FieldSchema {
     isRichText: false,
     isFsmField: false,
     relationLookupField: lookupField,
+  };
+}
+
+function buildRelationshipCountField(relation: RelationshipSchema): FieldSchema {
+  const relationName = relation.name || relation.fieldName;
+  const countAccessor = `${relationName}Count`;
+  return {
+    name: countAccessor,
+    fieldName: countAccessor,
+    verboseName: `${relation.verboseName || relationName} Count`,
+    helpText: `Nombre d'elements lies pour ${relation.verboseName || relationName}`,
+    fieldType: "Integer",
+    graphqlType: "Int",
+    required: false,
+    nullable: true,
+    blank: true,
+    editable: false,
+    unique: false,
+    hasDefault: false,
+    autoNow: false,
+    autoNowAdd: false,
+    readable: relation.readable,
+    writable: false,
+    visibility: relation.readable ? "list" : "hidden",
+    isPrimaryKey: false,
+    isIndexed: false,
+    isRelation: false,
+    isComputed: true,
+    isFile: false,
+    isImage: false,
+    isJson: false,
+    isDate: false,
+    isDatetime: false,
+    isNumeric: true,
+    isBoolean: false,
+    isText: false,
+    isRichText: false,
+    isFsmField: false,
+    customMetadata: JSON.stringify({
+      synthetic: "relation_count",
+      relation: relationName,
+    }),
   };
 }
 
@@ -175,13 +258,22 @@ export function mergeModelSchemaWithRelationships(
     })
     .map(buildRelationshipField);
 
-  if (relationshipFields.length === 0) {
+  const countFields = relationships
+    .filter((relation) => relation.isToMany && relation.readable)
+    .map(buildRelationshipCountField)
+    .filter((field) => {
+      const name = field.name || field.fieldName;
+      const fieldName = field.fieldName || field.name;
+      return !existingKeys.has(name) && !existingKeys.has(fieldName);
+    });
+
+  if (relationshipFields.length === 0 && countFields.length === 0) {
     return { ...metadata, fields: mergedFields };
   }
 
   return {
     ...metadata,
-    fields: [...mergedFields, ...relationshipFields],
+    fields: [...mergedFields, ...relationshipFields, ...countFields],
   };
 }
 

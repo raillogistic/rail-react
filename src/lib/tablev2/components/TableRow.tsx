@@ -1,5 +1,12 @@
 import React, { useMemo, useState } from "react";
-import { ChevronDown, ChevronRight, Loader2, Pencil, Trash2 } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  Loader2,
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+} from "lucide-react";
 import { gql, useMutation } from "@apollo/client";
 import { TableRow as ShadcnTableRow, TableCell } from "./TableFrame";
 import { Checkbox } from "@/lib/components/ui/checkbox";
@@ -14,14 +21,14 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/lib/components/ui/alert-dialog";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/lib/components/ui/tooltip";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/lib/components/ui/dropdown-menu";
 import { toast } from "sonner";
 import { useTable } from "../context/TableContext";
 import { useMetadata } from "../context/MetadataContext";
@@ -34,22 +41,33 @@ import {
   resolveGroupingLabel,
 } from "../utils";
 import type {
+  BaseModelTableColumnActionsInput,
   BaseModelTableColumnDef,
+  BaseModelTableColumnActionContext,
   BaseModelTableRefetch,
   FieldSchema,
   RowMutationPermissions,
 } from "../types";
 
 function RowActions({
-  rowId,
+  row,
+  data,
+  refetch,
   permissions,
+  columnActions,
 }: {
-  rowId: string;
+  row: Record<string, unknown>;
+  data: Record<string, unknown>[];
+  refetch?: BaseModelTableRefetch;
   permissions?: RowMutationPermissions | null;
+  columnActions?: BaseModelTableColumnActionsInput;
 }) {
   const { model, metadata } = useMetadata();
   const { refresh } = useTable();
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const rowIdValue = row.id;
+  const rowId =
+    rowIdValue === undefined || rowIdValue === null ? "" : String(rowIdValue);
   const baseMutations = metadata?.mutations ?? [];
   const baseDeleteMutation = findMutation(baseMutations, "delete");
   const baseUpdateMutation = findMutation(baseMutations, "update");
@@ -59,8 +77,25 @@ function RowActions({
     const type = normalizeMutationType(mutation);
     return type === "update" || type === "delete";
   });
-  const canDelete = baseCanDelete && (permissions?.canDelete ?? true);
+  const canDelete = !!rowId && baseCanDelete && (permissions?.canDelete ?? true);
   const canEdit = baseCanEdit && (permissions?.canUpdate ?? true);
+  const actionContext = useMemo<BaseModelTableColumnActionContext>(
+    () => ({
+      row,
+      data,
+      refetch,
+    }),
+    [data, refetch, row],
+  );
+  const customActions = useMemo(() => {
+    const source =
+      typeof columnActions === "function"
+        ? columnActions(actionContext)
+        : columnActions;
+    return source ?? [];
+  }, [actionContext, columnActions]);
+  const hasBuiltinActions = canEdit || canDelete;
+  const hasAnyActions = hasBuiltinActions || customActions.length > 0;
 
   const deleteMutationName = baseDeleteMutation?.name || `delete${model}`;
   const deleteDocument = useMemo(
@@ -101,81 +136,122 @@ function RowActions({
       setConfirmOpen(false);
     }
   };
+  const handleEdit = () => {
+    console.info("Edit row action triggered", row);
+  };
+  const runCustomAction = (
+    onClick: (context: BaseModelTableColumnActionContext) => void | Promise<void>,
+  ) => {
+    void Promise.resolve(onClick(actionContext)).catch((error: unknown) => {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Echec de l'action personnalisee.";
+      toast.error(message);
+    });
+  };
 
-  if (!hasRowActions) {
+  if (!hasRowActions && customActions.length === 0) {
     return null;
   }
 
-  if (!canEdit && !canDelete) {
+  if (!hasAnyActions) {
     return null;
   }
 
   return (
-    <TooltipProvider delayDuration={400}>
-      <div className="flex items-center justify-end gap-1 opacity-0 group-hover/row:opacity-100 transition-opacity duration-200">
-        {canEdit && (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                size="icon"
-                variant="ghost"
-                className="h-6 w-6 rounded-md hover:bg-blue-50 text-muted-foreground hover:text-blue-600 dark:hover:bg-blue-900/20"
-                aria-label="Modifier"
-              >
+    <>
+      <div className="flex items-center justify-end">
+        <DropdownMenu modal={false}>
+          <DropdownMenuTrigger asChild>
+            <Button
+              size="icon"
+              variant="outline"
+              className="h-6 w-6 rounded-md border-border bg-background text-muted-foreground shadow-sm hover:bg-muted hover:text-foreground"
+              aria-label="Actions de la ligne"
+            >
+              <MoreHorizontal className="h-3.5 w-3.5" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-44">
+            {canEdit ? (
+              <DropdownMenuItem onClick={handleEdit}>
                 <Pencil className="h-3.5 w-3.5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="top" className="text-xs">
-              Modifier
-            </TooltipContent>
-          </Tooltip>
-        )}
-
-        {canDelete && (
-          <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-6 w-6 rounded-md hover:bg-red-50 text-muted-foreground hover:text-red-600 dark:hover:bg-red-900/20"
-                    aria-label="Supprimer"
-                    disabled={deleting}
-                  >
-                    {deleting ? (
-                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                    ) : (
-                      <Trash2 className="h-3.5 w-3.5" />
-                    )}
-                  </Button>
-                </AlertDialogTrigger>
-              </TooltipTrigger>
-              <TooltipContent side="top" className="text-xs">
+                Modifier
+              </DropdownMenuItem>
+            ) : null}
+            {canDelete ? (
+              <DropdownMenuItem
+                variant="destructive"
+                onClick={() => setConfirmOpen(true)}
+                disabled={deleting}
+              >
+                {deleting ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Trash2 className="h-3.5 w-3.5" />
+                )}
                 Supprimer
-              </TooltipContent>
-            </Tooltip>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>
-                  Supprimer {metadata?.verboseName} ?
-                </AlertDialogTitle>
-                <AlertDialogDescription>
-                  Cette action est irreversible. L'enregistrement sera supprime
-                  definitivement.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Annuler</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDelete} disabled={deleting}>
-                  Supprimer
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-        )}
+              </DropdownMenuItem>
+            ) : null}
+            {hasBuiltinActions && customActions.length > 0 ? (
+              <DropdownMenuSeparator />
+            ) : null}
+            {customActions.map((action, index) => {
+              const key = action.key ?? `custom-row-action-${index}`;
+              if (typeof (action as { render?: unknown }).render === "function") {
+                const renderAction = (
+                  action as { render: (context: BaseModelTableColumnActionContext) => React.ReactNode }
+                ).render;
+                return <React.Fragment key={key}>{renderAction(actionContext)}</React.Fragment>;
+              }
+              if (typeof (action as { onClick?: unknown }).onClick !== "function") {
+                return null;
+              }
+              const clickAction = (
+                action as {
+                  onClick: (
+                    context: BaseModelTableColumnActionContext,
+                  ) => void | Promise<void>;
+                  label?: string;
+                }
+              );
+              return (
+                <DropdownMenuItem
+                  key={key}
+                  variant={action.variant}
+                  className={action.className}
+                  disabled={action.disabled}
+                  onClick={() => runCustomAction(clickAction.onClick)}
+                >
+                  {action.icon}
+                  {clickAction.label ?? "Action"}
+                </DropdownMenuItem>
+              );
+            })}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
-    </TooltipProvider>
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Supprimer {metadata?.verboseName} ?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Cette action est irreversible. L'enregistrement sera supprime
+              definitivement.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} disabled={deleting}>
+              Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
 
@@ -185,6 +261,7 @@ export function TableRows({
   columns,
   enableSelection,
   refetch,
+  columnActions,
   performance,
   scrollContainerRef,
   infiniteMode,
@@ -194,6 +271,7 @@ export function TableRows({
   columns?: BaseModelTableColumnDef[];
   enableSelection?: boolean;
   refetch?: BaseModelTableRefetch;
+  columnActions?: BaseModelTableColumnActionsInput;
   performance?: {
     enableVirtualization?: boolean;
     virtualizeThreshold?: number;
@@ -474,12 +552,16 @@ export function TableRows({
             "w-[60px] shrink-0 px-2 text-right",
             "sticky right-0 z-10",
             "table-last-column table-sticky-cell",
-            // Sticky background needs to match row
-            isSelected ? "bg-primary/5" : isEven ? "bg-white dark:bg-card" : "bg-slate-50/50 dark:bg-muted/10",
-            "group-hover/row:bg-muted/30" // Simple approximation for hover on sticky
+            "bg-background border-l border-border/60",
           )}
         >
-          <RowActions rowId={rowId} permissions={rowPermissions} />
+          <RowActions
+            row={row}
+            data={data}
+            refetch={refetch}
+            permissions={rowPermissions}
+            columnActions={columnActions}
+          />
         </TableCell>
       </ShadcnTableRow>
     );

@@ -76,6 +76,10 @@ export function TableMobileCard({
     const id = field.fieldName || field.name;
     return columnVisibility[id] ?? true;
   });
+  const showIdDescription = visibleColumns.some((field) => {
+    const id = field.fieldName || field.name;
+    return id === "id";
+  });
 
   if (visibleColumns.length === 0) return null;
 
@@ -99,7 +103,9 @@ export function TableMobileCard({
                   ? formatCellValue(resolveFieldValue(row, titleField), titleField)
                   : metadata?.verboseName || "Element"}
               </CardTitle>
-              <CardDescription className="text-xs font-mono">ID: {rowId}</CardDescription>
+              {showIdDescription ? (
+                <CardDescription className="text-xs font-mono">ID: {rowId}</CardDescription>
+              ) : null}
             </CardHeader>
             <CardContent className={`grid text-sm ${rowSpacingClass}`}>
               {otherFields.map((field) => (

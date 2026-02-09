@@ -59,7 +59,10 @@ export function TablePagination({
   const totalPages = numPages || 1;
   const maxPage = totalKnown ? totalPages : undefined;
   const pageSizeOptions = useMemo(
-    () => Array.from(new Set([10, 20, 30, 40, 50, 100, 200, perPage])).sort((a, b) => a - b),
+    () =>
+      Array.from(new Set([10, 20, 30, 40, 50, 100, 200, perPage])).sort(
+        (a, b) => a - b,
+      ),
     [perPage],
   );
 
@@ -68,8 +71,8 @@ export function TablePagination({
   }, [page]);
 
   const selectionText = totalKnown
-    ? labels?.selectionStatus?.(selectedCount, total) ??
-      `${selectedCount} sur ${total} selectionnee${selectedCount > 1 ? "s" : ""}`
+    ? (labels?.selectionStatus?.(selectedCount, total) ??
+      `${selectedCount} sur ${total} selectionnee${selectedCount > 1 ? "s" : ""}`)
     : `${selectedCount} selectionnee${selectedCount > 1 ? "s" : ""}`;
 
   const rangeStart = Math.min((page - 1) * perPage + 1, total);
@@ -80,9 +83,10 @@ export function TablePagination({
       : `${rangeStart}-${rangeEnd} sur ${total}`
     : `${data.length} chargee${data.length > 1 ? "s" : ""}`;
 
-  const leftText = enableSelection && selectedCount > 0 ? selectionText : rangeText;
+  const leftText =
+    enableSelection && selectedCount > 0 ? selectionText : rangeText;
   const pageText = totalKnown
-    ? labels?.pageStatus?.(page, totalPages) ?? `${page} / ${totalPages}`
+    ? (labels?.pageStatus?.(page, totalPages) ?? `${page} / ${totalPages}`)
     : `Page ${page}`;
 
   const commitPageInput = () => {
@@ -106,7 +110,7 @@ export function TablePagination({
 
   return (
     <TooltipProvider delayDuration={300}>
-      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border bg-card px-4 py-2">
+      <div className="flex flex-wrap items-center justify-between gap-3   px-4 py-2">
         {/* Left side - summary text */}
         <div className="flex items-center gap-2">
           <span className="text-xs text-muted-foreground">{leftText}</span>
@@ -135,7 +139,11 @@ export function TablePagination({
               </SelectTrigger>
               <SelectContent side="top" align="center">
                 {pageSizeOptions.map((pageSize) => (
-                  <SelectItem key={pageSize} value={`${pageSize}`} className="text-xs">
+                  <SelectItem
+                    key={pageSize}
+                    value={`${pageSize}`}
+                    className="text-xs"
+                  >
                     {pageSize}
                   </SelectItem>
                 ))}
@@ -148,7 +156,9 @@ export function TablePagination({
 
           {/* Page indicator */}
           <div className="flex items-center gap-1.5">
-            <span className="text-xs text-muted-foreground whitespace-nowrap">{pageText}</span>
+            <span className="text-xs text-muted-foreground whitespace-nowrap">
+              {pageText}
+            </span>
           </div>
 
           {/* Divider */}
