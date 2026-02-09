@@ -18,7 +18,9 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarMenuSubItem,
+  useSidebar,
 } from "@/lib/components/ui/sidebar";
+import { cn } from "@/lib/utils";
 
 /**
  * Navigation tree used inside the sidebar.
@@ -28,6 +30,9 @@ import {
  */
 export function NavMain() {
   const location = useLocation();
+  const { state } = useSidebar();
+  const isCollapsed = state === "collapsed";
+  
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>(
     () => {
       const initial: Record<string, boolean> = {};
@@ -46,9 +51,6 @@ export function NavMain() {
 
   const isExactPath = (targetPath: string): boolean =>
     location.pathname === targetPath;
-  const hasPathPrefix = (targetPath: string): boolean =>
-    location.pathname === targetPath ||
-    location.pathname.startsWith(`${targetPath}/`);
 
   useEffect(() => {
     setExpandedItems((prev) => {
@@ -91,40 +93,65 @@ export function NavMain() {
       : NAVIGATION_LINKS;
 
   return (
-    <SidebarGroup>
-      <SidebarGroupContent className="flex flex-col gap-3">
+    <SidebarGroup className="py-0">
+      <SidebarGroupContent className="flex flex-col gap-6">
         {visibleSections.map((section) => (
-          <div key={section.id} className="space-y-1">
-            <SidebarGroupLabel>{section.label}</SidebarGroupLabel>
-            <SidebarMenu>
+          <div key={section.id} className="space-y-2">
+            {!isCollapsed && (
+              <SidebarGroupLabel className="px-2 text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground/50">
+                {section.label}
+              </SidebarGroupLabel>
+            )}
+            <SidebarMenu className="gap-1">
               {section.items
                 .filter((item) => !item.hidden)
-                .map((item) => {
+                .map((item, index) => {
                   const visibleChildren = item.children?.filter(
                     (child) => !child.hidden
                   );
                   const hasChildren = Boolean(visibleChildren?.length);
-                  const isItemActive = isExactPath(item.path);
+                  const isItemActive = isExactPath(item.path) || visibleChildren?.some(c => isExactPath(c.path));
                   const isOpen = hasChildren && Boolean(expandedItems[item.id]);
 
                   if (!hasChildren) {
                     return (
-                      <SidebarMenuItem key={item.id}>
+                      <SidebarMenuItem 
+                        key={item.id} 
+                        style={{ animationDelay: `${index * 50}ms` }}
+                        className="animate-fade-in-slide opacity-0"
+                      >
                         <SidebarMenuButton
                           asChild
                           tooltip={item.title}
-                          className={
+                          className={cn(
+                            "relative h-10 w-full transition-all duration-200 group/btn overflow-hidden rounded-xl",
                             isItemActive
-                              ? "bg-primary/10 text-primary font-semibold"
-                              : "text-muted-foreground hover:text-primary"
-                          }
+                              ? "bg-primary/10 text-primary font-bold shadow-xs ring-1 ring-primary/20"
+                              : "text-muted-foreground/80 hover:bg-sidebar-accent/50 hover:text-foreground"
+                          )}
                         >
                           <Link
                             to={item.path}
-                            className="flex items-center gap-2"
+                            className="relative flex items-center gap-3 px-3 z-10"
                           >
-                            {/* {item.icon && <item.icon className="size-4" />} */}
+                            {isItemActive && (
+                              <div className="absolute inset-0 -z-10 bg-gradient-to-r from-transparent via-primary/10 to-transparent bg-[length:200%_100%] animate-shimmer pointer-events-none opacity-50" />
+                            )}
+                            {item.icon && (
+                              <div className="relative flex items-center justify-center">
+                                {isItemActive && (
+                                  <div className="absolute inset-0 -z-10 scale-[2.5] bg-primary/20 blur-xl rounded-full animate-pulse" />
+                                )}
+                                <item.icon className={cn(
+                                  "size-4.5 shrink-0 transition-transform duration-300 group-hover/btn:scale-110 relative z-10",
+                                  isItemActive ? "text-primary drop-shadow-[0_0_8px_rgba(var(--primary),0.5)]" : "text-muted-foreground/60 group-hover/btn:text-foreground"
+                                )} />
+                              </div>
+                            )}
                             <span className="truncate">{item.title}</span>
+                            {isItemActive && !isCollapsed && (
+                              <div className="absolute right-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-l-full bg-primary shadow-[0_0_8px_rgba(var(--primary),0.5)]" />
+                            )}
                           </Link>
                         </SidebarMenuButton>
                       </SidebarMenuItem>
@@ -144,50 +171,72 @@ export function NavMain() {
                       }
                       className="group/collapsible"
                     >
-                      <SidebarMenuItem>
+                      <SidebarMenuItem 
+                        style={{ animationDelay: `${index * 50}ms` }}
+                        className="animate-fade-in-slide opacity-0"
+                      >
                         <CollapsibleTrigger asChild>
                           <SidebarMenuButton
                             tooltip={item.title}
-                            className={
-                              isItemActive
-                                ? "bg-primary/10 text-primary font-semibold"
-                                : "text-muted-foreground hover:text-primary"
-                            }
+                            className={cn(
+                              "h-10 transition-all duration-200 group/btn rounded-xl relative overflow-hidden",
+                              isItemActive && !isOpen
+                                ? "bg-primary/10 text-primary font-bold shadow-xs ring-1 ring-primary/20"
+                                : "text-muted-foreground/80 hover:bg-sidebar-accent/50 hover:text-foreground"
+                            )}
                           >
-                            {item.icon && <item.icon className="size-4" />}
-                            <div className="flex flex-col items-start">
+                            {isItemActive && !isOpen && (
+                                <div className="absolute inset-0 -z-10 bg-gradient-to-r from-transparent via-primary/10 to-transparent bg-[length:200%_100%] animate-shimmer pointer-events-none opacity-50" />
+                            )}
+                            {item.icon && (
+                              <div className="relative flex items-center justify-center">
+                                {isItemActive && (
+                                  <div className="absolute inset-0 -z-10 scale-[2.5] bg-primary/20 blur-xl rounded-full animate-pulse" />
+                                )}
+                                <item.icon className={cn(
+                                  "size-4.5 shrink-0 transition-transform duration-300 group-hover/btn:scale-110 relative z-10",
+                                  isItemActive ? "text-primary drop-shadow-[0_0_8px_rgba(var(--primary),0.5)]" : "text-muted-foreground/60 group-hover/btn:text-foreground"
+                                )} />
+                              </div>
+                            )}
+                            <div className="flex flex-1 items-center justify-between overflow-hidden z-10">
                               <span className="truncate">{item.title}</span>
-                              {!visibleChildren?.length && item.description && (
-                                <span className="text-xs text-muted-foreground">
-                                  {item.description}
-                                </span>
-                              )}
+                              <ChevronRight className={cn(
+                                "ml-auto size-3.5 transition-transform duration-300 group-data-[state=open]/collapsible:rotate-90",
+                                isItemActive ? "text-primary" : "text-muted-foreground/40"
+                              )} />
                             </div>
-                            <ChevronRight className="ml-auto transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                            {isItemActive && !isOpen && !isCollapsed && (
+                              <div className="absolute right-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-l-full bg-primary shadow-[0_0_8px_rgba(var(--primary),0.5)]" />
+                            )}
                           </SidebarMenuButton>
                         </CollapsibleTrigger>
-                        <CollapsibleContent>
-                          <SidebarMenuSub>
+                        <CollapsibleContent className="overflow-hidden transition-all data-[state=closed]:animate-collapse-up data-[state=open]:animate-collapse-down">
+                          <SidebarMenuSub className="mt-1 ml-4 gap-1 border-l border-primary/10 pl-2">
                             {visibleChildren?.map((child) => {
                               const isChildActive = isExactPath(child.path);
                               return (
                                 <SidebarMenuSubItem
                                   key={child.path}
-                                  className="rounded-md"
                                 >
                                   <SidebarMenuSubButton
                                     asChild
-                                    className={
+                                    className={cn(
+                                      "h-8 transition-all duration-200 rounded-lg",
                                       isChildActive
-                                        ? "bg-primary/10 text-primary font-semibold"
-                                        : "text-muted-foreground hover:text-primary"
-                                    }
+                                        ? "bg-primary/5 text-primary font-semibold"
+                                        : "text-muted-foreground/70 hover:bg-sidebar-accent/30 hover:text-foreground"
+                                    )}
                                   >
                                     <Link
                                       to={child.path}
-                                      className="flex w-full items-center gap-2 px-3 py-2"
+                                      className="flex w-full items-center gap-2 px-3"
                                     >
-                                      <span>{child.title}</span>
+                                      <div className={cn(
+                                        "size-1 rounded-full transition-all duration-300",
+                                        isChildActive ? "bg-primary scale-125 shadow-[0_0_8px_rgba(var(--primary),0.5)]" : "bg-muted-foreground/30"
+                                      )} />
+                                      <span className="truncate">{child.title}</span>
                                     </Link>
                                   </SidebarMenuSubButton>
                                 </SidebarMenuSubItem>

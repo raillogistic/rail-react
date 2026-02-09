@@ -141,6 +141,28 @@
   --font-sans: var(--font-sans);
   --font-mono: var(--font-mono);
   --font-serif: var(--font-serif);
+
+  @keyframes collapse-down {
+    from { height: 0; opacity: 0; }
+    to { height: var(--radix-collapsible-content-height); opacity: 1; }
+  }
+  @keyframes collapse-up {
+    from { height: var(--radix-collapsible-content-height); opacity: 1; }
+    to { height: 0; opacity: 0; }
+  }
+  @keyframes shimmer {
+    from { background-position: 200% 0; }
+    to { background-position: -200% 0; }
+  }
+  @keyframes fade-in-slide {
+    from { opacity: 0; transform: translateX(-10px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+
+  --animate-collapse-down: collapse-down 0.3s ease-out;
+  --animate-collapse-up: collapse-up 0.3s ease-out;
+  --animate-shimmer: shimmer 8s linear infinite;
+  --animate-fade-in-slide: fade-in-slide 0.4s ease-out forwards;
 }
 
 @layer base {
@@ -150,6 +172,29 @@
 
   body {
     @apply bg-background text-foreground;
+  }
+
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: transparent transparent;
+    transition: scrollbar-color 0.3s;
+  }
+  .custom-scrollbar:hover {
+    scrollbar-color: var(--sidebar-border) transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 4px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: transparent;
+    border-radius: 10px;
+    transition: background 0.3s;
+  }
+  .custom-scrollbar:hover::-webkit-scrollbar-thumb {
+    background: var(--sidebar-border);
   }
 }
 
