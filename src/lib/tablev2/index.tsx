@@ -1,4 +1,4 @@
-/* eslint-disable react-refresh/only-export-components */
+﻿/* eslint-disable react-refresh/only-export-components */
 import React from "react";
 import { DndContext, closestCenter, DragEndEvent } from "@dnd-kit/core";
 import {
@@ -26,9 +26,11 @@ import { useAuthContext } from "@/auth/context";
 import type {
   BaseModelTableColumnActionsInput,
   BaseModelTableColumnDef,
+  BaseModelTableField,
   BaseModelTableFieldsInput,
   BaseModelTableColumnOrderingConfig,
   BaseModelTableRelationConfig,
+  BaseModelTableRelationStatsConfig,
   FieldSchema,
   ModelSchema,
   RelationshipSchema,
@@ -39,6 +41,7 @@ import {
   getDefaultHiddenColumnIds,
   getSyntheticRelationCountSource,
   isAccessorExcluded,
+  mergeBaseModelTableFields,
   normalizeBaseModelTableFieldsInput,
 } from "./utils";
 
@@ -151,6 +154,23 @@ export type ModelTableV2ViewOptions = {
   defaultWrapCells?: boolean;
   maxBodyHeightClassName?: string;
 };
+
+function toCamelCase(value: string): string {
+  return value.replace(/_([a-z])/g, (_, letter: string) => letter.toUpperCase());
+}
+
+function toSnakeCase(value: string): string {
+  return value
+    .replace(/([A-Z])/g, "_$1")
+    .toLowerCase()
+    .replace(/^_/, "");
+}
+
+function toGraphqlFieldName(value: string): string {
+  const camel = toCamelCase(value || "");
+  if (!camel) return "";
+  return camel.charAt(0).toLowerCase() + camel.slice(1);
+}
 
 function ModelTableV2Content({
   filterPanel,
@@ -304,6 +324,7 @@ type BaseTableContentProps = {
   hideTableOnMobile?: boolean;
   fields?: BaseModelTableFieldsInput;
   relations?: Record<string, BaseModelTableRelationConfig>;
+  relationStats?: BaseModelTableRelationStatsConfig;
   columnOrdering?: BaseModelTableColumnOrderingConfig;
   skipCount?: boolean;
   disableSorting?: boolean;
@@ -319,6 +340,7 @@ function BaseTableContent({
   hideTableOnMobile,
   fields,
   relations,
+  relationStats,
   columnOrdering,
   skipCount,
   disableSorting,
@@ -409,26 +431,9 @@ function BaseTableContent({
     () => new Set(normalizedFieldsConfig.exclude),
     [normalizedFieldsConfig.exclude],
   );
-  const hasConfiguredDisplay = normalizedFieldsConfig.display !== undefined;
-
-  const defaultHiddenColumnIds = React.useMemo(() => {
-    if (hasConfiguredDisplay) return new Set<string>();
-    return getDefaultHiddenColumnIds(metadata);
-  }, [hasConfiguredDisplay, metadata]);
-
-  const columnDefs = React.useMemo(() => {
-    if (!metadata) return null;
-
-    const fieldLookup = new Map<string, FieldSchema>();
-    metadata.fields.forEach((field) => {
-      fieldLookup.set(field.name, field);
-      if (field.fieldName) fieldLookup.set(field.fieldName, field);
-    });
-    const relationLookup = new Map<string, RelationshipSchema>();
-    metadata.relationships.forEach((relation) => {
-      if (relation.name) relationLookup.set(relation.name, relation);
-      if (relation.fieldName) relationLookup.set(relation.fieldName, relation);
-    });
+  const hasConfiguredInclude = normalizedFieldsConfig.include !== undefined;
+  const explicitlyAddedAccessors = React.useMemo(() => {
+    const accessors = new Set<string>();
     const toCamelCase = (value: string) =>
       value.replace(/_([a-z])/g, (_, letter: string) => letter.toUpperCase());
     const toSnakeCase = (value: string) =>
@@ -436,11 +441,88 @@ function BaseTableContent({
         .replace(/([A-Z])/g, "_$1")
         .toLowerCase()
         .replace(/^_/, "");
+    const addAccessorVariants = (value: string) => {
+      if (!value) return;
+      const roots = [value, value.split(".")[0], value.split("__")[0]];
+      roots.forEach((root) => {
+        if (!root) return;
+        accessors.add(root);
+        accessors.add(toCamelCase(root));
+        accessors.add(toSnakeCase(root));
+      });
+    };
+    normalizedFieldsConfig.add.forEach((entry) => {
+      addAccessorVariants(entry.accessor);
+    });
+    return accessors;
+  }, [normalizedFieldsConfig.add]);
+
+  const defaultHiddenColumnIds = React.useMemo(() => {
+    if (hasConfiguredInclude) return new Set<string>();
+    const hidden = getDefaultHiddenColumnIds(metadata);
+    explicitlyAddedAccessors.forEach((accessor) => {
+      hidden.delete(accessor);
+    });
+    return hidden;
+  }, [explicitlyAddedAccessors, hasConfiguredInclude, metadata]);
+
+  const columnDefs = React.useMemo(() => {
+    if (!metadata) return null;
+
+    const fieldLookup = new Map<string, FieldSchema>();
+    const fieldCanonicalByKey = new Map<string, string>();
+    metadata.fields.forEach((field) => {
+      const canonical = toGraphqlFieldName(field.name || field.fieldName);
+      [
+        field.name,
+        field.fieldName,
+        canonical,
+        toSnakeCase(canonical),
+        toCamelCase(canonical),
+      ]
+        .filter((entry): entry is string => !!entry)
+        .forEach((entry) => {
+          fieldLookup.set(entry, field);
+          fieldCanonicalByKey.set(entry, canonical);
+        });
+    });
+    const relationLookup = new Map<string, RelationshipSchema>();
+    const relationCanonicalByKey = new Map<string, string>();
+    metadata.relationships.forEach((relation) => {
+      const canonical = toGraphqlFieldName(relation.name || relation.fieldName);
+      [
+        relation.name,
+        relation.fieldName,
+        canonical,
+        toSnakeCase(canonical),
+        toCamelCase(canonical),
+      ]
+        .filter((entry): entry is string => !!entry)
+        .forEach((entry) => {
+          relationLookup.set(entry, relation);
+          relationCanonicalByKey.set(entry, canonical);
+        });
+    });
+    const canonicalizeRoot = (root: string) =>
+      relationCanonicalByKey.get(root) ??
+      fieldCanonicalByKey.get(root) ??
+      toGraphqlFieldName(root);
+    const canonicalizeAccessor = (accessor: string) => {
+      const parts = accessor.replace(/__/g, ".").split(".").filter(Boolean);
+      if (parts.length === 0) return "";
+      const [root, ...rest] = parts;
+      const normalizedRoot = canonicalizeRoot(root);
+      if (!normalizedRoot) return "";
+      const normalizedRest = rest.map((segment) => toGraphqlFieldName(segment));
+      return [normalizedRoot, ...normalizedRest.filter(Boolean)].join(".");
+    };
     const resolveRelationCountSource = (accessor: string, field?: FieldSchema) => {
       const syntheticSource = field
         ? getSyntheticRelationCountSource(field)
         : undefined;
-      if (syntheticSource) return syntheticSource;
+      if (syntheticSource) {
+        return relationCanonicalByKey.get(syntheticSource) ?? toGraphqlFieldName(syntheticSource);
+      }
       const stripped = accessor.replace(/count$/i, "");
       if (!stripped || stripped === accessor) return null;
       const candidates = new Set<string>([
@@ -449,7 +531,8 @@ function BaseTableContent({
         toSnakeCase(stripped),
       ]);
       for (const candidate of candidates) {
-        if (relationLookup.has(candidate)) return candidate;
+        const canonical = relationCanonicalByKey.get(candidate);
+        if (canonical) return canonical;
       }
       return null;
     };
@@ -468,20 +551,33 @@ function BaseTableContent({
       titleOverride?: string,
       render?: BaseModelTableColumnDef["render"],
     ): BaseModelTableColumnDef => {
-      const parts = accessor.split(".");
+      const normalizedAccessor = canonicalizeAccessor(accessor);
+      if (!normalizedAccessor) {
+        return {
+          id: accessor,
+          accessor,
+          title: titleOverride || accessor,
+          render,
+        };
+      }
+      const parts = normalizedAccessor.split(".");
       const root = parts[0];
       const fieldMeta = fieldLookup.get(root);
       const relationMeta = relationLookup.get(root);
       const isRelation = !!fieldMeta?.isRelation || !!relationMeta;
       const isToManyRelation = !!relationMeta?.isToMany;
-      const relationCountSource = resolveRelationCountSource(accessor, fieldMeta);
-      const displayField = relations?.[root]?.display ?? "desc";
+      const relationCountSource = resolveRelationCountSource(normalizedAccessor, fieldMeta);
+      const relationConfig =
+        relations?.[root] ??
+        relations?.[toSnakeCase(root)] ??
+        relations?.[toCamelCase(root)];
+      const displayField = toGraphqlFieldName(relationConfig?.display ?? "desc");
       const displayAccessor =
         parts.length === 1 && isRelation && !isToManyRelation
-          ? `${accessor}.${displayField}`
+          ? `${normalizedAccessor}.${displayField}`
           : isToManyRelation && parts.length > 1
             ? root
-            : accessor;
+            : normalizedAccessor;
       const relationCountRender: BaseModelTableColumnDef["render"] | undefined =
         relationCountSource
           ? (_value, row) => {
@@ -495,36 +591,54 @@ function BaseTableContent({
         fieldMeta?.verboseName ||
         relationMeta?.verboseName ||
         parts[parts.length - 1] ||
-        accessor;
+        normalizedAccessor;
 
       return {
-        id: accessor,
+        id: normalizedAccessor,
         accessor: displayAccessor,
         title,
         render: render ?? relationCountRender,
       };
     };
 
-    const configuredDisplay = normalizedFieldsConfig.display?.filter(
-      (entry) => {
-        const accessor = typeof entry === "string" ? entry : entry.accessor;
-        if (!accessor) return false;
-        return !isAccessorExcluded(accessor, excludedAccessors);
-      },
-    );
     const defaultDisplay = metadata.fields
       .filter((field) => field.visibility !== "hidden")
-      .map((field) => field.fieldName || field.name)
+      .map((field) => toGraphqlFieldName(field.name || field.fieldName))
+      .filter(Boolean)
       .filter((accessor) => !isAccessorExcluded(accessor, excludedAccessors));
+    const includeEntriesRaw = mergeBaseModelTableFields({
+      include: normalizedFieldsConfig.include,
+      defaults: defaultDisplay,
+      add: normalizedFieldsConfig.add,
+      excludedAccessors,
+    });
+    const includeEntries = includeEntriesRaw.reduce<BaseModelTableField[]>((acc, entry) => {
+      if (typeof entry === "string") {
+        const canonicalAccessor = canonicalizeAccessor(entry);
+        if (!canonicalAccessor) return acc;
+        if (acc.some((item) => (typeof item === "string" ? item : item.accessor) === canonicalAccessor)) {
+          return acc;
+        }
+        acc.push(canonicalAccessor);
+        return acc;
+      }
+      const canonicalAccessor = canonicalizeAccessor(entry.accessor);
+      if (!canonicalAccessor) return acc;
+      if (acc.some((item) => (typeof item === "string" ? item : item.accessor) === canonicalAccessor)) {
+        return acc;
+      }
+      acc.push({
+        ...entry,
+        accessor: canonicalAccessor,
+      });
+      return acc;
+    }, []);
 
-    const displayEntries = hasConfiguredDisplay
-      ? (configuredDisplay ?? [])
-      : defaultDisplay;
-
-    return displayEntries.map((entry) => {
+    return includeEntries.map((entry) => {
       if (typeof entry === "string") {
         const renderOverride =
           normalizedFieldsConfig.render[entry] ??
+          normalizedFieldsConfig.render[toSnakeCase(entry)] ??
           normalizedFieldsConfig.render[entry.split(".")[0]];
         return buildColumnDef(
           entry,
@@ -537,10 +651,11 @@ function BaseTableContent({
       }
       const renderOverride =
         normalizedFieldsConfig.render[entry.accessor] ??
+        normalizedFieldsConfig.render[toSnakeCase(entry.accessor)] ??
         normalizedFieldsConfig.render[entry.accessor.split(".")[0]];
       return buildColumnDef(
         entry.accessor,
-        entry.title ?? entry.display,
+        entry.title,
         entry.render ??
           (renderOverride
             ? (value, row, context) =>
@@ -548,7 +663,12 @@ function BaseTableContent({
             : undefined),
       );
     });
-  }, [excludedAccessors, metadata, normalizedFieldsConfig, relations]);
+  }, [
+    excludedAccessors,
+    metadata,
+    normalizedFieldsConfig,
+    relations,
+  ]);
 
   const sortableColumnIds = React.useMemo(() => {
     if (!columnDefs || columnDefs.length === 0) return columnOrder;
@@ -679,14 +799,14 @@ function BaseTableContent({
       (f) => f.visibility !== "hidden",
     );
     const visibleNames = visibleFields.map(
-      (field) => field.fieldName || field.name,
+      (field) => toGraphqlFieldName(field.name || field.fieldName),
     );
     resolveColumnOrder(visibleNames);
 
     const nextVisibility: Record<string, boolean> = { ...effectiveVisibility };
     let visibilityChanged = false;
     visibleFields.forEach((field) => {
-      const accessor = field.fieldName || field.name;
+      const accessor = toGraphqlFieldName(field.name || field.fieldName);
       if (nextVisibility[accessor] === undefined) {
         nextVisibility[accessor] = !defaultHiddenColumnIds.has(accessor);
         visibilityChanged = true;
@@ -808,6 +928,7 @@ function BaseTableContent({
                             enableSelection={enableSelection}
                             refetch={refetch}
                             columnActions={columnActions}
+                            relationStats={relationStats}
                             performance={performance}
                             scrollContainerRef={tableScrollRef}
                             infiniteMode={isInfiniteMode}
@@ -870,6 +991,7 @@ export interface BaseModelTableProps {
   hideTableOnMobile?: boolean;
   fields?: BaseModelTableFieldsInput;
   relations?: Record<string, BaseModelTableRelationConfig>;
+  relationStats?: BaseModelTableRelationStatsConfig;
   columnOrdering?: BaseModelTableColumnOrderingConfig;
   skipCount?: boolean;
   disableSorting?: boolean;
@@ -889,6 +1011,7 @@ export function BaseModelTable({
   hideTableOnMobile,
   fields,
   relations,
+  relationStats,
   columnOrdering,
   skipCount,
   disableSorting,
@@ -914,6 +1037,7 @@ export function BaseModelTable({
             hideTableOnMobile={hideTableOnMobile}
             fields={fields}
             relations={relations}
+            relationStats={relationStats}
             columnOrdering={columnOrdering}
             skipCount={skipCount}
             disableSorting={disableSorting}
@@ -946,6 +1070,7 @@ export function ModelTableV2({
       hideTableOnMobile={baseTable?.hideTableOnMobile ?? true}
       fields={baseTable?.fields}
       relations={baseTable?.relations}
+      relationStats={baseTable?.relationStats}
       columnOrdering={baseTable?.columnOrdering}
       skipCount={baseTable?.skipCount}
       disableSorting={baseTable?.disableSorting}
@@ -990,3 +1115,4 @@ export * from "./components/ExportDialog";
 
 // Utils
 export * from "./utils";
+

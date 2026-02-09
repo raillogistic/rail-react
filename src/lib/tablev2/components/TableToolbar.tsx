@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+﻿import { useMemo, useState } from "react";
 import {
   Check,
   Columns3Icon,
@@ -123,7 +123,7 @@ export function TableToolbar({
     if (!metadata) return [];
     const byName = new Map(metadata.fields.map((field) => [field.name, field]));
     const byFieldName = new Map(
-      metadata.fields.map((field) => [field.fieldName || field.name, field]),
+      metadata.fields.map((field) => [field.name || field.fieldName, field]),
     );
 
     const ordered: typeof metadata.fields = [];
@@ -176,7 +176,7 @@ export function TableToolbar({
       .filter((field) => field.visibility !== "hidden")
       .filter((field) => !disallowed.has(field.fieldType))
       .map((field) => ({
-        value: field.fieldName || field.name,
+        value: field.name || field.fieldName,
         label: field.verboseName || field.name,
       }));
   }, [metadata]);
@@ -568,3 +568,4 @@ export function TableToolbar({
     </TooltipProvider>
   );
 }
+

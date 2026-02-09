@@ -22,7 +22,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       {...props}
       className={cn(
         "border-r border-sidebar-border bg-sidebar text-sidebar-foreground",
-        layout === "mixed" && "top-[3.5rem] h-[calc(100svh-3.5rem)]"
+        layout === "mixed" && "top-[3.5rem] h-[calc(100svh-3.5rem)]",
       )}
     >
       <SidebarHeader>
@@ -30,7 +30,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           to="/"
           className={cn(
             "group flex items-center shadow-sm gap-3 rounded-xl border border-sidebar-border/70 bg-card/95 px-3 py-2 text-card-foreground transition hover:border-sidebar-ring hover:shadow-lg",
-            "group-data-[collapsible=icon]:h-12 group-data-[collapsible=icon]:w-12 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0 group-data-[collapsible=icon]:rounded-full group-data-[collapsible=icon]:border-transparent group-data-[collapsible=icon]:bg-transparent group-data-[collapsible=icon]:p-0"
+            "group-data-[collapsible=icon]:h-12 group-data-[collapsible=icon]:w-12 group-data-[collapsible=icon]:justify-center group-data-[collapsible=icon]:gap-0 group-data-[collapsible=icon]:rounded-full group-data-[collapsible=icon]:border-transparent group-data-[collapsible=icon]:bg-transparent group-data-[collapsible=icon]:p-0",
           )}
         >
           <span className="flex h-12 w-12 items-center justify-center rounded-xl p-1 transition-[border-radius] duration-200 group-data-[collapsible=icon]:rounded-full group-data-[collapsible=icon]:bg-transparent">
@@ -47,7 +47,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               "flex flex-col text-left transition-all duration-200",
               "group-data-[collapsible=icon]:opacity-0",
               "group-data-[collapsible=icon]:pointer-events-none",
-              "group-data-[collapsible=icon]:-translate-x-4"
+              "group-data-[collapsible=icon]:-translate-x-4",
             )}
           >
             <span className="text-sm font-semibold tracking-tight text-card-foreground">
@@ -59,7 +59,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </div>
         </Link>
       </SidebarHeader>
-
       <SidebarContent className="px-3">
         <NavMain />
       </SidebarContent>

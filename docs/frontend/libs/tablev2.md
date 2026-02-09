@@ -72,7 +72,7 @@ Row selection is disabled by default. Enable it explicitly when needed:
   app="sales"
   model="Invoice"
   fields={{
-    display: ["number", "customer.name", "total", "status"],
+    include: ["number", "customer.name", "total", "status"],
     exclude: ["internalNotes", "customer.secretCode"],
     render: {
       status: (value, row, data, refetch) => (
@@ -84,9 +84,30 @@ Row selection is disabled by default. Enable it explicitly when needed:
 ```
 
 Notes:
-- `display` sets visible accessors.
+- `include` sets visible accessors.
 - `exclude` removes fields/relations by accessor or root key.
 - `render` overrides column cell rendering by accessor/root key.
+
+Control reverse/M2M hover stats behavior with `relationStats`:
+
+```tsx
+<BaseModelTable
+  app="store"
+  model="Product"
+  relationStats={{
+    enabled: true,
+    exclude: ["tags"],
+    overrides: {
+      orderItems: (data) => (
+        <>
+          <div className="font-semibold">Custom Stats</div>
+          <div>Total: {String(data.stats?.totalCount ?? 0)}</div>
+        </>
+      ),
+    },
+  }}
+/>
+```
 
 **Notes**:
 - `filterPanel` merges FilterPanel props (e.g. `defaultFilters`, `fieldSelector`) with UI controls (`mode`, `side`, `widthClassName`, `defaultOpen`, `title`).

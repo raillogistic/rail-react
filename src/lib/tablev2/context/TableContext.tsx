@@ -35,6 +35,23 @@ type TableAction =
   | { type: "SET_LOADING"; loading: boolean }
   | { type: "REFRESH" };
 
+function areRowsShallowEqual(
+  left: Record<string, unknown>[],
+  right: Record<string, unknown>[],
+): boolean {
+  if (left === right) return true;
+  if (left.length !== right.length) return false;
+  for (let index = 0; index < left.length; index += 1) {
+    if (left[index] !== right[index]) return false;
+  }
+  return true;
+}
+
+function getErrorSignature(error?: Error | null): string {
+  if (!error) return "";
+  return `${error.name}:${error.message}`;
+}
+
 const initialState: TableContextState = {
   data: [],
   loading: false,
@@ -119,6 +136,18 @@ function tableReducer(state: TableContextState, action: TableAction): TableConte
         : hasTotal
           ? Math.ceil(totalCount / state.pagination.perPage)
           : 0;
+      const nextHasNextPage = action.hasNextPage ?? state.pagination.hasNextPage;
+      const nextHasPreviousPage =
+        action.hasPreviousPage ?? state.pagination.hasPreviousPage;
+      if (
+        state.pagination.total === totalCount &&
+        state.pagination.numPages === (pageCount ?? 0) &&
+        state.pagination.totalKnown === hasTotal &&
+        state.pagination.hasNextPage === nextHasNextPage &&
+        state.pagination.hasPreviousPage === nextHasPreviousPage
+      ) {
+        return state;
+      }
       return {
         ...state,
         pagination: {
@@ -126,9 +155,8 @@ function tableReducer(state: TableContextState, action: TableAction): TableConte
           total: totalCount,
           numPages: pageCount ?? 0,
           totalKnown: hasTotal,
-          hasNextPage: action.hasNextPage ?? state.pagination.hasNextPage,
-          hasPreviousPage:
-            action.hasPreviousPage ?? state.pagination.hasPreviousPage,
+          hasNextPage: nextHasNextPage,
+          hasPreviousPage: nextHasPreviousPage,
         },
       };
     }
@@ -164,11 +192,21 @@ function tableReducer(state: TableContextState, action: TableAction): TableConte
         pagination: { ...state.pagination, page: 1 }
       };
     case "SET_DATA":
+      {
+        const nextError = action.error || null;
+        const sameData = areRowsShallowEqual(state.data, action.data);
+        const sameLoading = state.loading === action.loading;
+        const sameError =
+          getErrorSignature(state.error) === getErrorSignature(nextError);
+        if (sameData && sameLoading && sameError) {
+          return state;
+        }
+      }
       return {
         ...state,
         data: action.data,
         loading: action.loading,
-        error: action.error || null
+        error: action.error || null,
       };
     case "SET_LOADING":
       return { ...state, loading: action.loading };

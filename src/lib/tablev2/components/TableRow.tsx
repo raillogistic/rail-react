@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+﻿import React, { useMemo, useState } from "react";
 import {
   ChevronDown,
   ChevronRight,
@@ -7,7 +7,7 @@ import {
   Pencil,
   Trash2,
 } from "lucide-react";
-import { gql, useMutation } from "@apollo/client";
+import { gql, useApolloClient, useMutation } from "@apollo/client";
 import { TableRow as ShadcnTableRow, TableCell } from "./TableFrame";
 import { Checkbox } from "@/lib/components/ui/checkbox";
 import { Button } from "@/lib/components/ui/button";
@@ -29,12 +29,19 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/lib/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/lib/components/ui/tooltip";
 import { toast } from "sonner";
 import { useTable } from "../context/TableContext";
 import { useMetadata } from "../context/MetadataContext";
+import { GET_MODEL_SCHEMA } from "../queries";
 import {
   formatCellValue,
   findMutation,
+  getSyntheticRelationCountSource,
   normalizeMutationType,
   resolveFieldValue,
   resolveGroupingKey,
@@ -44,10 +51,458 @@ import type {
   BaseModelTableColumnActionsInput,
   BaseModelTableColumnDef,
   BaseModelTableColumnActionContext,
+  BaseModelTableRelationStatsConfig,
+  BaseModelTableRelationStatsOverride,
   BaseModelTableRefetch,
   FieldSchema,
+  RelationshipSchema,
   RowMutationPermissions,
 } from "../types";
+
+type StatsRelationMeta = {
+  relationName: string;
+  relationLabel: string;
+  relatedApp: string;
+  relatedModel: string;
+};
+
+type RelationStatsHoverProps = {
+  row: Record<string, unknown>;
+  primaryKey: string;
+  model: string;
+  whereType: string;
+  relation: StatsRelationMeta;
+  overrideRenderer?: BaseModelTableRelationStatsOverride;
+  children: React.ReactNode;
+};
+
+function toSnakeCase(value: string): string {
+  return value
+    .replace(/([A-Z])/g, "_$1")
+    .toLowerCase()
+    .replace(/^_/, "");
+}
+
+function toCamelCase(value: string): string {
+  return value.replace(/_([a-z])/g, (_, letter: string) =>
+    letter.toUpperCase(),
+  );
+}
+
+function toLabel(value: string): string {
+  return value
+    .replace(/([A-Z])/g, " $1")
+    .replace(/_/g, " ")
+    .trim()
+    .replace(/^./, (char) => char.toUpperCase());
+}
+
+function normalizeRelationKey(value: string): string {
+  return toSnakeCase(value || "").replace(/_/g, "");
+}
+
+function toGraphqlFieldName(value: string): string {
+  const camel = toCamelCase(value || "");
+  if (!camel) return "";
+  return camel.charAt(0).toLowerCase() + camel.slice(1);
+}
+
+const STAT_METRIC_META = [
+  { suffix: "DistinctCount", label: "Distinct", order: 5 },
+  { suffix: "Count", label: "Count", order: 4 },
+  { suffix: "Sum", label: "Sum", order: 0 },
+  { suffix: "Avg", label: "Avg", order: 1 },
+  { suffix: "Min", label: "Min", order: 2 },
+  { suffix: "Max", label: "Max", order: 3 },
+] as const;
+
+type ParsedStatEntry = {
+  key: string;
+  value: unknown;
+  fieldKey: string;
+  fieldLabel: string;
+  metricLabel: string;
+  order: number;
+  isSummary: boolean;
+};
+
+function parseStatEntry(
+  key: string,
+  value: unknown,
+  labelLookup: Record<string, string>,
+): ParsedStatEntry {
+  if (key === "totalCount") {
+    return {
+      key,
+      value,
+      fieldKey: key,
+      fieldLabel: "Total records",
+      metricLabel: "Count",
+      order: -1,
+      isSummary: true,
+    };
+  }
+
+  for (const metric of STAT_METRIC_META) {
+    if (!key.endsWith(metric.suffix)) continue;
+    const rawBase = key.slice(0, -metric.suffix.length);
+    const fieldKey = rawBase || key;
+    return {
+      key,
+      value,
+      fieldKey,
+      fieldLabel: labelLookup[fieldKey] || toLabel(fieldKey),
+      metricLabel: metric.label,
+      order: metric.order,
+      isSummary: false,
+    };
+  }
+
+  return {
+    key,
+    value,
+    fieldKey: key,
+    fieldLabel: toLabel(key),
+    metricLabel: "Value",
+    order: 99,
+    isSummary: false,
+  };
+}
+
+function formatStatValue(value: unknown): string {
+  if (value === null || value === undefined) return "-";
+  if (typeof value === "number") {
+    if (Number.isInteger(value)) {
+      return value.toLocaleString();
+    }
+    return value.toLocaleString(undefined, { maximumFractionDigits: 4 });
+  }
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    if (!Number.isNaN(parsed) && value.trim() !== "") {
+      return Number.isInteger(parsed)
+        ? parsed.toLocaleString()
+        : parsed.toLocaleString(undefined, { maximumFractionDigits: 4 });
+    }
+    return value;
+  }
+  return String(value);
+}
+
+function buildStatsQueryDocument(
+  model: string,
+  relationName: string,
+  whereType: string,
+  statFieldNames: string[],
+) {
+  const lowerCaseModel = model.charAt(0).toLowerCase() + model.slice(1);
+  const queryName = `${lowerCaseModel}Pages`;
+  const operationName = `${lowerCaseModel}${relationName.replace(/[^a-zA-Z0-9]/g, "")}StatsHover`;
+  const statsFieldName = `${relationName}Stats`;
+
+  return gql`
+    query ${operationName}($where: ${whereType}, $skipCount: Boolean) {
+      ${queryName}(page: 1, perPage: 1, where: $where, skipCount: $skipCount) {
+        items {
+          id
+          ${statsFieldName} {
+            ${statFieldNames.join("\n            ")}
+          }
+        }
+      }
+    }
+  `;
+}
+
+function RelationStatsHover({
+  row,
+  primaryKey,
+  model,
+  whereType,
+  relation,
+  overrideRenderer,
+  children,
+}: RelationStatsHoverProps) {
+  const client = useApolloClient();
+  const [open, setOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [stats, setStats] = useState<Record<string, unknown> | null>(null);
+  const [statFieldLabels, setStatFieldLabels] = useState<
+    Record<string, string>
+  >({});
+
+  const rowIdentifierRaw = row[primaryKey] ?? row.id;
+  const rowIdentifier =
+    rowIdentifierRaw === null || rowIdentifierRaw === undefined
+      ? null
+      : String(rowIdentifierRaw);
+
+  const fetchStats = React.useCallback(async () => {
+    if (!rowIdentifier) return;
+    if (loading || stats) return;
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const relatedSchemaResult = await client.query({
+        query: GET_MODEL_SCHEMA,
+        variables: {
+          app: relation.relatedApp,
+          model: relation.relatedModel,
+        },
+        fetchPolicy: "cache-first",
+      });
+
+      const relatedFields =
+        (relatedSchemaResult.data?.modelSchema?.fields as Array<{
+          name?: string;
+          fieldName?: string;
+          verboseName?: string;
+          isNumeric?: boolean;
+          isRelation?: boolean;
+          isPrimaryKey?: boolean;
+        }>) ?? [];
+
+      const numericFields = relatedFields
+        .filter(
+          (field) => field.isNumeric && !field.isRelation && !field.isPrimaryKey,
+        )
+        .map((field) => {
+          const raw = field.name || field.fieldName || "";
+          const key = toGraphqlFieldName(raw);
+          const label = field.verboseName || toLabel(raw);
+          return { key, label };
+        })
+        .filter(
+          (field): field is { key: string; label: string } =>
+            !!field.key && !!field.label,
+        );
+
+      const fieldLabelLookup: Record<string, string> = {};
+      numericFields.forEach((field) => {
+        fieldLabelLookup[field.key] = field.label;
+      });
+      setStatFieldLabels(fieldLabelLookup);
+
+      const numericFieldBases = Object.keys(fieldLabelLookup);
+
+      let statFieldNames: string[] = [
+        ...numericFieldBases.flatMap((base) => [
+          `${base}Sum`,
+          `${base}Avg`,
+          `${base}Min`,
+          `${base}Max`,
+          `${base}Count`,
+          `${base}DistinctCount`,
+        ]),
+      ];
+
+      if (!statFieldNames.includes("totalCount")) {
+        statFieldNames = ["totalCount", ...statFieldNames];
+      }
+
+      const queryDocument = buildStatsQueryDocument(
+        model,
+        relation.relationName,
+        whereType,
+        statFieldNames,
+      );
+
+      const whereField = primaryKey;
+      const queryResult = await client.query({
+        query: queryDocument,
+        variables: {
+          where: {
+            [whereField]: {
+              eq: rowIdentifierRaw,
+            },
+          },
+          skipCount: true,
+        },
+        fetchPolicy: "cache-first",
+      });
+
+      const listKey = `${model.charAt(0).toLowerCase()}${model.slice(1)}Pages`;
+      const statsKey = `${relation.relationName}Stats`;
+      const rawStatsObject =
+        queryResult.data?.[listKey]?.items?.[0]?.[statsKey] ?? null;
+      const statsObject =
+        rawStatsObject && typeof rawStatsObject === "object"
+          ? Object.fromEntries(
+              Object.entries(rawStatsObject).filter(
+                ([key]) => !key.startsWith("__"),
+              ),
+            )
+          : rawStatsObject;
+
+      setStats(statsObject);
+    } catch (fetchError) {
+      const message =
+        fetchError instanceof Error ? fetchError.message : "Stats indisponibles.";
+      setError(message);
+    } finally {
+      setLoading(false);
+    }
+  }, [
+    client,
+    loading,
+    model,
+    primaryKey,
+    relation.relatedApp,
+    relation.relatedModel,
+    relation.relationName,
+    rowIdentifier,
+    rowIdentifierRaw,
+    stats,
+    whereType,
+  ]);
+
+  const handleOpenChange = React.useCallback(
+    (nextOpen: boolean) => {
+      setOpen(nextOpen);
+      if (nextOpen) {
+        void fetchStats();
+      }
+    },
+    [fetchStats],
+  );
+
+  const statEntries = useMemo(() => {
+    if (!stats) return [];
+    return Object.entries(stats).map(([key, value]) =>
+      parseStatEntry(key, value, statFieldLabels),
+    );
+  }, [statFieldLabels, stats]);
+
+  const summaryEntry = useMemo(
+    () => statEntries.find((entry) => entry.isSummary),
+    [statEntries],
+  );
+
+  const groupedEntries = useMemo(() => {
+    const grouped = new Map<
+      string,
+      { fieldLabel: string; values: ParsedStatEntry[] }
+    >();
+    statEntries
+      .filter((entry) => entry.value !== null && entry.value !== undefined)
+      .forEach((entry) => {
+        if (entry.isSummary) return;
+        if (entry.value === null || entry.value === undefined) return;
+        const current = grouped.get(entry.fieldKey);
+        if (current) {
+          current.values.push(entry);
+          return;
+        }
+        grouped.set(entry.fieldKey, {
+          fieldLabel: entry.fieldLabel,
+          values: [entry],
+        });
+      });
+    return Array.from(grouped.values())
+      .map((group) => ({
+        ...group,
+        values: group.values.sort((left, right) => {
+          if (left.order !== right.order) return left.order - right.order;
+          return left.key.localeCompare(right.key);
+        }),
+      }))
+      .sort((left, right) => left.fieldLabel.localeCompare(right.fieldLabel));
+  }, [statEntries]);
+
+  const overrideContent = overrideRenderer
+    ? overrideRenderer({
+        row,
+        relationName: relation.relationName,
+        loading,
+        error,
+        stats,
+      })
+    : null;
+
+  return (
+    <Tooltip open={open} onOpenChange={handleOpenChange} delayDuration={120}>
+      <TooltipTrigger asChild>
+        <span className="inline-flex w-full cursor-help items-center justify-start">
+          {children}
+        </span>
+      </TooltipTrigger>
+      <TooltipContent
+        side="top"
+        align="start"
+        sideOffset={8}
+        className="w-[360px] rounded-xl border border-border/70 bg-popover/95 p-0 text-xs text-popover-foreground shadow-xl backdrop-blur"
+      >
+        <div className="overflow-hidden rounded-xl">
+          <div className="border-b border-border/60 bg-muted/40 px-3 py-2.5">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+              {relation.relationLabel}
+            </p>
+            <p className="text-sm font-semibold text-foreground">Relation Stats</p>
+          </div>
+          <div className="max-h-[280px] space-y-2 overflow-y-auto p-3">
+          {overrideContent ? (
+            overrideContent
+          ) : loading ? (
+            <p className="inline-flex items-center gap-2 rounded-md border border-border/60 bg-muted/30 px-2 py-1.5">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              Chargement...
+            </p>
+          ) : error ? (
+            <p className="rounded-md border border-destructive/30 bg-destructive/10 px-2 py-1.5 text-destructive">
+              {error}
+            </p>
+          ) : statEntries.length ? (
+            <>
+              {summaryEntry ? (
+                <div className="rounded-lg border border-border/70 bg-card/90 px-3 py-2">
+                  <p className="text-[10px] uppercase tracking-[0.08em] text-muted-foreground">
+                    {summaryEntry.fieldLabel}
+                  </p>
+                  <p className="text-lg font-semibold leading-tight text-foreground">
+                    {formatStatValue(summaryEntry.value)}
+                  </p>
+                </div>
+              ) : null}
+              {groupedEntries.map((group) => (
+                <div
+                  key={group.fieldLabel}
+                  className="rounded-lg border border-border/60 bg-background/80 p-2"
+                >
+                  <p className="mb-1.5 text-[11px] font-semibold text-foreground">
+                    {group.fieldLabel}
+                  </p>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {group.values.map((entry) => (
+                      <div
+                        key={entry.key}
+                        className="rounded-md border border-border/40 bg-muted/30 px-2 py-1"
+                      >
+                        <p className="text-[10px] uppercase tracking-[0.06em] text-muted-foreground">
+                          {entry.metricLabel}
+                        </p>
+                        <p className="text-xs font-semibold text-foreground">
+                          {formatStatValue(entry.value)}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </>
+          ) : (
+            <p className="rounded-md border border-dashed border-border/60 px-2 py-1.5 text-muted-foreground">
+              Aucune statistique.
+            </p>
+          )}
+          </div>
+        </div>
+      </TooltipContent>
+    </Tooltip>
+  );
+}
 
 function RowActions({
   row,
@@ -262,6 +717,7 @@ export function TableRows({
   enableSelection,
   refetch,
   columnActions,
+  relationStats,
   performance,
   scrollContainerRef,
   infiniteMode,
@@ -272,6 +728,7 @@ export function TableRows({
   enableSelection?: boolean;
   refetch?: BaseModelTableRefetch;
   columnActions?: BaseModelTableColumnActionsInput;
+  relationStats?: BaseModelTableRelationStatsConfig;
   performance?: {
     enableVirtualization?: boolean;
     virtualizeThreshold?: number;
@@ -306,6 +763,16 @@ export function TableRows({
     });
     return lookup;
   }, [metadata]);
+
+  const relationLookup = useMemo(() => {
+    const lookup = new Map<string, RelationshipSchema>();
+    if (!metadata?.relationships) return lookup;
+    metadata.relationships.forEach((relation) => {
+      if (relation.name) lookup.set(relation.name, relation);
+      if (relation.fieldName) lookup.set(relation.fieldName, relation);
+    });
+    return lookup;
+  }, [metadata?.relationships]);
 
   const resolveValue = (row: Record<string, unknown>, accessor: string) =>
     accessor.split(".").reduce<unknown>((acc, key) => {
@@ -343,6 +810,136 @@ export function TableRows({
       return String(value);
     }
   };
+
+  const whereType = metadata?.filterConfig?.inputTypeName || `${metadata?.model || "Model"}WhereInput`;
+  const primaryKey = metadata?.primaryKey || "id";
+  const statsEnabled = relationStats?.enabled !== false;
+  const includeSet = useMemo(
+    () =>
+      new Set((relationStats?.include ?? []).map((name) => normalizeRelationKey(name))),
+    [relationStats?.include],
+  );
+  const excludeSet = useMemo(
+    () =>
+      new Set((relationStats?.exclude ?? []).map((name) => normalizeRelationKey(name))),
+    [relationStats?.exclude],
+  );
+
+  const resolveStatsRelation = React.useCallback(
+    (
+      accessor: string,
+      fieldMeta?: FieldSchema,
+    ): StatsRelationMeta | null => {
+      if (!statsEnabled) return null;
+      if (!metadata) return null;
+      const root = accessor.split(".")[0];
+      if (!root || root.endsWith("Stats")) return null;
+      const normalizedRoot = normalizeRelationKey(root);
+
+      const candidates = new Set<string>();
+      const relationFromSynthetic = fieldMeta
+        ? getSyntheticRelationCountSource(fieldMeta)
+        : undefined;
+      if (relationFromSynthetic) candidates.add(relationFromSynthetic);
+      if (fieldMeta?.isRelation) {
+        if (fieldMeta.name) candidates.add(fieldMeta.name);
+        if (fieldMeta.fieldName) candidates.add(fieldMeta.fieldName);
+      }
+      candidates.add(root);
+      if (/count$/i.test(root)) {
+        const stripped = root.replace(/count$/i, "");
+        if (stripped) candidates.add(stripped);
+      }
+
+      const normalizedCandidates = new Set<string>();
+      candidates.forEach((candidate) => {
+        normalizedCandidates.add(candidate);
+        normalizedCandidates.add(
+          candidate.replace(/_([a-z])/g, (_, letter: string) =>
+            letter.toUpperCase(),
+          ),
+        );
+        normalizedCandidates.add(toSnakeCase(candidate));
+      });
+
+      let relation: RelationshipSchema | undefined;
+      normalizedCandidates.forEach((candidate) => {
+        if (relation) return;
+        relation = relationLookup.get(candidate);
+      });
+      if (!relation) return null;
+      const normalizedRelationName = normalizeRelationKey(
+        relation.name || relation.fieldName || root,
+      );
+      if (includeSet.size > 0) {
+        const includeMatch =
+          includeSet.has(normalizedRelationName) || includeSet.has(normalizedRoot);
+        if (!includeMatch) return null;
+      }
+      if (
+        excludeSet.has(normalizedRelationName) ||
+        excludeSet.has(normalizedRoot)
+      ) {
+        return null;
+      }
+
+      const relationType = (relation.relationType || "").toUpperCase();
+      const isReverseOrManyToMany =
+        relation.isReverse ||
+        relationType.includes("MANY_TO_MANY") ||
+        relationType.includes("MANYTOMANY") ||
+        relationType.includes("REVERSE_FK");
+
+      if (!relation.isToMany || !isReverseOrManyToMany) return null;
+
+      const relationName = toGraphqlFieldName(
+        relation.name || relation.fieldName || "",
+      );
+      if (!relationName) return null;
+      const relationLabel =
+        relation.verboseName ||
+        fieldMeta?.verboseName ||
+        toLabel(relation.name || relation.fieldName || relationName);
+
+      return {
+        relationName,
+        relationLabel,
+        relatedApp: relation.relatedApp,
+        relatedModel: relation.relatedModel,
+      };
+    },
+    [excludeSet, includeSet, metadata, relationLookup, statsEnabled],
+  );
+
+  const resolveStatsOverride = React.useCallback(
+    (
+      accessor: string,
+      relationName: string,
+    ): BaseModelTableRelationStatsOverride | undefined => {
+      const overrides = relationStats?.overrides;
+      if (!overrides) return undefined;
+
+      const root = accessor.split(".")[0] || accessor;
+      const keyCandidates = [
+        accessor,
+        root,
+        toCamelCase(root),
+        toSnakeCase(root),
+        relationName,
+        toCamelCase(relationName),
+        toSnakeCase(relationName),
+      ];
+
+      for (const key of keyCandidates) {
+        if (Object.prototype.hasOwnProperty.call(overrides, key)) {
+          return overrides[key];
+        }
+      }
+
+      return undefined;
+    },
+    [relationStats?.overrides],
+  );
 
   const visibleColumns = useMemo(() => {
     if (columns && columns.length > 0) {
@@ -502,6 +1099,21 @@ export function TableRows({
             const metaField = isSimpleAccessor
               ? fieldLookup.get(field.accessor)
               : undefined;
+            const statsRelation = resolveStatsRelation(field.accessor, metaField);
+            const statsOverride = statsRelation
+              ? resolveStatsOverride(field.accessor, statsRelation.relationName)
+              : undefined;
+
+            const renderedValue = field.render
+              ? field.render(value, row, {
+                  accessor: field.accessor,
+                  columnId: field.id,
+                  data,
+                  refetch,
+                })
+              : metaField
+                ? formatCellValue(value, metaField)
+                : formatFallbackValue(value);
 
             return (
               <TableCell 
@@ -514,20 +1126,30 @@ export function TableRows({
                 )}
               >
                 <div className={cn(cellTextClass, "flex items-center h-full")}>
-                  {field.render
-                    ? field.render(value, row, {
-                        accessor: field.accessor,
-                        columnId: field.id,
-                        data,
-                        refetch,
-                      })
-                    : metaField
-                      ? formatCellValue(value, metaField)
-                      : formatFallbackValue(value)}
+                  {statsRelation ? (
+                    <RelationStatsHover
+                      row={row}
+                      primaryKey={primaryKey}
+                      model={metadata?.model || "Model"}
+                      whereType={whereType}
+                      relation={statsRelation}
+                      overrideRenderer={statsOverride}
+                    >
+                      {renderedValue}
+                    </RelationStatsHover>
+                  ) : (
+                    renderedValue
+                  )}
                 </div>
               </TableCell>
             );
           }
+
+          const statsRelation = resolveStatsRelation(field.name || field.fieldName, field);
+          const statsOverride = statsRelation
+            ? resolveStatsOverride(field.name || field.fieldName, statsRelation.relationName)
+            : undefined;
+          const renderedValue = formatCellValue(resolveFieldValue(row, field), field);
 
           return (
             <TableCell 
@@ -540,7 +1162,20 @@ export function TableRows({
               )}
             >
               <div className={cn(cellTextClass, "flex items-center h-full")}>
-                {formatCellValue(resolveFieldValue(row, field), field)}
+                {statsRelation ? (
+                  <RelationStatsHover
+                    row={row}
+                    primaryKey={primaryKey}
+                    model={metadata?.model || "Model"}
+                    whereType={whereType}
+                    relation={statsRelation}
+                    overrideRenderer={statsOverride}
+                  >
+                    {renderedValue}
+                  </RelationStatsHover>
+                ) : (
+                  renderedValue
+                )}
               </div>
             </TableCell>
           );
@@ -749,3 +1384,4 @@ export function TableRows({
     </>
   );
 }
+

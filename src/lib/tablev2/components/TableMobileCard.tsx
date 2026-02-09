@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+﻿import { useEffect, useState } from "react";
 import { Button } from "@/lib/components/ui/button";
 import {
   Card,
@@ -60,7 +60,7 @@ export function TableMobileCard({
 
   const byName = new Map(metadata.fields.map((field) => [field.name, field]));
   const byFieldName = new Map(
-    metadata.fields.map((field) => [field.fieldName || field.name, field]),
+    metadata.fields.map((field) => [field.name || field.fieldName, field]),
   );
   const orderedColumns = columnOrder
     .map((columnId) => byName.get(columnId) || byFieldName.get(columnId))
@@ -73,11 +73,11 @@ export function TableMobileCard({
   });
   const visibleColumns = mergedColumns.filter((field) => {
     if (field.visibility === "hidden") return false;
-    const id = field.fieldName || field.name;
+    const id = field.name || field.fieldName;
     return columnVisibility[id] ?? true;
   });
   const showIdDescription = visibleColumns.some((field) => {
-    const id = field.fieldName || field.name;
+    const id = field.name || field.fieldName;
     return id === "id";
   });
 
@@ -139,3 +139,4 @@ export function TableMobileCard({
     </div>
   );
 }
+

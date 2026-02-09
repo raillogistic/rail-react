@@ -1,7 +1,8 @@
-import { format } from "date-fns";
+﻿import { format } from "date-fns";
 import { Check, X } from "lucide-react";
 import {
   BaseModelTableField,
+  BaseModelTableFieldAdd,
   BaseModelTableFieldRenderMap,
   BaseModelTableFieldsInput,
   FieldSchema,
@@ -142,6 +143,12 @@ function toSnakeCase(value: string): string {
     .replace(/^_/, "");
 }
 
+function toGraphqlFieldName(value: string): string {
+  const camel = toCamelCase(value || "");
+  if (!camel) return "";
+  return camel.charAt(0).toLowerCase() + camel.slice(1);
+}
+
 function resolveRelationCountSource(
   accessor: string,
   field: FieldSchema,
@@ -177,7 +184,7 @@ export function getDefaultHiddenColumnIds(
   const normalizeKey = (value: string) => value.replace(/[_-]/g, "").toLowerCase();
 
   metadata.fields.forEach((field) => {
-    const accessor = field.fieldName || field.name;
+    const accessor = field.name || field.fieldName;
     const normalized = normalizeKey(accessor);
     const relation =
       relationLookup.get(field.name) ??
@@ -210,6 +217,9 @@ export function getDefaultHiddenColumnIds(
     hidden.add(accessor);
     hidden.add(field.name);
     if (field.fieldName) hidden.add(field.fieldName);
+    hidden.add(toGraphqlFieldName(accessor));
+    hidden.add(toGraphqlFieldName(field.name));
+    if (field.fieldName) hidden.add(toGraphqlFieldName(field.fieldName));
   });
 
   return hidden;
@@ -217,7 +227,7 @@ export function getDefaultHiddenColumnIds(
 
 function buildRelationshipField(relation: RelationshipSchema): FieldSchema {
   const name = relation.name || relation.fieldName;
-  const fieldName = relation.fieldName || relation.name;
+  const fieldName = relation.name || relation.fieldName;
   const lookupField =
     relation.lookupField && relation.lookupField !== "__str__"
       ? relation.lookupField
@@ -337,7 +347,7 @@ export function mergeModelSchemaWithRelationships(
   const relationshipFields = relationships
     .filter((relation) => {
       const name = relation.name || relation.fieldName;
-      const fieldName = relation.fieldName || relation.name;
+      const fieldName = relation.name || relation.fieldName;
       return !existingKeys.has(name) && !existingKeys.has(fieldName);
     })
     .map(buildRelationshipField);
@@ -347,7 +357,7 @@ export function mergeModelSchemaWithRelationships(
     .map(buildRelationshipCountField)
     .filter((field) => {
       const name = field.name || field.fieldName;
-      const fieldName = field.fieldName || field.name;
+      const fieldName = field.name || field.fieldName;
       return !existingKeys.has(name) && !existingKeys.has(fieldName);
     });
 
@@ -361,8 +371,45 @@ export function mergeModelSchemaWithRelationships(
   };
 }
 
+export function normalizeModelSchemaAccessors(
+  metadata?: ModelSchema | null,
+): ModelSchema | undefined {
+  if (!metadata) return undefined;
+
+  const normalizedFields = (metadata.fields ?? []).map((field) => {
+    const rawFieldName = field.fieldName || field.name;
+    const canonicalName = toGraphqlFieldName(field.name || field.fieldName);
+    return {
+      ...field,
+      name: canonicalName || field.name || rawFieldName,
+      fieldName: rawFieldName,
+    };
+  });
+
+  const normalizedRelationships = (metadata.relationships ?? []).map(
+    (relation) => {
+      const rawRelationFieldName = relation.fieldName || relation.name;
+      const canonicalName = toGraphqlFieldName(
+        relation.name || relation.fieldName,
+      );
+      return {
+        ...relation,
+        name: canonicalName || relation.name || rawRelationFieldName,
+        fieldName: rawRelationFieldName,
+      };
+    },
+  );
+
+  return {
+    ...metadata,
+    fields: normalizedFields,
+    relationships: normalizedRelationships,
+  };
+}
+
 export type ResolvedBaseModelTableFieldsConfig = {
-  display?: BaseModelTableField[];
+  include?: BaseModelTableField[];
+  add: BaseModelTableFieldAdd[];
   exclude: string[];
   render: BaseModelTableFieldRenderMap;
 };
@@ -372,7 +419,8 @@ export function normalizeBaseModelTableFieldsInput(
 ): ResolvedBaseModelTableFieldsConfig {
   if (!input) {
     return {
-      display: undefined,
+      include: undefined,
+      add: [],
       exclude: [],
       render: {},
     };
@@ -380,17 +428,139 @@ export function normalizeBaseModelTableFieldsInput(
 
   if (Array.isArray(input)) {
     return {
-      display: input,
+      include: input,
+      add: [],
       exclude: [],
       render: {},
     };
   }
 
+  const add = (input.add ?? [])
+    .map((entry) => ({
+      ...entry,
+      accessor: entry.accessor.trim(),
+    }))
+    .filter((entry) => Boolean(entry.accessor));
+
   return {
-    display: input.display ?? input.include,
+    include: input.include,
+    add,
     exclude: (input.exclude ?? []).map((entry) => entry.trim()).filter(Boolean),
     render: input.render ?? {},
   };
+}
+
+function getFieldAccessor(field: BaseModelTableField): string {
+  return typeof field === "string" ? field : field.accessor;
+}
+
+function withFieldTitle(
+  field: BaseModelTableField,
+  title: string,
+): BaseModelTableField {
+  if (typeof field === "string") {
+    return {
+      accessor: field,
+      title,
+    };
+  }
+  return {
+    ...field,
+    title,
+  };
+}
+
+function findFieldIndexByAccessor(
+  fields: BaseModelTableField[],
+  accessor: string,
+): number {
+  return fields.findIndex((field) => getFieldAccessor(field) === accessor);
+}
+
+function resolveInsertIndex(
+  fields: BaseModelTableField[],
+  order: BaseModelTableFieldAdd["order"],
+): number {
+  if (typeof order === "number") {
+    return Math.min(Math.max(order, 0), fields.length);
+  }
+  if (!order) return fields.length;
+
+  if (order.before) {
+    const beforeIndex = findFieldIndexByAccessor(fields, order.before);
+    if (beforeIndex >= 0) return beforeIndex;
+  }
+  if (order.after) {
+    const afterIndex = findFieldIndexByAccessor(fields, order.after);
+    if (afterIndex >= 0) return afterIndex + 1;
+  }
+
+  return fields.length;
+}
+
+export function mergeBaseModelTableFields(
+  options: {
+    include?: BaseModelTableField[];
+    defaults: BaseModelTableField[];
+    add?: BaseModelTableFieldAdd[];
+    excludedAccessors?: Set<string>;
+  },
+): BaseModelTableField[] {
+  const baseFields = options.include ?? options.defaults;
+  const excludedAccessors = options.excludedAccessors;
+  const merged: BaseModelTableField[] = [];
+  const existingAccessors = new Set<string>();
+
+  const appendBaseField = (field: BaseModelTableField) => {
+    const accessor = getFieldAccessor(field);
+    if (!accessor) return;
+    if (excludedAccessors && isAccessorExcluded(accessor, excludedAccessors)) {
+      return;
+    }
+    if (existingAccessors.has(accessor)) return;
+    merged.push(field);
+    existingAccessors.add(accessor);
+  };
+
+  baseFields.forEach(appendBaseField);
+
+  (options.add ?? []).forEach((fieldToAdd) => {
+    const accessor = fieldToAdd.accessor;
+    if (!accessor) return;
+    if (excludedAccessors && isAccessorExcluded(accessor, excludedAccessors)) {
+      return;
+    }
+
+    const existingIndex = findFieldIndexByAccessor(merged, accessor);
+    const title = fieldToAdd.title?.trim();
+
+    if (existingIndex >= 0) {
+      let nextField = merged[existingIndex];
+      if (title) {
+        nextField = withFieldTitle(nextField, title);
+      }
+
+      const shouldMove = fieldToAdd.order !== undefined;
+      if (!shouldMove) {
+        merged[existingIndex] = nextField;
+        return;
+      }
+
+      merged.splice(existingIndex, 1);
+      const insertIndex = resolveInsertIndex(merged, fieldToAdd.order);
+      merged.splice(insertIndex, 0, nextField);
+      return;
+    }
+
+    const newField: BaseModelTableField = title
+      ? { accessor, title }
+      : accessor;
+    const insertIndex = resolveInsertIndex(merged, fieldToAdd.order);
+    merged.splice(insertIndex, 0, newField);
+    existingAccessors.add(accessor);
+  });
+
+  return merged;
 }
 
 export function isAccessorExcluded(
@@ -502,3 +672,4 @@ export function findMutation(
     (mutation) => normalizeMutationType(mutation) === normalized,
   );
 }
+

@@ -90,7 +90,8 @@ Row selection is now disabled by default. Enable it only when needed:
   app="sales"
   model="Invoice"
   fields={{
-    display: ["number", "customer.name", "total", "status"],
+    include: ["number", "customer.name", "total", "status"],
+    add: [{ accessor: "createdAt", title: "Creation", order: { after: "status" } }],
     exclude: ["internalNotes", "customer.secretCode"],
     render: {
       status: (value, row, data, refetch) => (
@@ -102,9 +103,31 @@ Row selection is now disabled by default. Enable it only when needed:
 ```
 
 Notes:
-- `display` defines visible columns.
+- `include` defines visible columns.
+- `add` appends/inserts extra columns into `include` (or defaults when `include` is omitted).
 - `exclude` removes fields/relations by accessor or root key.
 - `render` overrides cell rendering by column accessor/root.
+
+Control reverse/M2M hover stats behavior with `relationStats`:
+
+```tsx
+<BaseModelTable
+  app="store"
+  model="Product"
+  relationStats={{
+    enabled: true,
+    exclude: ["tags"],
+    overrides: {
+      orderItems: (data) => (
+        <>
+          <div className="font-semibold">Custom Stats</div>
+          <div>Total: {String(data.stats?.totalCount ?? 0)}</div>
+        </>
+      ),
+    },
+  }}
+/>
+```
 
 ### View + Performance Options
 

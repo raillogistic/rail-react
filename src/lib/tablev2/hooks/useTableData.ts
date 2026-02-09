@@ -1,9 +1,10 @@
-import { useQuery, gql } from "@apollo/client";
+﻿import { useQuery, gql } from "@apollo/client";
 import { useMemo, useEffect } from "react";
 import { useTable } from "../context/TableContext";
 import { useMetadata } from "../context/MetadataContext";
 import { useDebouncedValue } from "./useDebouncedValue";
 import type {
+  BaseModelTableField,
   BaseModelTableFieldsInput,
   BaseModelTableRelationConfig,
   FieldSchema,
@@ -12,9 +13,28 @@ import type {
 } from "../types";
 import {
   getSyntheticRelationCountSource,
-  isAccessorExcluded,
+  mergeBaseModelTableFields,
   normalizeBaseModelTableFieldsInput,
 } from "../utils";
+
+function toCamelCase(value: string): string {
+  return value.replace(/_([a-z])/g, (_, letter: string) =>
+    letter.toUpperCase(),
+  );
+}
+
+function toSnakeCase(value: string): string {
+  return value
+    .replace(/([A-Z])/g, "_$1")
+    .toLowerCase()
+    .replace(/^_/, "");
+}
+
+function toGraphqlFieldName(value: string): string {
+  const camel = toCamelCase(value || "");
+  if (!camel) return "";
+  return camel.charAt(0).toLowerCase() + camel.slice(1);
+}
 
 // Helper to construct the dynamic query
 function buildDynamicQuery(
@@ -35,26 +55,94 @@ function buildDynamicQuery(
   const queryName = `${lowerCaseModel}Pages`;
 
   const relationLookup = new Map<string, RelationshipSchema>();
+  const relationCanonicalByKey = new Map<string, string>();
+  const relationByCanonical = new Map<string, RelationshipSchema>();
   relationships?.forEach((relation) => {
-    if (relation.name) relationLookup.set(relation.name, relation);
-    if (relation.fieldName) relationLookup.set(relation.fieldName, relation);
+    const canonicalName = toGraphqlFieldName(
+      relation.name || relation.fieldName,
+    );
+    if (!canonicalName) return;
+    relationByCanonical.set(canonicalName, relation);
+    [
+      relation.name,
+      relation.fieldName,
+      canonicalName,
+      toSnakeCase(canonicalName),
+      toCamelCase(canonicalName),
+    ]
+      .filter((entry): entry is string => !!entry)
+      .forEach((entry) => {
+        relationLookup.set(entry, relation);
+        relationCanonicalByKey.set(entry, canonicalName);
+      });
   });
+  const fieldCanonicalByKey = new Map<string, string>();
+  fields.forEach((field) => {
+    const canonicalName = toGraphqlFieldName(field.name || field.fieldName);
+    if (!canonicalName) return;
+    [
+      field.name,
+      field.fieldName,
+      canonicalName,
+      toSnakeCase(canonicalName),
+      toCamelCase(canonicalName),
+    ]
+      .filter((entry): entry is string => !!entry)
+      .forEach((entry) => fieldCanonicalByKey.set(entry, canonicalName));
+  });
+  const canonicalizeRoot = (root: string) =>
+    relationCanonicalByKey.get(root) ??
+    fieldCanonicalByKey.get(root) ??
+    toGraphqlFieldName(root);
+  const canonicalizeAccessor = (accessor: string) => {
+    const parts = accessor.replace(/__/g, ".").split(".").filter(Boolean);
+    if (parts.length === 0) return "";
+    const [root, ...rest] = parts;
+    const normalizedRoot = canonicalizeRoot(root);
+    if (!normalizedRoot) return "";
+    const normalizedRest = rest.map((segment) => toGraphqlFieldName(segment));
+    return [normalizedRoot, ...normalizedRest.filter(Boolean)].join(".");
+  };
+
   const relationCountSourceLookup = new Map<string, string>();
   fields.forEach((field) => {
     const source = getSyntheticRelationCountSource(field);
     if (!source) return;
-    if (field.name) relationCountSourceLookup.set(field.name, source);
-    if (field.fieldName) relationCountSourceLookup.set(field.fieldName, source);
+    const canonicalSource =
+      relationCanonicalByKey.get(source) ?? toGraphqlFieldName(source);
+    if (!canonicalSource) return;
+    [
+      field.name,
+      field.fieldName,
+      toGraphqlFieldName(field.name || field.fieldName),
+    ]
+      .filter((entry): entry is string => !!entry)
+      .forEach((entry) => relationCountSourceLookup.set(entry, canonicalSource));
   });
 
   const relationConfig = fieldConfig?.relations ?? {};
   const normalizedFieldsConfig = normalizeBaseModelTableFieldsInput(
     fieldConfig?.fields,
   );
-  const excludedAccessors = new Set(normalizedFieldsConfig.exclude);
+  const excludedAccessors = new Set<string>();
+  normalizedFieldsConfig.exclude.forEach((entry) => {
+    if (!entry) return;
+    excludedAccessors.add(entry);
+    excludedAccessors.add(toGraphqlFieldName(entry));
+    excludedAccessors.add(toSnakeCase(entry));
+    excludedAccessors.add(toCamelCase(entry));
+    const root = entry.split(".")[0]?.split("__")[0];
+    if (!root) return;
+    excludedAccessors.add(root);
+    excludedAccessors.add(toGraphqlFieldName(root));
+    excludedAccessors.add(toSnakeCase(root));
+    excludedAccessors.add(toCamelCase(root));
+  });
 
   const resolveRelationNameForCountAccessor = (accessor: string) => {
-    const explicit = relationCountSourceLookup.get(accessor);
+    const explicit =
+      relationCountSourceLookup.get(accessor) ??
+      relationCountSourceLookup.get(canonicalizeRoot(accessor));
     if (explicit) return explicit;
     const stripped = accessor.replace(/count$/i, "");
     if (!stripped || stripped === accessor) return null;
@@ -62,162 +150,169 @@ function buildDynamicQuery(
       stripped,
       stripped.charAt(0).toLowerCase() + stripped.slice(1),
       stripped.charAt(0).toUpperCase() + stripped.slice(1),
-      stripped.replace(/([A-Z])/g, "_$1").toLowerCase().replace(/^_/, ""),
-      stripped.replace(/_([a-z])/g, (_, letter: string) => letter.toUpperCase()),
+      stripped
+        .replace(/([A-Z])/g, "_$1")
+        .toLowerCase()
+        .replace(/^_/, ""),
+      stripped.replace(/_([a-z])/g, (_, letter: string) =>
+        letter.toUpperCase(),
+      ),
     ]);
     for (const candidate of candidates) {
-      if (relationLookup.has(candidate)) return candidate;
+      const canonical = relationCanonicalByKey.get(candidate);
+      if (canonical) return canonical;
     }
     return null;
   };
 
-  const isRelationField = (name: string) =>
-    fields.some(
-      (field) =>
-        (field.name === name || field.fieldName === name) && field.isRelation,
-    ) || relationLookup.has(name);
+  const isRelationField = (name: string) => {
+    const canonical = canonicalizeRoot(name);
+    if (!canonical) return false;
+    if (relationByCanonical.has(canonical)) return true;
+    return fields.some((field) => {
+      if (!field.isRelation) return false;
+      const fieldCanonical = toGraphqlFieldName(field.name || field.fieldName);
+      return fieldCanonical === canonical;
+    });
+  };
 
-  const buildRelationSelection = (relationName: string) => {
+  const resolveRelationConfig = (
+    canonicalName: string,
+    relation?: RelationshipSchema,
+  ) => {
+    const candidates = [
+      canonicalName,
+      relation?.name,
+      relation?.fieldName,
+      toSnakeCase(canonicalName),
+      toCamelCase(canonicalName),
+    ].filter((entry): entry is string => !!entry);
+    for (const candidate of candidates) {
+      if (relationConfig[candidate]) return relationConfig[candidate];
+    }
+    return undefined;
+  };
+
+  const buildRelationSelection = (relationNameRaw: string) => {
+    const relationName =
+      relationCanonicalByKey.get(relationNameRaw) ??
+      toGraphqlFieldName(relationNameRaw);
     const relation =
-      relationLookup.get(relationName) ?? relationLookup.get(relationName);
-    const config = relationConfig[relationName];
-    const selections = new Set<string>(config?.fields ?? []);
+      relationByCanonical.get(relationName) ??
+      relationLookup.get(relationNameRaw);
+    const config = resolveRelationConfig(relationName, relation);
+    const selections = new Set<string>(
+      (config?.fields ?? []).map((entry) => toGraphqlFieldName(entry)),
+    );
     selections.add("id");
     selections.add("desc");
     if (config?.display) {
-      selections.add(config.display);
+      selections.add(toGraphqlFieldName(config.display));
     }
     if (
       relation?.lookupField &&
       relation.lookupField !== "id" &&
       relation.lookupField !== "__str__"
     ) {
-      selections.add(relation.lookupField);
+      selections.add(toGraphqlFieldName(relation.lookupField));
     }
-    return `${relationName} {\n        ${Array.from(selections).join("\n        ")}\n      }`;
+    const renderedSelections = Array.from(selections).filter(Boolean);
+    return `${relationName} {\n        ${renderedSelections.join("\n        ")}\n      }`;
   };
 
-  const buildDefaultFieldSelection = () => {
-    const selections: string[] = [];
-    const seenSelections = new Set<string>();
-    const pushSelection = (selection: string) => {
-      if (!selection || seenSelections.has(selection)) return;
-      seenSelections.add(selection);
-      selections.push(selection);
+  const defaultDisplayFields: BaseModelTableField[] = fields
+    .filter((field) => field.visibility !== "hidden")
+    .map((field) => toGraphqlFieldName(field.name || field.fieldName))
+    .filter(Boolean);
+
+  const resolvedIncludeFields = mergeBaseModelTableFields({
+    include: normalizedFieldsConfig.include,
+    defaults: defaultDisplayFields,
+    add: normalizedFieldsConfig.add,
+    excludedAccessors,
+  });
+
+  const fieldSelection = (() => {
+    interface SelectionTree {
+      [key: string]: SelectionTree | true;
+    }
+    const tree: SelectionTree = {};
+
+    const ensureObject = (node: SelectionTree, key: string) => {
+      if (!node[key] || node[key] === true) {
+        node[key] = {};
+      }
+      return node[key] as SelectionTree;
     };
-    fields
-      .filter((f) => {
-        if (f.visibility === "hidden") return false;
-        const accessor = f.fieldName || f.name;
-        return !isAccessorExcluded(accessor, excludedAccessors);
-      })
-      .forEach((field) => {
-        const accessor = field.fieldName || field.name;
-        const countSource = resolveRelationNameForCountAccessor(accessor);
+
+    const addPathToTree = (node: SelectionTree, parts: string[]) => {
+      const [head, ...rest] = parts;
+      if (!head) return;
+      if (rest.length === 0) {
+        node[head] = true;
+        return;
+      }
+      const child = ensureObject(node, head);
+      addPathToTree(child, rest);
+    };
+
+    const addRelationDefaults = (relationName: string) => {
+      const relation = relationLookup.get(relationName);
+      const relationNode = ensureObject(tree, relationName);
+      const config = relationConfig[relationName];
+      const defaults = new Set<string>(config?.fields ?? []);
+      defaults.add("id");
+      defaults.add("desc");
+      if (config?.display) {
+        defaults.add(config.display);
+      }
+      if (
+        relation?.lookupField &&
+        relation.lookupField !== "id" &&
+        relation.lookupField !== "__str__"
+      ) {
+        defaults.add(relation.lookupField);
+      }
+      defaults.forEach((field) => addPathToTree(relationNode, [field]));
+    };
+
+    resolvedIncludeFields.forEach((entry) => {
+      const rawAccessor = typeof entry === "string" ? entry : entry.accessor;
+      if (!rawAccessor) return;
+      const accessor = canonicalizeAccessor(rawAccessor);
+      if (!accessor) return;
+      const parts = accessor.split(".");
+      const [root, ...rest] = parts;
+      if (!root) return;
+
+      if (rest.length === 0) {
+        const countSource = resolveRelationNameForCountAccessor(root);
         if (countSource) {
-          pushSelection(buildRelationSelection(countSource));
+          addRelationDefaults(countSource);
           return;
         }
-        if (field.isRelation) {
-          pushSelection(buildRelationSelection(field.name));
-          return;
-        }
-        pushSelection(field.name);
-      });
-    return selections.join("\n      ");
-  };
-
-  const configuredDisplayFields = normalizedFieldsConfig.display?.filter(
-    (entry) => {
-      const accessor = typeof entry === "string" ? entry : entry.accessor;
-      return !isAccessorExcluded(accessor, excludedAccessors);
-    },
-  );
-  const hasConfiguredDisplay = normalizedFieldsConfig.display !== undefined;
-
-  const fieldSelection = hasConfiguredDisplay
-    ? (() => {
-        interface SelectionTree {
-          [key: string]: SelectionTree | true;
-        }
-        const tree: SelectionTree = {};
-
-        const ensureObject = (node: SelectionTree, key: string) => {
-          if (!node[key] || node[key] === true) {
-            node[key] = {};
-          }
-          return node[key] as SelectionTree;
-        };
-
-        const addPathToTree = (node: SelectionTree, parts: string[]) => {
-          const [head, ...rest] = parts;
-          if (!head) return;
-          if (rest.length === 0) {
-            node[head] = true;
-            return;
-          }
-          const child = ensureObject(node, head);
-          addPathToTree(child, rest);
-        };
-
-        const addRelationDefaults = (relationName: string) => {
-          const relation = relationLookup.get(relationName);
-          const relationNode = ensureObject(tree, relationName);
-          const config = relationConfig[relationName];
-          const defaults = new Set<string>(config?.fields ?? []);
-          defaults.add("id");
-          defaults.add("desc");
-          if (config?.display) {
-            defaults.add(config.display);
-          }
-          if (
-            relation?.lookupField &&
-            relation.lookupField !== "id" &&
-            relation.lookupField !== "__str__"
-          ) {
-            defaults.add(relation.lookupField);
-          }
-          defaults.forEach((field) => addPathToTree(relationNode, [field]));
-        };
-
-        (configuredDisplayFields ?? []).forEach((entry) => {
-          const accessor = typeof entry === "string" ? entry : entry.accessor;
-          if (!accessor) return;
-          const parts = accessor.split(".");
-          const [root, ...rest] = parts;
-          if (!root) return;
-
-          if (rest.length === 0) {
-            const countSource = resolveRelationNameForCountAccessor(root);
-            if (countSource) {
-              addRelationDefaults(countSource);
-              return;
-            }
-            if (isRelationField(root)) {
-              addRelationDefaults(root);
-            } else {
-              addPathToTree(tree, [root]);
-            }
-            return;
-          }
-
+        if (isRelationField(root)) {
           addRelationDefaults(root);
-          const relationNode = ensureObject(tree, root);
-          addPathToTree(relationNode, rest);
-        });
+        } else {
+          addPathToTree(tree, [root]);
+        }
+        return;
+      }
 
-        const serializeTree = (node: SelectionTree): string =>
-          Object.entries(node)
-            .map(([key, value]) =>
-              value === true
-                ? key
-                : `${key} {\n        ${serializeTree(value)}\n      }`,
-            )
-            .join("\n      ");
+      addRelationDefaults(root);
+      const relationNode = ensureObject(tree, root);
+      addPathToTree(relationNode, rest);
+    });
 
-        return serializeTree(tree);
-      })()
-    : buildDefaultFieldSelection();
+    const serializeTree = (node: SelectionTree): string =>
+      Object.entries(node)
+        .map(([key, value]) =>
+          value === true ? key : `${key} {\n        ${serializeTree(value)}\n      }`,
+        )
+        .join("\n      ");
+
+    return serializeTree(tree);
+  })();
 
   const rowPermissionsSelection = `
       rowPermissions {
@@ -290,25 +385,54 @@ export function useTableData(config?: {
   } = useTable();
   const debouncedQuickSearch = useDebouncedValue(quickSearch, 300);
 
-  const isAllowedOrderBy = useMemo(() => {
-    const fieldRoots = new Set<string>();
-    const relationRoots = new Set<string>();
+  const normalizeOrderByValue = useMemo(() => {
+    const rootCanonicalByKey = new Map<string, string>();
+    const register = (key: string | undefined, canonical: string) => {
+      if (!key) return;
+      rootCanonicalByKey.set(key, canonical);
+      rootCanonicalByKey.set(toGraphqlFieldName(key), canonical);
+      rootCanonicalByKey.set(toSnakeCase(key), canonical);
+      rootCanonicalByKey.set(toCamelCase(key), canonical);
+    };
 
     metadata?.fields.forEach((field) => {
-      if (field.name) fieldRoots.add(field.name);
-      if (field.fieldName) fieldRoots.add(field.fieldName);
+      const canonical = toGraphqlFieldName(field.name || field.fieldName);
+      if (!canonical) return;
+      register(field.name, canonical);
+      register(field.fieldName, canonical);
+      register(canonical, canonical);
     });
 
     metadata?.relationships?.forEach((relation) => {
-      if (relation.name) relationRoots.add(relation.name);
-      if (relation.fieldName) relationRoots.add(relation.fieldName);
+      const canonical = toGraphqlFieldName(relation.name || relation.fieldName);
+      if (!canonical) return;
+      register(relation.name, canonical);
+      register(relation.fieldName, canonical);
+      register(canonical, canonical);
     });
 
-    return (value: string) => {
-      if (!value) return false;
-      const normalized = value.replace(/^-/, "");
-      const root = normalized.split("__")[0];
-      return fieldRoots.has(root) || relationRoots.has(root);
+    return (value: string): string | null => {
+      if (!value) return null;
+      const isDesc = value.startsWith("-");
+      const normalized = isDesc ? value.slice(1) : value;
+      const separator = normalized.includes("__")
+        ? "__"
+        : normalized.includes(".")
+          ? "."
+          : null;
+      const segments = separator
+        ? normalized.split(separator).filter(Boolean)
+        : [normalized];
+      if (segments.length === 0) return null;
+      const [root, ...rest] = segments;
+      const canonicalRoot = rootCanonicalByKey.get(root);
+      if (!canonicalRoot) return null;
+      const canonicalRest = rest.map((segment) => toGraphqlFieldName(segment));
+      const rebuilt = [canonicalRoot, ...canonicalRest.filter(Boolean)].join(
+        separator ?? "__",
+      );
+      if (!rebuilt) return null;
+      return isDesc ? `-${rebuilt}` : rebuilt;
     };
   }, [metadata?.fields, metadata?.relationships]);
 
@@ -343,9 +467,9 @@ export function useTableData(config?: {
     const orderBy = Array.isArray(orderByRaw)
       ? orderByRaw.filter((entry): entry is string => typeof entry === "string")
       : undefined;
-    const sanitizedOrderBy = orderBy?.filter((entry) =>
-      isAllowedOrderBy(entry),
-    );
+    const sanitizedOrderBy = orderBy
+      ?.map((entry) => normalizeOrderByValue(entry))
+      .filter((entry): entry is string => !!entry);
     // orderBy is driven by advanced filters (if provided).
 
     const supportsQuick = !!metadata?.filterConfig?.supportsQuick;
@@ -368,7 +492,7 @@ export function useTableData(config?: {
     pagination.perPage,
     debouncedQuickSearch,
     filterVariables,
-    isAllowedOrderBy,
+    normalizeOrderByValue,
     metadata?.filterConfig?.supportsQuick,
     config?.skipCount,
   ]);
@@ -388,8 +512,6 @@ export function useTableData(config?: {
       notifyOnNetworkStatusChange: true,
     },
   );
-  console.log(data);
-
   const mergeUniqueRows = useMemo(
     () =>
       (
@@ -471,3 +593,4 @@ export function useTableData(config?: {
 
   return { refetch };
 }
+

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+﻿import { useCallback, useEffect, useMemo, useState } from "react";
 import { Download, Loader2 } from "lucide-react";
 import { Button } from "@/lib/components/ui/button";
 import {
@@ -77,7 +77,7 @@ const buildRootFieldSelection = (
     const field = metadata.fields.find((item) => item.name === fieldName);
     if (!field || !isReadableField(field)) return;
     if (!selectAll && columnVisibility[field.name] === false) return;
-    const accessor = field.fieldName || field.name;
+    const accessor = field.name || field.fieldName;
     selection[accessor] = field.verboseName || field.name;
   });
   return selection;
@@ -213,7 +213,7 @@ export function ModelTableExportDialog({
     orderedRootFields.forEach((fieldName) => {
       const field = metadata.fields.find((item) => item.name === fieldName);
       if (!field) return;
-      const accessor = field.fieldName || field.name;
+      const accessor = field.name || field.fieldName;
       const label = selectedFields[accessor];
       if (!label) return;
       orderedEntries.push([accessor, label]);
@@ -462,3 +462,4 @@ export function ModelTableExportDialog({
     </Dialog>
   );
 }
+

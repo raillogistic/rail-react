@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import type { ReactElement, ReactNode } from "react";
 import { FilterFormState } from "../form/filters/types";
 
 // ============================================================================
@@ -410,13 +410,25 @@ export type BaseModelTableField =
   | {
       accessor: string;
       title?: string;
-      display?: string;
       render?: BaseModelTableFieldRender;
     };
 
+export type BaseModelTableFieldAddOrder =
+  | number
+  | {
+      after?: string;
+      before?: string;
+    };
+
+export type BaseModelTableFieldAdd = {
+  accessor: string;
+  title?: string;
+  order?: BaseModelTableFieldAddOrder;
+};
+
 export type BaseModelTableFieldsConfig = {
-  display?: BaseModelTableField[];
   include?: BaseModelTableField[];
+  add?: BaseModelTableFieldAdd[];
   exclude?: string[];
   render?: BaseModelTableFieldRenderMap;
 };
@@ -428,6 +440,25 @@ export type BaseModelTableFieldsInput =
 export type BaseModelTableRelationConfig = {
   fields?: string[];
   display?: string;
+};
+
+export type BaseModelTableRelationStatsOverrideData = {
+  row: Record<string, unknown>;
+  relationName: string;
+  loading: boolean;
+  error: string | null;
+  stats: Record<string, unknown> | null;
+};
+
+export type BaseModelTableRelationStatsOverride = (
+  data: BaseModelTableRelationStatsOverrideData,
+) => ReactElement;
+
+export type BaseModelTableRelationStatsConfig = {
+  enabled?: boolean;
+  include?: string[];
+  exclude?: string[];
+  overrides?: Record<string, BaseModelTableRelationStatsOverride>;
 };
 
 export type BaseModelTableColumnDef = {

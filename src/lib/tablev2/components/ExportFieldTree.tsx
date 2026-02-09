@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useMemo, useState } from "react";
+﻿import { ReactNode, useEffect, useMemo, useState } from "react";
 import { useQuery } from "@apollo/client";
 import { closestCenter, DndContext, DragEndEvent } from "@dnd-kit/core";
 import {
@@ -360,7 +360,7 @@ export function ExportFieldTree({
   };
 
   const rows = fields.map((field) => {
-    const accessorSegment = field.fieldName || field.name;
+    const accessorSegment = field.name || field.fieldName;
     const accessor = accessorPrefix
       ? `${accessorPrefix}.${accessorSegment}`
       : accessorSegment;
@@ -437,3 +437,4 @@ export function ExportFieldTree({
     </DndContext>
   );
 }
+
