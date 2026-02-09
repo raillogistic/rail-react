@@ -281,6 +281,7 @@ export function useTableData(config?: {
   const {
     pagination,
     data: currentData,
+    loading: currentTableLoading,
     quickSearch,
     filterVariables,
     refreshKey,
@@ -442,15 +443,15 @@ export function useTableData(config?: {
     } else if (error) {
       _setData([], false, error);
     }
-    // If loading is true and we have previous data, we might keep it or show loading overlay
-    // But strictly syncing loading state:
-    if (loading && !data) {
-      // _setData([], true, undefined); // Optional: clear data on load? Or keep stale?
-      // Usually better to keep stale data and show loading indicator
+    if (loading && !data && !currentTableLoading) {
+      // Mark table as loading immediately while keeping current rows (if any)
+      // so we don't flash an empty state before the response arrives.
+      _setData(currentData, true);
     }
   }, [
     config?.dataMode,
     currentData,
+    currentTableLoading,
     data,
     error,
     loading,
