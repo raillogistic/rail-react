@@ -105,4 +105,58 @@ describe("serializeFilterToGraphQL", () => {
       },
     });
   });
+
+  it("uses nested alias key for to-one relation when available", () => {
+    const nestedSchema = makeSchema([makeField("name")]);
+    const schema = makeSchema(
+      [
+        makeField("id"),
+        {
+          ...makeField("categoryRel"),
+          fieldName: "category_rel",
+          baseType: "Relationship",
+          graphqlType: "CategoryWhereInput",
+          filterInputType: "CategoryWhereInput",
+          isRelation: true,
+        },
+      ],
+      [
+        {
+          name: "category",
+          fieldName: "category",
+          fieldLabel: "Category",
+          relationType: "FOREIGN_KEY",
+          relatedApp: "store",
+          relatedModel: "Category",
+          nestedFilterType: "CategoryWhereInput",
+          supportsDirectFilter: true,
+          supportsSome: false,
+          supportsEvery: false,
+          supportsNone: false,
+          supportsCount: false,
+          supportsIsNull: true,
+          nestedSchema,
+        },
+      ]
+    );
+
+    const state = makeState({
+      id: "cond-2",
+      type: "condition",
+      fieldPath: ["category", "name"],
+      fieldName: "name",
+      operator: "icontains",
+      value: "aa",
+    });
+
+    const result = serializeFilterToGraphQL(state.root, schema, 3);
+
+    expect(result).toEqual({
+      categoryRel: {
+        name: {
+          icontains: "aa",
+        },
+      },
+    });
+  });
 });

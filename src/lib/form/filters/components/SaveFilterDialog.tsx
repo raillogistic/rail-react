@@ -50,25 +50,41 @@ import { countConditions } from "../state";
 
 // GraphQL Mutations
 const CREATE_SAVED_FILTER = gql`
-  mutation CreateSavedFilter($input: SavedFilterInput!) {
+  mutation CreateSavedFilter($input: CreateSavedFilterInput!) {
     createSavedFilter(input: $input) {
-      id
-      name
-      description
-      filterJson
-      isShared
+      ok
+      errors {
+        field
+        message
+        code
+      }
+      object {
+        id
+        name
+        description
+        filterJson
+        isShared
+      }
     }
   }
 `;
 
 const UPDATE_SAVED_FILTER = gql`
-  mutation UpdateSavedFilter($id: ID!, $input: SavedFilterUpdateInput!) {
+  mutation UpdateSavedFilter($id: ID!, $input: UpdateSavedFilterInput!) {
     updateSavedFilter(id: $id, input: $input) {
-      id
-      name
-      description
-      filterJson
-      isShared
+      ok
+      errors {
+        field
+        message
+        code
+      }
+      object {
+        id
+        name
+        description
+        filterJson
+        isShared
+      }
     }
   }
 `;
@@ -150,6 +166,21 @@ export const SaveFilterDialog: React.FC<SaveFilterDialogProps> = ({
       })
     : false;
 
+  const formatMutationErrors = useCallback(
+    (errors: Array<{ field?: string | null; message?: string | null }>) => {
+      return errors
+        .map((entry) => {
+          const message = entry.message?.trim();
+          if (!message) return null;
+          const field = entry.field?.trim();
+          return field ? `${field}: ${message}` : message;
+        })
+        .filter(Boolean)
+        .join(" | ");
+    },
+    [],
+  );
+
   // Validation
   const validation = React.useMemo(() => {
     const errors: string[] = [];
@@ -179,14 +210,11 @@ export const SaveFilterDialog: React.FC<SaveFilterDialogProps> = ({
   // Handle save
   const handleSave = useCallback(async () => {
     if (!validation.isValid) return;
-
     setError(null);
-
     const filterJson = JSON.stringify(serializedFilter);
-
     try {
       if (isEditing && existingFilter) {
-        await updateFilter({
+        const response = await updateFilter({
           variables: {
             id: existingFilter.id,
             input: {
@@ -197,8 +225,14 @@ export const SaveFilterDialog: React.FC<SaveFilterDialogProps> = ({
             },
           },
         });
+        const payload = response.data?.updateSavedFilter;
+        if (!payload?.ok) {
+          const mutationError = formatMutationErrors(payload?.errors ?? []);
+          setError(mutationError || "Echec de la mise a jour du filtre.");
+          return;
+        }
       } else {
-        await createFilter({
+        const response = await createFilter({
           variables: {
             input: {
               name: name.trim(),
@@ -209,12 +243,17 @@ export const SaveFilterDialog: React.FC<SaveFilterDialogProps> = ({
             },
           },
         });
+        const payload = response.data?.createSavedFilter;
+        if (!payload?.ok) {
+          const mutationError = formatMutationErrors(payload?.errors ?? []);
+          setError(mutationError || "Echec de l'enregistrement du filtre.");
+          return;
+        }
       }
-
       onSaved();
       onOpenChange(false);
     } catch (err: any) {
-      setError(err.message ?? "Échec de l'enregistrement du filtre. Veuillez réessayer.");
+      setError(err.message ?? "Echec de l'enregistrement du filtre. Veuillez reessayer.");
     }
   }, [
     validation.isValid,
@@ -227,6 +266,7 @@ export const SaveFilterDialog: React.FC<SaveFilterDialogProps> = ({
     modelName,
     createFilter,
     updateFilter,
+    formatMutationErrors,
     onSaved,
     onOpenChange,
   ]);
@@ -393,3 +433,4 @@ export const SaveFilterDialog: React.FC<SaveFilterDialogProps> = ({
 };
 
 export default SaveFilterDialog;
+

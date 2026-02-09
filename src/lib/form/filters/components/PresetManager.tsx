@@ -300,15 +300,14 @@ export const PresetManager: React.FC<PresetManagerProps> = ({
               {filteredGroups.static.length > 0 && (
                 <CommandGroup heading={<span className="text-[10px] font-bold uppercase tracking-tighter">System Defaults</span>}>
                   {filteredGroups.static.map((preset) => (
-                    <PresetItem
-                      key={preset.id}
-                      preset={preset}
-                      isSelected={selectedPresets.includes(preset.name)}
-                      onToggle={() => handleToggle(preset)}
-                      onApply={() => handleApply(preset)}
-                    />
-                  ))}
-                </CommandGroup>
+                      <PresetItem
+                        key={preset.id}
+                        preset={preset}
+                        isSelected={selectedPresets.includes(preset.name)}
+                        onToggle={() => handleToggle(preset)}
+                      />
+                    ))}
+                  </CommandGroup>
               )}
 
               {filteredGroups.saved.length > 0 && (
@@ -321,7 +320,6 @@ export const PresetManager: React.FC<PresetManagerProps> = ({
                         preset={preset}
                         isSelected={selectedPresets.includes(preset.id)}
                         onToggle={() => handleToggle(preset)}
-                        onApply={() => handleApply(preset)}
                         onEdit={onEditPreset ? () => onEditPreset(preset) : undefined}
                         onDelete={() => setDeleteDialogPreset(preset)}
                         onShare={onSharePreset && !preset.isShared ? () => onSharePreset(preset) : undefined}
@@ -342,7 +340,6 @@ export const PresetManager: React.FC<PresetManagerProps> = ({
                         preset={preset}
                         isSelected={selectedPresets.includes(preset.id)}
                         onToggle={() => handleToggle(preset)}
-                        onApply={() => handleApply(preset)}
                       />
                     ))}
                   </CommandGroup>
@@ -403,7 +400,7 @@ const PresetCard: React.FC<PresetCardProps> = ({
         "group/card border bg-background/50 hover:bg-background hover:shadow-md hover:border-primary/30 transition-all duration-200 rounded-xl overflow-hidden cursor-pointer",
         isSelected && "border-primary bg-primary/5 ring-1 ring-primary/10 shadow-sm"
       )}
-      onClick={onApply}
+      onClick={onToggle}
     >
       <CardHeader className="p-3 pb-1 flex flex-row items-start justify-between space-y-0">
         <div className="flex-1 min-w-0 pr-2">
@@ -481,7 +478,6 @@ interface PresetItemProps {
   preset: FilterPreset;
   isSelected: boolean;
   onToggle: () => void;
-  onApply: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
   onShare?: () => void;
@@ -492,7 +488,6 @@ const PresetItem: React.FC<PresetItemProps> = ({
   preset,
   isSelected,
   onToggle,
-  onApply,
   onEdit,
   onDelete,
   onShare,
@@ -501,7 +496,7 @@ const PresetItem: React.FC<PresetItemProps> = ({
   return (
     <CommandItem
       value={preset.name}
-      onSelect={onApply}
+      onSelect={onToggle}
       className="flex items-center justify-between group py-2 px-3 focus:bg-primary/5 transition-all"
     >
       <div className="flex items-center gap-3 flex-1 min-w-0">

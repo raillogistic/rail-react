@@ -89,18 +89,14 @@ export function CommandMenu() {
   return (
     <>
       <Button
-        variant="outline"
+        variant="ghost"
         className={cn(
-          "h-8 w-8 p-0 flex items-center justify-center rounded-full bg-background text-sm font-normal text-muted-foreground shadow-none"
+          "h-8 w-8 p-0 flex items-center justify-center rounded-full border border-sidebar-border/40 bg-background/50 text-muted-foreground transition-all duration-300 hover:bg-primary/10 hover:text-primary hover:border-primary/20 hover:scale-105 hover:shadow-sm"
         )}
         onClick={() => setOpen(true)}
         aria-label="Rechercher"
       >
-        {/* <Search className="h-4 w-4" /> */}
-        <kbd className="">
-          <Search />
-          {/* <span className="text-xs">⌘</span>K */}
-        </kbd>
+        <Search className="h-4 w-4" />
       </Button>
       <CommandDialog open={open} onOpenChange={setOpen}>
         <CommandInput placeholder="Tapez une commande ou recherchez..." />

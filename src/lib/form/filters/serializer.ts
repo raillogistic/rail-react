@@ -105,16 +105,18 @@ function buildNestedFilter(
   const pathInfo: Array<{
     segment: string;
     relation?: RelationFilter;
+    schema?: UnifiedFilterSchema;
   }> = [];
 
   let currentSchema: UnifiedFilterSchema | undefined = schema;
 
   for (const segment of fieldPath) {
+    const schemaAtSegment = currentSchema;
     const relation = currentSchema?.relationFilters.find(
       (r) => r.name === segment || r.fieldName === segment
     );
 
-    pathInfo.push({ segment, relation });
+    pathInfo.push({ segment, relation, schema: schemaAtSegment });
 
     if (relation?.nestedSchema) {
       currentSchema = relation.nestedSchema;
@@ -128,7 +130,7 @@ function buildNestedFilter(
   let result = filterValue;
 
   for (let i = fieldPath.length - 1; i >= 0; i--) {
-    const { segment, relation } = pathInfo[i];
+    const { segment, relation, schema: segmentSchema } = pathInfo[i];
     const isFirst = i === 0;
     const isLast = i === fieldPath.length - 1;
 
@@ -149,7 +151,11 @@ function buildNestedFilter(
         const fieldWithOp = `${relationKey}${opSuffix}`;
         result = { [fieldWithOp]: result };
       } else {
-        const relationKey = relation.name || relation.fieldName || segment;
+        const relationKey = resolveToOneNestedRelationKey(
+          relation,
+          segment,
+          segmentSchema
+        );
         result = { [relationKey]: result };
       }
     } else {
@@ -165,4 +171,30 @@ function normalizeOperator(op: string): string {
   const clean = op.startsWith("_") ? op.slice(1) : op;
   // Capitalize first letter
   return clean.charAt(0).toUpperCase() + clean.slice(1);
+}
+
+function resolveToOneNestedRelationKey(
+  relation: RelationFilter,
+  segment: string,
+  schema?: UnifiedFilterSchema
+): string {
+  if (!schema) {
+    return relation.name || relation.fieldName || segment;
+  }
+
+  const relationName = relation.name || segment;
+  const relationFieldName = relation.fieldName || segment;
+
+  const nestedAliasByName = `${relationName}Rel`;
+  const nestedAliasByFieldName = `${relationFieldName}_rel`;
+
+  const nestedField = schema.fields.find(
+    (field) =>
+      field.name === nestedAliasByName ||
+      field.fieldName === nestedAliasByFieldName
+  );
+
+  // Prefer explicit nested alias when present (dual-field pattern),
+  // otherwise keep the relation key (unified pattern compatibility).
+  return nestedField?.name ?? relationName;
 }

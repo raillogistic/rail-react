@@ -53,6 +53,7 @@ export interface UseFilterPanelReturn {
   setGroupLogic: (groupId: string, logic: "AND" | "OR") => void;
   toggleGroupNegation: (groupId: string) => void;
   togglePreset: (presetId: string) => void;
+  setSelectedPresets: (presetIds: string[]) => void;
   setDistinctOn: (fields: string[]) => void;
   setOrderBy: (fields: string[]) => void;
   clearAll: () => void;
@@ -277,6 +278,13 @@ export function useFilterPanel({
     }));
   }, []);
 
+  const setSelectedPresets = useCallback((presetIds: string[]) => {
+    setState((prev) => ({
+      ...prev,
+      selectedPresets: presetIds,
+    }));
+  }, []);
+
   const setDistinctOn = useCallback((fields: string[]) => {
     setState((prev) => ({ ...prev, distinctOn: fields }));
   }, []);
@@ -356,6 +364,7 @@ export function useFilterPanel({
     setGroupLogic,
     toggleGroupNegation,
     togglePreset,
+    setSelectedPresets,
     setDistinctOn,
     setOrderBy,
     clearAll,

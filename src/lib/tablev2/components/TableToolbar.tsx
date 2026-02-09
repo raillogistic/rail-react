@@ -199,10 +199,13 @@ export function TableToolbar({
   const handleApplyFilters = (
     variables: FilterQueryVariables,
     state: FilterFormState,
+    context?: { source: "manual" | "preset" },
   ) => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     setAdvancedFilters(state, variables as any);
-    setFilterOpen(false);
+    if (context?.source !== "preset") {
+      setFilterOpen(false);
+    }
   };
 
   const filterContent = (

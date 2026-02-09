@@ -3,6 +3,7 @@ import {
   Braces,
   Calendar,
   Hash,
+  Link2,
   ToggleLeft,
   Type,
 } from "lucide-react";
@@ -22,6 +23,8 @@ export const FieldTypeIcon: React.FC<{ type: string }> = ({ type }) => {
       return <Calendar className={iconClass} />;
     case "JSON":
       return <Braces className={iconClass} />;
+    case "Relationship":
+      return <Link2 className={iconClass} />;
     default:
       return null;
   }

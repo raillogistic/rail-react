@@ -70,7 +70,11 @@ export interface FilterPanelProps {
   /** Profondeur maximale des filtres imbriqués */
   maxDepth?: number;
   /** Callback appelé lors de l'application des filtres */
-  onApply: (variables: FilterQueryVariables, state: FilterFormState) => void;
+  onApply: (
+    variables: FilterQueryVariables,
+    state: FilterFormState,
+    context?: { source: "manual" | "preset" },
+  ) => void;
   /** Inclure les filtres sauvegardés */
   includeSavedFilters?: boolean;
   /** Afficher le sélecteur "Distinct On" */
@@ -154,6 +158,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
     removeCondition,
     addGroup,
     togglePreset,
+    setSelectedPresets,
     setDistinctOn,
     setOrderBy,
     clearAll,
@@ -183,7 +188,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
       orderBy: state.orderBy,
       maxDepth,
     });
-    onApply(variables, state);
+    onApply(variables, state, { source: "manual" });
     if (layout === "popover" || layout === "toolbar") {
       setPopoverOpen(false);
     }
@@ -192,27 +197,49 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
   const handleApplyPreset = useCallback(
     (preset: FilterPreset) => {
       if (!schema) return;
+      const presetSelectionKey =
+        preset.source === "static" ? preset.name : preset.id;
+      const nextSelectedPresets = [presetSelectionKey];
+
       const newRoot = applyPresetToFilterState(
         preset,
         state.root,
         schema,
         "replace",
       );
+
+      setSelectedPresets(nextSelectedPresets);
       setRoot(newRoot);
+      const variables = buildQueryVariables({
+        filterState: newRoot,
+        schema,
+        selectedPresets: nextSelectedPresets,
+        distinctOn: state.distinctOn,
+        orderBy: state.orderBy,
+        maxDepth,
+      });
+
+      const presetWhere =
+        preset.filterJson && typeof preset.filterJson === "object"
+          ? (preset.filterJson as Record<string, unknown>)
+          : null;
+
+      // Apply the preset payload as the source of truth for table queries.
+      // This keeps ModelTableV2 behavior consistent even when UI parsing is lossy.
+      const nextVariables =
+        preset.source !== "static" &&
+        presetWhere &&
+        Object.keys(presetWhere).length > 0
+          ? { ...variables, where: presetWhere }
+          : variables;
+
       onApply(
-        buildQueryVariables({
-          filterState: newRoot,
-          schema,
-          selectedPresets: state.selectedPresets,
-          distinctOn: state.distinctOn,
-          orderBy: state.orderBy,
-          maxDepth,
-        }),
-        { ...state, root: newRoot },
+        nextVariables,
+        { ...state, root: newRoot, selectedPresets: nextSelectedPresets },
+        { source: "preset" },
       );
-      setActiveTab("builder");
     },
-    [schema, state, setRoot, onApply, maxDepth],
+    [schema, state, setRoot, setSelectedPresets, onApply, maxDepth],
   );
 
   const handleEditPreset = useCallback((preset: FilterPreset) => {
@@ -340,6 +367,17 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
     state.orderBy.length,
     setRoot,
   ]);
+
+  const handleAddFirstCondition = useCallback(() => {
+    const firstField = schema?.fields.find((field) => !field.isRelation) ?? schema?.fields[0];
+    if (!firstField) return;
+
+    addCondition(
+      [firstField.name],
+      firstField.name,
+      firstField.defaultOperator ?? "eq",
+    );
+  }, [schema, addCondition]);
 
   if (loading) {
     return (
@@ -524,7 +562,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
                         variant="outline" 
                         size="sm" 
                         className="mt-4 h-8 border-dashed"
-                        onClick={() => addCondition([], "", "eq")}
+                        onClick={handleAddFirstCondition}
                       >
                         <Plus className="mr-2 h-3.5 w-3.5" />
                         Add First Condition

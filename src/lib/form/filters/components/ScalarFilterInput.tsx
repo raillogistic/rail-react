@@ -77,6 +77,79 @@ export const ScalarFilterInput: React.FC<ScalarFilterInputProps> = ({
   }), []);
   const dummyForm = useForm(formOptions);
 
+  const hasQueryRelationship =
+    baseType === "Relationship" && Boolean(field.relationConfig?.relatedModel);
+
+  // Keep hooks at top-level so switching field types does not change hook order.
+  const relationshipQueryConfig = React.useMemo<QueryChoiceFieldConfig | null>(() => {
+    if (!hasQueryRelationship || !field.relationConfig) {
+      return null;
+    }
+
+    const { relatedApp, relatedModel, searchFields } = field.relationConfig;
+    const fullModel = relatedApp ? `${relatedApp}.${relatedModel}` : relatedModel;
+    const modelName = relatedModel || field.fieldName;
+
+    const simplePluralize = (name: string) => {
+      const lower = name.toLowerCase();
+      if (lower.endsWith("y") && !/[aeiou]y$/.test(lower)) {
+        return name.slice(0, -1) + "ies";
+      }
+      if (lower.endsWith("s")) {
+        return name + "es";
+      }
+      return name + "s";
+    };
+
+    const listFieldName = simplePluralize(modelName);
+
+    const candidateLabel =
+      searchFields?.find((f) =>
+        ["name", "title", "label", "code", "slug"].includes(f)
+      ) ??
+      searchFields?.[0] ??
+      "name";
+
+    return {
+      name: field.fieldName,
+      type: "select-query",
+      relatedModel: fullModel,
+      multiple: isList,
+      placeholder: uiHints?.placeholder ?? "Rechercher...",
+      graphql: {
+        listFieldName: listFieldName.toLowerCase(),
+        valueField: "id",
+        labelField: candidateLabel,
+        extraFields: searchFields ?? [],
+      },
+    };
+  }, [
+    hasQueryRelationship,
+    field.fieldName,
+    field.relationConfig,
+    isList,
+    uiHints?.placeholder,
+  ]);
+
+  const relationshipMockField = React.useMemo(
+    () => ({
+      state: {
+        value,
+        meta: {
+          isDirty: false,
+          touchedErrors: [],
+          errors: [],
+          errorMap: {},
+          isBlurred: false,
+        },
+      },
+      handleChange: (val: any) => onChange(val),
+      getValue: () => value,
+      setValue: (val: any) => onChange(val),
+    }),
+    [value, onChange],
+  );
+
   // isNull operator - simple checkbox
   if (opName === "isNull") {
     return (
@@ -125,77 +198,19 @@ export const ScalarFilterInput: React.FC<ScalarFilterInputProps> = ({
   }
 
   // Relationship fields - use QueryChoiceInput
-  if (baseType === "Relationship" && field.relationConfig?.relatedModel) {
-    // Construct configuration for QueryChoiceInput
-    // Memoize config to prevent unnecessary re-renders/re-fetches in QueryChoiceInput
-    const queryConfig = React.useMemo<QueryChoiceFieldConfig>(() => {
-      const { relatedApp, relatedModel, searchFields } = field.relationConfig!;
-      const fullModel = relatedApp ? `${relatedApp}.${relatedModel}` : relatedModel;
-      const modelName = relatedModel || field.fieldName;
-
-      // Attempt better pluralization for the list field
-      const simplePluralize = (name: string) => {
-        const lower = name.toLowerCase();
-        if (lower.endsWith("y") && !/[aeiou]y$/.test(lower)) {
-          return name.slice(0, -1) + "ies";
-        }
-        if (lower.endsWith("s")) {
-          return name + "es";
-        }
-        return name + "s";
-      };
-
-      const listFieldName = simplePluralize(modelName);
-
-      // Determine best label field from search fields or default to "name"
-      // We look for a field that looks like a name/title/label
-      const candidateLabel = searchFields?.find(f =>
-        ["name", "title", "label", "code", "slug"].includes(f)
-      ) ?? searchFields?.[0] ?? "name";
-
-      return {
-        name: field.fieldName,
-        type: "select-query",
-        relatedModel: fullModel,
-        multiple: isList,
-        placeholder: uiHints?.placeholder ?? "Rechercher...",
-        graphql: {
-          listFieldName: listFieldName.toLowerCase(),
-          valueField: "id",
-          labelField: candidateLabel,
-          extraFields: searchFields ?? [],
-        }
-      };
-    }, [field.fieldName, field.relationConfig, isList, uiHints?.placeholder]);
-
-    // Construct a mock field API object that mimics what TanStack Form provides
-    const mockField = React.useMemo(() => ({
-      state: {
-        value: value,
-        meta: {
-          isDirty: false,
-          touchedErrors: [],
-          errors: [],
-          errorMap: {},
-          isBlurred: false,
-        },
-      },
-      handleChange: (val: any) => onChange(val),
-      getValue: () => value,
-      setValue: (val: any) => onChange(val),
-    }), [value, onChange]);
-
-    if (process.env.NODE_ENV !== "production") {
-       if (!queryConfig.relatedModel) {
-         console.warn(`[ScalarFilterInput] relatedModel is missing for field ${field.fieldName}`, field.relationConfig);
-       }
+  if (hasQueryRelationship && relationshipQueryConfig) {
+    if (process.env.NODE_ENV !== "production" && !relationshipQueryConfig.relatedModel) {
+      console.warn(
+        `[ScalarFilterInput] relatedModel is missing for field ${field.fieldName}`,
+        field.relationConfig
+      );
     }
 
     return (
       <div className="w-full">
         <QueryChoiceInput
-          config={queryConfig}
-          field={mockField as any}
+          config={relationshipQueryConfig}
+          field={relationshipMockField as any}
           form={dummyForm as any}
           disabled={disabled}
         />

@@ -51,7 +51,7 @@ export interface InlineFieldSelectorProps {
   favoriteFields?: string[][];
   fieldSelector?: FieldSelectorOptions;
   onLoadRelationSchema?: (
-    relation: RelationFilter
+    relation: RelationFilter,
   ) => Promise<UnifiedFilterSchema | null>;
   getRelationSchema?: (relation: RelationFilter) => UnifiedFilterSchema | null;
 }
@@ -106,8 +106,7 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
   );
 
   const allowedOnly = useMemo(
-    () =>
-      new Set(selectorConfig.only.map((name) => name.trim().toLowerCase())),
+    () => new Set(selectorConfig.only.map((name) => name.trim().toLowerCase())),
     [selectorConfig.only],
   );
   const allowedExclude = useMemo(
@@ -175,7 +174,12 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
         ]);
       });
     return sortFields(filtered);
-  }, [schema.fields, matchesAllowed, selectorConfig.requireChoices, sortFields]);
+  }, [
+    schema.fields,
+    matchesAllowed,
+    selectorConfig.requireChoices,
+    sortFields,
+  ]);
 
   const getNestedSchema = useCallback(
     (relation: RelationFilter) => {
@@ -184,18 +188,15 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
     [getRelationSchema],
   );
 
-  const handleOpenChange = useCallback(
-    (newOpen: boolean) => {
-      setOpen(newOpen);
-      if (!newOpen) {
-        setSearch("");
-        setShowAdvanced(false);
-        setExpandedRelations({});
-        setLoadingRelations({});
-      }
-    },
-    [],
-  );
+  const handleOpenChange = useCallback((newOpen: boolean) => {
+    setOpen(newOpen);
+    if (!newOpen) {
+      setSearch("");
+      setShowAdvanced(false);
+      setExpandedRelations({});
+      setLoadingRelations({});
+    }
+  }, []);
 
   const handleQuickSelect = useCallback(
     (field: FilterableField) => {
@@ -321,7 +322,8 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
     const lowerFieldName = fieldName.toLowerCase();
     const inputType = field.filterInputType ?? "";
     const isAggregationInput =
-      inputType.includes("Aggregation") || inputType.includes("CountFilterInput");
+      inputType.includes("Aggregation") ||
+      inputType.includes("CountFilterInput");
     const advancedNames = new Set([
       "include",
       "quick",
@@ -387,8 +389,16 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
     return false;
   }, []);
 
+  const isRelationNestedAlias = useCallback((field: FilterableField) => {
+    const lowerName = field.name.toLowerCase();
+    const lowerFieldName = field.fieldName.toLowerCase();
+    return lowerName.endsWith("rel") || lowerFieldName.endsWith("_rel");
+  }, []);
+
   const normalFields = useMemo(() => {
-    const base = schema.fields.filter((field) => !field.isRelation);
+    // Keep direct relation ID fields (e.g. `category`) selectable, but hide
+    // nested relation aliases (e.g. `categoryRel` / `category_rel`) from scalar lists.
+    const base = schema.fields.filter((field) => !isRelationNestedAlias(field));
     const filtered = base.filter((field) => {
       if (selectorConfig.requireChoices && !field.choices?.length) {
         return false;
@@ -401,11 +411,20 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
       ]);
     });
     return sortFields(filtered);
-  }, [schema.fields, matchesAllowed, selectorConfig.requireChoices, sortFields]);
+  }, [
+    schema.fields,
+    isRelationNestedAlias,
+    matchesAllowed,
+    selectorConfig.requireChoices,
+    sortFields,
+  ]);
 
   const advancedFields = useMemo(() => {
     if (!allowAdvanced) return [];
-    const filtered = schema.fields.filter(isAdvancedField).filter((field) => {
+    const filtered = schema.fields
+      .filter((field) => !isRelationNestedAlias(field))
+      .filter(isAdvancedField)
+      .filter((field) => {
       if (selectorConfig.requireChoices && !field.choices?.length) {
         return false;
       }
@@ -415,6 +434,7 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
   }, [
     allowAdvanced,
     schema.fields,
+    isRelationNestedAlias,
     isAdvancedField,
     matchesAllowed,
     selectorConfig.requireChoices,
@@ -439,7 +459,13 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
   const recentVisible = useMemo(
     () =>
       recentResolved.filter((item) => {
-        if (!matchesAllowed([item.field.name, item.field.fieldName, item.labelPath.join(".")])) {
+        if (
+          !matchesAllowed([
+            item.field.name,
+            item.field.fieldName,
+            item.labelPath.join("."),
+          ])
+        ) {
           return false;
         }
         if (selectorConfig.requireChoices && !item.field.choices?.length) {
@@ -463,7 +489,13 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
   const favoriteVisible = useMemo(
     () =>
       favoriteResolved.filter((item) => {
-        if (!matchesAllowed([item.field.name, item.field.fieldName, item.labelPath.join(".")])) {
+        if (
+          !matchesAllowed([
+            item.field.name,
+            item.field.fieldName,
+            item.labelPath.join("."),
+          ])
+        ) {
           return false;
         }
         if (selectorConfig.requireChoices && !item.field.choices?.length) {
@@ -485,12 +517,18 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
   );
 
   const favoriteTopLevel = useMemo(
-    () => favoriteVisible.filter(({ field, path }) => path.length === 1 && !field.isRelation),
+    () =>
+      favoriteVisible.filter(
+        ({ field, path }) => path.length === 1 && !field.isRelation,
+      ),
     [favoriteVisible],
   );
 
   const recentTopLevel = useMemo(
-    () => recentVisible.filter(({ field, path }) => path.length === 1 && !field.isRelation),
+    () =>
+      recentVisible.filter(
+        ({ field, path }) => path.length === 1 && !field.isRelation,
+      ),
     [recentVisible],
   );
 
@@ -513,7 +551,8 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
   const quickList = useMemo(
     () =>
       quickVisible.filter(
-        (field) => !recentNames.has(field.name) && !favoriteNames.has(field.name),
+        (field) =>
+          !recentNames.has(field.name) && !favoriteNames.has(field.name),
       ),
     [quickVisible, recentNames, favoriteNames],
   );
@@ -565,7 +604,13 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
     }
 
     schema.relationFilters.forEach((relation) => {
-      if (!matchesAllowed([relation.name, relation.fieldName, relation.fieldLabel])) {
+      if (
+        !matchesAllowed([
+          relation.name,
+          relation.fieldName,
+          relation.fieldLabel,
+        ])
+      ) {
         return;
       }
       switch (relation.relationType) {
@@ -591,7 +636,11 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
   }, [schema.relationFilters, allowRelations, matchesAllowed]);
 
   const buildRelationEntry = useCallback(
-    (relation: RelationFilter, path: string[], depth: number): RelationEntry => {
+    (
+      relation: RelationFilter,
+      path: string[],
+      depth: number,
+    ): RelationEntry => {
       const nestedSchema = getNestedSchema(relation);
       const pathKey = path.join(".");
       const shouldExpand = hasSearch || expandedRelations[pathKey];
@@ -609,7 +658,12 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
           return false;
         }
         const key = [...path, field.name].join(".");
-        return matchesAllowed([field.name, field.fieldName, field.fieldLabel, key]);
+        return matchesAllowed([
+          field.name,
+          field.fieldName,
+          field.fieldLabel,
+          key,
+        ]);
       });
       const filteredScalars = hasSearch
         ? constrainedScalars.filter(matchesField)
@@ -750,6 +804,10 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
     }));
   }, []);
 
+  const stopWheelPropagation = useCallback((event: React.WheelEvent) => {
+    event.stopPropagation();
+  }, []);
+
   const ensureRelationSchema = useCallback(
     async (relation: RelationFilter, key: string) => {
       if (!onLoadRelationSchema) return null;
@@ -827,7 +885,11 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
       const { Icon, tone } = getRelationVisual(entry.relation);
 
       return (
-        <div key={pathKey} style={{ marginLeft: depth * 12 }} className="space-y-1">
+        <div
+          key={pathKey}
+          style={{ marginLeft: depth * 12 }}
+          className="space-y-1"
+        >
           <Collapsible
             open={isExpanded}
             onOpenChange={(openValue) => {
@@ -875,7 +937,8 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
                       }
                       className={cn(
                         "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs hover:bg-muted/60",
-                        isSelected([...entry.path, field.name]) && "bg-muted/80",
+                        isSelected([...entry.path, field.name]) &&
+                          "bg-muted/80",
                       )}
                     >
                       <FieldTypeIcon type={field.baseType} />
@@ -932,7 +995,11 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
   return (
     <Popover open={open} onOpenChange={handleOpenChange}>
       <PopoverTrigger asChild>{trigger}</PopoverTrigger>
-      <PopoverContent className="w-[520px] p-0" align="start">
+      <PopoverContent
+        className="w-[520px] p-0"
+        align="start"
+        onWheelCapture={stopWheelPropagation}
+      >
         <div className="flex flex-col">
           <div className="flex items-center gap-2 p-3 border-b bg-muted/30">
             <Input
@@ -957,7 +1024,10 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
             </Button>
           </div>
 
-          <ScrollArea className="h-[420px]">
+          <ScrollArea
+            className="h-[420px] overscroll-contain"
+            onWheelCapture={stopWheelPropagation}
+          >
             <div className="p-3 space-y-5">
               {!hasVisibleContent && (
                 <div className="text-xs text-muted-foreground px-2 py-3">
@@ -1117,7 +1187,9 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
                           <button
                             key={`date-${field.fieldName}`}
                             type="button"
-                            onClick={() => handleSelectField([field.name], field)}
+                            onClick={() =>
+                              handleSelectField([field.name], field)
+                            }
                             className={cn(
                               "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs hover:bg-muted/60",
                               isSelected([field.name]) && "bg-muted/80",
@@ -1143,7 +1215,9 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
                           <button
                             key={`date-helper-${field.fieldName}`}
                             type="button"
-                            onClick={() => handleSelectField([field.name], field)}
+                            onClick={() =>
+                              handleSelectField([field.name], field)
+                            }
                             className={cn(
                               "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs hover:bg-muted/60",
                               isSelected([field.name]) && "bg-muted/80",
@@ -1171,7 +1245,9 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
                     </Badge>
                   </div>
                   <div className="space-y-2">
-                    {foreignKeyEntries.map((entry) => renderRelationEntry(entry, 0))}
+                    {foreignKeyEntries.map((entry) =>
+                      renderRelationEntry(entry, 0),
+                    )}
                   </div>
                 </div>
               )}
@@ -1188,7 +1264,9 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
                     </Badge>
                   </div>
                   <div className="space-y-2">
-                    {oneToOneEntries.map((entry) => renderRelationEntry(entry, 0))}
+                    {oneToOneEntries.map((entry) =>
+                      renderRelationEntry(entry, 0),
+                    )}
                   </div>
                 </div>
               )}
@@ -1205,7 +1283,9 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
                     </Badge>
                   </div>
                   <div className="space-y-2">
-                    {manyToOneEntries.map((entry) => renderRelationEntry(entry, 0))}
+                    {manyToOneEntries.map((entry) =>
+                      renderRelationEntry(entry, 0),
+                    )}
                   </div>
                 </div>
               )}
@@ -1247,7 +1327,9 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
                           <button
                             key={`adv-${field.fieldName}`}
                             type="button"
-                            onClick={() => handleSelectField([field.name], field)}
+                            onClick={() =>
+                              handleSelectField([field.name], field)
+                            }
                             className={cn(
                               "flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-xs hover:bg-muted/60",
                               isSelected([field.name]) && "bg-muted/80",
@@ -1279,7 +1361,9 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
           <div className="px-3 py-1.5 border-t text-[10px] text-muted-foreground bg-muted/20">
             {standardFields.length} fields, {visibleRelationCount} relations
             {advancedHiddenCount > 0 && (
-              <span className="ml-2">| {advancedHiddenCount} advanced hidden</span>
+              <span className="ml-2">
+                | {advancedHiddenCount} advanced hidden
+              </span>
             )}
           </div>
         </div>
