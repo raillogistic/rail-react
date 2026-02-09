@@ -58,7 +58,7 @@ import type {
   ModelTableFilterPanelProps,
   ModelTableV2TableConfig,
 } from "../index";
-import { resolveGroupingKey } from "../utils";
+import { getDefaultHiddenColumnIds, resolveGroupingKey } from "../utils";
 import { ModelTableExportDialog } from "./ExportDialog";
 
 export function TableToolbar({
@@ -225,6 +225,17 @@ export function TableToolbar({
     setColumnVisibility(nextVisibility);
   };
 
+  const applyDefaultColumnsVisibility = () => {
+    if (!metadata) return;
+    const defaultHidden = getDefaultHiddenColumnIds(metadata);
+    const nextVisibility = { ...columnVisibility };
+    orderedColumns.forEach((column) => {
+      const id = column.fieldName || column.name;
+      nextVisibility[id] = !defaultHidden.has(id);
+    });
+    setColumnVisibility(nextVisibility);
+  };
+
   const handleExpandAllGroups = () => {
     if (!groupingField) return;
     const nextCollapsed: Record<string, boolean> = {};
@@ -373,9 +384,19 @@ export function TableToolbar({
                     className="h-8 text-xs" 
                   />
                 </div>
-                <div className="px-2 py-1.5 flex items-center justify-between">
-                   <span className="text-xs text-muted-foreground">Tout selectionner</span>
-                   <Switch checked={allColumnsVisible} onCheckedChange={setAllColumnsVisibility} />
+                <div className="px-2 py-1.5 flex items-center justify-between gap-2">
+                   <Button
+                     variant="outline"
+                     size="sm"
+                     className="h-7 text-xs"
+                     onClick={applyDefaultColumnsVisibility}
+                   >
+                     Par defaut
+                   </Button>
+                   <div className="flex items-center gap-2">
+                     <span className="text-xs text-muted-foreground">Tout selectionner</span>
+                     <Switch checked={allColumnsVisible} onCheckedChange={setAllColumnsVisibility} />
+                   </div>
                 </div>
                 <DropdownMenuSeparator />
                 <div className="max-h-[300px] overflow-auto">

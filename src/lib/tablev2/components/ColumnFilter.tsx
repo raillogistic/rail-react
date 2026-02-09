@@ -25,9 +25,10 @@ import { cn } from "@/lib/utils";
 interface ColumnFilterProps {
   columnId: string;
   field?: FieldSchema;
+  hideTrigger?: boolean;
 }
 
-export function ColumnFilter({ columnId, field }: ColumnFilterProps) {
+export function ColumnFilter({ columnId, field, hideTrigger = false }: ColumnFilterProps) {
   const { metadata } = useMetadata();
   const { activeColumnFilter, setActiveColumnFilter } = useTable();
   const { addFilterCondition, advancedFilters, removeFilterCondition } = useTableFilters();
@@ -54,6 +55,15 @@ export function ColumnFilter({ columnId, field }: ColumnFilterProps) {
     );
   }, [metadata, resolvedField, columnId]);
 
+  const filterFieldName = useMemo(
+    () =>
+      filterMeta?.name ||
+      resolvedField?.name ||
+      resolvedField?.fieldName ||
+      columnId,
+    [filterMeta?.name, resolvedField?.name, resolvedField?.fieldName, columnId],
+  );
+
   // 2. Map to FilterableField for ScalarFilterInput
   const filterableField = useMemo<FilterableField | null>(() => {
     if (!resolvedField || !filterMeta) return null;
@@ -69,7 +79,7 @@ export function ColumnFilter({ columnId, field }: ColumnFilterProps) {
 
     // Map operators
     const operators: FilterOperator[] = filterMeta.options.map((opt) => ({
-      name: opt.name,
+      name: opt.lookup || opt.name,
       label: opt.label,
       helpText: opt.helpText,
       graphqlType: opt.graphqlType || "String",
@@ -107,7 +117,7 @@ export function ColumnFilter({ columnId, field }: ColumnFilterProps) {
     // Simplified: Find first condition matching fieldName
     const findCondition = (group: any): any => {
       for (const cond of group.conditions) {
-        if (cond.type === "condition" && cond.fieldName === (resolvedField?.fieldName || resolvedField?.name || columnId)) {
+        if (cond.type === "condition" && cond.fieldName === filterFieldName) {
           return cond;
         }
         if (cond.type === "group") {
@@ -118,7 +128,7 @@ export function ColumnFilter({ columnId, field }: ColumnFilterProps) {
       return null;
     };
     return findCondition(advancedFilters.root);
-  }, [advancedFilters.root, resolvedField, columnId]);
+  }, [advancedFilters.root, filterFieldName]);
 
   const [operator, setOperator] = useState<string>(activeCondition?.operator || filterableField?.defaultOperator || "exact");
   const [value, setValue] = useState<any>(activeCondition?.value);
@@ -150,9 +160,8 @@ export function ColumnFilter({ columnId, field }: ColumnFilterProps) {
   const currentOperator = filterableField.operators.find(op => op.name === operator) || filterableField.operators[0];
 
   const handleApply = () => {
-    const fieldName = resolvedField.name || resolvedField.fieldName || columnId;
     addFilterCondition({
-      field: fieldName, // Use name for GraphQL mapping usually
+      field: filterFieldName,
       operator,
       value,
     });
@@ -196,9 +205,16 @@ export function ColumnFilter({ columnId, field }: ColumnFilterProps) {
             openedFromMenuRef.current = false;
           }}
           className={cn(
-            "h-8 w-8 p-0 ml-1 data-[state=open]:bg-accent",
-            isActive ? "text-primary hover:text-primary" : "text-muted-foreground/50 hover:text-foreground"
+            hideTrigger
+              ? "sr-only h-0 w-0 p-0 m-0 border-0"
+              : "h-8 w-8 p-0 ml-1 data-[state=open]:bg-accent",
+            !hideTrigger &&
+              (isActive
+                ? "text-primary hover:text-primary"
+                : "text-muted-foreground/50 hover:text-foreground"),
           )}
+          tabIndex={hideTrigger ? -1 : 0}
+          aria-hidden={hideTrigger}
         >
           <Filter className={cn("h-3.5 w-3.5", isActive && "fill-current")} />
         </Button>

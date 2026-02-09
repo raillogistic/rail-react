@@ -36,6 +36,7 @@ import type {
 } from "./types";
 import {
   findMutation,
+  getDefaultHiddenColumnIds,
   getSyntheticRelationCountSource,
   isAccessorExcluded,
   normalizeBaseModelTableFieldsInput,
@@ -410,81 +411,10 @@ function BaseTableContent({
   );
   const hasConfiguredDisplay = normalizedFieldsConfig.display !== undefined;
 
-  const relationLookupForDefaults = React.useMemo(() => {
-    const lookup = new Map<string, RelationshipSchema>();
-    metadata?.relationships?.forEach((relation) => {
-      if (relation.name) lookup.set(relation.name, relation);
-      if (relation.fieldName) lookup.set(relation.fieldName, relation);
-    });
-    return lookup;
-  }, [metadata?.relationships]);
-
   const defaultHiddenColumnIds = React.useMemo(() => {
-    const hidden = new Set<string>();
-    if (hasConfiguredDisplay || !metadata?.fields) {
-      return hidden;
-    }
-
-    const normalizeKey = (value: string) =>
-      value.replace(/[_-]/g, "").toLowerCase();
-    const toCamelCase = (value: string) =>
-      value.replace(/_([a-z])/g, (_, letter: string) => letter.toUpperCase());
-    const toSnakeCase = (value: string) =>
-      value
-        .replace(/([A-Z])/g, "_$1")
-        .toLowerCase()
-        .replace(/^_/, "");
-
-    const resolveRelationCountSource = (accessor: string, field: FieldSchema) => {
-      const syntheticSource = getSyntheticRelationCountSource(field);
-      if (syntheticSource) return syntheticSource;
-      const stripped = accessor.replace(/count$/i, "");
-      if (!stripped || stripped === accessor) return null;
-      const candidates = new Set<string>([
-        stripped,
-        toCamelCase(stripped),
-        toSnakeCase(stripped),
-      ]);
-      for (const candidate of candidates) {
-        if (relationLookupForDefaults.has(candidate)) return candidate;
-      }
-      return null;
-    };
-
-    metadata.fields.forEach((field) => {
-      const accessor = field.fieldName || field.name;
-      const normalized = normalizeKey(accessor);
-      const relation =
-        relationLookupForDefaults.get(field.name) ??
-        relationLookupForDefaults.get(field.fieldName || "");
-      const relationType = relation?.relationType?.toLowerCase() || "";
-      const isRelationCount = !!resolveRelationCountSource(accessor, field);
-      const isTimestamp =
-        normalized === "createdat" ||
-        normalized === "updatedat" ||
-        normalized === "updateat";
-      const hideByDefault =
-        field.isPrimaryKey ||
-        normalized === "id" ||
-        field.isJson ||
-        field.fieldType === "TextField" ||
-        isTimestamp ||
-        isRelationCount ||
-        (!!relation &&
-          (relation.isToMany ||
-            relation.isReverse ||
-            relationType.includes("many_to_many") ||
-            relationType.includes("manytomany") ||
-            relationType.includes("reverse_fk")));
-
-      if (hideByDefault) {
-        hidden.add(accessor);
-        hidden.add(field.name);
-      }
-    });
-
-    return hidden;
-  }, [hasConfiguredDisplay, metadata?.fields, relationLookupForDefaults]);
+    if (hasConfiguredDisplay) return new Set<string>();
+    return getDefaultHiddenColumnIds(metadata);
+  }, [hasConfiguredDisplay, metadata]);
 
   const columnDefs = React.useMemo(() => {
     if (!metadata) return null;

@@ -8,6 +8,7 @@ import { useTable } from "../context/TableContext";
 import { useMetadata } from "../context/MetadataContext";
 import { Checkbox } from "@/lib/components/ui/checkbox";
 import { TableColumnMenu } from "./TableColumnMenu";
+import { ColumnFilter } from "./ColumnFilter";
 import type {
   BaseModelTableColumnDef,
   BaseModelTableColumnOrderingConfig,
@@ -208,12 +209,17 @@ export function TableHeader({
                 draggable={allowDrag && dragModeEnabled && !locked.has(field.id)}
                 density={density}
               >
-                <TableColumnMenu
-                  columnId={field.id}
-                  title={field.title}
-                  disabled={disableSorting}
-                  fullWidthTrigger
-                />
+                <div className="flex w-full items-center">
+                  <div className="min-w-0 flex-1">
+                    <TableColumnMenu
+                      columnId={field.id}
+                      title={field.title}
+                      disabled={disableSorting}
+                      fullWidthTrigger
+                    />
+                  </div>
+                  <ColumnFilter columnId={field.id} hideTrigger />
+                </div>
               </DraggableHead>
             );
           }
@@ -226,13 +232,18 @@ export function TableHeader({
               draggable={allowDrag && dragModeEnabled && !locked.has(field.name)}
               density={density}
             >
-              <TableColumnMenu
-                columnId={field.name}
-                title={field.verboseName}
-                field={field}
-                disabled={disableSorting}
-                fullWidthTrigger
-              />
+              <div className="flex w-full items-center">
+                <div className="min-w-0 flex-1">
+                  <TableColumnMenu
+                    columnId={field.name}
+                    title={field.verboseName}
+                    field={field}
+                    disabled={disableSorting}
+                    fullWidthTrigger
+                  />
+                </div>
+                <ColumnFilter columnId={field.name} field={field} hideTrigger />
+              </div>
             </DraggableHead>
           );
         })}

@@ -131,6 +131,90 @@ export function getSyntheticRelationCountSource(
   return metadata.relation;
 }
 
+function toCamelCase(value: string): string {
+  return value.replace(/_([a-z])/g, (_, letter: string) => letter.toUpperCase());
+}
+
+function toSnakeCase(value: string): string {
+  return value
+    .replace(/([A-Z])/g, "_$1")
+    .toLowerCase()
+    .replace(/^_/, "");
+}
+
+function resolveRelationCountSource(
+  accessor: string,
+  field: FieldSchema,
+  relationLookup: Map<string, RelationshipSchema>,
+): string | null {
+  const syntheticSource = getSyntheticRelationCountSource(field);
+  if (syntheticSource) return syntheticSource;
+  const stripped = accessor.replace(/count$/i, "");
+  if (!stripped || stripped === accessor) return null;
+  const candidates = new Set<string>([
+    stripped,
+    toCamelCase(stripped),
+    toSnakeCase(stripped),
+  ]);
+  for (const candidate of candidates) {
+    if (relationLookup.has(candidate)) return candidate;
+  }
+  return null;
+}
+
+export function getDefaultHiddenColumnIds(
+  metadata?: ModelSchema | null,
+): Set<string> {
+  const hidden = new Set<string>();
+  if (!metadata?.fields) return hidden;
+
+  const relationLookup = new Map<string, RelationshipSchema>();
+  metadata.relationships?.forEach((relation) => {
+    if (relation.name) relationLookup.set(relation.name, relation);
+    if (relation.fieldName) relationLookup.set(relation.fieldName, relation);
+  });
+
+  const normalizeKey = (value: string) => value.replace(/[_-]/g, "").toLowerCase();
+
+  metadata.fields.forEach((field) => {
+    const accessor = field.fieldName || field.name;
+    const normalized = normalizeKey(accessor);
+    const relation =
+      relationLookup.get(field.name) ??
+      relationLookup.get(field.fieldName || "");
+    const relationType = relation?.relationType?.toLowerCase() || "";
+    const isRelationCount = !!resolveRelationCountSource(
+      accessor,
+      field,
+      relationLookup,
+    );
+    const isTimestamp =
+      normalized === "createdat" ||
+      normalized === "updatedat" ||
+      normalized === "updateat";
+    const hideByDefault =
+      field.isPrimaryKey ||
+      normalized === "id" ||
+      field.isJson ||
+      field.fieldType === "TextField" ||
+      isTimestamp ||
+      isRelationCount ||
+      (!!relation &&
+        (relation.isToMany ||
+          relation.isReverse ||
+          relationType.includes("many_to_many") ||
+          relationType.includes("manytomany") ||
+          relationType.includes("reverse_fk")));
+
+    if (!hideByDefault) return;
+    hidden.add(accessor);
+    hidden.add(field.name);
+    if (field.fieldName) hidden.add(field.fieldName);
+  });
+
+  return hidden;
+}
+
 function buildRelationshipField(relation: RelationshipSchema): FieldSchema {
   const name = relation.name || relation.fieldName;
   const fieldName = relation.fieldName || relation.name;
@@ -355,17 +439,6 @@ export function resolveGroupingKey(
   }
 
   return String(value);
-}
-
-function toCamelCase(value: string): string {
-  return value.replace(/_([a-z])/g, (_, letter: string) => letter.toUpperCase());
-}
-
-function toSnakeCase(value: string): string {
-  return value
-    .replace(/([A-Z])/g, "_$1")
-    .toLowerCase()
-    .replace(/^_/, "");
 }
 
 export function resolveFieldValue(
