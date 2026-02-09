@@ -169,7 +169,7 @@ export function TableColumnMenu({
             variant="ghost"
             size="sm"
             className={cn(
-              "h-full w-full m-0 rounded-none justify-between px-0 py-0 data-[state=open]:bg-accent data-[state=open]:text-accent-foreground",
+              "h-full w-full min-h-0 m-0 self-stretch rounded-none justify-between px-0 py-0 data-[state=open]:bg-accent data-[state=open]:text-accent-foreground",
               "font-medium",
               currentSort
                 ? "text-primary"

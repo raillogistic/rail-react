@@ -209,8 +209,8 @@ export function TableHeader({
                 draggable={allowDrag && dragModeEnabled && !locked.has(field.id)}
                 density={density}
               >
-                <div className="flex w-full items-center">
-                  <div className="min-w-0 flex-1">
+                <div className="flex h-full w-full items-stretch self-stretch">
+                  <div className="min-w-0 flex-1 h-full">
                     <TableColumnMenu
                       columnId={field.id}
                       title={field.title}
@@ -226,14 +226,14 @@ export function TableHeader({
 
           // Metadata field
           return (
-            <DraggableHead
-              key={field.name}
-              id={field.name}
-              draggable={allowDrag && dragModeEnabled && !locked.has(field.name)}
-              density={density}
-            >
-              <div className="flex w-full items-center">
-                <div className="min-w-0 flex-1">
+              <DraggableHead
+                key={field.name}
+                id={field.name}
+                draggable={allowDrag && dragModeEnabled && !locked.has(field.name)}
+                density={density}
+              >
+              <div className="flex h-full w-full items-stretch self-stretch">
+                <div className="min-w-0 flex-1 h-full">
                   <TableColumnMenu
                     columnId={field.name}
                     title={field.verboseName}
