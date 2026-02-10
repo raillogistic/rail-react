@@ -21,7 +21,10 @@ import {
   SelectValue,
 } from "@/lib/components/ui/select";
 import { toast } from "@/lib/components/ui/sonner";
-import { getSecureHeaders } from "@/auth/utils/token-storage";
+import {
+  getAuthorizationHeader,
+  getSecureHeaders,
+} from "@/auth/utils/token-storage";
 import { useMetadata } from "../context/MetadataContext";
 import { useTable } from "../context/TableContext";
 import type {
@@ -290,10 +293,14 @@ export function ModelTableExportDialog({
       "/api/v1/export/";
 
     try {
+      const authorizationHeader = getAuthorizationHeader();
       const response = await fetch(exportEndpoint, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
+          ...(authorizationHeader
+            ? { Authorization: authorizationHeader }
+            : {}),
           ...getSecureHeaders(),
         },
         body: JSON.stringify(payload),
