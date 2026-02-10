@@ -4,7 +4,7 @@ import { X } from "lucide-react";
 import { FilterFieldType, FilterOptionType } from "../../compat/types";
 import { FilterCondition, FilterValue } from "./types";
 import { FilterValueInput } from "./FilterValueInput";
-import { translateLookup } from "./FilterConditionRow";
+import { translateLookupLabelFr } from "./operatorLabels";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -107,7 +107,7 @@ export const ColumnFilterInput: React.FC<Props> = ({
             >
               <div className="flex w-full items-center justify-between gap-2">
                 <span className="text-sm">
-                  {translateLookup(opt.lookup_expr)}
+                  {translateLookupLabelFr(opt.lookup_expr)}
                 </span>
                 <span className="text-xs text-muted-foreground">
                   {LOOKUP_SYMBOLS[opt.lookup_expr] ??

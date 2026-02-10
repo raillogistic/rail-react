@@ -42,6 +42,7 @@ import type {
   RelationFilterDialogProps,
   RelationFunctionMode,
 } from "./types";
+import { formatLookupLabelFr } from "../filtering/operatorLabels";
 
 export function RelationFilterDialog({
   columnId,
@@ -428,7 +429,7 @@ export function RelationFilterDialog({
                     <SelectContent>
                       {relationCountOperators.map((operator) => (
                         <SelectItem key={`count-op-${operator}`} value={operator}>
-                          {operator}
+                          {formatLookupLabelFr(operator)}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -484,7 +485,7 @@ export function RelationFilterDialog({
                       <SelectContent>
                         {relationOperatorOptions.map((operator) => (
                           <SelectItem key={`rel-op-${operator}`} value={operator}>
-                            {operator}
+                            {formatLookupLabelFr(operator)}
                           </SelectItem>
                         ))}
                       </SelectContent>

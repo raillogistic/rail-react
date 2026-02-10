@@ -75,7 +75,34 @@ const MOCK_METADATA_QUERY = {
           supportsFts: true,
           supportsAggregation: false,
           dualModeEnabled: false,
+          presets: [],
+          computedFilters: [],
         },
+        filters: [
+          {
+            __typename: 'FilterSchema',
+            name: 'username',
+            fieldName: 'username',
+            fieldLabel: 'Username',
+            baseType: 'String',
+            isNested: false,
+            relatedModel: null,
+            options: [
+              {
+                __typename: 'FilterOption',
+                name: 'username__icontains',
+                lookup: 'icontains',
+                label: 'Contient',
+                helpText: 'Filtrer par username',
+                choices: [],
+                graphqlType: 'String',
+                isList: false,
+              },
+            ],
+            filterInputType: 'StringFilter',
+            availableOperators: ['icontains'],
+          },
+        ],
         fields: [
           {
             __typename: 'FieldSchema',
@@ -298,5 +325,7 @@ describe('ModelTableV2 Integration', () => {
         expect(screen.getAllByText('alice').length).toBeGreaterThan(0);
         expect(screen.getAllByText('bob').length).toBeGreaterThan(0);
     });
+
+    expect(screen.getAllByText('Filtrer').length).toBeGreaterThan(0);
   });
 });

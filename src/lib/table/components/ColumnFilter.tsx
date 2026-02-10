@@ -21,6 +21,7 @@ import { FieldSchema } from "../types";
 import { ScalarFilterInput } from "../../form/filters/components/ScalarFilterInput";
 import type { FilterableField, FilterOperator, FilterBaseType } from "../../form/filters/types";
 import { cn } from "@/lib/utils";
+import { translateLookupLabelFr } from "./filtering/operatorLabels";
 
 interface ColumnFilterProps {
   columnId: string;
@@ -81,7 +82,7 @@ export function ColumnFilter({ columnId, field, hideTrigger = false }: ColumnFil
     // Map operators
     const operators: FilterOperator[] = filterMeta.options.map((opt) => ({
       name: opt.lookup || opt.name,
-      label: opt.label,
+      label: translateLookupLabelFr(opt.lookup || opt.name, opt.label),
       helpText: opt.helpText,
       graphqlType: opt.graphqlType || "String",
       isList: opt.isList || false,

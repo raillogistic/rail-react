@@ -24,6 +24,7 @@ import { FilterFieldType, FilterOptionType } from "../../compat/types";
 import { AdvancedFilteringController, FilterCondition } from "./types";
 import { FilterValueInput } from "./FilterValueInput";
 import { FilterFieldSelector } from "./FilterFieldSelector";
+import { translateLookupLabelFr } from "./operatorLabels";
 
 type Props = {
   controller: AdvancedFilteringController;
@@ -52,33 +53,6 @@ const getDefaultOptionName = (field?: FilterFieldType) => {
   );
   return (icontains ?? field.options[0])?.name;
 };
-
-export const LOOKUP_LABELS_FR: Record<FilterOptionType["lookup_expr"], string> =
-  {
-    in: "Parmi",
-    exact: "Ã‰gal Ã ",
-    contains: "Contient",
-    icontains: "Contient (ignore la casse)",
-    startswith: "Commence par",
-    istartswith: "Commence par (ignore la casse)",
-    endswith: "Se termine par",
-    iendswith: "Se termine par (ignore la casse)",
-    range: "Entre",
-    gt: "SupÃ©rieur Ã ",
-    gte: "SupÃ©rieur ou Ã©gal Ã ",
-    lt: "InfÃ©rieur Ã ",
-    lte: "InfÃ©rieur ou Ã©gal Ã ",
-    iregex: "Correspond (regex insensible)",
-    regex: "Correspond (regex)",
-    count: "Nombre Ã©gal Ã ",
-    count_gt: "Nombre supÃ©rieur Ã ",
-    count_gte: "Nombre supÃ©rieur ou Ã©gal Ã ",
-    count_lt: "Nombre infÃ©rieur Ã ",
-    count_lte: "Nombre infÃ©rieur ou Ã©gal Ã ",
-  };
-
-export const translateLookup = (expr: FilterOptionType["lookup_expr"]) =>
-  LOOKUP_LABELS_FR[expr] ?? expr.toUpperCase();
 
 export const FilterConditionRow: React.FC<Props> = ({
   controller,
@@ -148,8 +122,8 @@ export const FilterConditionRow: React.FC<Props> = ({
                   className="border-dashed"
                   title={
                     option
-                      ? `OpÃ©rateur: ${translateLookup(option.lookup_expr)}`
-                      : "Choisir un opÃ©rateur"
+                      ? `Operateur: ${translateLookupLabelFr(option.lookup_expr)}`
+                      : "Choisir un operateur"
                   }
                 >
                   <LookupIcon className="h-4 w-4" />
@@ -164,9 +138,9 @@ export const FilterConditionRow: React.FC<Props> = ({
                       event.preventDefault();
                       handleOptionChange(opt.name);
                     }}
-                  >
+                    >
                     <span className="text-sm font-medium">
-                      {translateLookup(opt.lookup_expr)}
+                      {translateLookupLabelFr(opt.lookup_expr)}
                     </span>
                     {opt.help_text ? (
                       <span className="text-xs text-muted-foreground">
@@ -177,7 +151,7 @@ export const FilterConditionRow: React.FC<Props> = ({
                 ))}
                 {(field?.options ?? []).length === 0 ? (
                   <div className="px-2 py-1 text-xs text-muted-foreground">
-                    Aucun opÃ©rateur disponible
+                    Aucun operateur disponible
                   </div>
                 ) : null}
               </DropdownMenuContent>

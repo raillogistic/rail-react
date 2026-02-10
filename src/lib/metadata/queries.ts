@@ -71,6 +71,30 @@ export const TABLE_MODEL_METADATA_QUERY = gql`
         canCreateInline
         customMetadata
       }
+      filters {
+        name
+        fieldName
+        fieldLabel
+        baseType
+        isNested
+        relatedModel
+        options {
+          name
+          lookup
+          label
+          helpText
+          choices {
+            value
+            label
+            group
+            disabled
+          }
+          graphqlType
+          isList
+        }
+        filterInputType
+        availableOperators
+      }
       filterConfig {
         style
         argumentName
