@@ -40,7 +40,7 @@ export const SmartValueInput: React.FC<SmartValueInputProps> = ({
           onChange={onChange}
           disabled={disabled}
           autoFocus={autoFocus}
-          ariaLabel="Value"
+          ariaLabel="Valeur"
         />
       </div>
       {showPresets && (

@@ -71,13 +71,13 @@ export const DistinctOnSelector: React.FC<DistinctOnSelectorProps> = ({
       const orderByField = orderBy[i];
 
       if (!orderByField) {
-        return `ORDER BY must include "${distinctField}" at position ${i + 1}`;
+        return `ORDER BY doit inclure "${distinctField}" à la position ${i + 1}`;
       }
 
       // Handle descending order prefix
       const normalizedOrderBy = orderByField.replace(/^-/, "");
       if (normalizedOrderBy !== distinctField) {
-        return `ORDER BY[${i}] must be "${distinctField}" (got "${normalizedOrderBy}")`;
+        return `ORDER BY[${i}] doit être "${distinctField}" (reçu "${normalizedOrderBy}")`;
       }
     }
 
@@ -118,7 +118,7 @@ export const DistinctOnSelector: React.FC<DistinctOnSelectorProps> = ({
           <Button
             variant="outline"
             role="combobox"
-            aria-label="Distinct fields"
+            aria-label="Champs distincts"
             aria-expanded={open}
             className="justify-between gap-2"
             disabled={disabled || distinctFields.length === 0}
@@ -201,7 +201,7 @@ export const DistinctOnSelector: React.FC<DistinctOnSelectorProps> = ({
             className="h-6 px-2 text-xs"
             onClick={handleClear}
           >
-            Clear all
+            Tout effacer
           </Button>
         </div>
       )}

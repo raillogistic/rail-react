@@ -165,7 +165,7 @@ export const ScalarFilterInput: React.FC<ScalarFilterInputProps> = ({
           htmlFor={`${field.fieldName}-isNull`}
           className="text-sm text-muted-foreground cursor-pointer"
         >
-          Le champ est vide (nul)
+          Le champ est vide
         </label>
       </div>
     );
@@ -234,8 +234,8 @@ export const ScalarFilterInput: React.FC<ScalarFilterInputProps> = ({
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="__any__">Toute valeur</SelectItem>
-          <SelectItem value="true">Oui / Vrai</SelectItem>
-          <SelectItem value="false">Non / Faux</SelectItem>
+          <SelectItem value="true">Oui</SelectItem>
+          <SelectItem value="false">Non</SelectItem>
         </SelectContent>
       </Select>
     );
@@ -256,6 +256,13 @@ export const ScalarFilterInput: React.FC<ScalarFilterInputProps> = ({
     }
     // Numeric date parts (year, month, day)
     if (["year", "month", "day", "weekDay", "hour"].includes(opName)) {
+      const opLabels: Record<string, string> = {
+        year: "l'année",
+        month: "le mois",
+        day: "le jour",
+        weekDay: "le jour de la semaine",
+        hour: "l'heure",
+      };
       return (
         <Input
           type="number"
@@ -264,7 +271,7 @@ export const ScalarFilterInput: React.FC<ScalarFilterInputProps> = ({
             const val = e.target.value;
             onChange(val === "" ? undefined : parseInt(val, 10));
           }}
-          placeholder={`Entrer ${opName}...`}
+          placeholder={`Entrer ${opLabels[opName] || opName}...`}
           disabled={disabled}
           autoFocus={autoFocus}
           min={opName === "month" ? 1 : opName === "day" ? 1 : undefined}
@@ -494,7 +501,7 @@ const MultiSelectChoices: React.FC<MultiSelectChoicesProps> = ({
             ) : (
               <span className="truncate">
                 {selectedLabels.join(", ")}
-                {value.length > 3 && ` +${value.length - 3} more`}
+                {value.length > 3 && ` +${value.length - 3} de plus`}
               </span>
             )}
             <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -503,12 +510,12 @@ const MultiSelectChoices: React.FC<MultiSelectChoicesProps> = ({
         <PopoverContent className="w-[300px] p-0" align="start">
           <Command>
             <CommandInput
-              placeholder="Search..."
+              placeholder="Rechercher..."
               value={search}
               onValueChange={setSearch}
             />
             <CommandList>
-              <CommandEmpty>No options found.</CommandEmpty>
+              <CommandEmpty>Aucune option trouvée.</CommandEmpty>
               <CommandGroup>
                 {filteredChoices.map((choice) => (
                   <CommandItem
@@ -550,7 +557,7 @@ const MultiSelectChoices: React.FC<MultiSelectChoicesProps> = ({
               className="h-6 px-2 text-xs"
               onClick={() => onChange([])}
             >
-              Clear all
+              Tout effacer
             </Button>
           )}
         </div>
@@ -576,7 +583,7 @@ const DatePickerInput: React.FC<DatePickerInputProps> = ({
   const parsedDate = value ? parseISO(value) : undefined;
   const isValidDate = parsedDate && isValid(parsedDate);
 
-  const formatStr = includeTime ? "PPP 'at' p" : "PPP";
+  const formatStr = includeTime ? "PPP 'à' p" : "PPP";
 
   return (
     <Popover open={open} onOpenChange={setOpen}>

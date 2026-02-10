@@ -1,14 +1,20 @@
-import React, { useCallback, useMemo, useRef, useState, useEffect } from "react";
-import { 
-  AlertTriangle, 
-  Filter, 
-  Save, 
-  RotateCcw, 
-  Plus, 
-  ChevronRight, 
+import React, {
+  useCallback,
+  useMemo,
+  useRef,
+  useState,
+  useEffect,
+} from "react";
+import {
+  AlertTriangle,
+  Filter,
+  Save,
+  RotateCcw,
+  Plus,
+  ChevronRight,
   ListFilter,
   X,
-  Layers
+  Layers,
 } from "lucide-react";
 import { Button } from "@/lib/components/ui/button";
 import { Card, CardContent } from "@/lib/components/ui/card";
@@ -22,11 +28,11 @@ import {
 import { Badge } from "@/lib/components/ui/badge";
 import { Separator } from "@/lib/components/ui/separator";
 import { ScrollArea } from "@/lib/components/ui/scroll-area";
-import { 
-  Tooltip, 
-  TooltipContent, 
-  TooltipProvider, 
-  TooltipTrigger 
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
 } from "@/lib/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
@@ -261,17 +267,17 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
   });
 
   const resolveDefaultPath = useCallback(
-    async (spec: DefaultFilterSpec): Promise<{
+    async (
+      spec: DefaultFilterSpec,
+    ): Promise<{
       path: string[];
       operator: string;
       value?: unknown;
     } | null> => {
       if (!schema) return null;
-      const raw =
-        typeof spec === "string" ? { name: spec } : spec;
+      const raw = typeof spec === "string" ? { name: spec } : spec;
       const path =
-        raw.path ??
-        (raw.name.includes(".") ? raw.name.split(".") : [raw.name]);
+        raw.path ?? (raw.name.includes(".") ? raw.name.split(".") : [raw.name]);
 
       let currentSchema: UnifiedFilterSchema | null = schema;
       for (let i = 0; i < path.length; i++) {
@@ -335,7 +341,12 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
       const conditions = resolved
         .filter(Boolean)
         .map((item) =>
-          createCondition(item!.path, item!.path[item!.path.length - 1], item!.operator, item!.value),
+          createCondition(
+            item!.path,
+            item!.path[item!.path.length - 1],
+            item!.operator,
+            item!.value,
+          ),
         );
       if (conditions.length === 0) {
         defaultsAppliedRef.current = true;
@@ -362,7 +373,8 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
   ]);
 
   const handleAddFirstCondition = useCallback(() => {
-    const firstField = schema?.fields.find((field) => !field.isRelation) ?? schema?.fields[0];
+    const firstField =
+      schema?.fields.find((field) => !field.isRelation) ?? schema?.fields[0];
     if (!firstField) return;
 
     addCondition(
@@ -396,10 +408,15 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
 
   if (error || !schema) {
     return (
-      <Alert variant="destructive" className="border-destructive/20 bg-destructive/5">
+      <Alert
+        variant="destructive"
+        className="border-destructive/20 bg-destructive/5"
+      >
         <AlertTriangle className="h-4 w-4" />
         <AlertDescription className="flex items-center justify-between w-full">
-          <span className="font-medium">{error?.message ?? "Failed to load filter schema"}</span>
+          <span className="font-medium">
+            {error?.message ?? "Échec du chargement du schéma de filtrage"}
+          </span>
           <Button
             variant="ghost"
             size="sm"
@@ -407,7 +424,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
             className="h-8 hover:bg-destructive/10"
           >
             <RotateCcw className="mr-2 h-3.5 w-3.5" />
-            Retry
+            Réessayer
           </Button>
         </AlertDescription>
       </Alert>
@@ -424,15 +441,18 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
               <Filter className="h-4 w-4" />
             </div>
             <div>
-              <h3 className="font-semibold text-sm leading-none tracking-tight">{title}</h3>
+              <h3 className="font-semibold text-sm leading-none tracking-tight">
+                {title}
+              </h3>
               <p className="text-[11px] text-muted-foreground mt-1">
                 {activeCount > 0 ? (
                   <span className="flex items-center gap-1 text-primary animate-in fade-in slide-in-from-left-1">
                     <Layers className="h-2.5 w-2.5" />
-                    {activeCount} active filter{activeCount !== 1 ? "s" : ""}
+                    {activeCount} filtre{activeCount !== 1 ? "s" : ""} actif
+                    {activeCount !== 1 ? "s" : ""}
                   </span>
                 ) : (
-                  "Configure and apply data filters"
+                  "Configurer et appliquer des filtres"
                 )}
               </p>
             </div>
@@ -449,7 +469,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
                 onSharePreset={handleSharePreset}
                 disabled={disabled}
                 layout="list"
-                label="Views"
+                label="Vues"
               />
             )}
             {activeCount > 0 && (
@@ -467,7 +487,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="bottom" align="end">
-                    <p className="text-xs">Reset all filters</p>
+                    <p className="text-xs">Réinitialiser tous les filtres</p>
                   </TooltipContent>
                 </Tooltip>
               </TooltipProvider>
@@ -492,7 +512,9 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
               <div className="bg-muted/30 p-3 rounded-lg border border-border/50">
                 <div className="flex items-center gap-2 mb-2">
                   <ListFilter className="h-3.5 w-3.5 text-muted-foreground" />
-                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Optimization</span>
+                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Optimisation
+                  </span>
                 </div>
                 <DistinctOnSelector
                   distinctFields={schema.distinctFields}
@@ -525,31 +547,33 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
                 onLoadRelationSchema={loadSchemaForRelation}
                 getRelationSchema={getSchemaForRelation}
               />
-              
+
               {state.root.conditions.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-12 text-center">
                   <div className="h-16 w-16 rounded-full bg-muted/20 flex items-center justify-center mb-4 border-2 border-dashed border-muted">
                     <Plus className="h-8 w-8 text-muted-foreground/40" />
                   </div>
-                  <h4 className="text-sm font-medium text-foreground">No filters added yet</h4>
+                  <h4 className="text-sm font-medium text-foreground">
+                    Aucun filtre ajouté
+                  </h4>
                   <p className="text-xs text-muted-foreground mt-1 max-w-[200px]">
-                    Add conditions to narrow down your data results
+                    Ajoutez des conditions pour affiner vos résultats
                   </p>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
+                  <Button
+                    variant="outline"
+                    size="sm"
                     className="mt-4 h-8 border-dashed"
                     onClick={handleAddFirstCondition}
                   >
                     <Plus className="mr-2 h-3.5 w-3.5" />
-                    Add First Condition
+                    Ajouter le premier filtre
                   </Button>
                 </div>
               )}
             </div>
           </div>
         </ScrollArea>
-        
+
         {/* Subtle Bottom Gradient */}
         <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-background to-transparent pointer-events-none z-10" />
       </div>
@@ -561,17 +585,25 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
             {showKeyboardHints && !disabled && (
               <div className="hidden sm:flex items-center gap-3 text-[10px] text-muted-foreground/70 font-medium">
                 <span className="flex items-center gap-1">
-                  <kbd className="px-1 py-0.5 rounded border bg-background text-[9px] font-sans">Ctrl</kbd> + <kbd className="px-1 py-0.5 rounded border bg-background text-[9px] font-sans">Enter</kbd>
-                  Apply
+                  <kbd className="px-1 py-0.5 rounded border bg-background text-[9px] font-sans">
+                    Ctrl
+                  </kbd>{" "}
+                  +{" "}
+                  <kbd className="px-1 py-0.5 rounded border bg-background text-[9px] font-sans">
+                    Entrée
+                  </kbd>
+                  Appliquer
                 </span>
                 <span className="flex items-center gap-1">
-                  <kbd className="px-1 py-0.5 rounded border bg-background text-[9px] font-sans">Esc</kbd>
-                  Clear
+                  <kbd className="px-1 py-0.5 rounded border bg-background text-[9px] font-sans">
+                    Esc
+                  </kbd>
+                  Effacer
                 </span>
               </div>
             )}
           </div>
-          
+
           <div className="flex items-center gap-2">
             {allowSaveFilter && activeCount > 0 && (
               <Button
@@ -585,15 +617,15 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
                 disabled={disabled}
               >
                 <Save className="mr-2 h-3.5 w-3.5 text-primary" />
-                Save Current
+                Enregistrer actuel
               </Button>
             )}
-            <Button 
-              onClick={handleApply} 
-              disabled={disabled} 
+            <Button
+              onClick={handleApply}
+              disabled={disabled}
               className="h-9 px-6 text-xs font-semibold shadow-sm active:scale-95 transition-all"
             >
-              Apply Filters
+              Appliquer les filtres
               <ChevronRight className="ml-1.5 h-3.5 w-3.5" />
             </Button>
           </div>
@@ -602,7 +634,8 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
     </div>
   );
 
-  const containerStyles = "w-full max-w-full sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl p-0 border shadow-2xl overflow-hidden rounded-xl animate-in zoom-in-95 duration-200";
+  const containerStyles =
+    "w-full max-w-full sm:max-w-md md:max-w-lg lg:max-w-xl xl:max-w-2xl p-0 border shadow-2xl overflow-hidden rounded-xl animate-in zoom-in-95 duration-200";
 
   return (
     <>
@@ -617,19 +650,24 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
               onAddFilter={() => setPopoverOpen(true)}
             />
             <PopoverTrigger asChild>
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <Button
+                variant="outline"
+                size="sm"
                 className={cn(
                   "h-8 text-xs font-medium border-dashed px-3 hover:border-primary/50 hover:bg-primary/5 transition-all",
-                  activeCount > 0 && "border-primary/30 bg-primary/5 text-primary"
+                  activeCount > 0 &&
+                    "border-primary/30 bg-primary/5 text-primary",
                 )}
               >
                 <Plus className="mr-2 h-3.5 w-3.5" />
-                Add More Filters
+                Ajouter plus de filtres
               </Button>
             </PopoverTrigger>
-            <PopoverContent className={containerStyles} align="start" sideOffset={8}>
+            <PopoverContent
+              className={containerStyles}
+              align="start"
+              sideOffset={8}
+            >
               {filterContent}
             </PopoverContent>
           </div>
@@ -643,17 +681,19 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
               variant="outline"
               size="sm"
               className={cn(
-                "gap-2 h-9 px-4 rounded-lg font-medium transition-all duration-200", 
-                activeCount > 0 
-                  ? "border-primary bg-primary/5 text-primary shadow-sm" 
-                  : "hover:border-primary/30"
+                "gap-2 h-9 px-4 rounded-lg font-medium transition-all duration-200",
+                activeCount > 0
+                  ? "border-primary bg-primary/5 text-primary shadow-sm"
+                  : "hover:border-primary/30",
               )}
             >
-              <Filter className={cn("h-4 w-4", activeCount > 0 && "fill-primary/20")} />
+              <Filter
+                className={cn("h-4 w-4", activeCount > 0 && "fill-primary/20")}
+              />
               {title}
               {activeCount > 0 && (
-                <Badge 
-                  variant="default" 
+                <Badge
+                  variant="default"
                   className="ml-1 h-5 min-w-5 flex items-center justify-center rounded-full p-0 text-[10px] font-bold"
                 >
                   {activeCount}
@@ -661,7 +701,11 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
               )}
             </Button>
           </PopoverTrigger>
-          <PopoverContent className={containerStyles} align="start" sideOffset={8}>
+          <PopoverContent
+            className={containerStyles}
+            align="start"
+            sideOffset={8}
+          >
             {filterContent}
           </PopoverContent>
         </Popover>

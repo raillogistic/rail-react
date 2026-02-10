@@ -10,7 +10,12 @@ import {
 } from "@/lib/components/ui/collapsible";
 import { Switch } from "@/lib/components/ui/switch";
 import { Badge } from "@/lib/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/lib/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/lib/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 
 import { InlineFieldSelector } from "./InlineFieldSelector";
@@ -65,7 +70,7 @@ export interface FilterGroupProps {
   fieldSelector?: FieldSelectorOptions;
   /** Fonction asynchrone pour charger le schéma d'une relation */
   onLoadRelationSchema?: (
-    relation: RelationFilter
+    relation: RelationFilter,
   ) => Promise<UnifiedFilterSchema | null>;
   /** Fonction pour obtenir le schéma déjà chargé d'une relation */
   getRelationSchema?: (relation: RelationFilter) => UnifiedFilterSchema | null;
@@ -121,9 +126,10 @@ export const FilterGroupComponent: React.FC<FilterGroupProps> = ({
         className={cn(
           "relative transition-all duration-200 group/filter-group",
           depth > 0 && "ml-4 pl-4 border-l-2 border-primary/10 py-2 my-2",
-          showNegationWarning && "border border-destructive/30 bg-destructive/5 rounded-xl p-4 shadow-sm ring-1 ring-destructive/10",
+          showNegationWarning &&
+            "border border-destructive/30 bg-destructive/5 rounded-xl p-4 shadow-sm ring-1 ring-destructive/10",
           !showNegationWarning && depth > 0 && "hover:border-primary/30",
-          isRoot && "space-y-4"
+          isRoot && "space-y-4",
         )}
         data-testid="filter-group"
       >
@@ -145,29 +151,34 @@ export const FilterGroupComponent: React.FC<FilterGroupProps> = ({
               className="h-7"
               aria-label="Group logic"
             >
-              <ToggleGroupItem 
-                value="AND" 
+              <ToggleGroupItem
+                value="AND"
                 className="text-[10px] font-bold px-2.5 h-6 data-[state=active]:bg-background data-[state=active]:shadow-sm"
               >
-                AND
+                ET
               </ToggleGroupItem>
-              <ToggleGroupItem 
-                value="OR" 
+              <ToggleGroupItem
+                value="OR"
                 className="text-[10px] font-bold px-2.5 h-6 data-[state=active]:bg-background data-[state=active]:shadow-sm"
               >
-                OR
+                OU
               </ToggleGroupItem>
             </ToggleGroup>
           </div>
 
-          <Badge variant="outline" className="h-6 px-2 text-[10px] font-medium border-primary/20 bg-primary/5 text-primary">
-            {group.logic === "AND" ? "Match All" : "Match Any"}
+          <Badge
+            variant="outline"
+            className="h-6 px-2 text-[10px] font-medium border-primary/20 bg-primary/5 text-primary"
+          >
+            {group.logic === "AND" ? "Tout vérifier" : "Vérifier au moins un"}
           </Badge>
 
           <div className="ml-auto flex items-center gap-1.5 opacity-0 group-hover/filter-group:opacity-100 transition-opacity">
             {config.enableNot && (
               <div className="flex items-center gap-2 mr-2 bg-muted/30 px-2 py-1 rounded-md">
-                <span className="text-[10px] font-bold text-muted-foreground">NOT</span>
+                <span className="text-[10px] font-bold text-muted-foreground">
+                  NON
+                </span>
                 <Switch
                   checked={group.negated}
                   onCheckedChange={(checked) => onChange({ negated: checked })}
@@ -176,25 +187,25 @@ export const FilterGroupComponent: React.FC<FilterGroupProps> = ({
                 />
               </div>
             )}
-            
+
             {!isRoot && (
               <Button
                 variant="ghost"
                 size="icon"
                 className="h-7 w-7 rounded-md text-muted-foreground hover:text-destructive hover:bg-destructive/10"
                 onClick={onRemove}
-                aria-label="Remove group"
+                aria-label="Supprimer le groupe"
               >
                 <X className="h-3.5 w-3.5" />
               </Button>
             )}
-            
+
             <CollapsibleTrigger asChild>
               <Button
                 variant="ghost"
                 size="icon"
                 className="h-7 w-7 rounded-md text-muted-foreground hover:bg-muted"
-                aria-label="Toggle group"
+                aria-label="Réduire/Agrandir le groupe"
               >
                 <ChevronDown
                   className={cn(
@@ -210,7 +221,7 @@ export const FilterGroupComponent: React.FC<FilterGroupProps> = ({
         {showNegationWarning && (
           <div className="flex items-center gap-2 mb-3 text-[11px] font-medium text-destructive bg-destructive/10 px-3 py-1.5 rounded-lg border border-destructive/20 animate-in fade-in slide-in-from-top-1">
             <Info className="h-3 w-3" />
-            Everything in this group is currently negated (inverted).
+            Tout ce qui se trouve dans ce groupe est actuellement nié (inversé).
           </div>
         )}
 
@@ -231,7 +242,9 @@ export const FilterGroupComponent: React.FC<FilterGroupProps> = ({
                     className="w-full h-11 border-dashed border-primary/20 bg-primary/5 text-primary hover:bg-primary/10 hover:border-primary/40 transition-all rounded-xl"
                   >
                     <Plus className="h-4 w-4 mr-2" />
-                    <span className="text-xs font-semibold">Start building filters</span>
+                    <span className="text-xs font-semibold">
+                      Commencer à construire des filtres
+                    </span>
                   </Button>
                 }
                 recentFields={recentFields}
@@ -241,7 +254,10 @@ export const FilterGroupComponent: React.FC<FilterGroupProps> = ({
           ) : (
             <div className="space-y-2.5">
               {group.conditions.map((item) => (
-                <div key={item.id} className="relative animate-in fade-in slide-in-from-left-1">
+                <div
+                  key={item.id}
+                  className="relative animate-in fade-in slide-in-from-left-1"
+                >
                   {item.type === "condition" ? (
                     <FilterRow
                       condition={item}
@@ -311,8 +327,8 @@ export const FilterGroupComponent: React.FC<FilterGroupProps> = ({
                       >
                         <Plus className="h-4 w-4 mr-1.5" />
                         {group.logic === "OR"
-                          ? "Add OR condition"
-                          : "Add condition"}
+                          ? "Ajouter une condition OU"
+                          : "Ajouter une condition"}
                       </Button>
                     }
                     recentFields={recentFields}
@@ -334,7 +350,9 @@ export const FilterGroupComponent: React.FC<FilterGroupProps> = ({
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent>
-                      <p className="text-xs">Add nested filter group</p>
+                      <p className="text-xs">
+                        Ajouter un groupe de filtres imbriqué
+                      </p>
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>

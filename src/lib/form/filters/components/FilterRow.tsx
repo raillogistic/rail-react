@@ -153,7 +153,7 @@ export const FilterRow: React.FC<FilterRowProps> = ({
           <AlertCircle className="h-4 w-4" />
         </div>
         <div className="flex flex-col">
-          <span className="text-[11px] font-bold text-destructive/80 uppercase tracking-tight leading-none">Unknown field</span>
+          <span className="text-[11px] font-bold text-destructive/80 uppercase tracking-tight leading-none">Champ inconnu</span>
           <span className="text-xs font-medium text-destructive mt-0.5">
             {condition.fieldPath.join(" → ")}
           </span>
@@ -209,7 +209,7 @@ export const FilterRow: React.FC<FilterRowProps> = ({
                   </span>
                 )}
                 <span className="truncate text-foreground">
-                  {condition.fieldPath.length === 0 ? "Select field..." : field.fieldLabel}
+                  {condition.fieldPath.length === 0 ? "Sélectionner un champ..." : field.fieldLabel}
                 </span>
               </div>
             </Button>
@@ -230,9 +230,9 @@ export const FilterRow: React.FC<FilterRowProps> = ({
             <SelectValue />
           </SelectTrigger>
           <SelectContent className="rounded-xl border-border/50 shadow-xl">
-            <SelectItem value="_some" className="text-xs font-medium">SOME</SelectItem>
-            <SelectItem value="_every" className="text-xs font-medium">EVERY</SelectItem>
-            <SelectItem value="_none" className="text-xs font-medium">NONE</SelectItem>
+            <SelectItem value="_some" className="text-xs font-medium">AU MOINS UN</SelectItem>
+            <SelectItem value="_every" className="text-xs font-medium">TOUS</SelectItem>
+            <SelectItem value="_none" className="text-xs font-medium">AUCUN</SelectItem>
           </SelectContent>
         </Select>
       )}
@@ -269,13 +269,13 @@ export const FilterRow: React.FC<FilterRowProps> = ({
                 className="h-8 w-8 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                 onClick={onRemove}
                 disabled={disabled}
-                aria-label="Remove filter"
+                aria-label="Supprimer le filtre"
               >
                 <X className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
             <TooltipContent side="top" align="center">
-              <p className="text-[10px] font-bold">Remove</p>
+              <p className="text-[10px] font-bold">Supprimer</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>

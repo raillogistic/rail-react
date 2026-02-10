@@ -66,7 +66,7 @@ export const DatePresetPicker: React.FC<DatePresetPickerProps> = ({
           disabled={disabled}
         >
           <Calendar className="h-3.5 w-3.5" />
-          Presets
+          Raccourcis
           <ChevronDown className="h-3 w-3 opacity-60" />
         </Button>
       </DropdownMenuTrigger>

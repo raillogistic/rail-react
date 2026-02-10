@@ -114,7 +114,7 @@ export function mergeFilterMetadata(
       filterInputType: filter.filterInputType,
       operators: filter.options.map((opt) => ({
         name: opt.name,
-        label: opt.label,
+        label: translateOperatorLabel(opt.name, opt.label),
         helpText: opt.helpText,
         graphqlType: opt.graphqlType,
         isList: opt.isList ?? false,
@@ -213,6 +213,59 @@ export function mergeFilterMetadata(
   };
 }
 
+/**
+ * Traduit les libellés des opérateurs en français si nécessaire.
+ */
+function translateOperatorLabel(name: string, originalLabel: string): string {
+  const translations: Record<string, string> = {
+    eq: "Égal à",
+    neq: "Différent de",
+    contains: "Contient",
+    icontains: "Contient (insensible)",
+    startsWith: "Commence par",
+    istartsWith: "Commence par (insensible)",
+    endsWith: "Se termine par",
+    iendsWith: "Se termine par (insensible)",
+    in: "Dans la liste",
+    notIn: "Pas dans la liste",
+    gt: "Supérieur à",
+    gte: "Supérieur ou égal à",
+    lt: "Inférieur à",
+    lte: "Inférieur ou égal à",
+    isNull: "Est vide",
+    between: "Entre",
+    regex: "Regex",
+    iregex: "Regex (insensible)",
+    exact: "Est exactement",
+    iexact: "Est exactement (insensible)",
+    year: "Année",
+    month: "Mois",
+    day: "Jour",
+    weekDay: "Jour de la semaine",
+    hour: "Heure",
+    minute: "Minute",
+    second: "Seconde",
+    range: "Plage",
+    hasKey: "Possède la clé",
+    hasKeys: "Possède les clés",
+    hasAnyKeys: "Possède l'une des clés",
+    containedBy: "Contenu dans",
+    overlaps: "Chevauche",
+    today: "Aujourd'hui",
+    yesterday: "Hier",
+    thisWeek: "Cette semaine",
+    lastWeek: "La semaine dernière",
+    thisMonth: "Ce mois-ci",
+    lastMonth: "Le mois dernier",
+    thisQuarter: "Ce trimestre",
+    thisYear: "Cette année",
+    last30Days: "Les 30 derniers jours",
+    last90Days: "Les 90 derniers jours",
+  };
+
+  return translations[name] ?? originalLabel;
+}
+
 function normalizeBaseType(baseType: string): FilterBaseType {
   const mapping: Record<string, FilterBaseType> = {
     "String": "String",
@@ -299,14 +352,14 @@ function getDatePresets(baseType: string): FilterUIHints["datePresets"] {
 }
 
 const DEFAULT_DATE_PRESETS = [
-  { key: "today", label: "Today", startOfPeriod: "day" },
-  { key: "yesterday", label: "Yesterday" },
-  { key: "thisWeek", label: "This Week", startOfPeriod: "week" },
-  { key: "lastWeek", label: "Last Week", startOfPeriod: "week" },
-  { key: "thisMonth", label: "This Month", startOfPeriod: "month" },
-  { key: "lastMonth", label: "Last Month", startOfPeriod: "month" },
-  { key: "thisQuarter", label: "This Quarter", startOfPeriod: "quarter" },
-  { key: "thisYear", label: "This Year", startOfPeriod: "year" },
-  { key: "last30Days", label: "Last 30 Days" },
-  { key: "last90Days", label: "Last 90 Days" },
+  { key: "today", label: "Aujourd'hui", startOfPeriod: "day" },
+  { key: "yesterday", label: "Hier" },
+  { key: "thisWeek", label: "Cette semaine", startOfPeriod: "week" },
+  { key: "lastWeek", label: "La semaine dernière", startOfPeriod: "week" },
+  { key: "thisMonth", label: "Ce mois-ci", startOfPeriod: "month" },
+  { key: "lastMonth", label: "Le mois dernier", startOfPeriod: "month" },
+  { key: "thisQuarter", label: "Ce trimestre", startOfPeriod: "quarter" },
+  { key: "thisYear", label: "Cette année", startOfPeriod: "year" },
+  { key: "last30Days", label: "Les 30 derniers jours" },
+  { key: "last90Days", label: "Les 90 derniers jours" },
 ];

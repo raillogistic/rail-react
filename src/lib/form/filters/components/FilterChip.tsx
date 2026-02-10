@@ -93,7 +93,7 @@ export const FilterChip: React.FC<FilterChipProps> = ({
  */
 function formatValue(value: any): string {
   if (Array.isArray(value)) {
-    if (value.length === 0) return "empty";
+    if (value.length === 0) return "vide";
     if (value.length <= 2) return value.join(", ");
     return `${value.slice(0, 2).join(", ")} +${value.length - 2}`;
   }
@@ -101,7 +101,7 @@ function formatValue(value: any): string {
     return "—";
   }
   if (typeof value === "boolean") {
-    return value ? "Yes" : "No";
+    return value ? "Oui" : "Non";
   }
   return String(value);
 }
@@ -110,21 +110,45 @@ function formatValue(value: any): string {
  * Mappage des opérateurs vers des symboles courts pour l'affichage.
  */
 const OPERATOR_LABELS: Record<string, { symbol: string; label: string }> = {
-  eq: { symbol: "=", label: "Equals" },
-  neq: { symbol: "≠", label: "Not equals" },
-  gt: { symbol: ">", label: "Greater than" },
-  gte: { symbol: "≥", label: "Greater or equal" },
-  lt: { symbol: "<", label: "Less than" },
-  lte: { symbol: "≤", label: "Less or equal" },
-  contains: { symbol: "contains", label: "Contains" },
-  icontains: { symbol: "~", label: "Contains" },
-  startsWith: { symbol: "starts", label: "Starts with" },
-  endsWith: { symbol: "ends", label: "Ends with" },
-  in: { symbol: "in", label: "Is one of" },
-  notIn: { symbol: "∉", label: "Is not one of" },
-  between: { symbol: "between", label: "Between" },
-  isNull: { symbol: "is empty", label: "Is empty" },
-  regex: { symbol: ".*", label: "Matches" },
+  eq: { symbol: "=", label: "Égal à" },
+  neq: { symbol: "≠", label: "Différent de" },
+  gt: { symbol: ">", label: "Supérieur à" },
+  gte: { symbol: "≥", label: "Supérieur ou égal à" },
+  lt: { symbol: "<", label: "Inférieur à" },
+  lte: { symbol: "≤", label: "Inférieur ou égal à" },
+  contains: { symbol: "contient", label: "Contient" },
+  icontains: { symbol: "~", label: "Contient" },
+  startsWith: { symbol: "commence par", label: "Commence par" },
+  istartsWith: { symbol: "i-commence", label: "Commence par (insensible)" },
+  endsWith: { symbol: "finit par", label: "Se termine par" },
+  iendsWith: { symbol: "i-finit", label: "Se termine par (insensible)" },
+  in: { symbol: "dans", label: "Fait partie de" },
+  notIn: { symbol: "∉", label: "Ne fait pas partie de" },
+  between: { symbol: "entre", label: "Entre" },
+  isNull: { symbol: "est vide", label: "Est vide" },
+  regex: { symbol: ".*", label: "Correspond à (Regex)" },
+  iregex: { symbol: ".*~", label: "Correspond à (Regex insensible)" },
+  exact: { symbol: "==", label: "Est exactement" },
+  iexact: { symbol: "==~", label: "Est exactement (insensible)" },
+  date: { symbol: "date", label: "Date égale à" },
+  year: { symbol: "année", label: "Année égale à" },
+  month: { symbol: "mois", label: "Mois égal à" },
+  day: { symbol: "jour", label: "Jour égal à" },
+  weekDay: { symbol: "js", label: "Jour de la semaine" },
+  hour: { symbol: "heure", label: "Heure égale à" },
+  today: { symbol: "auj.", label: "Aujourd'hui" },
+  yesterday: { symbol: "hier", label: "Hier" },
+  thisWeek: { symbol: "sem.", label: "Cette semaine" },
+  pastWeek: { symbol: "sem. d", label: "La semaine dernière" },
+  thisMonth: { symbol: "mois", label: "Ce mois-ci" },
+  pastMonth: { symbol: "mois d", label: "Le mois dernier" },
+  thisYear: { symbol: "an", label: "Cette année" },
+  pastYear: { symbol: "an d", label: "L'année dernière" },
+  hasKey: { symbol: "clé", label: "Possède la clé" },
+  hasKeys: { symbol: "clés", label: "Possède les clés" },
+  hasAnyKeys: { symbol: "clés-ou", label: "Possède l'une des clés" },
+  containedBy: { symbol: "⊂", label: "Contenu dans" },
+  overlaps: { symbol: "∩", label: "Chevauche" },
 };
 
 export default FilterChip;

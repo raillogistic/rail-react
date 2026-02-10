@@ -56,7 +56,7 @@ export const ActiveFiltersBar: React.FC<ActiveFiltersBarProps> = ({
           className="h-8 border-dashed border-muted-foreground/30 hover:border-primary/50 hover:bg-primary/5 transition-all rounded-lg text-xs font-medium"
         >
           <Plus className="h-3.5 w-3.5 mr-2 text-muted-foreground/60" />
-          Add filter
+          Ajouter un filtre
         </Button>
       </div>
     );
@@ -66,7 +66,7 @@ export const ActiveFiltersBar: React.FC<ActiveFiltersBarProps> = ({
     <div className="flex items-center flex-wrap gap-2 py-1">
       <div className="flex items-center gap-1.5 mr-1 text-muted-foreground/60">
         <ListFilter className="h-4 w-4" />
-        <span className="text-[10px] font-bold uppercase tracking-widest">Active Filters</span>
+        <span className="text-[10px] font-bold uppercase tracking-widest">Filtres actifs</span>
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
@@ -85,11 +85,11 @@ export const ActiveFiltersBar: React.FC<ActiveFiltersBarProps> = ({
             <Tooltip>
               <TooltipTrigger asChild>
                 <Badge variant="secondary" className="h-6 rounded-lg bg-muted/50 text-[10px] font-bold cursor-help px-2 border-transparent hover:bg-muted transition-colors">
-                  +{overflow} more
+                  +{overflow} de plus
                 </Badge>
               </TooltipTrigger>
               <TooltipContent className="text-[11px] font-medium">
-                {overflow} additional filter{overflow > 1 ? "s are" : " is"} currently applied
+                {overflow} filtre{overflow > 1 ? "s supplémentaires sont" : " supplémentaire est"} actuellement appliqué{overflow > 1 ? "s" : ""}
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
@@ -119,7 +119,7 @@ export const ActiveFiltersBar: React.FC<ActiveFiltersBarProps> = ({
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p className="text-xs">Clear all filters</p>
+              <p className="text-xs">Effacer tous les filtres</p>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>

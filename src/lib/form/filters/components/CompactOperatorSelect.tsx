@@ -37,12 +37,12 @@ export const CompactOperatorSelect: React.FC<CompactOperatorSelectProps> = ({
 }) => {
   const groupedOperators = useMemo(() => {
     const groups: Record<string, typeof field.operators> = {
-      "Equality": [],
-      "Comparison": [],
-      "Text Search": [],
-      "List": [],
+      "Égalité": [],
+      "Comparaison": [],
+      "Recherche texte": [],
+      "Liste": [],
       "Date": [],
-      "Other": [],
+      "Autre": [],
     };
 
     const operators = applyPreferredOperatorOrdering(field);
@@ -50,17 +50,17 @@ export const CompactOperatorSelect: React.FC<CompactOperatorSelectProps> = ({
     operators.forEach((op) => {
       const name = op.name;
       if (["eq", "neq", "isnull"].includes(name)) {
-        groups["Equality"].push(op);
+        groups["Égalité"].push(op);
       } else if (["gt", "gte", "lt", "lte", "between"].includes(name)) {
-        groups["Comparison"].push(op);
+        groups["Comparaison"].push(op);
       } else if (["contains", "icontains", "startsWith", "endsWith", "regex", "iregex", "exact", "iexact"].includes(name)) {
-        groups["Text Search"].push(op);
+        groups["Recherche texte"].push(op);
       } else if (["in", "notIn"].includes(name)) {
-        groups["List"].push(op);
+        groups["Liste"].push(op);
       } else if (["year", "month", "day", "weekDay", "hour"].includes(name)) {
         groups["Date"].push(op);
       } else {
-        groups["Other"].push(op);
+        groups["Autre"].push(op);
       }
     });
 

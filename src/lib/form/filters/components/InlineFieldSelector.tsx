@@ -923,7 +923,7 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
             <CollapsibleContent>
               {isLoading && (
                 <div className="ml-6 mt-1 px-2 py-2 text-[11px] text-muted-foreground">
-                  Loading fields…
+                  Chargement des champs…
                 </div>
               )}
               {!isLoading && entry.filteredScalars.length > 0 && (
@@ -956,8 +956,8 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
                 entry.childRelations.length === 0 && (
                   <div className="ml-6 mt-1 px-2 py-2 text-[11px] text-muted-foreground">
                     {nestedSchema || !onLoadRelationSchema
-                      ? "No nested fields available"
-                      : "Expand to load fields"}
+                      ? "Aucun champ imbriqué disponible"
+                      : "Développer pour charger les champs"}
                   </div>
                 )}
 
@@ -1003,13 +1003,13 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
         <div className="flex flex-col">
           <div className="flex items-center gap-2 p-3 border-b bg-muted/30">
             <Input
-              placeholder="Search fields..."
+              placeholder="Rechercher des champs..."
               value={search}
               onChange={(event) => setSearch(event.target.value)}
               className="h-8 text-xs flex-1"
             />
             <Badge variant="outline" className="text-xs h-6">
-              {config.maxDepth} depth
+              profondeur {config.maxDepth}
             </Badge>
             <Button
               type="button"
@@ -1020,7 +1020,7 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
               disabled={!hasAdvanced}
             >
               <SlidersHorizontal className="h-3 w-3" />
-              Advanced
+              Avancé
             </Button>
           </div>
 
@@ -1031,10 +1031,10 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
             <div className="p-3 space-y-5">
               {!hasVisibleContent && (
                 <div className="text-xs text-muted-foreground px-2 py-3">
-                  No fields found
+                  Aucun champ trouvé
                   {advancedHiddenCount > 0 && (
                     <span className="ml-1">
-                      | Enable Advanced to see {advancedHiddenCount} more
+                      | Activez le mode Avancé pour en voir {advancedHiddenCount} de plus
                     </span>
                   )}
                 </div>
@@ -1045,7 +1045,7 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-[11px] uppercase tracking-wide text-muted-foreground">
                       <Clock className="h-3 w-3 text-sky-500" />
-                      Recent
+                      Récents
                     </div>
                     <Badge variant="secondary" className="text-[10px]">
                       {recentVisible.length}
@@ -1082,7 +1082,7 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-[11px] uppercase tracking-wide text-muted-foreground">
                       <Zap className="h-3 w-3 text-orange-500" />
-                      Quick filters
+                      Filtres rapides
                     </div>
                     <Badge variant="secondary" className="text-[10px]">
                       {favoriteVisible.length + quickList.length}
@@ -1093,7 +1093,7 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
                     <div className="space-y-1">
                       <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
                         <Star className="h-3 w-3 text-amber-500" />
-                        Pinned
+                        Épinglés
                       </div>
                       <div className="space-y-1">
                         {favoriteVisible.map((item) => (
@@ -1143,7 +1143,7 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <div className="text-[11px] uppercase tracking-wide text-muted-foreground">
-                      Fields
+                      Champs
                     </div>
                     <Badge variant="secondary" className="text-[10px]">
                       {normalFieldCount}
@@ -1180,7 +1180,7 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
                     <div className="space-y-1">
                       <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
                         <Clock className="h-3 w-3 text-sky-500" />
-                        Date & time
+                        Date & heure
                       </div>
                       <div className="space-y-1">
                         {normalDates.map((field) => (
@@ -1207,7 +1207,7 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
                     <div className="space-y-1">
                       <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
                         <span className="uppercase tracking-wide text-[10px]">
-                          Date helpers
+                          Assistants de date
                         </span>
                       </div>
                       <div className="space-y-1">
@@ -1238,7 +1238,7 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-[11px] uppercase tracking-wide text-muted-foreground">
                       <Link2 className="h-3 w-3 text-blue-500" />
-                      Direct foreign keys
+                      Clés étrangères directes
                     </div>
                     <Badge variant="secondary" className="text-[10px]">
                       {foreignKeyEntries.length}
@@ -1257,7 +1257,7 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-[11px] uppercase tracking-wide text-muted-foreground">
                       <Link2 className="h-3 w-3 text-indigo-500" />
-                      One-to-one relations
+                      Relations un-à-un
                     </div>
                     <Badge variant="secondary" className="text-[10px]">
                       {oneToOneEntries.length}
@@ -1276,7 +1276,7 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-[11px] uppercase tracking-wide text-muted-foreground">
                       <GitBranch className="h-3 w-3 text-emerald-500" />
-                      Many-to-one relations
+                      Relations plusieurs-à-un
                     </div>
                     <Badge variant="secondary" className="text-[10px]">
                       {manyToOneEntries.length}
@@ -1295,7 +1295,7 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-[11px] uppercase tracking-wide text-muted-foreground">
                       <SlidersHorizontal className="h-3 w-3 text-muted-foreground" />
-                      Advanced
+                      Avancé
                     </div>
                     <Badge variant="secondary" className="text-[10px]">
                       {filteredAdvanced.length + manyToManyEntries.length}
@@ -1306,7 +1306,7 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
                     <div className="space-y-2">
                       <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
                         <Layers className="h-3 w-3 text-purple-500" />
-                        Many-to-many
+                        Plusieurs-à-plusieurs
                       </div>
                       <div className="space-y-2">
                         {manyToManyEntries.map((entry) =>
@@ -1320,7 +1320,7 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
                     <div className="space-y-1">
                       <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
                         <SlidersHorizontal className="h-3 w-3" />
-                        Advanced fields
+                        Champs avancés
                       </div>
                       <div className="space-y-1">
                         {filteredAdvanced.map((field) => (
@@ -1359,10 +1359,10 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
           </ScrollArea>
 
           <div className="px-3 py-1.5 border-t text-[10px] text-muted-foreground bg-muted/20">
-            {standardFields.length} fields, {visibleRelationCount} relations
+            {standardFields.length} champs, {visibleRelationCount} relations
             {advancedHiddenCount > 0 && (
               <span className="ml-2">
-                | {advancedHiddenCount} advanced hidden
+                | {advancedHiddenCount} avancés masqués
               </span>
             )}
           </div>
