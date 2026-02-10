@@ -5,14 +5,9 @@ import {
   Save, 
   RotateCcw, 
   Plus, 
-  Command, 
   ChevronRight, 
   ListFilter,
-  History,
-  Bookmark,
-  Settings2,
   X,
-  Search,
   Layers
 } from "lucide-react";
 import { Button } from "@/lib/components/ui/button";
@@ -26,7 +21,6 @@ import {
 } from "@/lib/components/ui/popover";
 import { Badge } from "@/lib/components/ui/badge";
 import { Separator } from "@/lib/components/ui/separator";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/lib/components/ui/tabs";
 import { ScrollArea } from "@/lib/components/ui/scroll-area";
 import { 
   Tooltip, 
@@ -122,7 +116,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
   fieldSelector,
   config: configOverrides,
   disabled,
-  title = "Filters",
+  title = "Filtres",
   showKeyboardHints = true,
   persistKey,
 }) => {
@@ -176,7 +170,6 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
   const [saveDialogOpen, setSaveDialogOpen] = useState(false);
   const [editingPreset, setEditingPreset] = useState<FilterPreset | null>(null);
   const [popoverOpen, setPopoverOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<string>("builder");
 
   const handleApply = useCallback(() => {
     if (!schema) return;
@@ -445,6 +438,20 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
             </div>
           </div>
           <div className="flex items-center gap-1.5">
+            {showPresets && schema.presets.length > 0 && (
+              <PresetManager
+                presets={schema.presets}
+                selectedPresets={state.selectedPresets}
+                onTogglePreset={togglePreset}
+                onApplyPreset={handleApplyPreset}
+                onEditPreset={handleEditPreset}
+                onDeletePreset={handleDeletePreset}
+                onSharePreset={handleSharePreset}
+                disabled={disabled}
+                layout="list"
+                label="Views"
+              />
+            )}
             {activeCount > 0 && (
               <TooltipProvider>
                 <Tooltip>
@@ -475,133 +482,73 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
             </Button>
           </div>
         </div>
-
-        <Tabs 
-          value={activeTab} 
-          onValueChange={setActiveTab} 
-          className="w-full px-4"
-        >
-          <TabsList className="h-9 w-full justify-start bg-transparent p-0 border-b-0 space-x-6">
-            <TabsTrigger 
-              value="builder"
-              className="relative h-9 rounded-none border-b-2 border-b-transparent bg-transparent px-1 pb-3 pt-2 text-xs font-medium text-muted-foreground data-[state=active]:border-b-primary data-[state=active]:text-foreground data-[state=active]:shadow-none transition-none"
-            >
-              <Settings2 className="mr-2 h-3.5 w-3.5" />
-              Condition Builder
-            </TabsTrigger>
-            <TabsTrigger 
-              value="presets"
-              className="relative h-9 rounded-none border-b-2 border-b-transparent bg-transparent px-1 pb-3 pt-2 text-xs font-medium text-muted-foreground data-[state=active]:border-b-primary data-[state=active]:text-foreground data-[state=active]:shadow-none transition-none"
-            >
-              <Bookmark className="mr-2 h-3.5 w-3.5" />
-              Saved Views
-              {schema.presets.length > 0 && (
-                <Badge variant="secondary" className="ml-2 h-4 min-w-4 px-1 text-[10px]">
-                  {schema.presets.length}
-                </Badge>
-              )}
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
       </div>
 
       {/* Main Body */}
       <div className="flex-1 overflow-hidden relative">
-        <Tabs value={activeTab} className="h-full flex flex-col">
-          <TabsContent value="builder" className="m-0 p-0 flex-1 overflow-hidden">
-            <ScrollArea className="h-full px-4 pt-4 pb-6">
-              <div className="space-y-6">
-                {showDistinct && schema.distinctFields.length > 0 && (
-                  <div className="bg-muted/30 p-3 rounded-lg border border-border/50">
-                    <div className="flex items-center gap-2 mb-2">
-                      <ListFilter className="h-3.5 w-3.5 text-muted-foreground" />
-                      <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Optimization</span>
-                    </div>
-                    <DistinctOnSelector
-                      distinctFields={schema.distinctFields}
-                      selectedFields={state.distinctOn}
-                      orderBy={state.orderBy}
-                      onChange={setDistinctOn}
-                      onOrderByRequired={setOrderBy}
-                      disabled={disabled}
-                    />
-                  </div>
-                )}
-
-                <div className="pb-12">
-                  <FilterGroupComponent
-                    group={state.root}
-                    schema={schema}
-                    config={config}
-                    onChange={(updates) => setRoot({ ...state.root, ...updates })}
-                    onAddCondition={(groupId, fieldPath, fieldName, operator) =>
-                      addCondition(fieldPath, fieldName, operator, groupId)
-                    }
-                    onAddGroup={addGroup}
-                    onUpdateCondition={updateCondition}
-                    onRemoveItem={removeCondition}
-                    isRoot
-                    depth={0}
-                    recentFields={recentFields}
-                    favoriteFields={favoriteFields}
-                    fieldSelector={fieldSelector}
-                    onLoadRelationSchema={loadSchemaForRelation}
-                    getRelationSchema={getSchemaForRelation}
-                  />
-                  
-                  {state.root.conditions.length === 0 && (
-                    <div className="flex flex-col items-center justify-center py-12 text-center">
-                      <div className="h-16 w-16 rounded-full bg-muted/20 flex items-center justify-center mb-4 border-2 border-dashed border-muted">
-                        <Plus className="h-8 w-8 text-muted-foreground/40" />
-                      </div>
-                      <h4 className="text-sm font-medium text-foreground">No filters added yet</h4>
-                      <p className="text-xs text-muted-foreground mt-1 max-w-[200px]">
-                        Add conditions to narrow down your data results
-                      </p>
-                      <Button 
-                        variant="outline" 
-                        size="sm" 
-                        className="mt-4 h-8 border-dashed"
-                        onClick={handleAddFirstCondition}
-                      >
-                        <Plus className="mr-2 h-3.5 w-3.5" />
-                        Add First Condition
-                      </Button>
-                    </div>
-                  )}
+        <ScrollArea className="h-full px-4 pt-4 pb-6">
+          <div className="space-y-6">
+            {showDistinct && schema.distinctFields.length > 0 && (
+              <div className="bg-muted/30 p-3 rounded-lg border border-border/50">
+                <div className="flex items-center gap-2 mb-2">
+                  <ListFilter className="h-3.5 w-3.5 text-muted-foreground" />
+                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Optimization</span>
                 </div>
+                <DistinctOnSelector
+                  distinctFields={schema.distinctFields}
+                  selectedFields={state.distinctOn}
+                  orderBy={state.orderBy}
+                  onChange={setDistinctOn}
+                  onOrderByRequired={setOrderBy}
+                  disabled={disabled}
+                />
               </div>
-            </ScrollArea>
-          </TabsContent>
+            )}
 
-          <TabsContent value="presets" className="m-0 p-0 flex-1 overflow-hidden">
-            <ScrollArea className="h-full px-4 py-4">
-              <div className="space-y-4">
-                {showPresets && (
-                  <PresetManager
-                    presets={schema.presets}
-                    selectedPresets={state.selectedPresets}
-                    onTogglePreset={togglePreset}
-                    onApplyPreset={handleApplyPreset}
-                    onEditPreset={handleEditPreset}
-                    onDeletePreset={handleDeletePreset}
-                    onSharePreset={handleSharePreset}
-                    disabled={disabled}
-                    layout="grid"
-                  />
-                )}
-                
-                {schema.presets.length === 0 && (
-                  <div className="flex flex-col items-center justify-center py-16 text-center text-muted-foreground">
-                    <Bookmark className="h-12 w-12 mb-4 opacity-10" />
-                    <p className="text-sm">You haven't saved any views yet.</p>
-                    <p className="text-xs mt-1">Save your current filters to access them later.</p>
+            <div className="pb-12">
+              <FilterGroupComponent
+                group={state.root}
+                schema={schema}
+                config={config}
+                onChange={(updates) => setRoot({ ...state.root, ...updates })}
+                onAddCondition={(groupId, fieldPath, fieldName, operator) =>
+                  addCondition(fieldPath, fieldName, operator, groupId)
+                }
+                onAddGroup={addGroup}
+                onUpdateCondition={updateCondition}
+                onRemoveItem={removeCondition}
+                isRoot
+                depth={0}
+                recentFields={recentFields}
+                favoriteFields={favoriteFields}
+                fieldSelector={fieldSelector}
+                onLoadRelationSchema={loadSchemaForRelation}
+                getRelationSchema={getSchemaForRelation}
+              />
+              
+              {state.root.conditions.length === 0 && (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <div className="h-16 w-16 rounded-full bg-muted/20 flex items-center justify-center mb-4 border-2 border-dashed border-muted">
+                    <Plus className="h-8 w-8 text-muted-foreground/40" />
                   </div>
-                )}
-              </div>
-            </ScrollArea>
-          </TabsContent>
-        </Tabs>
+                  <h4 className="text-sm font-medium text-foreground">No filters added yet</h4>
+                  <p className="text-xs text-muted-foreground mt-1 max-w-[200px]">
+                    Add conditions to narrow down your data results
+                  </p>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="mt-4 h-8 border-dashed"
+                    onClick={handleAddFirstCondition}
+                  >
+                    <Plus className="mr-2 h-3.5 w-3.5" />
+                    Add First Condition
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        </ScrollArea>
         
         {/* Subtle Bottom Gradient */}
         <div className="absolute bottom-0 left-0 right-0 h-6 bg-gradient-to-t from-background to-transparent pointer-events-none z-10" />
