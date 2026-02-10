@@ -386,7 +386,7 @@ export function TableRows({
                 />
               </svg>
             </div>
-            <span className="text-sm font-medium">{emptyState ?? "Aucun resultat."}</span>
+            <span className="text-sm font-medium">{emptyState ?? "Aucun résultat."}</span>
           </div>
         </TableCell>
       </ShadcnTableRow>

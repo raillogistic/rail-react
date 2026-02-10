@@ -734,7 +734,7 @@ export function BaseTableContent({
       <div
         className="flex h-64 items-center justify-center border rounded-md"
         role="status"
-        aria-label="Chargement des metadonnees du tableau"
+        aria-label="Chargement des métadonnées du tableau"
       >
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
@@ -744,7 +744,7 @@ export function BaseTableContent({
   if (metadataError) {
     return (
       <div className="flex h-64 items-center justify-center border rounded-md text-red-500">
-        Erreur de chargement des metadonnees : {metadataError.message}
+        Erreur de chargement des métadonnées : {metadataError.message}
       </div>
     );
   }
@@ -799,8 +799,8 @@ export function BaseTableContent({
             <div className="mt-auto flex items-center justify-between border-t bg-muted/20 px-4 py-2 text-xs text-muted-foreground">
               <span>
                 {pagination.totalKnown
-                  ? `${data.length} sur ${pagination.total} chargee(s)`
-                  : `${data.length} chargee(s)`}
+                  ? `${data.length} sur ${pagination.total} chargée(s)`
+                  : `${data.length} chargée(s)`}
               </span>
               {tableLoading ? (
                 <span className="inline-flex items-center gap-1.5 text-primary/70">
@@ -808,7 +808,7 @@ export function BaseTableContent({
                   Chargement...
                 </span>
               ) : pagination.hasNextPage ? (
-                <span className="opacity-60">Defilez pour plus</span>
+                <span className="opacity-60">Défilez pour plus</span>
               ) : (
                 <span className="opacity-60">Fin</span>
               )}
@@ -823,7 +823,7 @@ export function BaseTableContent({
           )}
           {dataError && (
             <div className="text-sm text-red-500 px-2">
-              Erreur de chargement des donnees : {dataError.message}
+              Erreur de chargement des données : {dataError.message}
             </div>
           )}
         </div>

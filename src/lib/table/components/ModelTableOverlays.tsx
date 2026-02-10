@@ -201,7 +201,7 @@ export function ActionDialog({
             <p className="text-sm text-muted-foreground">
               {(actionMeta.action?.message as string | undefined) ??
                 (actionMeta.description as string | undefined) ??
-                "Voulez-vous exÃ©cuter cette action ?"}
+                "Voulez-vous exécuter cette action ?"}
             </p>
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={onCancel} disabled={submitting}>
@@ -219,7 +219,7 @@ export function ActionDialog({
             defaultValues={defaults ?? {}}
             submitLabel={
               (actionMeta.action?.submit_label as string | undefined) ??
-              "ExÃ©cuter"
+              "Exécuter"
             }
             resetLabel={cancelLabel}
             disableAutoReset

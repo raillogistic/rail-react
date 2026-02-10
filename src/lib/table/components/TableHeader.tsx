@@ -190,7 +190,7 @@ export function TableHeader({
                   allSelected || (someSelected ? "indeterminate" : false)
                 }
                 onCheckedChange={toggleSelectAll}
-                aria-label="Tout selectionner"
+                aria-label="Tout sélectionner"
                 className="transition-all duration-200 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
               />
             </div>

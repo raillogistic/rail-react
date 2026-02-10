@@ -245,7 +245,7 @@ export function TableColumnMenu({
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleSort("desc")}>
                 <ArrowDownAZ className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
-                <span>Decroissant (Z-A)</span>
+                <span>Décroissant (Z-A)</span>
                 {currentSort === "desc" && <Check className="ml-auto h-3.5 w-3.5" />}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
@@ -281,8 +281,8 @@ export function TableColumnMenu({
             <GripVertical className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
             <span>
               {dragModeEnabled
-                ? "Desactiver glisser-deposer"
-                : "Activer glisser-deposer"}
+                ? "Désactiver le glisser-déposer"
+                : "Activer le glisser-déposer"}
             </span>
             {dragModeEnabled && <Check className="ml-auto h-3.5 w-3.5" />}
           </DropdownMenuItem>
@@ -292,7 +292,7 @@ export function TableColumnMenu({
           {canGroup && (
             <DropdownMenuItem onClick={handleGroup}>
               <Layers className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
-              <span>{isGrouped ? "Degrouper" : "Grouper par"}</span>
+              <span>{isGrouped ? "Dégrouper" : "Grouper par"}</span>
               {isGrouped && <Check className="ml-auto h-3.5 w-3.5" />}
             </DropdownMenuItem>
           )}
@@ -310,7 +310,7 @@ export function TableColumnMenu({
           </DropdownMenuItem>
           <DropdownMenuItem onClick={handleResetColumns}>
             <RotateCcw className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
-            <span>Reinitialiser les colonnes</span>
+            <span>Réinitialiser les colonnes</span>
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

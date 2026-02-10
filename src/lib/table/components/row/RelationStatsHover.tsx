@@ -160,7 +160,7 @@ export function RelationStatsHover({
       setStats(statsObject);
     } catch (fetchError) {
       const message =
-        fetchError instanceof Error ? fetchError.message : "Stats indisponibles.";
+        fetchError instanceof Error ? fetchError.message : "Statistiques indisponibles.";
       setError(message);
     } finally {
       setLoading(false);
@@ -260,7 +260,7 @@ export function RelationStatsHover({
             <p className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
               {relation.relationLabel}
             </p>
-            <p className="text-sm font-semibold text-foreground">Relation Stats</p>
+            <p className="text-sm font-semibold text-foreground">Statistiques de relation</p>
           </div>
           <div className="max-h-[280px] space-y-2 overflow-y-auto p-3">
             {overrideContent ? (

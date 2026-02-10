@@ -276,12 +276,12 @@ export function ModelTableExportDialog({
 
   const handleExport = useCallback(async () => {
     if (!metadata) {
-      setExportError("Les metadonnees ne sont pas disponibles.");
+      setExportError("Les métadonnées ne sont pas disponibles.");
       return;
     }
     const payload = buildExportPayload();
     if (!payload) {
-      setExportError("Selectionnez au moins un champ a exporter.");
+      setExportError("Sélectionnez au moins un champ à exporter.");
       return;
     }
 
@@ -308,7 +308,7 @@ export function ModelTableExportDialog({
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "Echec de l'export.");
+        throw new Error(errorData.error || "Échec de l'export.");
       }
 
       const contentType = response.headers.get("content-type") ?? "";
@@ -316,7 +316,7 @@ export function ModelTableExportDialog({
         const result = await response.json();
         throw new Error(
           result.error ||
-            "Export en file d'attente. Utilisez l'endpoint des exports pour telecharger.",
+            "Export en file d'attente. Utilisez l'endpoint des exports pour télécharger.",
         );
       }
 
@@ -334,11 +334,11 @@ export function ModelTableExportDialog({
       link.remove();
       window.URL.revokeObjectURL(url);
 
-      toast.success(`Export ${fileExtension.toUpperCase()} genere.`);
+      toast.success(`Export ${fileExtension.toUpperCase()} généré.`);
       setOpen(false);
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "Echec de l'export.";
+        error instanceof Error ? error.message : "Échec de l'export.";
       setExportError(message);
       toast.error(message);
     } finally {
@@ -356,7 +356,7 @@ export function ModelTableExportDialog({
             variant="outline"
             size="icon"
             className="h-8 w-8"
-            aria-label={labels?.buttonAria ?? "Exporter les donnees"}
+            aria-label={labels?.buttonAria ?? "Exporter les données"}
           >
             <Download className="h-4 w-4" />
           </Button>
@@ -368,26 +368,28 @@ export function ModelTableExportDialog({
             {labels?.title ??
               `Exporter ${metadata.verboseNamePlural || metadata.model}`}
           </DialogTitle>
-          <DialogDescription>
-            {labels?.description ??
-              "Choisissez les champs et le format pour la demande d'export."}
-          </DialogDescription>
+          <DialogHeader>
+            <DialogDescription>
+              {labels?.description ??
+                "Choisissez les champs et le format pour la demande d'export."}
+            </DialogDescription>
+          </DialogHeader>
         </DialogHeader>
         <div className="grid gap-6 md:grid-cols-[2fr,1fr]">
           <div className="space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
                 <p className="text-sm font-medium">
-                  {labels?.fieldsTitle ?? "Champs a exporter"}
+                  {labels?.fieldsTitle ?? "Champs à exporter"}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {labels?.selectedCount?.(selectedCount) ??
-                    `${selectedCount} selectionne(s)`}
+                    `${selectedCount} sélectionné(s)`}
                 </p>
               </div>
               <div className="flex gap-2">
                 <Button variant="ghost" size="sm" onClick={selectAllRootFields}>
-                  {labels?.selectAll ?? "Tout selectionner"}
+                  {labels?.selectAll ?? "Tout sélectionner"}
                 </Button>
                 <Button variant="ghost" size="sm" onClick={clearFields}>
                   {labels?.clear ?? "Effacer"}
@@ -415,7 +417,7 @@ export function ModelTableExportDialog({
                   id="export-filename"
                   value={exportFilename}
                   onChange={(event) => setExportFilename(event.target.value)}
-                  placeholder={labels?.filenamePlaceholder ?? "ex. data_export"}
+                  placeholder={labels?.filenamePlaceholder ?? "ex. export_donnees"}
                   className="mt-1"
                 />
               </div>
@@ -448,7 +450,7 @@ export function ModelTableExportDialog({
         <DialogFooter className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="text-xs text-muted-foreground">
             {labels?.footerSelectedCount?.(selectedCount) ??
-              `${selectedCount} champ${selectedCount === 1 ? "" : "s"} seront exportes.`}
+              `${selectedCount} champ${selectedCount === 1 ? "" : "s"} seront exportés.`}
           </div>
           <div className="flex w-full justify-end gap-2 sm:w-auto">
             <Button variant="ghost" onClick={() => setOpen(false)}>
@@ -461,7 +463,7 @@ export function ModelTableExportDialog({
               {exporting ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : null}
-              {labels?.download ?? "Telecharger"}
+              {labels?.download ?? "Télécharger"}
             </Button>
           </div>
         </DialogFooter>

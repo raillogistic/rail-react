@@ -101,19 +101,19 @@ export function RowActions({
       const result = await executeDelete({ variables: { id: rowId } });
       const ok = !!result.data?.response?.ok;
       if (ok) {
-        toast.success(`${metadata?.verboseName ?? "Enregistrement"} supprime.`);
+        toast.success(`${metadata?.verboseName ?? "Enregistrement"} supprimé.`);
         refresh();
       } else {
         const message =
           result.data?.response?.errors
             ?.map((error: { message?: string }) => error?.message)
             .filter(Boolean)
-            .join(", ") || "Echec de suppression.";
+            .join(", ") || "Échec de suppression.";
         toast.error(message);
       }
     } catch (error) {
       console.error("Failed to delete record", error);
-      const message = error instanceof Error ? error.message : "Echec de suppression.";
+      const message = error instanceof Error ? error.message : "Échec de suppression.";
       toast.error(message);
     } finally {
       setConfirmOpen(false);
@@ -131,7 +131,7 @@ export function RowActions({
       const message =
         error instanceof Error
           ? error.message
-          : "Echec de l'action personnalisee.";
+          : "Échec de l'action personnalisée.";
       toast.error(message);
     });
   };
@@ -224,8 +224,8 @@ export function RowActions({
               Supprimer {metadata?.verboseName} ?
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Cette action est irreversible. L'enregistrement sera supprime
-              definitivement.
+              Cette action est irréversible. L'enregistrement sera supprimé
+              définitivement.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

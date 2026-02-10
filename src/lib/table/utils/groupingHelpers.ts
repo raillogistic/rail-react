@@ -65,7 +65,7 @@ export function resolveGroupingLabel(
   groupingField: string,
 ): string {
   const key = resolveGroupingKey(row, groupingField);
-  if (key === "__EMPTY__") return "Non renseigne";
+  if (key === "__EMPTY__") return "Non renseigné";
 
   const value = resolveGroupingValue(row, groupingField);
   if (typeof value === "object" && value !== null) {

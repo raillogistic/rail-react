@@ -72,8 +72,8 @@ export function TablePagination({
 
   const selectionText = totalKnown
     ? (labels?.selectionStatus?.(selectedCount, total) ??
-      `${selectedCount} sur ${total} selectionnee${selectedCount > 1 ? "s" : ""}`)
-    : `${selectedCount} selectionnee${selectedCount > 1 ? "s" : ""}`;
+      `${selectedCount} sur ${total} sélectionnée${selectedCount > 1 ? "s" : ""}`)
+    : `${selectedCount} sélectionnée${selectedCount > 1 ? "s" : ""}`;
 
   const rangeStart = Math.min((page - 1) * perPage + 1, total);
   const rangeEnd = Math.min(page * perPage, total);
@@ -81,7 +81,7 @@ export function TablePagination({
     ? total === 0
       ? "0 ligne"
       : `${rangeStart}-${rangeEnd} sur ${total}`
-    : `${data.length} chargee${data.length > 1 ? "s" : ""}`;
+    : `${data.length} chargée${data.length > 1 ? "s" : ""}`;
 
   const leftText =
     enableSelection && selectedCount > 0 ? selectionText : rangeText;
@@ -121,7 +121,7 @@ export function TablePagination({
           {/* Rows per page */}
           <div className="flex items-center gap-2">
             <span className="text-xs text-muted-foreground whitespace-nowrap">
-              {labels?.rowsPerPage ?? "par page"}
+              {labels?.rowsPerPage ?? "lignes par page"}
             </span>
             <Select
               value={`${perPage}`}
@@ -184,7 +184,7 @@ export function TablePagination({
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="top" className="text-xs">
-                {labels?.firstPageAria ?? "Premiere page"}
+                {labels?.firstPageAria ?? "Première page"}
               </TooltipContent>
             </Tooltip>
 
@@ -206,7 +206,7 @@ export function TablePagination({
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="top" className="text-xs">
-                {labels?.previousPageAria ?? "Page precedente"}
+                {labels?.previousPageAria ?? "Page précédente"}
               </TooltipContent>
             </Tooltip>
 
@@ -224,7 +224,7 @@ export function TablePagination({
                 "h-7 w-12 border-border/50 bg-muted/30 px-2 text-center text-xs",
                 "focus:ring-1 focus:ring-primary/20",
               )}
-              aria-label="Aller a la page"
+              aria-label="Aller à la page"
             />
 
             {/* Next page */}
@@ -267,7 +267,7 @@ export function TablePagination({
                 </Button>
               </TooltipTrigger>
               <TooltipContent side="top" className="text-xs">
-                {labels?.lastPageAria ?? "Derniere page"}
+                {labels?.lastPageAria ?? "Dernière page"}
               </TooltipContent>
             </Tooltip>
           </div>

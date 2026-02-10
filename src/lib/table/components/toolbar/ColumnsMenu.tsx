@@ -48,7 +48,7 @@ export function ColumnsMenu({
             </Button>
           </DropdownMenuTrigger>
         </TooltipTrigger>
-        <TooltipContent>Gerer les colonnes</TooltipContent>
+        <TooltipContent>Gérer les colonnes</TooltipContent>
       </Tooltip>
       <DropdownMenuContent align="end" className="w-64">
         <div className="p-2">
@@ -66,10 +66,10 @@ export function ColumnsMenu({
             className="h-7 text-xs"
             onClick={onApplyDefaultColumnsVisibility}
           >
-            Par defaut
+            Par défaut
           </Button>
           <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">Tout selectionner</span>
+            <span className="text-xs text-muted-foreground">Tout sélectionner</span>
             <Switch checked={allColumnsVisible} onCheckedChange={onSetAllColumnsVisibility} />
           </div>
         </div>

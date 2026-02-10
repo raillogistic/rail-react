@@ -53,7 +53,7 @@ export function TableMobileCard({
   if (data.length === 0) {
     return (
       <div className="rounded-lg border p-4 text-center text-muted-foreground md:hidden">
-        {emptyState ?? "Aucun resultat."}
+        {emptyState ?? "Aucun résultat."}
       </div>
     );
   }
@@ -101,7 +101,7 @@ export function TableMobileCard({
               <CardTitle className={wrapCells ? "text-base" : "truncate text-base"}>
                 {titleField
                   ? formatCellValue(resolveFieldValue(row, titleField), titleField)
-                  : metadata?.verboseName || "Element"}
+                  : metadata?.verboseName || "Élément"}
               </CardTitle>
               {showIdDescription ? (
                 <CardDescription className="text-xs font-mono">ID: {rowId}</CardDescription>

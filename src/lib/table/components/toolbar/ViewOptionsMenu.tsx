@@ -42,7 +42,7 @@ export function ViewOptionsMenu({
         <TooltipContent>Affichage</TooltipContent>
       </Tooltip>
       <DropdownMenuContent align="end" className="w-56">
-        <DropdownMenuLabel className="text-xs">Densite</DropdownMenuLabel>
+        <DropdownMenuLabel className="text-xs">Densité</DropdownMenuLabel>
         <DropdownMenuItem onClick={() => onDensityChange("compact")}>
           {density === "compact" && <Check className="mr-2 h-4 w-4" />}
           <span className={density !== "compact" ? "ml-6" : ""}>Compact</span>
@@ -57,7 +57,7 @@ export function ViewOptionsMenu({
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <div className="p-2 flex items-center justify-between">
-          <span className="text-sm">Retour a la ligne</span>
+          <span className="text-sm">Retour à la ligne</span>
           <Switch checked={wrapCells} onCheckedChange={onWrapChange} />
         </div>
       </DropdownMenuContent>

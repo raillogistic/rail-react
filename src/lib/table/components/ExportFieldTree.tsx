@@ -232,7 +232,7 @@ function RelationFieldRow({
               "mt-0.5 rounded-sm p-0.5 text-muted-foreground transition-colors hover:text-foreground",
               !canExpand && "pointer-events-none opacity-40",
             )}
-            aria-label={open ? "Replier la relation" : "Deplier la relation"}
+            aria-label={open ? "Replier la relation" : "Déplier la relation"}
           >
             <ChevronRight
               className={cn("h-4 w-4 transition-transform", open && "rotate-90")}
@@ -269,22 +269,22 @@ function RelationFieldRow({
           ) : loading ? (
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <Loader2 className="h-3 w-3 animate-spin" />
-              Chargement des champs lies...
+              Chargement des champs liés...
             </div>
           ) : showError ? (
             <div className="text-xs text-destructive">
-              Echec du chargement des metadonnees liees.
+              Échec du chargement des métadonnées liées.
             </div>
           ) : (
             <div className="text-xs text-muted-foreground">
-              Aucun champ lie disponible.
+              Aucun champ lié disponible.
             </div>
           )}
         </CollapsibleContent>
       ) : null}
       {isCycle ? (
         <div className="ml-6 text-xs text-muted-foreground">
-          Cycle detecte. Champs imbriques desactives.
+          Cycle détecté. Champs imbriqués désactivés.
         </div>
       ) : null}
     </Collapsible>
