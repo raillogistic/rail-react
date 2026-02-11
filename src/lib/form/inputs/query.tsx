@@ -896,7 +896,10 @@ function buildGraphQLRecipe(config?: QueryChoiceGraphQLConfig): GraphQLRecipe {
   if (!normalizedRelatedModel) {
     return { document: null };
   }
-  const listField = config.listFieldName ?? `${normalizedRelatedModel}List`;
+  const listField = resolveListFieldName(
+    config.listFieldName,
+    normalizedRelatedModel,
+  );
   const searchVariableName =
     config.searchVariableName === undefined
       ? "quick"
@@ -1064,6 +1067,29 @@ function toModelToken(value: string) {
     .join("");
   if (!pascal) return "";
   return pascal.charAt(0).toLowerCase() + pascal.slice(1);
+}
+
+function resolveListFieldName(
+  providedListFieldName: string | undefined,
+  normalizedRelatedModel: string,
+) {
+  const defaultListField = `${normalizedRelatedModel}List`;
+  if (!providedListFieldName) {
+    return defaultListField;
+  }
+
+  const trimmed = providedListFieldName.trim();
+  if (!trimmed) {
+    return defaultListField;
+  }
+
+  // New schema convention: list root fields are "{modelName}List".
+  // Keep explicit names only when they already follow that convention.
+  if (trimmed.endsWith("List")) {
+    return trimmed;
+  }
+
+  return defaultListField;
 }
 
 function toPascalCase(value: string) {

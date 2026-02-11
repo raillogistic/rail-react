@@ -29,6 +29,26 @@ interface ColumnFilterProps {
   hideTrigger?: boolean;
 }
 
+function resolveLookupOperator(option: {
+  name?: string;
+  lookup?: string;
+  lookup_expr?: string;
+}): string {
+  if (typeof option.lookup === "string" && option.lookup.trim().length > 0) {
+    return option.lookup.trim();
+  }
+  if (
+    typeof option.lookup_expr === "string" &&
+    option.lookup_expr.trim().length > 0
+  ) {
+    return option.lookup_expr.trim();
+  }
+  const rawName = typeof option.name === "string" ? option.name : "";
+  const match = rawName.match(/__([a-zA-Z0-9_]+)$/);
+  if (match?.[1]) return match[1];
+  return rawName || "exact";
+}
+
 export function ColumnFilter({ columnId, field, hideTrigger = false }: ColumnFilterProps) {
   const { metadata } = useMetadata();
   const metadataFilters = metadata?.filters ?? [];
@@ -66,6 +86,23 @@ export function ColumnFilter({ columnId, field, hideTrigger = false }: ColumnFil
     [filterMeta?.name, resolvedField?.name, resolvedField?.fieldName, columnId],
   );
 
+  const relationSchema = useMemo(() => {
+    if (!metadata || !resolvedField?.isRelation) return undefined;
+    const candidates = [
+      resolvedField.name,
+      resolvedField.fieldName,
+      filterMeta?.name,
+      filterMeta?.fieldName,
+      columnId,
+    ].filter(Boolean) as string[];
+    return metadata.relationships.find((relation) =>
+      candidates.some(
+        (candidate) =>
+          relation.name === candidate || relation.fieldName === candidate,
+      ),
+    );
+  }, [metadata, resolvedField?.isRelation, resolvedField?.name, resolvedField?.fieldName, filterMeta?.name, filterMeta?.fieldName, columnId]);
+
   // 2. Map to FilterableField for ScalarFilterInput
   const filterableField = useMemo<FilterableField | null>(() => {
     if (!resolvedField || !filterMeta) return null;
@@ -80,14 +117,22 @@ export function ColumnFilter({ columnId, field, hideTrigger = false }: ColumnFil
     else if (resolvedField.isRelation) baseType = "Relationship";
 
     // Map operators
-    const operators: FilterOperator[] = filterMeta.options.map((opt) => ({
-      name: opt.lookup || opt.name,
-      label: translateLookupLabelFr(opt.lookup || opt.name, opt.label),
-      helpText: opt.helpText,
-      graphqlType: opt.graphqlType || "String",
-      isList: opt.isList || false,
-      choices: opt.choices,
-    }));
+    const operators: FilterOperator[] = filterMeta.options.map((opt) => {
+      const lookup = resolveLookupOperator(opt as { name?: string; lookup?: string; lookup_expr?: string });
+      return {
+        name: lookup,
+        label: translateLookupLabelFr(lookup, opt.label),
+        helpText: opt.helpText,
+        graphqlType: opt.graphqlType || "String",
+        isList:
+          Boolean(opt.isList) ||
+          lookup === "in" ||
+          lookup === "not_in" ||
+          lookup === "hasKeys" ||
+          lookup === "hasAnyKeys",
+        choices: opt.choices,
+      };
+    });
 
     return {
       name: resolvedField.name,
@@ -101,17 +146,29 @@ export function ColumnFilter({ columnId, field, hideTrigger = false }: ColumnFil
       defaultOperator: operators[0]?.name || "exact",
       choices: resolvedField.choices, // Pass field choices
       isRelation: resolvedField.isRelation,
-      relationConfig: resolvedField.isRelation ? {
-          relatedApp: "", // Need to fetch from relation schema if needed, usually scalar input handles choice based
-          relatedModel: "", 
-          lookupField: "id", 
-          searchFields: ["name"]
-      } : undefined,
+      relationConfig: (() => {
+        if (!resolvedField.isRelation) return undefined;
+        const relatedModelRaw = relationSchema?.relatedModel ?? filterMeta?.relatedModel ?? "";
+        const [modelApp, modelName] = relatedModelRaw.includes(".")
+          ? relatedModelRaw.split(".", 2)
+          : ["", relatedModelRaw];
+        const relatedModel = relationSchema?.relatedModel || modelName || "";
+        return {
+          relatedApp: relationSchema?.relatedApp || modelApp || "",
+          relatedModel,
+          lookupField:
+            relationSchema?.lookupField || resolvedField.relationLookupField || "id",
+          searchFields:
+            relationSchema?.searchFields && relationSchema.searchFields.length > 0
+              ? relationSchema.searchFields
+              : ["name"],
+        };
+      })(),
       uiHints: {
         widget: "text", // Default, ScalarFilterInput auto-detects better
       }
     };
-  }, [resolvedField, filterMeta]);
+  }, [resolvedField, filterMeta, relationSchema]);
 
   // 3. Current Filter State
   const activeCondition = useMemo(() => {

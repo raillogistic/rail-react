@@ -4,7 +4,17 @@
  */
 
 import React, { useMemo } from "react";
-import { X, AlertCircle, ChevronRight, Hash, Type, Calendar, CheckSquare, Search, Tag } from "lucide-react";
+import {
+  X,
+  AlertCircle,
+  ChevronRight,
+  Hash,
+  Type,
+  Calendar,
+  CheckSquare,
+  Search,
+  Tag,
+} from "lucide-react";
 import { Button } from "@/lib/components/ui/button";
 import {
   Select,
@@ -14,7 +24,12 @@ import {
   SelectValue,
 } from "@/lib/components/ui/select";
 import { Badge } from "@/lib/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/lib/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/lib/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import type {
   FilterCondition,
@@ -40,7 +55,11 @@ export interface FilterRowProps {
   /** Callback pour supprimer cette ligne */
   onRemove: () => void;
   /** Callback lors du changement de champ cible */
-  onFieldChange: (fieldPath: string[], fieldName: string, operator: string) => void;
+  onFieldChange: (
+    fieldPath: string[],
+    fieldName: string,
+    operator: string,
+  ) => void;
   /** Focus automatique au montage */
   autoFocus?: boolean;
   /** Indique si la ligne vient d'être ajoutée */
@@ -57,7 +76,7 @@ export interface FilterRowProps {
   fieldSelector?: FieldSelectorOptions;
   /** Fonction asynchrone pour charger le schéma d'une relation */
   onLoadRelationSchema?: (
-    relation: RelationFilter
+    relation: RelationFilter,
   ) => Promise<UnifiedFilterSchema | null>;
   /** Fonction pour obtenir le schéma déjà chargé d'une relation */
   getRelationSchema?: (relation: RelationFilter) => UnifiedFilterSchema | null;
@@ -118,13 +137,17 @@ export const FilterRow: React.FC<FilterRowProps> = ({
 
   const needsRelationOperator = useMemo(() => {
     return relationChain.some(
-      (r) => r.relationType === "MANY_TO_MANY" || r.relationType === "REVERSE_FK"
+      (r) =>
+        r.relationType === "MANY_TO_MANY" || r.relationType === "REVERSE_FK",
     );
   }, [relationChain]);
 
   const selectedOperator = useMemo(() => {
     if (!field) return null;
-    return field.operators.find((op) => op.name === condition.operator) ?? field.operators[0];
+    return (
+      field.operators.find((op) => op.name === condition.operator) ??
+      field.operators[0]
+    );
   }, [field, condition.operator]);
 
   const fieldIcon = useMemo(() => {
@@ -153,7 +176,9 @@ export const FilterRow: React.FC<FilterRowProps> = ({
           <AlertCircle className="h-4 w-4" />
         </div>
         <div className="flex flex-col">
-          <span className="text-[11px] font-bold text-destructive/80 uppercase tracking-tight leading-none">Champ inconnu</span>
+          <span className="text-[11px] font-bold text-destructive/80 uppercase tracking-tight leading-none">
+            Champ inconnu
+          </span>
           <span className="text-xs font-medium text-destructive mt-0.5">
             {condition.fieldPath.join(" → ")}
           </span>
@@ -176,7 +201,7 @@ export const FilterRow: React.FC<FilterRowProps> = ({
       className={cn(
         "group/filter-row flex flex-wrap items-center gap-2 rounded-xl border border-border/50 bg-background px-3 py-2 transition-all duration-200 hover:border-primary/30 hover:shadow-sm",
         validationError && "border-destructive/50 bg-destructive/5",
-        isNew && "animate-in fade-in-0 slide-in-from-top-1 duration-300"
+        isNew && "animate-in fade-in-0 slide-in-from-top-1 duration-300",
       )}
     >
       {/* Field Path & Label */}
@@ -204,12 +229,14 @@ export const FilterRow: React.FC<FilterRowProps> = ({
               <div className="flex items-center gap-1.5 overflow-hidden max-w-[140px] sm:max-w-[200px]">
                 {relationChain.length > 0 && (
                   <span className="text-muted-foreground/60 font-medium truncate hidden sm:inline">
-                    {relationChain.map(r => r.fieldLabel).join(" → ")}
+                    {relationChain.map((r) => r.fieldLabel).join(" → ")}
                     <ChevronRight className="inline h-3 w-3 mx-0.5 opacity-50" />
                   </span>
                 )}
                 <span className="truncate text-foreground">
-                  {condition.fieldPath.length === 0 ? "Sélectionner un champ..." : field.fieldLabel}
+                  {condition.fieldPath.length === 0
+                    ? "Sélectionner un champ..."
+                    : field.fieldLabel}
                 </span>
               </div>
             </Button>
@@ -226,13 +253,22 @@ export const FilterRow: React.FC<FilterRowProps> = ({
           onValueChange={(value) => onChange({ relationOperator: value })}
           disabled={disabled}
         >
-          <SelectTrigger className="h-8 w-[84px] text-[10px] font-bold uppercase tracking-wider rounded-lg bg-muted/30 border-transparent hover:border-border/50 transition-all focus:ring-0" aria-label="Relation operator">
+          <SelectTrigger
+            className="h-8 w-[84px] text-[10px] font-bold uppercase tracking-wider rounded-lg bg-muted/30 border-transparent hover:border-border/50 transition-all focus:ring-0"
+            aria-label="Relation operator"
+          >
             <SelectValue />
           </SelectTrigger>
           <SelectContent className="rounded-xl border-border/50 shadow-xl">
-            <SelectItem value="_some" className="text-xs font-medium">AU MOINS UN</SelectItem>
-            <SelectItem value="_every" className="text-xs font-medium">TOUS</SelectItem>
-            <SelectItem value="_none" className="text-xs font-medium">AUCUN</SelectItem>
+            <SelectItem value="_some" className="text-xs font-medium">
+              AU MOINS UN
+            </SelectItem>
+            <SelectItem value="_every" className="text-xs font-medium">
+              TOUS
+            </SelectItem>
+            <SelectItem value="_none" className="text-xs font-medium">
+              AUCUN
+            </SelectItem>
           </SelectContent>
         </Select>
       )}
@@ -241,7 +277,9 @@ export const FilterRow: React.FC<FilterRowProps> = ({
       <CompactOperatorSelect
         field={field}
         value={condition.operator}
-        onChange={(newOperator) => onChange({ operator: newOperator, value: undefined })}
+        onChange={(newOperator) =>
+          onChange({ operator: newOperator, value: undefined })
+        }
         disabled={disabled}
       />
 

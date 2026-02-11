@@ -193,7 +193,8 @@ export function BaseTableContent({
   const queryVisibleAccessors = React.useMemo(() => {
     if (!metadata) return undefined;
 
-    const persistedVisibility = persistedStateRef.current?.columnVisibility ?? {};
+    const persistedVisibility =
+      persistedStateRef.current?.columnVisibility ?? {};
     const visibilitySource =
       Object.keys(columnVisibility).length > 0
         ? columnVisibility
@@ -260,7 +261,9 @@ export function BaseTableContent({
       excludedAccessors,
     })
       .map((entry) =>
-        canonicalizeAccessor(typeof entry === "string" ? entry : entry.accessor),
+        canonicalizeAccessor(
+          typeof entry === "string" ? entry : entry.accessor,
+        ),
       )
       .filter(Boolean);
 
@@ -377,12 +380,18 @@ export function BaseTableContent({
       const normalizedRest = rest.map((segment) => toGraphqlFieldName(segment));
       return [normalizedRoot, ...normalizedRest.filter(Boolean)].join(".");
     };
-    const resolveRelationCountSource = (accessor: string, field?: FieldSchema) => {
+    const resolveRelationCountSource = (
+      accessor: string,
+      field?: FieldSchema,
+    ) => {
       const syntheticSource = field
         ? getSyntheticRelationCountSource(field)
         : undefined;
       if (syntheticSource) {
-        return relationCanonicalByKey.get(syntheticSource) ?? toGraphqlFieldName(syntheticSource);
+        return (
+          relationCanonicalByKey.get(syntheticSource) ??
+          toGraphqlFieldName(syntheticSource)
+        );
       }
       const stripped = accessor.replace(/count$/i, "");
       if (!stripped || stripped === accessor) return null;
@@ -427,12 +436,17 @@ export function BaseTableContent({
       const relationMeta = relationLookup.get(root);
       const isRelation = !!fieldMeta?.isRelation || !!relationMeta;
       const isToManyRelation = !!relationMeta?.isToMany;
-      const relationCountSource = resolveRelationCountSource(normalizedAccessor, fieldMeta);
+      const relationCountSource = resolveRelationCountSource(
+        normalizedAccessor,
+        fieldMeta,
+      );
       const relationConfig =
         relations?.[root] ??
         relations?.[toSnakeCase(root)] ??
         relations?.[toCamelCase(root)];
-      const displayField = toGraphqlFieldName(relationConfig?.display ?? "desc");
+      const displayField = toGraphqlFieldName(
+        relationConfig?.display ?? "desc",
+      );
       const displayAccessor =
         parts.length === 1 && isRelation && !isToManyRelation
           ? `${normalizedAccessor}.${displayField}`
@@ -473,27 +487,42 @@ export function BaseTableContent({
       add: normalizedFieldsConfig.add,
       excludedAccessors,
     });
-    const includeEntries = includeEntriesRaw.reduce<BaseModelTableField[]>((acc, entry) => {
-      if (typeof entry === "string") {
-        const canonicalAccessor = canonicalizeAccessor(entry);
-        if (!canonicalAccessor) return acc;
-        if (acc.some((item) => (typeof item === "string" ? item : item.accessor) === canonicalAccessor)) {
+    const includeEntries = includeEntriesRaw.reduce<BaseModelTableField[]>(
+      (acc, entry) => {
+        if (typeof entry === "string") {
+          const canonicalAccessor = canonicalizeAccessor(entry);
+          if (!canonicalAccessor) return acc;
+          if (
+            acc.some(
+              (item) =>
+                (typeof item === "string" ? item : item.accessor) ===
+                canonicalAccessor,
+            )
+          ) {
+            return acc;
+          }
+          acc.push(canonicalAccessor);
           return acc;
         }
-        acc.push(canonicalAccessor);
+        const canonicalAccessor = canonicalizeAccessor(entry.accessor);
+        if (!canonicalAccessor) return acc;
+        if (
+          acc.some(
+            (item) =>
+              (typeof item === "string" ? item : item.accessor) ===
+              canonicalAccessor,
+          )
+        ) {
+          return acc;
+        }
+        acc.push({
+          ...entry,
+          accessor: canonicalAccessor,
+        });
         return acc;
-      }
-      const canonicalAccessor = canonicalizeAccessor(entry.accessor);
-      if (!canonicalAccessor) return acc;
-      if (acc.some((item) => (typeof item === "string" ? item : item.accessor) === canonicalAccessor)) {
-        return acc;
-      }
-      acc.push({
-        ...entry,
-        accessor: canonicalAccessor,
-      });
-      return acc;
-    }, []);
+      },
+      [],
+    );
 
     return includeEntries.map((entry) => {
       if (typeof entry === "string") {
@@ -524,12 +553,7 @@ export function BaseTableContent({
             : undefined),
       );
     });
-  }, [
-    excludedAccessors,
-    metadata,
-    normalizedFieldsConfig,
-    relations,
-  ]);
+  }, [excludedAccessors, metadata, normalizedFieldsConfig, relations]);
 
   const sortableColumnIds = React.useMemo(() => {
     if (!columnDefs || columnDefs.length === 0) return columnOrder;
@@ -647,15 +671,16 @@ export function BaseTableContent({
       ? persistedVisibility
       : columnVisibility;
     const shouldForceLegacyHiddenDefaults =
-      shouldHydrateFromPersistedVisibility &&
-      persistedVisibilityVersion < 3;
+      shouldHydrateFromPersistedVisibility && persistedVisibilityVersion < 3;
 
     const targetColumns = columnDefs;
     if (targetColumns && targetColumns.length > 0) {
       const columnIds = targetColumns.map((column) => column.id);
       resolveColumnOrder(columnIds);
 
-      const nextVisibility: Record<string, boolean> = { ...effectiveVisibility };
+      const nextVisibility: Record<string, boolean> = {
+        ...effectiveVisibility,
+      };
       let visibilityChanged = false;
       columnIds.forEach((id) => {
         if (nextVisibility[id] === undefined) {
@@ -673,7 +698,8 @@ export function BaseTableContent({
         }
       });
       // Only update if there was a change or if we need to apply persisted state
-      const needsUpdate = visibilityChanged || shouldHydrateFromPersistedVisibility;
+      const needsUpdate =
+        visibilityChanged || shouldHydrateFromPersistedVisibility;
       if (needsUpdate) {
         setColumnVisibility(nextVisibility);
       }
@@ -683,8 +709,8 @@ export function BaseTableContent({
     const visibleFields = metadata.fields.filter(
       (f) => f.visibility !== "hidden",
     );
-    const visibleNames = visibleFields.map(
-      (field) => toGraphqlFieldName(field.name || field.fieldName),
+    const visibleNames = visibleFields.map((field) =>
+      toGraphqlFieldName(field.name || field.fieldName),
     );
     resolveColumnOrder(visibleNames);
 
@@ -697,16 +723,17 @@ export function BaseTableContent({
         visibilityChanged = true;
         return;
       }
-        if (
-          shouldForceLegacyHiddenDefaults &&
-          defaultHiddenColumnIds.has(accessor) &&
-          nextVisibility[accessor] !== false
-        ) {
+      if (
+        shouldForceLegacyHiddenDefaults &&
+        defaultHiddenColumnIds.has(accessor) &&
+        nextVisibility[accessor] !== false
+      ) {
         nextVisibility[accessor] = false;
         visibilityChanged = true;
       }
     });
-    const needsUpdate = visibilityChanged || shouldHydrateFromPersistedVisibility;
+    const needsUpdate =
+      visibilityChanged || shouldHydrateFromPersistedVisibility;
     if (needsUpdate) {
       setColumnVisibility(nextVisibility);
     }
@@ -784,46 +811,51 @@ export function BaseTableContent({
       <div className="flex-1 min-h-0 min-w-0 overflow-y-auto">
         <div className="flex min-h-full min-w-0 flex-col gap-4">
           {children}
-          
-          <div className={hideTableOnMobile ? "hidden md:block h-full" : "h-full"}>
-              <div className="flex h-full flex-col overflow-hidden rounded-md border bg-card">
-                  <div className="flex-1 min-h-0 overflow-auto" ref={tableScrollRef}>
-                    <DndContext
-                      collisionDetection={closestCenter}
-                      onDragEnd={handleDragEnd}
+
+          <div
+            className={hideTableOnMobile ? "hidden md:block h-full" : "h-full"}
+          >
+            <div className="flex h-full flex-col overflow-hidden rounded-md border bg-card">
+              <div
+                className="flex-1 min-h-0 overflow-auto"
+                ref={tableScrollRef}
+              >
+                <DndContext
+                  collisionDetection={closestCenter}
+                  onDragEnd={handleDragEnd}
+                >
+                  <TableFrame className="w-full relative">
+                    <SortableContext
+                      items={sortableColumnIds}
+                      strategy={horizontalListSortingStrategy}
                     >
-                      <TableFrame className="w-full relative">
-                        <SortableContext
-                          items={sortableColumnIds}
-                          strategy={horizontalListSortingStrategy}
-                        >
-                          <TableHeader
-                            actionsLabel={tableConfig?.actionsLabel}
-                            columns={columnDefs ?? undefined}
-                            columnOrdering={columnOrdering}
-                            disableSorting={disableSorting}
-                            enableSelection={enableSelection}
-                          />
-                        </SortableContext>
-                        <TableBody>
-                          <TableRows
-                            emptyState={tableConfig?.emptyState}
-                            loadingText={tableConfig?.loadingText}
-                            columns={columnDefs ?? undefined}
-                            enableSelection={enableSelection}
-                            refetch={refetch}
-                            columnActions={columnActions}
-                            relationStats={relationStats}
-                            queryManager={queryManager}
-                            performance={performance}
-                            scrollContainerRef={tableScrollRef}
-                            infiniteMode={isInfiniteMode}
-                          />
-                        </TableBody>
-                      </TableFrame>
-                    </DndContext>
-                  </div>
+                      <TableHeader
+                        actionsLabel={tableConfig?.actionsLabel}
+                        columns={columnDefs ?? undefined}
+                        columnOrdering={columnOrdering}
+                        disableSorting={disableSorting}
+                        enableSelection={enableSelection}
+                      />
+                    </SortableContext>
+                    <TableBody>
+                      <TableRows
+                        emptyState={tableConfig?.emptyState}
+                        loadingText={tableConfig?.loadingText}
+                        columns={columnDefs ?? undefined}
+                        enableSelection={enableSelection}
+                        refetch={refetch}
+                        columnActions={columnActions}
+                        relationStats={relationStats}
+                        queryManager={queryManager}
+                        performance={performance}
+                        scrollContainerRef={tableScrollRef}
+                        infiniteMode={isInfiniteMode}
+                      />
+                    </TableBody>
+                  </TableFrame>
+                </DndContext>
               </div>
+            </div>
           </div>
 
           {isInfiniteMode ? (
@@ -846,10 +878,10 @@ export function BaseTableContent({
             </div>
           ) : (
             <div className="mt-auto border-t bg-card/50">
-                <TablePagination
-                  labels={tableConfig?.paginationLabels}
-                  enableSelection={enableSelection}
-                />
+              <TablePagination
+                labels={tableConfig?.paginationLabels}
+                enableSelection={enableSelection}
+              />
             </div>
           )}
           {dataError && (
@@ -862,5 +894,3 @@ export function BaseTableContent({
     </div>
   );
 }
-
-

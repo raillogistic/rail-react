@@ -35,7 +35,7 @@ interface FilterSchemaResponse {
     name: string;
     fieldName: string;
     fieldLabel: string;
-    baseType: string;
+    baseType?: string;
     isNested: boolean;
     relatedModel?: string;
     filterInputType: string;
@@ -96,7 +96,7 @@ export function mergeFilterMetadata(
     const modelField = fieldLookup.get(filter.name);
     const relation = relationLookup.get(filter.name);
 
-    let baseType = normalizeBaseType(filter.baseType);
+    let baseType = resolveFieldBaseType(filter, modelField);
 
     // Upgrade baseType to Relationship if we found a matching relationship definition
     // This handles cases where the filter schema reports "ID" or "String" for a foreign key
@@ -120,8 +120,9 @@ export function mergeFilterMetadata(
         isList: opt.isList ?? false,
         choices: opt.choices,
       })),
-      defaultOperator: filter.defaultOperator ?? getDefaultOperator(filter.baseType),
-      preferredOperators: filter.preferredOperators ?? getPreferredOperators(filter.baseType),
+      defaultOperator: filter.defaultOperator ?? getDefaultOperator(baseType),
+      preferredOperators:
+        filter.preferredOperators ?? getPreferredOperators(baseType),
       choices: modelField?.choices,
       isRelation: filter.isNested,
       relationConfig: relation ? {
@@ -130,7 +131,7 @@ export function mergeFilterMetadata(
         lookupField: relation.lookupField,
         searchFields: relation.searchFields ?? [],
       } : undefined,
-      uiHints: buildUIHints(filter, modelField),
+      uiHints: buildUIHints(filter, modelField, baseType),
       group: findFieldGroup(filter.name, modelSchema.fieldGroups),
     };
   });
@@ -267,22 +268,101 @@ function translateOperatorLabel(name: string, originalLabel: string): string {
 }
 
 function normalizeBaseType(baseType: string): FilterBaseType {
-  const mapping: Record<string, FilterBaseType> = {
-    "String": "String",
-    "Number": "Number",
-    "Int": "Number",
-    "Float": "Number",
-    "Boolean": "Boolean",
-    "Date": "Date",
-    "DateTime": "DateTime",
-    "Relationship": "Relationship",
-    "JSON": "JSON",
+  const raw = String(baseType ?? "").trim();
+  if (!raw) return "String";
+
+  const exactMapping: Record<string, FilterBaseType> = {
+    String: "String",
+    Number: "Number",
+    Int: "Number",
+    Integer: "Number",
+    Float: "Number",
+    Decimal: "Number",
+    Boolean: "Boolean",
+    Bool: "Boolean",
+    Date: "Date",
+    DateTime: "DateTime",
+    Datetime: "DateTime",
+    Relationship: "Relationship",
+    ID: "Number",
+    Json: "JSON",
+    JSON: "JSON",
   };
-  return mapping[baseType] ?? "String";
+  if (exactMapping[raw]) return exactMapping[raw];
+
+  const normalized = raw.toLowerCase().replace(/[^a-z0-9]/g, "");
+  if (["string", "char", "text", "id"].includes(normalized)) return "String";
+  if (
+    ["number", "int", "integer", "float", "decimal", "bigint", "smallint"].includes(
+      normalized,
+    )
+  ) {
+    return "Number";
+  }
+  if (["boolean", "bool"].includes(normalized)) return "Boolean";
+  if (normalized === "date") return "Date";
+  if (["datetime", "timestamp"].includes(normalized)) return "DateTime";
+  if (
+    ["relationship", "relation", "foreignkey", "fk", "manytomany", "onetoone"].includes(
+      normalized,
+    )
+  ) {
+    return "Relationship";
+  }
+  if (["json", "jsonfield"].includes(normalized)) return "JSON";
+
+  // Fallbacks for descriptor-style type names (e.g. "BooleanFilterInput").
+  if (normalized.includes("boolean") || normalized.includes("bool")) {
+    return "Boolean";
+  }
+  if (normalized.includes("datetime") || normalized.includes("timestamp")) {
+    return "DateTime";
+  }
+  if (normalized.includes("date")) return "Date";
+  if (normalized.includes("json")) return "JSON";
+  if (
+    normalized.includes("relation") ||
+    normalized.includes("foreignkey") ||
+    normalized.includes("manytomany") ||
+    normalized.includes("onetoone")
+  ) {
+    return "Relationship";
+  }
+  if (
+    normalized.includes("number") ||
+    normalized.includes("integer") ||
+    normalized.includes("decimal") ||
+    normalized.includes("float")
+  ) {
+    return "Number";
+  }
+
+  return "String";
 }
 
-function buildUIHints(filter: any, modelField: any): FilterUIHints {
-  const baseType = filter.baseType;
+function resolveFieldBaseType(filter: any, modelField: any): FilterBaseType {
+  const candidates = [
+    filter.baseType,
+    filter.filterInputType,
+    modelField?.graphqlType,
+    ...(Array.isArray(filter.options)
+      ? filter.options.map((option: any) => option?.graphqlType)
+      : []),
+  ];
+
+  for (const candidate of candidates) {
+    const resolved = normalizeBaseType(String(candidate ?? ""));
+    if (resolved !== "String") return resolved;
+  }
+  return "String";
+}
+
+function buildUIHints(
+  filter: any,
+  modelField: any,
+  resolvedBaseType?: FilterBaseType,
+): FilterUIHints {
+  const baseType = resolvedBaseType ?? normalizeBaseType(filter.baseType);
   const hints: FilterUIHints = {
     widget: "text",
     allowClear: true,
@@ -308,8 +388,10 @@ function buildUIHints(filter: any, modelField: any): FilterUIHints {
     hints.widget = "json";
   }
 
-  hints.defaultOperator = filter.defaultOperator ?? getDefaultOperator(baseType);
-  hints.preferredOperators = filter.preferredOperators ?? getPreferredOperators(baseType);
+  hints.defaultOperator =
+    filter.defaultOperator ?? getDefaultOperator(baseType);
+  hints.preferredOperators =
+    filter.preferredOperators ?? getPreferredOperators(baseType);
   hints.datePresets = filter.datePresets ?? getDatePresets(baseType);
   hints.showInQuickFilter = filter.showInQuickFilter ?? false;
   hints.priority = filter.priority ?? 999;
@@ -332,6 +414,7 @@ function getDefaultOperator(baseType: string): string {
 }
 
 function getPreferredOperators(baseType: string): string[] {
+  const normalized = normalizeBaseType(baseType);
   const preferred: Record<string, string[]> = {
     String: ["icontains", "eq", "startsWith", "endsWith", "in"],
     Number: ["eq", "gte", "lte", "between", "in"],
@@ -341,11 +424,12 @@ function getPreferredOperators(baseType: string): string[] {
     Relationship: ["eq", "in", "isNull"],
     JSON: ["hasKey", "contains", "eq"],
   };
-  return preferred[baseType] ?? ["eq"];
+  return preferred[normalized] ?? ["eq"];
 }
 
 function getDatePresets(baseType: string): FilterUIHints["datePresets"] {
-  if (baseType !== "Date" && baseType !== "DateTime") {
+  const normalized = normalizeBaseType(baseType);
+  if (normalized !== "Date" && normalized !== "DateTime") {
     return undefined;
   }
   return DEFAULT_DATE_PRESETS;

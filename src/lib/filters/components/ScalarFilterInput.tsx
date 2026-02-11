@@ -70,6 +70,14 @@ export const ScalarFilterInput: React.FC<ScalarFilterInputProps> = ({
 }) => {
   const { baseType, uiHints, choices } = field;
   const { name: opName, isList } = operator;
+  const isBooleanLike =
+    baseType === "Boolean" ||
+    String(field.filterInputType ?? "")
+      .toLowerCase()
+      .includes("boolean") ||
+    String(operator.graphqlType ?? "")
+      .toLowerCase()
+      .includes("boolean");
 
   // Dummy form for QueryChoiceInput
   const formOptions = React.useMemo(() => ({
@@ -219,7 +227,7 @@ export const ScalarFilterInput: React.FC<ScalarFilterInputProps> = ({
   }
 
   // Boolean fields
-  if (baseType === "Boolean") {
+  if (isBooleanLike) {
     return (
       <Select
         value={value === undefined ? "__any__" : String(value)}

@@ -24,7 +24,7 @@ import { DashboardPage } from "@/views/dashboard/DashboardPage";
 
 import { getAppDefaultRoute, getAppNavigationLinks } from "@/apps/routes";
 // import ModelForm from "@/lib/form";
-import { ModelTableV2 } from "@/lib/table";
+import { BaseModelTable, ModelTableV2 } from "@/lib/table";
 import { ModelForm } from "@/lib/form";
 import { ModelImportPage } from "@/lib/import/pages";
 // import ModelForm    from "@/lib/form";
@@ -108,8 +108,20 @@ const CORE_NAVIGATION_LINKS: NavigationSection[] = [
         description: "Progress view for ModelTableV2 (store.Order)",
         component: (
           <>
-            {" "}
             <ModelTableV2 app="store" model="Product" />
+          </>
+        ),
+      },
+      {
+        id: "orders-table-v",
+        title: "Base Table",
+        path: "/orders-table-",
+        icon: LayoutDashboard,
+        requiresAuth: true,
+        description: "Progress view for ModelTableV2 (store.Order)",
+        component: (
+          <>
+            <BaseModelTable app="store" model="Product" />
           </>
         ),
       },
