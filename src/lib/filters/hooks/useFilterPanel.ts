@@ -25,6 +25,7 @@ import {
 } from "../tree/operations";
 import { buildQueryVariables } from "../queryBuilder";
 import { useFilterPersistence } from "./useFilterPersistence";
+import { getActiveFilterStats, normalizeFilterFormState } from "../engine";
 
 export interface UseFilterPanelOptions {
   schema: UnifiedFilterSchema | null;
@@ -77,11 +78,13 @@ function createInitialFilterState(): FilterFormState {
     selectedPresets: [],
     distinctOn: [],
     orderBy: [],
+    relationFunctions: [],
   };
 }
 
 export function useFilterPanel({
   schema,
+  config,
   initialState,
   autoApply = false,
   autoApplyDelay = 500,
@@ -93,13 +96,19 @@ export function useFilterPanel({
   const shouldPersist = Boolean(persistKey);
 
   const [state, setState] = useState<FilterFormState>(() => {
-    if (initialState) return initialState;
+    if (initialState) return normalizeFilterFormState(initialState);
     const persisted = shouldPersist ? persistence?.load() : null;
-    return persisted ?? createInitialFilterState();
+    return persisted
+      ? normalizeFilterFormState(persisted)
+      : createInitialFilterState();
   });
 
   const baselineRef = useRef(
-    JSON.stringify(initialState ?? createInitialFilterState())
+    JSON.stringify(
+      initialState
+        ? normalizeFilterFormState(initialState)
+        : createInitialFilterState(),
+    )
   );
 
   const [recentFields, setRecentFields] = useState<string[][]>(() => {
@@ -120,11 +129,9 @@ export function useFilterPanel({
     }
   });
 
-  // Use tree stats for active count
-  const stats = useMemo(() => getTreeStats(state.root), [state.root]);
   const activeCount = useMemo(
-    () => stats.activeConditionCount + state.selectedPresets.length,
-    [stats.activeConditionCount, state.selectedPresets.length]
+    () => getActiveFilterStats(state).activeCount,
+    [state]
   );
 
   const hasChanges = useMemo(
@@ -302,7 +309,9 @@ export function useFilterPanel({
   }, [shouldPersist, persistence]);
 
   const reset = useCallback(() => {
-    const next = initialState ?? createInitialFilterState();
+    const next = initialState
+      ? normalizeFilterFormState(initialState)
+      : createInitialFilterState();
     setState(next);
   }, [initialState]);
 
@@ -323,8 +332,10 @@ export function useFilterPanel({
       selectedPresets: state.selectedPresets,
       distinctOn: state.distinctOn,
       orderBy: state.orderBy,
+      relationFunctions: state.relationFunctions,
+      maxDepth: config?.maxDepth ?? 3,
     });
-  }, [schema, state]);
+  }, [config?.maxDepth, schema, state]);
 
   const apply = useCallback(() => {
     if (!onApply) return;

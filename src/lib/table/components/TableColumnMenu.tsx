@@ -25,6 +25,7 @@ import {
 import { Button } from "@/lib/components/ui/button";
 import { useTable } from "../context/TableContext";
 import { useMetadata } from "../context/MetadataContext";
+import { useTableFilters } from "../hooks/useTableFilters";
 import type { FieldSchema } from "../types";
 import { cn } from "@/lib/utils";
 import { getSyntheticRelationCountSource } from "../utils";
@@ -38,6 +39,10 @@ interface TableColumnMenuProps {
   fullWidthTrigger?: boolean;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 export function TableColumnMenu({
   columnId,
   title,
@@ -49,9 +54,6 @@ export function TableColumnMenu({
 
   const { metadata } = useMetadata();
   const {
-    advancedFilters,
-    filterVariables,
-    setAdvancedFilters,
     columnVisibility,
     setColumnVisibility,
     groupingField,
@@ -62,6 +64,7 @@ export function TableColumnMenu({
     dragModeEnabled,
     setDragModeEnabled,
   } = useTable();
+  const { advancedFilters, filterVariables, setAdvancedFilters } = useTableFilters();
   const metadataFilters = metadata?.filters ?? [];
 
   const resolvedField = useMemo(() => {
@@ -94,13 +97,16 @@ export function TableColumnMenu({
       nextOrderBy = [`${prefix}${sortKey}`, ...nextOrderBy];
     }
 
-    setAdvancedFilters(
-      { ...advancedFilters, orderBy: nextOrderBy },
-      {
-        ...(filterVariables ?? {}),
-        orderBy: nextOrderBy.length ? nextOrderBy : undefined,
-      },
-    );
+    const nextVariables = isRecord(filterVariables)
+      ? { ...filterVariables }
+      : {};
+    if (nextOrderBy.length > 0) {
+      nextVariables.orderBy = nextOrderBy;
+    } else {
+      delete nextVariables.orderBy;
+    }
+
+    setAdvancedFilters({ ...advancedFilters, orderBy: nextOrderBy }, nextVariables);
   };
 
   const isGrouped = groupingField === (resolvedField?.fieldName || resolvedField?.name);
@@ -269,7 +275,6 @@ export function TableColumnMenu({
               metadataFilters={metadataFilters}
               relationBaseName={relationBaseName}
               relationFunctionKeys={relationFunctionKeys}
-              filterVariables={filterVariables}
               advancedFilters={advancedFilters}
               setAdvancedFilters={setAdvancedFilters}
             />

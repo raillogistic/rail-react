@@ -61,6 +61,7 @@ function makeState(condition: FilterCondition): FilterFormState {
     selectedPresets: [],
     distinctOn: [],
     orderBy: [],
+    relationFunctions: [],
   };
 }
 

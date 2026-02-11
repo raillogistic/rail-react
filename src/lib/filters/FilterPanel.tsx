@@ -167,6 +167,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
     activeCount,
   } = useFilterPanel({
     schema,
+    config,
     initialState,
     persistKey,
   });
@@ -185,6 +186,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
       selectedPresets: state.selectedPresets,
       distinctOn: state.distinctOn,
       orderBy: state.orderBy,
+      relationFunctions: state.relationFunctions,
       maxDepth,
     });
     onApply(variables, state, { source: "manual" });
@@ -215,6 +217,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
         selectedPresets: nextSelectedPresets,
         distinctOn: state.distinctOn,
         orderBy: state.orderBy,
+        relationFunctions: state.relationFunctions,
         maxDepth,
       });
 
@@ -324,6 +327,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
       return (
         value.root.conditions.length > 0 ||
         value.selectedPresets.length > 0 ||
+        (value.relationFunctions?.length ?? 0) > 0 ||
         value.distinctOn.length > 0 ||
         value.orderBy.length > 0
       );
@@ -367,6 +371,7 @@ export const FilterPanel: React.FC<FilterPanelProps> = ({
     resolveDefaultPath,
     state.root.conditions.length,
     state.selectedPresets.length,
+    state.relationFunctions?.length,
     state.distinctOn.length,
     state.orderBy.length,
     setRoot,

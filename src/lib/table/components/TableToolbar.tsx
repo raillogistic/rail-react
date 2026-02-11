@@ -59,6 +59,7 @@ export function TableToolbar({
     setDensity,
     wrapCells,
     setWrapCells,
+    loading,
     refresh,
   } = useTable();
   const {
@@ -67,6 +68,7 @@ export function TableToolbar({
     setAdvancedFilters,
     clearAllFilters,
     hasActiveFilters,
+    activeFilterStats,
     advancedFilters,
   } = useTableFilters();
 
@@ -226,9 +228,7 @@ export function TableToolbar({
     setGroupCollapsed(nextCollapsed);
   };
 
-  const activeAdvancedFilterCount =
-    advancedFilters.root.conditions.length +
-    advancedFilters.selectedPresets.length;
+  const activeAdvancedFilterCount = activeFilterStats.activeCount;
 
   const hasGroupedRows = !!groupingField;
 
@@ -236,9 +236,9 @@ export function TableToolbar({
 
   return (
     <TooltipProvider delayDuration={300}>
-      <div className="mb-4 flex flex-col gap-3">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-lg border bg-card p-1 shadow-sm">
-          <div className="flex flex-1 items-center gap-2 w-full sm:w-auto px-1">
+      <div className="mb-4 flex flex-col gap-3 animate-in fade-in slide-in-from-top-4 duration-500">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-2xl border border-border/40 bg-card/60 p-2 shadow-[0_8px_30px_rgb(0,0,0,0.02)] backdrop-blur-xl transition-all hover:shadow-[0_8px_40px_rgb(0,0,0,0.04)]">
+          <div className="flex flex-1 items-center gap-3 w-full sm:w-auto px-1">
             {quickSearch !== false && supportsQuick && (
               <QuickSearch
                 value={quickSearchValue}
@@ -250,22 +250,35 @@ export function TableToolbar({
             )}
 
             {(hasActiveFilters || hasGroupedRows) && (
-              <div className="hidden lg:flex items-center gap-2 ml-2">
+              <div className="hidden lg:flex items-center gap-2 ml-2 animate-in fade-in zoom-in-95 duration-300">
                 {activeAdvancedFilterCount > 0 && (
-                  <Badge variant="secondary" className="h-6 gap-1 bg-primary/10 text-primary hover:bg-primary/20">
-                    <Filter className="h-3 w-3" />
+                  <Badge 
+                    variant="secondary" 
+                    className="h-8 gap-2 bg-primary/10 text-primary hover:bg-primary/20 border-none px-3 font-bold transition-all"
+                  >
+                    <Filter className="h-3.5 w-3.5" />
                     <span>{activeAdvancedFilterCount}</span>
-                    <button onClick={() => clearAllFilters()} className="ml-1 rounded-full p-0.5 hover:bg-primary/20">
-                      <X className="h-2.5 w-2.5" />
+                    <button 
+                      onClick={() => clearAllFilters()} 
+                      className="ml-1 rounded-full p-0.5 hover:bg-primary/30 transition-colors"
+                      title="Effacer les filtres"
+                    >
+                      <X className="h-3 w-3" />
                     </button>
                   </Badge>
                 )}
                 {hasGroupedRows && (
-                  <Badge variant="outline" className="h-6 gap-1 border-dashed">
-                    <Filter className="h-3 w-3 text-muted-foreground" />
-                    <span className="text-muted-foreground">Groupe</span>
-                    <button onClick={() => setGroupingField(null)} className="ml-1 rounded-full p-0.5 hover:bg-muted">
-                      <X className="h-2.5 w-2.5" />
+                  <Badge 
+                    variant="outline" 
+                    className="h-8 gap-2 border-dashed border-primary/30 bg-primary/5 px-3 font-bold transition-all"
+                  >
+                    <div className="h-1.5 w-1.5 rounded-full bg-primary animate-pulse" />
+                    <span className="text-primary/80 uppercase text-[10px] tracking-widest">Groupe</span>
+                    <button 
+                      onClick={() => setGroupingField(null)} 
+                      className="ml-1 rounded-full p-0.5 hover:bg-primary/10 transition-colors"
+                    >
+                      <X className="h-3 w-3 text-primary" />
                     </button>
                   </Badge>
                 )}
@@ -273,26 +286,30 @@ export function TableToolbar({
             )}
           </div>
 
-          <div className="flex items-center gap-1 w-full sm:w-auto px-1">
-            <ViewOptionsMenu
-              density={density}
-              onDensityChange={setDensity}
-              wrapCells={wrapCells}
-              onWrapChange={setWrapCells}
-            />
+          <div className="flex items-center gap-1.5 w-full sm:w-auto px-1">
+            <div className="flex items-center p-1 bg-muted/20 rounded-xl border border-border/10">
+              <ViewOptionsMenu
+                density={density}
+                onDensityChange={setDensity}
+                wrapCells={wrapCells}
+                onWrapChange={setWrapCells}
+              />
 
-            <Separator orientation="vertical" className="h-5" />
+              <div className="h-4 w-px bg-border/20 mx-1" />
 
-            <ColumnsMenu
-              columnSearch={columnSearch}
-              onColumnSearchChange={setColumnSearch}
-              visibleColumns={visibleColumns}
-              columnVisibility={columnVisibility}
-              allColumnsVisible={allColumnsVisible}
-              onToggleColumn={toggleColumn}
-              onSetAllColumnsVisibility={setAllColumnsVisibility}
-              onApplyDefaultColumnsVisibility={applyDefaultColumnsVisibility}
-            />
+              <ColumnsMenu
+                columnSearch={columnSearch}
+                onColumnSearchChange={setColumnSearch}
+                visibleColumns={visibleColumns}
+                columnVisibility={columnVisibility}
+                allColumnsVisible={allColumnsVisible}
+                onToggleColumn={toggleColumn}
+                onSetAllColumnsVisibility={setAllColumnsVisibility}
+                onApplyDefaultColumnsVisibility={applyDefaultColumnsVisibility}
+              />
+            </div>
+
+            <div className="h-6 w-px bg-border/20 mx-1" />
 
             {panelDefaults.mode === "modal" ? (
               <Dialog open={filterOpen} onOpenChange={setFilterOpen}>
@@ -300,22 +317,27 @@ export function TableToolbar({
                   <Button
                     variant={hasActiveFilters ? "secondary" : "ghost"}
                     size="sm"
-                    className={cn("h-8 gap-2", hasActiveFilters && "bg-primary/10 text-primary hover:bg-primary/20")}
+                    className={cn(
+                      "h-9 px-3 gap-2.5 rounded-xl font-bold transition-all", 
+                      hasActiveFilters ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20" : "hover:bg-muted/60"
+                    )}
                   >
-                    <ListFilter className="h-4 w-4" />
-                    <span className="hidden sm:inline-block text-xs">Filtres</span>
+                    <ListFilter className={cn("h-4 w-4", hasActiveFilters ? "animate-pulse" : "text-muted-foreground")} />
+                    <span className="hidden sm:inline-block text-xs uppercase tracking-widest">Filtres</span>
                     {hasActiveFilters && (
-                      <span className="ml-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
+                      <span className="ml-1 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-background/20 text-[10px] font-black">
                         {activeAdvancedFilterCount}
                       </span>
                     )}
                   </Button>
                 </DialogTrigger>
-                <DialogContent className={`max-h-[90vh] overflow-hidden p-0 flex flex-col ${panelWidthClassName}`}>
-                  <DialogHeader className="border-b px-4 py-3">
-                    <DialogTitle>{panelDefaults.title}</DialogTitle>
+                <DialogContent className={`max-h-[90vh] overflow-hidden p-0 flex flex-col rounded-3xl border-none shadow-2xl backdrop-blur-2xl bg-background/95 ${panelWidthClassName}`}>
+                  <DialogHeader className="border-b border-border/20 px-6 py-4 bg-muted/10">
+                    <DialogTitle className="text-xl font-black uppercase tracking-tighter">{panelDefaults.title}</DialogTitle>
                   </DialogHeader>
-                  {filterOpen ? renderFilterContent() : null}
+                  <div className="flex-1 overflow-auto custom-scrollbar">
+                    {filterOpen ? renderFilterContent() : null}
+                  </div>
                 </DialogContent>
               </Dialog>
             ) : (
@@ -324,50 +346,63 @@ export function TableToolbar({
                   <Button
                     variant={hasActiveFilters ? "secondary" : "ghost"}
                     size="sm"
-                    className={cn("h-8 gap-2", hasActiveFilters && "bg-primary/10 text-primary hover:bg-primary/20")}
+                    className={cn(
+                      "h-9 px-3 gap-2.5 rounded-xl font-bold transition-all", 
+                      hasActiveFilters ? "bg-primary text-primary-foreground hover:bg-primary/90 shadow-lg shadow-primary/20" : "hover:bg-muted/60"
+                    )}
                   >
-                    <ListFilter className="h-4 w-4" />
-                    <span className="hidden sm:inline-block text-xs">Filtres</span>
+                    <ListFilter className={cn("h-4 w-4", hasActiveFilters ? "animate-pulse" : "text-muted-foreground")} />
+                    <span className="hidden sm:inline-block text-xs uppercase tracking-widest">Filtres</span>
                     {hasActiveFilters && (
-                      <span className="ml-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground">
+                      <span className="ml-1 flex h-4.5 w-4.5 items-center justify-center rounded-full bg-background/20 text-[10px] font-black">
                         {activeAdvancedFilterCount}
                       </span>
                     )}
                   </Button>
                 </SheetTrigger>
-                <SheetContent side={panelDefaults.side} className={`p-0 ${panelWidthClassName}`}>
-                  <SheetHeader className="border-b">
-                    <SheetTitle>{panelDefaults.title}</SheetTitle>
+                <SheetContent side={panelDefaults.side} className={`p-0 border-none shadow-2xl backdrop-blur-2xl bg-background/95 ${panelWidthClassName}`}>
+                  <SheetHeader className="border-b border-border/20 px-6 py-4 bg-muted/10">
+                    <SheetTitle className="text-xl font-black uppercase tracking-tighter">{panelDefaults.title}</SheetTitle>
                   </SheetHeader>
-                  {filterOpen ? renderFilterContent() : null}
+                  <div className="h-full overflow-auto custom-scrollbar">
+                    {filterOpen ? renderFilterContent() : null}
+                  </div>
                 </SheetContent>
               </Sheet>
             )}
 
-            <GroupingMenu
-              groupingField={groupingField}
-              hasGroupedRows={hasGroupedRows}
-              groupableFields={groupableFields}
-              onSetGroupingField={setGroupingField}
-              onResetCollapsed={() => setGroupCollapsed({})}
-              onExpandAll={handleExpandAllGroups}
-              onCollapseAll={handleCollapseAllGroups}
-            />
+            <div className="flex items-center p-1 bg-muted/20 rounded-xl border border-border/10">
+              <GroupingMenu
+                groupingField={groupingField}
+                hasGroupedRows={hasGroupedRows}
+                groupableFields={groupableFields}
+                onSetGroupingField={setGroupingField}
+                onResetCollapsed={() => setGroupCollapsed({})}
+                onExpandAll={handleExpandAllGroups}
+                onCollapseAll={handleCollapseAllGroups}
+              />
 
-            <ModelTableExportDialog
-              labels={tableConfig?.exportLabels}
-              trigger={
-                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                  <Download className="h-4 w-4 text-muted-foreground" />
-                </Button>
-              }
-            />
+              <ModelTableExportDialog
+                labels={tableConfig?.exportLabels}
+                trigger={
+                  <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-lg hover:bg-background hover:text-primary transition-all">
+                    <Download className="h-4 w-4" />
+                  </Button>
+                }
+              />
 
-            <Separator orientation="vertical" className="h-5" />
+              <div className="h-4 w-px bg-border/20 mx-1" />
 
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => refresh()}>
-              <RefreshCw className="h-4 w-4 text-muted-foreground" />
-            </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="h-8 w-8 p-0 rounded-lg hover:bg-background hover:text-primary transition-all active:scale-90" 
+                onClick={() => refresh()}
+                disabled={loading}
+              >
+                <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
+              </Button>
+            </div>
           </div>
         </div>
       </div>

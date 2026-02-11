@@ -25,17 +25,18 @@ import {
   SelectValue,
 } from "@/lib/components/ui/select";
 import { Sigma } from "lucide-react";
-import { isRecord } from "../../utils";
 import type { FilterSchema } from "../../types";
 import {
-  HEADER_BASE_WHERE_KEY,
-  HEADER_RELATION_FILTERS_KEY,
   isScalarFilterInputType,
-  mergeWhereWithRelationFragments,
   operatorOptionsForGraphqlType,
   parseScalarValue,
   resolveFilterSchemaByName,
 } from "./columnMenuHelpers";
+import {
+  removeRelationFunctionsByRelation,
+  upsertRelationFunction,
+} from "../../../filters/engine";
+import type { RelationFunctionFilter } from "../../../filters/types";
 import type {
   AggFunction,
   RelationFieldOption,
@@ -49,7 +50,6 @@ export function RelationFilterDialog({
   metadataFilters,
   relationBaseName,
   relationFunctionKeys,
-  filterVariables,
   advancedFilters,
   setAdvancedFilters,
 }: RelationFilterDialogProps) {
@@ -84,13 +84,14 @@ export function RelationFilterDialog({
       .filter((entry): entry is string => !!entry);
   }, [relationCountFilter]);
 
-  const currentVariables = isRecord(filterVariables) ? filterVariables : {};
-  const relationFragmentsMap = isRecord(currentVariables[HEADER_RELATION_FILTERS_KEY])
-    ? (currentVariables[HEADER_RELATION_FILTERS_KEY] as Record<string, unknown>)
-    : {};
-  const hasActiveRelationFilters = Object.values(relationFunctionKeys).some(
-    (key) => !!relationFragmentsMap[key],
-  );
+  const relationFunctions = advancedFilters.relationFunctions ?? [];
+  const hasActiveRelationFilters = relationFunctions.some((entry) => {
+    const path =
+      entry.relationPath && entry.relationPath.length > 0
+        ? entry.relationPath
+        : [entry.relationName];
+    return path[path.length - 1] === relationBaseName;
+  });
 
   const [relationDialogOpen, setRelationDialogOpen] = useState(false);
   const [relationMode, setRelationMode] = useState<RelationFunctionMode>("count");
@@ -143,79 +144,39 @@ export function RelationFilterDialog({
     setRelationDialogOpen(true);
   };
 
-  const applyRelationFragment = (
-    functionKey: string,
-    fragment: Record<string, unknown>,
-  ) => {
-    const existingVariables = isRecord(filterVariables) ? filterVariables : {};
-    const nextRelationFragments = isRecord(existingVariables[HEADER_RELATION_FILTERS_KEY])
-      ? { ...(existingVariables[HEADER_RELATION_FILTERS_KEY] as Record<string, unknown>) }
-      : {};
-
-    nextRelationFragments[functionKey] = fragment;
-
-    const baseWhere = isRecord(existingVariables[HEADER_BASE_WHERE_KEY])
-      ? (existingVariables[HEADER_BASE_WHERE_KEY] as Record<string, unknown>)
-      : isRecord(existingVariables.where)
-        ? (existingVariables.where as Record<string, unknown>)
-        : undefined;
-
-    const mergedWhere = mergeWhereWithRelationFragments(baseWhere, nextRelationFragments);
-
-    setAdvancedFilters(
-      { ...advancedFilters },
-      {
-        ...existingVariables,
-        [HEADER_BASE_WHERE_KEY]: baseWhere ?? {},
-        [HEADER_RELATION_FILTERS_KEY]: nextRelationFragments,
-        where: mergedWhere,
-      },
+  const applyRelationFunction = (relationFilter: RelationFunctionFilter) => {
+    const nextRelationFilters = upsertRelationFunction(
+      relationFunctions,
+      relationFilter,
     );
+    setAdvancedFilters({
+      ...advancedFilters,
+      relationFunctions: nextRelationFilters,
+    });
   };
 
   const clearRelationFragments = () => {
-    const existingVariables = isRecord(filterVariables) ? filterVariables : {};
-    const nextRelationFragments = isRecord(existingVariables[HEADER_RELATION_FILTERS_KEY])
-      ? { ...(existingVariables[HEADER_RELATION_FILTERS_KEY] as Record<string, unknown>) }
-      : {};
-
-    delete nextRelationFragments[relationFunctionKeys.some];
-    delete nextRelationFragments[relationFunctionKeys.none];
-    delete nextRelationFragments[relationFunctionKeys.every];
-    delete nextRelationFragments[relationFunctionKeys.count];
-    delete nextRelationFragments[relationFunctionKeys.agg];
-
-    const baseWhere = isRecord(existingVariables[HEADER_BASE_WHERE_KEY])
-      ? (existingVariables[HEADER_BASE_WHERE_KEY] as Record<string, unknown>)
-      : undefined;
-    const mergedWhere = mergeWhereWithRelationFragments(baseWhere, nextRelationFragments);
-
-    const nextVariables: Record<string, unknown> = { ...existingVariables };
-    if (Object.keys(nextRelationFragments).length === 0) {
-      delete nextVariables[HEADER_RELATION_FILTERS_KEY];
-      delete nextVariables[HEADER_BASE_WHERE_KEY];
-      if (mergedWhere) {
-        nextVariables.where = mergedWhere;
-      } else {
-        delete nextVariables.where;
-      }
-    } else {
-      nextVariables[HEADER_RELATION_FILTERS_KEY] = nextRelationFragments;
-      nextVariables[HEADER_BASE_WHERE_KEY] = baseWhere ?? {};
-      nextVariables.where = mergedWhere;
-    }
-
-    setAdvancedFilters({ ...advancedFilters }, nextVariables);
+    const nextRelationFilters = removeRelationFunctionsByRelation(
+      relationFunctions,
+      relationBaseName,
+    );
+    setAdvancedFilters({
+      ...advancedFilters,
+      relationFunctions: nextRelationFilters,
+    });
   };
 
   const applyRelationDialog = () => {
     if (relationMode === "count") {
       const parsedValue = Number(relationValue);
       if (Number.isNaN(parsedValue)) return;
-      applyRelationFragment(relationFunctionKeys.count, {
-        [relationFunctionKeys.count]: {
-          [relationOperator]: parsedValue,
-        },
+      applyRelationFunction({
+        id: `${relationBaseName}:count`,
+        relationName: relationBaseName,
+        relationPath: [relationBaseName],
+        mode: "count",
+        operator: relationOperator,
+        value: parsedValue,
       });
       setRelationDialogOpen(false);
       return;
@@ -224,26 +185,21 @@ export function RelationFilterDialog({
     if (relationMode === "agg") {
       const parsedValue = Number(aggValue);
       if (Number.isNaN(parsedValue) || !aggField) return;
-      applyRelationFragment(relationFunctionKeys.agg, {
-        [relationFunctionKeys.agg]: {
-          field: aggField,
-          [aggFunction]: {
-            [aggOperator]: parsedValue,
-          },
-        },
+      applyRelationFunction({
+        id: `${relationBaseName}:agg`,
+        relationName: relationBaseName,
+        relationPath: [relationBaseName],
+        mode: "agg",
+        fieldName: aggField,
+        aggFunction,
+        operator: aggOperator,
+        value: parsedValue,
       });
       setRelationDialogOpen(false);
       return;
     }
 
     if (!relationFieldName) return;
-    const functionKey =
-      relationMode === "some"
-        ? relationFunctionKeys.some
-        : relationMode === "none"
-          ? relationFunctionKeys.none
-          : relationFunctionKeys.every;
-
     const parsedValue = parseScalarValue(
       relationValue,
       selectedRelationField?.graphqlType || "StringFilterInput",
@@ -251,12 +207,14 @@ export function RelationFilterDialog({
     );
     if (parsedValue === undefined) return;
 
-    applyRelationFragment(functionKey, {
-      [functionKey]: {
-        [relationFieldName]: {
-          [relationOperator]: parsedValue,
-        },
-      },
+    applyRelationFunction({
+      id: `${relationBaseName}:${relationMode}`,
+      relationName: relationBaseName,
+      relationPath: [relationBaseName],
+      mode: relationMode === "none" ? "none" : relationMode === "every" ? "every" : "some",
+      fieldName: relationFieldName,
+      operator: relationOperator,
+      value: parsedValue,
     });
     setRelationDialogOpen(false);
   };

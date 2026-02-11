@@ -86,6 +86,16 @@ export function ColumnFilter({ columnId, field, hideTrigger = false }: ColumnFil
     [filterMeta?.name, resolvedField?.name, resolvedField?.fieldName, columnId],
   );
 
+  const filterFieldPath = useMemo(() => {
+    if (filterFieldName.includes(".")) {
+      return filterFieldName.split(".").filter(Boolean);
+    }
+    if (filterFieldName.includes("__")) {
+      return filterFieldName.split("__").filter(Boolean);
+    }
+    return [filterFieldName];
+  }, [filterFieldName]);
+
   const relationSchema = useMemo(() => {
     if (!metadata || !resolvedField?.isRelation) return undefined;
     const candidates = [
@@ -172,12 +182,17 @@ export function ColumnFilter({ columnId, field, hideTrigger = false }: ColumnFil
 
   // 3. Current Filter State
   const activeCondition = useMemo(() => {
+    const targetPath = filterFieldPath.join(".");
     // Traverse root group to find condition for this field
-    // Simplified: Find first condition matching fieldName
     const findCondition = (group: any): any => {
       for (const cond of group.conditions) {
-        if (cond.type === "condition" && cond.fieldName === filterFieldName) {
-          return cond;
+        if (cond.type === "condition") {
+          const conditionPath = Array.isArray(cond.fieldPath)
+            ? cond.fieldPath.join(".")
+            : "";
+          if (conditionPath === targetPath || cond.fieldName === filterFieldName) {
+            return cond;
+          }
         }
         if (cond.type === "group") {
           const found = findCondition(cond);
@@ -187,7 +202,7 @@ export function ColumnFilter({ columnId, field, hideTrigger = false }: ColumnFil
       return null;
     };
     return findCondition(advancedFilters.root);
-  }, [advancedFilters.root, filterFieldName]);
+  }, [advancedFilters.root, filterFieldName, filterFieldPath]);
 
   const [operator, setOperator] = useState<string>(activeCondition?.operator || filterableField?.defaultOperator || "exact");
   const [value, setValue] = useState<any>(activeCondition?.value);
@@ -221,6 +236,8 @@ export function ColumnFilter({ columnId, field, hideTrigger = false }: ColumnFil
   const handleApply = () => {
     addFilterCondition({
       field: filterFieldName,
+      fieldPath: filterFieldPath,
+      fieldName: filterFieldPath[filterFieldPath.length - 1] || filterFieldName,
       operator,
       value,
     });

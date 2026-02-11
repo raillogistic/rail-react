@@ -215,11 +215,7 @@ const CORE_NAVIGATION_LINKS: NavigationSection[] = [
       },
     ],
   },
-  {
-    id: "form",
-    label: "Form",
-    items: [],
-  },
+
   {
     id: "parametre",
     label: "parametre",

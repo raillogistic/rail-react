@@ -161,34 +161,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
       <SidebarContent className="relative z-10 custom-scrollbar px-3 py-2 space-y-6">
         <NavMain />
-
-        {!isCollapsed && (
-          <div className="px-4 py-4 mt-10">
-            <Card className="rounded-2xl border-none bg-primary/5 relative overflow-hidden group/card">
-              <div className="absolute -right-2 -bottom-2 opacity-5 transition-transform duration-700 group-hover/card:scale-125 group-hover/card:rotate-12">
-                <ShieldCheck className="size-20" />
-              </div>
-              <CardContent className="p-4 space-y-3">
-                <div className="flex items-center gap-2">
-                  <Sparkles className="size-3.5 text-primary animate-pulse" />
-                  <span className="text-[10px] font-black uppercase tracking-widest text-primary/80">
-                    Support Prioritaire
-                  </span>
-                </div>
-                <p className="text-xs font-medium text-muted-foreground leading-relaxed">
-                  Besoin d'aide ? Nos experts sont disponibles 24/7 pour vous
-                  accompagner.
-                </p>
-                <Button
-                  variant="link"
-                  className="p-0 h-auto text-[10px] font-black uppercase tracking-widest text-primary hover:no-underline flex items-center gap-1"
-                >
-                  Contacter l'aide <ArrowRight className="size-3" />
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        )}
       </SidebarContent>
 
       <SidebarFooter className="relative z-10 p-4">

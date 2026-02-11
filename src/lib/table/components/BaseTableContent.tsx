@@ -45,6 +45,7 @@ import type {
   ModelTableV2TableConfig,
   ModelTableV2ViewOptions,
 } from "../config/types";
+import { cn } from "@/lib/utils";
 type BaseTableContentProps = {
   persistenceKey?: string;
   children?: React.ReactNode;
@@ -788,43 +789,90 @@ export function BaseTableContent({
 
   if (metadataLoading) {
     return (
-      <div
-        className="flex h-64 items-center justify-center border rounded-md"
-        role="status"
-        aria-label="Chargement des métadonnées du tableau"
-      >
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className="flex h-[400px] w-full flex-col gap-4 p-4 animate-in fade-in duration-500">
+        <div className="flex items-center justify-between">
+          <div className="h-10 w-64 animate-pulse rounded-lg bg-muted/40" />
+          <div className="flex gap-2">
+            <div className="h-10 w-24 animate-pulse rounded-lg bg-muted/40" />
+            <div className="h-10 w-24 animate-pulse rounded-lg bg-muted/40" />
+          </div>
+        </div>
+        <div className="flex-1 rounded-xl border border-border/40 bg-card/30 backdrop-blur-sm p-1">
+          <div className="h-12 w-full animate-pulse rounded-t-lg bg-muted/60" />
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="flex gap-4 p-4 border-b border-border/10">
+              <div className="h-4 w-4 animate-pulse rounded bg-muted/40" />
+              <div className="h-4 flex-1 animate-pulse rounded bg-muted/30" />
+              <div className="h-4 w-24 animate-pulse rounded bg-muted/30" />
+              <div className="h-4 w-32 animate-pulse rounded bg-muted/30" />
+            </div>
+          ))}
+        </div>
       </div>
     );
   }
 
   if (metadataError) {
     return (
-      <div className="flex h-64 items-center justify-center border rounded-md text-red-500">
-        Erreur de chargement des métadonnées : {metadataError.message}
+      <div className="flex h-[400px] items-center justify-center p-8">
+        <div className="max-w-md w-full rounded-2xl border border-red-200 bg-red-50/30 p-8 text-center backdrop-blur-sm animate-in zoom-in-95 duration-300">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-100 text-red-600">
+            <svg
+              className="h-8 w-8"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+              />
+            </svg>
+          </div>
+          <h3 className="mb-2 text-lg font-bold text-red-900">
+            Erreur de métadonnées
+          </h3>
+          <p className="text-sm text-red-700/80 leading-relaxed mb-6">
+            Impossible de charger les informations de structure pour ce tableau.
+            <span className="block mt-1 font-mono text-[10px] opacity-60">
+              {metadataError.message}
+            </span>
+          </p>
+          <button
+            onClick={() => window.location.reload()}
+            className="rounded-full bg-red-600 px-6 py-2 text-sm font-semibold text-white shadow-lg shadow-red-600/20 transition-all hover:bg-red-700 active:scale-95"
+          >
+            Réessayer
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="flex h-full w-full max-w-full min-w-0 flex-col overflow-hidden">
-      <div className="flex-1 min-h-0 min-w-0 overflow-y-auto">
-        <div className="flex min-h-full min-w-0 flex-col gap-4">
+    <div className="flex h-full w-full max-w-full min-w-0 flex-col overflow-hidden animate-in fade-in duration-700">
+      <div className="flex-1 min-h-0 min-w-0 overflow-y-auto custom-scrollbar">
+        <div className="flex min-h-full min-w-0 flex-col gap-4 p-1 sm:p-2">
           {children}
 
           <div
-            className={hideTableOnMobile ? "hidden md:block h-full" : "h-full"}
+            className={cn(
+              "flex-1 min-h-0 min-w-0 transition-all duration-300",
+              hideTableOnMobile ? "hidden md:block" : "block",
+            )}
           >
-            <div className="flex h-full flex-col overflow-hidden rounded-md border bg-card">
+            <div className="group/frame relative flex h-full flex-col overflow-hidden rounded-[1.25rem] border border-border/40 bg-card/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-xl transition-all duration-500 hover:shadow-[0_8px_40px_rgb(0,0,0,0.08)] hover:border-border/60">
               <div
-                className="flex-1 min-h-0 overflow-auto"
+                className="flex-1 min-h-0 overflow-auto scroll-smooth custom-scrollbar"
                 ref={tableScrollRef}
               >
                 <DndContext
                   collisionDetection={closestCenter}
                   onDragEnd={handleDragEnd}
                 >
-                  <TableFrame className="w-full relative">
+                  <TableFrame className="w-full relative border-separate border-spacing-0">
                     <SortableContext
                       items={sortableColumnIds}
                       strategy={horizontalListSortingStrategy}
@@ -855,38 +903,74 @@ export function BaseTableContent({
                   </TableFrame>
                 </DndContext>
               </div>
+
+              {isInfiniteMode ? (
+                <div className="mt-auto flex items-center justify-between border-t border-border/30 bg-muted/10 px-6 py-3 text-xs font-medium text-muted-foreground/80 backdrop-blur-md">
+                  <div className="flex items-center gap-2">
+                    <div className="h-1.5 w-1.5 rounded-full bg-primary/40 animate-pulse" />
+                    <span>
+                      {pagination.totalKnown
+                        ? `${data.length} sur ${pagination.total} éléments`
+                        : `${data.length} éléments chargés`}
+                    </span>
+                  </div>
+                  {tableLoading ? (
+                    <span className="inline-flex items-center gap-2 text-primary font-bold">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                      Chargement...
+                    </span>
+                  ) : pagination.hasNextPage ? (
+                    <span className="opacity-60 flex items-center gap-1.5">
+                      <svg
+                        className="h-3 w-3 animate-bounce"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M19 14l-7 7m0 0l-7-7m7 7V3"
+                        />
+                      </svg>
+                      Défilez pour plus
+                    </span>
+                  ) : (
+                    <span className="opacity-40 uppercase tracking-widest text-[10px]">
+                      Fin de liste
+                    </span>
+                  )}
+                </div>
+              ) : null}
             </div>
           </div>
 
-          {isInfiniteMode ? (
-            <div className="mt-auto flex items-center justify-between border-t bg-muted/20 px-4 py-2 text-xs text-muted-foreground">
-              <span>
-                {pagination.totalKnown
-                  ? `${data.length} sur ${pagination.total} chargée(s)`
-                  : `${data.length} chargée(s)`}
-              </span>
-              {tableLoading ? (
-                <span className="inline-flex items-center gap-1.5 text-primary/70">
-                  <Loader2 className="h-3 w-3 animate-spin" />
-                  Chargement...
-                </span>
-              ) : pagination.hasNextPage ? (
-                <span className="opacity-60">Défilez pour plus</span>
-              ) : (
-                <span className="opacity-60">Fin</span>
-              )}
-            </div>
-          ) : (
-            <div className="mt-auto border-t bg-card/50">
+          {!isInfiniteMode && (
+            <div className="mt-auto animate-in slide-in-from-bottom-4 duration-500">
               <TablePagination
                 labels={tableConfig?.paginationLabels}
                 enableSelection={enableSelection}
               />
             </div>
           )}
+
           {dataError && (
-            <div className="text-sm text-red-500 px-2">
-              Erreur de chargement des données : {dataError.message}
+            <div className="flex items-center gap-2 rounded-lg bg-red-50/50 border border-red-100 px-4 py-2 text-xs font-semibold text-red-600 animate-in shake duration-300">
+              <svg
+                className="h-4 w-4"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                />
+              </svg>
+              Erreur de données : {dataError.message}
             </div>
           )}
         </div>

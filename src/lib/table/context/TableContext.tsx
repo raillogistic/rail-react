@@ -5,6 +5,7 @@ import {
   TableDensity,
 } from "../types";
 import { FilterFormState } from "../../filters/types";
+import { normalizeFilterFormState } from "../../filters/engine";
 
 // ============================================================================
 // Actions & Reducer
@@ -82,6 +83,7 @@ const initialState: TableContextState = {
     selectedPresets: [],
     distinctOn: [],
     orderBy: [],
+    relationFunctions: [],
   },
   filterVariables: {},
   // Placeholders, will be overwritten by Provider
@@ -187,7 +189,7 @@ function tableReducer(state: TableContextState, action: TableAction): TableConte
     case "SET_ADVANCED_FILTERS":
       return {
         ...state,
-        advancedFilters: action.filters,
+        advancedFilters: normalizeFilterFormState(action.filters),
         filterVariables: action.variables,
         pagination: { ...state.pagination, page: 1 }
       };
@@ -229,7 +231,14 @@ interface TableProviderProps {
 }
 
 export function TableProvider({ children, initialState: initialProps }: TableProviderProps) {
-  const [state, dispatch] = useReducer(tableReducer, { ...initialState, ...initialProps });
+  const mergedInitialState = {
+    ...initialState,
+    ...initialProps,
+    advancedFilters: normalizeFilterFormState(
+      initialProps?.advancedFilters ?? initialState.advancedFilters,
+    ),
+  };
+  const [state, dispatch] = useReducer(tableReducer, mergedInitialState);
 
   const actions = {
     setPage: useCallback((page: number) => dispatch({ type: "SET_PAGE", page }), []),

@@ -4,15 +4,20 @@
  * Converts filter form state to GraphQL where input format.
  */
 
-import type { FilterGroup, FilterCondition, UnifiedFilterSchema, RelationFilter } from "./types";
+import type {
+  FilterGroup,
+  FilterCondition,
+  UnifiedFilterSchema,
+  RelationFilter,
+} from "./types";
 
 /**
  * Serialize nested filter form state to GraphQL where input.
  */
 export function serializeFilterToGraphQL(
   group: FilterGroup,
-  schema: UnifiedFilterSchema,
-  maxDepth: number
+  schema?: UnifiedFilterSchema | null,
+  maxDepth: number = 3
 ): Record<string, any> {
   const serialized = serializeGroup(group, schema, maxDepth);
   
@@ -31,8 +36,8 @@ export function serializeFilterToGraphQL(
 
 function serializeGroup(
   group: FilterGroup,
-  schema: UnifiedFilterSchema,
-  maxDepth: number
+  schema?: UnifiedFilterSchema | null,
+  maxDepth: number = 3
 ): Record<string, any> {
   const conditions = group.conditions
     .map((item) => {
@@ -65,8 +70,8 @@ function serializeGroup(
 
 function serializeCondition(
   condition: FilterCondition,
-  schema: UnifiedFilterSchema,
-  maxDepth: number
+  schema?: UnifiedFilterSchema | null,
+  maxDepth: number = 3
 ): Record<string, any> | null {
   // Skip empty values
   if (
@@ -93,7 +98,7 @@ function serializeCondition(
 function buildNestedFilter(
   fieldPath: string[],
   filterValue: Record<string, any>,
-  schema: UnifiedFilterSchema,
+  schema?: UnifiedFilterSchema | null,
   relationOperator?: string
 ): Record<string, any> {
   if (fieldPath.length === 0) {

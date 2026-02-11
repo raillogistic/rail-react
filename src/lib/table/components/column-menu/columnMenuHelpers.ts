@@ -1,7 +1,4 @@
-import { isRecord, toSnakeCase } from "../../utils";
-
-export const HEADER_RELATION_FILTERS_KEY = "__headerRelationFilters";
-export const HEADER_BASE_WHERE_KEY = "__baseWhere";
+import { toSnakeCase } from "../../utils";
 
 export function isScalarFilterInputType(typeName: string): boolean {
   if (!typeName || !typeName.includes("FilterInput")) return false;
@@ -63,27 +60,6 @@ export function parseScalarValue(
   }
 
   return rawValue;
-}
-
-export function mergeWhereWithRelationFragments(
-  baseWhere: Record<string, unknown> | undefined,
-  fragmentsMap: Record<string, unknown>,
-): Record<string, unknown> | undefined {
-  const clauses: Record<string, unknown>[] = [];
-
-  if (baseWhere && Object.keys(baseWhere).length > 0) {
-    clauses.push(baseWhere);
-  }
-
-  Object.values(fragmentsMap).forEach((entry) => {
-    if (!isRecord(entry)) return;
-    if (Object.keys(entry).length === 0) return;
-    clauses.push(entry);
-  });
-
-  if (clauses.length === 0) return undefined;
-  if (clauses.length === 1) return clauses[0];
-  return { AND: clauses };
 }
 
 export function resolveFilterSchemaByName(

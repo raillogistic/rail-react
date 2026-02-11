@@ -110,62 +110,63 @@ export function TablePagination({
 
   return (
     <TooltipProvider delayDuration={300}>
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-4 py-3 bg-background/95 backdrop-blur-md border-t shadow-[0_-4px_12px_-8px_rgba(0,0,0,0.1)]">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 bg-background/60 backdrop-blur-xl border border-border/40 rounded-2xl shadow-[0_-8px_30px_rgba(0,0,0,0.02)] mt-2 animate-in slide-in-from-bottom-2 duration-500">
         {/* Left Section: Selection & Summary */}
-        <div className="flex items-center gap-3 w-full sm:w-auto">
+        <div className="flex items-center gap-4 w-full sm:w-auto">
           {enableSelection && selectedCount > 0 ? (
-            <div className="flex items-center gap-2 animate-in fade-in slide-in-from-left-2 duration-300">
+            <div className="flex items-center gap-2 animate-in zoom-in-95 duration-300">
               <Badge
                 variant="default"
-                className="h-6 px-2 bg-primary/90 hover:bg-primary font-bold shadow-sm transition-all active:scale-95"
+                className="h-7 px-3 bg-primary font-bold shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95 border-none"
               >
                 {selectedCount} sélectionné{selectedCount > 1 ? "s" : ""}
               </Badge>
-              <Separator
-                orientation="vertical"
-                className="h-4 mx-1 opacity-50"
-              />
+              <div className="h-4 w-px bg-border/40 mx-1" />
             </div>
           ) : null}
 
-          <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-2">
-            <span className="text-xs font-semibold text-foreground/70 tracking-tight">
+          <div className="flex flex-col gap-0.5">
+            <span className="text-[11px] font-bold text-muted-foreground/60 uppercase tracking-widest leading-none">
+              Statistiques
+            </span>
+            <span className="text-xs font-semibold text-foreground tracking-tight">
               {totalKnown ? (
                 total === 0 ? (
                   "Aucun enregistrement"
                 ) : (
-                  <>
-                    <span className="text-foreground font-bold">
+                  <span className="flex items-center gap-1.5">
+                    <span className="text-primary font-extrabold">
                       {rangeStart}-{rangeEnd}
                     </span>
-                    <span className="mx-1 text-muted-foreground/60 font-medium">
+                    <span className="text-muted-foreground/40 font-medium lowercase">
                       sur
                     </span>
                     <span className="text-foreground font-extrabold">
                       {total}
                     </span>
-                  </>
+                  </span>
                 )
               ) : (
                 <Badge
                   variant="secondary"
-                  className="font-bold text-[10px] uppercase tracking-wider h-5 bg-muted/50 border-none"
+                  className="font-bold text-[10px] uppercase tracking-wider h-5 bg-primary/5 text-primary border-none"
                 >
-                  {data.length} chargé{data.length > 1 ? "s" : ""}
+                  {data.length} élément{data.length > 1 ? "s" : ""} chargé
+                  {data.length > 1 ? "s" : ""}
                 </Badge>
               )}
             </span>
           </div>
 
-          <div className="ml-auto sm:ml-2">
+          <div className="ml-2 group">
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   variant="ghost"
                   size="icon"
                   className={cn(
-                    "h-8 w-8 rounded-full transition-all active:scale-90",
-                    loading && "animate-spin text-primary",
+                    "h-8 w-8 rounded-full transition-all active:scale-90 hover:bg-primary/5 hover:text-primary",
+                    loading && "animate-spin text-primary bg-primary/5",
                   )}
                   onClick={() => refresh()}
                   disabled={loading}
@@ -173,173 +174,196 @@ export function TablePagination({
                   <RefreshCw className="h-3.5 w-3.5" />
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side="top">Actualiser les données</TooltipContent>
+              <TooltipContent side="top" className="font-bold text-[10px]">
+                Actualiser
+              </TooltipContent>
             </Tooltip>
           </div>
         </div>
 
         {/* Right Section: Controls Group */}
-        <div className="flex flex-wrap items-center justify-center sm:justify-end gap-2 sm:gap-6 w-full sm:w-auto">
+        <div className="flex flex-wrap items-center justify-center sm:justify-end gap-3 sm:gap-8 w-full sm:w-auto">
           {/* Rows Per Page Selector */}
-          <div className="flex items-center gap-2 group">
-            <Layers className="h-3.5 w-3.5 text-muted-foreground opacity-50 group-hover:text-primary transition-colors" />
-            <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider hidden lg:inline">
-              {labels?.rowsPerPage ?? "Lignes"}
-            </span>
+          <div className="flex items-center gap-2.5 group">
+            <div className="flex flex-col items-end gap-0.5">
+              <span className="text-[10px] font-bold text-muted-foreground/40 uppercase tracking-[0.2em] leading-none hidden lg:inline">
+                Affichage
+              </span>
+              <span className="text-[11px] font-bold text-muted-foreground hidden lg:inline">
+                {labels?.rowsPerPage ?? "Lignes"}
+              </span>
+            </div>
             <Select
               value={`${perPage}`}
               onValueChange={(value) => setPerPage(Number(value))}
             >
               <SelectTrigger
                 className={cn(
-                  "h-8 w-[75px] border-border/40 bg-muted/20 text-xs font-bold rounded-lg",
-                  "focus:ring-2 focus:ring-primary/10 transition-all hover:bg-muted/40",
+                  "h-9 w-[85px] border-border/20 bg-muted/30 text-xs font-bold rounded-xl transition-all hover:bg-muted/50 hover:border-border/40 focus:ring-4 focus:ring-primary/5",
                 )}
               >
                 <SelectValue placeholder={perPage} />
               </SelectTrigger>
               <SelectContent
                 side="top"
-                align="center"
-                className="rounded-xl border-border/40 shadow-xl"
+                align="end"
+                className="rounded-2xl border-border/40 shadow-2xl backdrop-blur-xl bg-background/95"
               >
                 {pageSizeOptions.map((pageSize) => (
                   <SelectItem
                     key={pageSize}
                     value={`${pageSize}`}
-                    className="text-xs font-semibold focus:bg-primary/5 focus:text-primary rounded-md m-1"
-                                    >
-                                      {pageSize} lignes
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </div>
-                  
-                            <Separator orientation="vertical" className="h-6 hidden md:block opacity-30" />
-                  
-                            {/* Pagination Cluster */}
-                            <div className="flex items-center gap-1.5 p-1 bg-muted/20 rounded-xl border border-border/30">
-                              {/* First Page */}
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="hidden h-8 w-8 rounded-lg lg:flex hover:bg-background hover:text-primary hover:shadow-sm disabled:opacity-20"
-                                    onClick={() => setPage(1)}
-                                    disabled={!canGoFirst || loading}
-                                  >
-                                    <ChevronsLeft className="h-4 w-4" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent side="top" className="font-bold text-[10px]">{labels?.firstPageAria ?? "Début"}</TooltipContent>
-                              </Tooltip>
-                  
-                              {/* Previous Page */}
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8 rounded-lg hover:bg-background hover:text-primary hover:shadow-sm disabled:opacity-20"
-                                    onClick={() => setPage(page - 1)}
-                                    disabled={!canGoPrevious || loading}
-                                  >
-                                    <ChevronLeft className="h-4 w-4" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent side="top" className="font-bold text-[10px]">{labels?.previousPageAria ?? "Précédent"}</TooltipContent>
-                              </Tooltip>
-                  
-                              {/* Middle Indicator with Quick Jump */}
-                              <div className="flex items-center px-3 gap-2 min-w-[100px] justify-center">
-                                 {!isJumping ? (
-                                   <div 
-                                     className="flex items-center gap-1 cursor-pointer hover:bg-background/50 px-2 py-0.5 rounded-md transition-colors"
-                                     onClick={() => totalKnown && setIsQuickJumpOpen(true)}
-                                   >
-                                      <span className="text-xs font-extrabold text-foreground tracking-tighter">
-                                        {totalKnown 
-                                          ? (labels?.pageStatus?.(page, totalPages) ?? `${page} / ${totalPages}`)
-                                          : `Page ${page}`}
-                                      </span>
-                                   </div>
-                                 ) : (
-                                   <div className="flex items-center gap-1 animate-in zoom-in-95 duration-200">
-                                      <Input
-                                        autoFocus
-                                        value={pageInput}
-                                        onChange={(e) => setPageInput(e.target.value)}
-                                        onBlur={() => {
-                                          commitPageInput();
-                                          setIsQuickJumpOpen(false);
-                                        }}
-                                        onKeyDown={(e) => {
-                                          if (e.key === "Enter") {
-                                            commitPageInput();
-                                            setIsQuickJumpOpen(false);
-                                          }
-                                          if (e.key === "Escape") {
-                                            setPageInput(String(page));
-                                            setIsQuickJumpOpen(false);
-                                          }
-                                        }}
-                                        className="h-7 w-12 text-xs font-bold text-center p-0 border-primary/30 focus-visible:ring-primary/20"
-                                      />
-                                      <Button 
-                                        size="icon" 
-                                        variant="ghost" 
-                                        className="h-7 w-7 text-primary"
-                                        onClick={() => {
-                                          commitPageInput();
-                                          setIsQuickJumpOpen(false);
-                                        }}
-                                      >
-                                        <ArrowRight className="h-3 w-3" />
-                                      </Button>
-                                   </div>
-                                 )}
-                              </div>
-                  
-                              {/* Next Page */}
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-8 w-8 rounded-lg hover:bg-background hover:text-primary hover:shadow-sm disabled:opacity-20"
-                                    onClick={() => setPage(page + 1)}
-                                    disabled={!canGoNext || loading}
-                                  >
-                                    <ChevronRight className="h-4 w-4" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent side="top" className="font-bold text-[10px]">{labels?.nextPageAria ?? "Suivant"}</TooltipContent>
-                              </Tooltip>
-                  
-                              {/* Last Page */}
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="hidden h-8 w-8 rounded-lg lg:flex hover:bg-background hover:text-primary hover:shadow-sm disabled:opacity-20"
-                                    onClick={() => setPage(numPages || 1)}
-                                    disabled={!canGoLast || loading}
-                                  >
-                                    <ChevronsRight className="h-4 w-4" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent side="top" className="font-bold text-[10px]">{labels?.lastPageAria ?? "Fin"}</TooltipContent>
-                              </Tooltip>
-                            </div>
-                            
-                            {/* Quick Jump Info - Desktop Only */}
-                            <div className="hidden xl:flex items-center gap-1 text-[10px] font-bold text-muted-foreground/40 uppercase tracking-widest pointer-events-none">
-                               <Hash className="h-3 w-3" />
-                               <span>Aller à la page</span>
-                            </div>
+                    className="text-xs font-semibold focus:bg-primary focus:text-primary-foreground rounded-lg m-1 transition-colors"
+                  >
+                    {pageSize} lignes
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          <div className="h-8 w-px bg-border/20 hidden md:block" />
+
+          {/* Pagination Cluster */}
+          <div className="flex items-center gap-2 p-1.5 bg-muted/30 rounded-2xl border border-border/20 shadow-inner">
+            {/* First Page */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="hidden h-9 w-9 rounded-xl lg:flex hover:bg-background hover:text-primary hover:shadow-md disabled:opacity-20 transition-all active:scale-90"
+                  onClick={() => setPage(1)}
+                  disabled={!canGoFirst || loading}
+                >
+                  <ChevronsLeft className="h-4.5 w-4.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent
+                side="top"
+                className="font-bold text-[10px] uppercase tracking-widest"
+              >
+                Premier
+              </TooltipContent>
+            </Tooltip>
+
+            {/* Previous Page */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 rounded-xl hover:bg-background hover:text-primary hover:shadow-md disabled:opacity-20 transition-all active:scale-90"
+                  onClick={() => setPage(page - 1)}
+                  disabled={!canGoPrevious || loading}
+                >
+                  <ChevronLeft className="h-4.5 w-4.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent
+                side="top"
+                className="font-bold text-[10px] uppercase tracking-widest"
+              >
+                Précédent
+              </TooltipContent>
+            </Tooltip>
+
+            {/* Middle Indicator with Quick Jump */}
+            <div className="flex items-center px-4 gap-2 min-w-[120px] justify-center">
+              {!isJumping ? (
+                <button
+                  className="group/jump flex flex-col items-center gap-0 cursor-pointer hover:scale-105 transition-all active:scale-95"
+                  onClick={() => totalKnown && setIsQuickJumpOpen(true)}
+                >
+                  <span className="text-[9px] font-bold text-muted-foreground/40 uppercase tracking-[0.2em] leading-none group-hover/jump:text-primary/60 transition-colors">
+                    Page
+                  </span>
+                  <span className="text-sm font-black text-foreground tracking-tighter group-hover/jump:text-primary transition-colors">
+                    {totalKnown
+                      ? (labels?.pageStatus?.(page, totalPages) ??
+                        `${page} / ${totalPages}`)
+                      : page}
+                  </span>
+                </button>
+              ) : (
+                <div className="flex items-center gap-1.5 animate-in zoom-in-95 duration-200">
+                  <Input
+                    autoFocus
+                    value={pageInput}
+                    onChange={(e) => setPageInput(e.target.value)}
+                    onBlur={() => {
+                      commitPageInput();
+                      setIsQuickJumpOpen(false);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        commitPageInput();
+                        setIsQuickJumpOpen(false);
+                      }
+                      if (e.key === "Escape") {
+                        setPageInput(String(page));
+                        setIsQuickJumpOpen(false);
+                      }
+                    }}
+                    className="h-8 w-14 text-xs font-black text-center p-0 border-primary/30 bg-background/50 focus-visible:ring-primary/20 rounded-lg"
+                  />
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className="h-8 w-8 text-primary bg-primary/5 rounded-lg"
+                    onClick={() => {
+                      commitPageInput();
+                      setIsQuickJumpOpen(false);
+                    }}
+                  >
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              )}
+            </div>
+
+            {/* Next Page */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-9 w-9 rounded-xl hover:bg-background hover:text-primary hover:shadow-md disabled:opacity-20 transition-all active:scale-90"
+                  onClick={() => setPage(page + 1)}
+                  disabled={!canGoNext || loading}
+                >
+                  <ChevronRight className="h-4.5 w-4.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent
+                side="top"
+                className="font-bold text-[10px] uppercase tracking-widest"
+              >
+                Suivant
+              </TooltipContent>
+            </Tooltip>
+
+            {/* Last Page */}
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="hidden h-9 w-9 rounded-xl lg:flex hover:bg-background hover:text-primary hover:shadow-md disabled:opacity-20 transition-all active:scale-90"
+                  onClick={() => setPage(numPages || 1)}
+                  disabled={!canGoLast || loading}
+                >
+                  <ChevronsRight className="h-4.5 w-4.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent
+                side="top"
+                className="font-bold text-[10px] uppercase tracking-widest"
+              >
+                Dernier
+              </TooltipContent>
+            </Tooltip>
+          </div>
         </div>
       </div>
     </TooltipProvider>

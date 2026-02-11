@@ -226,6 +226,35 @@ export interface FilterCondition {
   relationOperator?: string;  // For M2M: "_some", "_every", "_none"
 }
 
+export type RelationFunctionMode =
+  | "some"
+  | "none"
+  | "every"
+  | "count"
+  | "agg";
+
+export type RelationAggFunction =
+  | "sum"
+  | "avg"
+  | "min"
+  | "max"
+  | "count"
+  | "countDistinct";
+
+/**
+ * First-class relation function filter stored in canonical filter state.
+ */
+export interface RelationFunctionFilter {
+  id: string;
+  relationName: string;
+  relationPath?: string[];
+  mode: RelationFunctionMode;
+  operator: string;
+  value?: unknown;
+  fieldName?: string;
+  aggFunction?: RelationAggFunction;
+}
+
 /**
  * Logical group (AND/OR) containing conditions or nested groups.
  */
@@ -245,6 +274,7 @@ export interface FilterFormState {
   selectedPresets: string[];
   distinctOn: string[];
   orderBy: string[];
+  relationFunctions: RelationFunctionFilter[];
 }
 
 /**

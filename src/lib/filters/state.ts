@@ -19,6 +19,7 @@ export function createInitialFilterState(): FilterFormState {
     selectedPresets: [],
     distinctOn: [],
     orderBy: [],
+    relationFunctions: [],
   };
 }
 

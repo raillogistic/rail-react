@@ -4,27 +4,36 @@
  * Builds complete GraphQL query variables from filter UI state.
  */
 
-import type { FilterGroup, UnifiedFilterSchema, FilterQueryVariables } from "./types";
+import type {
+  FilterFormState,
+  FilterGroup,
+  RelationFunctionFilter,
+  UnifiedFilterSchema,
+  FilterQueryVariables,
+} from "./types";
 import { serializeFilterToGraphQL } from "./serializer";
+import { buildRelationFunctionClauses, mergeWhereClauses } from "./engine";
 
 export interface QueryBuilderOptions {
   /** Current filter state */
   filterState: FilterGroup;
   /** Unified schema */
-  schema: UnifiedFilterSchema;
+  schema?: UnifiedFilterSchema | null;
   /** Selected preset names (for presets argument) */
   selectedPresets: string[];
   /** Selected distinct fields */
   distinctOn: string[];
   /** Order by fields */
   orderBy: string[];
+  /** First-class relation function filters */
+  relationFunctions?: RelationFunctionFilter[];
   /** Pagination */
   pagination?: {
     limit?: number;
     offset?: number;
   };
   /** Max nesting depth */
-  maxDepth: number;
+  maxDepth?: number;
 }
 
 /**
@@ -37,57 +46,64 @@ export function buildQueryVariables(options: QueryBuilderOptions): FilterQueryVa
     selectedPresets,
     distinctOn,
     orderBy,
+    relationFunctions,
     pagination,
     maxDepth,
   } = options;
 
   const variables: FilterQueryVariables = {};
+  const whereClauses: Array<Record<string, unknown> | undefined> = [];
 
   // Build where clause from filter state
-  const where = serializeFilterToGraphQL(filterState, schema, maxDepth);
+  const where = serializeFilterToGraphQL(
+    filterState,
+    schema ?? undefined,
+    maxDepth ?? 3,
+  );
   if (Object.keys(where).length > 0) {
-    variables.where = where;
+    whereClauses.push(where);
   }
 
-  // Add static preset names (not saved filter IDs)
-  const staticPresets = selectedPresets.filter((p) => {
-    const preset = schema.presets.find((pr) => pr.id === p || pr.name === p);
-    return preset?.source === "static";
-  });
-  if (staticPresets.length > 0) {
-    variables.presets = staticPresets.map((p) => {
-      // Use name for static presets
-      const preset = schema.presets.find((pr) => pr.id === p || pr.name === p);
-      return preset?.name ?? p;
-    });
-  }
+  // Add relation function clauses to where
+  const relationClauses = buildRelationFunctionClauses(relationFunctions);
+  relationClauses.forEach((entry) => whereClauses.push(entry));
 
-  // Add saved filter where clauses to main where (merged)
-  const savedPresets = selectedPresets.filter((p) => {
-    const preset = schema.presets.find((pr) => pr.id === p);
-    return preset?.source === "saved" || preset?.source === "shared";
-  });
-  if (savedPresets.length > 0) {
-    // Merge saved filter conditions into where
-    const savedConditions = savedPresets
-      .map((presetId) => {
-        const preset = schema.presets.find((pr) => pr.id === presetId);
-        return preset?.filterJson;
-      })
-      .filter(Boolean);
+  // Add preset clauses
+  if (schema) {
+    const staticPresetNames: string[] = [];
+    const savedPresetConditions: Record<string, unknown>[] = [];
 
-    if (savedConditions.length > 0) {
-      if (variables.where) {
-        // Combine with AND
-        variables.where = {
-          AND: [variables.where, ...savedConditions],
-        };
-      } else if (savedConditions.length === 1) {
-        variables.where = savedConditions[0];
-      } else {
-        variables.where = { AND: savedConditions };
+    selectedPresets.forEach((presetId) => {
+      const preset = schema.presets.find(
+        (entry) => entry.id === presetId || entry.name === presetId,
+      );
+      if (!preset) {
+        staticPresetNames.push(presetId);
+        return;
       }
+
+      if (preset.source === "static") {
+        staticPresetNames.push(preset.name);
+        return;
+      }
+
+      if (preset.filterJson && typeof preset.filterJson === "object") {
+        savedPresetConditions.push(preset.filterJson as Record<string, unknown>);
+      }
+    });
+
+    if (staticPresetNames.length > 0) {
+      variables.presets = staticPresetNames;
     }
+    savedPresetConditions.forEach((entry) => whereClauses.push(entry));
+  } else if (selectedPresets.length > 0) {
+    // Without schema context we preserve IDs/names as-is.
+    variables.presets = [...selectedPresets];
+  }
+
+  const mergedWhere = mergeWhereClauses(whereClauses);
+  if (mergedWhere) {
+    variables.where = mergedWhere;
   }
 
   // Add distinct on (with orderBy validation/auto-adjustment)
@@ -109,6 +125,26 @@ export function buildQueryVariables(options: QueryBuilderOptions): FilterQueryVa
   }
 
   return variables;
+}
+
+export function buildQueryVariablesFromState(
+  state: FilterFormState,
+  options: {
+    schema?: UnifiedFilterSchema | null;
+    maxDepth?: number;
+    pagination?: { limit?: number; offset?: number };
+  } = {},
+): FilterQueryVariables {
+  return buildQueryVariables({
+    filterState: state.root,
+    schema: options.schema,
+    selectedPresets: state.selectedPresets,
+    distinctOn: state.distinctOn,
+    orderBy: state.orderBy,
+    relationFunctions: state.relationFunctions ?? [],
+    maxDepth: options.maxDepth,
+    pagination: options.pagination,
+  });
 }
 
 /**

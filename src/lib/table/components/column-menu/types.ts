@@ -1,4 +1,5 @@
 import type { FilterSchema } from "../../types";
+import type { FilterFormState } from "../../../filters/types";
 
 export type RelationFunctionMode = "some" | "none" | "every" | "count" | "agg";
 
@@ -23,20 +24,9 @@ export type RelationFilterDialogProps = {
   metadataFilters: FilterSchema[];
   relationBaseName: string;
   relationFunctionKeys: RelationFunctionKeys;
-  filterVariables: Record<string, unknown> | undefined;
-  advancedFilters: {
-    where?: unknown;
-    orderBy: string[];
-    presets: string[];
-    distinctOn: string[];
-  };
+  advancedFilters: FilterFormState;
   setAdvancedFilters: (
-    filters: {
-      where?: unknown;
-      orderBy: string[];
-      presets: string[];
-      distinctOn: string[];
-    },
+    filters: FilterFormState,
     variables?: Record<string, unknown>,
   ) => void;
 };

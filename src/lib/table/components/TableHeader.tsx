@@ -52,37 +52,35 @@ function DraggableHead({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "group/col sticky top-0 z-20 whitespace-nowrap",
-        "border-b border-border",
-        "bg-background/95 backdrop-blur-sm text-left font-semibold text-muted-foreground",
-        "transition-colors duration-150",
-        // Colored accent line on top
-        "before:absolute before:left-0 before:top-0 before:h-[2px] before:w-full before:bg-primary/0 before:transition-colors hover:before:bg-primary",
+        "group/col sticky top-0 z-20 whitespace-nowrap overflow-visible",
+        "border-b border-border/40",
+        "bg-background/80 backdrop-blur-md text-left",
+        "transition-all duration-300",
+        // Colored accent line on bottom
+        "after:absolute after:left-0 after:bottom-[-1px] after:h-[2px] after:w-0 after:bg-primary after:transition-all hover:after:w-full",
         density === "compact"
-          ? "h-8 p-0 text-xs"
+          ? "h-9 p-0 text-[11px] font-bold uppercase tracking-wider"
           : density === "spacious"
-            ? "h-12 p-0 text-sm"
-            : "h-10 p-0 text-sm",
-        isDragging && "opacity-50 scale-[1.02] shadow-lg z-30 ring-1 ring-primary/20",
-        "hover:bg-muted/60 hover:text-foreground",
-        isActions && "bg-muted/60 backdrop-blur-sm",
+            ? "h-14 p-0 text-[14px] font-semibold"
+            : "h-11 p-0 text-[13px] font-semibold",
+        isDragging &&
+          "opacity-30 scale-95 shadow-2xl z-30 ring-2 ring-primary/20 bg-muted",
+        "hover:bg-muted/40 hover:text-foreground text-muted-foreground/80",
+        isActions &&
+          "bg-muted/30 font-bold text-[10px] uppercase tracking-widest",
         className,
       )}
       aria-sort={ariaSort}
     >
-      <div
-        className={cn(
-          "flex items-stretch gap-0 h-full",
-        )}
-      >
+      <div className="flex items-stretch gap-0 h-full w-full">
         {draggable ? (
           <button
             type="button"
             aria-label="Reordonner la colonne"
             className={cn(
-              "h-full px-2 border-r border-border/60",
-              "text-muted-foreground hover:text-foreground hover:bg-accent/60",
-              "cursor-grab active:cursor-grabbing",
+              "h-full px-2.5 border-r border-border/20",
+              "text-muted-foreground/40 hover:text-primary hover:bg-primary/5",
+              "cursor-grab active:cursor-grabbing transition-all",
               "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50",
             )}
             {...attributes}
@@ -92,7 +90,7 @@ function DraggableHead({
             <GripVertical className="h-3.5 w-3.5" />
           </button>
         ) : null}
-        <div className="flex items-stretch gap-0 flex-1 min-w-0 h-full">
+        <div className="flex items-stretch gap-0 flex-1 min-w-0 h-full group/title">
           {children}
         </div>
       </div>
@@ -169,19 +167,19 @@ export function TableHeader({
   if (!metadata && !columns) return null;
 
   return (
-    <ShadcnTableHeader className="bg-muted/40">
-      <TableRow className="border-b-0 hover:bg-transparent">
+    <ShadcnTableHeader className="bg-muted/5 group/header">
+      <TableRow className="border-b-0 hover:bg-transparent transition-none">
         {enableSelection ? (
           <TableHead
             className={cn(
-              "w-[40px] table-first-column sticky top-0 z-20",
-              "border-b border-border bg-background/95 backdrop-blur-sm",
-              "transition-colors duration-150",
+              "w-[46px] table-first-column sticky top-0 z-20 overflow-visible",
+              "border-b border-border/40 bg-background/80 backdrop-blur-md",
+              "transition-colors duration-200",
               density === "compact"
-                ? "py-0 px-2 h-8"
+                ? "py-0 px-2 h-9"
                 : density === "spacious"
-                  ? "py-0 px-3 h-12"
-                  : "py-0 px-2.5 h-10",
+                  ? "py-0 px-3.5 h-14"
+                  : "py-0 px-3 h-11",
             )}
           >
             <div className="flex items-center justify-center h-full">
@@ -191,7 +189,7 @@ export function TableHeader({
                 }
                 onCheckedChange={toggleSelectAll}
                 aria-label="Tout sélectionner"
-                className="transition-all duration-200 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                className="h-4.5 w-4.5 transition-all duration-300 data-[state=checked]:bg-primary data-[state=checked]:scale-110 data-[state=checked]:shadow-lg data-[state=checked]:shadow-primary/20"
               />
             </div>
           </TableHead>
@@ -201,12 +199,14 @@ export function TableHeader({
           if (!field) return null;
 
           if ("accessor" in field) {
-             // Custom column def
+            // Custom column def
             return (
               <DraggableHead
                 key={field.id}
                 id={field.id}
-                draggable={allowDrag && dragModeEnabled && !locked.has(field.id)}
+                draggable={
+                  allowDrag && dragModeEnabled && !locked.has(field.id)
+                }
                 density={density}
               >
                 <div className="flex h-full w-full items-stretch self-stretch">
@@ -226,12 +226,14 @@ export function TableHeader({
 
           // Metadata field
           return (
-              <DraggableHead
-                key={field.name}
-                id={field.name}
-                draggable={allowDrag && dragModeEnabled && !locked.has(field.name)}
-                density={density}
-              >
+            <DraggableHead
+              key={field.name}
+              id={field.name}
+              draggable={
+                allowDrag && dragModeEnabled && !locked.has(field.name)
+              }
+              density={density}
+            >
               <div className="flex h-full w-full items-stretch self-stretch">
                 <div className="min-w-0 flex-1 h-full">
                   <TableColumnMenu
@@ -252,11 +254,13 @@ export function TableHeader({
         <DraggableHead
           id="actions"
           draggable={false}
-          className="w-[60px] text-right sticky right-0 z-30 table-last-column"
+          className="w-[70px] text-right sticky right-0 z-30 table-last-column border-l border-border/20 shadow-[-12px_0_15px_-10px_rgba(0,0,0,0.05)]"
           density={density}
           isActions
         >
-          <span className="block w-full pr-2">{actionsLabel ?? ""}</span>
+          <span className="block w-full pr-4 text-[10px] font-bold uppercase tracking-[0.15em] opacity-60">
+            {actionsLabel ?? ""}
+          </span>
         </DraggableHead>
       </TableRow>
     </ShadcnTableHeader>

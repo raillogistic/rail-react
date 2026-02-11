@@ -20,8 +20,18 @@ export type {
   FilterCondition,
   FilterGroup,
   FilterFormState,
+  RelationFunctionMode,
+  RelationAggFunction,
+  RelationFunctionFilter,
   NestedFilterConfig,
   FilterQueryVariables,
 } from "./types";
 
 export { DEFAULT_NESTED_CONFIG } from "./types";
+export {
+  getActiveFilterStats,
+  normalizeFilterFormState,
+  migrateLegacyRelationState,
+  hasLegacyRelationVariables,
+} from "./engine";
+export { buildQueryVariablesFromState } from "./queryBuilder";
