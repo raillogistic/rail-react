@@ -1,5 +1,5 @@
 import React from "react";
-import { act, renderHook, waitFor } from "@testing-library/react";
+import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { TableProvider } from "../../context/TableContext";
 import { useTableFilters } from "../useTableFilters";
@@ -82,46 +82,6 @@ describe("useTableFilters", () => {
       operator: "eq",
       value: "PAID",
     });
-  });
-
-  it("migrates legacy header relation keys into canonical relationFunctions", async () => {
-    const wrapper = ({ children }: { children: React.ReactNode }) => (
-      <TableProvider
-        initialState={{
-          advancedFilters: makeState(),
-          filterVariables: {
-            __headerRelationFilters: {
-              itemsCount: {
-                itemsCount: { gte: 2 },
-              },
-            },
-            __baseWhere: {},
-            where: {
-              itemsCount: { gte: 2 },
-            },
-          },
-        }}
-      >
-        {children}
-      </TableProvider>
-    );
-
-    const { result } = renderHook(() => useTableFilters(), { wrapper });
-
-    await waitFor(() => {
-      expect(result.current.advancedFilters.relationFunctions).toHaveLength(1);
-    });
-
-    expect(result.current.advancedFilters.relationFunctions[0]).toMatchObject({
-      relationName: "items",
-      mode: "count",
-      operator: "gte",
-      value: 2,
-    });
-    expect(result.current.filterVariables).toBeDefined();
-    const variables = result.current.filterVariables as Record<string, unknown>;
-    expect(variables.__headerRelationFilters).toBeUndefined();
-    expect(variables.__baseWhere).toBeUndefined();
   });
 
   it("clears root, presets and relation functions with one reset action", () => {

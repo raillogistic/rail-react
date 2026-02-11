@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { useTable } from "../context/TableContext";
 import {
   FilterFormState,
@@ -14,8 +14,6 @@ import {
 import { buildQueryVariablesFromState } from "../../filters/queryBuilder";
 import {
   getActiveFilterStats,
-  hasLegacyRelationVariables,
-  migrateLegacyRelationState,
   normalizeFilterFormState,
   removeRelationFunctionsByRelation,
   upsertRelationFunction,
@@ -64,60 +62,20 @@ export function useTableFilters() {
     (value: FilterFormState, variables?: Record<string, unknown>) => {
       const normalizedState = normalizeFilterFormState(value);
       const inputVariables = isRecord(variables) ? variables : undefined;
-      const migration = migrateLegacyRelationState({
-        state: normalizedState,
-        variables: inputVariables,
-      });
-      const nextState = migration.state;
 
-      if (inputVariables && !migration.migrated) {
-        setAdvancedFiltersRaw(nextState, inputVariables);
+      if (inputVariables) {
+        setAdvancedFiltersRaw(normalizedState, inputVariables);
         return;
       }
 
-      const nextVariables = buildQueryVariablesFromState(nextState) as Record<
+      const nextVariables = buildQueryVariablesFromState(normalizedState) as Record<
         string,
         unknown
       >;
-      const migratedVariables = migration.variables;
-      if (
-        !nextVariables.where &&
-        migratedVariables &&
-        isRecord(migratedVariables.where)
-      ) {
-        nextVariables.where = migratedVariables.where;
-      }
-      if (
-        !nextVariables.presets &&
-        migratedVariables &&
-        Array.isArray(migratedVariables.presets)
-      ) {
-        nextVariables.presets = migratedVariables.presets;
-      }
-      if (
-        !nextVariables.distinctOn &&
-        migratedVariables &&
-        Array.isArray(migratedVariables.distinctOn)
-      ) {
-        nextVariables.distinctOn = migratedVariables.distinctOn;
-      }
-      if (
-        !nextVariables.orderBy &&
-        migratedVariables &&
-        Array.isArray(migratedVariables.orderBy)
-      ) {
-        nextVariables.orderBy = migratedVariables.orderBy;
-      }
-      setAdvancedFiltersRaw(nextState, nextVariables as Record<string, unknown>);
+      setAdvancedFiltersRaw(normalizedState, nextVariables as Record<string, unknown>);
     },
     [setAdvancedFiltersRaw]
   );
-
-  useEffect(() => {
-    if (!isRecord(filterVariables)) return;
-    if (!hasLegacyRelationVariables(filterVariables)) return;
-    handleAdvancedFiltersChange(advancedFilters, filterVariables);
-  }, [advancedFilters, filterVariables, handleAdvancedFiltersChange]);
 
   const clearAllFilters = useCallback(() => {
     setQuickSearch("");

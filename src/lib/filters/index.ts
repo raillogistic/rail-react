@@ -31,7 +31,5 @@ export { DEFAULT_NESTED_CONFIG } from "./types";
 export {
   getActiveFilterStats,
   normalizeFilterFormState,
-  migrateLegacyRelationState,
-  hasLegacyRelationVariables,
 } from "./engine";
 export { buildQueryVariablesFromState } from "./queryBuilder";

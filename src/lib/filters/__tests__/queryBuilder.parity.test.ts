@@ -3,10 +3,7 @@ import {
   buildQueryVariables,
   buildQueryVariablesFromState,
 } from "../queryBuilder";
-import {
-  getActiveFilterStats,
-  migrateLegacyRelationState,
-} from "../engine";
+import { getActiveFilterStats } from "../engine";
 import type {
   FilterCondition,
   FilterFormState,
@@ -218,44 +215,6 @@ describe("query builder parity", () => {
           },
         },
       ],
-    });
-  });
-
-  it("migrates legacy relation fragments and strips legacy keys", () => {
-    const legacyVariables: Record<string, unknown> = {
-      __headerRelationFilters: {
-        itemsCount: {
-          itemsCount: { gte: 3 },
-        },
-      },
-      __baseWhere: {
-        status: { eq: "PAID" },
-      },
-      where: {
-        AND: [{ status: { eq: "PAID" } }, { itemsCount: { gte: 3 } }],
-      },
-    };
-
-    const migration = migrateLegacyRelationState({
-      state: makeState([]),
-      variables: legacyVariables,
-    });
-
-    expect(migration.migrated).toBe(true);
-    expect(migration.state.relationFunctions).toEqual([
-      {
-        id: "items:count",
-        relationName: "items",
-        relationPath: ["items"],
-        mode: "count",
-        operator: "gte",
-        value: 3,
-      },
-    ]);
-    expect(migration.variables).toEqual({
-      where: {
-        AND: [{ status: { eq: "PAID" } }, { itemsCount: { gte: 3 } }],
-      },
     });
   });
 

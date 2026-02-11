@@ -1,13 +1,9 @@
 import { getTreeStats } from "./tree/operations";
 import type {
   FilterFormState,
-  RelationAggFunction,
   RelationFunctionFilter,
   RelationFunctionMode,
 } from "./types";
-
-export const LEGACY_HEADER_RELATION_FILTERS_KEY = "__headerRelationFilters";
-export const LEGACY_HEADER_BASE_WHERE_KEY = "__baseWhere";
 
 const MODE_SUFFIX: Record<RelationFunctionMode, string> = {
   some: "Some",
@@ -16,20 +12,6 @@ const MODE_SUFFIX: Record<RelationFunctionMode, string> = {
   count: "Count",
   agg: "Agg",
 };
-
-const SUFFIX_MODE: Array<[string, RelationFunctionMode]> = [
-  ["Some", "some"],
-  ["None", "none"],
-  ["Every", "every"],
-  ["Count", "count"],
-  ["Agg", "agg"],
-];
-
-type UnknownRecord = Record<string, unknown>;
-
-function isRecord(value: unknown): value is UnknownRecord {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
 
 export function hasMeaningfulValue(value: unknown): boolean {
   if (value === undefined || value === null || value === "") return false;
@@ -173,169 +155,6 @@ export function removeRelationFunctionsByRelation(
         : [entry.relationName];
     return path[path.length - 1] !== relationName;
   });
-}
-
-function parseModeFromLegacyKey(
-  key: string,
-): { relationName: string; mode: RelationFunctionMode } | null {
-  for (const [suffix, mode] of SUFFIX_MODE) {
-    if (!key.endsWith(suffix)) continue;
-    const relationName = key.slice(0, -suffix.length);
-    if (!relationName) return null;
-    return { relationName, mode };
-  }
-  return null;
-}
-
-function parseLegacyAggFunction(payload: UnknownRecord): {
-  aggFunction: RelationAggFunction;
-  operator: string;
-  value: unknown;
-} | null {
-  const entries = Object.entries(payload).filter(([key]) => key !== "field");
-  for (const [aggFunction, rawCondition] of entries) {
-    if (!isRecord(rawCondition)) continue;
-    const [operator, value] = Object.entries(rawCondition)[0] ?? [];
-    if (!operator) continue;
-    return {
-      aggFunction: aggFunction as RelationAggFunction,
-      operator,
-      value,
-    };
-  }
-  return null;
-}
-
-function parseLegacyRelationFunctionEntry(
-  legacyKey: string,
-  fragment: unknown,
-): RelationFunctionFilter | null {
-  const parsedKey = parseModeFromLegacyKey(legacyKey);
-  if (!parsedKey) return null;
-  if (!isRecord(fragment)) return null;
-  const payload = isRecord(fragment[legacyKey])
-    ? (fragment[legacyKey] as UnknownRecord)
-    : fragment;
-
-  if (parsedKey.mode === "count") {
-    const [operator, value] = Object.entries(payload)[0] ?? [];
-    if (!operator) return null;
-    return {
-      id: `${parsedKey.relationName}:count`,
-      relationName: parsedKey.relationName,
-      relationPath: [parsedKey.relationName],
-      mode: "count",
-      operator,
-      value,
-    };
-  }
-
-  if (parsedKey.mode === "agg") {
-    const fieldName =
-      typeof payload.field === "string" && payload.field.trim().length > 0
-        ? payload.field
-        : undefined;
-    if (!fieldName) return null;
-    const agg = parseLegacyAggFunction(payload);
-    if (!agg) return null;
-    return {
-      id: `${parsedKey.relationName}:agg`,
-      relationName: parsedKey.relationName,
-      relationPath: [parsedKey.relationName],
-      mode: "agg",
-      fieldName,
-      aggFunction: agg.aggFunction,
-      operator: agg.operator,
-      value: agg.value,
-    };
-  }
-
-  const [fieldName, rawCondition] = Object.entries(payload)[0] ?? [];
-  if (!fieldName || !isRecord(rawCondition)) return null;
-  const [operator, value] = Object.entries(rawCondition)[0] ?? [];
-  if (!operator) return null;
-  return {
-    id: `${parsedKey.relationName}:${parsedKey.mode}`,
-    relationName: parsedKey.relationName,
-    relationPath: [parsedKey.relationName],
-    mode: parsedKey.mode,
-    fieldName,
-    operator,
-    value,
-  };
-}
-
-export function extractLegacyRelationFunctions(
-  variables: Record<string, unknown> | undefined,
-): RelationFunctionFilter[] {
-  if (!variables) return [];
-  const legacy = variables[LEGACY_HEADER_RELATION_FILTERS_KEY];
-  if (!isRecord(legacy)) return [];
-  const parsed = Object.entries(legacy)
-    .map(([key, fragment]) => parseLegacyRelationFunctionEntry(key, fragment))
-    .filter((entry): entry is RelationFunctionFilter => !!entry);
-
-  if (parsed.length === 0) return [];
-  return parsed.reduce<RelationFunctionFilter[]>(
-    (acc, entry) => upsertRelationFunction(acc, entry),
-    [],
-  );
-}
-
-export function hasLegacyRelationVariables(
-  variables: Record<string, unknown> | undefined,
-): boolean {
-  if (!variables) return false;
-  if (LEGACY_HEADER_RELATION_FILTERS_KEY in variables) return true;
-  if (LEGACY_HEADER_BASE_WHERE_KEY in variables) return true;
-  return false;
-}
-
-export function stripLegacyRelationVariables(
-  variables: Record<string, unknown> | undefined,
-): Record<string, unknown> | undefined {
-  if (!variables) return undefined;
-  if (!hasLegacyRelationVariables(variables)) return variables;
-  const nextVariables = { ...variables };
-  delete nextVariables[LEGACY_HEADER_RELATION_FILTERS_KEY];
-  delete nextVariables[LEGACY_HEADER_BASE_WHERE_KEY];
-  return nextVariables;
-}
-
-export function migrateLegacyRelationState(options: {
-  state: FilterFormState;
-  variables?: Record<string, unknown>;
-}): {
-  state: FilterFormState;
-  variables?: Record<string, unknown>;
-  migrated: boolean;
-} {
-  const { state, variables } = options;
-  const legacyRelations = extractLegacyRelationFunctions(variables);
-  const cleanedVariables = stripLegacyRelationVariables(variables);
-
-  if (legacyRelations.length === 0) {
-    return {
-      state,
-      variables: cleanedVariables,
-      migrated: cleanedVariables !== variables,
-    };
-  }
-
-  const current = state.relationFunctions ?? [];
-  const merged = legacyRelations.reduce<RelationFunctionFilter[]>(
-    (acc, entry) => upsertRelationFunction(acc, entry),
-    current,
-  );
-
-  return {
-    state: {
-      ...state,
-      relationFunctions: merged,
-    },
-    variables: cleanedVariables,
-    migrated: true,
-  };
 }
 
 export interface ActiveFilterStats {
