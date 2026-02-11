@@ -229,8 +229,8 @@ export function build_method_mutation(
   methodName: string,
   options: MethodMutationBuilderOptions = {},
 ): string {
-  const baseField = toOperationField(modelName);
-  const method = toPascalCase(methodName);
+  const modelToken = toPascalCase(modelName);
+  const methodToken = toOperationField(methodName);
   const includeInput = options.include_input === true;
   const inputType =
     options.input_type_name ||
@@ -238,8 +238,9 @@ export function build_method_mutation(
   const resultBlock = options.result_selection
     ? `result { ${options.result_selection} }`
     : `result`;
-  const fieldName = options.field_name || `${baseField}${method}`;
-  const operation = fieldName || `${baseField}${method}`;
+  const defaultFieldName = `${methodToken}${modelToken}`;
+  const fieldName = options.field_name || defaultFieldName;
+  const operation = fieldName || defaultFieldName;
 
   const varDefs = includeInput ? `($id: ID!, $input: ${inputType}!)` : `($id: ID!)`;
   const argDefs = includeInput ? `(id: $id, input: $input)` : `(id: $id)`;

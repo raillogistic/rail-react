@@ -17,6 +17,7 @@ export function BaseModelTable({
   fields,
   relations,
   relationStats,
+  queryManager,
   columnOrdering,
   skipCount,
   disableSorting,
@@ -43,6 +44,7 @@ export function BaseModelTable({
             fields={fields}
             relations={relations}
             relationStats={relationStats}
+            queryManager={queryManager}
             columnOrdering={columnOrdering}
             skipCount={skipCount}
             disableSorting={disableSorting}

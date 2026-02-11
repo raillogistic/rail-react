@@ -1,4 +1,5 @@
 import { gql } from "@apollo/client";
+import { buildModelQueryField } from "../../../utils";
 
 const STAT_METRIC_META = [
   { suffix: "DistinctCount", label: "Distinct", order: 5 },
@@ -103,10 +104,11 @@ export function buildStatsQueryDocument(
   relationName: string,
   whereType: string,
   statFieldNames: string[],
+  queryManager?: string,
 ) {
-  const lowerCaseModel = model.charAt(0).toLowerCase() + model.slice(1);
-  const queryName = `${lowerCaseModel}Pages`;
-  const operationName = `${lowerCaseModel}${relationName.replace(/[^a-zA-Z0-9]/g, "")}StatsHover`;
+  const modelToken = buildModelQueryField(model, "single");
+  const queryName = buildModelQueryField(model, "page", queryManager);
+  const operationName = `${modelToken}${relationName.replace(/[^a-zA-Z0-9]/g, "")}StatsHover`;
   const statsFieldName = `${relationName}Stats`;
 
   return gql`

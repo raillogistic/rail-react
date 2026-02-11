@@ -163,7 +163,7 @@ export interface QueryChoiceFieldConfig extends BaseFieldConfig {
   ) => Promise<ChoiceOption[]>;
   /**
    * Convenience shortcut – when defined the component will automatically build
-   * a query like `${relatedModel}s` and use it as the datasource.
+   * a query field like `${relatedModelToken}List` and use it as the datasource.
    */
   relatedModel?: string;
   /**

@@ -6,7 +6,7 @@ import { TableProvider } from '../../context/TableContext';
 import { gql } from '@apollo/client';
 
 const MOCK_DATA_QUERY = gql`
-  query userPages(
+  query userPage(
     $page: Int
     $perPage: Int
     $orderBy: [String]
@@ -16,7 +16,7 @@ const MOCK_DATA_QUERY = gql`
     $distinctOn: [String]
     $skipCount: Boolean
   ) {
-    userPages(
+    userPage(
       page: $page
       perPage: $perPage
       orderBy: $orderBy
@@ -83,7 +83,7 @@ describe('useTableData', () => {
         },
         result: {
           data: {
-            userPages: {
+            userPage: {
               __typename: 'PaginatedUser',
               pageInfo: {
                 __typename: 'PaginationInfo',

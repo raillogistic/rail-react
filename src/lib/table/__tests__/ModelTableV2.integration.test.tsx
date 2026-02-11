@@ -4,6 +4,7 @@ import { ModelTableV2 } from '../index';
 import { GET_MODEL_SCHEMA } from '../queries';
 import { gql } from '@apollo/client';
 import { describe, it, expect, vi } from 'vitest';
+import { MemoryRouter } from 'react-router-dom';
 
 // Mock FilterPanel to avoid extra Apollo queries in tests
 vi.mock('../../form/filters/FilterPanel', () => ({
@@ -206,7 +207,7 @@ const MOCK_METADATA_QUERY = {
 const MOCK_DATA_QUERY = {
   request: {
     query: gql`
-      query userPages(
+      query userPage(
         $page: Int
         $perPage: Int
         $orderBy: [String]
@@ -216,7 +217,7 @@ const MOCK_DATA_QUERY = {
         $distinctOn: [String]
         $skipCount: Boolean
       ) {
-        userPages(
+        userPage(
           page: $page
           perPage: $perPage
           orderBy: $orderBy
@@ -258,7 +259,7 @@ const MOCK_DATA_QUERY = {
   },
   result: {
     data: {
-      userPages: {
+      userPage: {
         __typename: 'PaginatedUser',
         pageInfo: {
           __typename: 'PaginationInfo',
@@ -302,7 +303,9 @@ describe('ModelTableV2 Integration', () => {
   it('should render table with headers based on metadata', async () => {
     render(
       <MockedProvider mocks={[MOCK_METADATA_QUERY, MOCK_DATA_QUERY]}>
-        <ModelTableV2 app="auth" model="User" />
+        <MemoryRouter>
+          <ModelTableV2 app="auth" model="User" />
+        </MemoryRouter>
       </MockedProvider>
     );
 

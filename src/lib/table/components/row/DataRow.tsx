@@ -39,6 +39,7 @@ type DataRowProps = {
   primaryKey: string;
   modelName: string;
   whereType: string;
+  queryManager?: string;
 };
 
 export function DataRow({
@@ -63,6 +64,7 @@ export function DataRow({
   primaryKey,
   modelName,
   whereType,
+  queryManager,
 }: DataRowProps) {
   const rowId = String(row.id);
   const isSelected = enableSelection && rowSelection[rowId];
@@ -147,6 +149,7 @@ export function DataRow({
                     model={modelName}
                     whereType={whereType}
                     relation={statsRelation}
+                    queryManager={queryManager}
                     overrideRenderer={statsOverride}
                   >
                     {renderedValue}
@@ -183,6 +186,7 @@ export function DataRow({
                   model={modelName}
                   whereType={whereType}
                   relation={statsRelation}
+                  queryManager={queryManager}
                   overrideRenderer={statsOverride}
                 >
                   {renderedValue}

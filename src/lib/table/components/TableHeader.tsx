@@ -72,18 +72,15 @@ function DraggableHead({
     >
       <div
         className={cn(
-          "flex items-stretch justify-between gap-0 h-full",
+          "flex items-stretch gap-0 h-full",
         )}
       >
-        <div className="flex items-stretch gap-0 flex-1 min-w-0 h-full">
-          {children}
-        </div>
         {draggable ? (
           <button
             type="button"
             aria-label="Reordonner la colonne"
             className={cn(
-              "h-full px-2 border-l border-border/60",
+              "h-full px-2 border-r border-border/60",
               "text-muted-foreground hover:text-foreground hover:bg-accent/60",
               "cursor-grab active:cursor-grabbing",
               "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50",
@@ -95,6 +92,9 @@ function DraggableHead({
             <GripVertical className="h-3.5 w-3.5" />
           </button>
         ) : null}
+        <div className="flex items-stretch gap-0 flex-1 min-w-0 h-full">
+          {children}
+        </div>
       </div>
     </TableHead>
   );

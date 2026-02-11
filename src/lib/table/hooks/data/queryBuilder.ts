@@ -8,6 +8,7 @@ import type {
   RelationshipSchema,
 } from "../../types";
 import {
+  buildModelQueryField,
   getSyntheticRelationCountSource,
   mergeBaseModelTableFields,
   normalizeBaseModelTableFieldsInput,
@@ -19,6 +20,7 @@ import {
 export type TableDataConfig = {
   fields?: BaseModelTableFieldsInput;
   relations?: Record<string, BaseModelTableRelationConfig>;
+  queryManager?: string;
   skipCount?: boolean;
   dataMode?: "pagination" | "infinite";
   visibleAccessors?: string[];
@@ -33,8 +35,11 @@ export function buildDynamicQuery(
   filterConfig?: FilterConfig,
   fieldConfig?: TableDataConfig,
 ) {
-  const lowerCaseModel = model.charAt(0).toLowerCase() + model.slice(1);
-  const queryName = `${lowerCaseModel}Pages`;
+  const queryName = buildModelQueryField(
+    model,
+    "page",
+    fieldConfig?.queryManager,
+  );
 
   const relationLookup = new Map<string, RelationshipSchema>();
   const relationCanonicalByKey = new Map<string, string>();

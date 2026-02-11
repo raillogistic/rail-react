@@ -9,6 +9,7 @@ import {
   createOrderByNormalizer,
   type TableDataConfig,
 } from "./data";
+import { buildModelQueryField } from "../utils";
 
 export function useTableData(config?: TableDataConfig) {
   const { app, model, metadata } = useMetadata();
@@ -111,8 +112,11 @@ export function useTableData(config?: TableDataConfig) {
 
   useEffect(() => {
     if (data) {
-      const lowerCaseModel = model.charAt(0).toLowerCase() + model.slice(1);
-      const queryName = `${lowerCaseModel}Pages`;
+      const queryName = buildModelQueryField(
+        model,
+        "page",
+        config?.queryManager,
+      );
       const result = data[queryName];
       if (result) {
         const nextItems = Array.isArray(result.items) ? result.items : [];

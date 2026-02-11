@@ -32,6 +32,7 @@ export function TableRows({
   refetch,
   columnActions,
   relationStats,
+  queryManager,
   performance,
   scrollContainerRef,
   infiniteMode,
@@ -43,6 +44,7 @@ export function TableRows({
   refetch?: BaseModelTableRefetch;
   columnActions?: BaseModelTableColumnActionsInput;
   relationStats?: BaseModelTableRelationStatsConfig;
+  queryManager?: string;
   performance?: {
     enableVirtualization?: boolean;
     virtualizeThreshold?: number;
@@ -440,6 +442,7 @@ export function TableRows({
                       primaryKey={primaryKey}
                       modelName={metadata?.model || "Model"}
                       whereType={whereType}
+                      queryManager={queryManager}
                     />
                   ))
                 : null}
@@ -517,6 +520,7 @@ export function TableRows({
           primaryKey={primaryKey}
           modelName={metadata?.model || "Model"}
           whereType={whereType}
+          queryManager={queryManager}
         />
       ))}
       {enableVirtualization && bottomSpacerHeight > 0 ? (

@@ -130,6 +130,7 @@ export interface BaseModelTableProps {
   fields?: BaseModelTableFieldsInput;
   relations?: Record<string, BaseModelTableRelationConfig>;
   relationStats?: BaseModelTableRelationStatsConfig;
+  queryManager?: string;
   columnOrdering?: BaseModelTableColumnOrderingConfig;
   skipCount?: boolean;
   disableSorting?: boolean;

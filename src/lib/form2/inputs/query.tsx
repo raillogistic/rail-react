@@ -890,14 +890,14 @@ function buildGraphQLRecipe(config?: QueryChoiceGraphQLConfig): GraphQLRecipe {
     };
   }
   const normalizedRelatedModel = config.relatedModel
-    ? config.relatedModel.split(".").pop()?.toLowerCase()
+    ? toModelToken(config.relatedModel.split(".").pop() ?? "")
     : undefined;
 
   if (!normalizedRelatedModel) {
     return { document: null };
   }
   const listField =
-    config.listFieldName ?? pluralizeModel(normalizedRelatedModel ?? "");
+    config.listFieldName ?? `${normalizedRelatedModel}List`;
   const searchVariableName =
     config.searchVariableName === undefined
       ? "quick"
@@ -1051,12 +1051,17 @@ function inferPropName(selection: string): string | undefined {
   return clean || undefined;
 }
 
-function pluralizeModel(name: string) {
-  if (!name) return "";
-  // if (name.endsWith("s")) {
-  //   return `${name}es`;
-  // }
-  return `${name}s`;
+function toModelToken(value: string) {
+  const normalized = String(value || "").trim();
+  if (!normalized) return "";
+  const pascal = normalized
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .split(/[^a-zA-Z0-9]+/)
+    .filter(Boolean)
+    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1).toLowerCase())
+    .join("");
+  if (!pascal) return "";
+  return pascal.charAt(0).toLowerCase() + pascal.slice(1);
 }
 
 function toPascalCase(value: string) {

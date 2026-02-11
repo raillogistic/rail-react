@@ -16,6 +16,7 @@ import {
   toLabel,
   type ParsedStatEntry,
 } from "./utils/statsHelpers";
+import { buildModelQueryField } from "../../utils";
 
 export type StatsRelationMeta = {
   relationName: string;
@@ -30,6 +31,7 @@ type RelationStatsHoverProps = {
   model: string;
   whereType: string;
   relation: StatsRelationMeta;
+  queryManager?: string;
   overrideRenderer?: BaseModelTableRelationStatsOverride;
   children: React.ReactNode;
 };
@@ -40,6 +42,7 @@ export function RelationStatsHover({
   model,
   whereType,
   relation,
+  queryManager,
   overrideRenderer,
   children,
 }: RelationStatsHoverProps) {
@@ -128,6 +131,7 @@ export function RelationStatsHover({
         relation.relationName,
         whereType,
         statFieldNames,
+        queryManager,
       );
 
       const whereField = primaryKey;
@@ -144,7 +148,7 @@ export function RelationStatsHover({
         fetchPolicy: "cache-first",
       });
 
-      const listKey = `${model.charAt(0).toLowerCase()}${model.slice(1)}Pages`;
+      const listKey = buildModelQueryField(model, "page", queryManager);
       const statsKey = `${relation.relationName}Stats`;
       const rawStatsObject =
         queryResult.data?.[listKey]?.items?.[0]?.[statsKey] ?? null;
@@ -176,6 +180,7 @@ export function RelationStatsHover({
     rowIdentifier,
     rowIdentifierRaw,
     stats,
+    queryManager,
     whereType,
   ]);
 

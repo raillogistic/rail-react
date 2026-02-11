@@ -55,6 +55,7 @@ type BaseTableContentProps = {
   fields?: BaseModelTableFieldsInput;
   relations?: Record<string, BaseModelTableRelationConfig>;
   relationStats?: BaseModelTableRelationStatsConfig;
+  queryManager?: string;
   columnOrdering?: BaseModelTableColumnOrderingConfig;
   skipCount?: boolean;
   disableSorting?: boolean;
@@ -71,6 +72,7 @@ export function BaseTableContent({
   fields,
   relations,
   relationStats,
+  queryManager,
   columnOrdering,
   skipCount,
   disableSorting,
@@ -119,6 +121,7 @@ export function BaseTableContent({
   const persistedStateRef = React.useRef<
     ReturnType<typeof loadPersistedTableState> | null | undefined
   >(undefined);
+  const hasConsumedPersistedOrderRef = React.useRef(false);
   const persistedSeedRef = React.useRef<{
     key: string;
     userId: string | null;
@@ -131,6 +134,7 @@ export function BaseTableContent({
     persistedSeedRef.current.userId !== currentUserId ||
     persistedSeedRef.current.settingsRef !== userTableConfigs;
   if (shouldRefreshPersistedSeed) {
+    hasConsumedPersistedOrderRef.current = false;
     persistedSeedRef.current = {
       key: effectiveKey,
       userId: currentUserId,
@@ -305,6 +309,7 @@ export function BaseTableContent({
     () => ({
       fields,
       relations,
+      queryManager,
       skipCount: skipCount ?? true,
       dataMode: performance?.dataMode ?? "pagination",
       visibleAccessors: queryVisibleAccessors,
@@ -315,6 +320,7 @@ export function BaseTableContent({
       performance?.dataMode,
       queryVisibleAccessors,
       relations,
+      queryManager,
       requiredDataAccessors,
       skipCount,
     ],
@@ -529,7 +535,10 @@ export function BaseTableContent({
     if (!columnDefs || columnDefs.length === 0) return columnOrder;
     const ids = columnDefs.map((column) => column.id);
     if (columnOrder.length === 0) return ids;
-    return columnOrder.filter((id) => ids.includes(id));
+    const ordered = columnOrder.filter((id) => ids.includes(id));
+    const orderedSet = new Set(ordered);
+    const missing = ids.filter((id) => !orderedSet.has(id));
+    return [...ordered, ...missing];
   }, [columnDefs, columnOrder]);
 
   const allowColumnDrag = columnOrdering?.draggable !== false;
@@ -542,13 +551,27 @@ export function BaseTableContent({
     if (!allowColumnDrag) return;
     const { active, over } = event;
     if (!over) return;
-    if (lockedColumns.has(String(active.id))) return;
-    if (active.id !== over?.id) {
-      const oldIndex = columnOrder.indexOf(String(active.id));
-      const newIndex = columnOrder.indexOf(String(over?.id));
-      setColumnOrder(arrayMove(columnOrder, oldIndex, newIndex));
-    }
+    const activeId = String(active.id);
+    const overId = String(over.id);
+    if (lockedColumns.has(activeId) || lockedColumns.has(overId)) return;
+    if (activeId === overId) return;
+
+    const orderSource =
+      sortableColumnIds.length > 0 ? sortableColumnIds : columnOrder;
+    if (orderSource.length === 0) return;
+
+    const oldIndex = orderSource.indexOf(activeId);
+    const newIndex = orderSource.indexOf(overId);
+    if (oldIndex < 0 || newIndex < 0) return;
+
+    setColumnOrder(arrayMove(orderSource, oldIndex, newIndex));
   };
+
+  React.useEffect(() => {
+    if (columnOrder.length > 0) {
+      hasConsumedPersistedOrderRef.current = true;
+    }
+  }, [columnOrder]);
 
   const resolveColumnOrder = React.useCallback(
     (availableIds: string[]) => {
@@ -556,12 +579,16 @@ export function BaseTableContent({
       const append = columnOrdering?.append ?? "end";
       const configOrder = columnOrdering?.order ?? [];
 
-      // Check persisted state first, then fall back to context columnOrder
       const persistedOrder = persistedStateRef.current?.columnOrder;
-      const effectiveColumnOrder =
-        persistedOrder && persistedOrder.length > 0
-          ? persistedOrder
-          : columnOrder;
+      const canUsePersistedFallback =
+        mode === "persisted" &&
+        !hasConsumedPersistedOrderRef.current &&
+        columnOrder.length === 0 &&
+        !!persistedOrder &&
+        persistedOrder.length > 0;
+      const effectiveColumnOrder = canUsePersistedFallback
+        ? persistedOrder
+        : columnOrder;
 
       const baseOrder =
         mode === "persisted" && effectiveColumnOrder.length > 0
@@ -597,6 +624,9 @@ export function BaseTableContent({
         combined.every((id, index) => columnOrder[index] === id);
       if (!same) {
         setColumnOrder(combined);
+      }
+      if (canUsePersistedFallback) {
+        hasConsumedPersistedOrderRef.current = true;
       }
     },
     [columnOrder, columnOrdering, setColumnOrder],
@@ -784,6 +814,7 @@ export function BaseTableContent({
                             refetch={refetch}
                             columnActions={columnActions}
                             relationStats={relationStats}
+                            queryManager={queryManager}
                             performance={performance}
                             scrollContainerRef={tableScrollRef}
                             infiniteMode={isInfiniteMode}

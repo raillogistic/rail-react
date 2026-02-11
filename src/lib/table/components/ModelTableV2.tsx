@@ -22,6 +22,7 @@ export function ModelTableV2({
       fields={baseTable?.fields}
       relations={baseTable?.relations}
       relationStats={baseTable?.relationStats}
+      queryManager={baseTable?.queryManager}
       columnOrdering={baseTable?.columnOrdering}
       skipCount={baseTable?.skipCount}
       disableSorting={baseTable?.disableSorting}
