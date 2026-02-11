@@ -269,7 +269,7 @@ export interface QueryChoiceGraphQLConfig {
   /** GraphQL field used as the option description */
   descriptionField?: string;
   /**
-   * Property names (dot notation supported) used to extract option metadata
+   * Property names (dot notation supported) used to extract option details
    * from the GraphQL response.
    */
   /** Dot-notation path to extract the option value */
@@ -348,7 +348,7 @@ export interface QueryChoiceInlineCreateConfig {
   modelName?: string;
   /**
    * Model identifier sent to the permission endpoint. Useful when permission
-   * lookup differs from the metadata/app pair (for example, aliased models).
+   * lookup differs from the app/model pair (for example, aliased models).
    */
   permissionModelName?: string;
   /** Optional title rendered above the inline creation form. */
@@ -530,7 +530,7 @@ export interface FormSectionConfig<TValues = Record<string, any>> {
 export interface FormSchema<TValues = Record<string, any>> {
   /** Identifier stored on the schema (useful for analytics or storage) */
   id?: string;
-  /** Misc metadata you want to attach to the schema */
+  /** Misc details you want to attach to the schema */
   meta?: Record<string, any>;
   /** List of field sections. If omitted, `fields` is used instead. */
   sections?: FormSectionConfig<TValues>[];

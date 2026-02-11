@@ -1,10 +1,10 @@
 import * as React from "react";
-import { useFormMetadata } from "@/lib/form/hooks/useFormMetadata";
-import type { FormMetadata } from "@/lib/form/types";
 import { useModelTableMetadata } from "@/lib/table/compat/hooks";
 import type { ModelTableType, FieldPermissionSnapshot } from "@/lib/table/compat/types";
 import { useModelPermissions, type ModelPermissions } from "@/lib/auth/hooks/useModelPermissions";
 import { normalizeFieldPermission, type NormalizedFieldPermission } from "@/lib/modelMetadata/types";
+import { useMetadata } from "@/lib/metadata/gateway";
+import type { ModelSchema } from "@/lib/table/types";
 
 export interface ModelAccessSnapshot {
   appName: string;
@@ -13,7 +13,7 @@ export interface ModelAccessSnapshot {
   tableFieldPermissions: Record<string, NormalizedFieldPermission>;
   formFieldPermissions: Record<string, NormalizedFieldPermission>;
   tableMetadata: ModelTableType | null;
-  formMetadata: FormMetadata | null;
+  formMetadata: ModelSchema | null;
   loading: boolean;
   error?: Error;
   refetch: () => Promise<void>;
@@ -26,7 +26,7 @@ export interface ModelAccessProviderProps {
   modelName: string;
   children: React.ReactNode;
   tableMeta?: ModelTableType | null;
-  formMeta?: FormMetadata | null;
+  formMeta?: ModelSchema | null;
   loadTableMetadata?: boolean;
   loadFormMetadata?: boolean;
 }
@@ -66,7 +66,7 @@ function buildFieldPermissionMap(source: PermissionSource[] | undefined) {
   }, {});
 }
 
-function buildFormFieldPermissionMap(metadata: FormMetadata | null) {
+function buildFormFieldPermissionMap(metadata: ModelSchema | null) {
   if (!metadata) return {};
   const entries: Record<string, NormalizedFieldPermission> = {};
   metadata.fields?.forEach((field) => {
@@ -82,7 +82,7 @@ export function useModelAccess(options: {
   appName: string;
   modelName: string;
   tableMetaOverride?: ModelTableType | null;
-  formMetaOverride?: FormMetadata | null;
+  formMetaOverride?: ModelSchema | null;
   loadTableMetadata?: boolean;
   loadFormMetadata?: boolean;
 }): ModelAccessSnapshot {
@@ -110,9 +110,10 @@ export function useModelAccess(options: {
     loading: formLoading,
     error: formError,
     refetch: refetchForm,
-  } = useFormMetadata({
-    appName,
-    modelName,
+  } = useMetadata({
+    app: appName,
+    model: modelName,
+    profile: "form",
     skip: !loadFormMetadata || Boolean(formMetaOverride),
   });
 
@@ -225,4 +226,3 @@ export function useModelAccessContext(): ModelAccessSnapshot {
   }
   return ctx;
 }
-

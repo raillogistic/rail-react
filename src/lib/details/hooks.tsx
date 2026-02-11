@@ -4,8 +4,8 @@ import type {
   ModelTableType,
   TableFieldMetadataType,
 } from "../table/compat/types";
-import { useFormMetadata } from "../form";
 import { useModelTableMetadata } from "../table/compat/hooks";
+import { useMetadata } from "@/lib/metadata/gateway";
 
 export type ModelMetadataRelationship = Record<string, any>;
 
@@ -36,7 +36,7 @@ function buildSingleItemQuery(modelName: string, fields: TableFieldMetadataType[
 
 
 export function useGraphQLModelDetail(appName: string, modelName: string, id: string | number) {
-  const formMeta = useFormMetadata({ appName, modelName });
+  const formMeta = useMetadata({ app: appName, model: modelName, profile: "form" });
 
   const tableMeta = useModelTableMetadata(appName, modelName);
   const tableFields = tableMeta.metadata?.fields;
@@ -90,4 +90,3 @@ export function useLazyRelatedTable(
   const vars = React.useMemo(() => ({ filters, page: 1, per_page: 10 }), [filters]);
   return { relatedApp, relatedModel, initVariables: vars };
 }
-
