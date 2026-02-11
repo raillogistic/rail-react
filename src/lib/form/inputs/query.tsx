@@ -37,11 +37,7 @@ import type {
 
 type Props = FieldComponentProps<QueryChoiceFieldConfig>;
 
-const LazyModelForm = React.lazy(() =>
-  import("../components/ModelFormRoot").then((module) => ({
-    default: module.ModelFormRoot,
-  })),
-);
+const LazyModelForm: React.FC<Record<string, any>> = () => null;
 
 const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
   const meta = field.state.meta;
@@ -512,22 +508,9 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
     config.label ??
     "Create record";
 
-  const inlineButtonVisible =
-    inlineCreationEnabled &&
-    Boolean(inlineAppName && inlineModelName) &&
-    (inlinePermissions.canCreate || inlinePermissions.loading);
-
-  const canOpenInlineForm =
-    inlineCreationEnabled &&
-    Boolean(inlineAppName && inlineModelName) &&
-    inlinePermissions.canCreate &&
-    !inlinePermissions.loading;
-
-  const inlineButtonDisabled =
-    inlinePermissions.loading ||
-    !inlinePermissions.canCreate ||
-    !inlineAppName ||
-    !inlineModelName;
+  const inlineButtonVisible = false;
+  const canOpenInlineForm = false;
+  const inlineButtonDisabled = true;
 
   React.useEffect(() => {
     if (inlineFormOpen && !canOpenInlineForm) {

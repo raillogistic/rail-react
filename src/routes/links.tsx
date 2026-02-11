@@ -23,11 +23,9 @@ import { LayoutSettingsPage } from "@/views/settings/LayoutSettingsPage";
 import { DashboardPage } from "@/views/dashboard/DashboardPage";
 
 import { getAppDefaultRoute, getAppNavigationLinks } from "@/apps/routes";
-// import ModelForm from "@/lib/form";
 import { BaseModelTable, ModelTableV2 } from "@/lib/table";
-import { ModelForm } from "@/lib/form";
 import { ModelImportPage } from "@/lib/import/pages";
-// import ModelForm    from "@/lib/form";
+import DynamicForm from "@/lib/form/inputs/form";
 
 export const ROUTES = {
   LOGIN: "/login",
@@ -130,7 +128,57 @@ const CORE_NAVIGATION_LINKS: NavigationSection[] = [
         path: "/form",
         component: (
           <>
-            <ModelForm
+            <DynamicForm
+              schema={{
+                initialValues: { firstName: "dmslkdls" },
+                sections: [
+                  {
+                    fields: [
+                      {
+                        type: "checkbox",
+                        name: "test",
+                        label: "test",
+                        defaultValue: true,
+                        description: "dmslkdmlsk",
+                      },
+                    ],
+                  },
+                ],
+
+                // fields: [
+                //   {
+                //     placeholder: "first name",
+                //     name: "firstName",
+                //     type: "text",
+                //     label: "First Name",
+                //     required: true,
+                //   },
+                //   {
+                //     placeholder: "last name",
+                //     name: "lastName",
+                //     type: "text",
+                //     label: "Last Name",
+                //   },
+                //   {
+                //     placeholder: "email",
+                //     name: "email",
+                //     type: "email",
+                //     label: "Email",
+                //   },
+                //   {
+                //     name: "password",
+                //     type: "password",
+                //     label: "Password",
+                //   },
+                //   {
+                //     name: "confirmPassword",
+                //     type: "password",
+                //     label: "Confirm Password",
+                //   },
+                // ],
+              }}
+            />
+            {/* <ModelForm
               appName="store"
               modelName="Order"
               mutationMode={"create"}
@@ -188,7 +236,7 @@ const CORE_NAVIGATION_LINKS: NavigationSection[] = [
               //     },
               //   },
               // }}
-            />
+            /> */}
             {/* <ModelForm appName="store" modelName="Product" />{" "} */}
           </>
         ),

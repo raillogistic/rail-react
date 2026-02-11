@@ -5,7 +5,6 @@ import type {
   DetailFieldConfig,
   DetailTabConfig,
   ModelDetailProps,
-  ModelDetailUpdateFormConfig,
   NestedDetailConfig,
   RelatedTableConfig,
 } from "./types";
@@ -17,18 +16,8 @@ import {
 import type { SortingState } from "@tanstack/react-table";
 import { Button } from "@/lib/components/ui/button";
 import { Input } from "@/lib/components/ui/input";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/lib/components/ui/dialog";
-import ModelForm, { type ModelFormProps } from "../form";
 import { Pencil, Trash2 } from "lucide-react";
 import { useGraphQLModelTable } from "../table/compat/hooks";
-import { Drawer, DrawerContent } from "@/lib/components/ui/drawer";
-import { cn } from "../utils";
-import { toast } from "@/lib/components/ui/sonner";
 import { useModelAccess, ModelAccessContext } from "@/lib/security/modelAccess";
 import { useModelTelemetry } from "@/lib/telemetry/useModelTelemetry";
 import { useAuditableAction } from "@/lib/security/useAuditableAction";
@@ -90,143 +79,6 @@ function formatValueByType(value: unknown, fieldType?: string) {
 const normalizeFieldValue = (field: string | undefined) =>
   field ? field.replace(/[^a-z0-9]/gi, "").toLowerCase() : "";
 
-const mergeUniqueStrings = (
-  ...groups: Array<Iterable<string | null | undefined> | null | undefined>
-) => {
-  const acc = new Set<string>();
-  groups.forEach((group) => {
-    if (!group) return;
-    for (const value of group) {
-      if (typeof value === "string" && value.trim().length > 0) {
-        acc.add(value);
-      }
-    }
-  });
-  return Array.from(acc);
-};
-
-const relationIdKeys = ["id", "pk", "value", "uuid"];
-
-const isMultiSelectionRelationship = (
-  relationship?: ModelMetadataRelationship | null
-) => {
-  if (!relationship) return false;
-  if (
-    relationship.one_to_one ||
-    relationship.foreign_key ||
-    relationship.relationship_type === "ForeignKey" ||
-    relationship.relationship_type === "OneToOneField"
-  ) {
-    return false;
-  }
-  if (
-    relationship.multiple ||
-    relationship.many_to_many ||
-    relationship.relationship_type === "ManyToManyField" ||
-    relationship.relationship_type === "ReverseManyToMany"
-  ) {
-    return true;
-  }
-  if (relationship.relationship_type === "ManyToOneRel") {
-    return Boolean(relationship.many_to_many);
-  }
-  return false;
-};
-
-const extractRelationIdentifier = (value: unknown) => {
-  if (
-    value === null ||
-    value === undefined ||
-    typeof value === "string" ||
-    typeof value === "number"
-  ) {
-    return value;
-  }
-  if (typeof value === "object") {
-    for (const key of relationIdKeys) {
-      const candidate = (value as Record<string, unknown>)[key];
-      if (
-        typeof candidate === "string" ||
-        typeof candidate === "number" ||
-        candidate === null
-      ) {
-        return candidate;
-      }
-    }
-  }
-  return undefined;
-};
-
-const extractRelationLabel = (value: unknown): string | undefined => {
-  if (!value || typeof value !== "object") return undefined;
-  const record = value as Record<string, unknown>;
-  const candidate =
-    record.desc ??
-    record.name ??
-    record.label ??
-    record.title ??
-    record.code ??
-    record.reference;
-  if (candidate === null || candidate === undefined) return undefined;
-  return String(candidate);
-};
-
-const buildRelationshipInitialEntry = (
-  entry: unknown
-): string | number | Record<string, unknown> | null => {
-  const identifier = extractRelationIdentifier(entry);
-  if (
-    identifier === undefined ||
-    identifier === null ||
-    (typeof identifier !== "string" && typeof identifier !== "number")
-  ) {
-    return null;
-  }
-  const label = extractRelationLabel(entry);
-  if (label) {
-    const description =
-      typeof entry === "object"
-        ? (entry as Record<string, unknown>).description ??
-          (entry as Record<string, unknown>).desc2 ??
-          (entry as Record<string, unknown>).code
-        : undefined;
-    const option: Record<string, unknown> = {
-      value: identifier,
-      label,
-    };
-    if (description) {
-      option.description = String(description);
-    }
-    return option;
-  }
-  return identifier;
-};
-
-const normalizeRelationshipValue = (
-  value: unknown,
-  multiple: boolean
-): unknown => {
-  if (value === null || value === undefined) {
-    return value;
-  }
-  if (multiple) {
-    const source = Array.isArray(value) ? value : [value];
-    const mapped = source
-      .map((entry) => buildRelationshipInitialEntry(entry))
-      .filter(
-        (entry): entry is string | number | Record<string, unknown> =>
-          entry !== null
-      );
-    return mapped;
-  }
-  if (Array.isArray(value)) {
-    if (!value.length) return null;
-    const normalized = buildRelationshipInitialEntry(value[0]);
-    return normalized ?? null;
-  }
-  return buildRelationshipInitialEntry(value) ?? value;
-};
-
 function buildDetailFields(
   fields: DetailFieldConfig[],
   requested?: string[] | undefined
@@ -243,13 +95,11 @@ export default function ModelDetail({
   className,
   includeSections,
   excludeSections,
-  onEdit,
   onUpdate,
   relatedTableConfigs,
   nested,
-  updateForm,
 }: ModelDetailProps) {
-  const { metadata, tableMeta, item, loading, error, refetch } = useGraphQLModelDetail(
+  const { metadata, tableMeta, item, loading, error } = useGraphQLModelDetail(
     appName,
     modelName,
     id
@@ -438,23 +288,6 @@ export default function ModelDetail({
     });
   }, [metadata, shouldIncludeSection]);
 
-  const autoExcludedRelationships = React.useMemo(
-    () =>
-      mergeUniqueStrings(
-        nestedEntries.map((entry) => entry.relation.name),
-        relatedSections.map((relation) => relation.name)
-      ),
-    [nestedEntries, relatedSections]
-  );
-
-  const handleDetailUpdated = React.useCallback(
-    (payload: Record<string, unknown>) => {
-      onUpdate?.(payload);
-      void refetch();
-    },
-    [onUpdate, refetch]
-  );
-
   if (loading) return <div className={className}>Chargement...</div>;
   if (!item) {
     return (
@@ -463,30 +296,12 @@ export default function ModelDetail({
       </ModelAccessContext.Provider>
     );
   }
-  const updateBlockedReason = null;
-
   return (
     <ModelAccessContext.Provider value={modelAccess}>
       <div className={className}>
       <div className="flex items-center justify-between mb-2">
         <div className="text-lg font-semibold">
           {metadata?.verbose_name ?? modelName}
-        </div>
-        <div className="flex items-center gap-2">
-          <UpdateRecordButton
-            appName={appName}
-            modelName={modelName}
-            entityLabel={metadata?.verbose_name ?? modelName}
-            initialValues={item}
-            onUpdated={handleDetailUpdated}
-            onEdit={onEdit}
-            config={{
-              ...updateForm,
-            }}
-            autoExcludedRelationships={autoExcludedRelationships}
-            relationships={metadata?.relationships}
-            blockedReason={updateBlockedReason ?? undefined}
-          />
         </div>
       </div>
       {detailTabs.length ? (
@@ -503,7 +318,6 @@ export default function ModelDetail({
                 parentApp={appName}
                 parentItem={item}
                 parentId={id}
-                onParentUpdated={() => onUpdate?.(item ?? {})}
               />
             ) : null
           )}
@@ -934,7 +748,6 @@ type NestedDetailCardProps = {
   parentApp: string;
   parentItem: Record<string, unknown> | null;
   parentId: string | number;
-  onParentUpdated?: () => void;
 };
 
 function NestedDetailCard({
@@ -943,7 +756,6 @@ function NestedDetailCard({
   parentApp,
   parentItem,
   parentId,
-  onParentUpdated,
 }: NestedDetailCardProps) {
   const targetApp = relation.related_app ?? parentApp;
   const targetModel = relation.related_model ?? relation.name;
@@ -965,7 +777,6 @@ function NestedDetailCard({
     metadata: nestedMeta,
     item: nestedItem,
     loading: nestedLoading,
-    refetch: nestedRefetch,
   } = useGraphQLModelDetail(targetApp, targetModel, recordId ?? "");
 
   const fieldsMeta = nestedMeta?.fields ?? [];
@@ -981,58 +792,6 @@ function NestedDetailCard({
       ? buildDetailFields(configs, config.fields)
       : configs;
   }, [fieldsMeta, config?.fields]);
-
-  const creationFormConfig = React.useMemo(() => {
-    if (!config?.allowUpdate || !config.updateForm || !nestedItem) {
-      return null;
-    }
-    const userProps = config.updateForm;
-    const genericRelationExclusions =
-      nestedMeta?.relationships
-        ?.filter((rel) => rel.relationship_type === "GenericRelation")
-        .map((rel) => rel.name) ?? [];
-    const defaultExcludeRelationships = mergeUniqueStrings(
-      nestedMeta?.relationships?.map((rel) => rel.name),
-      genericRelationExclusions,
-      [relation.name]
-    );
-    const excludeRelations = mergeUniqueStrings(
-      userProps.excludeRelationships,
-      defaultExcludeRelationships
-    );
-    const formConfig = {
-      ...userProps,
-      appName: userProps.appName ?? targetApp,
-      modelName: userProps.modelName ?? targetModel,
-      mutationMode: "update" as const,
-      mutationId: recordId,
-      initialValues: {
-        ...((userProps.initialValues as Record<string, unknown>) ?? {}),
-        ...nestedItem,
-      },
-      excludeRelationships: excludeRelations,
-      nestedFields: userProps.nestedFields ?? [],
-    } satisfies ModelFormProps<Record<string, unknown>>;
-    formConfig.onCompleted = (payload: any) => {
-      userProps.onCompleted?.(payload);
-      nestedRefetch();
-      onParentUpdated?.();
-      setUpdateOpen(false);
-    };
-    return formConfig;
-  }, [
-    config?.allowUpdate,
-    config?.updateForm,
-    nestedItem,
-    nestedMeta?.relationships,
-    onParentUpdated,
-    relation.name,
-    nestedRefetch,
-    targetApp,
-    targetModel,
-  ]);
-
-  const [isUpdateOpen, setUpdateOpen] = React.useState(false);
 
   if (!targetApp || !targetModel || !recordId) return null;
   if (nestedLoading || !nestedItem) {
@@ -1063,15 +822,6 @@ function NestedDetailCard({
     <div className="rounded-lg border bg-background/60 p-4 shadow-sm">
       <div className="mb-2 flex items-center justify-between">
         <h3 className="text-base font-semibold text-foreground">{title}</h3>
-        {config?.allowUpdate && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setUpdateOpen(true)}
-          >
-            Modifier
-          </Button>
-        )}
       </div>
       <BaseDetail
         data={nestedItem ?? {}}
@@ -1079,48 +829,6 @@ function NestedDetailCard({
         className="bg-transparent"
         initialTab={tabs[0].key}
       />
-      {config?.allowUpdate &&
-        creationFormConfig &&
-        (config.mode === "drawer" ? (
-          <Drawer
-            open={isUpdateOpen}
-            onOpenChange={setUpdateOpen}
-            direction={config.drawerDirection ?? "right"}
-          >
-            <DrawerContent
-              className={cn("p-0", config.width ? "" : undefined)}
-              style={{ width: config.width, height: config.height }}
-            >
-              <div className="border-b px-4 py-3">
-                <h2 className="text-lg font-semibold">
-                  {config.modalTitle ?? `Modifier ${title}`}
-                </h2>
-              </div>
-              <div className="max-h-[70vh] overflow-y-auto px-4 py-4">
-                <ModelForm {...creationFormConfig} />
-              </div>
-            </DrawerContent>
-          </Drawer>
-        ) : (
-          <Dialog open={isUpdateOpen} onOpenChange={setUpdateOpen}>
-            <DialogContent
-              className={cn(
-                "max-w-3xl",
-                config.width ? "max-w-none" : undefined
-              )}
-              style={{ width: config.width, height: config.height }}
-            >
-              <DialogHeader>
-                <DialogTitle>
-                  {config.modalTitle ?? `Modifier ${title}`}
-                </DialogTitle>
-              </DialogHeader>
-              <div className="max-h-[70vh] overflow-y-auto">
-                <ModelForm {...creationFormConfig} />
-              </div>
-            </DialogContent>
-          </Dialog>
-        ))}
     </div>
   );
 }
@@ -1140,410 +848,3 @@ function getRelationTarget(relation: ModelMetadataRelationship): {
       : maybeObject?.model_name ?? undefined;
   return { targetApp, targetModel };
 }
-
-type UpdateRecordButtonProps = {
-  appName: string;
-  modelName: string;
-  entityLabel?: string | null;
-  initialValues: Record<string, unknown>;
-  onUpdated?: (data: Record<string, unknown>) => void;
-  onEdit?: (data: Record<string, unknown>) => void;
-  config?: ModelDetailUpdateFormConfig;
-  autoExcludedRelationships: string[];
-  relationships?: ModelMetadataRelationship[];
-  blockedReason?: string | null;
-};
-
-function UpdateRecordButton({
-  appName,
-  modelName,
-  entityLabel,
-  initialValues,
-  onUpdated,
-  onEdit,
-  config,
-  autoExcludedRelationships,
-  relationships,
-  blockedReason,
-}: UpdateRecordButtonProps) {
-  const resolvedConfig = config ?? {};
-  const {
-    enabled = true,
-    triggerLabel = "Modifier",
-    triggerIcon,
-    mode = "modal",
-    drawerDirection = "right",
-    width,
-    height,
-    title,
-    description,
-    autoExcludeDisplayedRelationships = true,
-    includeFields,
-    excludeFields,
-    includeRelationships,
-    excludeRelationships,
-    formProps,
-  } = resolvedConfig;
-
-  const [open, setOpen] = React.useState(false);
-  const [openCount, setOpenCount] = React.useState(0);
-  const userFormProps = formProps ?? {};
-  const {
-    onCompleted: userOnCompleted,
-    onError: userOnError,
-    initialValues: overrideInitialValues,
-    exclude: userExclude,
-    only: userOnly,
-    excludeRelationships: userExcludeRelationships,
-    onlyRelationships: userOnlyRelationships,
-    showHeading: userShowHeading,
-    showSectionHeaders: userShowSectionHeaders,
-    title: userFormTitle,
-    description: userFormDescription,
-    containerClassName: userContainerClassName,
-    ...restUserFormProps
-  } = userFormProps;
-
-  const titleLabel =
-    title ?? userFormTitle ?? `Modifier ${entityLabel ?? "l'Ã©lÃ©ment"}`;
-  const descriptionLabel = description ?? userFormDescription ?? null;
-
-  const handleOpen = React.useCallback(() => {
-    onEdit?.(initialValues);
-    setOpenCount((prev) => prev + 1);
-    setOpen(true);
-  }, [initialValues, onEdit]);
-
-  const handleClose = React.useCallback(
-    (nextOpen: boolean) => {
-      setOpen(nextOpen);
-    },
-    [setOpen]
-  );
-
-  const includeRelationshipSet = React.useMemo(
-    () => new Set(includeRelationships ?? []),
-    [includeRelationships]
-  );
-  const genericRelationExclusions = React.useMemo(
-    () =>
-      (relationships ?? [])
-        .filter((relation) => relation.relationship_type === "GenericRelation")
-        .map((relation) => relation.name),
-    [relationships]
-  );
-  const autoRelationshipExclusions = React.useMemo(() => {
-    if (!autoExcludeDisplayedRelationships) return [];
-    return autoExcludedRelationships.filter(
-      (relation) => !includeRelationshipSet.has(relation)
-    );
-  }, [
-    autoExcludeDisplayedRelationships,
-    autoExcludedRelationships,
-    includeRelationshipSet,
-  ]);
-
-  const mergedExcludeRelationships = React.useMemo(
-    () =>
-      mergeUniqueStrings(
-        autoRelationshipExclusions,
-        excludeRelationships,
-        userExcludeRelationships as string[] | undefined,
-        genericRelationExclusions
-      ),
-    [
-      autoRelationshipExclusions,
-      excludeRelationships,
-      userExcludeRelationships,
-      genericRelationExclusions,
-    ]
-  );
-
-  const mergedOnlyRelationships = React.useMemo(() => {
-    if (userOnlyRelationships && userOnlyRelationships.length) {
-      return userOnlyRelationships;
-    }
-    if (includeRelationships && includeRelationships.length) {
-      return includeRelationships;
-    }
-    return undefined;
-  }, [includeRelationships, userOnlyRelationships]);
-
-  const mergedExcludeFields = React.useMemo(
-    () =>
-      mergeUniqueStrings(
-        excludeFields,
-        userExclude as string[] | undefined,
-        autoRelationshipExclusions
-      ),
-    [excludeFields, userExclude, autoRelationshipExclusions]
-  );
-
-  const mergedOnlyFields = React.useMemo(() => {
-    if (userOnly && userOnly.length) return userOnly;
-    if (includeFields && includeFields.length) return includeFields;
-    return undefined;
-  }, [includeFields, userOnly]);
-
-  // Fingerprints ensure recomputation when cache updates mutate the object in place.
-  const initialValuesFingerprint = JSON.stringify(initialValues ?? {});
-  const overrideInitialValuesFingerprint = JSON.stringify(
-    (overrideInitialValues as Record<string, unknown>) ?? {}
-  );
-
-  const mergedInitialValues = React.useMemo(() => {
-    const base: Record<string, unknown> = {
-      ...initialValues,
-      ...((overrideInitialValues as Record<string, unknown>) ?? {}),
-    };
-    const overrideId =
-      (overrideInitialValues as Record<string, unknown>)?.id ??
-      (overrideInitialValues as Record<string, unknown>)?.pk;
-    const resolvedId =
-      overrideId ??
-      initialValues?.id ??
-      initialValues?.pk ??
-      base.id ??
-      base.pk ??
-      null;
-    if (resolvedId !== null && resolvedId !== undefined) {
-      base.id = resolvedId;
-    }
-    const relationshipMetadata = relationships ?? [];
-    const next = { ...base };
-    const handled = new Set<string>();
-    relationshipMetadata.forEach((relationship) => {
-      const fieldName = relationship.name;
-      if (!(fieldName in next)) return;
-      const multiple = isMultiSelectionRelationship(relationship);
-      next[fieldName] = normalizeRelationshipValue(next[fieldName], multiple);
-      handled.add(fieldName);
-    });
-    Object.keys(next).forEach((fieldName) => {
-      if (handled.has(fieldName)) return;
-      const value = next[fieldName];
-      if (
-        value === null ||
-        value === undefined ||
-        (typeof value !== "object" && !Array.isArray(value))
-      ) {
-        return;
-      }
-      const heuristicMultiple = Array.isArray(value);
-      next[fieldName] = normalizeRelationshipValue(value, heuristicMultiple);
-    });
-    return next;
-  }, [
-    initialValues,
-    overrideInitialValues,
-    relationships,
-    initialValuesFingerprint,
-    overrideInitialValuesFingerprint,
-  ]);
-
-  const resolvedRecordId = React.useMemo(() => {
-    const candidates = [
-      (mergedInitialValues as Record<string, unknown>)?.id,
-      (mergedInitialValues as Record<string, unknown>)?.pk,
-      initialValues?.id,
-      initialValues?.pk,
-    ];
-    const resolved = candidates.find(
-      (value) => typeof value === "string" || typeof value === "number"
-    );
-    return resolved !== undefined ? String(resolved) : undefined;
-  }, [mergedInitialValues, initialValues]);
-
-  const resolvedContainerClassName = React.useMemo(() => {
-    if (!userContainerClassName && mode !== "drawer") return undefined;
-    if (mode === "drawer") {
-      return cn("flex h-full flex-col", userContainerClassName);
-    }
-    return userContainerClassName;
-  }, [mode, userContainerClassName]);
-
-  const finalFormProps = React.useMemo(() => {
-    const shouldShowHeading = userShowHeading ?? false;
-    const shouldShowSectionHeaders = userShowSectionHeaders ?? false;
-    const effectiveFormTitle =
-      userFormTitle ?? (shouldShowHeading ? titleLabel : undefined);
-    const effectiveFormDescription =
-      userFormDescription ??
-      (shouldShowHeading ? descriptionLabel ?? undefined : undefined);
-    const effectiveMutationId =
-      restUserFormProps.mutationId ?? resolvedRecordId;
-    const props: ModelFormProps<Record<string, unknown>> = {
-      ...restUserFormProps,
-      appName: restUserFormProps.appName ?? appName,
-      modelName: restUserFormProps.modelName ?? modelName,
-      mutationMode: "update",
-      initialValues: mergedInitialValues,
-      showHeading: shouldShowHeading,
-      showSectionHeaders: shouldShowSectionHeaders,
-    };
-    if (effectiveMutationId !== undefined && effectiveMutationId !== null) {
-      props.mutationId = String(effectiveMutationId);
-    }
-    if (effectiveFormTitle !== undefined) {
-      props.title = effectiveFormTitle;
-    }
-    if (effectiveFormDescription !== undefined) {
-      props.description = effectiveFormDescription;
-    }
-    if (resolvedContainerClassName) {
-      props.containerClassName = resolvedContainerClassName;
-    }
-    if (mergedExcludeFields.length) {
-      props.exclude = mergedExcludeFields;
-    }
-    if (mergedOnlyFields?.length) {
-      props.only = mergedOnlyFields;
-    }
-    if (mergedExcludeRelationships.length) {
-      props.excludeRelationships = mergedExcludeRelationships;
-    }
-    if (mergedOnlyRelationships?.length) {
-      props.onlyRelationships = mergedOnlyRelationships;
-    }
-    return props;
-  }, [
-    restUserFormProps,
-    appName,
-    modelName,
-    mergedInitialValues,
-    mergedExcludeFields,
-    mergedOnlyFields,
-    mergedExcludeRelationships,
-    mergedOnlyRelationships,
-    resolvedContainerClassName,
-    userShowHeading,
-    userShowSectionHeaders,
-    userFormTitle,
-    userFormDescription,
-    titleLabel,
-    descriptionLabel,
-    resolvedRecordId,
-  ]);
-
-  const containerStyle = React.useMemo(() => {
-    const resolvedWidth = width ?? undefined;
-    const resolvedHeight =
-      mode === "drawer" ? height ?? "100vh" : height ?? undefined;
-    return {
-      width: resolvedWidth,
-      maxWidth: resolvedWidth,
-      height: resolvedHeight,
-    };
-  }, [mode, width, height]);
-
-  const formInstanceKey = React.useMemo(() => {
-    const base = resolvedRecordId
-      ? `${modelName}-${resolvedRecordId}`
-      : `${modelName}-form`;
-    const relCount = relationships?.length ?? 0;
-    return `${base}-${relCount}-${openCount}`;
-  }, [resolvedRecordId, modelName, relationships, openCount]);
-
-  if (!enabled) return null;
-
-  const triggerButton = (
-    <Button
-      variant="outline"
-      size="sm"
-      onClick={handleOpen}
-      disabled={Boolean(blockedReason)}
-      title={blockedReason ?? undefined}
-    >
-      {triggerIcon}
-      <span className={triggerIcon ? "ml-1" : undefined}>{triggerLabel}</span>
-    </Button>
-  );
-  const triggerContent = blockedReason ? (
-    <div className="flex flex-col gap-1">
-      {triggerButton}
-      <span className="text-xs text-muted-foreground max-w-xs">
-        {blockedReason}
-      </span>
-    </div>
-  ) : (
-    triggerButton
-  );
-
-  const formBody = open ? (
-    <ModelForm
-      key={formInstanceKey}
-      {...finalFormProps}
-      onCompleted={(payload) => {
-        userOnCompleted?.(payload);
-        onUpdated?.(payload);
-        toast.success(`${entityLabel ?? "Enregistrement"} mis Ã  jour.`);
-        setOpen(false);
-      }}
-      onError={(error) => {
-        userOnError?.(error);
-        toast.error(
-          error instanceof Error
-            ? error.message
-            : "Ã‰chec de la mise Ã  jour. Merci de rÃ©essayer."
-        );
-      }}
-    />
-  ) : null;
-
-  if (mode === "drawer") {
-    return (
-      <>
-        {triggerContent}
-        <Drawer
-          open={open}
-          onOpenChange={handleClose}
-          direction={drawerDirection}
-        >
-          <DrawerContent
-            className={cn(
-              "flex h-full flex-col p-0",
-              width ? "max-w-none sm:max-w-none" : undefined
-            )}
-            style={containerStyle}
-          >
-            <DialogTitle></DialogTitle>
-            <div className="border-b px-4 py-3">
-              <h2 className="text-lg font-semibold">{titleLabel}</h2>
-              {descriptionLabel ? (
-                <p className="text-sm text-muted-foreground">
-                  {descriptionLabel}
-                </p>
-              ) : null}
-            </div>
-            <div className="flex flex-1 flex-col overflow-hidden px-4 py-4">
-              {formBody}
-            </div>
-          </DrawerContent>
-        </Drawer>
-      </>
-    );
-  }
-
-  return (
-    <>
-      {triggerContent}
-      <Dialog open={open} onOpenChange={handleClose}>
-        <DialogContent
-          className={cn("max-w-3xl", width ? "max-w-none" : undefined)}
-          style={containerStyle}
-        >
-          <DialogHeader>
-            <DialogTitle>{titleLabel}</DialogTitle>
-            {descriptionLabel ? (
-              <p className="text-sm text-muted-foreground">
-                {descriptionLabel}
-              </p>
-            ) : null}
-          </DialogHeader>
-          <div className="max-h-[70vh] overflow-y-auto">{formBody}</div>
-        </DialogContent>
-      </Dialog>
-    </>
-  );
-}
-

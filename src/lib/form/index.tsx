@@ -1,27 +1,6 @@
-import { ModelFormRoot } from "./components/ModelFormRoot";
-import {
-  ModelFormShell,
-  ModelFormHeader,
-  ModelFormErrors,
-  ModelFormBody,
-  ModelFormLoading,
-  ModelFormErrorState,
-} from "./components/ModelFormShell";
+import DynamicForm from "./inputs/form";
 
-export const ModelForm = Object.assign(ModelFormRoot, {
-  Root: ModelFormRoot,
-  Shell: ModelFormShell,
-  Header: ModelFormHeader,
-  Errors: ModelFormErrors,
-  Body: ModelFormBody,
-  Loading: ModelFormLoading,
-  ErrorState: ModelFormErrorState,
-});
-
-export default ModelForm;
-
+export default DynamicForm;
+export { DynamicForm };
 export * from "./types";
-export * from "./hooks/useModelForm";
 export * from "./hooks/useFormMetadata";
-export * from "./context/ModelFormContext";
-export * from "./components/ModelFormShell";
