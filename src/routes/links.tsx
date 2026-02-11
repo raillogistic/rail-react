@@ -20,10 +20,11 @@ import { AccountSettingsPage } from "@/views/settings/AccountSettingsPage";
 import { AdminUISettingsPage } from "@/views/settings/AdminUISettingsPage";
 import { AppearanceSettingsPage } from "@/views/settings/AppearanceSettingsPage";
 import { LayoutSettingsPage } from "@/views/settings/LayoutSettingsPage";
+import { DashboardPage } from "@/views/dashboard/DashboardPage";
 
 import { getAppDefaultRoute, getAppNavigationLinks } from "@/apps/routes";
 // import ModelForm from "@/lib/form/backend/ModelForm";
-import { BaseModelTable, ModelTableV2 } from "@/lib/table";
+import { ModelTableV2 } from "@/lib/table";
 import { ModelForm } from "@/lib/form2";
 import { ModelImportPage } from "@/lib/import/pages";
 // import ModelForm    from "@/lib/form2";
@@ -88,13 +89,7 @@ const CORE_NAVIGATION_LINKS: NavigationSection[] = [
         icon: LayoutDashboard,
         requiresAuth: true,
         description: "Vue synthèse des indicateurs",
-        component: (
-          <>
-            <div className="grid grid-cols-1 gap-2 min-w-0">
-              <BaseModelTable app="store" model="Order" />
-            </div>
-          </>
-        ),
+        component: <DashboardPage />,
       },
       {
         id: "model-import",
@@ -114,7 +109,7 @@ const CORE_NAVIGATION_LINKS: NavigationSection[] = [
         component: (
           <>
             {" "}
-            <ModelTableV2 app="store" model="Order" />
+            <ModelTableV2 app="store" model="Product" />
           </>
         ),
       },

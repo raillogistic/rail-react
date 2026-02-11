@@ -81,4 +81,18 @@ describe("import error messages", () => {
     expect(message.toLowerCase()).toContain("category");
     expect(message.toLowerCase()).toContain("identifiant numerique");
   });
+
+  it("translates not-null constraint commit error to readable french", () => {
+    const message = summarizeImportIssues([
+      {
+        id: "u3",
+        code: "UNKNOWN_ERROR",
+        severity: "ERROR",
+        message:
+          'Commit failed: null value in column "is_active" of relation "store_product" violates not-null constraint DETAIL: Failing row contains (...)',
+      },
+    ]);
+    expect(message.toLowerCase()).toContain("champ obligatoire");
+    expect(message.toLowerCase()).toContain("is_active");
+  });
 });

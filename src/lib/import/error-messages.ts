@@ -54,6 +54,12 @@ const frenchMessageForIssueCode = (issue: ImportIssue): string | null => {
       if (rawMessage.includes("Batch has changed since the last simulation")) {
         return "Le lot a ete modifie depuis la derniere simulation. Relancez la simulation avant de confirmer l'importation.";
       }
+      const notNullMatch = /null value in column \"([^\"]+)\".*violates not-null constraint/i.exec(
+        rawMessage,
+      );
+      if (notNullMatch?.[1]) {
+        return `${prefix}le champ obligatoire \"${notNullMatch[1]}\" est vide. Renseignez une valeur valide puis relancez la validation.`;
+      }
       return `${prefix}${rawMessage}`;
     default:
       return null;
