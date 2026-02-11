@@ -50,7 +50,8 @@ type NavigationMenuEntry = {
 
 const getSectionEntries = (section: NavigationSection): NavigationMenuEntry[] =>
   section.items.flatMap((item): NavigationMenuEntry[] => {
-    const visibleChildren = item.children?.filter((child) => !child.hidden) ?? [];
+    const visibleChildren =
+      item.children?.filter((child) => !child.hidden) ?? [];
     if (visibleChildren.length > 0) {
       return visibleChildren.map((child) => ({
         title: child.title,
@@ -91,8 +92,8 @@ const AppNavMenu = ({
           (item) =>
             location.pathname.startsWith(item.path) ||
             item.children?.some((child) =>
-              location.pathname.startsWith(child.path)
-            )
+              location.pathname.startsWith(child.path),
+            ),
         );
 
         // Mixed mode: Render sections as simple links (no dropdowns)
@@ -105,7 +106,7 @@ const AppNavMenu = ({
                 to={firstPath}
                 className={cn(
                   navigationMenuTriggerStyle(),
-                  isActive && "bg-accent text-accent-foreground"
+                  isActive && "bg-accent text-accent-foreground",
                 )}
               >
                 {section.label}
@@ -200,7 +201,7 @@ export function AppNavbar() {
         <div
           className={cn(
             "flex items-center justify-between space-x-2",
-            layout !== "mixed" ? "flex-none ml-auto" : "ml-auto"
+            layout !== "mixed" ? "flex-none ml-auto" : "ml-auto",
           )}
         >
           <div className="w-full flex-1 md:w-auto md:flex-none">
@@ -232,7 +233,7 @@ const ListItem = React.forwardRef<
         className={cn(
           "block select-none space-y-1 rounded-md p-3 leading-none no-underline outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
           active && "bg-accent text-accent-foreground",
-          className
+          className,
         )}
         {...props}
       >
@@ -283,7 +284,7 @@ function MobileNav() {
                       className={cn(
                         "rounded-md px-3 py-2 text-sm font-medium transition-colors hover:bg-accent hover:text-accent-foreground",
                         location.pathname === item.path &&
-                          "bg-accent text-accent-foreground"
+                          "bg-accent text-accent-foreground",
                       )}
                     >
                       {item.title}

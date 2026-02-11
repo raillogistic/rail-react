@@ -16,22 +16,9 @@ interface TableFrameProps {
 
 export function TableFrame({ children, className }: TableFrameProps) {
   return (
-    <div
-      className={cn(
-        "group/table relative w-full max-w-full min-w-0 overflow-hidden rounded-lg",
-        "bg-card",
-        "border border-border/60",
-        "shadow-sm",
-        className,
-      )}
-    >
-      {/* Inner scroll container */}
-      <div className="w-full overflow-x-auto">
-        <Table className="h-full min-w-max text-[13px]">
-          {children}
-        </Table>
-      </div>
-    </div>
+    <Table className={cn("min-w-full text-[13px] border-separate border-spacing-0", className)}>
+      {children}
+    </Table>
   );
 }
 

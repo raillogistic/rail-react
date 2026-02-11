@@ -25,6 +25,7 @@ import { getAppDefaultRoute, getAppNavigationLinks } from "@/apps/routes";
 // import ModelForm from "@/lib/form/backend/ModelForm";
 import { BaseModelTable, ModelTableV2 } from "@/lib/table";
 import { ModelForm } from "@/lib/form2";
+import { ModelImportPage } from "@/lib/import/pages";
 // import ModelForm    from "@/lib/form2";
 
 export const ROUTES = {
@@ -33,6 +34,7 @@ export const ROUTES = {
   RESET_PASSWORD: "/reset-password",
 
   DASHBOARD: "/dashboard",
+  MODEL_IMPORT: "/model-import",
   NOT_FOUND: "/404",
 
   SETTINGS_ACCOUNT: "/settings/account",
@@ -89,10 +91,18 @@ const CORE_NAVIGATION_LINKS: NavigationSection[] = [
         component: (
           <>
             <div className="grid grid-cols-1 gap-2 min-w-0">
-              <BaseModelTable app="store" model="Product" />
+              <BaseModelTable app="store" model="Order" />
             </div>
           </>
         ),
+      },
+      {
+        id: "model-import",
+        title: "Import",
+        path: ROUTES.MODEL_IMPORT,
+        requiresAuth: true,
+        hidden: true,
+        component: <ModelImportPage />,
       },
       {
         id: "orders-table-v2",
@@ -102,9 +112,10 @@ const CORE_NAVIGATION_LINKS: NavigationSection[] = [
         requiresAuth: true,
         description: "Progress view for ModelTableV2 (store.Order)",
         component: (
-          <div className="grid grid-cols-1 gap-2 min-w-0">
-            <ModelTableV2 app="store" model="Product" />
-          </div>
+          <>
+            {" "}
+            <ModelTableV2 app="store" model="Order" />
+          </>
         ),
       },
       {

@@ -7,8 +7,9 @@ import { MFASetupPage } from "./MFASetupPage";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Eye, EyeOff, Mail, Lock, AlertCircle, WifiOff } from "lucide-react";
+import { Eye, EyeOff, Mail, Lock, AlertCircle, WifiOff, ArrowRight, Loader2, ShieldCheck, Sparkles } from "lucide-react";
 import { Checkbox } from "@/lib/components/ui/checkbox";
+import { cn } from "@/lib/utils";
 import {
   isServerOfflineError,
   onOfflineStatusChange,
@@ -24,6 +25,69 @@ const loginSchema = z.object({
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
+
+// --- Custom Internal Components for Unique Design ---
+
+interface CustomInputProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  label: string;
+  icon: React.ReactNode;
+  error?: string;
+}
+
+const CustomInput = React.forwardRef<HTMLInputElement, CustomInputProps>(
+  ({ label, icon, error, ...props }, ref) => (
+    <div className="space-y-2 group">
+      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60 ml-1 transition-colors group-focus-within:text-primary">
+        {label}
+      </label>
+      <div className="relative">
+        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-muted-foreground/40 group-focus-within:text-primary transition-colors">
+          {icon}
+        </div>
+        <input
+          {...props}
+          ref={ref}
+          className={cn(
+            "w-full h-14 pl-12 pr-4 bg-muted/20 border-2 border-transparent rounded-2xl text-sm font-semibold transition-all outline-none",
+            "placeholder:text-muted-foreground/30",
+            "focus:bg-background focus:border-primary/20 focus:shadow-[0_8px_20px_-10px_rgba(var(--primary),0.15)]",
+            error ? "border-destructive/30 bg-destructive/5" : "hover:bg-muted/40"
+          )}
+        />
+        {error && (
+          <div className="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+            <AlertCircle className="h-4 w-4 text-destructive" />
+          </div>
+        )}
+      </div>
+      {error && <p className="text-[10px] font-bold text-destructive ml-1 animate-in slide-in-from-top-1">{error}</p>}
+    </div>
+  )
+);
+CustomInput.displayName = "CustomInput";
+
+interface CustomButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  isLoading?: boolean;
+}
+
+const CustomButton = ({ children, isLoading, disabled, className, ...props }: CustomButtonProps) => (
+  <button
+    {...props}
+    disabled={disabled || isLoading}
+    className={cn(
+      "group relative overflow-hidden h-14 w-full rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all active:scale-95 disabled:opacity-70 disabled:active:scale-100",
+      "bg-foreground text-background shadow-[0_20px_40px_-15px_rgba(0,0,0,0.3)] hover:shadow-[0_25px_50px_-12px_rgba(0,0,0,0.4)] hover:-translate-y-0.5",
+      "before:absolute before:inset-0 before:bg-gradient-to-r before:from-white/0 before:via-white/10 before:to-white/0 before:translate-x-[-100%] hover:before:translate-x-[100%] before:transition-transform before:duration-1000",
+      className
+    )}
+  >
+    <div className="relative flex items-center justify-center gap-3">
+      {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : children}
+    </div>
+  </button>
+);
+
+// --- Main Page Component ---
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -108,162 +172,146 @@ export const LoginPage: React.FC = () => {
   };
 
   return (
-    <div className="flex min-h-screen w-full bg-gray-50">
-      {/* Left Side - Form */}
-      <div className="flex flex-col justify-center w-full lg:w-1/2 px-8 py-12 sm:px-12 lg:px-24 xl:px-32 bg-white">
-        <div className="w-full max-w-md mx-auto space-y-8">
-          {/* Header */}
-          <div className="text-center lg:text-center">
-            <div className="inline-flex items-center justify-center w-full rounded-xl  text-white mb-6">
-              <img src={Logo} alt="Logo" height={128} width={128} />
-            </div>
-            <h2 className="text-3xl font-bold text-gray-900 tracking-tight">
-              {status === "mfa_required"
-                ? "Double authentification"
-                : "Bienvenue sur Rail Logistics"}
-            </h2>
-            <p className="mt-2 text-gray-500 text-base">
-              {status === "mfa_required"
-                ? "Veuillez confirmer votre identité."
-                : "Connectez-vous pour accéder à votre espace de maintenance."}
-            </p>
+    <div className="flex min-h-screen w-full bg-[#fdfdfd] selection:bg-primary/20">
+      {/* Brand Section (Left in new design for balance) */}
+      <div className="hidden lg:flex lg:w-[50%] xl:w-[60%] relative flex-col justify-between p-12 overflow-hidden bg-[#0a0a0b]">
+        {/* Background Effects */}
+        <div className="absolute top-0 right-0 w-[800px] h-[800px] bg-primary/20 rounded-full blur-[120px] -mr-96 -mt-96 opacity-50" />
+        <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-blue-500/10 rounded-full blur-[100px] -ml-48 -mb-48 opacity-30" />
+        
+        <img
+          src={Cover}
+          alt="Maintenance"
+          className="absolute inset-0 w-full h-full object-cover opacity-40 mix-blend-luminosity grayscale transition-transform duration-[10s] hover:scale-110"
+        />
+
+        <div className="relative z-10 flex items-center gap-3">
+          <div className="h-10 w-10 rounded-xl bg-white flex items-center justify-center p-2 shadow-2xl ring-1 ring-white/20">
+            <img src={Logo} alt="Logo" className="h-full w-full object-contain" />
           </div>
+          <span className="text-sm font-black uppercase tracking-[0.4em] text-white/90">Rail Logistics</span>
+        </div>
 
-          {/* Alerts */}
-          {!isServerOnline && (
-            <div className="p-4 rounded-lg bg-orange-50 border border-orange-200 flex items-start gap-3">
-              <WifiOff className="h-5 w-5 text-orange-500 mt-0.5 shrink-0" />
-              <div>
-                <h3 className="text-sm font-semibold text-orange-800">
-                  Serveur inaccessible
-                </h3>
-                <p className="text-sm text-orange-600 mt-1">
-                  Impossible de joindre le serveur. Vérifiez votre connexion
-                  internet.
-                </p>
-              </div>
+        <div className="relative z-10 max-w-xl space-y-8 animate-in slide-in-from-bottom-12 duration-1000 delay-200">
+          <div className="space-y-4">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 backdrop-blur-md">
+              <Sparkles className="h-3 w-3 text-primary shadow-[0_0_10px_rgba(var(--primary),0.5)]" />
+              <span className="text-[10px] font-bold text-white/60 uppercase tracking-widest">Technologie de pointe</span>
             </div>
-          )}
-
-          {error && status !== "mfa_required" && (
-            <div className="p-4 rounded-lg bg-red-50 border border-red-200 flex items-start gap-3">
-              <AlertCircle className="h-5 w-5 text-red-500 mt-0.5 shrink-0" />
-              <div>
-                <h3 className="text-sm font-semibold text-red-800">
-                  Erreur de connexion
-                </h3>
-                <p className="text-sm text-red-600 mt-1">
-                  {error.userMessage ||
-                    error.message ||
-                    "Une erreur est survenue."}
-                </p>
-              </div>
+            <h1 className="text-6xl xl:text-7xl font-black text-white leading-[1.05] tracking-tight">
+              L'excellence <br/> en mouvement.
+            </h1>
+          </div>
+          <p className="text-lg text-white/50 leading-relaxed font-medium">
+            Propulser la maintenance ferroviaire vers de nouveaux standards de précision, de sécurité et d'efficacité opérationnelle.
+          </p>
+          
+          <div className="pt-8 flex items-center gap-12">
+            <div className="space-y-1">
+              <p className="text-2xl font-black text-white">99.9%</p>
+              <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Disponibilité</p>
             </div>
-          )}
+            <div className="h-8 w-px bg-white/10" />
+            <div className="space-y-1">
+              <p className="text-2xl font-black text-white">24/7</p>
+              <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest">Surveillance</p>
+            </div>
+          </div>
+        </div>
 
-          {/* Form or MFA Challenge */}
-          {status === "mfa_required" ? (
-            mfaSetupRequired ? (
-              <MFASetupPage
-                embedded
-                ephemeralToken={ephemeralToken || undefined}
-                onComplete={handleMFAVerify}
-              />
+        <div className="relative z-10 flex items-center justify-between text-[10px] font-bold text-white/30 uppercase tracking-[0.2em]">
+          <span>© {new Date().getFullYear()} Rail Logistics</span>
+          <div className="flex gap-6">
+            <span className="hover:text-white/60 cursor-pointer transition-colors">Support</span>
+            <span className="hover:text-white/60 cursor-pointer transition-colors">Confidentialité</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Form Section */}
+      <div className="flex flex-col flex-1 relative bg-background">
+        <div className="flex-1 flex flex-col justify-center px-8 py-12 sm:px-12 md:px-20 xl:px-32">
+          <div className="w-full max-w-sm mx-auto space-y-12 animate-in fade-in slide-in-from-right-12 duration-1000">
+            
+            <div className="space-y-2">
+              <h2 className="text-4xl font-black tracking-tighter text-foreground">
+                {status === "mfa_required" ? "Sécurité" : "Connexion"}
+              </h2>
+              <div className="h-1 w-12 bg-primary rounded-full shadow-[0_0_15px_rgba(var(--primary),0.4)]" />
+            </div>
+
+            {/* Status Messages */}
+            {!isServerOnline && (
+              <div className="p-4 rounded-2xl bg-orange-500/5 border border-orange-500/20 flex items-center gap-3 text-orange-600 animate-pulse">
+                <WifiOff className="h-5 w-5 shrink-0" />
+                <p className="text-xs font-bold uppercase tracking-wider">Serveur déconnecté</p>
+              </div>
+            )}
+
+            {error && status !== "mfa_required" && (
+              <div className="p-4 rounded-2xl bg-destructive/5 border border-destructive/20 flex items-start gap-3 text-destructive animate-in zoom-in-95">
+                <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
+                <div className="space-y-1">
+                  <p className="text-xs font-black uppercase tracking-wider">Erreur système</p>
+                  <p className="text-xs font-medium opacity-80">{error.userMessage || error.message}</p>
+                </div>
+              </div>
+            )}
+
+            {status === "mfa_required" ? (
+              <div className="pt-2">
+                {mfaSetupRequired ? (
+                  <MFASetupPage
+                    embedded
+                    ephemeralToken={ephemeralToken || undefined}
+                    onComplete={handleMFAVerify}
+                  />
+                ) : (
+                  <MFAChallenge
+                    method="totp"
+                    error={error?.userMessage || error?.message}
+                    isLoading={isLoading}
+                    onVerify={handleMFAVerify}
+                    onCancel={handleCancelMFA}
+                  />
+                )}
+              </div>
             ) : (
-              <MFAChallenge
-                method="totp"
-                error={error?.userMessage || error?.message}
-                isLoading={isLoading}
-                onVerify={handleMFAVerify}
-                onCancel={handleCancelMFA}
-              />
-            )
-          ) : (
-            <>
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-                <div className="space-y-5">
-                  {/* Username Input */}
-                  <div>
-                    <label
-                      htmlFor="username"
-                      className="block text-sm font-medium text-gray-700 mb-1.5"
-                    >
-                      Nom d'utilisateur
-                    </label>
-                    <div className="relative group">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 group-focus-within:text-blue-600 transition-colors">
-                        <Mail className="h-5 w-5" />
-                      </div>
-                      <input
-                        {...register("username")}
-                        type="text"
-                        id="username"
-                        className={`
-                      block w-full pl-10 pr-3 py-3 bg-gray-50 border rounded-lg text-gray-900 text-sm placeholder-gray-400 focus:bg-white transition-all duration-200 ease-in-out outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600
-                      ${
-                        errors.username
-                          ? "border-red-300 focus:border-red-500 focus:ring-red-500/20"
-                          : "border-gray-200"
-                      }
-                    `}
-                        placeholder="Entrez votre identifiant"
-                      />
-                    </div>
-                    {errors.username && (
-                      <p className="mt-1.5 text-sm text-red-600 flex items-center gap-1">
-                        <AlertCircle size={14} /> {errors.username.message}
-                      </p>
-                    )}
-                  </div>
+              <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
+                <div className="space-y-6">
+                  <CustomInput
+                    {...register("username")}
+                    label="Identifiant"
+                    placeholder="E-mail ou nom d'utilisateur"
+                    icon={<Mail className="h-4 w-4" />}
+                    error={errors.username?.message}
+                    disabled={isLoading || isSubmitting}
+                  />
 
-                  {/* Password Input */}
-                  <div>
-                    <label
-                      htmlFor="password"
-                      className="block text-sm font-medium text-gray-700 mb-1.5"
-                    >
-                      Mot de passe
-                    </label>
-                    <div className="relative group">
-                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400 group-focus-within:text-blue-600 transition-colors">
-                        <Lock className="h-5 w-5" />
-                      </div>
-                      <input
-                        {...register("password")}
-                        type={showPassword ? "text" : "password"}
-                        id="password"
-                        className={`
-                      block w-full pl-10 pr-10 py-3 bg-gray-50 border rounded-lg text-gray-900 text-sm placeholder-gray-400 focus:bg-white transition-all duration-200 ease-in-out outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600
-                      ${
-                        errors.password
-                          ? "border-red-300 focus:border-red-500 focus:ring-red-500/20"
-                          : "border-gray-200"
-                      }
-                    `}
-                        placeholder="Entrez votre mot de passe"
-                      />
+                  <div className="space-y-2">
+                    <CustomInput
+                      {...register("password")}
+                      type={showPassword ? "text" : "password"}
+                      label="Mot de passe"
+                      placeholder="Saisissez votre code"
+                      icon={<Lock className="h-4 w-4" />}
+                      error={errors.password?.message}
+                      disabled={isLoading || isSubmitting}
+                    />
+                    <div className="flex justify-end">
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-400 hover:text-gray-600 transition-colors focus:outline-none"
+                        className="text-[10px] font-black uppercase tracking-widest text-muted-foreground hover:text-primary transition-colors pr-2"
                       >
-                        {showPassword ? (
-                          <EyeOff className="h-5 w-5" />
-                        ) : (
-                          <Eye className="h-5 w-5" />
-                        )}
+                        {showPassword ? "Masquer" : "Afficher"}
                       </button>
                     </div>
-                    {errors.password && (
-                      <p className="mt-1.5 text-sm text-red-600 flex items-center gap-1">
-                        <AlertCircle size={14} /> {errors.password.message}
-                      </p>
-                    )}
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
+                <div className="flex items-center justify-between py-2">
+                  <div className="flex items-center space-x-3">
                     <Controller
                       name="rememberMe"
                       control={control}
@@ -272,72 +320,47 @@ export const LoginPage: React.FC = () => {
                           id="rememberMe"
                           checked={field.value}
                           onCheckedChange={field.onChange}
+                          className="h-5 w-5 rounded-md border-2"
                         />
                       )}
                     />
                     <label
                       htmlFor="rememberMe"
-                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 text-gray-700"
+                      className="text-xs font-bold text-muted-foreground/80 cursor-pointer select-none"
                     >
-                      Se souvenir de moi
+                      Rester identifié
                     </label>
                   </div>
 
-                  <div className="text-sm">
-                    <button
-                      type="button"
-                      onClick={handleForgotPassword}
-                      className="font-medium text-blue-600 hover:text-blue-500 hover:underline transition-all"
-                    >
-                      Mot de passe oublié ?
-                    </button>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={handleForgotPassword}
+                    className="text-xs font-bold text-primary hover:text-primary/80 transition-colors"
+                  >
+                    Oublié ?
+                  </button>
                 </div>
 
-                <button
-                  type="submit"
-                  disabled={isSubmitting || isLoading || !isServerOnline}
-                  className={`
-                w-full py-3 px-4 border border-transparent rounded-lg shadow-sm text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all duration-200 transform active:scale-[0.98]
-                ${
-                  isSubmitting || isLoading || !isServerOnline
-                    ? "opacity-75 cursor-not-allowed"
-                    : ""
-                }
-              `}
-                >
-                  {isSubmitting || isLoading
-                    ? "Connexion en cours..."
-                    : "Se connecter"}
-                </button>
+                <CustomButton isLoading={isSubmitting || isLoading} disabled={!isServerOnline}>
+                  Accéder au terminal <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                </CustomButton>
               </form>
+            )}
 
-              <div className="mt-8 pt-6 border-t border-gray-100 text-center">
-                <p className="text-xs text-gray-400">
-                  &copy; {new Date().getFullYear()} Rail Logistics. Tous droits
-                  réservés.
-                </p>
-              </div>
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* Right Side - Image */}
-      <div className="hidden lg:block lg:w-1/2 relative overflow-hidden">
-        <div className="absolute inset-0 bg-blue-900/20 z-10 mix-blend-multiply"></div>
-        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent z-20"></div>
-        <img
-          src={Cover}
-          alt="Maintenance ferroviaire"
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-        <div className="absolute bottom-0 left-0 right-0 p-12 z-30 text-white">
-          <h3 className="text-2xl font-bold mb-2">Excellence Opérationnelle</h3>
-          <p className="text-blue-100 max-w-md text-lg leading-relaxed">
-            Une plateforme unifiée pour la gestion de la maintenance, assurant
-            fiabilité et sécurité sur l'ensemble du réseau ferroviaire.
-          </p>
+            <div className="pt-8 flex flex-col items-center space-y-6">
+               <div className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground/40 uppercase tracking-[0.3em]">
+                 <ShieldCheck className="h-3 w-3" />
+                 Accès hautement sécurisé
+               </div>
+               
+               <div className="lg:hidden flex items-center gap-3">
+                 <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center p-1.5 grayscale opacity-50">
+                    <img src={Logo} alt="Logo" className="h-full w-full object-contain" />
+                 </div>
+                 <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/30">Rail Logistics</span>
+               </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>

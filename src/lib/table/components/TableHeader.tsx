@@ -54,7 +54,7 @@ function DraggableHead({
       className={cn(
         "group/col sticky top-0 z-20 whitespace-nowrap",
         "border-b border-border",
-        "bg-muted/40 text-left font-semibold text-muted-foreground",
+        "bg-background/95 backdrop-blur-sm text-left font-semibold text-muted-foreground",
         "transition-colors duration-150",
         // Colored accent line on top
         "before:absolute before:left-0 before:top-0 before:h-[2px] before:w-full before:bg-primary/0 before:transition-colors hover:before:bg-primary",
@@ -175,7 +175,7 @@ export function TableHeader({
           <TableHead
             className={cn(
               "w-[40px] table-first-column sticky top-0 z-20",
-              "border-b border-border bg-muted/40",
+              "border-b border-border bg-background/95 backdrop-blur-sm",
               "transition-colors duration-150",
               density === "compact"
                 ? "py-0 px-2 h-8"

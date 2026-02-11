@@ -17,6 +17,7 @@ import { PublicRoute } from "./PublicRoute";
 // Import page components
 import { LoginPage, ForgotPasswordPage, ResetPasswordPage } from "@/auth/pages";
 import { MainApp } from "@/layout/MainApp";
+import { ModelImportPage } from "@/lib/import/pages";
 
 // Import view components
 
@@ -72,6 +73,7 @@ export const ProtectedRoutes: React.FC = () => {
   return (
     <Routes>
       {/* Default redirect to dashboard */}
+      <Route path={ROUTES.MODEL_IMPORT} element={<ModelImportPage />} />
 
       {/* Dashboard */}
 

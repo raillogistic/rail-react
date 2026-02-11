@@ -9,7 +9,9 @@
  */
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { AlertTriangle, Wifi, WifiOff, X } from 'lucide-react';
+import { Wifi, WifiOff, X, RefreshCw } from 'lucide-react';
+import { Alert, AlertTitle, AlertDescription } from '@/lib/components/ui/alert';
+import { Button } from '@/lib/components/ui/button';
 
 interface OfflineAlertProps {
   isVisible: boolean;
@@ -38,60 +40,62 @@ export const OfflineAlert: React.FC<OfflineAlertProps> = ({
   if (!isVisible) return null;
 
   return (
-    <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 max-w-md w-full mx-4">
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg shadow-lg p-4">
-        <div className="flex items-start">
-          <div className="flex-shrink-0">
-            <WifiOff className="h-5 w-5 text-yellow-600" />
-          </div>
-          
-          <div className="ml-3 flex-1">
-            <h3 className="text-sm font-medium text-yellow-800">
-              Connection Issue
-            </h3>
-            <p className="mt-1 text-sm text-yellow-700">
-              {message}
-            </p>
-            
-            <div className="mt-3 flex space-x-2">
-              <button
-                onClick={handleRetry}
-                disabled={isRetrying}
-                className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded text-yellow-800 bg-yellow-100 hover:bg-yellow-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isRetrying ? (
-                  <>
-                    <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-yellow-600 mr-1"></div>
-                    Retrying...
-                  </>
-                ) : (
-                  <>
-                    <Wifi className="h-3 w-3 mr-1" />
-                    Retry
-                  </>
-                )}
-              </button>
-              
-              <button
-                onClick={onDismiss}
-                className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded text-yellow-800 bg-yellow-100 hover:bg-yellow-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-yellow-500"
-              >
-                Dismiss
-              </button>
+    <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 max-w-lg w-[calc(100%-2rem)] mx-auto animate-in fade-in slide-in-from-top-4 duration-300">
+      <Alert className="border-orange-200 bg-orange-50/90 backdrop-blur-md shadow-lg border-2">
+        <WifiOff className="h-5 w-5 text-orange-600" />
+        <div className="flex flex-col gap-3">
+          <div className="flex items-start justify-between w-full">
+            <div>
+              <AlertTitle className="text-orange-800 font-bold flex items-center gap-2">
+                Connection Issue
+              </AlertTitle>
+              <AlertDescription className="text-orange-700/80 mt-1 font-medium leading-relaxed">
+                {message}
+              </AlertDescription>
             </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onDismiss}
+              className="h-8 w-8 text-orange-500 hover:text-orange-600 hover:bg-orange-100 -mr-2 -mt-1 rounded-full"
+            >
+              <X className="h-4 w-4" />
+              <span className="sr-only">Dismiss</span>
+            </Button>
           </div>
           
-          <div className="ml-4 flex-shrink-0">
-            <button
-              onClick={onDismiss}
-              className="bg-yellow-50 rounded-md inline-flex text-yellow-400 hover:text-yellow-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-yellow-50 focus:ring-yellow-600"
+          <div className="flex items-center gap-3">
+            <Button
+              onClick={handleRetry}
+              disabled={isRetrying}
+              variant="default"
+              size="sm"
+              className="bg-orange-600 hover:bg-orange-700 text-white border-none shadow-md h-8 px-4 rounded-full font-semibold"
             >
-              <span className="sr-only">Close</span>
-              <X className="h-5 w-5" />
-            </button>
+              {isRetrying ? (
+                <>
+                  <RefreshCw className="h-3.5 w-3.5 mr-2 animate-spin" />
+                  Attempting...
+                </>
+              ) : (
+                <>
+                  <Wifi className="h-3.5 w-3.5 mr-2" />
+                  Retry Connection
+                </>
+              )}
+            </Button>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onDismiss}
+              className="border-orange-200 text-orange-700 hover:bg-orange-100 h-8 px-4 rounded-full font-medium"
+            >
+              Dismiss
+            </Button>
           </div>
         </div>
-      </div>
+      </Alert>
     </div>
   );
 };
@@ -99,7 +103,7 @@ export const OfflineAlert: React.FC<OfflineAlertProps> = ({
 /**
  * Hook for managing offline state and alerts
  */
-export const useOfflineAlert = () => {
+export function useOfflineAlert() {
   const [isOffline, setIsOffline] = useState(false);
   const [showAlert, setShowAlert] = useState(false);
   const [lastError, setLastError] = useState<string | null>(null);
@@ -172,4 +176,4 @@ export const useOfflineAlert = () => {
     hideOfflineAlert,
     retryConnection,
   };
-};
+}

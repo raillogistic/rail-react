@@ -14,12 +14,14 @@ import {
   onOfflineStatusChange,
   testServerConnectivity,
 } from "@/utils/offline-detector";
+import { Alert, AlertTitle, AlertDescription } from "@/lib/components/ui/alert";
+import { Button } from "@/lib/components/ui/button";
+import { cn } from "@/lib/utils";
 
 interface OfflineNotificationProps {
   onRetry?: () => void;
   className?: string;
   showRetryButton?: boolean;
-  autoHide?: boolean;
   position?: "top" | "bottom";
 }
 
@@ -27,7 +29,6 @@ export const OfflineNotification: React.FC<OfflineNotificationProps> = ({
   onRetry,
   className = "",
   showRetryButton = true,
-  autoHide = false,
   position = "top",
 }) => {
   const [isVisible, setIsVisible] = useState(false);
@@ -85,59 +86,69 @@ export const OfflineNotification: React.FC<OfflineNotificationProps> = ({
   }
 
   const positionClasses =
-    position === "top" ? "top-4 left-4 right-4" : "bottom-4 left-4 right-4";
+    position === "top" 
+      ? "top-6 left-1/2 -translate-x-1/2" 
+      : "bottom-6 left-1/2 -translate-x-1/2";
 
   return (
-    <div className={`fixed ${positionClasses} z-50 ${className}`}>
-      <div className="bg-orange-50 border border-orange-200 rounded-lg shadow-lg p-4 mx-auto max-w-md">
-        <div className="flex items-start space-x-3">
-          <div className="flex-shrink-0">
-            <WifiOff className="h-6 w-6 text-orange-400" />
-          </div>
-
-          <div className="flex-1 min-w-0">
-            <h3 className="text-sm font-medium text-orange-800">
-              Server Connection Lost
-            </h3>
-            <p className="text-sm text-orange-700 mt-1">
-              Unable to connect to localhost:8000/graphql. Some features may not
-              be available.
-            </p>
-
-            {showRetryButton && (
-              <div className="mt-3 flex space-x-2">
-                <button
-                  onClick={handleRetry}
-                  disabled={isRetrying}
-                  className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded text-orange-700 bg-orange-100 hover:bg-orange-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {isRetrying ? (
-                    <>
-                      <RefreshCw className="animate-spin h-3 w-3 mr-1" />
-                      Checking...
-                    </>
-                  ) : (
-                    <>
-                      <RefreshCw className="h-3 w-3 mr-1" />
-                      Retry Connection
-                    </>
-                  )}
-                </button>
-              </div>
-            )}
-          </div>
-
-          <div className="flex-shrink-0">
-            <button
+    <div className={cn(
+      "fixed z-50 w-full max-w-lg px-4 animate-in fade-in slide-in-from-top-4 duration-300",
+      positionClasses,
+      className
+    )}>
+      <Alert className="border-orange-200 bg-orange-50/90 backdrop-blur-md shadow-2xl border-2 overflow-hidden ring-4 ring-orange-500/5">
+        <WifiOff className="h-5 w-5 text-orange-600" />
+        <div className="flex flex-col gap-3">
+          <div className="flex items-start justify-between w-full gap-4">
+            <div>
+              <AlertTitle className="text-orange-900 font-bold text-base flex items-center gap-2">
+                Server Connection Lost
+              </AlertTitle>
+              <AlertDescription className="text-orange-800/80 mt-1 font-medium leading-relaxed">
+                Unable to connect to the GraphQL API. Some features may be restricted.
+              </AlertDescription>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={handleDismiss}
-              className="bg-orange-50 rounded-md inline-flex text-orange-400 hover:text-orange-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
+              className="h-8 w-8 text-orange-500 hover:text-orange-600 hover:bg-orange-100/50 rounded-full shrink-0"
             >
+              <X className="h-4 w-4" />
               <span className="sr-only">Close</span>
-              <X className="h-5 w-5" />
-            </button>
+            </Button>
           </div>
+
+          {showRetryButton && (
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={handleRetry}
+                disabled={isRetrying}
+                variant="default"
+                size="sm"
+                className="bg-orange-600 hover:bg-orange-700 text-white shadow-sm h-8 px-4 rounded-full font-bold transition-all active:scale-95"
+              >
+                {isRetrying ? (
+                  <>
+                    <RefreshCw className="animate-spin h-3.5 w-3.5 mr-2" />
+                    Checking...
+                  </>
+                ) : (
+                  <>
+                    <RefreshCw className="h-3.5 w-3.5 mr-2" />
+                    Retry Connection
+                  </>
+                )}
+              </Button>
+              <div className="flex h-2 w-2 relative ml-1">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
+              </div>
+              <span className="text-[10px] text-orange-600/70 font-bold uppercase tracking-widest">Auto-checking</span>
+            </div>
+          )}
         </div>
-      </div>
+      </Alert>
     </div>
   );
 };

@@ -1,11 +1,11 @@
 import React from "react";
-import { PlusCircle } from "lucide-react";
+import { PlusCircle, Upload } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/lib/components/ui/button";
 import { useMetadata } from "../context/MetadataContext";
 import { useTable } from "../context/TableContext";
 import { findMutation } from "../utils";
 import { TableToolbar } from "./TableToolbar";
-import { TableMobileCard } from "./TableMobileCard";
 import type {
   ModelTableFilterPanelProps,
   ModelTableV2TableConfig,
@@ -28,6 +28,7 @@ export function ModelTableV2Content({
 }: ModelTableV2ContentProps) {
   const { metadata, app, model } = useMetadata();
   const { data, rowSelection } = useTable();
+  const navigate = useNavigate();
   const showTitle = tableConfig?.showTitle !== false;
   const resolvedTitle = tableConfig?.title || metadata?.verboseNamePlural || metadata?.model;
 
@@ -60,6 +61,22 @@ export function ModelTableV2Content({
     };
   }, [canCreate, tableConfig?.addLabel]);
 
+  const importAction = React.useMemo<ModelTableV2TopAction>(() => {
+    return {
+      key: "import",
+      label: "Importer",
+      icon: <Upload className="mr-2 h-4 w-4" />,
+      variant: "outline",
+      size: "sm",
+      order: 0,
+      show_when: "always",
+      on_click: () => {
+        const params = new URLSearchParams({ app, model });
+        navigate(`/model-import?${params.toString()}`);
+      },
+    };
+  }, [app, model, navigate]);
+
   const resolvedTopActions = React.useMemo(() => {
     const userActions =
       typeof topActions === "function"
@@ -73,6 +90,7 @@ export function ModelTableV2Content({
           })
         : topActions;
     const combined = [...(userActions ?? [])];
+    combined.unshift(importAction);
     if (addAction) {
       combined.unshift(addAction);
     }
@@ -81,10 +99,10 @@ export function ModelTableV2Content({
     return combined
       .filter((action) => action.show_when !== "has_selection" || hasSelection)
       .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-  }, [addAction, app, data, metadata, model, rowSelection, selectedRows, topActions]);
+  }, [addAction, app, data, importAction, metadata, model, rowSelection, selectedRows, topActions]);
 
   return (
-    <div className="flex flex-col gap-2 h-full">
+    <div className="flex flex-col gap-2 w-full">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 px-1">
         {showTitle && resolvedTitle && (
           <div className="flex items-center gap-2">
@@ -115,7 +133,6 @@ export function ModelTableV2Content({
       </div>
 
       <TableToolbar filterPanel={filterPanel} tableConfig={tableConfig} quickSearch={quickSearch} />
-      <TableMobileCard emptyState={tableConfig?.emptyState} />
     </div>
   );
 }
