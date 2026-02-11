@@ -425,11 +425,11 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
       .filter((field) => !isRelationNestedAlias(field))
       .filter(isAdvancedField)
       .filter((field) => {
-      if (selectorConfig.requireChoices && !field.choices?.length) {
-        return false;
-      }
-      return matchesAllowed([field.name, field.fieldName, field.fieldLabel]);
-    });
+        if (selectorConfig.requireChoices && !field.choices?.length) {
+          return false;
+        }
+        return matchesAllowed([field.name, field.fieldName, field.fieldLabel]);
+      });
     return sortFields(filtered);
   }, [
     allowAdvanced,
@@ -1034,7 +1034,8 @@ export const InlineFieldSelector: React.FC<InlineFieldSelectorProps> = ({
                   Aucun champ trouvé
                   {advancedHiddenCount > 0 && (
                     <span className="ml-1">
-                      | Activez le mode Avancé pour en voir {advancedHiddenCount} de plus
+                      | Activez le mode Avancé pour en voir{" "}
+                      {advancedHiddenCount} de plus
                     </span>
                   )}
                 </div>

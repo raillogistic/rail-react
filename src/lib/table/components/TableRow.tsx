@@ -273,6 +273,34 @@ export function TableRows({
       );
   }, [columnOrder, columnVisibility, columns, metadata]);
 
+  const groupingFieldMeta = useMemo(() => {
+    if (!groupingField) return undefined;
+    const root = groupingField.replace(/__/g, ".").split(".")[0];
+    const candidates = [
+      groupingField,
+      toGraphqlFieldName(groupingField),
+      toCamelCase(groupingField),
+      toSnakeCase(groupingField),
+      root,
+      toGraphqlFieldName(root),
+      toCamelCase(root),
+      toSnakeCase(root),
+    ];
+    for (const candidate of candidates) {
+      if (!candidate) continue;
+      const field = fieldLookup.get(candidate);
+      if (field) return field;
+    }
+    return undefined;
+  }, [fieldLookup, groupingField]);
+
+  const groupingFieldLabel = useMemo(() => {
+    if (!groupingField) return undefined;
+    if (groupingFieldMeta?.verboseName) return groupingFieldMeta.verboseName;
+    const root = groupingField.replace(/__/g, ".").split(".")[0];
+    return toLabel(root || groupingField);
+  }, [groupingField, groupingFieldMeta?.verboseName]);
+
   const groupedData = useMemo(() => {
     if (!groupingField) return null;
 
@@ -294,13 +322,16 @@ export function TableRows({
       }
       groups.set(key, {
         key,
-        label: resolveGroupingLabel(row, groupingField),
+        label: resolveGroupingLabel(row, groupingField, {
+          fieldLabel: groupingFieldLabel,
+          isBoolean: groupingFieldMeta?.isBoolean,
+        }),
         rows: [row],
       });
     });
 
     return Array.from(groups.values());
-  }, [data, groupingField]);
+  }, [data, groupingField, groupingFieldLabel, groupingFieldMeta?.isBoolean]);
 
   const handleRowSelect = (rowId: string, checked: boolean) => {
     const nextSelection = { ...rowSelection };

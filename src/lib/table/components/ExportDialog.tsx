@@ -155,6 +155,7 @@ export function ModelTableExportDialog({
     columnOrder,
     columnVisibility,
     filterVariables,
+    groupingField,
     quickSearch,
     advancedFilters,
   } = useTable();
@@ -170,6 +171,7 @@ export function ModelTableExportDialog({
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const hasGrouping = !!groupingField;
 
   const canExport = !!metadata?.permissions?.canExport;
 
@@ -183,6 +185,13 @@ export function ModelTableExportDialog({
     );
     setExportFilename(metadata.verboseNamePlural || metadata.model || "export");
   }, [open, metadata, columnOrder, columnVisibility]);
+
+  useEffect(() => {
+    if (!hasGrouping) return;
+    if (fileExtension !== "xlsx") {
+      setFileExtension("xlsx");
+    }
+  }, [hasGrouping, fileExtension]);
 
   const handleToggleField = useCallback((accessor: string, label: string) => {
     setSelectedFields((prev) => {
@@ -272,6 +281,9 @@ export function ModelTableExportDialog({
     if (filterPayload?.distinctOn?.length) {
       payload.distinct_on = filterPayload.distinctOn;
     }
+    if (groupingField) {
+      payload.group_by = resolveAccessor(metadata, groupingField);
+    }
     if (Object.keys(variables).length) {
       payload.variables = variables;
     }
@@ -285,6 +297,7 @@ export function ModelTableExportDialog({
     exportFilename,
     orderingPayload,
     filterPayload,
+    groupingField,
     fieldOrder,
     columnOrder,
   ]);
@@ -297,6 +310,10 @@ export function ModelTableExportDialog({
     const payload = buildExportPayload();
     if (!payload) {
       setExportError("Sélectionnez au moins un champ à exporter.");
+      return;
+    }
+    if (hasGrouping && fileExtension !== "xlsx") {
+      setExportError("Le regroupement est disponible uniquement pour Excel.");
       return;
     }
 
@@ -360,7 +377,7 @@ export function ModelTableExportDialog({
     } finally {
       setExporting(false);
     }
-  }, [metadata, buildExportPayload, fileExtension]);
+  }, [metadata, buildExportPayload, fileExtension, hasGrouping]);
 
   if (!metadata || !canExport) return null;
 
@@ -531,8 +548,10 @@ export function ModelTableExportDialog({
                       <button
                         type="button"
                         onClick={() => setFileExtension("csv")}
+                        disabled={hasGrouping}
                         className={cn(
                           "flex items-center justify-center gap-2 py-2 px-3 rounded-xl border transition-all duration-300",
+                          hasGrouping && "cursor-not-allowed opacity-50",
                           fileExtension === "csv"
                             ? "bg-primary border-primary shadow-md shadow-primary/10 text-primary-foreground"
                             : "bg-background/50 border-border/30 text-muted-foreground hover:border-primary/30 hover:text-primary",
@@ -544,6 +563,11 @@ export function ModelTableExportDialog({
                         </span>
                       </button>
                     </div>
+                    {hasGrouping ? (
+                      <p className="text-[10px] font-bold text-primary/80">
+                        Export groupé actif: Excel uniquement.
+                      </p>
+                    ) : null}
                   </div>
                 </div>
               </div>

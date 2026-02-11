@@ -1,6 +1,11 @@
 import type { FieldSchema } from "../types";
 import { toCamelCase, toSnakeCase } from "./caseConversion";
 
+type ResolveGroupingLabelOptions = {
+  fieldLabel?: string;
+  isBoolean?: boolean;
+};
+
 export function resolveGroupingValue(
   row: Record<string, unknown>,
   groupingField: string,
@@ -60,14 +65,35 @@ export function resolveFieldValue(
   return undefined;
 }
 
+function normalizeBooleanValue(value: unknown): boolean | null {
+  if (value === true || value === false) return value;
+  if (typeof value !== "string") return null;
+  const normalized = value.trim().toLowerCase();
+  if (normalized === "true") return true;
+  if (normalized === "false") return false;
+  return null;
+}
+
 export function resolveGroupingLabel(
   row: Record<string, unknown>,
   groupingField: string,
+  options?: ResolveGroupingLabelOptions,
 ): string {
   const key = resolveGroupingKey(row, groupingField);
   if (key === "__EMPTY__") return "Non renseigné";
 
   const value = resolveGroupingValue(row, groupingField);
+  const isNativeBoolean = value === true || value === false;
+  if (options?.isBoolean || isNativeBoolean) {
+    const normalizedBoolean = normalizeBooleanValue(value);
+    if (normalizedBoolean === null) return key;
+    const booleanLabel = normalizedBoolean === true ? "Oui" : "Non";
+    if (options?.fieldLabel) {
+      return `${options.fieldLabel} = ${booleanLabel}`;
+    }
+    return booleanLabel;
+  }
+
   if (typeof value === "object" && value !== null) {
     const record = value as Record<string, unknown>;
     if (record.desc !== undefined && record.desc !== null) {
