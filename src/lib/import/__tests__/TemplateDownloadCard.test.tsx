@@ -10,10 +10,17 @@ const TEMPLATE: ModelImportTemplate = {
   exactVersion: "v1",
   matchingKeyFields: ["id"],
   requiredColumns: [
-    { name: "name", required: true, dataType: "CharField" },
-    { name: "price", required: true, dataType: "DecimalField" },
+    { name: "name", label: "Product name", required: true, dataType: "CharField" },
+    { name: "price", label: "Price", required: true, dataType: "DecimalField" },
   ],
-  optionalColumns: [{ name: "inventory_count", required: false, dataType: "IntegerField" }],
+  optionalColumns: [
+    {
+      name: "inventory_count",
+      label: "Inventory count",
+      required: false,
+      dataType: "IntegerField",
+    },
+  ],
   acceptedFormats: ["CSV", "XLSX"],
   maxRows: 10000,
   maxFileSizeBytes: 25 * 1024 * 1024,
@@ -21,14 +28,21 @@ const TEMPLATE: ModelImportTemplate = {
 };
 
 describe("TemplateDownloadCard", () => {
-  it("renders template metadata and download link", () => {
+  it("renders template metadata and field selector with required fields locked", () => {
     render(<TemplateDownloadCard template={TEMPLATE} />);
 
-    expect(screen.getByText("Modele d'import")).toBeInTheDocument();
+    expect(screen.getByText("Import template")).toBeInTheDocument();
     expect(screen.getByText(/version/i)).toBeInTheDocument();
-    expect(screen.getByText("name, price")).toBeInTheDocument();
-    expect(screen.getByText("id")).toBeInTheDocument();
+    expect(screen.getByText(/Fields in template/i)).toBeInTheDocument();
 
-    expect(screen.getByRole("button", { name: /telecharger csv/i })).toBeInTheDocument();
+    const requiredNameCheckbox = screen.getByLabelText("Include field name") as HTMLButtonElement;
+    const requiredPriceCheckbox = screen.getByLabelText("Include field price") as HTMLButtonElement;
+    const optionalInventoryCheckbox = screen.getByLabelText("Include field inventory_count") as HTMLButtonElement;
+
+    expect(requiredNameCheckbox).toBeDisabled();
+    expect(requiredPriceCheckbox).toBeDisabled();
+    expect(optionalInventoryCheckbox).not.toBeDisabled();
+
+    expect(screen.getByRole("button", { name: /download template/i })).toBeInTheDocument();
   });
 });

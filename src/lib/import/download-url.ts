@@ -51,9 +51,27 @@ const isLegacyTemplateDownloadUrl = (downloadUrl: string): boolean => {
   }
 };
 
-const applyTemplateFormatToUrl = (
+const normalizeTemplateFields = (fields: string[] | undefined): string[] => {
+  if (!fields?.length) {
+    return [];
+  }
+  const seen = new Set<string>();
+  const normalized: string[] = [];
+  for (const rawField of fields) {
+    const field = String(rawField ?? "").trim();
+    if (!field || seen.has(field)) {
+      continue;
+    }
+    seen.add(field);
+    normalized.push(field);
+  }
+  return normalized;
+};
+
+const applyTemplateOptionsToUrl = (
   downloadUrl: string,
   format: "csv" | "xlsx",
+  fields?: string[],
 ): string => {
   if (!downloadUrl) {
     return downloadUrl;
@@ -69,6 +87,11 @@ const applyTemplateFormatToUrl = (
     }
 
     parsed.searchParams.set("format", format);
+    parsed.searchParams.delete("fields");
+    const normalizedFields = normalizeTemplateFields(fields);
+    for (const field of normalizedFields) {
+      parsed.searchParams.append("fields", field);
+    }
     if (wasAbsolute) {
       return parsed.toString();
     }
@@ -82,10 +105,16 @@ export const buildModelImportTemplateDownloadUrl = (
   appLabel: string,
   modelName: string,
   format: "csv" | "xlsx" = "csv",
+  fields?: string[],
 ): string => {
   const safeAppLabel = String(appLabel).trim();
   const safeModelName = String(modelName).trim().toLowerCase();
-  const path = `/api/v1/import/templates/${safeAppLabel}/${safeModelName}/?format=${format}`;
+  const query = new URLSearchParams();
+  query.set("format", format);
+  for (const field of normalizeTemplateFields(fields)) {
+    query.append("fields", field);
+  }
+  const path = `/api/v1/import/templates/${safeAppLabel}/${safeModelName}/?${query.toString()}`;
   return resolveModelImportDownloadUrl(path);
 };
 
@@ -95,17 +124,19 @@ export const resolveModelImportTemplateDownloadUrl = (
     modelName: string;
     downloadUrl?: string | null;
     format?: "csv" | "xlsx";
+    fields?: string[];
   },
 ): string => {
   const desiredFormat = input.format ?? "csv";
   const preferred = resolveModelImportDownloadUrl(input.downloadUrl ?? "");
   if (preferred && !isLegacyTemplateDownloadUrl(preferred)) {
-    return applyTemplateFormatToUrl(preferred, desiredFormat);
+    return applyTemplateOptionsToUrl(preferred, desiredFormat, input.fields);
   }
 
   return buildModelImportTemplateDownloadUrl(
     input.appLabel,
     input.modelName,
     desiredFormat,
+    input.fields,
   );
 };

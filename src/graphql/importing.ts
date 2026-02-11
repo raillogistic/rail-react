@@ -11,15 +11,19 @@ export const MODEL_IMPORT_TEMPLATE_QUERY = gql`
       matchingKeyFields
       requiredColumns {
         name
+        label
         required
         dataType
+        defaultValue
         formatHint
         allowedValues
       }
       optionalColumns {
         name
+        label
         required
         dataType
+        defaultValue
         formatHint
         allowedValues
       }

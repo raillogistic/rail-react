@@ -22,8 +22,10 @@ export type UpdateModelImportBatchAction =
 
 export interface ImportColumnRule {
   name: string;
+  label?: string | null;
   required: boolean;
   dataType: string;
+  defaultValue?: unknown;
   formatHint?: string | null;
   allowedValues?: string[] | null;
 }
