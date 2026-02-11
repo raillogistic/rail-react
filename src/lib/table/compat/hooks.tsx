@@ -30,7 +30,7 @@ import type {
   DistinctField,
   RelationFilter,
   FieldGroup,
-} from "@/lib/form/filters/types";
+} from "@/lib/filters/types";
 
 /* ----------------------------
    ⚡ Complete V2 Metadata Query

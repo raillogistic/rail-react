@@ -7,7 +7,7 @@ Filter Panel V2 provides the new inline, popover, panel, and toolbar filter expe
 
 ### Basic (panel)
 ```tsx
-import { FilterPanel } from "@/lib/form/filters";
+import { FilterPanel } from "@/lib/filters";
 
 <FilterPanel
   app="sales"

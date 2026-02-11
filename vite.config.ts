@@ -20,7 +20,7 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: [
       "./src/test/setup.ts",
-      "./src/lib/form/filters/__tests__/setup/setup.ts",
+      "./src/lib/filters/__tests__/setup/setup.ts",
     ],
     css: true,
   },

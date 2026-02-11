@@ -569,6 +569,7 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
 
   return (
     <FieldWrapper config={config} error={error} dirty={dirty}>
+      xxx
       <div className="flex items-start gap-2">
         <div className="flex-1">
           <DropdownMenu>
@@ -896,8 +897,7 @@ function buildGraphQLRecipe(config?: QueryChoiceGraphQLConfig): GraphQLRecipe {
   if (!normalizedRelatedModel) {
     return { document: null };
   }
-  const listField =
-    config.listFieldName ?? `${normalizedRelatedModel}List`;
+  const listField = config.listFieldName ?? `${normalizedRelatedModel}List`;
   const searchVariableName =
     config.searchVariableName === undefined
       ? "quick"
@@ -1058,7 +1058,10 @@ function toModelToken(value: string) {
     .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
     .split(/[^a-zA-Z0-9]+/)
     .filter(Boolean)
-    .map((segment) => segment.charAt(0).toUpperCase() + segment.slice(1).toLowerCase())
+    .map(
+      (segment) =>
+        segment.charAt(0).toUpperCase() + segment.slice(1).toLowerCase(),
+    )
     .join("");
   if (!pascal) return "";
   return pascal.charAt(0).toLowerCase() + pascal.slice(1);

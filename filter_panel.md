@@ -1107,7 +1107,7 @@ Unified preset and saved filter management.
 # File Structure (Final)
 
 ```
-src/lib/form/filters/
+src/lib/filters/
 ├── index.ts                        # Public exports
 ├── types.ts                        # Updated types
 ├── state.ts                        # State utilities

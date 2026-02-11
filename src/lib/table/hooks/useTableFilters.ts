@@ -5,7 +5,7 @@ import {
   FilterFormState,
   FilterCondition,
   FilterGroup,
-} from "../../form/filters/types";
+} from "../../filters/types";
 
 const HEADER_RELATION_FILTERS_KEY = "__headerRelationFilters";
 const HEADER_BASE_WHERE_KEY = "__baseWhere";

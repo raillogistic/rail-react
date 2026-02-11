@@ -1,5 +1,5 @@
 import type { ReactElement, ReactNode } from "react";
-import { FilterFormState } from "../form/filters/types";
+import { FilterFormState } from "../filters/types";
 
 // ============================================================================
 // GraphQL Metadata Types (Mirrors rail-django/extensions/metadata/types.py)

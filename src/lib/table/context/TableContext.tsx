@@ -4,7 +4,7 @@ import {
   ColumnVisibilityState,
   TableDensity,
 } from "../types";
-import { FilterFormState } from "../../form/filters/types";
+import { FilterFormState } from "../../filters/types";
 
 // ============================================================================
 // Actions & Reducer

@@ -1,4 +1,4 @@
-ï»¿import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Download, Loader2 } from "lucide-react";
 import { Button } from "@/lib/components/ui/button";
 import {
@@ -30,7 +30,7 @@ import { useTable } from "../context/TableContext";
 import type {
   FilterGroup,
   FilterQueryVariables,
-} from "../../form/filters/types";
+} from "../../filters/types";
 import type { ModelSchema } from "../types";
 import {
   ExportFieldTree,
@@ -276,12 +276,12 @@ export function ModelTableExportDialog({
 
   const handleExport = useCallback(async () => {
     if (!metadata) {
-      setExportError("Les mÃ©tadonnÃ©es ne sont pas disponibles.");
+      setExportError("Les métadonnées ne sont pas disponibles.");
       return;
     }
     const payload = buildExportPayload();
     if (!payload) {
-      setExportError("SÃ©lectionnez au moins un champ Ã  exporter.");
+      setExportError("Sélectionnez au moins un champ à exporter.");
       return;
     }
 
@@ -308,7 +308,7 @@ export function ModelTableExportDialog({
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "Ã‰chec de l'export.");
+        throw new Error(errorData.error || "Échec de l'export.");
       }
 
       const contentType = response.headers.get("content-type") ?? "";
@@ -316,7 +316,7 @@ export function ModelTableExportDialog({
         const result = await response.json();
         throw new Error(
           result.error ||
-            "Export en file d'attente. Utilisez l'endpoint des exports pour tÃ©lÃ©charger.",
+            "Export en file d'attente. Utilisez l'endpoint des exports pour télécharger.",
         );
       }
 
@@ -334,11 +334,11 @@ export function ModelTableExportDialog({
       link.remove();
       window.URL.revokeObjectURL(url);
 
-      toast.success(`Export ${fileExtension.toUpperCase()} gÃ©nÃ©rÃ©.`);
+      toast.success(`Export ${fileExtension.toUpperCase()} généré.`);
       setOpen(false);
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "Ã‰chec de l'export.";
+        error instanceof Error ? error.message : "Échec de l'export.";
       setExportError(message);
       toast.error(message);
     } finally {
@@ -356,7 +356,7 @@ export function ModelTableExportDialog({
             variant="outline"
             size="icon"
             className="h-8 w-8"
-            aria-label={labels?.buttonAria ?? "Exporter les donnÃ©es"}
+            aria-label={labels?.buttonAria ?? "Exporter les données"}
           >
             <Download className="h-4 w-4" />
           </Button>
@@ -380,16 +380,16 @@ export function ModelTableExportDialog({
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
                 <p className="text-sm font-medium">
-                  {labels?.fieldsTitle ?? "Champs Ã  exporter"}
+                  {labels?.fieldsTitle ?? "Champs à exporter"}
                 </p>
                 <p className="text-xs text-muted-foreground">
                   {labels?.selectedCount?.(selectedCount) ??
-                    `${selectedCount} sÃ©lectionnÃ©(s)`}
+                    `${selectedCount} sélectionné(s)`}
                 </p>
               </div>
               <div className="flex gap-2">
                 <Button variant="ghost" size="sm" onClick={selectAllRootFields}>
-                  {labels?.selectAll ?? "Tout sÃ©lectionner"}
+                  {labels?.selectAll ?? "Tout sélectionner"}
                 </Button>
                 <Button variant="ghost" size="sm" onClick={clearFields}>
                   {labels?.clear ?? "Effacer"}
@@ -450,7 +450,7 @@ export function ModelTableExportDialog({
         <DialogFooter className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="text-xs text-muted-foreground">
             {labels?.footerSelectedCount?.(selectedCount) ??
-              `${selectedCount} champ${selectedCount === 1 ? "" : "s"} seront exportÃ©s.`}
+              `${selectedCount} champ${selectedCount === 1 ? "" : "s"} seront exportés.`}
           </div>
           <div className="flex w-full justify-end gap-2 sm:w-auto">
             <Button variant="ghost" onClick={() => setOpen(false)}>
@@ -463,7 +463,7 @@ export function ModelTableExportDialog({
               {exporting ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : null}
-              {labels?.download ?? "TÃ©lÃ©charger"}
+              {labels?.download ?? "Télécharger"}
             </Button>
           </div>
         </DialogFooter>

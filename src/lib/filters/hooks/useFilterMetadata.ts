@@ -18,7 +18,7 @@ import {
 
 const SAVED_FILTERS_QUERY = gql`
   query SavedFilters($modelName: String!) {
-    savedFilters(
+    savedFilters: savedFilterList(
       where: { modelName: { eq: $modelName } }
       orderBy: ["-updated_at"]
       limit: 50

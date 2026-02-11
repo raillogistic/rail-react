@@ -18,8 +18,8 @@ import { useMetadata } from "../context/MetadataContext";
 import { useTableFilters } from "../hooks/useTableFilters";
 import { useTable } from "../context/TableContext";
 import { FieldSchema } from "../types";
-import { ScalarFilterInput } from "../../form/filters/components/ScalarFilterInput";
-import type { FilterableField, FilterOperator, FilterBaseType } from "../../form/filters/types";
+import { ScalarFilterInput } from "../../filters/components/ScalarFilterInput";
+import type { FilterableField, FilterOperator, FilterBaseType } from "../../filters/types";
 import { cn } from "@/lib/utils";
 import { translateLookupLabelFr } from "./filtering/operatorLabels";
 

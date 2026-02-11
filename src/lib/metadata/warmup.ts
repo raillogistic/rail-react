@@ -1,5 +1,5 @@
 import { gql, type ApolloClient } from "@apollo/client";
-import { FILTER_METADATA_QUERY } from "@/lib/form/filters/queries";
+import { FILTER_METADATA_QUERY } from "@/lib/filters/queries";
 import { GET_MODEL_SCHEMA } from "@/lib/table/queries";
 import {
   clearPersistedMetadataStore,

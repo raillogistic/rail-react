@@ -24,11 +24,11 @@ import { cn } from "@/lib/utils";
 import { useTable } from "../context/TableContext";
 import { useMetadata } from "../context/MetadataContext";
 import { useTableFilters } from "../hooks/useTableFilters";
-import { FilterPanel } from "../../form/filters/FilterPanel";
+import { FilterPanel } from "../../filters/FilterPanel";
 import {
   FilterFormState,
   FilterQueryVariables,
-} from "../../form/filters/types";
+} from "../../filters/types";
 import type {
   ModelTableFilterPanelProps,
   ModelTableV2TableConfig,

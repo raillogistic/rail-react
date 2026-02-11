@@ -1,5 +1,5 @@
 import type { InMemoryCache } from "@apollo/client";
-import { FILTER_METADATA_QUERY } from "@/lib/form/filters/queries";
+import { FILTER_METADATA_QUERY } from "@/lib/filters/queries";
 import { GET_MODEL_SCHEMA } from "@/lib/table/queries";
 
 const STORAGE_VERSION = 1;

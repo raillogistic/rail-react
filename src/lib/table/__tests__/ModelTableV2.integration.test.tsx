@@ -7,7 +7,7 @@ import { describe, it, expect, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 
 // Mock FilterPanel to avoid extra Apollo queries in tests
-vi.mock('../../form/filters/FilterPanel', () => ({
+vi.mock('../../filters/FilterPanel', () => ({
   FilterPanel: () => <div data-testid="dynamic-filter-form-mock">Filter Form</div>
 }));
 
