@@ -46,8 +46,8 @@ import { Textarea } from "@/lib/components/ui/textarea";
 import { useForm } from "@tanstack/react-form";
 
 import type { FilterableField, FilterOperator, FilterChoice } from "../types";
-import type { QueryChoiceFieldConfig } from "../../form2/inputs/types";
-import QueryChoiceInput from "../../form2/inputs/query";
+import type { QueryChoiceFieldConfig } from "../../form/inputs/types";
+import QueryChoiceInput from "../../form/inputs/query";
 
 export interface ScalarFilterInputProps {
   field: FilterableField;

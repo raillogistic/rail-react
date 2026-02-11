@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { build_method_mutation } from "../mutations";
 
-describe("form2 method mutation naming", () => {
+describe("form method mutation naming", () => {
   it("builds methodNameModelName field names by default", () => {
     const mutation = build_method_mutation("ReportingDataset", "describe", {
       include_input: true,

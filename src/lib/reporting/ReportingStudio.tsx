@@ -14,7 +14,7 @@ import {
   build_update_mutation,
   type CreateMutationResponse,
   type UpdateMutationResponse,
-} from "@/lib/form/backend/types/mutations";
+} from "@/lib/form/mutations";
 import {
   useReportingDatasetDescribe,
   useReportingDatasetRunQuery,

@@ -32,7 +32,7 @@ import {
   type CreateMutationResponse,
   type DeleteMutationResponse,
   type UpdateMutationResponse,
-} from "@/lib/form/backend/types/mutations";
+} from "@/lib/form/mutations";
 import { useGraphQLModelTable } from "@/lib/table/compat/hooks";
 import { useReportingReportBuildPayload } from "@/lib/reporting/graphql";
 import type { ReportingChartSpec, ReportingQueryResult, ReportingVisualizationConfig } from "@/lib/reporting/types";

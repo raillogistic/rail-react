@@ -1,5 +1,5 @@
 import type { ModelTableType, FieldPermissionSnapshot } from "@/lib/table/compat/types";
-import type { FormMetadata } from "@/lib/form2/types";
+import type { FormMetadata } from "@/lib/form/types";
 
 export type GraphQLModelMetadataResource =
   | { kind: "table"; metadata: ModelTableType }

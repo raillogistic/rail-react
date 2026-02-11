@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { print } from "graphql";
 import { buildGraphQLRecipe } from "../query";
 
-describe("form2 query recipe naming", () => {
+describe("form query recipe naming", () => {
   it("defaults relatedModel datasource to modelList", () => {
     const recipe = buildGraphQLRecipe({ relatedModel: "ReportingDataset" });
     expect(recipe.document).toBeTruthy();

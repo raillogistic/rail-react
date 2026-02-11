@@ -1,6 +1,6 @@
 import * as React from "react";
-import { useFormMetadata } from "@/lib/form2/hooks/useFormMetadata";
-import type { FormMetadata } from "@/lib/form2/types";
+import { useFormMetadata } from "@/lib/form/hooks/useFormMetadata";
+import type { FormMetadata } from "@/lib/form/types";
 import { useModelTableMetadata } from "@/lib/table/compat/hooks";
 import type { ModelTableType, FieldPermissionSnapshot } from "@/lib/table/compat/types";
 import { useModelPermissions, type ModelPermissions } from "@/lib/auth/hooks/useModelPermissions";

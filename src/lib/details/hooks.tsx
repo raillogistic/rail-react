@@ -4,7 +4,7 @@ import type {
   ModelTableType,
   TableFieldMetadataType,
 } from "../table/compat/types";
-import { useFormMetadata } from "../form/backend/hooks";
+import { useFormMetadata } from "../form";
 import { useModelTableMetadata } from "../table/compat/hooks";
 
 export type ModelMetadataRelationship = Record<string, any>;

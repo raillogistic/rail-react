@@ -10,7 +10,7 @@ import { useGraphQLModelTable } from "@/lib/table/compat/hooks";
 import {
   build_method_mutation,
   type MethodMutationResponse,
-} from "@/lib/form/backend/types/mutations";
+} from "@/lib/form/mutations";
 
 import {
   ReportingDatasetView,

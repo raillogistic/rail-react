@@ -23,7 +23,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/lib/components/ui/dialog";
-import ModelForm, { type ModelFormProps } from "../form/backend/ModelForm";
+import ModelForm, { type ModelFormProps } from "../form";
 import { Pencil, Trash2 } from "lucide-react";
 import { useGraphQLModelTable } from "../table/compat/hooks";
 import { Drawer, DrawerContent } from "@/lib/components/ui/drawer";

@@ -4,7 +4,7 @@ import {
   build_method_mutation,
   type MethodMutationResponse,
   type MethodMutationVariables,
-} from "@/lib/form/backend/types/mutations";
+} from "@/lib/form/mutations";
 import type {
   ReportingDatasetDescription,
   ReportingQueryResult,

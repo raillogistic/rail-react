@@ -18,7 +18,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/lib/components/ui/dialog";
-import { FieldWrapper } from "./common";
+import {
+  FieldWrapper,
+  resolveFieldErrors,
+  resolveRequiredError,
+} from "./common";
 import { cn } from "@/lib/utils";
 import { useModelPermissions } from "@/lib/auth/hooks/useModelPermissions";
 import type {
@@ -33,17 +37,26 @@ import type {
 
 type Props = FieldComponentProps<QueryChoiceFieldConfig>;
 
-const LazyModelForm = React.lazy(() => import("../backend/ModelForm"));
+const LazyModelForm = React.lazy(() =>
+  import("../components/ModelFormRoot").then((module) => ({
+    default: module.ModelFormRoot,
+  })),
+);
 
 const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
   const meta = field.state.meta;
   const dirty = meta.isDirty;
-  const rawError = meta.touchedErrors?.[0] ?? meta.errors?.[0];
-  const submitCount = useStore(form.store, (state) => state.submitCount);
+  const submitCount = useStore(
+    form.store,
+    (state) =>
+      (state as any).submissionAttempts ?? (state as any).submitCount ?? 0,
+  );
   const isSubmitted = submitCount > 0;
   const showError =
     dirty || meta.isBlurred || isSubmitted || Boolean(meta.errorMap?.onSubmit);
-  const error = showError ? rawError : undefined;
+  const fieldErrors = resolveFieldErrors(meta, showError);
+  const error =
+    fieldErrors ?? resolveRequiredError(config, field.state.value, showError);
   const graphqlConfig = React.useMemo<
     QueryChoiceGraphQLConfig | undefined
   >(() => {
@@ -877,14 +890,13 @@ function buildGraphQLRecipe(config?: QueryChoiceGraphQLConfig): GraphQLRecipe {
     };
   }
   const normalizedRelatedModel = config.relatedModel
-    ? config.relatedModel.split(".").pop()?.toLowerCase()
+    ? toModelToken(config.relatedModel.split(".").pop() ?? "")
     : undefined;
 
   if (!normalizedRelatedModel) {
     return { document: null };
   }
-  const listField =
-    config.listFieldName ?? pluralizeModel(normalizedRelatedModel ?? "");
+  const listField = config.listFieldName ?? `${normalizedRelatedModel}List`;
   const searchVariableName =
     config.searchVariableName === undefined
       ? "quick"
@@ -1038,12 +1050,20 @@ function inferPropName(selection: string): string | undefined {
   return clean || undefined;
 }
 
-function pluralizeModel(name: string) {
-  if (!name) return "";
-  if (name.endsWith("s")) {
-    return `${name}es`;
-  }
-  return `${name}s`;
+function toModelToken(value: string) {
+  const normalized = String(value || "").trim();
+  if (!normalized) return "";
+  const pascal = normalized
+    .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+    .split(/[^a-zA-Z0-9]+/)
+    .filter(Boolean)
+    .map(
+      (segment) =>
+        segment.charAt(0).toUpperCase() + segment.slice(1).toLowerCase(),
+    )
+    .join("");
+  if (!pascal) return "";
+  return pascal.charAt(0).toLowerCase() + pascal.slice(1);
 }
 
 function toPascalCase(value: string) {

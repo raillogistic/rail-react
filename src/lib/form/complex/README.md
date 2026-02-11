@@ -1,6 +1,6 @@
 # Complex Forms (DynamicForm-only)
 
-These components are **spec-driven wrappers** around `frontend/src/lib/form/inputs/form.tsx` (`DynamicForm`). They do not rely on shared field definitions: you pass your own `FormSchema` / `FormSectionConfig` (e.g., for a WorkOrder) and the component manages a local TanStack form instance for you.
+These components are **spec-driven wrappers** around `src/lib/form/inputs/form.tsx` (`DynamicForm`). They do not rely on shared field definitions: you pass your own `FormSchema` / `FormSectionConfig` (e.g., for a WorkOrder) and the component manages a local TanStack form instance for you.
 
 ## Component props (all generics default to `Record<string, any>`)
 - `MultiStepWizardForm`: `{ sections, defaultValues?, onSubmit?, title?, finalSubmitLabel?, resetLabel? }` — slices your provided sections one per step.
@@ -17,7 +17,7 @@ These components are **spec-driven wrappers** around `frontend/src/lib/form/inpu
 All components are re-exported by `complex/shapes.tsx`.
 
 ## Example (WorkOrder)
-See `frontend/src/lib/form/FormExample.tsx` for a full WorkOrder schema wired into every shape. Each component receives WorkOrder sections/schemas via props (no shared defaults).
+See the examples alongside `src/lib/form/complex/shapes.tsx` for usage patterns. Each component receives WorkOrder sections/schemas via props (no shared defaults).
 
 ```tsx
 import {

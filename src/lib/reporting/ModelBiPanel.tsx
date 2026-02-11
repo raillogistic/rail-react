@@ -37,7 +37,7 @@ import {
   build_create_mutation,
   build_update_mutation,
   build_delete_mutation,
-} from "../form/backend/types/mutations";
+} from "../form/mutations";
 import type { TableFieldMetadataType } from "@/lib/table/compat/types";
 
 /**

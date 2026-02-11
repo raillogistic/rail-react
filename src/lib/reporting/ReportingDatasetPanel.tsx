@@ -15,7 +15,7 @@ import {
   build_create_mutation,
   type CreateMutationResponse,
   type CreateMutationVariables,
-} from "@/lib/form/backend/types/mutations";
+} from "@/lib/form/mutations";
 
 /**
  * Props for the reporting dataset creation panel.

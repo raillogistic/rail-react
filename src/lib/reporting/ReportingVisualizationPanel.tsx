@@ -8,7 +8,7 @@ import { Button } from "@/lib/components/ui/button";
 import { Input } from "@/lib/components/ui/input";
 import { Textarea } from "@/lib/components/ui/textarea";
 import { useGraphQLModelTable } from "../table/compat/hooks";
-import { build_create_mutation } from "../form/backend/types/mutations";
+import { build_create_mutation } from "../form/mutations";
 
 /**
  * Props to render the visualization creation panel.

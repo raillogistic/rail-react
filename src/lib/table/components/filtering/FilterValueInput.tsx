@@ -25,7 +25,7 @@ import {
   ChoiceOption,
   defaultMapRecord,
   resolveRecords,
-} from "@/lib/form2/inputs/query";
+} from "@/lib/form/inputs/query";
 
 type Props = {
   condition: FilterCondition;

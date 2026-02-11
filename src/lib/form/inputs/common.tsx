@@ -5,7 +5,7 @@ import type { BaseFieldConfig } from "./types";
 
 type FieldWrapperProps = {
   config: BaseFieldConfig;
-  error?: string;
+  error?: string | string[];
   dirty?: boolean;
   children: React.ReactNode;
 };
@@ -16,6 +16,11 @@ export const FieldWrapper: React.FC<FieldWrapperProps> = ({
   dirty,
   children,
 }) => {
+  const errorList = Array.isArray(error)
+    ? error.filter(Boolean)
+    : error
+    ? [error]
+    : [];
   if (config.hidden) {
     return <div className="hidden">{children}</div>;
   }
@@ -49,7 +54,56 @@ export const FieldWrapper: React.FC<FieldWrapperProps> = ({
       {config.helpText ? (
         <p className="text-xs text-muted-foreground">{config.helpText}</p>
       ) : null}
-      {error ? <p className="text-xs text-destructive">{error}</p> : null}
+      {errorList.length > 0 ? (
+        errorList.length === 1 ? (
+          <p className="text-xs text-destructive">{errorList[0]}</p>
+        ) : (
+          <ul className="space-y-1 text-xs text-destructive">
+            {errorList.map((item, index) => (
+              <li key={`${config.name}-error-${index}`}>{item}</li>
+            ))}
+          </ul>
+        )
+      ) : null}
     </div>
   );
 };
+
+export function resolveFieldErrors(meta: any, showError: boolean) {
+  if (!showError) return undefined;
+  const collected: string[] = [];
+  if (Array.isArray(meta?.touchedErrors)) {
+    collected.push(...meta.touchedErrors);
+  }
+  if (Array.isArray(meta?.errors)) {
+    collected.push(...meta.errors);
+  }
+  const submitError = meta?.errorMap?.onSubmit;
+  if (submitError) {
+    collected.push(submitError);
+  }
+  const unique = Array.from(new Set(collected.filter(Boolean)));
+  return unique.length ? unique : undefined;
+}
+
+export function resolveRequiredError(
+  config: BaseFieldConfig,
+  value: any,
+  showError: boolean
+) {
+  if (!showError || !config.required) return undefined;
+  const requiresTrue = config.type === "checkbox" || config.type === "switch";
+  if (requiresTrue) {
+    return value === true ? undefined : "Ce champ est obligatoire";
+  }
+  if (Array.isArray(value)) {
+    return value.length > 0 ? undefined : "Ce champ est obligatoire";
+  }
+  if (typeof value === "string") {
+    return value.trim().length > 0 ? undefined : "Ce champ est obligatoire";
+  }
+  if (value === undefined || value === null) {
+    return "Ce champ est obligatoire";
+  }
+  return undefined;
+}

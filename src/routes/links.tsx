@@ -23,11 +23,11 @@ import { LayoutSettingsPage } from "@/views/settings/LayoutSettingsPage";
 import { DashboardPage } from "@/views/dashboard/DashboardPage";
 
 import { getAppDefaultRoute, getAppNavigationLinks } from "@/apps/routes";
-// import ModelForm from "@/lib/form/backend/ModelForm";
+// import ModelForm from "@/lib/form";
 import { ModelTableV2 } from "@/lib/table";
-import { ModelForm } from "@/lib/form2";
+import { ModelForm } from "@/lib/form";
 import { ModelImportPage } from "@/lib/import/pages";
-// import ModelForm    from "@/lib/form2";
+// import ModelForm    from "@/lib/form";
 
 export const ROUTES = {
   LOGIN: "/login",
