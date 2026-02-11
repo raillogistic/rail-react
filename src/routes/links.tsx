@@ -26,6 +26,13 @@ import { getAppDefaultRoute, getAppNavigationLinks } from "@/apps/routes";
 import { BaseModelTable, ModelTableV2 } from "@/lib/table";
 import { ModelImportPage } from "@/lib/import/pages";
 import DynamicForm from "@/lib/form/inputs/form";
+import {
+  ApplicationReviewForm,
+  ContactForm,
+  InvoiceForm,
+  OnboardingWizard,
+  SettingsForm,
+} from "@/lib/form/example";
 
 export const ROUTES = {
   LOGIN: "/login",
@@ -127,118 +134,13 @@ const CORE_NAVIGATION_LINKS: NavigationSection[] = [
         id: "form-test",
         path: "/form",
         component: (
-          <>
-            <DynamicForm
-              schema={{
-                initialValues: { firstName: "dmslkdls" },
-                sections: [
-                  {
-                    fields: [
-                      {
-                        type: "checkbox",
-                        name: "test",
-                        label: "test",
-                        defaultValue: true,
-                        description: "dmslkdmlsk",
-                      },
-                    ],
-                  },
-                ],
-
-                // fields: [
-                //   {
-                //     placeholder: "first name",
-                //     name: "firstName",
-                //     type: "text",
-                //     label: "First Name",
-                //     required: true,
-                //   },
-                //   {
-                //     placeholder: "last name",
-                //     name: "lastName",
-                //     type: "text",
-                //     label: "Last Name",
-                //   },
-                //   {
-                //     placeholder: "email",
-                //     name: "email",
-                //     type: "email",
-                //     label: "Email",
-                //   },
-                //   {
-                //     name: "password",
-                //     type: "password",
-                //     label: "Password",
-                //   },
-                //   {
-                //     name: "confirmPassword",
-                //     type: "password",
-                //     label: "Confirm Password",
-                //   },
-                // ],
-              }}
-            />
-            {/* <ModelForm
-              appName="store"
-              modelName="Order"
-              mutationMode={"create"}
-              onChange={(values) => {
-                console.log(values);
-              }}
-              // objectId={orderId}
-              nestedFields={["customer", "items"]}
-              initialValues={{
-                customer: {
-                  id: "c1",
-                  firstName: "Ada",
-                  lastName: "Ada",
-                  email: "ada@example.com",
-                },
-                items: [
-                  { id: "li1", product: "1", quantity: 2 },
-                  { product: "2", quantity: 1 }, // no id => create
-                ],
-              }}
-              // nestedFieldsControl={{
-              //   defaultMode: "auto",
-              //   defaultPruneEmpty: true,
-              //   defaultIdKeys: ["id", "uuid"],
-              //   defaultKeepRelationshipField: false,
-              //   fields: {
-              //     customer: {
-              //       mode: "auto",
-              //       // keepRelationshipField: false,
-              //       objectProps: { columns: 2, collapsible: true },
-              //       fieldOverrides: {
-              //         id: { hidden: true },
-              //         email: { required: true },
-              //       },
-              //     },
-              //     items: {
-              //       mode: "auto",
-              //       operations: {
-              //         connect: true,
-              //         create: true,
-              //         update: true,
-              //         disconnect: true,
-              //         set: true,
-              //       },
-              //       listProps: {
-              //         addLabel: "Add line item",
-              //         itemLabel: "Line",
-              //         columns: 3,
-              //       },
-              //       fieldOverrides: {
-              //         id: { hidden: true },
-              //         quantity: { type: "number", min: 1 },
-              //         product: { placeholder: "Select product" },
-              //       },
-              //     },
-              //   },
-              // }}
-            /> */}
-            {/* <ModelForm appName="store" modelName="Product" />{" "} */}
-          </>
+          <div>
+            <SettingsForm />
+            <ContactForm />
+            <OnboardingWizard />
+            <InvoiceForm />
+            <ApplicationReviewForm />
+          </div>
         ),
         description: "dd",
         requiresAuth: true,

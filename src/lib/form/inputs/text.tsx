@@ -9,6 +9,8 @@ import type {
   TextFieldConfig,
 } from "./types";
 import { Textarea } from "@/lib/components/ui/textarea";
+import { File, X, FileJson } from "lucide-react";
+import { Button } from "@/lib/components/ui/button";
 
 type Props = FieldComponentProps<TextFieldConfig | FileFieldConfig>;
 
@@ -30,7 +32,12 @@ const TextInput: React.FC<Props> = ({ config, field, form }) => {
     return (
       <FieldWrapper config={config} error={error} dirty={dirty}>
         <Textarea
-          className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          data-slot="textarea"
+          className={cn(
+            "min-h-[100px] w-full resize-y rounded-lg border-border/60 bg-background/50 px-4 py-3 text-sm transition-all focus:border-primary/50 focus:bg-background focus:ring-4 focus:ring-primary/5 focus-visible:ring-0",
+            config.readOnly && "cursor-default bg-muted/50",
+            config.disabled && "cursor-not-allowed opacity-50"
+          )}
           rows={config.rows ?? 4}
           placeholder={config.placeholder}
           value={value}
@@ -45,31 +52,63 @@ const TextInput: React.FC<Props> = ({ config, field, form }) => {
 
   if (config.type === "file") {
     const files = (field.state.value as File[] | File | null) ?? null;
-    const summary = Array.isArray(files)
-      ? files.map((file) => file.name).join(", ")
-      : files instanceof File
-      ? files.name
-      : "Aucun fichier";
+    const fileList = Array.isArray(files) ? files : files ? [files] : [];
+    
     return (
       <FieldWrapper config={config} error={error} dirty={dirty}>
-        <Input
-          type="file"
-          accept={config.accept}
-          multiple={Boolean(config.multiple)}
-          onChange={(event) => {
-            const list = event.target.files;
-            if (!list) {
-              field.handleChange(config.multiple ? [] : null);
-              return;
-            }
-            field.handleChange(
-              config.multiple ? Array.from(list) : list[0] ?? null
-            );
-          }}
-          onBlur={field.handleBlur}
-          disabled={config.disabled}
-        />
-        <p className="text-xs text-muted-foreground">{summary}</p>
+        <div className="flex flex-col gap-3">
+          <div className="relative">
+            <Input
+              data-slot="input"
+              type="file"
+              accept={config.accept}
+              multiple={Boolean(config.multiple)}
+              className="cursor-pointer file:mr-4 file:rounded-md file:border-0 file:bg-primary/10 file:px-4 file:py-1 file:text-xs file:font-bold file:text-primary hover:file:bg-primary/20"
+              onChange={(event) => {
+                const list = event.target.files;
+                if (!list) {
+                  field.handleChange(config.multiple ? [] : null);
+                  return;
+                }
+                field.handleChange(
+                  config.multiple ? Array.from(list) : list[0] ?? null
+                );
+              }}
+              onBlur={field.handleBlur}
+              disabled={config.disabled}
+            />
+          </div>
+          
+          {fileList.length > 0 && (
+            <div className="flex flex-wrap gap-2 animate-in fade-in slide-in-from-top-1">
+              {fileList.map((file, idx) => (
+                <div 
+                  key={`${file.name}-${idx}`}
+                  className="flex items-center gap-2 rounded-md border border-border/50 bg-muted/30 px-2 py-1.5 text-[11px] font-medium"
+                >
+                  <File className="size-3.5 text-primary" />
+                  <span className="max-w-[150px] truncate">{file.name}</span>
+                  <span className="text-[10px] text-muted-foreground">({(file.size / 1024).toFixed(1)} KB)</span>
+                  {!config.disabled && !config.readOnly && (
+                    <button 
+                      type="button"
+                      className="ml-1 text-muted-foreground hover:text-destructive transition-colors"
+                      onClick={() => {
+                        if (config.multiple) {
+                          field.handleChange(fileList.filter((_, i) => i !== idx));
+                        } else {
+                          field.handleChange(null);
+                        }
+                      }}
+                    >
+                      <X className="size-3" />
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </FieldWrapper>
     );
   }
@@ -81,14 +120,24 @@ const TextInput: React.FC<Props> = ({ config, field, form }) => {
         : JSON.stringify(field.state.value ?? {}, null, 2);
     return (
       <FieldWrapper config={config} error={error} dirty={dirty}>
-        <textarea
-          className="font-mono min-h-[160px] w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
-          value={value}
-          onChange={(event) => field.handleChange(event.target.value)}
-          onBlur={field.handleBlur}
-          readOnly={config.readOnly}
-          disabled={config.disabled}
-        />
+        <div className="group/json relative overflow-hidden rounded-lg border border-border/60 transition-all focus-within:border-primary/50 focus-within:ring-4 focus-within:ring-primary/5">
+          <div className="flex items-center justify-between bg-muted/20 px-3 py-1.5 border-b border-border/30">
+            <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+              <FileJson className="size-3.5" />
+              JSON Editor
+            </div>
+          </div>
+          <textarea
+            data-slot="textarea"
+            className="font-mono min-h-[160px] w-full resize-y bg-background/50 p-4 text-[13px] leading-relaxed outline-none transition-colors focus:bg-background"
+            value={value}
+            onChange={(event) => field.handleChange(event.target.value)}
+            onBlur={field.handleBlur}
+            readOnly={config.readOnly}
+            disabled={config.disabled}
+            spellCheck={false}
+          />
+        </div>
       </FieldWrapper>
     );
   }
@@ -107,6 +156,7 @@ const TextInput: React.FC<Props> = ({ config, field, form }) => {
   return (
     <FieldWrapper config={config} error={error} dirty={dirty}>
       <Input
+        data-slot="input"
         type={inputType}
         placeholder={config.placeholder}
         value={value}
@@ -116,7 +166,10 @@ const TextInput: React.FC<Props> = ({ config, field, form }) => {
         onBlur={field.handleBlur}
         readOnly={config.readOnly}
         disabled={config.disabled}
-        className={cn(config.inputProps?.className)}
+        className={cn(
+          "h-10 rounded-lg border-border/60 bg-background/50 px-4 transition-all focus:border-primary/50 focus:bg-background focus:ring-4 focus:ring-primary/5 focus-visible:ring-0",
+          config.inputProps?.className
+        )}
         {...config.inputProps}
       />
     </FieldWrapper>

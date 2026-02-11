@@ -3,7 +3,7 @@ import { useApolloClient } from "@apollo/client";
 import { useStore } from "@tanstack/react-form";
 import type { UseFormReturn } from "@tanstack/react-form";
 import { parse, type DocumentNode } from "graphql";
-import { Loader2, Plus } from "lucide-react";
+import { Loader2, Plus, Search, Check, ChevronDown, X, Database } from "lucide-react";
 import { Button } from "@/lib/components/ui/button";
 import { Input } from "@/lib/components/ui/input";
 import {
@@ -18,6 +18,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/lib/components/ui/dialog";
+import { Badge } from "@/lib/components/ui/badge";
 import {
   FieldWrapper,
   resolveFieldErrors,
@@ -502,53 +503,12 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
     inlineCreateConfig?.formProps,
   ]);
 
-  const inlineDialogTitle =
-    inlineCreateConfig?.title ??
-    inlineModelName ??
-    config.label ??
-    "Create record";
+  const selectedOptions = React.useMemo(
+    () => options.filter((opt) => selectedValues.includes(opt.value)),
+    [options, selectedValues],
+  );
 
-  const inlineButtonVisible = false;
-  const canOpenInlineForm = false;
-  const inlineButtonDisabled = true;
-
-  React.useEffect(() => {
-    if (inlineFormOpen && !canOpenInlineForm) {
-      setInlineFormOpen(false);
-    }
-  }, [canOpenInlineForm, inlineFormOpen]);
-
-  const selectedLabel = React.useMemo(() => {
-    if (!config.multiple && selectedValues.length === 1) {
-      const choice = options.find((opt) => opt.value === selectedValues[0]);
-      if (choice) {
-        if (choice.description) {
-          return `${choice.label} — ${choice.description}`;
-        }
-        return choice.label;
-      }
-      return config.placeholder ?? "Sélectionner";
-    }
-    if (selectedValues.length > 0) {
-      const resolved = options.filter((opt) =>
-        selectedValues.includes(opt.value),
-      );
-      if (resolved.length > 0) {
-        return resolved
-          .map((opt) =>
-            opt.description ? `${opt.label} — ${opt.description}` : opt.label,
-          )
-          .join(", ");
-      }
-      return `${selectedValues.length} sélectionné${
-        selectedValues.length > 1 ? "s" : ""
-      }`;
-    }
-    return config.placeholder ?? "Sélectionner";
-  }, [config.multiple, config.placeholder, options, selectedValues]);
-
-  const tooltipLabel = selectedValues.length > 0 ? selectedLabel : undefined;
-  const inlineTriggerLabel = inlineCreateConfig?.title ?? "Add";
+  const inlineTriggerLabel = inlineCreateConfig?.title ?? "Ajouter";
 
   return (
     <FieldWrapper config={config} error={error} dirty={dirty}>
@@ -558,57 +518,104 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
             <DropdownMenuTrigger asChild>
               <Button
                 variant="outline"
-                className="w-full justify-between"
                 data-slot="button"
+                className={cn(
+                  "h-auto min-h-10 w-full justify-between rounded-lg border-border/60 bg-background/50 px-3 py-2 text-left font-normal transition-all hover:border-primary/50 hover:bg-background",
+                  selectedValues.length > 0 ? "border-primary/30" : "",
+                )}
               >
-                <span className="truncate" title={tooltipLabel}>
-                  {selectedLabel}
-                </span>
-                {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                <div className="flex flex-wrap gap-1.5 pr-4">
+                  {selectedOptions.length > 0 ? (
+                    selectedOptions.map((opt) => (
+                      <Badge
+                        key={opt.value}
+                        variant="secondary"
+                        className="bg-primary/10 text-primary border-none rounded-md px-1.5 py-0 text-[10px] font-bold uppercase tracking-wider"
+                      >
+                        {opt.label}
+                        {config.multiple && (
+                          <X
+                            className="ml-1 size-3 cursor-pointer opacity-60 hover:opacity-100"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggle(opt.value);
+                            }}
+                          />
+                        )}
+                      </Badge>
+                    ))
+                  ) : (
+                    <span className="text-muted-foreground">
+                      {config.placeholder ?? "Sélectionner..."}
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center gap-2">
+                  {loading ? (
+                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                  ) : (
+                    <ChevronDown className="size-4 opacity-50" />
+                  )}
+                </div>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-72 space-y-2 p-2">
-              <Input
-                placeholder="Rechercher..."
-                value={search}
-                onChange={(event) => {
-                  const term = event.target.value;
-                  setSearch(term);
-                  scheduleLoad(term);
-                }}
-                autoFocus
-                onKeyDown={handleKeyDown}
-              />
+            <DropdownMenuContent className="w-80 p-0 shadow-2xl border-border/40 bg-background/95 backdrop-blur-sm overflow-hidden">
+              <div className="flex items-center border-b border-border/40 bg-muted/20 px-3 py-2">
+                <Search className="mr-2 size-4 text-muted-foreground/60" />
+                <Input
+                  className="h-8 border-none bg-transparent p-0 text-sm focus-visible:ring-0"
+                  placeholder="Rechercher..."
+                  value={search}
+                  onChange={(event) => {
+                    const term = event.target.value;
+                    setSearch(term);
+                    scheduleLoad(term);
+                  }}
+                  autoFocus
+                  onKeyDown={handleKeyDown}
+                />
+              </div>
               <div
-                className="max-h-60 overflow-y-auto space-y-1"
+                className="max-h-72 overflow-y-auto p-1.5"
                 ref={optionsListRef}
               >
                 {options.length === 0 ? (
-                  <p className="text-xs text-muted-foreground px-2 py-3">
-                    Aucun résultat
-                  </p>
+                  <div className="flex flex-col items-center justify-center py-8 text-center">
+                    <Database className="mb-2 size-8 text-muted-foreground/20" />
+                    <p className="text-xs font-medium text-muted-foreground/60">
+                      Aucun résultat
+                    </p>
+                  </div>
                 ) : (
                   options.map((option, index) => (
                     <DropdownMenuCheckboxItem
                       key={option.value}
                       className={cn(
-                        "items-start rounded-md py-2 pl-8 pr-2 text-left",
-                        option.description ? "gap-1" : null,
-                        index === highlightedIndex ? "bg-muted" : null,
+                        "relative flex cursor-pointer select-none items-center rounded-md py-2.5 pl-9 pr-3 outline-none transition-colors",
+                        "hover:bg-primary/5 hover:text-primary focus:bg-primary/5 focus:text-primary",
+                        index === highlightedIndex
+                          ? "bg-primary/5 text-primary"
+                          : "",
+                        selectedValues.includes(option.value)
+                          ? "bg-primary/5 font-medium text-primary"
+                          : "",
                       )}
                       checked={selectedValues.includes(option.value)}
                       onCheckedChange={() => toggle(option.value)}
                       disabled={option.disabled}
-                      title={String(option.value)}
                       data-option-index={index}
-                      aria-selected={index === highlightedIndex}
                     >
-                      <div className="flex flex-col text-left">
-                        <span className="text-sm font-medium">
+                      <span className="absolute left-3 flex size-4 items-center justify-center">
+                        {selectedValues.includes(option.value) && (
+                          <Check className="size-3.5 stroke-[3]" />
+                        )}
+                      </span>
+                      <div className="flex flex-col gap-0.5">
+                        <span className="text-sm leading-none">
                           {option.label}
                         </span>
                         {option.description ? (
-                          <span className="text-xs text-muted-foreground">
+                          <span className="text-[10px] text-muted-foreground/70 leading-tight">
                             {option.description}
                           </span>
                         ) : null}
@@ -617,38 +624,47 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
                   ))
                 )}
               </div>
+              {inlineCreationEnabled && (
+                <div className="border-t border-border/40 p-1.5 bg-muted/5">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="w-full justify-start text-primary hover:bg-primary/5 hover:text-primary font-bold text-[10px] uppercase tracking-wider"
+                    onClick={() => setInlineFormOpen(true)}
+                  >
+                    <Plus className="mr-2 size-3.5 stroke-[3]" />
+                    {inlineTriggerLabel}
+                  </Button>
+                </div>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-        {inlineButtonVisible ? (
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="mt-1 h-10 w-10"
-            aria-label={inlineTriggerLabel}
-            onClick={() => setInlineFormOpen(true)}
-            data-slot="button"
-            disabled={inlineButtonDisabled}
-          >
-            <Plus className="h-4 w-4" />
-          </Button>
-        ) : null}
       </div>
       <Dialog open={inlineFormOpen} onOpenChange={setInlineFormOpen}>
-        <DialogContent className="max-w-3xl">
-          <div className="max-h-[70vh] overflow-y-auto">
+        <DialogContent className="sm:max-w-3xl overflow-hidden rounded-2xl p-0 border-border/40 shadow-2xl">
+          <DialogHeader className="px-6 pt-6 pb-2">
+            <DialogTitle className="flex items-center gap-2 text-xl font-bold tracking-tight">
+              <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                <Plus className="size-5" />
+              </div>
+              {inlineTriggerLabel}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="max-h-[70vh] overflow-y-auto px-6 pb-8">
             <React.Suspense
               fallback={
-                <p className="text-sm text-muted-foreground">Loading form...</p>
+                <div className="flex items-center justify-center py-20">
+                  <Loader2 className="size-8 animate-spin text-primary/30" />
+                </div>
               }
             >
-              {inlineFormOpen && canOpenInlineForm ? (
+              {inlineFormOpen && (
                 <LazyModelForm
                   {...inlineFormProps}
                   onError={() => setInlineFormOpen(true)}
                 />
-              ) : null}
+              )}
             </React.Suspense>
           </div>
         </DialogContent>

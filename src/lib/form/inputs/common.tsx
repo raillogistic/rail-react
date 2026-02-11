@@ -1,6 +1,13 @@
 import React from "react";
 import { Label } from "@/lib/components/ui/label";
 import { cn } from "@/lib/utils";
+import { 
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/lib/components/ui/tooltip";
+import { Info, AlertCircle } from "lucide-react";
 import type { BaseFieldConfig } from "./types";
 
 type FieldWrapperProps = {
@@ -21,50 +28,104 @@ export const FieldWrapper: React.FC<FieldWrapperProps> = ({
     : error
     ? [error]
     : [];
+  
+  const hasError = errorList.length > 0;
+
   if (config.hidden) {
     return <div className="hidden">{children}</div>;
   }
+
   return (
     <div
       data-dirty={dirty ? "true" : undefined}
+      data-error={hasError ? "true" : undefined}
       className={cn(
-        "rounded-md border border-transparent p-1",
-        "data-[dirty=true]:[&_[data-slot=input]]:border-emerald-500 data-[dirty=true]:[&_[data-slot=input]]:focus-visible:border-emerald-500 data-[dirty=true]:[&_[data-slot=input]]:focus-visible:ring-emerald-500/50",
-        "data-[dirty=true]:[&_[data-slot=textarea]]:border-emerald-500 data-[dirty=true]:[&_[data-slot=textarea]]:focus-visible:border-emerald-500 data-[dirty=true]:[&_[data-slot=textarea]]:focus-visible:ring-emerald-500/50",
-        "data-[dirty=true]:[&_[data-slot=select-trigger]]:border-emerald-500 data-[dirty=true]:[&_[data-slot=select-trigger]]:focus-visible:border-emerald-500 data-[dirty=true]:[&_[data-slot=select-trigger]]:focus-visible:ring-emerald-500/50",
-        "data-[dirty=true]:[&_[data-slot=checkbox]]:border-emerald-500 data-[dirty=true]:[&_[data-slot=checkbox]]:ring-emerald-500/40",
-        "data-[dirty=true]:[&_[data-slot=button]]:border-emerald-500 data-[dirty=true]:[&_[data-slot=button]]:focus-visible:border-emerald-500 data-[dirty=true]:[&_[data-slot=button]]:focus-visible:ring-emerald-500/40",
+        "group flex flex-col gap-1.5 py-1",
+        "transition-all duration-200 ease-in-out",
         config.className
       )}
     >
-      {config.label ? (
-        <div className="flex items-center justify-between gap-2">
-          <Label className="text-sm font-medium text-foreground">
-            {config.label}
-            {config.required ? (
-              <span className="text-destructive ml-1">*</span>
-            ) : null}
-          </Label>
+      <div className="flex items-center justify-between gap-2 px-0.5">
+        {config.label ? (
+          <div className="flex items-center gap-1.5">
+            <Label 
+              className={cn(
+                "text-sm font-medium transition-colors",
+                hasError ? "text-destructive" : "text-foreground/90",
+                "group-focus-within:text-primary"
+              )}
+            >
+              {config.label}
+              {config.required ? (
+                <span className="text-destructive ml-0.5" aria-hidden="true">*</span>
+              ) : null}
+            </Label>
+            
+            {config.description && (
+              <TooltipProvider>
+                <Tooltip delayDuration={300}>
+                  <TooltipTrigger asChild>
+                    <button type="button" className="text-muted-foreground/60 hover:text-muted-foreground transition-colors outline-none">
+                      <Info className="size-3.5" />
+                      <span className="sr-only">Description</span>
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" className="max-w-64 text-xs">
+                    {config.description}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+          </div>
+        ) : <div />}
+
+        {dirty && !hasError && (
+          <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-500 animate-in fade-in slide-in-from-right-1">
+            Modifié
+          </span>
+        )}
+      </div>
+
+      <div 
+        className={cn(
+          "relative transition-all duration-200",
+          "data-[dirty=true]:[&_[data-slot=input]]:border-emerald-500/50 data-[dirty=true]:[&_[data-slot=input]]:ring-emerald-500/10",
+          "data-[dirty=true]:[&_[data-slot=textarea]]:border-emerald-500/50 data-[dirty=true]:[&_[data-slot=textarea]]:ring-emerald-500/10",
+          "data-[dirty=true]:[&_[data-slot=select-trigger]]:border-emerald-500/50 data-[dirty=true]:[&_[data-slot=select-trigger]]:ring-emerald-500/10",
+          "data-[dirty=true]:[&_[data-slot=checkbox]]:border-emerald-500 data-[dirty=true]:[&_[data-slot=checkbox]]:ring-emerald-500/20",
+          "data-[dirty=true]:[&_[data-slot=button]]:border-emerald-500/50 data-[dirty=true]:[&_[data-slot=button]]:ring-emerald-500/10",
+          
+          "data-[error=true]:[&_[data-slot=input]]:border-destructive/50 data-[error=true]:[&_[data-slot=input]]:ring-destructive/10",
+          "data-[error=true]:[&_[data-slot=textarea]]:border-destructive/50 data-[error=true]:[&_[data-slot=textarea]]:ring-destructive/10",
+          "data-[error=true]:[&_[data-slot=select-trigger]]:border-destructive/50 data-[error=true]:[&_[data-slot=select-trigger]]:ring-destructive/10",
+          "data-[error=true]:[&_[data-slot=checkbox]]:border-destructive data-[error=true]:[&_[data-slot=checkbox]]:ring-destructive/20",
+          "data-[error=true]:[&_[data-slot=button]]:border-destructive/50 data-[error=true]:[&_[data-slot=button]]:ring-destructive/10"
+        )}
+        data-dirty={dirty ? "true" : undefined}
+        data-error={hasError ? "true" : undefined}
+      >
+        {children}
+      </div>
+
+      {config.helpText && !hasError && (
+        <p className="px-0.5 text-[11px] leading-tight text-muted-foreground/70 italic">
+          {config.helpText}
+        </p>
+      )}
+
+      {hasError && (
+        <div className="flex flex-col gap-1 px-0.5 animate-in fade-in slide-in-from-top-1">
+          {errorList.map((item, index) => (
+            <div 
+              key={`${config.name}-error-${index}`}
+              className="flex items-center gap-1.5 text-[11px] font-medium text-destructive leading-tight"
+            >
+              <AlertCircle className="size-3 shrink-0" />
+              <span>{item}</span>
+            </div>
+          ))}
         </div>
-      ) : null}
-      {config.description ? (
-        <p className="text-xs text-muted-foreground">{config.description}</p>
-      ) : null}
-      {children}
-      {config.helpText ? (
-        <p className="text-xs text-muted-foreground">{config.helpText}</p>
-      ) : null}
-      {errorList.length > 0 ? (
-        errorList.length === 1 ? (
-          <p className="text-xs text-destructive">{errorList[0]}</p>
-        ) : (
-          <ul className="space-y-1 text-xs text-destructive">
-            {errorList.map((item, index) => (
-              <li key={`${config.name}-error-${index}`}>{item}</li>
-            ))}
-          </ul>
-        )
-      ) : null}
+      )}
     </div>
   );
 };

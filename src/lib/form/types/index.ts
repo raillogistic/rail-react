@@ -1,10 +1,10 @@
 /**
- * Re-exports all form field and schema types from the canonical location.
+ * Re-exports all form type definitions from a single entry point.
  *
- * Input components should import from here for backwards compatibility.
- *
- * @module form/inputs/types
+ * @module form/types
  */
+
+// Schema & field types
 export type {
   PrimitiveFormInputType,
   StructuralFormInputType,
@@ -34,8 +34,9 @@ export type {
   FormValidator,
   FormSchema,
   ChangeRecord,
-} from "../types/schema";
+} from "./schema";
 
+// Behavior types
 export type {
   FormSubmitContext,
   FieldConditionMap,
@@ -45,12 +46,17 @@ export type {
   FormErrors,
   FormAutosaveConfig,
   FormBehaviorConfig,
-} from "../types/behavior";
+} from "./behavior";
 
-export type { FormLayoutMode, FormLayoutConfig } from "../types/layout";
-export type { FormActionsConfig } from "../types/actions";
+// Layout types
+export type { FormLayoutMode, FormLayoutConfig } from "./layout";
+
+// Actions types
+export type { FormActionsConfig } from "./actions";
+
+// Props types
 export type {
   FormStateConfig,
   FormDevtoolsConfig,
   DynamicFormProps,
-} from "../types/props";
+} from "./props";

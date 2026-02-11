@@ -1,7 +1,9 @@
 import React from "react";
 import { useStore } from "@tanstack/react-form";
 import { Checkbox } from "@/lib/components/ui/checkbox";
+import { Switch } from "@/lib/components/ui/switch";
 import { Button } from "@/lib/components/ui/button";
+import { cn } from "@/lib/utils";
 import { FieldWrapper, resolveFieldErrors, resolveRequiredError } from "./common";
 import type { BooleanFieldConfig, FieldComponentProps } from "./types";
 
@@ -20,31 +22,78 @@ const BooleanInput: React.FC<Props> = ({ config, field, form }) => {
   const error = fieldErrors ?? resolveRequiredError(config, field.state.value, showError);
   const value = Boolean(field.state.value);
 
+  const label = value ? config.trueLabel ?? "Oui" : config.falseLabel ?? "Non";
+
+  if (config.type === "switch") {
+    return (
+      <FieldWrapper config={config} error={error} dirty={dirty}>
+        <div 
+          className={cn(
+            "flex items-center gap-4 rounded-lg border border-border/40 bg-background/50 p-3 transition-all duration-200",
+            "hover:border-border/80 hover:bg-background",
+            value ? "border-primary/20 bg-primary/5" : ""
+          )}
+        >
+          <Switch
+            data-slot="checkbox"
+            checked={value}
+            onCheckedChange={(checked) => field.handleChange(Boolean(checked))}
+            disabled={config.disabled}
+          />
+          <div className="flex flex-col">
+            <span className={cn(
+              "text-sm font-medium transition-colors",
+              value ? "text-primary" : "text-foreground/70"
+            )}>
+              {label}
+            </span>
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="ml-auto h-7 px-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground transition-all hover:bg-primary/10 hover:text-primary"
+            onClick={() => field.handleChange(!value)}
+            type="button"
+            disabled={config.disabled}
+          >
+            {value ? "Désactiver" : "Activer"}
+          </Button>
+        </div>
+      </FieldWrapper>
+    );
+  }
+
   return (
     <FieldWrapper config={config} error={error} dirty={dirty}>
-      <div className="flex items-center gap-3">
+      <div 
+        className={cn(
+          "flex items-center gap-3 rounded-lg border border-border/40 bg-background/50 px-4 py-3 transition-all duration-200",
+          "hover:border-border/80 hover:bg-background",
+          value ? "border-primary/20 bg-primary/5 shadow-sm" : ""
+        )}
+        onClick={() => !config.disabled && field.handleChange(!value)}
+      >
         <Checkbox
+          data-slot="checkbox"
           checked={value}
           onCheckedChange={(checked) => field.handleChange(Boolean(checked))}
           onBlur={field.handleBlur}
           disabled={config.disabled}
+          className="size-5"
+          onClick={(e) => e.stopPropagation()}
         />
-        <span className="text-sm text-muted-foreground">
-          {value ? config.trueLabel ?? "Oui" : config.falseLabel ?? "Non"}
-        </span>
-        {config.type === "switch" ? (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => field.handleChange(!value)}
-            type="button"
-          >
-            {value ? "Désactiver" : "Activer"}
-          </Button>
-        ) : null}
+        <div className="flex flex-col cursor-pointer select-none">
+          <span className={cn(
+            "text-sm font-semibold transition-colors",
+            value ? "text-primary" : "text-foreground/80"
+          )}>
+            {label}
+          </span>
+        </div>
       </div>
     </FieldWrapper>
   );
 };
 
 export default BooleanInput;
+

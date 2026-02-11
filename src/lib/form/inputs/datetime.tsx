@@ -1,10 +1,11 @@
 import React from "react";
 import { useStore } from "@tanstack/react-form";
 import { format, parseISO } from "date-fns";
-import { Calendar as CalendarIcon } from "lucide-react";
+import { fr } from "date-fns/locale";
+import { CalendarDays, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/lib/components/ui/button";
-import { Calendar } from "@/lib/components/ui/calendar";
+import { Calendar as CalendarComponent } from "@/lib/components/ui/calendar";
 import {
   Popover,
   PopoverContent,
@@ -77,37 +78,49 @@ const DateTimeInput: React.FC<Props> = ({ config, field, form }) => {
       <Popover>
         <PopoverTrigger asChild>
           <Button
-            variant={"outline"}
+            variant="outline"
             data-slot="input"
             className={cn(
-              "w-full justify-start text-left font-normal",
-              !value && "text-muted-foreground"
+              "h-10 w-full justify-start rounded-lg border-border/60 bg-background/50 px-4 text-left font-normal transition-all",
+              "hover:border-primary/50 hover:bg-background focus:border-primary/50 focus:bg-background focus:ring-4 focus:ring-primary/5",
+              !value && "text-muted-foreground",
+              isValidDate && "border-primary/30 font-medium text-foreground",
+              config.disabled && "cursor-not-allowed opacity-60"
             )}
             disabled={config.disabled}
           >
-            <CalendarIcon className="mr-2 h-4 w-4" />
-            {isValidDate ? (
-              format(dateValue, "yyyy-MM-dd HH:mm")
-            ) : (
-              <span>Pick a date and time</span>
-            )}
+            <CalendarDays className={cn(
+              "mr-2.5 size-4 transition-colors",
+              isValidDate ? "text-primary" : "text-muted-foreground/60"
+            )} />
+            <span className="truncate">
+              {isValidDate ? (
+                format(dateValue, "dd/MM/yyyy HH:mm", { locale: fr })
+              ) : (
+                <span>Choisir date et heure</span>
+              )}
+            </span>
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="start">
-          <Calendar
+        <PopoverContent className="w-auto p-0 border-border/40 shadow-xl bg-background/95 backdrop-blur-sm" align="start">
+          <CalendarComponent
             mode="single"
             selected={dateValue}
             onSelect={handleDateSelect}
             initialFocus
-            className="p-2"
+            locale={fr}
+            className="p-3"
           />
-          <div className="p-2 border-t border-border">
-            <Input
-              type="time"
-              className="w-full"
-              value={isValidDate ? format(dateValue, "HH:mm") : ""}
-              onChange={handleTimeChange}
-            />
+          <div className="flex items-center gap-3 border-t border-border/40 bg-muted/20 p-4">
+            <Clock className="size-4 text-primary" />
+            <div className="flex-1">
+              <Input
+                type="time"
+                className="h-9 rounded-md border-border/60 bg-background transition-all focus:border-primary/50 focus:ring-4 focus:ring-primary/5"
+                value={isValidDate ? format(dateValue, "HH:mm") : ""}
+                onChange={handleTimeChange}
+              />
+            </div>
           </div>
         </PopoverContent>
       </Popover>

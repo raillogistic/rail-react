@@ -1,11 +1,11 @@
 import * as React from "react";
 import { useStore } from "@tanstack/react-form";
-import { CalendarIcon } from "lucide-react";
+import { Calendar, CalendarDays } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
 
 import { Button } from "@/lib/components/ui/button";
-import { Calendar } from "@/lib/components/ui/calendar";
+import { Calendar as CalendarComponent } from "@/lib/components/ui/calendar";
 import {
   Popover,
   PopoverContent,
@@ -76,23 +76,30 @@ const DateInput: React.FC<Props> = ({ config, field, form }) => {
             variant="outline"
             data-slot="input"
             className={cn(
-              "w-full justify-start text-left font-normal",
+              "h-10 w-full justify-start rounded-lg border-border/60 bg-background/50 px-4 text-left font-normal transition-all",
+              "hover:border-primary/50 hover:bg-background focus:border-primary/50 focus:bg-background focus:ring-4 focus:ring-primary/5",
               !parsedValue && "text-muted-foreground",
+              parsedValue && "border-primary/30 font-medium text-foreground",
               config.disabled && "cursor-not-allowed opacity-60"
             )}
             disabled={config.disabled}
           >
-            <CalendarIcon className="mr-2 h-4 w-4" />
-            {buttonLabel}
+            <CalendarDays className={cn(
+              "mr-2.5 size-4 transition-colors",
+              parsedValue ? "text-primary" : "text-muted-foreground/60"
+            )} />
+            <span className="truncate">{buttonLabel}</span>
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="start">
-          <Calendar
+        <PopoverContent className="w-auto p-0 border-border/40 shadow-xl bg-background/95 backdrop-blur-sm" align="start">
+          <CalendarComponent
             mode="single"
             selected={parsedValue}
             onSelect={handleSelect}
             disabled={disabledRanges.length ? disabledRanges : undefined}
             initialFocus
+            locale={fr}
+            className="p-3"
           />
         </PopoverContent>
       </Popover>

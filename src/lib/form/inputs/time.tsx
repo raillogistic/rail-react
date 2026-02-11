@@ -1,6 +1,8 @@
 import React from "react";
 import { useStore } from "@tanstack/react-form";
 import { Input } from "@/lib/components/ui/input";
+import { ClockIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { FieldWrapper, resolveFieldErrors, resolveRequiredError } from "./common";
 import type { DateFieldConfig, FieldComponentProps } from "./types";
 
@@ -21,17 +23,25 @@ const TimeInput: React.FC<Props> = ({ config, field, form }) => {
 
   return (
     <FieldWrapper config={config} error={error} dirty={dirty}>
-      <Input
-        type="time"
-        value={value}
-        min={config.min}
-        max={config.max}
-        onChange={(event) => field.handleChange(event.target.value)}
-        onBlur={field.handleBlur}
-        disabled={config.disabled}
-      />
+      <div className="relative group/time">
+        <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/50 transition-colors group-focus-within/time:text-primary/70">
+          <ClockIcon className="size-4" />
+        </div>
+        <Input
+          data-slot="input"
+          type="time"
+          value={value}
+          min={config.min}
+          max={config.max}
+          onChange={(event) => field.handleChange(event.target.value)}
+          onBlur={field.handleBlur}
+          disabled={config.disabled}
+          className="h-10 rounded-lg border-border/60 bg-background/50 pl-9 pr-4 transition-all focus:border-primary/50 focus:bg-background focus:ring-4 focus:ring-primary/5 focus-visible:ring-0"
+        />
+      </div>
     </FieldWrapper>
   );
 };
 
 export default TimeInput;
+
