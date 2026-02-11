@@ -1,5 +1,19 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Download, Loader2 } from "lucide-react";
+import {
+  Download,
+  Loader2,
+  FileSpreadsheet,
+  FileText,
+  Settings2,
+  Database,
+  Filter,
+  ArrowUpDown,
+  X,
+  CheckCircle2,
+  Info,
+  Search,
+  ListTree,
+} from "lucide-react";
 import { Button } from "@/lib/components/ui/button";
 import {
   Dialog,
@@ -21,16 +35,16 @@ import {
   SelectValue,
 } from "@/lib/components/ui/select";
 import { toast } from "@/lib/components/ui/sonner";
+import { Badge } from "@/lib/components/ui/badge";
+import { Separator } from "@/lib/components/ui/separator";
 import {
   getAuthorizationHeader,
   getSecureHeaders,
 } from "@/auth/utils/token-storage";
+import { cn } from "@/lib/utils";
 import { useMetadata } from "../context/MetadataContext";
 import { useTable } from "../context/TableContext";
-import type {
-  FilterGroup,
-  FilterQueryVariables,
-} from "../../filters/types";
+import type { FilterGroup, FilterQueryVariables } from "../../filters/types";
 import type { ModelSchema } from "../types";
 import {
   ExportFieldTree,
@@ -155,6 +169,7 @@ export function ModelTableExportDialog({
   const [fieldOrder, setFieldOrder] = useState<string[]>([]);
   const [exporting, setExporting] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
   const canExport = !!metadata?.permissions?.canExport;
 
@@ -276,12 +291,12 @@ export function ModelTableExportDialog({
 
   const handleExport = useCallback(async () => {
     if (!metadata) {
-      setExportError("Les métadonnées ne sont pas disponibles.");
+      setExportError("Les mÃ©tadonnÃ©es ne sont pas disponibles.");
       return;
     }
     const payload = buildExportPayload();
     if (!payload) {
-      setExportError("Sélectionnez au moins un champ à exporter.");
+      setExportError("SÃ©lectionnez au moins un champ Ã  exporter.");
       return;
     }
 
@@ -305,10 +320,11 @@ export function ModelTableExportDialog({
         },
         body: JSON.stringify(payload),
       });
+      console.log(JSON.stringify(payload));
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "Échec de l'export.");
+        throw new Error(errorData.error || "Ã‰chec de l'export.");
       }
 
       const contentType = response.headers.get("content-type") ?? "";
@@ -316,7 +332,7 @@ export function ModelTableExportDialog({
         const result = await response.json();
         throw new Error(
           result.error ||
-            "Export en file d'attente. Utilisez l'endpoint des exports pour télécharger.",
+            "Export en file d'attente. Utilisez l'endpoint des exports pour tÃ©lÃ©charger.",
         );
       }
 
@@ -334,11 +350,11 @@ export function ModelTableExportDialog({
       link.remove();
       window.URL.revokeObjectURL(url);
 
-      toast.success(`Export ${fileExtension.toUpperCase()} généré.`);
+      toast.success(`Export ${fileExtension.toUpperCase()} gÃ©nÃ©rÃ©.`);
       setOpen(false);
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "Échec de l'export.";
+        error instanceof Error ? error.message : "Ã‰chec de l'export.";
       setExportError(message);
       toast.error(message);
     } finally {
@@ -355,48 +371,93 @@ export function ModelTableExportDialog({
           <Button
             variant="outline"
             size="icon"
-            className="h-8 w-8"
-            aria-label={labels?.buttonAria ?? "Exporter les données"}
+            className="h-8 w-8 rounded-lg border-border/40 hover:bg-primary/5 hover:text-primary transition-all active:scale-90"
+            aria-label={labels?.buttonAria ?? "Exporter les donnÃ©es"}
           >
             <Download className="h-4 w-4" />
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-5xl">
-        <DialogHeader>
-          <DialogTitle>
-            {labels?.title ??
-              `Exporter ${metadata.verboseNamePlural || metadata.model}`}
-          </DialogTitle>
-          <DialogHeader>
-            <DialogDescription>
-              {labels?.description ??
-                "Choisissez les champs et le format pour la demande d'export."}
-            </DialogDescription>
-          </DialogHeader>
+      <DialogContent className="max-w-5xl h-[90vh] max-h-[900px] gap-0 p-0 overflow-hidden border-none shadow-2xl backdrop-blur-2xl bg-background/95 rounded-[2rem] flex flex-col animate-in zoom-in-95 duration-300">
+        <DialogHeader className="flex-none px-8 py-6 bg-muted/10 border-b border-border/20">
+          <div className="flex items-center gap-4">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary shadow-lg shadow-primary/20">
+              <Database className="h-6 w-6 text-primary-foreground" />
+            </div>
+            <div className="space-y-0.5">
+              <DialogTitle className="text-2xl font-black uppercase tracking-tighter">
+                {labels?.title ??
+                  `Export ${metadata.verboseNamePlural || metadata.model}`}
+              </DialogTitle>
+              <DialogDescription className="text-xs font-bold uppercase tracking-widest text-muted-foreground/60 flex items-center gap-2">
+                <Info className="h-3 w-3" />
+                {labels?.description ??
+                  "Configuration de l'extraction des donnÃ©es"}
+              </DialogDescription>
+            </div>
+          </div>
         </DialogHeader>
-        <div className="grid gap-6 md:grid-cols-[2fr,1fr]">
-          <div className="space-y-3">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <p className="text-sm font-medium">
-                  {labels?.fieldsTitle ?? "Champs à exporter"}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {labels?.selectedCount?.(selectedCount) ??
-                    `${selectedCount} sélectionné(s)`}
-                </p>
+
+        <div className="flex-1 min-h-0 grid gap-0 md:grid-cols-[2.5fr,1fr] overflow-hidden">
+          {/* Structure Section */}
+          <div className="flex flex-col border-r border-border/20 bg-background/50 overflow-hidden">
+            <div className="flex-none space-y-4 px-8 py-4 bg-muted/5 border-b border-border/10 z-10 backdrop-blur-sm">
+              <div className="flex items-center justify-between">
+                <div className="flex flex-col">
+                  <div className="flex items-center gap-2">
+                    <ListTree className="h-4 w-4 text-primary/60" />
+                    <span className="text-sm font-black uppercase tracking-widest text-foreground/80">
+                      {labels?.fieldsTitle ?? "Structure de l'export"}
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-bold text-primary animate-in fade-in slide-in-from-left-2 duration-500">
+                    {selectedCount} champ{selectedCount > 1 ? "s" : ""}{" "}
+                    sÃ©lectionnÃ©{selectedCount > 1 ? "s" : ""}
+                  </span>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={selectAllRootFields}
+                    className="h-8 text-[10px] font-black uppercase tracking-widest hover:bg-primary/10 hover:text-primary rounded-lg transition-all"
+                  >
+                    {labels?.selectAll ?? "Tout"}
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearFields}
+                    className="h-8 text-[10px] font-black uppercase tracking-widest hover:bg-red-50 hover:text-red-500 rounded-lg transition-all"
+                  >
+                    {labels?.clear ?? "Effacer"}
+                  </Button>
+                </div>
               </div>
-              <div className="flex gap-2">
-                <Button variant="ghost" size="sm" onClick={selectAllRootFields}>
-                  {labels?.selectAll ?? "Tout sélectionner"}
-                </Button>
-                <Button variant="ghost" size="sm" onClick={clearFields}>
-                  {labels?.clear ?? "Effacer"}
-                </Button>
+
+              {/* Search Bar - Fixed here */}
+              <div className="relative group">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted-foreground/40 group-focus-within:text-primary transition-colors">
+                  <Search className="h-4 w-4" />
+                </div>
+                <Input
+                  placeholder="Rechercher un champ..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="pl-10 h-10 bg-background border-border/40 rounded-xl focus:ring-4 focus:ring-primary/5 transition-all font-medium"
+                />
+                {searchQuery && (
+                  <button
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 hover:bg-muted rounded-lg transition-all"
+                  >
+                    <X className="h-3.5 w-3.5 text-muted-foreground/60" />
+                  </button>
+                )}
               </div>
             </div>
-            <ScrollArea className="h-[360px] rounded-md border p-3">
+
+            <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
               <ExportFieldTree
                 metadata={metadata}
                 selected={selectedFields}
@@ -404,66 +465,129 @@ export function ModelTableExportDialog({
                 maxDepth={MAX_NESTED_DEPTH}
                 fieldOrder={fieldOrder}
                 onFieldOrderChange={setFieldOrder}
+                searchFilter={searchQuery}
               />
-            </ScrollArea>
-          </div>
-          <div className="space-y-4">
-            <div className="rounded-md grid grid-cols-2 gap-2 border p-3 space-y-3">
-              <div>
-                <Label htmlFor="export-filename">
-                  {labels?.filenameLabel ?? "Nom du fichier"}
-                </Label>
-                <Input
-                  id="export-filename"
-                  value={exportFilename}
-                  onChange={(event) => setExportFilename(event.target.value)}
-                  placeholder={labels?.filenamePlaceholder ?? "ex. export_donnees"}
-                  className="mt-1"
-                />
-              </div>
-              <div>
-                <Label>{labels?.formatLabel ?? "Format"}</Label>
-                <Select
-                  value={fileExtension}
-                  onValueChange={(value: FileExtension) =>
-                    setFileExtension(value)
-                  }
-                >
-                  <SelectTrigger className="mt-1 w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="xlsx">Excel (.xlsx)</SelectItem>
-                    <SelectItem value="csv">CSV (.csv)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
             </div>
+          </div>
 
-            {exportError ? (
-              <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
-                {exportError}
+          {/* Configuration Section */}
+          <div className="flex flex-col bg-muted/5 overflow-hidden">
+            <div className="flex-1 p-6 space-y-6 overflow-y-auto custom-scrollbar">
+              {/* Configuration Group */}
+              <div className="space-y-5">
+                <div className="flex items-center gap-2">
+                  <Settings2 className="h-3.5 w-3.5 text-primary/60" />
+                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/80">
+                    Configuration
+                  </span>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="space-y-1.5">
+                    <Label
+                      htmlFor="export-filename"
+                      className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/50 ml-1"
+                    >
+                      {labels?.filenameLabel ?? "Nom du fichier"}
+                    </Label>
+                    <div className="relative group">
+                      <Input
+                        id="export-filename"
+                        value={exportFilename}
+                        onChange={(event) =>
+                          setExportFilename(event.target.value)
+                        }
+                        placeholder={
+                          labels?.filenamePlaceholder ?? "export_donnees"
+                        }
+                        className="h-9 bg-background/50 border-border/30 focus:ring-4 focus:ring-primary/5 rounded-lg text-xs font-bold transition-all"
+                      />
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-bold text-muted-foreground/30 uppercase tracking-widest pointer-events-none">
+                        .{fileExtension}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/50 ml-1">
+                      {labels?.formatLabel ?? "Format"}
+                    </Label>
+                    <div className="grid grid-cols-2 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setFileExtension("xlsx")}
+                        className={cn(
+                          "flex items-center justify-center gap-2 py-2 px-3 rounded-xl border transition-all duration-300",
+                          fileExtension === "xlsx"
+                            ? "bg-primary border-primary shadow-md shadow-primary/10 text-primary-foreground"
+                            : "bg-background/50 border-border/30 text-muted-foreground hover:border-primary/30 hover:text-primary",
+                        )}
+                      >
+                        <FileSpreadsheet className="h-3.5 w-3.5" />
+                        <span className="text-[9px] font-black uppercase tracking-widest">
+                          Excel
+                        </span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setFileExtension("csv")}
+                        className={cn(
+                          "flex items-center justify-center gap-2 py-2 px-3 rounded-xl border transition-all duration-300",
+                          fileExtension === "csv"
+                            ? "bg-primary border-primary shadow-md shadow-primary/10 text-primary-foreground"
+                            : "bg-background/50 border-border/30 text-muted-foreground hover:border-primary/30 hover:text-primary",
+                        )}
+                      >
+                        <FileText className="h-3.5 w-3.5" />
+                        <span className="text-[9px] font-black uppercase tracking-widest">
+                          CSV
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
               </div>
-            ) : null}
+
+              <Separator className="bg-border/5" />
+
+              {/* Status Group */}
+              {exportError ? (
+                <div className="rounded-xl border border-red-100 bg-red-50/50 p-3 text-[10px] font-bold text-red-500 animate-in shake duration-300">
+                  <div className="flex gap-2">
+                    <X className="h-3.5 w-3.5 shrink-0" />
+                    <span>{exportError}</span>
+                  </div>
+                </div>
+              ) : null}
+            </div>
           </div>
         </div>
-        <DialogFooter className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="text-xs text-muted-foreground">
+
+        <DialogFooter className="px-8 py-6 bg-muted/5 border-t border-border/20 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between flex-none">
+          <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.1em] text-muted-foreground/60">
+            <span className="h-1.5 w-1.5 rounded-full bg-primary/40 animate-pulse" />
             {labels?.footerSelectedCount?.(selectedCount) ??
-              `${selectedCount} champ${selectedCount === 1 ? "" : "s"} seront exportés.`}
+              `${selectedCount} champ${selectedCount <= 1 ? "" : "s"} prÃªt${selectedCount <= 1 ? "" : "s"} pour l'export`}
           </div>
-          <div className="flex w-full justify-end gap-2 sm:w-auto">
-            <Button variant="ghost" onClick={() => setOpen(false)}>
+          <div className="flex w-full justify-end gap-3 sm:w-auto">
+            <Button
+              variant="ghost"
+              onClick={() => setOpen(false)}
+              className="h-11 px-6 rounded-xl font-bold uppercase text-xs tracking-widest hover:bg-background transition-all"
+            >
               {labels?.cancel ?? "Annuler"}
             </Button>
             <Button
               onClick={handleExport}
               disabled={exporting || selectedCount === 0}
+              className="h-11 px-8 rounded-xl font-black uppercase text-xs tracking-[0.2em] shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-95 disabled:grayscale"
             >
               {exporting ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              ) : null}
-              {labels?.download ?? "Télécharger"}
+              ) : (
+                <Download className="mr-2 h-4 w-4" />
+              )}
+              {labels?.download ?? "GÃ©nÃ©rer"}
             </Button>
           </div>
         </DialogFooter>
@@ -471,4 +595,3 @@ export function ModelTableExportDialog({
     </Dialog>
   );
 }
-
