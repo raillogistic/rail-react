@@ -34,4 +34,9 @@ export interface FormActionsConfig<TValues = Record<string, any>> {
   };
   /** Show a "dirty" indicator badge */
   showDirtyIndicator?: boolean;
+  /** Configuration for Undo/Redo history controls */
+  undoRedo?: {
+    enabled: boolean;
+    showInActionBar?: boolean; // If true, shows in the main actions bar. If false, might be rendered elsewhere or strictly via keyboard.
+  };
 }

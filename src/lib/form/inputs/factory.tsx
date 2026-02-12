@@ -7,6 +7,7 @@ import DateInput from "./date";
 import DateTimeInput from "./datetime";
 import TimeInput from "./time";
 import QueryChoiceInput from "./query";
+import RichTextInput from "./rich-text";
 
 type Registry = Partial<Record<FormInputType, FieldRendererComponent>>;
 
@@ -18,6 +19,7 @@ const registry: Registry = {
   color: TextInput,
   json: TextInput,
   file: TextInput,
+  "rich-text": RichTextInput,
   number: NumberInput,
   decimal: NumberInput,
   slider: NumberInput,

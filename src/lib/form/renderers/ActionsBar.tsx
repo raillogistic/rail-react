@@ -18,14 +18,19 @@ import {
   DialogTitle,
 } from "@/lib/components/ui/dialog";
 import { cn } from "@/lib/utils";
-import { Save, RotateCcw, CheckCircle2, AlertTriangle, Loader2 } from "lucide-react";
-import type { FormActionsConfig } from "../types/actions";
+import { Save, RotateCcw, CheckCircle2, AlertTriangle, Loader2, Undo, Redo } from "lucide-react";
 
 export type ActionsBarProps<TValues> = {
   form: UseFormReturn<TValues>;
   config?: FormActionsConfig<TValues>;
   isLoading?: boolean;
   variant: "default" | "compact" | "popup";
+  history?: {
+    undo: () => void;
+    redo: () => void;
+    canUndo: boolean;
+    canRedo: boolean;
+  };
 };
 
 export const ActionsBar = <TValues extends Record<string, any>>({
@@ -33,14 +38,16 @@ export const ActionsBar = <TValues extends Record<string, any>>({
   config,
   isLoading,
   variant,
+  history,
 }: ActionsBarProps<TValues>) => {
   const {
-    submitLabel = "Enregistrer",
-    resetLabel = "Réinitialiser",
+    submitLabel = "Save",
+    resetLabel = "Reset",
     hidden = false,
     extra,
     confirmSubmit,
     showDirtyIndicator = true,
+    undoRedo,
   } = config ?? {};
 
   const isSubmitting = useStore(form.store, (state) => state.isSubmitting);
@@ -52,12 +59,12 @@ export const ActionsBar = <TValues extends Record<string, any>>({
   if (hidden) return null;
 
   const isPopup = variant === "popup" || variant === "compact";
-  
+
   const actionsClass = cn(
     "z-50 flex flex-wrap items-center justify-between gap-4 p-4",
     "transition-all duration-300 ease-in-out",
-    isPopup 
-      ? "mt-4 border-t bg-muted/30" 
+    isPopup
+      ? "mt-4 border-t bg-muted/30"
       : "sticky bottom-0 mt-6 -mx-4 border-t bg-background/80 backdrop-blur-md shadow-[0_-4px_12px_rgba(0,0,0,0.03)]"
   );
 
@@ -74,17 +81,19 @@ export const ActionsBar = <TValues extends Record<string, any>>({
       ? extra({ form, isSubmitting, canSubmit })
       : extra;
 
+  const showUndoRedo = undoRedo?.enabled && undoRedo?.showInActionBar !== false && history;
+
   return (
     <>
       <div className={actionsClass}>
         <div className="flex items-center gap-3">
           {showDirtyIndicator && isDirty ? (
-            <Badge 
-              variant="outline" 
+            <Badge
+              variant="outline"
               className="bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800 animate-in fade-in slide-in-from-left-2"
             >
               <CheckCircle2 className="mr-1.5 size-3.5" />
-              Changements non enregistrés
+              Unsaved changes
             </Badge>
           ) : (
              <div className="w-1" />
@@ -93,7 +102,34 @@ export const ActionsBar = <TValues extends Record<string, any>>({
 
         <div className="flex items-center gap-3">
           {renderedExtra}
-          
+
+          {showUndoRedo && history ? (
+            <div className="flex items-center gap-1 border-r border-border/40 pr-3 mr-1">
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="size-8 text-muted-foreground"
+                onClick={history.undo}
+                disabled={!history.canUndo || isSubmitting}
+                title="Undo"
+              >
+                <Undo className="size-4" />
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="size-8 text-muted-foreground"
+                onClick={history.redo}
+                disabled={!history.canRedo || isSubmitting}
+                title="Redo"
+              >
+                <Redo className="size-4" />
+              </Button>
+            </div>
+          ) : null}
+
           <Button
             type="button"
             variant="ghost"
@@ -121,7 +157,7 @@ export const ActionsBar = <TValues extends Record<string, any>>({
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 size-4 animate-spin" />
-                Enregistrement...
+                Saving...
               </>
             ) : (
               <>
@@ -139,11 +175,11 @@ export const ActionsBar = <TValues extends Record<string, any>>({
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <AlertTriangle className="size-5 text-warning text-amber-500" />
-                {confirmSubmit.title ?? "Confirmer l'envoi"}
+                {confirmSubmit.title ?? "Confirm Submission"}
               </DialogTitle>
               <DialogDescription className="pt-2">
                 {confirmSubmit.message ??
-                  "Êtes-vous sûr de vouloir envoyer ce formulaire ?"}
+                  "Are you sure you want to submit this form?"}
               </DialogDescription>
             </DialogHeader>
             <DialogFooter className="mt-4 gap-2">
@@ -151,7 +187,7 @@ export const ActionsBar = <TValues extends Record<string, any>>({
                 variant="outline"
                 onClick={() => setConfirmOpen(false)}
               >
-                Annuler
+                Cancel
               </Button>
               <Button
                 onClick={() => {
@@ -159,7 +195,7 @@ export const ActionsBar = <TValues extends Record<string, any>>({
                   form.handleSubmit();
                 }}
               >
-                Confirmer
+                Confirm
               </Button>
             </DialogFooter>
           </DialogContent>

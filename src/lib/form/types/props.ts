@@ -30,6 +30,11 @@ export interface FormStateConfig<TValues> {
   isLoading?: boolean;
   /** Fired once the form instance is initialized */
   onReady?: (form: UseFormReturn<TValues>) => void;
+  /**
+   * Persistence key for localStorage.
+   * If provided, form values will be saved to localStorage and restored on mount.
+   */
+  persistKey?: string;
 }
 
 // ─── Devtools Config ─────────────────────────────────────────────────────────

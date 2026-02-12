@@ -27,6 +27,7 @@ import { BaseModelTable, ModelTableV2 } from "@/lib/table";
 import { ModelImportPage } from "@/lib/import/pages";
 import DynamicForm from "@/lib/form/inputs/form";
 import {
+  AdvancedFeaturesForm,
   ApplicationReviewForm,
   ContactForm,
   InvoiceForm,
@@ -151,12 +152,31 @@ const CORE_NAVIGATION_LINKS: NavigationSection[] = [
         path: "/formold",
         component: (
           <>
-            {/* <ModelForm
-              appName="store"
-              modelName="Order"
-              nestedFields={["items"]}
-              ordering={{ trailingFields: ["items"] }}
-            /> */}
+          <DynamicForm
+            schema={{fields:[
+              {
+  name: "description",
+  type: "rich-text",
+  label: "Description",
+  
+  // minHeight: 160,
+  // toolbar: ["bold", "italic", "heading", "list", "link"],
+},
+              {
+  name: "metadata",
+  type: "group",
+  label: "Metadata",
+  collapsible: true,
+  ui: { variant: "default", }, // "default" | "card" | "fieldset"
+  fields: [
+
+    { name: "author", type: "text", label: "Author" },
+    { name: "tags", type: "text", label: "Tags" },
+  ],
+}
+            ]}}
+          />
+           {/* <AdvancedFeaturesForm/> */}
           </>
         ),
         description: "old form",

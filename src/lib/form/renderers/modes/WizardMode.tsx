@@ -93,7 +93,7 @@ export const WizardMode = <TValues extends Record<string, any>>({
   if (!visibleSections.length) {
     return (
       <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border/60 py-20 px-4 text-center">
-        <p className="text-sm font-medium text-muted-foreground/60">Aucune étape définie.</p>
+        <p className="text-sm font-medium text-muted-foreground/60">No steps defined.</p>
       </div>
     );
   }
@@ -104,10 +104,10 @@ export const WizardMode = <TValues extends Record<string, any>>({
         <div className="relative flex flex-col gap-4">
           <div className="flex items-center justify-between gap-4">
              <div className="flex items-center gap-2">
-                <span className="text-sm font-bold tracking-tight">Étape {stepIndex + 1} sur {totalSteps}</span>
+                <span className="text-sm font-bold tracking-tight">Step {stepIndex + 1} of {totalSteps}</span>
              </div>
              <Badge variant="secondary" className="bg-primary/5 text-primary border-primary/20 font-bold px-2 py-0.5 text-[10px] uppercase tracking-wider">
-               {Math.round(((stepIndex + 1) / totalSteps) * 100)}% complété
+               {Math.round(((stepIndex + 1) / totalSteps) * 100)}% completed
              </Badge>
           </div>
 
@@ -139,7 +139,7 @@ export const WizardMode = <TValues extends Record<string, any>>({
                       "hidden sm:block text-[10px] font-bold uppercase tracking-tight transition-colors truncate px-0.5",
                       isActive ? "text-primary" : "text-muted-foreground/60"
                     )}>
-                       {section.step?.label ?? section.title ?? `Étape ${index + 1}`}
+                       {section.step?.label ?? section.title ?? `Step ${index + 1}`}
                     </span>
                   </div>
                 </React.Fragment>
@@ -177,9 +177,9 @@ export const WizardMode = <TValues extends Record<string, any>>({
           onClick={handlePrev}
         >
           <ChevronLeft className="mr-2 size-4" />
-          Précédent
+          Previous
         </Button>
-        
+
         <div className="flex items-center gap-3">
           {isLast ? (
             <Button
@@ -192,16 +192,16 @@ export const WizardMode = <TValues extends Record<string, any>>({
               }}
             >
               <Send className="mr-2 size-4" />
-              Terminer
+              Finish
             </Button>
           ) : (
-            <Button 
-              type="button" 
+            <Button
+              type="button"
               size="sm"
               className="min-w-[120px] shadow-lg shadow-primary/10"
               onClick={handleNext}
             >
-              Suivant
+              Continue
               <ChevronRight className="ml-2 size-4" />
             </Button>
           )}

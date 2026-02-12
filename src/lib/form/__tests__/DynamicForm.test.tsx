@@ -125,8 +125,53 @@ vi.mock("lucide-react", () => ({
   ChevronDownIcon: ({ className }: { className?: string }) => (
     <svg data-testid="chevron-down" className={className} />
   ),
+  ChevronDown: ({ className }: { className?: string }) => (
+    <svg data-testid="chevron-down" className={className} />
+  ),
+  ChevronLeft: ({ className }: { className?: string }) => (
+    <svg data-testid="chevron-left" className={className} />
+  ),
+  ChevronRight: ({ className }: { className?: string }) => (
+    <svg data-testid="chevron-right" className={className} />
+  ),
   CheckIcon: ({ className }: { className?: string }) => (
     <svg data-testid="check-icon" className={className} />
+  ),
+  Save: ({ className }: { className?: string }) => (
+    <svg data-testid="save-icon" className={className} />
+  ),
+  Send: ({ className }: { className?: string }) => (
+    <svg data-testid="send-icon" className={className} />
+  ),
+  RotateCcw: ({ className }: { className?: string }) => (
+    <svg data-testid="rotate-ccw-icon" className={className} />
+  ),
+  CheckCircle2: ({ className }: { className?: string }) => (
+    <svg data-testid="check-circle-2-icon" className={className} />
+  ),
+  AlertTriangle: ({ className }: { className?: string }) => (
+    <svg data-testid="alert-triangle-icon" className={className} />
+  ),
+  Loader2: ({ className }: { className?: string }) => (
+    <svg data-testid="loader-2-icon" className={className} />
+  ),
+  Undo: ({ className }: { className?: string }) => (
+    <svg data-testid="undo-icon" className={className} />
+  ),
+  Redo: ({ className }: { className?: string }) => (
+    <svg data-testid="redo-icon" className={className} />
+  ),
+  Lock: ({ className }: { className?: string }) => (
+    <svg data-testid="lock-icon" className={className} />
+  ),
+  Unlock: ({ className }: { className?: string }) => (
+    <svg data-testid="unlock-icon" className={className} />
+  ),
+  ClipboardCheck: ({ className }: { className?: string }) => (
+    <svg data-testid="clipboard-check-icon" className={className} />
+  ),
+  Info: ({ className }: { className?: string }) => (
+    <svg data-testid="info-icon" className={className} />
   ),
 }));
 
@@ -404,7 +449,8 @@ describe("DynamicForm - modes", () => {
       />,
     );
 
-    expect(screen.getByText("Section A")).toBeInTheDocument();
-    expect(screen.getByText("Section B")).toBeInTheDocument();
+    // "Section A" appears in the accordion trigger and potentially in the section header inside
+    expect(screen.getAllByText("Section A").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Section B").length).toBeGreaterThan(0);
   });
 });

@@ -1,7 +1,7 @@
 # DynamicForm
 
 ## Overview
-DynamicForm is a schema-driven form engine built on [TanStack React Form](https://tanstack.com/form). It renders complex, multi-section forms from a declarative `FormSchema` and supports conditional visibility, computed fields, field dependencies, multiple layout modes, autosave, and cross-field validation.
+DynamicForm is a schema-driven form engine built on [TanStack React Form](https://tanstack.com/form). It renders complex, multi-section forms from a declarative `FormSchema` and supports conditional visibility, computed fields, field dependencies, multiple layout modes, autosave, cross-field validation, local persistence, undo/redo history, rich text editing, and grouped field layouts.
 
 ## Quick Start
 
@@ -30,10 +30,10 @@ All configuration is organized into five semantic groups:
 | Prop | Type | Description |
 |------|------|-------------|
 | `schema` | `FormSchema` | Declarative schema (sections, fields, initial values, validators) |
-| `state` | `FormStateConfig` | External form instance, defaults, loading, read-only |
+| `state` | `FormStateConfig` | External form instance, defaults, loading, read-only, persistence |
 | `behavior` | `FormBehaviorConfig` | Submit, change, validation, conditions, computed, dependencies |
 | `layout` | `FormLayoutConfig` | Columns, variant, CSS, rendering mode |
-| `actions` | `FormActionsConfig` | Submit/reset labels, position, extra slots, confirmation |
+| `actions` | `FormActionsConfig` | Submit/reset labels, position, extra slots, confirmation, undo/redo |
 | `devtools` | `FormDevtoolsConfig` | Debug panel, diagnostics, change logging |
 
 ---
@@ -81,6 +81,7 @@ const schema: FormSchema = {
 | Type | Config | Default value |
 |------|--------|--------------|
 | `text`, `email`, `password`, `textarea`, `color`, `json` | `TextFieldConfig` | `""` |
+| `rich-text` | `RichTextFieldConfig` | `""` |
 | `number`, `decimal`, `slider`, `range` | `NumberFieldConfig` | `0` |
 | `select`, `radio` | `ChoiceFieldConfig` | `""` |
 | `select-query` | `QueryChoiceFieldConfig` | `[]` |
@@ -90,6 +91,7 @@ const schema: FormSchema = {
 | `custom` | `CustomFieldConfig` | `""` |
 | `object` | `ObjectFieldConfig` | nested defaults |
 | `list` | `ListFieldConfig` | `[]` |
+| `group` | `GroupFieldConfig` | nested defaults |
 
 ### Nested objects
 ```tsx
@@ -115,10 +117,38 @@ const schema: FormSchema = {
   addLabel: "Add Contact",
   minItems: 1,
   maxItems: 5,
+  ordering: { activate: true, toField: "order" }, // enables drag-and-drop reordering
   fields: [
     { name: "name", type: "text", label: "Name" },
     { name: "phone", type: "text", label: "Phone" },
+    { name: "order", type: "number", hidden: true },
   ],
+}
+```
+
+### Group fields
+```tsx
+{
+  name: "metadata",
+  type: "group",
+  label: "Metadata",
+  collapsible: true,
+  ui: { variant: "card" }, // "default" | "card" | "fieldset"
+  fields: [
+    { name: "author", type: "text", label: "Author" },
+    { name: "tags", type: "text", label: "Tags" },
+  ],
+}
+```
+
+### Rich text fields
+```tsx
+{
+  name: "description",
+  type: "rich-text",
+  label: "Description",
+  minHeight: 160,
+  toolbar: ["bold", "italic", "heading", "list", "link"],
 }
 ```
 
@@ -162,6 +192,7 @@ const schema: FormSchema = {
     readOnly: isArchived,
     disabled: isSaving,
     isLoading: isDataLoading,
+    persistKey: "invoice-draft-v1",
     onReady: (form) => formRef.current = form,
   }}
 />
@@ -169,13 +200,14 @@ const schema: FormSchema = {
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `form` | `UseFormReturn` | — | External TanStack form instance |
-| `defaultValues` | `Partial<TValues>` | — | Runtime defaults merged over schema defaults |
+| `form` | `UseFormReturn` | - | External TanStack form instance |
+| `defaultValues` | `Partial<TValues>` | - | Runtime defaults merged over schema defaults |
 | `disableAutoReset` | `boolean` | `false` | Skip auto-reset when defaults change |
 | `readOnly` | `boolean` | `false` | All fields become non-editable |
 | `disabled` | `boolean` | `false` | All fields become disabled |
 | `isLoading` | `boolean` | `false` | Disables interactions |
-| `onReady` | `(form) => void` | — | Fires once on form initialization |
+| `persistKey` | `string` | - | Enables localStorage persistence for form values |
+| `onReady` | `(form) => void` | - | Fires once on form initialization |
 
 ---
 
@@ -294,11 +326,11 @@ Conditions can use glob patterns (`"address.*"`) to match multiple fields at onc
 
 | Option | Type | Default | Description |
 |--------|------|---------|-------------|
-| `columns` | `number` | `2` | Default column count (1–6) |
+| `columns` | `number` | `2` | Default column count (1-6) |
 | `variant` | `"default" \| "compact" \| "popup"` | `"default"` | Spacing preset |
 | `showSectionHeaders` | `boolean` | `true` | Show section title/description |
-| `className` | `string` | — | CSS class for the `<form>` element |
-| `bodyClassName` | `string` | — | CSS class for the scrollable body |
+| `className` | `string` | - | CSS class for the `<form>` element |
+| `bodyClassName` | `string` | - | CSS class for the scrollable body |
 | `mode` | `FormLayoutMode` | `{ type: "standard" }` | Rendering mode |
 
 ### Wizard mode
@@ -333,7 +365,7 @@ Conditions can use glob patterns (`"address.*"`) to match multiple fields at onc
 |--------|------|---------|-------------|
 | `showProgress` | `boolean` | `true` | Show step progress indicators |
 | `allowSkip` | `boolean` | `false` | Allow jumping to future steps |
-| `resolveSteps` | `(values) => number[]` | — | Dynamic step ordering |
+| `resolveSteps` | `(values) => number[]` | - | Dynamic step ordering |
 
 ### Accordion mode
 ```tsx
@@ -395,6 +427,10 @@ Renders a lock/unlock toggle. When locked, the form enters read-only mode and op
     submitLabel: "Create Invoice",
     resetLabel: "Clear",
     showDirtyIndicator: true,
+    undoRedo: {
+      enabled: true,
+      showInActionBar: true,
+    },
     confirmSubmit: {
       enabled: true,
       title: "Confirm Creation",
@@ -415,9 +451,10 @@ Renders a lock/unlock toggle. When locked, the form enters read-only mode and op
 | `resetLabel` | `string` | `"Reset"` | Reset button text |
 | `hidden` | `boolean` | `false` | Hide the entire actions bar |
 | `position` | `"bottom" \| "top" \| "both" \| "sticky-bottom"` | `"bottom"` | Position of the actions bar |
-| `extra` | `ReactNode \| (ctx) => ReactNode` | — | Additional action buttons |
-| `confirmSubmit` | `{ enabled, title?, message? }` | — | Confirmation dialog before submit |
+| `extra` | `ReactNode \| (ctx) => ReactNode` | - | Additional action buttons |
+| `confirmSubmit` | `{ enabled, title?, message? }` | - | Confirmation dialog before submit |
 | `showDirtyIndicator` | `boolean` | `false` | Show "Unsaved changes" badge |
+| `undoRedo` | `{ enabled, showInActionBar? }` | - | Enables undo/redo history controls |
 
 ---
 
@@ -488,9 +525,12 @@ src/lib/form/
     useFormComputed   # Computed/derived fields
     useFormDependencies    # Field dependency effects
     useFormValidation # Form-level cross-field validation
+    useFormPersistence # localStorage persistence
+    useFormHistory    # Undo/redo history state
   renderers/          # UI components
     SectionRenderer   # Section rendering with grid layout
     FieldRenderer     # Field type dispatch
+    GroupFieldRenderer # Group field container renderer
     ListFieldRenderer # List field with add/remove/reorder
     ActionsBar        # Submit/reset buttons
     DebugPanel        # Developer tools panel
@@ -503,7 +543,7 @@ src/lib/form/
   inputs/             # Input components by type
     form.tsx          # DynamicForm (thin orchestrator)
     text.tsx, numbers.tsx, choices.tsx, boolean.tsx,
-    date.tsx, time.tsx, datetime.tsx, query.tsx,
+    date.tsx, time.tsx, datetime.tsx, query.tsx, rich-text.tsx,
     common.tsx, factory.tsx, fieldOrder.ts
   index.tsx           # Public exports
 ```
@@ -516,9 +556,10 @@ npx vitest run src/lib/form
 ```
 
 Test files:
-- `__tests__/defaults.test.ts` — default value computation, deep merge, deep equal
-- `__tests__/changeTracking.test.ts` — diff-based change detection
-- `__tests__/fieldOrder.test.ts` — field ordering and sorting
-- `__tests__/DynamicForm.test.tsx` — integration tests for rendering, conditions, and modes
-- `__tests__/mutations.naming.test.ts` — mutation naming conventions
-- `inputs/__tests__/query.naming.test.ts` — query field naming
+- `__tests__/defaults.test.ts` - default value computation, deep merge, deep equal
+- `__tests__/changeTracking.test.ts` - diff-based change detection
+- `__tests__/fieldOrder.test.ts` - field ordering and sorting
+- `__tests__/DynamicForm.test.tsx` - integration tests for rendering, conditions, and modes
+- `__tests__/new-features.test.tsx` - undo/redo, persistence, groups, list drag-and-drop, rich text
+- `__tests__/mutations.naming.test.ts` - mutation naming conventions
+- `inputs/__tests__/query.naming.test.ts` - query field naming

@@ -26,12 +26,14 @@ const TextInput: React.FC<Props> = ({ config, field, form }) => {
     dirty || meta.isBlurred || isSubmitted || Boolean(meta.errorMap?.onSubmit);
   const fieldErrors = resolveFieldErrors(meta, showError);
   const error = fieldErrors ?? resolveRequiredError(config, field.state.value, showError);
+  const fieldId = field.name;
 
   if (config.type === "textarea") {
     const value = (field.state.value as string) ?? "";
     return (
-      <FieldWrapper config={config} error={error} dirty={dirty}>
+      <FieldWrapper config={config} fieldId={fieldId} error={error} dirty={dirty}>
         <Textarea
+          id={fieldId}
           data-slot="textarea"
           className={cn(
             "min-h-[100px] w-full resize-y rounded-lg border-border/60 bg-background/50 px-4 py-3 text-sm transition-all focus:border-primary/50 focus:bg-background focus:ring-4 focus:ring-primary/5 focus-visible:ring-0",
@@ -55,10 +57,11 @@ const TextInput: React.FC<Props> = ({ config, field, form }) => {
     const fileList = Array.isArray(files) ? files : files ? [files] : [];
     
     return (
-      <FieldWrapper config={config} error={error} dirty={dirty}>
+      <FieldWrapper config={config} fieldId={fieldId} error={error} dirty={dirty}>
         <div className="flex flex-col gap-3">
           <div className="relative">
             <Input
+              id={fieldId}
               data-slot="input"
               type="file"
               accept={config.accept}
@@ -119,7 +122,7 @@ const TextInput: React.FC<Props> = ({ config, field, form }) => {
         ? field.state.value
         : JSON.stringify(field.state.value ?? {}, null, 2);
     return (
-      <FieldWrapper config={config} error={error} dirty={dirty}>
+      <FieldWrapper config={config} fieldId={fieldId} error={error} dirty={dirty}>
         <div className="group/json relative overflow-hidden rounded-lg border border-border/60 transition-all focus-within:border-primary/50 focus-within:ring-4 focus-within:ring-primary/5">
           <div className="flex items-center justify-between bg-muted/20 px-3 py-1.5 border-b border-border/30">
             <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
@@ -128,6 +131,7 @@ const TextInput: React.FC<Props> = ({ config, field, form }) => {
             </div>
           </div>
           <textarea
+            id={fieldId}
             data-slot="textarea"
             className="font-mono min-h-[160px] w-full resize-y bg-background/50 p-4 text-[13px] leading-relaxed outline-none transition-colors focus:bg-background"
             value={value}
@@ -154,8 +158,9 @@ const TextInput: React.FC<Props> = ({ config, field, form }) => {
   const value = (field.state.value as string) ?? "";
 
   return (
-    <FieldWrapper config={config} error={error} dirty={dirty}>
+    <FieldWrapper config={config} fieldId={fieldId} error={error} dirty={dirty}>
       <Input
+        id={fieldId}
         data-slot="input"
         type={inputType}
         placeholder={config.placeholder}

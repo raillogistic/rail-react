@@ -17,6 +17,8 @@ import { useFormConditions } from "../hooks/useFormConditions";
 import { useFormComputed } from "../hooks/useFormComputed";
 import { useFormDependencies } from "../hooks/useFormDependencies";
 import { useFormValidation } from "../hooks/useFormValidation";
+import { useFormPersistence } from "../hooks/useFormPersistence";
+import { useFormHistory } from "../hooks/useFormHistory";
 import { ActionsBar } from "../renderers/ActionsBar";
 import { DebugPanel } from "../renderers/DebugPanel";
 import { StandardMode } from "../renderers/modes/StandardMode";
@@ -49,6 +51,7 @@ const DynamicForm = <TValues extends Record<string, any> = Record<string, any>>(
   const globalDisabled = stateConfig?.disabled ?? false;
   const isLoading = stateConfig?.isLoading ?? false;
   const onReady = stateConfig?.onReady;
+  const persistKey = stateConfig?.persistKey;
 
   const onSubmit = behaviorConfig?.onSubmit;
   const onChange = behaviorConfig?.onChange;
@@ -83,7 +86,7 @@ const DynamicForm = <TValues extends Record<string, any> = Record<string, any>>(
     defaultValues: computedDefaults,
     onSubmit: async ({ value }) => {
       // Run form-level validation
-      const isValid = runValidation(value);
+      const isValid = runValidation(value, form as any);
       if (!isValid) return;
       await onSubmit?.(value, { form, isInternal: !externalForm });
     },
@@ -134,6 +137,17 @@ const DynamicForm = <TValues extends Record<string, any> = Record<string, any>>(
   // ─── Store subscriptions ─────────────────────────────────────────────
 
   const formValues = useStore(form.store, (state) => state.values) as TValues;
+
+  // ─── Persistence ─────────────────────────────────────────────────────
+
+  useFormPersistence(form, persistKey, !!persistKey);
+
+  // ─── History (Undo/Redo) ─────────────────────────────────────────────
+
+  const history = useFormHistory(
+    form,
+    actionsConfig?.undoRedo?.enabled ?? false
+  );
 
   // ─── Auto-reset on defaults change ───────────────────────────────────
 
@@ -228,7 +242,7 @@ const DynamicForm = <TValues extends Record<string, any> = Record<string, any>>(
   const formWrapperClass = cn(
     "relative flex flex-col w-full transition-all duration-300",
     isPopup
-      ? "gap-4 bg-transparent"
+      ? "gap-3 bg-transparent"
       : "h-full rounded-2xl bg-card/10 p-6 border border-border/40 shadow-sm",
     layoutClassName,
   );
@@ -292,6 +306,7 @@ const DynamicForm = <TValues extends Record<string, any> = Record<string, any>>(
             config={actionsConfig}
             isLoading={isLoading}
             variant={layoutVariant}
+            history={history}
           />
         ) : null}
 
@@ -300,7 +315,7 @@ const DynamicForm = <TValues extends Record<string, any> = Record<string, any>>(
             <div className="flex flex-col items-center gap-3 rounded-xl border bg-background p-6 shadow-2xl">
               <Loader2 className="size-8 animate-spin text-primary" />
               <p className="text-sm font-bold tracking-tight text-muted-foreground">
-                Chargement en cours...
+                Loading...
               </p>
             </div>
           </div>

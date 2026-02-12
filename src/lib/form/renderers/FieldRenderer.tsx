@@ -13,16 +13,17 @@ import type {
   ChoiceFieldConfig,
   FormInputType,
   FieldComponentProps,
+  GroupFieldConfig,
 } from "../types/schema";
 import { resolveInputComponent } from "../inputs/factory";
-import { resolveFieldErrors, resolveRequiredError } from "../inputs/common";
 import { ListFieldRenderer } from "./ListFieldRenderer";
+import { GroupFieldRenderer } from "./GroupFieldRenderer";
 import { buildResponsiveGridClass } from "./utils";
 import { getPrimitiveDefaultValue } from "../hooks/useFormDefaults";
 
 type PrimitiveField = Exclude<
   FormFieldConfig,
-  ObjectFieldConfig | ListFieldConfig
+  ObjectFieldConfig | ListFieldConfig | GroupFieldConfig
 >;
 
 export type FieldRendererProps<TValues> = {
@@ -47,6 +48,20 @@ export const FieldRenderer = <TValues extends Record<string, any>>({
   // Check hidden status
   if (config.hidden || hiddenFields?.has(path)) {
     return null;
+  }
+
+  if (config.type === "group") {
+    return (
+      <GroupFieldRenderer
+        config={config}
+        path={path}
+        form={form}
+        colSpan={colSpan}
+        globalReadOnly={globalReadOnly}
+        globalDisabled={globalDisabled}
+        hiddenFields={hiddenFields}
+      />
+    );
   }
 
   if (config.type === "object") {

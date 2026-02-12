@@ -16,6 +16,7 @@ import type { FieldApi, UseFormReturn } from "@tanstack/react-form";
 export type PrimitiveFormInputType =
   | "text"
   | "textarea"
+  | "rich-text"
   | "number"
   | "decimal"
   | "email"
@@ -35,7 +36,7 @@ export type PrimitiveFormInputType =
   | "json"
   | "custom";
 
-export type StructuralFormInputType = "object" | "list";
+export type StructuralFormInputType = "object" | "list" | "group";
 
 export type FormInputType = PrimitiveFormInputType | StructuralFormInputType;
 
@@ -242,6 +243,34 @@ export interface ListFieldConfig extends BaseFieldConfig {
   fields: FormFieldConfig[];
 }
 
+export interface GroupFieldConfig extends BaseFieldConfig {
+  type: "group";
+  fields: FormFieldConfig[];
+  columns?: number;
+  collapsible?: boolean;
+  ui?: {
+    variant?: "default" | "card" | "fieldset";
+    className?: string;
+  };
+}
+
+export interface RichTextFieldConfig extends BaseFieldConfig {
+  type: "rich-text";
+  minHeight?: string | number;
+  maxHeight?: string | number;
+  toolbar?: (
+    | "bold"
+    | "italic"
+    | "strike"
+    | "code"
+    | "link"
+    | "heading"
+    | "list"
+    | "quote"
+    | "separator"
+  )[];
+}
+
 // ─── Field Union ─────────────────────────────────────────────────────────────
 
 export type FormFieldConfig =
@@ -254,7 +283,9 @@ export type FormFieldConfig =
   | FileFieldConfig
   | CustomFieldConfig
   | ObjectFieldConfig
-  | ListFieldConfig;
+  | ListFieldConfig
+  | GroupFieldConfig
+  | RichTextFieldConfig;
 
 // ─── Field Renderer Types ────────────────────────────────────────────────────
 

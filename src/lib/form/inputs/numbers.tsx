@@ -19,6 +19,7 @@ const NumberInput: React.FC<Props> = ({ config, field, form }) => {
   const showError = dirty || meta.isBlurred || isSubmitted || Boolean(meta.errorMap?.onSubmit);
   const fieldErrors = resolveFieldErrors(meta, showError);
   const error = fieldErrors ?? resolveRequiredError(config, field.state.value, showError);
+  const fieldId = field.name;
   const value = field.state.value ?? "";
 
   const typeAttr =
@@ -36,12 +37,13 @@ const NumberInput: React.FC<Props> = ({ config, field, form }) => {
   };
 
   return (
-    <FieldWrapper config={config} error={error} dirty={dirty}>
+    <FieldWrapper config={config} fieldId={fieldId} error={error} dirty={dirty}>
       <div className="relative group/number">
         <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/50 transition-colors group-focus-within/number:text-primary/70">
           <Hash className="size-4" />
         </div>
         <Input
+          id={fieldId}
           data-slot="input"
           type={typeAttr}
           value={value as any}

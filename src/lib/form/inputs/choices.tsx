@@ -55,11 +55,12 @@ const ChoiceInput: React.FC<Props> = ({ config, field, form }) => {
     const selectedOptions = config.options.filter(opt => selectedValues.includes(opt.value));
 
     return (
-      <FieldWrapper config={config} error={error} dirty={dirty}>
+      <FieldWrapper config={config} fieldId={field.name} error={error} dirty={dirty}>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button 
-              variant="outline" 
+            <Button
+              id={field.name}
+              variant="outline"
               data-slot="select-trigger"
               className={cn(
                 "h-auto min-h-10 w-full justify-between rounded-lg border-border/60 bg-background/50 px-3 py-2 text-left font-normal transition-all hover:border-primary/50 hover:bg-background",
@@ -175,13 +176,14 @@ const ChoiceInput: React.FC<Props> = ({ config, field, form }) => {
     (config.required ? config.options[0]?.value ?? "" : "");
 
   return (
-    <FieldWrapper config={config} error={error} dirty={dirty}>
+    <FieldWrapper config={config} fieldId={field.name} error={error} dirty={dirty}>
       <Select
         value={String(selectedValue)}
         onValueChange={(next) => field.handleChange(next)}
         disabled={config.disabled}
       >
-        <SelectTrigger 
+        <SelectTrigger
+          id={field.name}
           data-slot="select-trigger"
           className="h-10 rounded-lg border-border/60 bg-background/50 px-4 transition-all focus:border-primary/50 focus:bg-background focus:ring-4 focus:ring-primary/5 focus-visible:ring-0"
         >

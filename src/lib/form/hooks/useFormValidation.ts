@@ -10,7 +10,7 @@ import type { FormValidator } from "../types/schema";
 import type { FormErrors } from "../types/behavior";
 
 interface UseFormValidationOptions<TValues> {
-  form: UseFormReturn<TValues>;
+  form?: UseFormReturn<TValues>;
   validate?: (values: TValues) => FormErrors<TValues> | undefined;
   schemaValidators?: FormValidator<TValues>[];
 }
@@ -24,8 +24,12 @@ export function useFormValidation<TValues extends Record<string, any>>(
   >({});
 
   const runValidation = React.useCallback(
-    (values: TValues): boolean => {
+    (
+      values: TValues,
+      formOverride?: UseFormReturn<TValues>,
+    ): boolean => {
       const errors: Record<string, string> = {};
+      const targetForm = formOverride ?? form;
 
       // Run behavior.validate
       if (validate) {
@@ -48,16 +52,18 @@ export function useFormValidation<TValues extends Record<string, any>>(
       setFormErrors(errors);
 
       // Apply errors to form fields
-      for (const [fieldName, message] of Object.entries(errors)) {
-        form.setFieldMeta(fieldName as any, (prev) => ({
-          ...prev,
-          isValid: false,
-          errors: [message],
-          errorMap: {
-            ...(prev?.errorMap ?? {}),
-            onSubmit: message,
-          },
-        }));
+      if (targetForm?.setFieldMeta) {
+        for (const [fieldName, message] of Object.entries(errors)) {
+          targetForm.setFieldMeta(fieldName as any, (prev) => ({
+            ...prev,
+            isValid: false,
+            errors: [message],
+            errorMap: {
+              ...(prev?.errorMap ?? {}),
+              onSubmit: message,
+            },
+          }));
+        }
       }
 
       return Object.keys(errors).length === 0;

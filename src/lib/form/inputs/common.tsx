@@ -12,6 +12,7 @@ import type { BaseFieldConfig } from "./types";
 
 type FieldWrapperProps = {
   config: BaseFieldConfig;
+  fieldId?: string;
   error?: string | string[];
   dirty?: boolean;
   children: React.ReactNode;
@@ -19,6 +20,7 @@ type FieldWrapperProps = {
 
 export const FieldWrapper: React.FC<FieldWrapperProps> = ({
   config,
+  fieldId,
   error,
   dirty,
   children,
@@ -48,7 +50,8 @@ export const FieldWrapper: React.FC<FieldWrapperProps> = ({
       <div className="flex items-center justify-between gap-2 px-0.5">
         {config.label ? (
           <div className="flex items-center gap-1.5">
-            <Label 
+            <Label
+              htmlFor={fieldId}
               className={cn(
                 "text-sm font-medium transition-colors",
                 hasError ? "text-destructive" : "text-foreground/90",

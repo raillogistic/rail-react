@@ -10,9 +10,14 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 export default defineConfig({
   plugins: [react(), tailwindcss()],
   resolve: {
+    // Force a single React instance across workspace-level dependencies
+    // (e.g. @tiptap/react resolved from a parent node_modules).
+    dedupe: ["react", "react-dom"],
     alias: {
       "@": path.resolve(__dirname, "./src"),
       "@core": path.resolve(__dirname, "./src/core"),
+      react: path.resolve(__dirname, "./node_modules/react"),
+      "react-dom": path.resolve(__dirname, "./node_modules/react-dom"),
     },
   },
   test: {

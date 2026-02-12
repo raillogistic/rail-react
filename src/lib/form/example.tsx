@@ -737,3 +737,101 @@ export const ApplicationReviewForm = () => (
     devtools={{ enabled: true, showDiagnostics: true, logChanges: true }}
   />
 );
+
+// ─── 6. Advanced Features ──────────────────────────────────────────────────────
+// Demonstrates Undo/Redo, LocalStorage persistence, Rich Text, Drag & Drop lists, and Groups.
+
+type AdvancedValues = {
+  projectTitle: string;
+  description: string;
+  tasks: Array<{ title: string; order: number }>;
+  metadata: {
+    author: string;
+    tags: string;
+  };
+  settings: {
+    isPublic: boolean;
+    allowComments: boolean;
+  };
+};
+
+const advancedSchema: FormSchema<AdvancedValues> = {
+  fields: [
+    {
+      name: "projectTitle",
+      type: "text",
+      label: "Project Title",
+      placeholder: "My Awesome Project",
+      required: true,
+    },
+    {
+      name: "description",
+      type: "rich-text",
+      label: "Project Description",
+      minHeight: "150px",
+      toolbar: ["bold", "italic", "heading", "list", "link"],
+    },
+    {
+      name: "tasks",
+      type: "list",
+      label: "Prioritized Tasks (Drag to Reorder)",
+      ordering: { activate: true, toField: "order" },
+      columns: 1,
+      fields: [
+        { name: "title", type: "text", label: "Task Name" },
+        // 'order' field is managed automatically but can be hidden or shown if needed
+        { name: "order", type: "number", label: "Order", hidden: true },
+      ],
+      defaultValue: [
+        { title: "Research", order: 0 },
+        { title: "Design", order: 1 },
+        { title: "Implementation", order: 2 },
+      ],
+    },
+    {
+      name: "metadata",
+      type: "group",
+      label: "Metadata (Card Group)",
+      collapsible: true,
+      ui: { variant: "card" },
+      fields: [
+        { name: "author", type: "text", label: "Author Name" },
+        { name: "tags", type: "text", label: "Tags (comma separated)" },
+      ],
+    },
+    {
+      name: "settings",
+      type: "group",
+      label: "Settings (Fieldset Group)",
+      ui: { variant: "fieldset" },
+      fields: [
+        { name: "isPublic", type: "switch", label: "Public Project" },
+        { name: "allowComments", type: "checkbox", label: "Allow Comments" },
+      ],
+    },
+  ],
+};
+
+export const AdvancedFeaturesForm = () => (
+  <DynamicForm<AdvancedValues>
+    schema={advancedSchema}
+    // Enable LocalStorage Persistence
+    state={{
+      persistKey: "rail-react-advanced-example",
+    }}
+    // Enable Undo/Redo
+    actions={{
+      undoRedo: {
+        enabled: true,
+        showInActionBar: true,
+      },
+      submitLabel: "Save Project",
+      resetLabel: "Reset All",
+    }}
+    behavior={{
+      onSubmit: async (values) => {
+        console.log("Advanced form submitted:", values);
+      },
+    }}
+  />
+);

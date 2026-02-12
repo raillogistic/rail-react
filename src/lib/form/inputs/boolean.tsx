@@ -20,14 +20,15 @@ const BooleanInput: React.FC<Props> = ({ config, field, form }) => {
   const showError = dirty || meta.isBlurred || isSubmitted || Boolean(meta.errorMap?.onSubmit);
   const fieldErrors = resolveFieldErrors(meta, showError);
   const error = fieldErrors ?? resolveRequiredError(config, field.state.value, showError);
+  const fieldId = field.name;
   const value = Boolean(field.state.value);
 
   const label = value ? config.trueLabel ?? "Oui" : config.falseLabel ?? "Non";
 
   if (config.type === "switch") {
     return (
-      <FieldWrapper config={config} error={error} dirty={dirty}>
-        <div 
+      <FieldWrapper config={config} fieldId={fieldId} error={error} dirty={dirty}>
+        <div
           className={cn(
             "flex items-center gap-4 rounded-lg border border-border/40 bg-background/50 p-3 transition-all duration-200",
             "hover:border-border/80 hover:bg-background",
@@ -35,6 +36,7 @@ const BooleanInput: React.FC<Props> = ({ config, field, form }) => {
           )}
         >
           <Switch
+            id={fieldId}
             data-slot="checkbox"
             checked={value}
             onCheckedChange={(checked) => field.handleChange(Boolean(checked))}
@@ -64,8 +66,8 @@ const BooleanInput: React.FC<Props> = ({ config, field, form }) => {
   }
 
   return (
-    <FieldWrapper config={config} error={error} dirty={dirty}>
-      <div 
+    <FieldWrapper config={config} fieldId={fieldId} error={error} dirty={dirty}>
+      <div
         className={cn(
           "flex items-center gap-3 rounded-lg border border-border/40 bg-background/50 px-4 py-3 transition-all duration-200",
           "hover:border-border/80 hover:bg-background",
@@ -74,6 +76,7 @@ const BooleanInput: React.FC<Props> = ({ config, field, form }) => {
         onClick={() => !config.disabled && field.handleChange(!value)}
       >
         <Checkbox
+          id={fieldId}
           data-slot="checkbox"
           checked={value}
           onCheckedChange={(checked) => field.handleChange(Boolean(checked))}
