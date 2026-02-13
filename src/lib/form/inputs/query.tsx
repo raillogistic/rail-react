@@ -385,9 +385,11 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
 
   const toggle = (value: ChoiceOption["value"]) => {
     if (config.multiple) {
-      const exists = selectedValues.includes(value);
+      const exists = selectedValues.some((item) =>
+        areChoiceValuesEqual(item, value),
+      );
       const next = exists
-        ? selectedValues.filter((item) => item !== value)
+        ? selectedValues.filter((item) => !areChoiceValuesEqual(item, value))
         : [...selectedValues, value];
       field.handleChange(next);
       return;
@@ -504,7 +506,10 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
   ]);
 
   const selectedOptions = React.useMemo(
-    () => options.filter((opt) => selectedValues.includes(opt.value)),
+    () =>
+      options.filter((opt) =>
+        selectedValues.some((value) => areChoiceValuesEqual(value, opt.value)),
+      ),
     [options, selectedValues],
   );
 
@@ -596,17 +601,23 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
                         index === highlightedIndex
                           ? "bg-primary/5 text-primary"
                           : "",
-                        selectedValues.includes(option.value)
+                        selectedValues.some((value) =>
+                          areChoiceValuesEqual(value, option.value),
+                        )
                           ? "bg-primary/5 font-medium text-primary"
                           : "",
                       )}
-                      checked={selectedValues.includes(option.value)}
+                      checked={selectedValues.some((value) =>
+                        areChoiceValuesEqual(value, option.value),
+                      )}
                       onCheckedChange={() => toggle(option.value)}
                       disabled={option.disabled}
                       data-option-index={index}
                     >
                       <span className="absolute left-3 flex size-4 items-center justify-center">
-                        {selectedValues.includes(option.value) && (
+                        {selectedValues.some((value) =>
+                          areChoiceValuesEqual(value, option.value),
+                        ) && (
                           <Check className="size-3.5 stroke-[3]" />
                         )}
                       </span>
@@ -826,9 +837,14 @@ function coerceValue(entry: unknown): string | number | null {
 }
 
 function extractPrefilledOption(entry: unknown): ChoiceOption | null {
-  if (!entry || typeof entry !== "object") return null;
   const value = coerceValue(entry);
   if (value === null || value === undefined) return null;
+  if (!entry || typeof entry !== "object") {
+    return {
+      value,
+      label: String(value),
+    };
+  }
   const record = entry as Record<string, unknown>;
   const label =
     record.label ?? record.desc ?? record.name ?? record.title ?? record.code;
@@ -849,14 +865,25 @@ function mergeChoiceOptions(
   addition: ChoiceOption[],
 ): ChoiceOption[] {
   if (!addition.length) return base;
-  const map = new Map<ChoiceOption["value"], ChoiceOption>();
+  const map = new Map<string, ChoiceOption>();
   base.forEach((option) => {
-    map.set(option.value, option);
+    map.set(toChoiceValueKey(option.value), option);
   });
   addition.forEach((option) => {
-    map.set(option.value, option);
+    map.set(toChoiceValueKey(option.value), option);
   });
   return Array.from(map.values());
+}
+
+function toChoiceValueKey(value: ChoiceOption["value"]): string {
+  return String(value);
+}
+
+function areChoiceValuesEqual(
+  left: ChoiceOption["value"],
+  right: ChoiceOption["value"],
+): boolean {
+  return toChoiceValueKey(left) === toChoiceValueKey(right);
 }
 
 type GraphQLRecipe = {

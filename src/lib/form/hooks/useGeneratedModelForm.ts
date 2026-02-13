@@ -96,6 +96,8 @@ function mapKindToInputType(kind: string): FormFieldConfig["type"] {
       return "json";
     case "FILE":
       return "file";
+    case "RELATION":
+      return "select-query";
     default:
       return "text";
   }
@@ -143,6 +145,31 @@ function transformPathTokens(path: string, transformer: (token: string) => strin
     .join(".");
 }
 
+function normalizeSubmitValueKeysToCamel(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map((entry) => normalizeSubmitValueKeysToCamel(entry));
+  }
+
+  if (!value || typeof value !== "object") {
+    return value;
+  }
+
+  const record = value as Record<string, unknown>;
+  const normalized: Record<string, unknown> = {};
+  const entries = Object.entries(record).sort(([left], [right]) => {
+    const leftIsSnake = left.includes("_");
+    const rightIsSnake = right.includes("_");
+    if (leftIsSnake === rightIsSnake) return 0;
+    return leftIsSnake ? -1 : 1;
+  });
+
+  for (const [key, entry] of entries) {
+    normalized[toCamelToken(key)] = normalizeSubmitValueKeysToCamel(entry);
+  }
+
+  return normalized;
+}
+
 function resolveInitialPathValue(
   values: Record<string, any>,
   path: string,
@@ -177,18 +204,25 @@ function normalizeInitialValuesByContract(
     return { ...values };
   }
 
-  let nextValues: Record<string, any> = { ...values };
+  let nextValues: Record<string, any> = {};
+  let resolvedCount = 0;
 
   for (const field of contract.fields ?? []) {
     const resolved = resolveInitialPathValue(values, field.path);
     if (resolved === undefined) continue;
     nextValues = setValueByPath(nextValues, field.path, resolved);
+    resolvedCount += 1;
   }
 
   for (const relation of contract.relations ?? []) {
     const resolved = resolveInitialPathValue(values, relation.path);
     if (resolved === undefined) continue;
     nextValues = setValueByPath(nextValues, relation.path, resolved);
+    resolvedCount += 1;
+  }
+
+  if (resolvedCount === 0) {
+    return { ...values };
   }
 
   return nextValues;
@@ -209,6 +243,35 @@ function isGeneratedIdentifierField(field: {
 
 function buildSchema(contract: ModelFormContract): FormSchema<Record<string, any>> {
   const fieldsByPath = new Map<string, FormFieldConfig>();
+
+  const buildGeneratedRelationField = (
+    relation: ModelFormContract["relations"][number],
+  ): FormFieldConfig => {
+    const relatedModel = [relation.relatedAppLabel, relation.relatedModelName]
+      .filter(Boolean)
+      .join(".");
+    return {
+      name: relation.path,
+      type: "select-query",
+      label: relation.label,
+      required: false,
+      readOnly: false,
+      defaultValue: relation.toMany ? [] : null,
+      multiple: relation.toMany,
+      relatedModel: relatedModel || relation.relatedModelName,
+      graphql: relatedModel
+        ? {
+            relatedModel,
+          }
+        : undefined,
+      meta: {
+        relationType: relation.relationType,
+        relatedAppLabel: relation.relatedAppLabel,
+        relatedModelName: relation.relatedModelName,
+      },
+    } as FormFieldConfig;
+  };
+
   for (const field of contract.fields) {
     if (field.hidden || field.readOnly || isGeneratedIdentifierField(field)) continue;
     const type = mapKindToInputType(field.kind);
@@ -240,11 +303,23 @@ function buildSchema(contract: ModelFormContract): FormSchema<Record<string, any
     fieldsByPath.set(field.path, baseConfig);
   }
 
+  for (const relation of contract.relations ?? []) {
+    if (!relation.path || fieldsByPath.has(relation.path)) continue;
+    fieldsByPath.set(relation.path, buildGeneratedRelationField(relation));
+  }
+
+  const assignedPaths = new Set<string>();
   const sections: FormSectionConfig[] = (contract.sections ?? [])
     .filter((section) => section.visible)
     .map((section) => {
       const sectionFields = section.fieldPaths
-        .map((path) => fieldsByPath.get(path))
+        .map((path) => {
+          const field = fieldsByPath.get(path);
+          if (field) {
+            assignedPaths.add(path);
+          }
+          return field;
+        })
         .filter(Boolean) as FormFieldConfig[];
       return {
         id: section.id,
@@ -254,6 +329,34 @@ function buildSchema(contract: ModelFormContract): FormSchema<Record<string, any
       };
     })
     .filter((section) => section.fields.length > 0);
+
+  const danglingRelationFields = (contract.relations ?? [])
+    .map((relation) => fieldsByPath.get(relation.path))
+    .filter(
+      (field): field is FormFieldConfig =>
+        Boolean(field) && !assignedPaths.has(field.name),
+    );
+
+  if (danglingRelationFields.length > 0) {
+    const seen = new Set<string>();
+    const deduped = danglingRelationFields.filter((field) => {
+      if (seen.has(field.name)) return false;
+      seen.add(field.name);
+      return true;
+    });
+    if (sections.length > 0) {
+      sections[0] = {
+        ...sections[0],
+        fields: [...sections[0].fields, ...deduped],
+      };
+    } else {
+      sections.push({
+        id: "relations",
+        title: "Relations",
+        fields: deduped,
+      });
+    }
+  }
 
   const fallbackFields = Array.from(fieldsByPath.values());
   return {
@@ -346,9 +449,12 @@ export function useGeneratedModelForm(options: UseGeneratedModelFormOptions) {
   const visibleFieldPaths = React.useMemo(
     () =>
       new Set(
-        (contract?.fields ?? [])
-          .filter((field) => !field.hidden)
-          .map((field) => field.path),
+        [
+          ...(contract?.fields ?? [])
+            .filter((field) => !field.hidden)
+            .map((field) => field.path),
+          ...((contract?.relations ?? []).map((relation) => relation.path) ?? []),
+        ],
       ),
     [contract],
   );
@@ -380,7 +486,10 @@ export function useGeneratedModelForm(options: UseGeneratedModelFormOptions) {
   }, [usingGenerated, contract, legacySchema, runtimeValues]);
 
   const buildSubmissionValues = React.useCallback(
-    (values: Record<string, any>) => applyOverrides(values, runtimeOverrides),
+    (values: Record<string, any>) =>
+      normalizeSubmitValueKeysToCamel(
+        applyOverrides(values, runtimeOverrides),
+      ) as Record<string, any>,
     [runtimeOverrides],
   );
 

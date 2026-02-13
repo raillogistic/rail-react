@@ -18,6 +18,27 @@ export type ResolveSubmitIdentifierOptions = {
 
 const FALLBACK_IDENTIFIER_KEY = "objectId";
 
+function toCamelToken(token: string): string {
+  return token.replace(/_([a-zA-Z0-9])/g, (_, char: string) => char.toUpperCase());
+}
+
+function toSnakeToken(token: string): string {
+  return token
+    .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
+    .replace(/([A-Z])([A-Z][a-z])/g, "$1_$2")
+    .toLowerCase();
+}
+
+function transformPathTokens(
+  path: string,
+  transformer: (token: string) => string,
+): string {
+  return path
+    .split(".")
+    .map((token) => (/^\d+$/.test(token) ? token : transformer(token)))
+    .join(".");
+}
+
 function resolveIdentifierKey(options: ResolveSubmitIdentifierOptions): string {
   const key =
     options.contractIdentifierKey ??
@@ -49,6 +70,25 @@ function resolveIdentifierValue(
   const byPath = getValueByPath(values, key);
   if (typeof byPath === "string" || typeof byPath === "number") {
     return byPath;
+  }
+
+  const alternateKeys = Array.from(
+    new Set([
+      transformPathTokens(key, toCamelToken),
+      transformPathTokens(key, toSnakeToken),
+    ]),
+  );
+
+  for (const alternateKey of alternateKeys) {
+    if (!alternateKey || alternateKey === key) continue;
+    const alternateDirect = values[alternateKey];
+    if (typeof alternateDirect === "string" || typeof alternateDirect === "number") {
+      return alternateDirect;
+    }
+    const alternateByPath = getValueByPath(values, alternateKey);
+    if (typeof alternateByPath === "string" || typeof alternateByPath === "number") {
+      return alternateByPath;
+    }
   }
 
   return null;

@@ -228,5 +228,100 @@ describe("useGeneratedModelForm adapter", () => {
 
     expect(result.current.initialValues.inventory_count).toBe(12);
     expect(result.current.schema.initialValues?.inventory_count).toBe(12);
+    expect(result.current.initialValues).not.toHaveProperty("inventoryCount");
+  });
+
+  it("injects relation query fields when sections do not declare them", () => {
+    const contract: ModelFormContract = {
+      ...sampleModelFormContract,
+      fields: [
+        {
+          ...sampleModelFormContract.fields[0],
+          path: "name",
+          fieldName: "name",
+          label: "Name",
+        },
+      ],
+      sections: [
+        {
+          ...sampleModelFormContract.sections[0],
+          fieldPaths: ["name"],
+        },
+      ],
+      relations: [
+        {
+          path: "category",
+          label: "Category",
+          relationType: "FOREIGN_KEY",
+          toMany: false,
+          relatedAppLabel: "store",
+          relatedModelName: "Category",
+          policy: {
+            path: "category",
+            allowedActions: ["CONNECT", "SET"],
+            blockedActions: [],
+            nestedEnabled: false,
+          },
+          nestedForm: null,
+        },
+        {
+          path: "order_items",
+          label: "Order Items",
+          relationType: "REVERSE_FK",
+          toMany: true,
+          relatedAppLabel: "store",
+          relatedModelName: "OrderItem",
+          policy: {
+            path: "order_items",
+            allowedActions: ["CONNECT", "SET"],
+            blockedActions: [],
+            nestedEnabled: false,
+          },
+          nestedForm: null,
+        },
+      ],
+    };
+
+    const initialData: ModelFormInitialData = {
+      appLabel: "store",
+      modelName: "Product",
+      objectId: "9",
+      values: JSON.stringify({
+        name: "Coffee Scoop",
+        category: 4,
+        orderItems: [5, 8, 17],
+      }) as unknown as Record<string, unknown>,
+      loadedAt: "2026-02-13T12:00:00Z",
+    };
+
+    const { result } = renderHook(() =>
+      useGeneratedModelForm({
+        generatedEnabled: true,
+        contract,
+        initialData,
+      }),
+    );
+
+    const fieldMap = new Map(
+      (result.current.schema.sections?.[0]?.fields ?? []).map((field) => [
+        field.name,
+        field,
+      ]),
+    );
+
+    const categoryField = fieldMap.get("category") as Record<string, unknown>;
+    const orderItemsField = fieldMap.get("order_items") as Record<string, unknown>;
+
+    expect(categoryField?.type).toBe("select-query");
+    expect(categoryField?.relatedModel).toBe("store.Category");
+    expect(categoryField?.multiple).toBe(false);
+
+    expect(orderItemsField?.type).toBe("select-query");
+    expect(orderItemsField?.relatedModel).toBe("store.OrderItem");
+    expect(orderItemsField?.multiple).toBe(true);
+
+    expect(result.current.initialValues.category).toBe(4);
+    expect(result.current.initialValues.order_items).toEqual([5, 8, 17]);
+    expect(result.current.initialValues).not.toHaveProperty("orderItems");
   });
 });

@@ -99,4 +99,95 @@ describe("generated submit workflow", () => {
       }),
     );
   });
+
+  it("normalizes snake_case values to camelCase before dispatching generated mutations", async () => {
+    const createExecutor = vi.fn().mockResolvedValue({
+      ok: true,
+      errors: [],
+      conflict: false,
+      formErrorKey: "__all__",
+    });
+
+    const { result } = renderHook(() =>
+      useGeneratedModelForm({
+        generatedEnabled: true,
+        contract: sampleModelFormContract,
+        submitMode: "CREATE",
+        executeMutation: createExecutor,
+      }),
+    );
+
+    await act(async () => {
+      await result.current.submit({
+        cost_price: "13.74",
+        created_at: "2026-02-07T19:38:42.943382+00:00",
+        metadata_blob: {
+          updated_from: "StoreProductUpdateModelFormExample",
+        },
+      });
+    });
+
+    expect(createExecutor).toHaveBeenCalledTimes(1);
+    expect(createExecutor).toHaveBeenCalledWith(
+      "createProduct",
+      {
+        input: {
+          costPrice: "13.74",
+          createdAt: "2026-02-07T19:38:42.943382+00:00",
+          metadataBlob: {
+            updatedFrom: "StoreProductUpdateModelFormExample",
+          },
+        },
+      },
+      expect.objectContaining({
+        operationName: "createProduct",
+      }),
+    );
+  });
+
+  it("resolves snake_case update identifiers from camelCase values", async () => {
+    const updateExecutor = vi.fn().mockResolvedValue({
+      ok: true,
+      errors: [],
+      conflict: false,
+      formErrorKey: "__all__",
+    });
+
+    const { result } = renderHook(() =>
+      useGeneratedModelForm({
+        generatedEnabled: true,
+        contract: {
+          ...sampleModelFormContract,
+          mutationBindings: {
+            ...sampleModelFormContract.mutationBindings,
+            updateIdentifierKey: "sku_code",
+          },
+        },
+        submitMode: "UPDATE",
+        executeMutation: updateExecutor,
+      }),
+    );
+
+    await act(async () => {
+      await result.current.submit({
+        skuCode: "SKU-001",
+        name: "Widget",
+      });
+    });
+
+    expect(updateExecutor).toHaveBeenCalledTimes(1);
+    expect(updateExecutor).toHaveBeenCalledWith(
+      "updateProduct",
+      {
+        sku_code: "SKU-001",
+        input: {
+          skuCode: "SKU-001",
+          name: "Widget",
+        },
+      },
+      expect.objectContaining({
+        identifier: { key: "sku_code", value: "SKU-001" },
+      }),
+    );
+  });
 });
