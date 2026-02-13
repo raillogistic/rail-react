@@ -422,7 +422,23 @@ describe("ModelForm", () => {
           fieldPaths: ["name", "description"],
         },
       ],
-      relations: [],
+      relations: [
+        {
+          path: "product",
+          label: "Product",
+          relationType: "ONE_TO_ONE",
+          toMany: false,
+          relatedAppLabel: "store",
+          relatedModelName: "Product",
+          policy: {
+            path: "product",
+            allowedActions: ["CONNECT", "SET"],
+            blockedActions: [],
+            nestedEnabled: false,
+          },
+          nestedForm: null,
+        },
+      ],
     };
 
     const tagContract: ModelFormContract = {
@@ -550,6 +566,11 @@ describe("ModelForm", () => {
         (field) => field.name,
       ),
     ).toEqual(["name", "description"]);
+    expect(
+      (categoryField?.fields as Array<{ name: string }>).some(
+        (field) => field.name === "product",
+      ),
+    ).toBe(false);
 
     expect(tagsField?.type).toBe("list");
     expect(
@@ -557,6 +578,9 @@ describe("ModelForm", () => {
         (field) => field.name,
       ),
     ).toEqual(["name"]);
+    expect((payload.initialValues?.category as { product?: unknown })?.product).toBe(
+      undefined,
+    );
   });
 
   it("filters nested relations using onlyRelationships", async () => {

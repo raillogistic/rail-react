@@ -205,6 +205,29 @@ function buildRelationModelKey(appLabel: string, modelName: string): string {
   return `${appLabel}.${modelName}`;
 }
 
+function collectBackReferenceRelationPaths(
+  parentContract: ModelFormContract,
+  relatedContract: ModelFormContract,
+): Set<string> {
+  const parentModelKey = buildRelationModelKey(
+    parentContract.appLabel,
+    parentContract.modelName,
+  );
+  const paths = new Set<string>();
+
+  for (const relation of relatedContract.relations ?? []) {
+    const targetModelKey = buildRelationModelKey(
+      relation.relatedAppLabel,
+      relation.relatedModelName,
+    );
+    if (targetModelKey === parentModelKey) {
+      paths.add(relation.path);
+    }
+  }
+
+  return paths;
+}
+
 function collectUniqueTopLevelFields(
   schema: FormSchema<Record<string, unknown>>,
 ): FormFieldConfig[] {
@@ -305,6 +328,10 @@ function materializeNestedRelationFields<TValues extends Record<string, unknown>
       if (relatedFields.length === 0) {
         return field;
       }
+      const backReferenceRelationPaths = collectBackReferenceRelationPaths(
+        contract,
+        relatedContract,
+      );
 
       const nestedFormConfig = parseRelationNestedFormConfig(relation.nestedForm);
       const includeNestedSelectors = mergePathLists(
@@ -318,6 +345,10 @@ function materializeNestedRelationFields<TValues extends Record<string, unknown>
 
       const nestedFields = relatedFields
         .map((relatedField) => {
+          if (backReferenceRelationPaths.has(relatedField.name)) {
+            return null;
+          }
+
           const fullPath = `${relation.path}.${relatedField.name}`;
 
           if (
