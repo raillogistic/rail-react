@@ -241,7 +241,9 @@ function isGeneratedIdentifierField(field: {
   return fieldName === "id" || leafToken === "id";
 }
 
-function buildSchema(contract: ModelFormContract): FormSchema<Record<string, any>> {
+export function buildSchemaFromContract(
+  contract: ModelFormContract,
+): FormSchema<Record<string, any>> {
   const fieldsByPath = new Map<string, FormFieldConfig>();
 
   const buildGeneratedRelationField = (
@@ -480,7 +482,7 @@ export function useGeneratedModelForm(options: UseGeneratedModelFormOptions) {
     if (!usingGenerated || !contract) {
       return legacySchema ?? { sections: [], fields: [] };
     }
-    const generated = buildSchema(contract);
+    const generated = buildSchemaFromContract(contract);
     generated.initialValues = runtimeValues;
     return generated;
   }, [usingGenerated, contract, legacySchema, runtimeValues]);

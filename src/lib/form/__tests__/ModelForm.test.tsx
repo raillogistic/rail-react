@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from "vitest";
 
 import {
   MODEL_FORM_CONTRACT_QUERY,
+  MODEL_FORM_CONTRACT_PAGES_QUERY,
   MODEL_FORM_INITIAL_DATA_QUERY,
 } from "@/graphql/modelFormContract";
 import type { ModelFormContract } from "../types/generatedContract";
@@ -326,6 +327,235 @@ describe("ModelForm", () => {
     expect(fields.some((field) => field.name === "customer.phone")).toBe(false);
     const nestedEmail = fields.find((field) => field.name === "customer.email");
     expect(nestedEmail?.label).toBe("Email (Nested Override)");
+  });
+
+  it("materializes nested relation forms for requested relation paths", async () => {
+    const updateContract: ModelFormContract = {
+      ...sampleModelFormContract,
+      appLabel: "store",
+      modelName: "Product",
+      mode: "UPDATE",
+      fields: [
+        {
+          ...sampleModelFormContract.fields[0],
+          path: "name",
+          fieldName: "name",
+          label: "Name",
+        },
+      ],
+      sections: [
+        {
+          ...sampleModelFormContract.sections[0],
+          fieldPaths: ["name"],
+        },
+      ],
+      relations: [
+        {
+          path: "category",
+          label: "Category",
+          relationType: "FOREIGN_KEY",
+          toMany: false,
+          relatedAppLabel: "store",
+          relatedModelName: "Category",
+          policy: {
+            path: "category",
+            allowedActions: ["CONNECT", "CREATE", "UPDATE", "SET"],
+            blockedActions: [],
+            nestedEnabled: true,
+          },
+          nestedForm: JSON.stringify({
+            enabled: true,
+            fields: ["name", "description"],
+            layout: { columns: 2 },
+          }) as unknown as Record<string, unknown>,
+        },
+        {
+          path: "tags",
+          label: "Tags",
+          relationType: "MANY_TO_MANY",
+          toMany: true,
+          relatedAppLabel: "store",
+          relatedModelName: "Tag",
+          policy: {
+            path: "tags",
+            allowedActions: ["CONNECT", "CREATE", "UPDATE", "SET", "CLEAR"],
+            blockedActions: [],
+            nestedEnabled: true,
+          },
+          nestedForm: JSON.stringify({
+            enabled: true,
+            fields: ["name"],
+            minItems: 0,
+            maxItems: 10,
+          }) as unknown as Record<string, unknown>,
+        },
+      ],
+    };
+
+    const categoryContract: ModelFormContract = {
+      ...sampleModelFormContract,
+      id: "store.Category.UPDATE",
+      appLabel: "store",
+      modelName: "Category",
+      mode: "UPDATE",
+      fields: [
+        {
+          ...sampleModelFormContract.fields[0],
+          path: "name",
+          fieldName: "name",
+          label: "Category Name",
+          kind: "TEXT",
+        },
+        {
+          ...sampleModelFormContract.fields[0],
+          path: "description",
+          fieldName: "description",
+          label: "Category Description",
+          kind: "TEXTAREA",
+          required: false,
+          nullable: true,
+        },
+      ],
+      sections: [
+        {
+          ...sampleModelFormContract.sections[0],
+          fieldPaths: ["name", "description"],
+        },
+      ],
+      relations: [],
+    };
+
+    const tagContract: ModelFormContract = {
+      ...sampleModelFormContract,
+      id: "store.Tag.UPDATE",
+      appLabel: "store",
+      modelName: "Tag",
+      mode: "UPDATE",
+      fields: [
+        {
+          ...sampleModelFormContract.fields[0],
+          path: "name",
+          fieldName: "name",
+          label: "Tag Name",
+          kind: "TEXT",
+        },
+      ],
+      sections: [
+        {
+          ...sampleModelFormContract.sections[0],
+          fieldPaths: ["name"],
+        },
+      ],
+      relations: [],
+    };
+
+    const mocks = [
+      {
+        request: {
+          query: MODEL_FORM_CONTRACT_QUERY,
+          variables: {
+            appLabel: "store",
+            modelName: "Product",
+            mode: "UPDATE",
+            includeNested: true,
+          },
+        },
+        result: {
+          data: {
+            modelFormContract: updateContract,
+          },
+        },
+      },
+      {
+        request: {
+          query: MODEL_FORM_INITIAL_DATA_QUERY,
+          variables: {
+            appLabel: "store",
+            modelName: "Product",
+            objectId: "42",
+            includeNested: true,
+            runtimeOverrides: [],
+          },
+        },
+        result: {
+          data: {
+            modelFormInitialData: {
+              appLabel: "store",
+              modelName: "Product",
+              objectId: "42",
+              values: JSON.stringify({
+                name: "Starter",
+                category: { id: "1", name: "Hardware", description: "Devices" },
+                tags: [{ id: "2", name: "Featured" }],
+              }),
+              readonlyValues: null,
+              loadedAt: "2026-02-12T12:00:00Z",
+            },
+          },
+        },
+      },
+      {
+        request: {
+          query: MODEL_FORM_CONTRACT_PAGES_QUERY,
+          variables: {
+            page: 1,
+            perPage: 2,
+            models: [
+              { appLabel: "store", modelName: "Category" },
+              { appLabel: "store", modelName: "Tag" },
+            ],
+            mode: "UPDATE",
+            includeNested: false,
+          },
+        },
+        result: {
+          data: {
+            modelFormContractPages: {
+              page: 1,
+              perPage: 2,
+              total: 2,
+              results: [categoryContract, tagContract],
+            },
+          },
+        },
+      },
+    ];
+
+    renderWithMocks(
+      <ModelForm
+        app="store"
+        model="Product"
+        mode="UPDATE"
+        objectId="42"
+        nested={["category", "tags"]}
+      />,
+      mocks,
+    );
+
+    const payload = await getRenderedSchema();
+    const fields = payload.sections[0].fields as Array<
+      Record<string, unknown>
+    >;
+    const categoryField = fields.find((field) => field.name === "category") as
+      | Record<string, unknown>
+      | undefined;
+    const tagsField = fields.find((field) => field.name === "tags") as
+      | Record<string, unknown>
+      | undefined;
+
+    expect(categoryField?.type).toBe("object");
+    expect(
+      (categoryField?.fields as Array<{ name: string }>).map(
+        (field) => field.name,
+      ),
+    ).toEqual(["name", "description"]);
+
+    expect(tagsField?.type).toBe("list");
+    expect(
+      (tagsField?.fields as Array<{ name: string }>).map(
+        (field) => field.name,
+      ),
+    ).toEqual(["name"]);
   });
 
   it("filters nested relations using onlyRelationships", async () => {

@@ -107,6 +107,67 @@ export const MODEL_FORM_CONTRACT_PAGES_QUERY = gql`
         modelName
         mode
         version
+        configVersion
+        generatedAt
+        fields {
+          path
+          fieldName
+          label
+          kind
+          graphqlType
+          pythonType
+          required
+          nullable
+          readOnly
+          hidden
+          defaultValue
+          constraints
+          validators {
+            type
+            message
+            params
+          }
+          ui
+          metadata
+        }
+        sections {
+          id
+          title
+          description
+          fieldPaths
+          order
+          layout
+          visible
+        }
+        relations {
+          path
+          label
+          toMany
+          relatedAppLabel
+          relatedModelName
+          policy {
+            path
+            allowedActions
+            blockedActions
+            nestedEnabled
+          }
+          nestedForm
+        }
+        mutationBindings {
+          createOperation
+          updateOperation
+          bulkCreateOperation
+          bulkUpdateOperation
+          updateIdentifierKey
+          updateTargetPolicy
+          bulkCommitPolicy
+          conflictPolicy
+        }
+        errorPolicy {
+          canonicalFormErrorKey
+          fieldPathNotation
+          bulkRowPrefixPattern
+        }
       }
     }
   }

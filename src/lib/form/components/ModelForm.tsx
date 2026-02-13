@@ -3,12 +3,16 @@ import { gql, useApolloClient, useQuery } from "@apollo/client";
 
 import {
   MODEL_FORM_CONTRACT_QUERY,
+  MODEL_FORM_CONTRACT_PAGES_QUERY,
   MODEL_FORM_INITIAL_DATA_QUERY,
 } from "@/graphql/modelFormContract";
 import { cn } from "@/lib/utils";
 
 import DynamicForm from "../inputs/form";
-import { useGeneratedModelForm } from "../hooks/useGeneratedModelForm";
+import {
+  buildSchemaFromContract,
+  useGeneratedModelForm,
+} from "../hooks/useGeneratedModelForm";
 import { useGeneratedValidators } from "../hooks/useGeneratedValidators";
 import { buildGeneratedMutationDocument } from "../mutations";
 import type {
@@ -35,7 +39,10 @@ import {
   applyErrorsToFormFields,
   normalizeGeneratedErrorsForForm,
 } from "../utils/errors";
-import { serializeRuntimeOverridesForQuery } from "../utils/jsonCoercion";
+import {
+  asRecord,
+  serializeRuntimeOverridesForQuery,
+} from "../utils/jsonCoercion";
 
 type ContractQueryData = {
   modelFormContract: ModelFormContract | null;
@@ -60,6 +67,26 @@ type InitialDataQueryVariables = {
   runtimeOverrides?: Array<Record<string, unknown>>;
 };
 
+type ContractPagesQueryData = {
+  modelFormContractPages: {
+    page: number;
+    perPage: number;
+    total: number;
+    results: ModelFormContract[];
+  } | null;
+};
+
+type ContractPagesQueryVariables = {
+  page: number;
+  perPage: number;
+  models: Array<{
+    appLabel: string;
+    modelName: string;
+  }>;
+  mode: ModelFormMode;
+  includeNested: boolean;
+};
+
 type GeneratedMutationPayload = {
   ok?: boolean;
   errors?: unknown;
@@ -71,6 +98,15 @@ type NestedControlMap<TValues extends Record<string, unknown>> = Record<
   string,
   ModelFormNestedDefinition<TValues>
 >;
+
+type RelationNestedFormConfig = {
+  enabled?: boolean;
+  fields?: string[];
+  excludeFields?: string[];
+  columns?: number;
+  minItems?: number;
+  maxItems?: number;
+};
 
 const EMPTY_RUNTIME_OVERRIDES: ModelFormRuntimeOverride[] = [];
 const EMPTY_PATHS: string[] = [];
@@ -125,6 +161,218 @@ function mergePathLists(...lists: Array<string[] | undefined>): string[] {
     }
   }
   return Array.from(merged);
+}
+
+function toOptionalNumber(value: unknown): number | undefined {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return undefined;
+  }
+  return value;
+}
+
+function toOptionalStringArray(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const normalized = value
+    .map((entry) => String(entry ?? "").trim())
+    .filter(Boolean);
+  return normalized.length > 0 ? normalized : undefined;
+}
+
+function parseRelationNestedFormConfig(
+  nestedForm: unknown,
+): RelationNestedFormConfig | null {
+  const record = asRecord(nestedForm);
+  if (!record) return null;
+
+  const layout = asRecord(record.layout);
+  const rawColumns = layout?.columns ?? record.columns;
+
+  return {
+    enabled:
+      typeof record.enabled === "boolean" ? record.enabled : undefined,
+    fields: toOptionalStringArray(record.fields),
+    excludeFields: toOptionalStringArray(
+      record.excludeFields ?? record.exclude_fields,
+    ),
+    columns: toOptionalNumber(rawColumns),
+    minItems: toOptionalNumber(record.minItems ?? record.min_items),
+    maxItems: toOptionalNumber(record.maxItems ?? record.max_items),
+  };
+}
+
+function buildRelationModelKey(appLabel: string, modelName: string): string {
+  return `${appLabel}.${modelName}`;
+}
+
+function collectUniqueTopLevelFields(
+  schema: FormSchema<Record<string, unknown>>,
+): FormFieldConfig[] {
+  const sourceFields =
+    schema.sections?.flatMap((section) => section.fields) ?? schema.fields ?? [];
+  const uniqueFields = new Map<string, FormFieldConfig>();
+
+  for (const field of sourceFields) {
+    if (!field.name || field.name.includes(".")) continue;
+    if (uniqueFields.has(field.name)) continue;
+    uniqueFields.set(field.name, { ...field });
+  }
+
+  return Array.from(uniqueFields.values());
+}
+
+function buildNestedRelationFieldConfig(
+  relationField: FormFieldConfig,
+  relation: ModelFormContract["relations"][number],
+  nestedFields: FormFieldConfig[],
+  nestedFormConfig: RelationNestedFormConfig | null,
+): FormFieldConfig {
+  const base = {
+    name: relationField.name,
+    label: relationField.label ?? relation.label,
+    description: relationField.description,
+    required: relationField.required,
+    readOnly: relationField.readOnly,
+    disabled: relationField.disabled,
+    hidden: relationField.hidden,
+    className: relationField.className,
+    colSpan: relationField.colSpan,
+  };
+
+  if (relation.toMany) {
+    return {
+      ...base,
+      type: "list",
+      fields: nestedFields,
+      columns: nestedFormConfig?.columns,
+      minItems: nestedFormConfig?.minItems,
+      maxItems: nestedFormConfig?.maxItems,
+      itemLabel: relationField.label ?? relation.label,
+      addLabel: `Add ${relationField.label ?? relation.label}`,
+    } as FormFieldConfig;
+  }
+
+  return {
+    ...base,
+    type: "object",
+    fields: nestedFields,
+    columns: nestedFormConfig?.columns,
+  } as FormFieldConfig;
+}
+
+function materializeNestedRelationFields<TValues extends Record<string, unknown>>(
+  schema: FormSchema<TValues>,
+  options: {
+    contract: ModelFormContract | null;
+    nestedControls: NestedControlMap<TValues> | null;
+    relatedContractsByModel: Map<string, ModelFormContract>;
+  },
+): FormSchema<TValues> {
+  const { contract, nestedControls, relatedContractsByModel } = options;
+  if (!contract || !nestedControls) return schema;
+
+  const sections = schema.sections ?? [];
+  if (sections.length === 0) return schema;
+
+  const relationsByPath = new Map(
+    (contract.relations ?? []).map((relation) => [relation.path, relation]),
+  );
+  let schemaChanged = false;
+
+  const nextSections = sections.map((section) => {
+    let sectionChanged = false;
+
+    const nextFields = section.fields.map((field) => {
+      const relation = relationsByPath.get(field.name);
+      if (!relation) return field;
+
+      const nestedControl = nestedControls[relation.path];
+      if (!nestedControl || nestedControl.enabled === false) {
+        return field;
+      }
+
+      const modelKey = buildRelationModelKey(
+        relation.relatedAppLabel,
+        relation.relatedModelName,
+      );
+      const relatedContract = relatedContractsByModel.get(modelKey);
+      if (!relatedContract) {
+        return field;
+      }
+
+      const relatedSchema = buildSchemaFromContract(relatedContract);
+      const relatedFields = collectUniqueTopLevelFields(relatedSchema);
+      if (relatedFields.length === 0) {
+        return field;
+      }
+
+      const nestedFormConfig = parseRelationNestedFormConfig(relation.nestedForm);
+      const includeNestedSelectors = mergePathLists(
+        nestedFormConfig?.fields,
+        nestedControl.onlyFields ?? nestedControl.fields,
+      );
+      const excludeNestedSelectors = mergePathLists(
+        nestedFormConfig?.excludeFields,
+        nestedControl.excludeFields,
+      );
+
+      const nestedFields = relatedFields
+        .map((relatedField) => {
+          const fullPath = `${relation.path}.${relatedField.name}`;
+
+          if (
+            includeNestedSelectors.length > 0 &&
+            !matchFieldSelectors(
+              includeNestedSelectors,
+              fullPath,
+              relation.path,
+            )
+          ) {
+            return null;
+          }
+
+          if (
+            excludeNestedSelectors.some((selector) =>
+              isFieldSelectorMatch(selector, fullPath, relation.path),
+            )
+          ) {
+            return null;
+          }
+
+          return applyFieldOverride(
+            relatedField,
+            resolveFieldOverride(
+              nestedControl.fieldOverrides,
+              fullPath,
+              relation.path,
+            ),
+          );
+        })
+        .filter(Boolean) as FormFieldConfig[];
+
+      if (nestedFields.length === 0) {
+        return field;
+      }
+
+      const replacement = buildNestedRelationFieldConfig(
+        field,
+        relation,
+        nestedFields,
+        nestedFormConfig,
+      );
+      sectionChanged = true;
+      schemaChanged = true;
+      return replacement;
+    });
+
+    return sectionChanged ? { ...section, fields: nextFields } : section;
+  });
+
+  if (!schemaChanged) return schema;
+
+  return {
+    ...schema,
+    sections: nextSections,
+  };
 }
 
 function inferRelationPath(path: string): string | null {
@@ -708,6 +956,64 @@ export function ModelForm<
     ? (initialDataQuery.data?.modelFormInitialData ?? null)
     : null;
 
+  const nestedRelationModelRefs = React.useMemo(() => {
+    if (!contract || !nestedControls) return [];
+
+    const refs = new Map<
+      string,
+      {
+        appLabel: string;
+        modelName: string;
+      }
+    >();
+
+    for (const relation of contract.relations ?? []) {
+      const nestedControl = nestedControls[relation.path];
+      if (!nestedControl || nestedControl.enabled === false) continue;
+      if (!relation.relatedAppLabel || !relation.relatedModelName) continue;
+      const key = buildRelationModelKey(
+        relation.relatedAppLabel,
+        relation.relatedModelName,
+      );
+      refs.set(key, {
+        appLabel: relation.relatedAppLabel,
+        modelName: relation.relatedModelName,
+      });
+    }
+
+    return Array.from(refs.values());
+  }, [contract, nestedControls]);
+
+  const nestedRelationContractsQuery = useQuery<
+    ContractPagesQueryData,
+    ContractPagesQueryVariables
+  >(MODEL_FORM_CONTRACT_PAGES_QUERY, {
+    variables: {
+      page: 1,
+      perPage: Math.max(nestedRelationModelRefs.length, 1),
+      models: nestedRelationModelRefs,
+      mode: resolvedMode,
+      includeNested: false,
+    },
+    skip: !generatedEnabled || nestedRelationModelRefs.length === 0,
+    fetchPolicy: "cache-first",
+  });
+
+  const relatedContractsByModel = React.useMemo(() => {
+    const map = new Map<string, ModelFormContract>();
+    const page = nestedRelationContractsQuery.data?.modelFormContractPages;
+    for (const relatedContract of page?.results ?? []) {
+      map.set(
+        buildRelationModelKey(
+          relatedContract.appLabel,
+          relatedContract.modelName,
+        ),
+        relatedContract,
+      );
+    }
+    return map;
+  }, [nestedRelationContractsQuery.data]);
+
   React.useEffect(() => {
     if (!contract || !onContractLoaded) return;
     onContractLoaded(contract);
@@ -727,6 +1033,11 @@ export function ModelForm<
     if (!initialDataQuery.error || !onLoadError) return;
     onLoadError(toError(initialDataQuery.error), "initialData");
   }, [initialDataQuery.error, onLoadError]);
+
+  React.useEffect(() => {
+    if (!nestedRelationContractsQuery.error || !onLoadError) return;
+    onLoadError(toError(nestedRelationContractsQuery.error), "contract");
+  }, [nestedRelationContractsQuery.error, onLoadError]);
 
   const executeGeneratedMutation = React.useCallback(
     async (
@@ -804,8 +1115,19 @@ export function ModelForm<
     validatorExtensions,
   );
 
+  const schemaWithNestedRelations = React.useMemo(() => {
+    return materializeNestedRelationFields(
+      generated.schema as FormSchema<TFormValues>,
+      {
+        contract,
+        nestedControls,
+        relatedContractsByModel,
+      },
+    );
+  }, [generated.schema, contract, nestedControls, relatedContractsByModel]);
+
   const controlledSchema = React.useMemo(() => {
-    return applySchemaControls(generated.schema as FormSchema<TFormValues>, {
+    return applySchemaControls(schemaWithNestedRelations, {
       onlyFields: resolvedOnlyFields,
       excludeFields: resolvedExcludeFields,
       onlyRelationships: resolvedOnlyRelationships,
@@ -815,7 +1137,7 @@ export function ModelForm<
       nestedControls,
     });
   }, [
-    generated.schema,
+    schemaWithNestedRelations,
     resolvedOnlyFields,
     resolvedExcludeFields,
     resolvedOnlyRelationships,
