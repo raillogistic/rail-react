@@ -33,7 +33,14 @@ import {
   InvoiceForm,
   OnboardingWizard,
   SettingsForm,
-} from "@/lib/form/example";
+  StoreProductUpdateModelFormExample,
+} from "@/lib/form/examples";
+import {
+  StoreGeneratedExamples,
+  StoreProductCreateGeneratedFormExample,
+  StoreProductCreateModelFormExample,
+} from "@/lib/form/examples";
+import { ModelForm } from "@/lib/form";
 
 export const ROUTES = {
   LOGIN: "/login",
@@ -152,31 +159,9 @@ const CORE_NAVIGATION_LINKS: NavigationSection[] = [
         path: "/formold",
         component: (
           <>
-          <DynamicForm
-            schema={{fields:[
-              {
-  name: "description",
-  type: "rich-text",
-  label: "Description",
-  
-  // minHeight: 160,
-  // toolbar: ["bold", "italic", "heading", "list", "link"],
-},
-              {
-  name: "metadata",
-  type: "group",
-  label: "Metadata",
-  collapsible: true,
-  ui: { variant: "default", }, // "default" | "card" | "fieldset"
-  fields: [
+            <StoreProductUpdateModelFormExample objectId="5" />
 
-    { name: "author", type: "text", label: "Author" },
-    { name: "tags", type: "text", label: "Tags" },
-  ],
-}
-            ]}}
-          />
-           {/* <AdvancedFeaturesForm/> */}
+            {/* <AdvancedFeaturesForm/> */}
           </>
         ),
         description: "old form",

@@ -1,6 +1,10 @@
 import type { Dispatch, SetStateAction } from "react";
 import type { UseFormReturn } from "@tanstack/react-form";
 import type { MutationError } from "../mutations";
+import {
+  mapBulkErrorField,
+  normalizeGeneratedMutationErrors,
+} from "./normalizeMutationErrors";
 
 export function normalizeErrorFieldPath(field?: string | null): string | null {
   if (!field) return null;
@@ -151,6 +155,18 @@ export function normalizeMutationErrors(
         severity: normalizeSeverity(error.severity),
       })) ?? []
   );
+}
+
+export function normalizeGeneratedErrorsForForm(
+  errors: unknown
+): MutationError[] {
+  return normalizeGeneratedMutationErrors(errors).map((error) => ({
+    field: mapBulkErrorField(error),
+    message: error.message,
+    code: error.code,
+    severity: "error",
+    details: error.meta ?? undefined,
+  }));
 }
 
 export function isBlockingError(error: MutationError) {

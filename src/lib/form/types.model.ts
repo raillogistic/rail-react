@@ -1,28 +1,187 @@
 /**
  * Model-form level types (ModelFormProps and related).
  *
- * These types are used by the higher-level ModelForm component
- * that wraps DynamicForm with backend metadata integration.
+ * ModelForm wraps DynamicForm with generated contract loading, initial-data
+ * retrieval, and runtime override controls.
  */
 import type React from "react";
-import type { DynamicFormProps } from "./types/props";
+import type {
+  DynamicFormProps,
+  FormFieldConfig,
+  FormSchema,
+  FormSectionConfig,
+} from "./types";
+import type {
+  ModelFormContract,
+  ModelFormInitialData,
+  ModelFormMode,
+  ModelFormRuntimeOverride,
+} from "./types/generatedContract";
+import type { GeneratedValidatorExtensionMap } from "./hooks/useGeneratedValidators";
 
 export type { MutationError } from "./mutations";
 
+export type ModelFormModeInput =
+  | ModelFormMode
+  | "create"
+  | "update"
+  | "view";
+
+export type ModelFormFieldOverrideResult =
+  | Partial<FormFieldConfig>
+  | FormFieldConfig
+  | null
+  | undefined;
+
+export type ModelFormSectionOverrideResult<TValues extends Record<string, unknown>> =
+  | Partial<FormSectionConfig<TValues>>
+  | FormSectionConfig<TValues>
+  | null
+  | undefined;
+
+export type ModelFormFieldOverride = (
+  field: FormFieldConfig,
+) => ModelFormFieldOverrideResult;
+
+export type ModelFormSectionOverride<TValues extends Record<string, unknown>> = (
+  section: FormSectionConfig<TValues>,
+) => ModelFormSectionOverrideResult<TValues>;
+
+export type ModelFormFieldOverrideValue =
+  | Partial<FormFieldConfig>
+  | ModelFormFieldOverride;
+
+export type ModelFormSectionOverrideValue<TValues extends Record<string, unknown>> =
+  | Partial<FormSectionConfig<TValues>>
+  | ModelFormSectionOverride<TValues>;
+
+export type ModelFormFieldOverrides = Record<string, ModelFormFieldOverrideValue>;
+
+export type ModelFormSectionOverrides<TValues extends Record<string, unknown>> =
+  Record<string, ModelFormSectionOverrideValue<TValues>>;
+
+export type ModelFormNestedDefinition<TValues extends Record<string, unknown>> = {
+  enabled?: boolean;
+  fields?: string[];
+  onlyFields?: string[];
+  excludeFields?: string[];
+  includeSections?: string[];
+  excludeSections?: string[];
+  fieldOverrides?: ModelFormFieldOverrides;
+  sectionOverrides?: ModelFormSectionOverrides<TValues>;
+};
+
+export type ModelFormNestedConfig<TValues extends Record<string, unknown>> =
+  | string[]
+  | Record<string, ModelFormNestedDefinition<TValues>>;
+
+export type ModelFormErrorFallbackContext = {
+  error: Error;
+  stage: "contract" | "initialData";
+  app: string;
+  model: string;
+  mode: ModelFormMode;
+  objectId?: string;
+};
+
+type ModelFormStateConfig<
+  TFormValues extends Record<string, unknown>,
+> = NonNullable<DynamicFormProps<TFormValues>["state"]>;
+
+type ModelFormBehaviorConfig<
+  TFormValues extends Record<string, unknown>,
+> = NonNullable<DynamicFormProps<TFormValues>["behavior"]>;
+
+type ModelFormLayoutConfig<
+  TFormValues extends Record<string, unknown>,
+> = NonNullable<DynamicFormProps<TFormValues>["layout"]>;
+
 export interface ModelFormProps<
-  TFormValues extends Record<string, any> = Record<string, any>,
+  TFormValues extends Record<string, unknown> = Record<string, unknown>,
 > extends Partial<DynamicFormProps<TFormValues>> {
+  app?: string;
+  model?: string;
+  mode?: ModelFormModeInput;
+  objectId?: string | number | null;
+
+  /**
+   * Optional legacy aliases kept for compatibility with previous model-form
+   * wrappers in this codebase.
+   */
   appName?: string;
   modelName?: string;
-  mutationMode?: "create" | "update" | null;
+  mutationMode?: "create" | "update" | "view" | null;
   mutationId?: string;
+
+  generatedEnabled?: boolean;
+  includeNested?: boolean;
+  nested?: ModelFormNestedConfig<TFormValues>;
+  /** Legacy nested relation alias mapped to {@link nested}. */
+  nestedFields?: string[];
+  runtimeOverrides?: ModelFormRuntimeOverride[];
+
+  onlyFields?: string[];
+  excludeFields?: string[];
+  /** Legacy field alias mapped to {@link onlyFields}. */
+  only?: string[];
+  /** Legacy field alias mapped to {@link excludeFields}. */
+  exclude?: string[];
+  /**
+   * Restrict relation paths (first path segment of nested fields) that are
+   * allowed to render.
+   */
+  onlyRelationships?: string[];
+  /** Exclude relation paths (first path segment of nested fields). */
+  excludeRelationships?: string[];
+  fieldOverrides?: ModelFormFieldOverrides;
+  sectionOverrides?: ModelFormSectionOverrides<TFormValues>;
+
+  validatorExtensions?: GeneratedValidatorExtensionMap;
+  legacySchema?: FormSchema<TFormValues>;
+
+  /**
+   * Optional grouped DynamicForm overrides. Explicit top-level `state`,
+   * `behavior`, `layout`, `actions`, `devtools` props still take precedence.
+   */
+  formProps?: Partial<DynamicFormProps<TFormValues>>;
+
+  /** Convenience alias merged into `behavior.onSubmit`. */
+  onSubmit?: ModelFormBehaviorConfig<TFormValues>["onSubmit"];
+  /** Convenience alias merged into `behavior.onChange`. */
+  onChange?: ModelFormBehaviorConfig<TFormValues>["onChange"];
+  /** Convenience alias merged into `behavior.validate`. */
+  validate?: ModelFormBehaviorConfig<TFormValues>["validate"];
+
+  /** Convenience alias merged into `state.defaultValues`. */
+  defaultValues?: ModelFormStateConfig<TFormValues>["defaultValues"];
+  /** Convenience alias merged into `state.readOnly`. */
+  readOnly?: ModelFormStateConfig<TFormValues>["readOnly"];
+  /** Convenience alias merged into `state.disabled`. */
+  disabled?: ModelFormStateConfig<TFormValues>["disabled"];
+  /** Convenience alias merged into `state.isLoading`. */
+  isLoading?: ModelFormStateConfig<TFormValues>["isLoading"];
+  /** Convenience alias merged into `state.onReady`. */
+  onFormReady?: ModelFormStateConfig<TFormValues>["onReady"];
+  /** Convenience alias merged into `layout.showSectionHeaders`. */
+  showSectionHeaders?: ModelFormLayoutConfig<TFormValues>["showSectionHeaders"];
+  /** Convenience alias that sets layout variant to `popup` if not provided. */
+  inPopup?: boolean;
+
   title?: React.ReactNode;
   description?: React.ReactNode;
   showHeading?: boolean;
   containerClassName?: string;
-  only?: string[];
-  exclude?: string[];
-  onlyRelationships?: string[];
-  excludeRelationships?: string[];
-  nestedFields?: string[];
+  contentClassName?: string;
+
+  loadingFallback?: React.ReactNode;
+  emptySchemaFallback?: React.ReactNode;
+  errorFallback?:
+    | React.ReactNode
+    | ((ctx: ModelFormErrorFallbackContext) => React.ReactNode);
+
+  requireObjectIdForUpdate?: boolean;
+
+  onContractLoaded?: (contract: ModelFormContract) => void;
+  onInitialDataLoaded?: (initialData: ModelFormInitialData) => void;
+  onLoadError?: (error: Error, stage: "contract" | "initialData") => void;
 }

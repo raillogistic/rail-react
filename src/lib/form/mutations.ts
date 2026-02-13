@@ -255,3 +255,71 @@ export function build_method_mutation(
     `}`
   );
 }
+
+export type GeneratedMutationMode =
+  | "create"
+  | "update"
+  | "bulkCreate"
+  | "bulkUpdate";
+
+export type GeneratedMutationBindings = {
+  createOperation?: string | null;
+  updateOperation?: string | null;
+  bulkCreateOperation?: string | null;
+  bulkUpdateOperation?: string | null;
+};
+
+export function resolveGeneratedMutationOperation(
+  bindings: GeneratedMutationBindings | null | undefined,
+  mode: GeneratedMutationMode,
+  fallbackModelName?: string,
+): string {
+  const fromContract =
+    mode === "create"
+      ? bindings?.createOperation
+      : mode === "update"
+        ? bindings?.updateOperation
+        : mode === "bulkCreate"
+          ? bindings?.bulkCreateOperation
+          : bindings?.bulkUpdateOperation;
+
+  if (fromContract && String(fromContract).trim()) {
+    return String(fromContract).trim();
+  }
+
+  if (!fallbackModelName) {
+    throw new Error(`Missing mutation binding for mode '${mode}'.`);
+  }
+
+  return getMutationFieldName(fallbackModelName, mode);
+}
+
+export function buildGeneratedMutationDocument(
+  mode: GeneratedMutationMode,
+  operationName: string,
+  modelName: string,
+  selection = "id",
+): string {
+  if (mode === "create") {
+    return build_create_mutation(modelName, selection).replace(
+      new RegExp(`\\b${getMutationFieldName(modelName, "create")}\\b`, "g"),
+      operationName,
+    );
+  }
+  if (mode === "update") {
+    return build_update_mutation(modelName, selection).replace(
+      new RegExp(`\\b${getMutationFieldName(modelName, "update")}\\b`, "g"),
+      operationName,
+    );
+  }
+  if (mode === "bulkCreate") {
+    return build_bulk_create_mutation(modelName, selection).replace(
+      new RegExp(`\\b${getMutationFieldName(modelName, "bulkCreate")}\\b`, "g"),
+      operationName,
+    );
+  }
+  return build_bulk_update_mutation(modelName, selection).replace(
+    new RegExp(`\\b${getMutationFieldName(modelName, "bulkUpdate")}\\b`, "g"),
+    operationName,
+  );
+}

@@ -1,8 +1,28 @@
-/**
- * Five DynamicForm usage examples demonstrating the full range of features.
- */
+import { gql, useApolloClient, useQuery } from "@apollo/client";
 import React from "react";
-import { DynamicForm } from "@/lib/form";
+
+import {
+  MODEL_FORM_CONTRACT_QUERY,
+  MODEL_FORM_INITIAL_DATA_QUERY,
+} from "@/graphql/modelFormContract";
+import {
+  DynamicForm,
+  ModelForm,
+  buildGeneratedMutationDocument,
+  resolveGeneratedMutationOperation,
+  useGeneratedFormMetrics,
+  useGeneratedModelForm,
+  useGeneratedValidators,
+} from "@/lib/form";
+import type {
+  ModelFormContract,
+  ModelFormInitialData,
+  ModelFormMode,
+  ModelFormRuntimeOverride,
+} from "@/lib/form/types/generatedContract";
+import { normalizeGeneratedErrorsForForm } from "@/lib/form/utils/errors";
+import { buildNestedMutationPayload } from "@/lib/form/utils/nestedMutationPayload";
+import { ModelTableV2 } from "@/lib/table";
 import type { FormSchema } from "@/lib/form";
 import { Button } from "@/lib/components/ui/button";
 
@@ -835,3 +855,638 @@ export const AdvancedFeaturesForm = () => (
     }}
   />
 );
+
+type StoreModelName = "Product" | "Order";
+
+type ContractQueryData = {
+  modelFormContract: ModelFormContract | null;
+};
+
+type ContractQueryVariables = {
+  appLabel: string;
+  modelName: StoreModelName;
+  mode: ModelFormMode;
+  includeNested: boolean;
+};
+
+type InitialDataQueryData = {
+  modelFormInitialData: ModelFormInitialData | null;
+};
+
+type InitialDataQueryVariables = {
+  appLabel: string;
+  modelName: StoreModelName;
+  objectId: string;
+  includeNested: boolean;
+  runtimeOverrides?: ModelFormRuntimeOverride[];
+};
+
+type SubmissionState = {
+  status: "idle" | "saving" | "success" | "error";
+  message: string | null;
+  conflict: boolean;
+  errors: Array<{ field?: string | null; message: string }>;
+};
+
+type GeneratedMutationResponse = {
+  ok?: boolean;
+  errors?: unknown;
+  conflict?: boolean;
+};
+
+const INITIAL_SUBMISSION_STATE: SubmissionState = {
+  status: "idle",
+  message: null,
+  conflict: false,
+  errors: [],
+};
+
+const ORDER_RUNTIME_OVERRIDES: ModelFormRuntimeOverride[] = [
+  { path: "payment_token", action: "UNSET" },
+  {
+    path: "metadata",
+    action: "MERGE",
+    value: { updated_from: "rail-react/src/lib/form/examples.tsx" },
+  },
+];
+
+function getMutationResponse(
+  data: Record<string, unknown> | null | undefined,
+): GeneratedMutationResponse {
+  if (!data || typeof data !== "object") {
+    return {};
+  }
+  const response = (data as { response?: unknown }).response;
+  if (!response || typeof response !== "object") {
+    return {};
+  }
+  return response as GeneratedMutationResponse;
+}
+
+function toSubmissionErrors(errors: unknown): SubmissionState["errors"] {
+  return normalizeGeneratedErrorsForForm(errors).map((item) => ({
+    field: item.field,
+    message: item.message,
+  }));
+}
+
+function toErrorMessage(error: unknown): string {
+  if (error instanceof Error && error.message.trim()) {
+    return error.message;
+  }
+  return "Request failed.";
+}
+
+function useStoreGeneratedForm(options: {
+  modelName: StoreModelName;
+  mode: ModelFormMode;
+  objectId?: string;
+  includeNested?: boolean;
+  runtimeOverrides?: ModelFormRuntimeOverride[];
+}) {
+  const {
+    modelName,
+    mode,
+    objectId,
+    includeNested = false,
+    runtimeOverrides = [],
+  } = options;
+
+  const contractQuery = useQuery<ContractQueryData, ContractQueryVariables>(
+    MODEL_FORM_CONTRACT_QUERY,
+    {
+      variables: {
+        appLabel: "store",
+        modelName,
+        mode,
+        includeNested,
+      },
+      fetchPolicy: "cache-and-network",
+    },
+  );
+
+  const shouldFetchInitialData = mode === "UPDATE" && Boolean(objectId);
+
+  const initialDataQuery = useQuery<
+    InitialDataQueryData,
+    InitialDataQueryVariables
+  >(MODEL_FORM_INITIAL_DATA_QUERY, {
+    variables: {
+      appLabel: "store",
+      modelName,
+      objectId: objectId ?? "",
+      includeNested,
+      runtimeOverrides,
+    },
+    skip: !shouldFetchInitialData,
+    fetchPolicy: "network-only",
+  });
+
+  const contract = contractQuery.data?.modelFormContract ?? null;
+  const initialData = shouldFetchInitialData
+    ? (initialDataQuery.data?.modelFormInitialData ?? null)
+    : null;
+
+  const generatedForm = useGeneratedModelForm({
+    contract,
+    initialData,
+    runtimeOverrides,
+    generatedEnabled: true,
+  });
+
+  const { formValidator } = useGeneratedValidators(contract);
+
+  return {
+    contract,
+    schema: generatedForm.schema,
+    buildSubmissionValues: generatedForm.buildSubmissionValues,
+    relations: contract?.relations ?? [],
+    formValidator,
+    loading: contractQuery.loading || initialDataQuery.loading,
+    error: contractQuery.error ?? initialDataQuery.error,
+  };
+}
+
+export function StoreProductCreateGeneratedFormExample() {
+  const client = useApolloClient();
+  const metrics = useGeneratedFormMetrics();
+
+  const [submission, setSubmission] = React.useState<SubmissionState>(
+    INITIAL_SUBMISSION_STATE,
+  );
+
+  const generated = useStoreGeneratedForm({
+    modelName: "Product",
+    mode: "CREATE",
+    runtimeOverrides: [
+      {
+        path: "metadata",
+        action: "MERGE",
+        value: { created_from: "generated-form-example" },
+      },
+    ],
+  });
+
+  console.log(generated);
+
+  const onSubmit = React.useCallback(
+    async (values: Record<string, unknown>) => {
+      if (!generated.contract) return;
+
+      setSubmission({
+        status: "saving",
+        message: "Submitting product create mutation...",
+        conflict: false,
+        errors: [],
+      });
+
+      const operationName = resolveGeneratedMutationOperation(
+        generated.contract.mutationBindings,
+        "create",
+        "Product",
+      );
+
+      const mutation = gql(
+        buildGeneratedMutationDocument(
+          "create",
+          operationName,
+          "Product",
+          "id sku name",
+        ),
+      );
+
+      try {
+        const result = await client.mutate<{
+          response?: GeneratedMutationResponse;
+        }>({
+          mutation,
+          variables: {
+            input: generated.buildSubmissionValues(values),
+          },
+        });
+
+        const response = getMutationResponse(
+          result.data as Record<string, unknown> | null | undefined,
+        );
+        const errors = toSubmissionErrors(response.errors);
+        const ok = Boolean(response.ok) && errors.length === 0;
+
+        metrics.recordAttempt({
+          ok,
+          hadValidationErrors: errors.length > 0,
+        });
+
+        setSubmission(
+          ok
+            ? {
+                status: "success",
+                message: "Product created successfully.",
+                conflict: false,
+                errors: [],
+              }
+            : {
+                status: "error",
+                message: "Product create failed.",
+                conflict: Boolean(response.conflict),
+                errors,
+              },
+        );
+      } catch (error) {
+        metrics.recordAttempt({
+          ok: false,
+          hadValidationErrors: false,
+        });
+        setSubmission({
+          status: "error",
+          message: toErrorMessage(error),
+          conflict: false,
+          errors: [],
+        });
+      }
+    },
+    [client, generated, metrics],
+  );
+
+  if (generated.loading) {
+    return <p>Loading generated Product form contract...</p>;
+  }
+
+  if (generated.error) {
+    return <p>Failed to load Product contract: {generated.error.message}</p>;
+  }
+
+  const snapshot = metrics.getSnapshot();
+
+  return (
+    <section className="space-y-4">
+      <h2 className="text-lg font-semibold">
+        Store Product Create (Generated Form)
+      </h2>
+      <DynamicForm
+        schema={generated.schema}
+        behavior={{
+          validate: generated.formValidator,
+          onSubmit,
+        }}
+        actions={{
+          submitLabel: "Create Product",
+          resetLabel: "Reset",
+          showDirtyIndicator: true,
+        }}
+      />
+      {submission.status !== "idle" ? (
+        <div className="rounded border border-border p-3 text-sm">
+          <p>{submission.message}</p>
+          {submission.conflict ? (
+            <p className="mt-1 text-destructive">
+              Update conflict detected. Reload contract and try again.
+            </p>
+          ) : null}
+          {submission.errors.length > 0 ? (
+            <ul className="mt-2 list-disc pl-5">
+              {submission.errors.map((item, index) => (
+                <li key={`${item.field ?? "__all__"}-${index}`}>
+                  {item.field ? `${item.field}: ` : ""}
+                  {item.message}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
+      ) : null}
+      <p className="text-xs text-muted-foreground">
+        Submission attempts: {snapshot.totalSubmissions}, correction success
+        rate: {Math.round(snapshot.correctionRate * 100)}%
+      </p>
+    </section>
+  );
+}
+
+export function StoreProductCreateModelFormExample() {
+  return (
+    <section className="space-y-4">
+      <h2 className="text-lg font-semibold">
+        Store Product Create (ModelForm)
+      </h2>
+      <ModelForm
+        app="store"
+        model="Product"
+        mode="CREATE"
+        description="Contract-driven form using the ready-to-use ModelForm wrapper."
+        behavior={{
+          onSubmit: async (values) => {
+            // Consumer decides mutation orchestration strategy.
+            console.log("Product create values:", values);
+          },
+        }}
+      />
+    </section>
+  );
+}
+
+type StoreProductUpdateModelFormExampleProps = {
+  objectId: string;
+};
+
+export function StoreProductUpdateModelFormExample({
+  objectId,
+}: StoreProductUpdateModelFormExampleProps) {
+  if (!objectId) {
+    return <p>Pass a valid `objectId` to load the Product update ModelForm.</p>;
+  }
+  return (
+    <section className="space-y-4">
+      <h2 className="text-lg font-semibold">
+        Store Product Update (ModelForm)
+      </h2>
+      <ModelForm
+        app="store"
+        model="Product"
+        mode="UPDATE"
+        objectId={objectId}
+        nested={["category", "tags"]}
+        description="Initial values are loaded automatically from modelFormInitialData."
+        behavior={{
+          onSubmit: async (values) => {
+            console.log("Product update values:", values);
+          },
+        }}
+      />
+    </section>
+  );
+}
+
+type StoreOrderViewModelFormExampleProps = {
+  objectId: string;
+};
+
+export function StoreOrderViewModelFormExample({
+  objectId,
+}: StoreOrderViewModelFormExampleProps) {
+  if (!objectId) {
+    return <p>Pass a valid `objectId` to load the Order view ModelForm.</p>;
+  }
+
+  return (
+    <section className="space-y-4">
+      <h2 className="text-lg font-semibold">Store Order View (ModelForm)</h2>
+      <ModelForm
+        app="store"
+        model="Order"
+        mode="VIEW"
+        objectId={objectId}
+        description="Read-only order details with contract-driven field visibility."
+      />
+    </section>
+  );
+}
+
+export function StoreOrderCreateModelFormExample() {
+  return (
+    <section className="space-y-4">
+      <h2 className="text-lg font-semibold">Store Order Create (ModelForm)</h2>
+      <ModelForm
+        app="store"
+        model="Order"
+        mode="CREATE"
+        nested={["customer", "items"]}
+        exclude={["payment_token", "raw_payload"]}
+        description="Create order form with nested customer/items enabled."
+        behavior={{
+          onSubmit: async (values) => {
+            console.log("Order create values:", values);
+          },
+        }}
+      />
+    </section>
+  );
+}
+
+export function StoreOrderItemCreateModelFormExample() {
+  return (
+    <section className="space-y-4">
+      <h2 className="text-lg font-semibold">
+        Store OrderItem Create (ModelForm)
+      </h2>
+      <ModelForm
+        app="store"
+        model="OrderItem"
+        mode="CREATE"
+        description="Contract-driven create form for order line items."
+        formProps={{
+          layout: { columns: 2, showSectionHeaders: true },
+          actions: { submitLabel: "Create Order Item", resetLabel: "Reset" },
+        }}
+        behavior={{
+          onSubmit: async (values) => {
+            console.log("OrderItem create values:", values);
+          },
+        }}
+      />
+    </section>
+  );
+}
+
+type StoreOrderUpdateGeneratedFormExampleProps = {
+  objectId: string;
+};
+
+export function StoreOrderUpdateGeneratedFormExample({
+  objectId,
+}: StoreOrderUpdateGeneratedFormExampleProps) {
+  const client = useApolloClient();
+  const metrics = useGeneratedFormMetrics();
+  const [submission, setSubmission] = React.useState<SubmissionState>(
+    INITIAL_SUBMISSION_STATE,
+  );
+
+  const generated = useStoreGeneratedForm({
+    modelName: "Order",
+    mode: "UPDATE",
+    objectId,
+    includeNested: true,
+    runtimeOverrides: ORDER_RUNTIME_OVERRIDES,
+  });
+
+  const onSubmit = React.useCallback(
+    async (values: Record<string, unknown>) => {
+      if (!generated.contract) return;
+
+      setSubmission({
+        status: "saving",
+        message: "Submitting order update mutation...",
+        conflict: false,
+        errors: [],
+      });
+
+      const operationName = resolveGeneratedMutationOperation(
+        generated.contract.mutationBindings,
+        "update",
+        "Order",
+      );
+
+      const mutation = gql(
+        buildGeneratedMutationDocument(
+          "update",
+          operationName,
+          "Order",
+          "id orderNumber status updatedAt",
+        ),
+      );
+
+      const submissionValues = generated.buildSubmissionValues(values);
+      const nestedPayload = buildNestedMutationPayload(
+        submissionValues,
+        generated.relations,
+      );
+
+      try {
+        const result = await client.mutate<{
+          response?: GeneratedMutationResponse;
+        }>({
+          mutation,
+          variables: {
+            id: objectId,
+            input: nestedPayload,
+          },
+        });
+
+        const response = getMutationResponse(
+          result.data as Record<string, unknown> | null | undefined,
+        );
+        const errors = toSubmissionErrors(response.errors);
+        const ok = Boolean(response.ok) && errors.length === 0;
+
+        metrics.recordAttempt({
+          ok,
+          hadValidationErrors: errors.length > 0,
+        });
+
+        setSubmission(
+          ok
+            ? {
+                status: "success",
+                message: "Order updated successfully.",
+                conflict: false,
+                errors: [],
+              }
+            : {
+                status: "error",
+                message: "Order update failed.",
+                conflict: Boolean(response.conflict),
+                errors,
+              },
+        );
+      } catch (error) {
+        metrics.recordAttempt({
+          ok: false,
+          hadValidationErrors: false,
+        });
+        setSubmission({
+          status: "error",
+          message: toErrorMessage(error),
+          conflict: false,
+          errors: [],
+        });
+      }
+    },
+    [client, generated, metrics, objectId],
+  );
+
+  if (!objectId) {
+    return (
+      <p>Pass a valid `objectId` to load the generated Order update form.</p>
+    );
+  }
+
+  if (generated.loading) {
+    return <p>Loading generated Order form contract...</p>;
+  }
+
+  if (generated.error) {
+    return <p>Failed to load Order contract: {generated.error.message}</p>;
+  }
+
+  const snapshot = metrics.getSnapshot();
+
+  return (
+    <section className="space-y-4">
+      <h2 className="text-lg font-semibold">
+        Store Order Update (Generated Form)
+      </h2>
+      <DynamicForm
+        schema={generated.schema}
+        behavior={{
+          validate: generated.formValidator,
+          onSubmit,
+        }}
+        actions={{
+          submitLabel: "Update Order",
+          resetLabel: "Reset",
+          showDirtyIndicator: true,
+        }}
+      />
+      {submission.status !== "idle" ? (
+        <div className="rounded border border-border p-3 text-sm">
+          <p>{submission.message}</p>
+          {submission.conflict ? (
+            <p className="mt-1 text-destructive">
+              Conflict response received. Refresh initial data and retry.
+            </p>
+          ) : null}
+          {submission.errors.length > 0 ? (
+            <ul className="mt-2 list-disc pl-5">
+              {submission.errors.map((item, index) => (
+                <li key={`${item.field ?? "__all__"}-${index}`}>
+                  {item.field ? `${item.field}: ` : ""}
+                  {item.message}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+        </div>
+      ) : null}
+      <p className="text-xs text-muted-foreground">
+        Submission attempts: {snapshot.totalSubmissions}, correction success
+        rate: {Math.round(snapshot.correctionRate * 100)}%
+      </p>
+    </section>
+  );
+}
+
+export function StoreModelTableExamples() {
+  return (
+    <section className="space-y-8">
+      <div>
+        <h2 className="mb-2 text-lg font-semibold">Store Product Table</h2>
+        <ModelTableV2 app="store" model="Product" />
+      </div>
+      <div>
+        <h2 className="mb-2 text-lg font-semibold">Store Order Table</h2>
+        <ModelTableV2 app="store" model="Order" />
+      </div>
+    </section>
+  );
+}
+
+type StoreGeneratedExamplesProps = {
+  orderId: string;
+};
+
+export function StoreGeneratedExamples({
+  orderId,
+}: StoreGeneratedExamplesProps) {
+  return (
+    <div className="space-y-10">
+      {/* 5 ready-to-use ModelForm usages: Product x2, Order x2, OrderItem x1 */}
+      <StoreProductCreateModelFormExample />
+      <StoreProductUpdateModelFormExample objectId={orderId} />
+      <StoreOrderCreateModelFormExample />
+      <StoreOrderViewModelFormExample objectId={orderId} />
+      <StoreOrderItemCreateModelFormExample />
+      <StoreProductCreateGeneratedFormExample />
+      <StoreOrderUpdateGeneratedFormExample objectId={orderId} />
+      <StoreModelTableExamples />
+    </div>
+  );
+}
