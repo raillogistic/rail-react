@@ -19,7 +19,6 @@ import { resolveInputComponent } from "../inputs/factory";
 import { ListFieldRenderer } from "./ListFieldRenderer";
 import { GroupFieldRenderer } from "./GroupFieldRenderer";
 import { buildResponsiveGridClass } from "./utils";
-import { getPrimitiveDefaultValue } from "../hooks/useFormDefaults";
 
 type PrimitiveField = Exclude<
   FormFieldConfig,
@@ -119,10 +118,7 @@ export const FieldRenderer = <TValues extends Record<string, any>>({
 
   if (config.type === "custom" && config.render) {
     return (
-      <form.Field
-        name={path as any}
-        defaultValue={config.defaultValue ?? getPrimitiveDefaultValue("text")}
-      >
+      <form.Field name={path as any}>
         {(fieldApi) => (
           <div
             className="animate-in fade-in slide-in-from-bottom-2 duration-300"
@@ -165,16 +161,6 @@ export const FieldRenderer = <TValues extends Record<string, any>>({
   return (
     <form.Field
       name={path as any}
-      defaultValue={
-        normalizedConfig.defaultValue ??
-        (normalizedConfig.type === "date" ||
-        normalizedConfig.type === "datetime-local" ||
-        normalizedConfig.type === "time"
-          ? undefined
-          : getPrimitiveDefaultValue(
-              normalizedConfig.type as PrimitiveField["type"],
-            ))
-      }
       validators={validators}
     >
       {(fieldApi) => (

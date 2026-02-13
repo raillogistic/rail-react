@@ -146,7 +146,7 @@ const DynamicForm = <TValues extends Record<string, any> = Record<string, any>>(
 
   const history = useFormHistory(
     form,
-    actionsConfig?.undoRedo?.enabled ?? false
+    actionsConfig?.undoRedo?.enabled ?? false,
   );
 
   // ─── Auto-reset on defaults change ───────────────────────────────────

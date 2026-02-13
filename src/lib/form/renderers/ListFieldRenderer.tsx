@@ -59,9 +59,6 @@ export const ListFieldRenderer = <TValues extends Record<string, any>>({
   globalDisabled,
   hiddenFields,
 }: ListFieldRendererProps<TValues>) => {
-  const defaultValue = Array.isArray(config.defaultValue)
-    ? config.defaultValue
-    : [];
   const validators = React.useMemo(
     () => createValidators(config, form, path),
     [config, form, path],
@@ -89,11 +86,7 @@ export const ListFieldRenderer = <TValues extends Record<string, any>>({
   );
 
   return (
-    <form.Field
-      name={path as any}
-      defaultValue={defaultValue}
-      validators={validators}
-    >
+    <form.Field name={path as any} validators={validators}>
       {(fieldApi: any) => (
         <ListFieldItems
           config={config}

@@ -10,16 +10,30 @@ import type {
 } from "./types";
 import { Textarea } from "@/lib/components/ui/textarea";
 import { File, X, FileJson } from "lucide-react";
-import { Button } from "@/lib/components/ui/button";
 
 type Props = FieldComponentProps<TextFieldConfig | FileFieldConfig>;
+
+function asSafeInputProps(
+  value: unknown,
+): React.ComponentProps<typeof Input> | undefined {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return undefined;
+  }
+  return value as React.ComponentProps<typeof Input>;
+}
 
 const TextInput: React.FC<Props> = ({ config, field, form }) => {
   const meta = field.state.meta;
   const dirty = meta.isDirty;
   const submitCount = useStore(
     form.store,
-    (state) => (state as any).submissionAttempts ?? (state as any).submitCount ?? 0
+    (state) => {
+      const formState = state as {
+        submissionAttempts?: number;
+        submitCount?: number;
+      };
+      return formState.submissionAttempts ?? formState.submitCount ?? 0;
+    },
   );
   const isSubmitted = submitCount > 0;
   const showError =
@@ -156,6 +170,7 @@ const TextInput: React.FC<Props> = ({ config, field, form }) => {
       : "text";
 
   const value = (field.state.value as string) ?? "";
+  const safeInputProps = asSafeInputProps(config.inputProps);
 
   return (
     <FieldWrapper config={config} fieldId={fieldId} error={error} dirty={dirty}>
@@ -173,9 +188,9 @@ const TextInput: React.FC<Props> = ({ config, field, form }) => {
         disabled={config.disabled}
         className={cn(
           "h-10 rounded-lg border-border/60 bg-background/50 px-4 transition-all focus:border-primary/50 focus:bg-background focus:ring-4 focus:ring-primary/5 focus-visible:ring-0",
-          config.inputProps?.className
+          safeInputProps?.className
         )}
-        {...config.inputProps}
+        {...safeInputProps}
       />
     </FieldWrapper>
   );

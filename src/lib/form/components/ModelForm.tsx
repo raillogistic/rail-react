@@ -20,6 +20,7 @@ import type {
   ModelFormContract,
   ModelFormInitialData,
   ModelFormMode,
+  ModelFormRuntimeOverride,
 } from "../types/generatedContract";
 import type {
   ModelFormFieldOverrideValue,
@@ -56,6 +57,9 @@ type NestedControlMap<TValues extends Record<string, unknown>> = Record<
   string,
   ModelFormNestedDefinition<TValues>
 >;
+
+const EMPTY_RUNTIME_OVERRIDES: ModelFormRuntimeOverride[] = [];
+const EMPTY_PATHS: string[] = [];
 
 function normalizeMode(mode?: string | null): ModelFormMode {
   const normalized = String(mode ?? "CREATE").toUpperCase();
@@ -110,7 +114,7 @@ function mergePathLists(...lists: Array<string[] | undefined>): string[] {
 }
 
 function inferRelationPath(path: string): string | null {
-  const index = path.indexOf(".");
+  const index = path.lastIndexOf(".");
   if (index <= 0) return null;
   return path.slice(0, index);
 }
@@ -122,6 +126,9 @@ function isFieldSelectorMatch(
 ): boolean {
   if (selector === fullPath) return true;
   if (!relationPath) return false;
+
+  // For nested fields, we allow matching the field name alone if we are in
+  // the context of that relation (relative matching).
   const relationPrefix = `${relationPath}.`;
   if (!fullPath.startsWith(relationPrefix)) return false;
   const relativePath = fullPath.slice(relationPrefix.length);
@@ -381,6 +388,78 @@ function mergeValidationErrors(
   return Object.keys(merged).length > 0 ? merged : undefined;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function deepMergeRecords(
+  ...sources: Array<Record<string, unknown> | undefined>
+): Record<string, unknown> | undefined {
+  let hasSource = false;
+  const result: Record<string, unknown> = {};
+
+  for (const source of sources) {
+    if (!source) continue;
+    hasSource = true;
+
+    for (const [key, sourceValue] of Object.entries(source)) {
+      const existingValue = result[key];
+
+      if (Array.isArray(sourceValue)) {
+        result[key] = [...sourceValue];
+        continue;
+      }
+
+      if (isRecord(sourceValue)) {
+        if (isRecord(existingValue)) {
+          result[key] =
+            deepMergeRecords(existingValue, sourceValue) ?? sourceValue;
+          continue;
+        }
+        result[key] = deepMergeRecords(sourceValue) ?? sourceValue;
+        continue;
+      }
+
+      result[key] = sourceValue;
+    }
+  }
+
+  return hasSource ? result : undefined;
+}
+
+function sortSerializableValue(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map((item) => sortSerializableValue(item));
+  }
+
+  if (!isRecord(value)) {
+    return value;
+  }
+
+  const sorted: Record<string, unknown> = {};
+  for (const key of Object.keys(value).sort()) {
+    sorted[key] = sortSerializableValue(value[key]);
+  }
+  return sorted;
+}
+
+function hashString(value: string): string {
+  let hash = 5381;
+  for (let index = 0; index < value.length; index += 1) {
+    hash = (hash * 33) ^ value.charCodeAt(index);
+  }
+  return (hash >>> 0).toString(36);
+}
+
+function stableHashOfValue(value: unknown): string {
+  try {
+    const serialized = JSON.stringify(sortSerializableValue(value));
+    return hashString(serialized);
+  } catch {
+    return "0";
+  }
+}
+
 export function ModelForm<
   TFormValues extends Record<string, unknown> = Record<string, unknown>,
 >(props: ModelFormProps<TFormValues>) {
@@ -397,13 +476,13 @@ export function ModelForm<
     nested,
     nestedFields,
     generatedEnabled = true,
-    runtimeOverrides = [],
-    onlyFields = [],
-    excludeFields = [],
+    runtimeOverrides,
+    onlyFields,
+    excludeFields,
     only,
     exclude,
-    onlyRelationships = [],
-    excludeRelationships = [],
+    onlyRelationships,
+    excludeRelationships,
     fieldOverrides,
     sectionOverrides,
     validatorExtensions,
@@ -442,26 +521,28 @@ export function ModelForm<
   const resolvedModel = model ?? modelName ?? "";
   const resolvedMode = normalizeMode(mode ?? mutationMode ?? undefined);
   const resolvedObjectId = objectId ?? mutationId;
-  const resolvedObjectIdValue =
-    resolvedObjectId === null || resolvedObjectId === undefined
-      ? undefined
-      : String(resolvedObjectId);
+  const resolvedObjectIdValue = resolvedObjectId?.toString();
   const resolvedNested = nested ?? nestedFields;
+  const resolvedRuntimeOverrides = runtimeOverrides ?? EMPTY_RUNTIME_OVERRIDES;
+  const resolvedOnlyFieldsInput = onlyFields ?? EMPTY_PATHS;
+  const resolvedExcludeFieldsInput = excludeFields ?? EMPTY_PATHS;
+  const resolvedOnlyRelationshipsInput = onlyRelationships ?? EMPTY_PATHS;
+  const resolvedExcludeRelationshipsInput = excludeRelationships ?? EMPTY_PATHS;
   const resolvedOnlyFields = React.useMemo(
-    () => mergePathLists(onlyFields, only),
-    [onlyFields, only],
+    () => mergePathLists(resolvedOnlyFieldsInput, only),
+    [resolvedOnlyFieldsInput, only],
   );
   const resolvedExcludeFields = React.useMemo(
-    () => mergePathLists(excludeFields, exclude),
-    [excludeFields, exclude],
+    () => mergePathLists(resolvedExcludeFieldsInput, exclude),
+    [resolvedExcludeFieldsInput, exclude],
   );
   const resolvedOnlyRelationships = React.useMemo(
-    () => mergePathLists(onlyRelationships),
-    [onlyRelationships],
+    () => mergePathLists(resolvedOnlyRelationshipsInput),
+    [resolvedOnlyRelationshipsInput],
   );
   const resolvedExcludeRelationships = React.useMemo(
-    () => mergePathLists(excludeRelationships),
-    [excludeRelationships],
+    () => mergePathLists(resolvedExcludeRelationshipsInput),
+    [resolvedExcludeRelationshipsInput],
   );
 
   const nestedControls = React.useMemo(
@@ -569,12 +650,11 @@ export function ModelForm<
       modelName: resolvedModel,
       objectId: resolvedObjectIdValue ?? "",
       includeNested: shouldIncludeNested,
-      runtimeOverrides,
+      runtimeOverrides: resolvedRuntimeOverrides,
     },
     skip: !shouldFetchInitialData,
     fetchPolicy: "network-only",
   });
-  console.log(initialDataQuery);
 
   const contract = contractQuery.data?.modelFormContract ?? null;
   const initialData = shouldFetchInitialData
@@ -587,7 +667,7 @@ export function ModelForm<
   }, [contract, onContractLoaded]);
 
   React.useEffect(() => {
-    if (!initialData || !onInitialDataLoaded) return;
+    if (!initialData || typeof onInitialDataLoaded !== "function") return;
     onInitialDataLoaded(initialData);
   }, [initialData, onInitialDataLoaded]);
 
@@ -604,7 +684,7 @@ export function ModelForm<
   const generated = useGeneratedModelForm({
     contract,
     initialData,
-    runtimeOverrides,
+    runtimeOverrides: resolvedRuntimeOverrides,
     generatedEnabled,
     legacySchema: legacySchema as
       | FormSchema<Record<string, unknown>>
@@ -677,6 +757,70 @@ export function ModelForm<
       hidden: resolvedActionsInput?.hidden ?? true,
     };
   }, [resolvedActionsInput, resolvedMode]);
+
+  const hydratedDefaultValues = React.useMemo<Partial<TFormValues> | undefined>(
+    () => {
+      if (!shouldFetchInitialData || initialDataQuery.loading) {
+        return undefined;
+      }
+      if (!isRecord(generated.initialValues)) {
+        return {} as Partial<TFormValues>;
+      }
+      return generated.initialValues as Partial<TFormValues>;
+    },
+    [shouldFetchInitialData, initialDataQuery.loading, generated.initialValues],
+  );
+
+  const finalState = React.useMemo(() => {
+    const baseState = { ...(mergedState ?? {}) };
+    const stateDefaultValues = isRecord(baseState.defaultValues)
+      ? (baseState.defaultValues as Record<string, unknown>)
+      : undefined;
+    const hydratedValues = isRecord(hydratedDefaultValues)
+      ? (hydratedDefaultValues as Record<string, unknown>)
+      : undefined;
+
+    const mergedDefaultValues = deepMergeRecords(
+      stateDefaultValues,
+      hydratedValues,
+    );
+
+    if (mergedDefaultValues) {
+      baseState.defaultValues = mergedDefaultValues as Partial<TFormValues>;
+    }
+
+    if (shouldFetchInitialData && hydratedDefaultValues !== undefined) {
+      baseState.disableAutoReset = true;
+    }
+
+    return Object.keys(baseState).length > 0 ? baseState : undefined;
+  }, [mergedState, hydratedDefaultValues, shouldFetchInitialData]);
+
+  const dynamicFormKey = React.useMemo(() => {
+    const baseKey = `${resolvedApp}:${resolvedModel}:${resolvedMode}:${
+      resolvedObjectIdValue ?? "new"
+    }`;
+
+    if (!shouldFetchInitialData) {
+      return `${baseKey}:standard`;
+    }
+
+    if (initialDataQuery.loading) {
+      return `${baseKey}:loading`;
+    }
+
+    return `${baseKey}:hydrated:${stableHashOfValue(
+      hydratedDefaultValues ?? {},
+    )}`;
+  }, [
+    resolvedApp,
+    resolvedModel,
+    resolvedMode,
+    resolvedObjectIdValue,
+    shouldFetchInitialData,
+    initialDataQuery.loading,
+    hydratedDefaultValues,
+  ]);
 
   const contractError = contractQuery.error
     ? toError(contractQuery.error)
@@ -768,8 +912,9 @@ export function ModelForm<
       ) : null}
       <div className={contentClassName}>
         <DynamicForm<TFormValues>
+          key={dynamicFormKey}
           schema={controlledSchema}
-          state={mergedState}
+          state={finalState}
           behavior={mergedBehavior}
           layout={resolvedLayoutInput}
           actions={mergedActions}
