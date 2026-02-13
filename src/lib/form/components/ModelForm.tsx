@@ -1831,25 +1831,44 @@ export function ModelForm<
     );
   }
   return (
-    <div className={cn("space-y-4", containerClassName)}>
+    <div className={cn("group/model-form relative w-full transition-all duration-500", containerClassName)}>
       {showHeading && (title || description) ? (
-        <header className="space-y-1">
-          {title ? <h2 className="text-lg font-semibold">{title}</h2> : null}
+        <header className="mb-8 space-y-3 px-1">
+          {title ? (
+            <div className="flex items-center gap-4">
+              <div className="h-8 w-1.5 rounded-full bg-primary/80 shadow-[0_0_15px_rgba(var(--primary),0.3)]" />
+              <h2 className="text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
+                {title}
+              </h2>
+            </div>
+          ) : null}
           {description ? (
-            <p className="text-sm text-muted-foreground">{description}</p>
+            <p className="max-w-3xl text-sm font-medium leading-relaxed text-muted-foreground/80 sm:text-base">
+              {description}
+            </p>
           ) : null}
         </header>
       ) : null}
-      <div className={contentClassName}>
-        <DynamicForm<TFormValues>
-          key={dynamicFormKey}
-          schema={controlledSchema}
-          state={finalState}
-          behavior={mergedBehavior}
-          layout={resolvedLayoutInput}
-          actions={mergedActions}
-          devtools={resolvedDevtoolsInput}
-        />
+
+      <div 
+        className={cn(
+          "relative overflow-hidden rounded-3xl border border-border/40 bg-card/30 backdrop-blur-sm transition-all duration-300 hover:border-border/60 hover:shadow-2xl hover:shadow-black/5",
+          contentClassName
+        )}
+      >
+        <div className="absolute inset-0 -z-10 bg-linear-to-br from-primary/5 via-transparent to-transparent opacity-50" />
+        
+        <div className="p-1">
+          <DynamicForm<TFormValues>
+            key={dynamicFormKey}
+            schema={controlledSchema}
+            state={finalState}
+            behavior={mergedBehavior}
+            layout={resolvedLayoutInput}
+            actions={mergedActions}
+            devtools={resolvedDevtoolsInput}
+          />
+        </div>
       </div>
     </div>
   );

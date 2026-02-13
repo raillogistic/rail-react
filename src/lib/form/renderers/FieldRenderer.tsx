@@ -65,23 +65,33 @@ export const FieldRenderer = <TValues extends Record<string, any>>({
 
   if (config.type === "object") {
     const nestedGridClass = cn(
-      "grid gap-x-4 gap-y-2",
+      "grid gap-x-6 gap-y-3",
       buildResponsiveGridClass(config.columns ?? 1),
     );
     return (
       <div
-        className="group/object rounded-xl border border-border/40 bg-muted/5 p-4 transition-all duration-300 hover:border-border/80 hover:bg-muted/10 space-y-4"
+        className="group/object relative overflow-hidden rounded-2xl border border-border/40 bg-card/20 p-6 transition-all duration-300 hover:border-border/80 hover:bg-card/40 hover:shadow-lg hover:shadow-black/5"
         style={
           colSpan
             ? { gridColumn: `span ${colSpan} / span ${colSpan}` }
             : undefined
         }
       >
+        <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-primary/20 via-primary/5 to-transparent opacity-0 transition-opacity group-hover/object:opacity-100" />
+        
         {config.label ? (
-          <div className="flex items-center justify-between border-b border-border/30 pb-2">
-            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground/80 group-hover/object:text-foreground transition-colors">
-              {config.label}
-            </span>
+          <div className="mb-6 flex items-center justify-between border-b border-border/20 pb-3">
+            <div className="flex items-center gap-2">
+              <div className="size-1.5 rounded-full bg-primary/60" />
+              <span className="text-xs font-extrabold uppercase tracking-[0.2em] text-muted-foreground/60 transition-colors group-hover/object:text-primary/80">
+                {config.label}
+              </span>
+            </div>
+            {config.collapsible && (
+               <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/30">
+                 Détails
+               </div>
+            )}
           </div>
         ) : null}
         <div className={nestedGridClass}>
