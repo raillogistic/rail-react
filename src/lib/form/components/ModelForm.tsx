@@ -32,6 +32,7 @@ import type {
   ModelFormFieldOverrideValue,
   ModelFormNestedConfig,
   ModelFormNestedDefinition,
+  ModelFormNestedFieldsOrderMode,
   ModelFormProps,
   ModelFormSectionOverrideValue,
 } from "../types.model";
@@ -102,11 +103,25 @@ type NestedControlMap<TValues extends Record<string, unknown>> = Record<
 
 type RelationNestedFormConfig = {
   enabled?: boolean;
+  title?: string;
+  description?: string;
   fields?: string[];
   excludeFields?: string[];
+  fieldsOrder?: ModelFormNestedFieldsOrderMode;
+  customOrder?: string[];
   columns?: number;
+  itemLabel?: string;
+  addButton?: {
+    enabled?: boolean;
+    label?: string;
+  };
+  sortable?: {
+    enabled?: boolean;
+    orderField?: string;
+  };
   minItems?: number;
   maxItems?: number;
+  collapsible?: boolean;
 };
 
 const EMPTY_RUNTIME_OVERRIDES: ModelFormRuntimeOverride[] = [];
@@ -171,6 +186,16 @@ function toOptionalNumber(value: unknown): number | undefined {
   return value;
 }
 
+function toOptionalBoolean(value: unknown): boolean | undefined {
+  return typeof value === "boolean" ? value : undefined;
+}
+
+function toOptionalString(value: unknown): string | undefined {
+  if (typeof value !== "string") return undefined;
+  const normalized = value.trim();
+  return normalized ? normalized : undefined;
+}
+
 function toOptionalStringArray(value: unknown): string[] | undefined {
   if (!Array.isArray(value)) return undefined;
   const normalized = value
@@ -179,24 +204,179 @@ function toOptionalStringArray(value: unknown): string[] | undefined {
   return normalized.length > 0 ? normalized : undefined;
 }
 
+function toOptionalRecord(value: unknown): Record<string, unknown> | null {
+  const direct = asRecord(value);
+  if (direct) return direct;
+
+  if (typeof value !== "string") return null;
+  try {
+    return asRecord(JSON.parse(value));
+  } catch {
+    return null;
+  }
+}
+
+function parseFieldsOrderMode(
+  value: unknown,
+): ModelFormNestedFieldsOrderMode | undefined {
+  const normalized = String(value ?? "").trim().toLowerCase();
+  if (normalized === "contract" || normalized === "default") return "contract";
+  if (
+    normalized === "fields" ||
+    normalized === "field" ||
+    normalized === "follow-fields" ||
+    normalized === "follow_fields" ||
+    normalized === "followfields"
+  ) {
+    return "fields";
+  }
+  if (
+    normalized === "custom" ||
+    normalized === "custom-order" ||
+    normalized === "custom_order" ||
+    normalized === "customorder"
+  ) {
+    return "custom";
+  }
+  return undefined;
+}
+
+function parseAddButtonConfig(value: unknown):
+  | {
+      enabled?: boolean;
+      label?: string;
+    }
+  | undefined {
+  if (typeof value === "boolean") {
+    return { enabled: value };
+  }
+  if (typeof value === "string") {
+    const label = toOptionalString(value);
+    return label ? { enabled: true, label } : { enabled: true };
+  }
+
+  const record = asRecord(value);
+  if (!record) return undefined;
+
+  const enabled = toOptionalBoolean(record.enabled ?? record.show);
+  const label = toOptionalString(record.label);
+  if (enabled === undefined && !label) return undefined;
+  return { enabled, label };
+}
+
+function parseSortableConfig(value: unknown):
+  | {
+      enabled?: boolean;
+      orderField?: string;
+    }
+  | undefined {
+  if (typeof value === "boolean") {
+    return { enabled: value };
+  }
+
+  const record = asRecord(value);
+  if (!record) return undefined;
+
+  const enabled = toOptionalBoolean(record.enabled ?? record.activate);
+  const orderField = toOptionalString(
+    record.orderField ??
+      record.order_field ??
+      record.toField ??
+      record.to_field ??
+      record.field,
+  );
+  if (enabled === undefined && !orderField) return undefined;
+  return { enabled, orderField };
+}
+
+function mergeAddButtonConfig(
+  relationValue: unknown,
+  nestedValue: unknown,
+):
+  | {
+      enabled?: boolean;
+      label?: string;
+    }
+  | undefined {
+  const relationConfig = parseAddButtonConfig(relationValue);
+  const nestedConfig = parseAddButtonConfig(nestedValue);
+  if (!relationConfig && !nestedConfig) return undefined;
+
+  const merged = {
+    ...(relationConfig ?? {}),
+    ...(nestedConfig ?? {}),
+  };
+  if (merged.enabled === undefined && merged.label) {
+    merged.enabled = true;
+  }
+  return merged;
+}
+
+function mergeSortableConfig(
+  relationValue: unknown,
+  nestedValue: unknown,
+):
+  | {
+      enabled?: boolean;
+      orderField?: string;
+    }
+  | undefined {
+  const relationConfig = parseSortableConfig(relationValue);
+  const nestedConfig = parseSortableConfig(nestedValue);
+  if (!relationConfig && !nestedConfig) return undefined;
+
+  const merged = {
+    ...(relationConfig ?? {}),
+    ...(nestedConfig ?? {}),
+  };
+  if (merged.enabled === undefined && merged.orderField) {
+    merged.enabled = true;
+  }
+  return merged;
+}
+
 function parseRelationNestedFormConfig(
   nestedForm: unknown,
 ): RelationNestedFormConfig | null {
-  const record = asRecord(nestedForm);
+  const record = toOptionalRecord(nestedForm);
   if (!record) return null;
 
   const layout = asRecord(record.layout);
   const rawColumns = layout?.columns ?? record.columns;
+  const addButton = parseAddButtonConfig(
+    record.addButton ?? record.add_button,
+  );
+  const sortable = parseSortableConfig(
+    record.sortable ?? record.ordering,
+  );
 
   return {
-    enabled: typeof record.enabled === "boolean" ? record.enabled : undefined,
+    enabled: toOptionalBoolean(record.enabled),
+    title: toOptionalString(record.title),
+    description: toOptionalString(record.description),
     fields: toOptionalStringArray(record.fields),
     excludeFields: toOptionalStringArray(
       record.excludeFields ?? record.exclude_fields,
     ),
+    fieldsOrder: parseFieldsOrderMode(
+      record.fieldsOrder ??
+        record.fields_order ??
+        record.orderMode ??
+        record.order_mode,
+    ),
+    customOrder: toOptionalStringArray(
+      record.customOrder ??
+        record.custom_order ??
+        record.customOrders ??
+        record.custom_orders,
+    ),
     columns: toOptionalNumber(rawColumns),
+    itemLabel: toOptionalString(record.itemLabel ?? record.item_label),
+    addButton,
+    sortable,
     minItems: toOptionalNumber(record.minItems ?? record.min_items),
     maxItems: toOptionalNumber(record.maxItems ?? record.max_items),
+    collapsible: toOptionalBoolean(record.collapsible),
   };
 }
 
@@ -245,16 +425,70 @@ function collectUniqueTopLevelFields(
   return Array.from(uniqueFields.values());
 }
 
-function buildNestedRelationFieldConfig(
+function toRelativeSelector(selector: string, relationPath: string): string {
+  const normalized = String(selector ?? "").trim();
+  if (!normalized) return "";
+  const relationPrefix = `${relationPath}.`;
+  return normalized.startsWith(relationPrefix)
+    ? normalized.slice(relationPrefix.length)
+    : normalized;
+}
+
+function orderFieldsBySelectors(
+  fields: FormFieldConfig[],
+  relationPath: string,
+  selectors: string[] | undefined,
+): FormFieldConfig[] {
+  if (!selectors?.length || fields.length < 2) return fields;
+
+  const ranking = new Map<string, number>();
+  selectors.forEach((selector, index) => {
+    const relativePath = toRelativeSelector(selector, relationPath);
+    if (!relativePath || ranking.has(relativePath)) return;
+    ranking.set(relativePath, index);
+  });
+
+  if (ranking.size === 0) return fields;
+
+  const ranked = fields.map((field, index) => ({
+    field,
+    index,
+    rank: ranking.get(field.name),
+  }));
+  const hasRankedField = ranked.some((entry) => entry.rank !== undefined);
+  if (!hasRankedField) return fields;
+
+  return ranked
+    .sort((a, b) => {
+      const rankA = a.rank ?? Number.MAX_SAFE_INTEGER;
+      const rankB = b.rank ?? Number.MAX_SAFE_INTEGER;
+      if (rankA === rankB) return a.index - b.index;
+      return rankA - rankB;
+    })
+    .map((entry) => entry.field);
+}
+
+function buildNestedRelationFieldConfig<
+  TValues extends Record<string, unknown>,
+>(
   relationField: FormFieldConfig,
   relation: ModelFormContract["relations"][number],
   nestedFields: FormFieldConfig[],
   nestedFormConfig: RelationNestedFormConfig | null,
+  nestedControl: ModelFormNestedDefinition<TValues>,
 ): FormFieldConfig {
+  const nestedTitle = nestedControl.title ?? nestedFormConfig?.title;
+  const nestedDescription =
+    nestedControl.description ??
+    nestedFormConfig?.description ??
+    relationField.description;
+  const nestedColumns = nestedControl.columns ?? nestedFormConfig?.columns;
+  const resolvedLabel = nestedTitle ?? relationField.label ?? relation.label;
+
   const base = {
     name: relationField.name,
-    label: relationField.label ?? relation.label,
-    description: relationField.description,
+    label: resolvedLabel,
+    description: nestedDescription,
     required: relationField.required,
     readOnly: relationField.readOnly,
     disabled: relationField.disabled,
@@ -264,15 +498,37 @@ function buildNestedRelationFieldConfig(
   };
 
   if (relation.toMany) {
+    const addButtonConfig = mergeAddButtonConfig(
+      nestedFormConfig?.addButton,
+      nestedControl.addButton,
+    );
+    const sortableConfig = mergeSortableConfig(
+      nestedFormConfig?.sortable,
+      nestedControl.sortable,
+    );
+    const hasSortableConfig = sortableConfig !== undefined;
+    const sortableEnabled = sortableConfig?.enabled ?? false;
+
     return {
       ...base,
       type: "list",
       fields: nestedFields,
-      columns: nestedFormConfig?.columns,
-      minItems: nestedFormConfig?.minItems,
-      maxItems: nestedFormConfig?.maxItems,
-      itemLabel: relationField.label ?? relation.label,
-      addLabel: `Add ${relationField.label ?? relation.label}`,
+      columns: nestedColumns,
+      minItems: nestedControl.minItems ?? nestedFormConfig?.minItems,
+      maxItems: nestedControl.maxItems ?? nestedFormConfig?.maxItems,
+      itemLabel:
+        nestedControl.itemLabel ?? nestedFormConfig?.itemLabel ?? resolvedLabel,
+      addLabel: addButtonConfig?.label ?? `Add ${resolvedLabel}`,
+      showAddButton: addButtonConfig?.enabled ?? true,
+      ...(hasSortableConfig ? { sortable: sortableEnabled } : {}),
+      ...(sortableEnabled && sortableConfig?.orderField
+        ? {
+            ordering: {
+              activate: true,
+              toField: sortableConfig.orderField,
+            },
+          }
+        : {}),
     } as FormFieldConfig;
   }
 
@@ -280,7 +536,8 @@ function buildNestedRelationFieldConfig(
     ...base,
     type: "object",
     fields: nestedFields,
-    columns: nestedFormConfig?.columns,
+    columns: nestedColumns,
+    collapsible: nestedControl.collapsible ?? nestedFormConfig?.collapsible,
   } as FormFieldConfig;
 }
 
@@ -347,6 +604,15 @@ function materializeNestedRelationFields<
         nestedFormConfig?.excludeFields,
         nestedControl.excludeFields,
       );
+      const customOrderSelectors = mergePathLists(
+        nestedControl.customOrder,
+        nestedFormConfig?.customOrder,
+      );
+      const explicitFieldOrderMode =
+        nestedControl.fieldsOrder ?? nestedFormConfig?.fieldsOrder;
+      const fieldOrderMode: ModelFormNestedFieldsOrderMode =
+        explicitFieldOrderMode ??
+        (customOrderSelectors.length > 0 ? "custom" : "contract");
 
       const nestedFields = relatedFields
         .map((relatedField) => {
@@ -390,11 +656,27 @@ function materializeNestedRelationFields<
         return field;
       }
 
+      const orderedNestedFields =
+        fieldOrderMode === "fields"
+          ? orderFieldsBySelectors(
+              nestedFields,
+              relation.path,
+              includeNestedSelectors,
+            )
+          : fieldOrderMode === "custom"
+            ? orderFieldsBySelectors(
+                nestedFields,
+                relation.path,
+                customOrderSelectors,
+              )
+            : nestedFields;
+
       const replacement = buildNestedRelationFieldConfig(
         field,
         relation,
-        nestedFields,
+        orderedNestedFields,
         nestedFormConfig,
+        nestedControl,
       );
       sectionChanged = true;
       schemaChanged = true;

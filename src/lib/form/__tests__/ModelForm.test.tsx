@@ -583,6 +583,157 @@ describe("ModelForm", () => {
     );
   });
 
+  it("applies extended nested controls for relation forms", async () => {
+    const rootContract: ModelFormContract = {
+      ...sampleModelFormContract,
+      appLabel: "store",
+      modelName: "Product",
+      mode: "CREATE",
+      fields: [
+        {
+          ...sampleModelFormContract.fields[0],
+          path: "name",
+          fieldName: "name",
+          label: "Name",
+        },
+      ],
+      sections: [
+        {
+          ...sampleModelFormContract.sections[0],
+          fieldPaths: ["name"],
+        },
+      ],
+      relations: [
+        {
+          path: "tags",
+          label: "Tags",
+          relationType: "MANY_TO_MANY",
+          toMany: true,
+          relatedAppLabel: "store",
+          relatedModelName: "Tag",
+          policy: {
+            path: "tags",
+            allowedActions: ["CONNECT", "CREATE", "UPDATE", "SET", "CLEAR"],
+            blockedActions: [],
+            nestedEnabled: true,
+          },
+          nestedForm: null,
+        },
+      ],
+    };
+
+    const tagContract: ModelFormContract = {
+      ...sampleModelFormContract,
+      id: "store.Tag.CREATE",
+      appLabel: "store",
+      modelName: "Tag",
+      mode: "CREATE",
+      fields: [
+        {
+          ...sampleModelFormContract.fields[0],
+          path: "name",
+          fieldName: "name",
+          label: "Tag Name",
+          kind: "TEXT",
+        },
+        {
+          ...sampleModelFormContract.fields[1],
+          path: "order",
+          fieldName: "order",
+          label: "Order",
+          kind: "NUMBER",
+          required: false,
+          nullable: true,
+        },
+      ],
+      sections: [
+        {
+          ...sampleModelFormContract.sections[0],
+          fieldPaths: ["name", "order"],
+        },
+      ],
+      relations: [],
+    };
+
+    const mocks = [
+      {
+        request: {
+          query: MODEL_FORM_CONTRACT_QUERY,
+          variables: {
+            appLabel: "store",
+            modelName: "Product",
+            mode: "CREATE",
+            includeNested: true,
+          },
+        },
+        result: {
+          data: {
+            modelFormContract: rootContract,
+          },
+        },
+      },
+      {
+        request: {
+          query: MODEL_FORM_CONTRACT_PAGES_QUERY,
+          variables: {
+            page: 1,
+            perPage: 1,
+            models: [{ appLabel: "store", modelName: "Tag" }],
+            mode: "CREATE",
+            includeNested: false,
+          },
+        },
+        result: {
+          data: {
+            modelFormContractPages: {
+              page: 1,
+              perPage: 1,
+              total: 1,
+              results: [tagContract],
+            },
+          },
+        },
+      },
+    ];
+
+    renderWithMocks(
+      <ModelForm
+        app="store"
+        model="Product"
+        mode="CREATE"
+        nested={{
+          tags: {
+            title: "Tag Entries",
+            addButton: { enabled: false, label: "Add Tag Row" },
+            sortable: { enabled: true, orderField: "order" },
+            customOrder: ["order", "name"],
+            itemLabel: "Tag Row",
+          },
+        }}
+      />,
+      mocks,
+    );
+
+    const payload = await getRenderedSchema();
+    const fields = payload.sections[0].fields as Array<Record<string, unknown>>;
+    const tagsField = fields.find((field) => field.name === "tags") as
+      | Record<string, unknown>
+      | undefined;
+
+    expect(tagsField?.type).toBe("list");
+    expect(tagsField?.label).toBe("Tag Entries");
+    expect(tagsField?.itemLabel).toBe("Tag Row");
+    expect(tagsField?.showAddButton).toBe(false);
+    expect(tagsField?.addLabel).toBe("Add Tag Row");
+    expect(tagsField?.sortable).toBe(true);
+    expect((tagsField?.ordering as { toField?: string } | undefined)?.toField).toBe(
+      "order",
+    );
+    expect(
+      (tagsField?.fields as Array<{ name: string }>).map((field) => field.name),
+    ).toEqual(["order", "name"]);
+  });
+
   it("filters nested relations using onlyRelationships", async () => {
     const nestedContract = {
       ...sampleModelFormContract,

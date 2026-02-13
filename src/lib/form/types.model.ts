@@ -62,13 +62,44 @@ export type ModelFormFieldOverrides = Record<string, ModelFormFieldOverrideValue
 export type ModelFormSectionOverrides<TValues extends Record<string, unknown>> =
   Record<string, ModelFormSectionOverrideValue<TValues>>;
 
+export type ModelFormNestedAddButtonConfig =
+  | boolean
+  | string
+  | {
+      enabled?: boolean;
+      label?: string;
+    };
+
+export type ModelFormNestedSortableConfig =
+  | boolean
+  | {
+      enabled?: boolean;
+      orderField?: string;
+    };
+
+export type ModelFormNestedFieldsOrderMode =
+  | "contract"
+  | "fields"
+  | "custom";
+
 export type ModelFormNestedDefinition<TValues extends Record<string, unknown>> = {
   enabled?: boolean;
+  title?: string;
+  description?: string;
   fields?: string[];
   onlyFields?: string[];
   excludeFields?: string[];
+  fieldsOrder?: ModelFormNestedFieldsOrderMode;
+  customOrder?: string[];
   includeSections?: string[];
   excludeSections?: string[];
+  columns?: number;
+  itemLabel?: string;
+  addButton?: ModelFormNestedAddButtonConfig;
+  sortable?: ModelFormNestedSortableConfig;
+  minItems?: number;
+  maxItems?: number;
+  collapsible?: boolean;
   fieldOverrides?: ModelFormFieldOverrides;
   sectionOverrides?: ModelFormSectionOverrides<TValues>;
 };

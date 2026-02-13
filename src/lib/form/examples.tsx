@@ -1232,7 +1232,15 @@ export function StoreProductUpdateModelFormExample({
         model="Product"
         mode="UPDATE"
         objectId={objectId}
-        nested={["category"]}
+        nested={{
+          order_items: {
+            description: "desc",
+            title: "dsds",
+            addButton: "dsdsd",
+            customOrder: ["order", "unit_price", "quantity"],
+            // fields: ["unit_price", "quantity"],
+          },
+        }}
         runtimeOverrides={PRODUCT_UPDATE_RUNTIME_OVERRIDES}
         description="Auto-wired update example: initial values load from modelFormInitialData and Save runs generated updateOperation."
         formProps={{

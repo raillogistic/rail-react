@@ -231,6 +231,8 @@ export interface ListFieldConfig extends BaseFieldConfig {
   type: "list";
   itemLabel?: string;
   addLabel?: string;
+  showAddButton?: boolean;
+  sortable?: boolean;
   minItems?: number;
   maxItems?: number;
   columns?: number;

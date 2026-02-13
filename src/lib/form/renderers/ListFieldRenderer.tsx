@@ -150,7 +150,11 @@ const ListFieldItems = <TValues extends Record<string, any>>({
     (Array.isArray(items) && items.length < config.maxItems);
 
   const isReadOnly = globalReadOnly || config.readOnly;
-  const isOrderingEnabled = config.ordering?.activate && !isReadOnly && !globalDisabled;
+  const showAddButton = config.showAddButton ?? true;
+  const isOrderingEnabled =
+    (config.sortable ?? config.ordering?.activate ?? false) &&
+    !isReadOnly &&
+    !globalDisabled;
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -227,7 +231,7 @@ const ListFieldItems = <TValues extends Record<string, any>>({
             ) : null}
           </div>
         </div>
-        {!isReadOnly ? (
+        {!isReadOnly && showAddButton ? (
           <Button
             type="button"
             size="sm"
@@ -266,7 +270,7 @@ const ListFieldItems = <TValues extends Record<string, any>>({
             <p className="text-sm font-medium text-muted-foreground/60">
               Aucun élément pour le moment
             </p>
-            {!isReadOnly && (
+            {!isReadOnly && showAddButton && (
                <Button
                 variant="ghost"
                 size="sm"
