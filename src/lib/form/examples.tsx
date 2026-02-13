@@ -1206,11 +1206,11 @@ export function StoreProductUpdateModelFormExample({
         objectId={objectId}
         nested={["category", "tags"]}
         description="Initial values are loaded automatically from modelFormInitialData."
-        behavior={{
-          onSubmit: async (values) => {
-            console.log("Product update values:", values);
-          },
-        }}
+        // behavior={{
+        //   onSubmit: async (values) => {
+        //     console.log("Product update values:", values);
+        //   },
+        // }}
       />
     </section>
   );

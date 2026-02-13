@@ -32,4 +32,70 @@ describe("useGeneratedValidators", () => {
     expect(validate({ name: "bad" })?.name).toContain("Forbidden");
     expect(validate({ name: "ok" })).toBeUndefined();
   });
+
+  it("does not coerce null min/max constraints to zero", () => {
+    const contract: ModelFormContract = {
+      ...sampleModelFormContract,
+      fields: [
+        {
+          ...sampleModelFormContract.fields[0],
+          path: "inventory_count",
+          fieldName: "inventory_count",
+          label: "Quantite en stock",
+          kind: "NUMBER",
+          required: false,
+          constraints: JSON.stringify({
+            min_value: null,
+            max_value: null,
+          }) as unknown as Record<string, unknown>,
+          validators: [],
+        },
+      ],
+    };
+
+    const { result } = renderHook(() => useGeneratedValidators(contract));
+    const validate = result.current.formValidator;
+
+    expect(validate({ inventory_count: 5 })).toBeUndefined();
+  });
+
+  it("uses Django MinValue/MaxValue validators when constraints are absent", () => {
+    const contract: ModelFormContract = {
+      ...sampleModelFormContract,
+      fields: [
+        {
+          ...sampleModelFormContract.fields[0],
+          path: "inventory_count",
+          fieldName: "inventory_count",
+          label: "Quantite en stock",
+          kind: "NUMBER",
+          required: false,
+          constraints: JSON.stringify({}) as unknown as Record<string, unknown>,
+          validators: [
+            {
+              type: "MinValueValidator",
+              params: JSON.stringify({ limit_value: 0 }) as unknown as Record<
+                string,
+                unknown
+              >,
+            },
+            {
+              type: "MaxValueValidator",
+              params: JSON.stringify({
+                limit_value: 2147483647,
+              }) as unknown as Record<string, unknown>,
+            },
+          ],
+        },
+      ],
+    };
+
+    const { result } = renderHook(() => useGeneratedValidators(contract));
+    const validate = result.current.formValidator;
+
+    expect(validate({ inventory_count: -1 })?.inventory_count).toContain(
+      "greater than or equal to 0",
+    );
+    expect(validate({ inventory_count: 5 })).toBeUndefined();
+  });
 });

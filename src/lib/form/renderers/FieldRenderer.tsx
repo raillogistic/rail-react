@@ -212,18 +212,13 @@ export function createValidators<TValues>(
       : [];
 
   if (config.required) {
-    const requiresTrue =
-      config.type === "checkbox" || config.type === "switch";
     validators.unshift((value) => {
       const emptyValue =
         value === undefined ||
         value === null ||
         value === "" ||
         (Array.isArray(value) && value.length === 0);
-      const invalidBoolean = requiresTrue && value === false;
-      return emptyValue || invalidBoolean
-        ? "This field is required"
-        : undefined;
+      return emptyValue ? "This field is required" : undefined;
     });
   }
 

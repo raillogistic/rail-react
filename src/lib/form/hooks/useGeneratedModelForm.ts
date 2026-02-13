@@ -143,11 +143,24 @@ function normalizeInitialValuesByContract(
   return nextValues;
 }
 
+function isGeneratedIdentifierField(field: {
+  path: string;
+  fieldName?: string;
+}): boolean {
+  const fieldName = String(field.fieldName ?? "").trim().toLowerCase();
+  const leafToken = String(field.path ?? "")
+    .split(".")
+    .filter(Boolean)
+    .at(-1)
+    ?.toLowerCase();
+  return fieldName === "id" || leafToken === "id";
+}
+
 function buildSchema(contract: ModelFormContract): FormSchema<Record<string, any>> {
   const fieldsByPath = new Map<string, FormFieldConfig>();
   for (const field of contract.fields) {
     // Generated contracts should not render non-editable fields in the frontend.
-    if (field.hidden || field.readOnly) continue;
+    if (field.hidden || field.readOnly || isGeneratedIdentifierField(field)) continue;
     const type = mapKindToInputType(field.kind);
     const uiConfig = asRecord(field.ui);
     const metadata = asRecord(field.metadata);

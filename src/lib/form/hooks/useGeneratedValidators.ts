@@ -5,11 +5,74 @@ import type {
   ModelFormContractField,
 } from "../types/generatedContract";
 import { asRecord } from "../utils/jsonCoercion";
+import { getValueByPath } from "../utils/objectPath";
 
 export type GeneratedValidatorExtensionMap = Record<
   string,
   ValidatorFn | ValidatorFn[]
 >;
+
+function toOptionalNumber(value: unknown): number | undefined {
+  if (value === null || value === undefined) return undefined;
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : undefined;
+  }
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return undefined;
+    const parsed = Number(trimmed);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+  return undefined;
+}
+
+function coerceValueToNumber(value: unknown): number | undefined {
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : undefined;
+  }
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    if (!trimmed) return undefined;
+    const parsed = Number(trimmed);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+  return undefined;
+}
+
+function resolveValidatorLimit(
+  field: ModelFormContractField,
+  kind: "min" | "max",
+): number | undefined {
+  for (const validator of field.validators ?? []) {
+    const validatorType = String(validator?.type ?? "").toLowerCase();
+    const isTargetValidator =
+      kind === "min"
+        ? validatorType.includes("minvalue") ||
+          validatorType === "min_value" ||
+          validatorType === "minvaluevalidator"
+        : validatorType.includes("maxvalue") ||
+          validatorType === "max_value" ||
+          validatorType === "maxvaluevalidator";
+    if (!isTargetValidator) continue;
+
+    const params = asRecord(validator?.params) ?? {};
+    const candidate =
+      kind === "min"
+        ? (params.limit_value ??
+            params.limitValue ??
+            params.min_value ??
+            params.minValue)
+        : (params.limit_value ??
+            params.limitValue ??
+            params.max_value ??
+            params.maxValue);
+    const limit = toOptionalNumber(candidate);
+    if (limit !== undefined) {
+      return limit;
+    }
+  }
+  return undefined;
+}
 
 function getConstraintValidators(field: ModelFormContractField): ValidatorFn[] {
   const validators: ValidatorFn[] = [];
@@ -24,7 +87,9 @@ function getConstraintValidators(field: ModelFormContractField): ValidatorFn[] {
     });
   }
 
-  const maxLength = Number((constraints as Record<string, unknown>).max_length);
+  const maxLength = toOptionalNumber(
+    (constraints as Record<string, unknown>).max_length,
+  );
   if (Number.isFinite(maxLength) && maxLength > 0) {
     validators.push((value) => {
       if (typeof value === "string" && value.length > maxLength) {
@@ -34,20 +99,26 @@ function getConstraintValidators(field: ModelFormContractField): ValidatorFn[] {
     });
   }
 
-  const minValue = Number((constraints as Record<string, unknown>).min_value);
-  if (Number.isFinite(minValue)) {
+  const minValue =
+    toOptionalNumber((constraints as Record<string, unknown>).min_value) ??
+    resolveValidatorLimit(field, "min");
+  if (minValue !== undefined) {
     validators.push((value) => {
-      if (typeof value === "number" && value < minValue) {
+      const numericValue = coerceValueToNumber(value);
+      if (numericValue !== undefined && numericValue < minValue) {
         return `${field.label} must be greater than or equal to ${minValue}.`;
       }
       return undefined;
     });
   }
 
-  const maxValue = Number((constraints as Record<string, unknown>).max_value);
-  if (Number.isFinite(maxValue)) {
+  const maxValue =
+    toOptionalNumber((constraints as Record<string, unknown>).max_value) ??
+    resolveValidatorLimit(field, "max");
+  if (maxValue !== undefined) {
     validators.push((value) => {
-      if (typeof value === "number" && value > maxValue) {
+      const numericValue = coerceValueToNumber(value);
+      if (numericValue !== undefined && numericValue > maxValue) {
         return `${field.label} must be less than or equal to ${maxValue}.`;
       }
       return undefined;
@@ -80,7 +151,7 @@ export function useGeneratedValidators(
     return (values: Record<string, any>) => {
       const errors: Record<string, string> = {};
       for (const [path, validators] of Object.entries(fieldValidators)) {
-        const value = values?.[path];
+        const value = getValueByPath(values, path);
         for (const validator of validators) {
           const result = validator(value, { values, name: path });
           if (typeof result === "string" && result.trim()) {

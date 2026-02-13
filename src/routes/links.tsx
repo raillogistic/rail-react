@@ -159,7 +159,7 @@ const CORE_NAVIGATION_LINKS: NavigationSection[] = [
         path: "/formold",
         component: (
           <>
-            <StoreProductUpdateModelFormExample objectId="5" />
+            <StoreProductUpdateModelFormExample objectId="9" />
 
             {/* <AdvancedFeaturesForm/> */}
           </>

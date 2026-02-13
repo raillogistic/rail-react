@@ -156,10 +156,6 @@ export function resolveRequiredError(
   showError: boolean
 ) {
   if (!showError || !config.required) return undefined;
-  const requiresTrue = config.type === "checkbox" || config.type === "switch";
-  if (requiresTrue) {
-    return value === true ? undefined : "Ce champ est obligatoire";
-  }
   if (Array.isArray(value)) {
     return value.length > 0 ? undefined : "Ce champ est obligatoire";
   }

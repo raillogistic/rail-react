@@ -87,6 +87,45 @@ describe("useGeneratedModelForm adapter", () => {
     ]);
   });
 
+  it("hides identifier field even when backend marks it editable", () => {
+    const contract = {
+      ...sampleModelFormContract,
+      fields: [
+        {
+          ...sampleModelFormContract.fields[0],
+          path: "id",
+          fieldName: "id",
+          label: "ID",
+          readOnly: false,
+          hidden: false,
+        },
+        {
+          ...sampleModelFormContract.fields[1],
+          path: "name",
+          fieldName: "name",
+          label: "Name",
+        },
+      ],
+      sections: [
+        {
+          ...sampleModelFormContract.sections[0],
+          fieldPaths: ["id", "name"],
+        },
+      ],
+    };
+
+    const { result } = renderHook(() =>
+      useGeneratedModelForm({
+        generatedEnabled: true,
+        contract,
+      }),
+    );
+
+    expect(result.current.schema.sections?.[0]?.fields.map((f) => f.name)).toEqual([
+      "name",
+    ]);
+  });
+
   it("parses JSONString contract payloads and initial values", () => {
     const contract: ModelFormContract = {
       ...sampleModelFormContract,
