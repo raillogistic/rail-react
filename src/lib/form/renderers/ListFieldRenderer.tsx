@@ -12,6 +12,8 @@ import {
   Plus,
   Trash2,
   GripVertical,
+  ArrowUp,
+  ArrowDown,
   AlertCircle,
   Layers,
 } from "lucide-react";
@@ -151,10 +153,13 @@ const ListFieldItems = <TValues extends Record<string, any>>({
 
   const isReadOnly = globalReadOnly || config.readOnly;
   const showAddButton = config.showAddButton ?? true;
+  const sortingMode = config.sortingMode ?? "drag&drop";
   const isOrderingEnabled =
     (config.sortable ?? config.ordering?.activate ?? false) &&
     !isReadOnly &&
     !globalDisabled;
+  const useDragAndDrop = isOrderingEnabled && sortingMode === "drag&drop";
+  const useButtonsOrdering = isOrderingEnabled && sortingMode === "buttons";
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -206,6 +211,17 @@ const ListFieldItems = <TValues extends Record<string, any>>({
       }
     },
     [items, fieldApi, enforceOrdering]
+  );
+
+  const handleMove = React.useCallback(
+    (index: number, direction: "up" | "down") => {
+      const nextIndex = direction === "up" ? index - 1 : index + 1;
+      if (index < 0 || nextIndex < 0 || nextIndex >= (items ?? []).length) {
+        return;
+      }
+      fieldApi.setValue(enforceOrdering(arrayMove(items, index, nextIndex)));
+    },
+    [enforceOrdering, fieldApi, items],
   );
 
   return (
@@ -282,7 +298,7 @@ const ListFieldItems = <TValues extends Record<string, any>>({
                </Button>
             )}
           </div>
-        ) : (
+        ) : useDragAndDrop ? (
           <DndContext
             sensors={sensors}
             collisionDetection={closestCenter}
@@ -311,12 +327,40 @@ const ListFieldItems = <TValues extends Record<string, any>>({
                   isReadOnly={isReadOnly}
                   globalDisabled={globalDisabled}
                   hiddenFields={hiddenFields}
-                  isOrderingEnabled={isOrderingEnabled}
+                  isOrderingEnabled={useDragAndDrop}
+                  orderingMode={sortingMode}
+                  canMoveUp={useButtonsOrdering ? index > 0 : false}
+                  canMoveDown={useButtonsOrdering ? index < items.length - 1 : false}
+                  onMoveUp={() => handleMove(index, "up")}
+                  onMoveDown={() => handleMove(index, "down")}
                   onRemove={() => handleRemove(index)}
                 />
               ))}
             </SortableContext>
           </DndContext>
+        ) : (
+          items.map((_: unknown, index: number) => (
+            <SortableListItem
+              key={`item-${index}`}
+              id={`item-${index}`}
+              index={index}
+              config={config}
+              path={path}
+              form={form}
+              itemGridClassName={itemGridClassName}
+              itemGridGapStyle={itemGridGapStyle}
+              isReadOnly={isReadOnly}
+              globalDisabled={globalDisabled}
+              hiddenFields={hiddenFields}
+              isOrderingEnabled={false}
+              orderingMode={sortingMode}
+              canMoveUp={useButtonsOrdering ? index > 0 : false}
+              canMoveDown={useButtonsOrdering ? index < items.length - 1 : false}
+              onMoveUp={() => handleMove(index, "up")}
+              onMoveDown={() => handleMove(index, "down")}
+              onRemove={() => handleRemove(index)}
+            />
+          ))
         )}
       </div>
     </div>
@@ -337,6 +381,11 @@ type SortableListItemProps<TValues> = {
   globalDisabled?: boolean;
   hiddenFields?: Set<string>;
   isOrderingEnabled?: boolean;
+  orderingMode?: "drag&drop" | "buttons";
+  canMoveUp?: boolean;
+  canMoveDown?: boolean;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
   onRemove: () => void;
 };
 
@@ -352,6 +401,11 @@ const SortableListItem = <TValues extends Record<string, any>>({
   globalDisabled,
   hiddenFields,
   isOrderingEnabled,
+  orderingMode,
+  canMoveUp,
+  canMoveDown,
+  onMoveUp,
+  onMoveDown,
   onRemove,
 }: SortableListItemProps<TValues>) => {
   const {
@@ -380,7 +434,7 @@ const SortableListItem = <TValues extends Record<string, any>>({
       >
         <div className="flex items-center justify-between border-b border-border/30 bg-muted/20 px-4 py-2">
           <div className="flex items-center gap-2">
-            {isOrderingEnabled ? (
+            {isOrderingEnabled && orderingMode === "drag&drop" ? (
               <div
                 {...attributes}
                 {...listeners}
@@ -398,6 +452,32 @@ const SortableListItem = <TValues extends Record<string, any>>({
           </div>
           {!isReadOnly ? (
             <div className="flex items-center gap-1">
+              {orderingMode === "buttons" ? (
+                <>
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    className="size-7 text-muted-foreground hover:text-foreground"
+                    onClick={onMoveUp}
+                    disabled={!canMoveUp || !!globalDisabled}
+                    title="Monter"
+                  >
+                    <ArrowUp className="size-3.5" />
+                  </Button>
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    className="size-7 text-muted-foreground hover:text-foreground"
+                    onClick={onMoveDown}
+                    disabled={!canMoveDown || !!globalDisabled}
+                    title="Descendre"
+                  >
+                    <ArrowDown className="size-3.5" />
+                  </Button>
+                </>
+              ) : null}
               <Button
                 type="button"
                 size="icon"

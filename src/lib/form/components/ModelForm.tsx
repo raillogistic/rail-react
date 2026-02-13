@@ -118,6 +118,7 @@ type RelationNestedFormConfig = {
   sortable?: {
     enabled?: boolean;
     orderField?: string;
+    mode?: "drag&drop" | "buttons";
   };
   minItems?: number;
   maxItems?: number;
@@ -219,7 +220,9 @@ function toOptionalRecord(value: unknown): Record<string, unknown> | null {
 function parseFieldsOrderMode(
   value: unknown,
 ): ModelFormNestedFieldsOrderMode | undefined {
-  const normalized = String(value ?? "").trim().toLowerCase();
+  const normalized = String(value ?? "")
+    .trim()
+    .toLowerCase();
   if (normalized === "contract" || normalized === "default") return "contract";
   if (
     normalized === "fields" ||
@@ -268,6 +271,7 @@ function parseSortableConfig(value: unknown):
   | {
       enabled?: boolean;
       orderField?: string;
+      mode?: "drag&drop" | "buttons";
     }
   | undefined {
   if (typeof value === "boolean") {
@@ -285,8 +289,27 @@ function parseSortableConfig(value: unknown):
       record.to_field ??
       record.field,
   );
-  if (enabled === undefined && !orderField) return undefined;
-  return { enabled, orderField };
+  const rawMode = toOptionalString(
+    record.mode ?? record.sortMode ?? record.sort_mode,
+  );
+  let mode: "drag&drop" | "buttons" | undefined;
+  if (rawMode) {
+    const normalizedMode = rawMode.toLowerCase();
+    if (
+      normalizedMode === "drag&drop" ||
+      normalizedMode === "drag-and-drop" ||
+      normalizedMode === "drag_drop" ||
+      normalizedMode === "dragdrop" ||
+      normalizedMode === "dnd"
+    ) {
+      mode = "drag&drop";
+    } else if (normalizedMode === "buttons" || normalizedMode === "button") {
+      mode = "buttons";
+    }
+  }
+  if (enabled === undefined && !orderField && mode === undefined)
+    return undefined;
+  return { enabled, orderField, mode };
 }
 
 function mergeAddButtonConfig(
@@ -319,6 +342,7 @@ function mergeSortableConfig(
   | {
       enabled?: boolean;
       orderField?: string;
+      mode?: "drag&drop" | "buttons";
     }
   | undefined {
   const relationConfig = parseSortableConfig(relationValue);
@@ -343,12 +367,8 @@ function parseRelationNestedFormConfig(
 
   const layout = asRecord(record.layout);
   const rawColumns = layout?.columns ?? record.columns;
-  const addButton = parseAddButtonConfig(
-    record.addButton ?? record.add_button,
-  );
-  const sortable = parseSortableConfig(
-    record.sortable ?? record.ordering,
-  );
+  const addButton = parseAddButtonConfig(record.addButton ?? record.add_button);
+  const sortable = parseSortableConfig(record.sortable ?? record.ordering);
 
   return {
     enabled: toOptionalBoolean(record.enabled),
@@ -423,6 +443,59 @@ function collectUniqueTopLevelFields(
   }
 
   return Array.from(uniqueFields.values());
+}
+
+function collectNestedRelationFields<TValues extends Record<string, unknown>>(
+  relatedSchema: FormSchema<Record<string, unknown>>,
+  nestedControl: ModelFormNestedDefinition<TValues>,
+): FormFieldConfig[] {
+  const relatedSections = relatedSchema.sections ?? [];
+  if (relatedSections.length === 0) {
+    return collectUniqueTopLevelFields(relatedSchema);
+  }
+
+  const filteredSections = relatedSections
+    .map((section) => {
+      if (
+        section.id &&
+        nestedControl.includeSections?.length &&
+        !nestedControl.includeSections.includes(section.id)
+      ) {
+        return null;
+      }
+      if (section.id && nestedControl.excludeSections?.includes(section.id)) {
+        return null;
+      }
+      const sectionOverride = resolveSectionOverride(
+        nestedControl.sectionOverrides,
+        section.id,
+      );
+      const overridden = applySectionOverride(section, sectionOverride);
+      if (!overridden) return null;
+      if (typeof overridden.visible === "function") {
+        try {
+          if (overridden.visible({} as Record<string, unknown>) === false) {
+            return null;
+          }
+        } catch {
+          // Ignore visibility evaluation errors for nested extraction.
+        }
+      }
+      return overridden;
+    })
+    .filter(Boolean)
+    .filter((section): section is FormSectionConfig<Record<string, unknown>> =>
+      Boolean(section && section.fields.length > 0),
+    );
+
+  if (filteredSections.length === 0) {
+    return [];
+  }
+
+  return collectUniqueTopLevelFields({
+    ...relatedSchema,
+    sections: filteredSections,
+  });
 }
 
 function toRelativeSelector(selector: string, relationPath: string): string {
@@ -518,9 +591,12 @@ function buildNestedRelationFieldConfig<
       maxItems: nestedControl.maxItems ?? nestedFormConfig?.maxItems,
       itemLabel:
         nestedControl.itemLabel ?? nestedFormConfig?.itemLabel ?? resolvedLabel,
-      addLabel: addButtonConfig?.label ?? `Add ${resolvedLabel}`,
+      addLabel: addButtonConfig?.label ?? `Ajouter`,
       showAddButton: addButtonConfig?.enabled ?? true,
       ...(hasSortableConfig ? { sortable: sortableEnabled } : {}),
+      ...(hasSortableConfig && sortableConfig?.mode
+        ? { sortingMode: sortableConfig.mode }
+        : {}),
       ...(sortableEnabled && sortableConfig?.orderField
         ? {
             ordering: {
@@ -584,7 +660,10 @@ function materializeNestedRelationFields<
       }
 
       const relatedSchema = buildSchemaFromContract(relatedContract);
-      const relatedFields = collectUniqueTopLevelFields(relatedSchema);
+      const relatedFields = collectNestedRelationFields(
+        relatedSchema,
+        nestedControl,
+      );
       if (relatedFields.length === 0) {
         return field;
       }

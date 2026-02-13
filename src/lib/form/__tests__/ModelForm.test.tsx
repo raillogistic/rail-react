@@ -705,7 +705,7 @@ describe("ModelForm", () => {
           tags: {
             title: "Tag Entries",
             addButton: { enabled: false, label: "Add Tag Row" },
-            sortable: { enabled: true, orderField: "order" },
+            sortable: { enabled: true, orderField: "order", mode: "buttons" },
             customOrder: ["order", "name"],
             itemLabel: "Tag Row",
           },
@@ -726,12 +726,170 @@ describe("ModelForm", () => {
     expect(tagsField?.showAddButton).toBe(false);
     expect(tagsField?.addLabel).toBe("Add Tag Row");
     expect(tagsField?.sortable).toBe(true);
+    expect(tagsField?.sortingMode).toBe("buttons");
     expect((tagsField?.ordering as { toField?: string } | undefined)?.toField).toBe(
       "order",
     );
     expect(
       (tagsField?.fields as Array<{ name: string }>).map((field) => field.name),
     ).toEqual(["order", "name"]);
+  });
+
+  it("applies nested sectionOverrides to related contracts", async () => {
+    const rootContract: ModelFormContract = {
+      ...sampleModelFormContract,
+      appLabel: "store",
+      modelName: "Product",
+      mode: "CREATE",
+      fields: [
+        {
+          ...sampleModelFormContract.fields[0],
+          path: "name",
+          fieldName: "name",
+          label: "Name",
+        },
+      ],
+      sections: [
+        {
+          ...sampleModelFormContract.sections[0],
+          fieldPaths: ["name"],
+        },
+      ],
+      relations: [
+        {
+          path: "tags",
+          label: "Tags",
+          relationType: "MANY_TO_MANY",
+          toMany: true,
+          relatedAppLabel: "store",
+          relatedModelName: "Tag",
+          policy: {
+            path: "tags",
+            allowedActions: ["CONNECT", "CREATE", "UPDATE", "SET", "CLEAR"],
+            blockedActions: [],
+            nestedEnabled: true,
+          },
+          nestedForm: null,
+        },
+      ],
+    };
+
+    const tagContract: ModelFormContract = {
+      ...sampleModelFormContract,
+      id: "store.Tag.CREATE",
+      appLabel: "store",
+      modelName: "Tag",
+      mode: "CREATE",
+      fields: [
+        {
+          ...sampleModelFormContract.fields[0],
+          path: "name",
+          fieldName: "name",
+          label: "Tag Name",
+          kind: "TEXT",
+        },
+        {
+          ...sampleModelFormContract.fields[1],
+          path: "order",
+          fieldName: "order",
+          label: "Order",
+          kind: "NUMBER",
+          required: false,
+          nullable: true,
+        },
+      ],
+      sections: [
+        {
+          id: "main",
+          title: "Main",
+          description: null,
+          fieldPaths: ["name"],
+          order: 0,
+          layout: null,
+          visible: true,
+        },
+        {
+          id: "advanced",
+          title: "Advanced",
+          description: null,
+          fieldPaths: ["order"],
+          order: 1,
+          layout: null,
+          visible: true,
+        },
+      ],
+      relations: [],
+    };
+
+    const mocks = [
+      {
+        request: {
+          query: MODEL_FORM_CONTRACT_QUERY,
+          variables: {
+            appLabel: "store",
+            modelName: "Product",
+            mode: "CREATE",
+            includeNested: true,
+          },
+        },
+        result: {
+          data: {
+            modelFormContract: rootContract,
+          },
+        },
+      },
+      {
+        request: {
+          query: MODEL_FORM_CONTRACT_PAGES_QUERY,
+          variables: {
+            page: 1,
+            perPage: 1,
+            models: [{ appLabel: "store", modelName: "Tag" }],
+            mode: "CREATE",
+            includeNested: false,
+          },
+        },
+        result: {
+          data: {
+            modelFormContractPages: {
+              page: 1,
+              perPage: 1,
+              total: 1,
+              results: [tagContract],
+            },
+          },
+        },
+      },
+    ];
+
+    renderWithMocks(
+      <ModelForm
+        app="store"
+        model="Product"
+        mode="CREATE"
+        nested={{
+          tags: {
+            sectionOverrides: {
+              advanced: {
+                ui: { card: false, accordion: true },
+                visible: () => false,
+              },
+            },
+          },
+        }}
+      />,
+      mocks,
+    );
+
+    const payload = await getRenderedSchema();
+    const fields = payload.sections[0].fields as Array<Record<string, unknown>>;
+    const tagsField = fields.find((field) => field.name === "tags") as
+      | Record<string, unknown>
+      | undefined;
+
+    expect(
+      (tagsField?.fields as Array<{ name: string }>).map((field) => field.name),
+    ).toEqual(["name"]);
   });
 
   it("filters nested relations using onlyRelationships", async () => {

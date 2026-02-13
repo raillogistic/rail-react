@@ -75,6 +75,7 @@ export type ModelFormNestedSortableConfig =
   | {
       enabled?: boolean;
       orderField?: string;
+      mode?: "drag&drop" | "buttons";
     };
 
 export type ModelFormNestedFieldsOrderMode =

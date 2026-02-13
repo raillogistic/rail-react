@@ -233,6 +233,7 @@ export interface ListFieldConfig extends BaseFieldConfig {
   addLabel?: string;
   showAddButton?: boolean;
   sortable?: boolean;
+  sortingMode?: "drag&drop" | "buttons";
   minItems?: number;
   maxItems?: number;
   columns?: number;
