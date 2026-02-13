@@ -179,6 +179,7 @@ export const MODEL_FORM_INITIAL_DATA_QUERY = gql`
     $modelName: String!
     $objectId: ID!
     $includeNested: Boolean = false
+    $nestedFields: [String!]
     $runtimeOverrides: [ModelFormRuntimeOverrideInput!]
   ) {
     modelFormInitialData(
@@ -186,6 +187,7 @@ export const MODEL_FORM_INITIAL_DATA_QUERY = gql`
       modelName: $modelName
       objectId: $objectId
       includeNested: $includeNested
+      nestedFields: $nestedFields
       runtimeOverrides: $runtimeOverrides
     ) {
       appLabel

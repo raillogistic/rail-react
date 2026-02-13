@@ -474,6 +474,7 @@ describe("ModelForm", () => {
             modelName: "Product",
             objectId: "42",
             includeNested: true,
+            nestedFields: ["category", "tags"],
             runtimeOverrides: [],
           },
         },

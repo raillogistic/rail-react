@@ -64,6 +64,7 @@ type InitialDataQueryVariables = {
   modelName: string;
   objectId: string;
   includeNested: boolean;
+  nestedFields?: string[];
   runtimeOverrides?: Array<Record<string, unknown>>;
 };
 
@@ -913,6 +914,33 @@ export function ModelForm<
       resolvedOnlyRelationships.length > 0 ||
       resolvedExcludeRelationships.length > 0,
     );
+  const initialDataNestedFields = React.useMemo(() => {
+    if (!nestedControls) return undefined;
+
+    const includedRelations = resolvedOnlyRelationships.length
+      ? new Set(resolvedOnlyRelationships)
+      : null;
+    const excludedRelations = resolvedExcludeRelationships.length
+      ? new Set(resolvedExcludeRelationships)
+      : null;
+
+    const nestedPaths = Object.entries(nestedControls)
+      .filter(([, definition]) => definition.enabled !== false)
+      .map(([relationPath]) => String(relationPath).trim())
+      .filter(Boolean)
+      .filter((relationPath) =>
+        includedRelations ? includedRelations.has(relationPath) : true,
+      )
+      .filter((relationPath) =>
+        excludedRelations ? !excludedRelations.has(relationPath) : true,
+      );
+
+    return nestedPaths.length > 0 ? nestedPaths : undefined;
+  }, [
+    nestedControls,
+    resolvedOnlyRelationships,
+    resolvedExcludeRelationships,
+  ]);
   const updateRequiresObjectId =
     resolvedMode === "UPDATE" &&
     requireObjectIdForUpdate &&
@@ -945,6 +973,9 @@ export function ModelForm<
       modelName: resolvedModel,
       objectId: resolvedObjectIdValue ?? "",
       includeNested: shouldIncludeNested,
+      ...(initialDataNestedFields
+        ? { nestedFields: initialDataNestedFields }
+        : {}),
       runtimeOverrides: runtimeOverridesForQuery,
     },
     skip: !shouldFetchInitialData,
