@@ -1,10 +1,17 @@
-import { useMemo } from "react";
+import React from "react";
 import type { FormFieldConfig, FormSchema, FormSectionConfig } from "../types/schema";
+import {
+  createSubmitDispatchGuard,
+  selectGeneratedSubmitOperation,
+} from "../mutations";
 import type {
   ModelFormContract,
   ModelFormInitialData,
+  ModelFormMode,
+  ModelFormMutationOutcome,
   ModelFormRuntimeOverride,
 } from "../types/generatedContract";
+import type { ModelFormSubmitState } from "../types.model";
 import { asRecord, parseJsonValue } from "../utils/jsonCoercion";
 import {
   getValueByPath,
@@ -12,13 +19,57 @@ import {
   setValueByPath,
   unsetValueByPath,
 } from "../utils/objectPath";
+import { normalizeGeneratedMutationErrors } from "../utils/normalizeMutationErrors";
+import {
+  CANONICAL_FORM_ERROR_KEY,
+  resolveCanonicalFormErrorKey,
+} from "../utils/errors";
+import {
+  ERROR_NORMALIZATION_BUDGET_MS,
+  SUBMIT_ORCHESTRATION_BUDGET_MS,
+  measureErrorNormalization,
+  measureSubmitOrchestration,
+} from "../utils/submitPerformance";
+import { buildSubmitPayload, type SubmitPayloadEnvelope } from "../utils/buildSubmitPayload";
+import { resolveSubmitIdentifier } from "../utils/resolveSubmitIdentifier";
 
-type UseGeneratedModelFormOptions = {
+const INITIAL_SUBMIT_STATE: ModelFormSubmitState = {
+  status: "IDLE",
+  isSubmitting: false,
+  lockActive: false,
+  outcome: null,
+};
+
+export type GeneratedSubmitExecutionContext = {
+  mode: "CREATE" | "UPDATE";
+  values: Record<string, unknown>;
+  resolvedValues: Record<string, unknown>;
+  envelope: SubmitPayloadEnvelope;
+};
+
+export type UseGeneratedModelFormOptions = {
   contract?: ModelFormContract | null;
   initialData?: ModelFormInitialData | null;
   runtimeOverrides?: ModelFormRuntimeOverride[];
   generatedEnabled?: boolean;
   legacySchema?: FormSchema<Record<string, any>>;
+  submitMode?: ModelFormMode;
+  objectId?: string | number | null;
+  identifierKeyOverride?: string | null;
+  executeMutation?: (
+    operationName: string,
+    variables: Record<string, unknown>,
+    envelope: SubmitPayloadEnvelope,
+  ) => Promise<unknown>;
+  submitOverride?: (
+    context: GeneratedSubmitExecutionContext,
+  ) => Promise<unknown>;
+};
+
+type SubmitResult = {
+  outcome: ModelFormMutationOutcome;
+  orchestrationDurationMs: number;
+  normalizationDurationMs: number;
 };
 
 function mapKindToInputType(kind: string): FormFieldConfig["type"] {
@@ -159,7 +210,6 @@ function isGeneratedIdentifierField(field: {
 function buildSchema(contract: ModelFormContract): FormSchema<Record<string, any>> {
   const fieldsByPath = new Map<string, FormFieldConfig>();
   for (const field of contract.fields) {
-    // Generated contracts should not render non-editable fields in the frontend.
     if (field.hidden || field.readOnly || isGeneratedIdentifierField(field)) continue;
     const type = mapKindToInputType(field.kind);
     const uiConfig = asRecord(field.ui);
@@ -212,6 +262,62 @@ function buildSchema(contract: ModelFormContract): FormSchema<Record<string, any
   };
 }
 
+function normalizeSubmitMode(mode: ModelFormMode | undefined): "CREATE" | "UPDATE" {
+  return mode === "UPDATE" ? "UPDATE" : "CREATE";
+}
+
+function toExecutionErrorMessage(error: unknown) {
+  if (error instanceof Error && error.message.trim()) {
+    return error.message;
+  }
+  return "Submit execution failed.";
+}
+
+function unwrapMutationPayload(
+  payload: unknown,
+  operationName: string,
+): Record<string, unknown> {
+  if (!payload || typeof payload !== "object") {
+    return {};
+  }
+  const dictionary = payload as Record<string, unknown>;
+  if (dictionary.ok !== undefined || dictionary.errors !== undefined) {
+    return dictionary;
+  }
+  const response = dictionary.response;
+  if (response && typeof response === "object") {
+    return response as Record<string, unknown>;
+  }
+  const operationData = dictionary[operationName];
+  if (operationData && typeof operationData === "object") {
+    return operationData as Record<string, unknown>;
+  }
+  const data = dictionary.data;
+  if (data && typeof data === "object") {
+    return unwrapMutationPayload(data, operationName);
+  }
+  return {};
+}
+
+function buildErrorOutcome(
+  message: string,
+  formErrorKey: string,
+  visibleFieldPaths: Set<string>,
+): ModelFormMutationOutcome {
+  return {
+    ok: false,
+    conflict: false,
+    formErrorKey,
+    errors: normalizeGeneratedMutationErrors(
+      [{ message, source: "EXECUTION", field: formErrorKey }],
+      {
+        formErrorKey,
+        visibleFieldPaths,
+      },
+    ),
+  };
+}
+
 export function useGeneratedModelForm(options: UseGeneratedModelFormOptions) {
   const {
     contract,
@@ -219,11 +325,35 @@ export function useGeneratedModelForm(options: UseGeneratedModelFormOptions) {
     runtimeOverrides = [],
     generatedEnabled = true,
     legacySchema,
+    submitMode,
+    objectId,
+    identifierKeyOverride,
+    executeMutation,
+    submitOverride,
   } = options;
 
   const usingGenerated = Boolean(generatedEnabled && contract);
+  const rawSubmitMode = submitMode ?? contract?.mode ?? "CREATE";
+  const activeSubmitMode = normalizeSubmitMode(rawSubmitMode);
+  const formErrorKey = resolveCanonicalFormErrorKey(
+    contract?.errorPolicy?.canonicalFormErrorKey ?? CANONICAL_FORM_ERROR_KEY,
+  );
+  const submitGuardRef = React.useRef(createSubmitDispatchGuard());
+  const [submitState, setSubmitState] = React.useState<ModelFormSubmitState>(
+    INITIAL_SUBMIT_STATE,
+  );
 
-  const baseValues = useMemo(() => {
+  const visibleFieldPaths = React.useMemo(
+    () =>
+      new Set(
+        (contract?.fields ?? [])
+          .filter((field) => !field.hidden)
+          .map((field) => field.path),
+      ),
+    [contract],
+  );
+
+  const baseValues = React.useMemo(() => {
     const parsedValues = parseJsonValue(initialData?.values);
     if (!parsedValues || typeof parsedValues !== "object" || Array.isArray(parsedValues)) {
       return {};
@@ -235,12 +365,12 @@ export function useGeneratedModelForm(options: UseGeneratedModelFormOptions) {
     );
   }, [initialData, contract]);
 
-  const runtimeValues = useMemo(
+  const runtimeValues = React.useMemo(
     () => applyOverrides(baseValues, runtimeOverrides),
     [baseValues, runtimeOverrides],
   );
 
-  const schema = useMemo<FormSchema<Record<string, any>>>(() => {
+  const schema = React.useMemo<FormSchema<Record<string, any>>>(() => {
     if (!usingGenerated || !contract) {
       return legacySchema ?? { sections: [], fields: [] };
     }
@@ -249,8 +379,178 @@ export function useGeneratedModelForm(options: UseGeneratedModelFormOptions) {
     return generated;
   }, [usingGenerated, contract, legacySchema, runtimeValues]);
 
-  const buildSubmissionValues = (values: Record<string, any>) =>
-    applyOverrides(values, runtimeOverrides);
+  const buildSubmissionValues = React.useCallback(
+    (values: Record<string, any>) => applyOverrides(values, runtimeOverrides),
+    [runtimeOverrides],
+  );
+
+  const canSubmit = Boolean(
+    usingGenerated &&
+      contract &&
+      rawSubmitMode !== "VIEW" &&
+      (executeMutation || submitOverride),
+  );
+
+  const submit = React.useCallback(
+    async (
+      values: Record<string, any>,
+    ): Promise<ModelFormMutationOutcome> => {
+      if (!canSubmit || !contract) {
+        return buildErrorOutcome(
+          "Generated submit executor is not configured.",
+          formErrorKey,
+          visibleFieldPaths,
+        );
+      }
+
+      try {
+        const result = await submitGuardRef.current.run<SubmitResult>(async () => {
+          setSubmitState((prev) => ({
+            ...prev,
+            status: "SUBMITTING",
+            isSubmitting: true,
+            lockActive: true,
+          }));
+
+          const {
+            result: orchestration,
+            measurement: orchestrationMeasurement,
+          } = measureSubmitOrchestration(() => {
+            const mode = activeSubmitMode;
+            const operationName = selectGeneratedSubmitOperation(
+              contract.mutationBindings,
+              mode,
+              contract.modelName,
+            );
+            const resolvedValues = buildSubmissionValues(values);
+            const identifier = resolveSubmitIdentifier({
+              mode,
+              values: resolvedValues,
+              objectId,
+              mutationBindings: contract.mutationBindings,
+              identifierKeyOverride,
+            });
+            const envelope = buildSubmitPayload({
+              mode,
+              operationName,
+              resolvedValues,
+              relations: contract.relations,
+              identifier,
+            });
+            return { mode, resolvedValues, envelope };
+          });
+
+          const executionPayload = submitOverride
+            ? await submitOverride({
+                mode: orchestration.mode,
+                values,
+                resolvedValues: orchestration.resolvedValues,
+                envelope: orchestration.envelope,
+              })
+            : await executeMutation?.(
+                orchestration.envelope.operationName,
+                orchestration.envelope.variables,
+                orchestration.envelope,
+              );
+
+          const payload = unwrapMutationPayload(
+            executionPayload,
+            orchestration.envelope.operationName,
+          );
+
+          const {
+            result: normalizedErrors,
+            measurement: normalizationMeasurement,
+          } = measureErrorNormalization(() =>
+            normalizeGeneratedMutationErrors(payload.errors ?? [], {
+              formErrorKey,
+              visibleFieldPaths,
+            }),
+          );
+
+          const conflict =
+            Boolean(payload.conflict) ||
+            normalizedErrors.some((error) => Boolean(error.conflict));
+          const ok = Boolean(payload.ok) && normalizedErrors.length === 0 && !conflict;
+
+          const outcome: ModelFormMutationOutcome = {
+            ok,
+            errors: normalizedErrors,
+            conflict,
+            formErrorKey: resolveCanonicalFormErrorKey(
+              String(payload.formErrorKey ?? formErrorKey),
+            ),
+          };
+
+          const status: ModelFormSubmitState["status"] = ok
+            ? "SUCCEEDED"
+            : conflict
+              ? "FAILED_CONFLICT"
+              : normalizedErrors.length > 0
+                ? "FAILED_VALIDATION"
+                : "FAILED_EXECUTION";
+
+          setSubmitState({
+            status,
+            isSubmitting: false,
+            lockActive: false,
+            outcome,
+          });
+
+          return {
+            outcome,
+            orchestrationDurationMs: orchestrationMeasurement.durationMs,
+            normalizationDurationMs: normalizationMeasurement.durationMs,
+          };
+        });
+
+        if (result.orchestrationDurationMs > SUBMIT_ORCHESTRATION_BUDGET_MS) {
+          console.warn(
+            `Generated submit orchestration exceeded budget: ${result.orchestrationDurationMs.toFixed(2)}ms.`,
+          );
+        }
+        if (result.normalizationDurationMs > ERROR_NORMALIZATION_BUDGET_MS) {
+          console.warn(
+            `Generated submit normalization exceeded budget: ${result.normalizationDurationMs.toFixed(2)}ms.`,
+          );
+        }
+
+        return result.outcome;
+      } catch (error) {
+        const message = toExecutionErrorMessage(error);
+        const outcome = buildErrorOutcome(
+          message,
+          formErrorKey,
+          visibleFieldPaths,
+        );
+        const isReentrantError = /already in progress/i.test(message);
+
+        if (!isReentrantError) {
+          setSubmitState({
+            status: "FAILED_EXECUTION",
+            isSubmitting: false,
+            lockActive: false,
+            outcome,
+          });
+        }
+
+        return outcome;
+      }
+    },
+    [
+      canSubmit,
+      contract,
+      activeSubmitMode,
+      buildSubmissionValues,
+      executeMutation,
+      formErrorKey,
+      identifierKeyOverride,
+      objectId,
+      rawSubmitMode,
+      submitOverride,
+      visibleFieldPaths,
+    ],
+  );
 
   return {
     usingGenerated,
@@ -259,5 +559,8 @@ export function useGeneratedModelForm(options: UseGeneratedModelFormOptions) {
     errorPolicy: contract?.errorPolicy,
     initialValues: runtimeValues,
     buildSubmissionValues,
+    submit,
+    submitState,
+    canSubmit,
   };
 }

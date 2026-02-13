@@ -20,10 +20,12 @@ GraphQL documents live in `src/graphql/modelFormContract.ts`.
    schema.
 3. Use `useGeneratedValidators` to derive baseline validators from contract
    constraints.
-4. Resolve mutation operations from `mutationBindings` with
-   `resolveGeneratedMutationOperation`.
-5. Normalize mutation errors with `normalizeGeneratedMutationErrors` and map
-   bulk errors to `items.<row>.<field>`.
+4. Default submit wiring (`ModelForm`, create/update modes) now executes generated
+   mutations automatically; no manual Apollo mutation code is required.
+5. Runtime overrides are applied before payload build, then identifier resolution
+   runs (`objectId` default with contract/override support).
+6. All submit failures are normalized to field-path or `__all__` with conflict
+   metadata preserved.
 
 ## Compatibility fallback
 
@@ -38,6 +40,31 @@ GraphQL documents live in `src/graphql/modelFormContract.ts`.
 - Runtime overrides are path-based and support `REPLACE`, `MERGE`, `UNSET`.
 - Call `buildSubmissionValues` from `useGeneratedModelForm` before mutation
   submission so overrides are applied consistently.
+
+## Default generated submit behavior
+
+- `ModelForm` in `CREATE`/`UPDATE` mode now routes Save through generated submit by default.
+- Create uses `mutationBindings.createOperation`; update uses `mutationBindings.updateOperation`.
+- Update identifier key resolution precedence:
+  - `contractIdentifierKey`
+  - explicit override
+  - `mutationBindings.updateIdentifierKey`
+  - fallback `objectId`
+
+### Loading + duplicate-submit guarantees
+
+- One submit lock exists per form instance.
+- While lock is active:
+  - Save is disabled.
+  - repeated Save clicks are rejected locally (no duplicate network dispatch).
+- Lock is released for success, validation failure, conflict failure, transport failure,
+  and custom-submit override exceptions.
+
+### Conflict handling UX
+
+- Conflict errors are normalized with `conflict: true` and `refreshRequired` metadata.
+- Field-level conflict instructions render a refresh hint when provided by error metadata.
+- If conflict path is unavailable or hidden, error maps to canonical `__all__`.
 
 ## `ModelForm` component (ready-to-use)
 

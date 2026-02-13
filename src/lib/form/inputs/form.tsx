@@ -50,6 +50,7 @@ const DynamicForm = <TValues extends Record<string, any> = Record<string, any>>(
   const globalReadOnly = stateConfig?.readOnly ?? false;
   const globalDisabled = stateConfig?.disabled ?? false;
   const isLoading = stateConfig?.isLoading ?? false;
+  const externalSubmitting = stateConfig?.isSubmitting ?? false;
   const onReady = stateConfig?.onReady;
   const persistKey = stateConfig?.persistKey;
 
@@ -268,6 +269,16 @@ const DynamicForm = <TValues extends Record<string, any> = Record<string, any>>(
 
   const isWizardMode = layoutMode.type === "wizard";
 
+  const resolvedActionsConfig = React.useMemo(() => {
+    if (!actionsConfig && !externalSubmitting) {
+      return actionsConfig;
+    }
+    return {
+      ...(actionsConfig ?? {}),
+      isSubmitting: Boolean(actionsConfig?.isSubmitting || externalSubmitting),
+    };
+  }, [actionsConfig, externalSubmitting]);
+
   const renderMode = () => {
     switch (layoutMode.type) {
       case "wizard":
@@ -303,7 +314,7 @@ const DynamicForm = <TValues extends Record<string, any> = Record<string, any>>(
         {!isWizardMode ? (
           <ActionsBar
             form={form}
-            config={actionsConfig}
+            config={resolvedActionsConfig}
             isLoading={isLoading}
             variant={layoutVariant}
             history={history}

@@ -18,6 +18,9 @@ type UseGeneratedBulkMutationsOptions = {
   executeMutation: ExecuteMutation;
 };
 
+export const BULK_FLOW_NON_GOAL_GUARD =
+  "single-record submit orchestration must not modify bulk behavior";
+
 function toOutcome(payload: any): ModelFormMutationOutcome & { objects: any[] } {
   const normalized = normalizeGeneratedMutationErrors(payload?.errors ?? []);
   const errors = normalized.map((error) => ({
@@ -37,6 +40,10 @@ export function useGeneratedBulkMutations({
   mutationBindings,
   executeMutation,
 }: UseGeneratedBulkMutationsOptions) {
+  // Explicit guard: this hook intentionally remains focused on bulk operations
+  // even when single-record generated submit orchestration is enabled.
+  void BULK_FLOW_NON_GOAL_GUARD;
+
   const runBulkCreate = useCallback(
     async (items: Record<string, unknown>[]) => {
       const operation = mutationBindings?.bulkCreateOperation;

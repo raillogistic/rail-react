@@ -14,6 +14,8 @@ import type {
 import type {
   ModelFormContract,
   ModelFormInitialData,
+  ModelFormMutationOutcome,
+  NormalizedModelFormError,
   ModelFormMode,
   ModelFormRuntimeOverride,
 } from "./types/generatedContract";
@@ -185,3 +187,30 @@ export interface ModelFormProps<
   onInitialDataLoaded?: (initialData: ModelFormInitialData) => void;
   onLoadError?: (error: Error, stage: "contract" | "initialData") => void;
 }
+
+export type ModelFormSubmitLifecycle =
+  | "IDLE"
+  | "SUBMITTING"
+  | "SUCCEEDED"
+  | "FAILED_VALIDATION"
+  | "FAILED_CONFLICT"
+  | "FAILED_EXECUTION";
+
+export type ModelFormSubmitState = {
+  status: ModelFormSubmitLifecycle;
+  isSubmitting: boolean;
+  lockActive: boolean;
+  outcome: ModelFormMutationOutcome | null;
+};
+
+export type ModelFormConflictState = {
+  conflict: boolean;
+  requiresRefresh: boolean;
+  message?: string;
+};
+
+export type ModelFormSubmitResult = ModelFormMutationOutcome & {
+  status: Exclude<ModelFormSubmitLifecycle, "IDLE" | "SUBMITTING">;
+  normalizedErrors: NormalizedModelFormError[];
+  conflictState: ModelFormConflictState;
+};

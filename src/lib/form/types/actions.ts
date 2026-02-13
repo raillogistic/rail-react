@@ -39,4 +39,12 @@ export interface FormActionsConfig<TValues = Record<string, any>> {
     enabled: boolean;
     showInActionBar?: boolean; // If true, shows in the main actions bar. If false, might be rendered elsewhere or strictly via keyboard.
   };
+  /** External submit state override (used by generated submit orchestration). */
+  isSubmitting?: boolean;
+  /** Last submit outcome passed to action controls for contextual messaging. */
+  submitOutcome?: {
+    ok: boolean;
+    conflict: boolean;
+    errorCount: number;
+  } | null;
 }

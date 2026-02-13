@@ -175,6 +175,85 @@ describe("ModelForm", () => {
     expect(payload.initialValues.price).toBe(10);
   });
 
+  it("serializes runtime override values as JSONString variables", async () => {
+    const updateContract: ModelFormContract = {
+      ...sampleModelFormContract,
+      appLabel: "store",
+      modelName: "Product",
+      mode: "UPDATE",
+    };
+
+    const mocks = [
+      {
+        request: {
+          query: MODEL_FORM_CONTRACT_QUERY,
+          variables: {
+            appLabel: "store",
+            modelName: "Product",
+            mode: "UPDATE",
+            includeNested: false,
+          },
+        },
+        result: {
+          data: {
+            modelFormContract: updateContract,
+          },
+        },
+      },
+      {
+        request: {
+          query: MODEL_FORM_INITIAL_DATA_QUERY,
+          variables: {
+            appLabel: "store",
+            modelName: "Product",
+            objectId: "42",
+            includeNested: false,
+            runtimeOverrides: [
+              {
+                path: "metadata",
+                action: "MERGE",
+                value:
+                  '{"updated_from":"StoreProductUpdateModelFormExample"}',
+              },
+            ],
+          },
+        },
+        result: {
+          data: {
+            modelFormInitialData: {
+              appLabel: "store",
+              modelName: "Product",
+              objectId: "42",
+              values: JSON.stringify({ name: "Starter", price: 10 }),
+              readonlyValues: null,
+              loadedAt: "2026-02-12T12:00:00Z",
+            },
+          },
+        },
+      },
+    ];
+
+    renderWithMocks(
+      <ModelForm
+        app="store"
+        model="Product"
+        mode="UPDATE"
+        objectId="42"
+        runtimeOverrides={[
+          {
+            path: "metadata",
+            action: "MERGE",
+            value: { updated_from: "StoreProductUpdateModelFormExample" },
+          },
+        ]}
+      />,
+      mocks,
+    );
+
+    const payload = await getRenderedSchema();
+    expect(payload.initialValues.name).toBe("Starter");
+  });
+
   it("applies nested field controls and overrides", async () => {
     const nestedContract = {
       ...sampleModelFormContract,

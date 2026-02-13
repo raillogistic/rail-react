@@ -69,6 +69,7 @@ export const MODEL_FORM_CONTRACT_QUERY = gql`
         updateOperation
         bulkCreateOperation
         bulkUpdateOperation
+        updateIdentifierKey
         updateTargetPolicy
         bulkCommitPolicy
         conflictPolicy
@@ -132,6 +133,21 @@ export const MODEL_FORM_INITIAL_DATA_QUERY = gql`
       values
       readonlyValues
       loadedAt
+    }
+  }
+`;
+
+export const MODEL_FORM_SUBMIT_CONTRACT_QUERY = gql`
+  query ModelFormSubmitContract($appLabel: String!, $modelName: String!) {
+    modelFormSubmitContract(appLabel: $appLabel, modelName: $modelName) {
+      appLabel
+      modelName
+      bindings {
+        createOperation
+        updateOperation
+        defaultIdentifierKey
+        formErrorKey
+      }
     }
   }
 `;

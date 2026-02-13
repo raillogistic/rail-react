@@ -160,7 +160,6 @@ const CORE_NAVIGATION_LINKS: NavigationSection[] = [
         component: (
           <>
             <StoreProductUpdateModelFormExample objectId="9" />
-
             {/* <AdvancedFeaturesForm/> */}
           </>
         ),

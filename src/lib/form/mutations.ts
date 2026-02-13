@@ -129,13 +129,23 @@ export function build_create_mutation(
 export function build_update_mutation(
   modelName: string,
   selection = "id",
+  options: {
+    identifierVariableName?: string;
+    identifierArgumentName?: string;
+    identifierType?: string;
+  } = {},
 ): string {
   const field = getMutationField("update", modelName);
   const inputType = getInputType("Update", modelName);
+  const identifierVariableName =
+    options.identifierVariableName?.trim() || "id";
+  const identifierArgumentName =
+    options.identifierArgumentName?.trim() || identifierVariableName;
+  const identifierType = options.identifierType?.trim() || "ID!";
   const operation = field || "update";
   return (
-    `mutation ${operation}($id: ID!, $input: ${inputType}!) {\n` +
-    `  response: ${field}(id: $id, input: $input) {\n` +
+    `mutation ${operation}($${identifierVariableName}: ${identifierType}, $input: ${inputType}!) {\n` +
+    `  response: ${field}(${identifierArgumentName}: $${identifierVariableName}, input: $input) {\n` +
     `    ok\n` +
     `    object { ${selection} }\n` +
     `    errors { field message code severity details }\n` +
@@ -262,12 +272,53 @@ export type GeneratedMutationMode =
   | "bulkCreate"
   | "bulkUpdate";
 
+export type GeneratedSubmitMode = "CREATE" | "UPDATE";
+
 export type GeneratedMutationBindings = {
   createOperation?: string | null;
   updateOperation?: string | null;
   bulkCreateOperation?: string | null;
   bulkUpdateOperation?: string | null;
+  updateIdentifierKey?: string | null;
 };
+
+export function selectGeneratedSubmitOperation(
+  bindings: GeneratedMutationBindings | null | undefined,
+  mode: GeneratedSubmitMode,
+  fallbackModelName?: string,
+) {
+  return resolveGeneratedMutationOperation(
+    bindings,
+    mode === "CREATE" ? "create" : "update",
+    fallbackModelName,
+  );
+}
+
+export type SubmitDispatchGuard = {
+  readonly active: boolean;
+  run<T>(task: () => Promise<T> | T): Promise<T>;
+};
+
+export function createSubmitDispatchGuard(): SubmitDispatchGuard {
+  let active = false;
+
+  return {
+    get active() {
+      return active;
+    },
+    async run<T>(task: () => Promise<T> | T): Promise<T> {
+      if (active) {
+        throw new Error("Submit dispatch already in progress.");
+      }
+      active = true;
+      try {
+        return await task();
+      } finally {
+        active = false;
+      }
+    },
+  };
+}
 
 export function resolveGeneratedMutationOperation(
   bindings: GeneratedMutationBindings | null | undefined,
@@ -299,6 +350,10 @@ export function buildGeneratedMutationDocument(
   operationName: string,
   modelName: string,
   selection = "id",
+  options: {
+    identifierVariableName?: string;
+    identifierArgumentName?: string;
+  } = {},
 ): string {
   if (mode === "create") {
     return build_create_mutation(modelName, selection).replace(
@@ -307,7 +362,10 @@ export function buildGeneratedMutationDocument(
     );
   }
   if (mode === "update") {
-    return build_update_mutation(modelName, selection).replace(
+    return build_update_mutation(modelName, selection, {
+      identifierVariableName: options.identifierVariableName,
+      identifierArgumentName: options.identifierArgumentName,
+    }).replace(
       new RegExp(`\\b${getMutationFieldName(modelName, "update")}\\b`, "g"),
       operationName,
     );

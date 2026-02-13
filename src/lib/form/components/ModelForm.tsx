@@ -1,5 +1,5 @@
 import React from "react";
-import { useQuery } from "@apollo/client";
+import { gql, useApolloClient, useQuery } from "@apollo/client";
 
 import {
   MODEL_FORM_CONTRACT_QUERY,
@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils";
 import DynamicForm from "../inputs/form";
 import { useGeneratedModelForm } from "../hooks/useGeneratedModelForm";
 import { useGeneratedValidators } from "../hooks/useGeneratedValidators";
+import { buildGeneratedMutationDocument } from "../mutations";
 import type {
   FormBehaviorConfig,
   FormFieldConfig,
@@ -19,6 +20,7 @@ import type {
 import type {
   ModelFormContract,
   ModelFormInitialData,
+  ModelFormMutationOutcome,
   ModelFormMode,
   ModelFormRuntimeOverride,
 } from "../types/generatedContract";
@@ -29,6 +31,11 @@ import type {
   ModelFormProps,
   ModelFormSectionOverrideValue,
 } from "../types.model";
+import {
+  applyErrorsToFormFields,
+  normalizeGeneratedErrorsForForm,
+} from "../utils/errors";
+import { serializeRuntimeOverridesForQuery } from "../utils/jsonCoercion";
 
 type ContractQueryData = {
   modelFormContract: ModelFormContract | null;
@@ -51,6 +58,13 @@ type InitialDataQueryVariables = {
   objectId: string;
   includeNested: boolean;
   runtimeOverrides?: Array<Record<string, unknown>>;
+};
+
+type GeneratedMutationPayload = {
+  ok?: boolean;
+  errors?: unknown;
+  conflict?: boolean;
+  formErrorKey?: string;
 };
 
 type NestedControlMap<TValues extends Record<string, unknown>> = Record<
@@ -460,9 +474,38 @@ function stableHashOfValue(value: unknown): string {
   }
 }
 
+function getMutationPayload(
+  operationName: string,
+  data: Record<string, unknown> | null | undefined,
+): GeneratedMutationPayload {
+  if (!data || typeof data !== "object") {
+    return {};
+  }
+  const response = data.response;
+  if (response && typeof response === "object") {
+    return response as GeneratedMutationPayload;
+  }
+  const byOperationName = data[operationName];
+  if (byOperationName && typeof byOperationName === "object") {
+    return byOperationName as GeneratedMutationPayload;
+  }
+  return {};
+}
+
+function toActionSubmitOutcome(outcome: ModelFormMutationOutcome | null) {
+  if (!outcome) return null;
+  return {
+    ok: Boolean(outcome.ok),
+    conflict: Boolean(outcome.conflict),
+    errorCount: Array.isArray(outcome.errors) ? outcome.errors.length : 0,
+  };
+}
+
 export function ModelForm<
   TFormValues extends Record<string, unknown> = Record<string, unknown>,
 >(props: ModelFormProps<TFormValues>) {
+  const apolloClient = useApolloClient();
+
   const {
     app,
     model,
@@ -524,6 +567,10 @@ export function ModelForm<
   const resolvedObjectIdValue = resolvedObjectId?.toString();
   const resolvedNested = nested ?? nestedFields;
   const resolvedRuntimeOverrides = runtimeOverrides ?? EMPTY_RUNTIME_OVERRIDES;
+  const runtimeOverridesForQuery = React.useMemo(
+    () => serializeRuntimeOverridesForQuery(resolvedRuntimeOverrides),
+    [resolvedRuntimeOverrides],
+  );
   const resolvedOnlyFieldsInput = onlyFields ?? EMPTY_PATHS;
   const resolvedExcludeFieldsInput = excludeFields ?? EMPTY_PATHS;
   const resolvedOnlyRelationshipsInput = onlyRelationships ?? EMPTY_PATHS;
@@ -650,7 +697,7 @@ export function ModelForm<
       modelName: resolvedModel,
       objectId: resolvedObjectIdValue ?? "",
       includeNested: shouldIncludeNested,
-      runtimeOverrides: resolvedRuntimeOverrides,
+      runtimeOverrides: runtimeOverridesForQuery,
     },
     skip: !shouldFetchInitialData,
     fetchPolicy: "network-only",
@@ -681,6 +728,64 @@ export function ModelForm<
     onLoadError(toError(initialDataQuery.error), "initialData");
   }, [initialDataQuery.error, onLoadError]);
 
+  const executeGeneratedMutation = React.useCallback(
+    async (
+      operationName: string,
+      variables: Record<string, unknown>,
+      envelope: { identifier?: { key: string; value: string | number } | null },
+    ) => {
+      const mutationMode = envelope.identifier ? "update" : "create";
+      const rawIdentifierName = envelope.identifier?.key;
+      const identifierName =
+        rawIdentifierName === "objectId" ? "id" : rawIdentifierName;
+
+      const graphqlVariables =
+        rawIdentifierName &&
+        identifierName &&
+        rawIdentifierName !== identifierName &&
+        Object.prototype.hasOwnProperty.call(variables, rawIdentifierName)
+          ? {
+              ...variables,
+              [identifierName]: variables[rawIdentifierName],
+            }
+          : variables;
+
+      if (
+        rawIdentifierName &&
+        identifierName &&
+        rawIdentifierName !== identifierName
+      ) {
+        delete (graphqlVariables as Record<string, unknown>)[rawIdentifierName];
+      }
+
+      const mutation = gql(
+        buildGeneratedMutationDocument(
+          mutationMode,
+          operationName,
+          resolvedModel,
+          "id",
+          identifierName
+            ? {
+                identifierVariableName: identifierName,
+                identifierArgumentName: identifierName,
+              }
+            : {},
+        ),
+      );
+
+      const result = await apolloClient.mutate({
+        mutation,
+        variables: graphqlVariables,
+      });
+
+      return getMutationPayload(
+        operationName,
+        result.data as Record<string, unknown> | null | undefined,
+      );
+    },
+    [apolloClient, resolvedModel],
+  );
+
   const generated = useGeneratedModelForm({
     contract,
     initialData,
@@ -689,6 +794,9 @@ export function ModelForm<
     legacySchema: legacySchema as
       | FormSchema<Record<string, unknown>>
       | undefined,
+    submitMode: resolvedMode,
+    objectId: resolvedObjectIdValue,
+    executeMutation: executeGeneratedMutation,
   });
 
   const { formValidator } = useGeneratedValidators(
@@ -721,12 +829,26 @@ export function ModelForm<
     FormBehaviorConfig<TFormValues> | undefined
   >(() => {
     const userValidate = resolvedBehaviorInput?.validate;
+    const userSubmit = resolvedBehaviorInput?.onSubmit;
     const shouldUseGeneratedValidation = Boolean(generatedEnabled && contract);
     const generatedValidate = shouldUseGeneratedValidation
       ? formValidator
       : undefined;
+    const shouldUseGeneratedSubmit = Boolean(
+      generatedEnabled &&
+      contract &&
+      resolvedMode !== "VIEW" &&
+      !userSubmit &&
+      generated.canSubmit,
+    );
 
-    if (!resolvedBehaviorInput && !generatedValidate) return undefined;
+    if (
+      !resolvedBehaviorInput &&
+      !generatedValidate &&
+      !shouldUseGeneratedSubmit
+    ) {
+      return undefined;
+    }
 
     const validate = (values: TFormValues) => {
       const generatedErrors = generatedValidate
@@ -736,40 +858,92 @@ export function ModelForm<
       return mergeValidationErrors(generatedErrors, customErrors);
     };
 
+    const onSubmit = shouldUseGeneratedSubmit
+      ? async (
+          values: TFormValues,
+          ctx: Parameters<
+            NonNullable<FormBehaviorConfig<TFormValues>["onSubmit"]>
+          >[1],
+        ) => {
+          const outcome = await generated.submit(
+            values as Record<string, unknown>,
+          );
+          if (outcome.errors.length) {
+            applyErrorsToFormFields(
+              normalizeGeneratedErrorsForForm(outcome.errors, {
+                formErrorKey: outcome.formErrorKey,
+              }),
+              ctx.form as any,
+            );
+          }
+        }
+      : userSubmit;
+
     return {
       ...(resolvedBehaviorInput ?? {}),
       validate,
+      ...(onSubmit ? { onSubmit } : {}),
     };
-  }, [resolvedBehaviorInput, generatedEnabled, contract, formValidator]);
+  }, [
+    resolvedBehaviorInput,
+    generatedEnabled,
+    contract,
+    formValidator,
+    generated.canSubmit,
+    generated.submit,
+    resolvedMode,
+  ]);
 
   const mergedState = React.useMemo(() => {
-    if (resolvedMode !== "VIEW") return resolvedStateInput;
-    return {
+    const submitAwareState = {
       ...(resolvedStateInput ?? {}),
-      readOnly: resolvedStateInput?.readOnly ?? true,
+      isSubmitting: Boolean(
+        resolvedStateInput?.isSubmitting || generated.submitState.isSubmitting,
+      ),
     };
-  }, [resolvedMode, resolvedStateInput]);
+    if (resolvedMode !== "VIEW") return submitAwareState;
+    return {
+      ...submitAwareState,
+      readOnly: submitAwareState.readOnly ?? true,
+    };
+  }, [resolvedMode, resolvedStateInput, generated.submitState.isSubmitting]);
 
   const mergedActions = React.useMemo(() => {
-    if (resolvedMode !== "VIEW") return resolvedActionsInput;
-    return {
+    const submitAwareActions = {
       ...(resolvedActionsInput ?? {}),
-      hidden: resolvedActionsInput?.hidden ?? true,
+      isSubmitting: Boolean(
+        resolvedActionsInput?.isSubmitting ||
+        generated.submitState.isSubmitting,
+      ),
+      submitOutcome: toActionSubmitOutcome(generated.submitState.outcome),
     };
-  }, [resolvedActionsInput, resolvedMode]);
+    if (resolvedMode !== "VIEW") return submitAwareActions;
+    return {
+      ...submitAwareActions,
+      hidden: submitAwareActions.hidden ?? true,
+    };
+  }, [
+    resolvedActionsInput,
+    resolvedMode,
+    generated.submitState.isSubmitting,
+    generated.submitState.outcome,
+  ]);
 
-  const hydratedDefaultValues = React.useMemo<Partial<TFormValues> | undefined>(
-    () => {
-      if (!shouldFetchInitialData || initialDataQuery.loading) {
-        return undefined;
-      }
-      if (!isRecord(generated.initialValues)) {
-        return {} as Partial<TFormValues>;
-      }
-      return generated.initialValues as Partial<TFormValues>;
-    },
-    [shouldFetchInitialData, initialDataQuery.loading, generated.initialValues],
-  );
+  const hydratedDefaultValues = React.useMemo<
+    Partial<TFormValues> | undefined
+  >(() => {
+    if (!shouldFetchInitialData || initialDataQuery.loading) {
+      return undefined;
+    }
+    if (!isRecord(generated.initialValues)) {
+      return {} as Partial<TFormValues>;
+    }
+    return generated.initialValues as Partial<TFormValues>;
+  }, [
+    shouldFetchInitialData,
+    initialDataQuery.loading,
+    generated.initialValues,
+  ]);
 
   const finalState = React.useMemo(() => {
     const baseState = { ...(mergedState ?? {}) };
@@ -899,6 +1073,7 @@ export function ModelForm<
       )
     );
   }
+  console.log(finalState);
 
   return (
     <div className={cn("space-y-4", containerClassName)}>

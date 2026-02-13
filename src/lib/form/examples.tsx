@@ -21,6 +21,7 @@ import type {
   ModelFormRuntimeOverride,
 } from "@/lib/form/types/generatedContract";
 import { normalizeGeneratedErrorsForForm } from "@/lib/form/utils/errors";
+import { serializeRuntimeOverridesForQuery } from "@/lib/form/utils/jsonCoercion";
 import { buildNestedMutationPayload } from "@/lib/form/utils/nestedMutationPayload";
 import { ModelTableV2 } from "@/lib/table";
 import type { FormSchema } from "@/lib/form";
@@ -901,6 +902,26 @@ const INITIAL_SUBMISSION_STATE: SubmissionState = {
   errors: [],
 };
 
+const PRODUCT_CREATE_RUNTIME_OVERRIDES: ModelFormRuntimeOverride[] = [
+  {
+    path: "metadata",
+    action: "MERGE",
+    value: {
+      created_from: "StoreProductCreateModelFormExample",
+    },
+  },
+];
+
+const PRODUCT_UPDATE_RUNTIME_OVERRIDES: ModelFormRuntimeOverride[] = [
+  {
+    path: "metadata",
+    action: "MERGE",
+    value: {
+      updated_from: "StoreProductUpdateModelFormExample",
+    },
+  },
+];
+
 const ORDER_RUNTIME_OVERRIDES: ModelFormRuntimeOverride[] = [
   { path: "payment_token", action: "UNSET" },
   {
@@ -966,6 +987,10 @@ function useStoreGeneratedForm(options: {
   );
 
   const shouldFetchInitialData = mode === "UPDATE" && Boolean(objectId);
+  const runtimeOverridesForQuery = React.useMemo(
+    () => serializeRuntimeOverridesForQuery(runtimeOverrides),
+    [runtimeOverrides],
+  );
 
   const initialDataQuery = useQuery<
     InitialDataQueryData,
@@ -976,7 +1001,7 @@ function useStoreGeneratedForm(options: {
       modelName,
       objectId: objectId ?? "",
       includeNested,
-      runtimeOverrides,
+      runtimeOverrides: runtimeOverridesForQuery,
     },
     skip: !shouldFetchInitialData,
     fetchPolicy: "network-only",
@@ -1172,11 +1197,14 @@ export function StoreProductCreateModelFormExample() {
         app="store"
         model="Product"
         mode="CREATE"
-        description="Contract-driven form using the ready-to-use ModelForm wrapper."
-        behavior={{
-          onSubmit: async (values) => {
-            // Consumer decides mutation orchestration strategy.
-            console.log("Product create values:", values);
+        runtimeOverrides={PRODUCT_CREATE_RUNTIME_OVERRIDES}
+        description="Auto-wired create example: Save runs generated createOperation with no manual mutation wiring."
+        formProps={{
+          layout: { columns: 2, showSectionHeaders: true },
+          actions: {
+            submitLabel: "Create Product",
+            resetLabel: "Reset",
+            showDirtyIndicator: true,
           },
         }}
       />
@@ -1204,13 +1232,17 @@ export function StoreProductUpdateModelFormExample({
         model="Product"
         mode="UPDATE"
         objectId={objectId}
-        nested={["category", "tags"]}
-        description="Initial values are loaded automatically from modelFormInitialData."
-        // behavior={{
-        //   onSubmit: async (values) => {
-        //     console.log("Product update values:", values);
-        //   },
-        // }}
+        // nested={["category", "tags"]}
+        runtimeOverrides={PRODUCT_UPDATE_RUNTIME_OVERRIDES}
+        description="Auto-wired update example: initial values load from modelFormInitialData and Save runs generated updateOperation."
+        formProps={{
+          layout: { columns: 2, showSectionHeaders: true },
+          actions: {
+            submitLabel: "Update Product",
+            resetLabel: "Reset",
+            showDirtyIndicator: true,
+          },
+        }}
       />
     </section>
   );

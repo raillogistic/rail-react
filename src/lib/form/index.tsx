@@ -30,6 +30,9 @@ export { useFormValidation } from "./hooks/useFormValidation";
 
 // Generated form contract integration
 export * from "./generated";
+export * from "./utils/buildSubmitPayload";
+export * from "./utils/resolveSubmitIdentifier";
+export * from "./utils/submitPerformance";
 
 export function resolveModelFormSchema(options: {
   generatedEnabled: boolean;

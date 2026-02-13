@@ -90,9 +90,23 @@ export type ModelFormMutationBindings = {
   updateOperation: string;
   bulkCreateOperation: string;
   bulkUpdateOperation: string;
+  updateIdentifierKey?: string | null;
   updateTargetPolicy: "PRIMARY_KEY_ONLY";
   bulkCommitPolicy: "ATOMIC";
   conflictPolicy: "REJECT_STALE";
+};
+
+export type ModelFormSubmitBindings = {
+  createOperation: string;
+  updateOperation: string;
+  defaultIdentifierKey: string;
+  formErrorKey: string;
+};
+
+export type ModelFormSubmitContract = {
+  appLabel: string;
+  modelName: string;
+  bindings: ModelFormSubmitBindings;
 };
 
 export type ModelFormErrorPolicy = {
@@ -137,6 +151,7 @@ export type NormalizedModelFormError = {
   message: string;
   code?: string | null;
   source: ModelFormErrorSource;
+  conflict?: boolean;
   rowIndex?: number | null;
   meta?: Record<string, unknown> | null;
 };

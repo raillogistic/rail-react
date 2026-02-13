@@ -61,6 +61,7 @@ export const sampleModelFormContract: ModelFormContract = {
     updateOperation: "updateProduct",
     bulkCreateOperation: "bulkCreateProduct",
     bulkUpdateOperation: "bulkUpdateProduct",
+    updateIdentifierKey: "objectId",
     updateTargetPolicy: "PRIMARY_KEY_ONLY",
     bulkCommitPolicy: "ATOMIC",
     conflictPolicy: "REJECT_STALE",
@@ -70,4 +71,16 @@ export const sampleModelFormContract: ModelFormContract = {
     fieldPathNotation: "dot",
     bulkRowPrefixPattern: "items.<row>.<field>",
   },
+};
+
+export const sampleCreateSubmitBindings = {
+  createOperation: "createProduct",
+  updateOperation: "updateProduct",
+  defaultIdentifierKey: "objectId",
+  formErrorKey: "__all__",
+};
+
+export const sampleUpdateSubmitBindings = {
+  ...sampleCreateSubmitBindings,
+  updateIdentifierKey: "sku",
 };

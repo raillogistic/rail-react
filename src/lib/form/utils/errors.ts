@@ -1,10 +1,20 @@
 import type { Dispatch, SetStateAction } from "react";
-import type { UseFormReturn } from "@tanstack/react-form";
 import type { MutationError } from "../mutations";
 import {
   mapBulkErrorField,
   normalizeGeneratedMutationErrors,
 } from "./normalizeMutationErrors";
+
+export const CANONICAL_FORM_ERROR_KEY = "__all__";
+const CONFLICT_CODES = new Set(["CONFLICT", "STALE_OBJECT", "VERSION_CONFLICT"]);
+
+type FormInstance = {
+  store: {
+    getState?: () => unknown;
+    state?: unknown;
+  };
+  setFieldMeta: (name: any, updater: (prev: any) => any) => void;
+};
 
 export function normalizeErrorFieldPath(field?: string | null): string | null {
   if (!field) return null;
@@ -15,6 +25,18 @@ export function normalizeErrorFieldPath(field?: string | null): string | null {
     .replace(/^\./, "")
     .replace(/\.$/, "");
   return normalized || null;
+}
+
+export function resolveCanonicalFormErrorKey(value?: string | null) {
+  const normalized = String(value ?? "").trim();
+  return normalized || CANONICAL_FORM_ERROR_KEY;
+}
+
+export function ensureCanonicalErrorField(
+  field?: string | null,
+  formErrorKey = CANONICAL_FORM_ERROR_KEY,
+) {
+  return normalizeErrorFieldPath(field) ?? resolveCanonicalFormErrorKey(formErrorKey);
 }
 
 export function buildFieldMatcher(fieldPath: string): RegExp {
@@ -56,7 +78,7 @@ export function resolveFieldMatches(
 
 export function applyErrorsToFormFields(
   errors: MutationError[],
-  form: UseFormReturn<any>
+  form: FormInstance
 ) {
   if (!errors.length) return;
   const state =
@@ -66,10 +88,12 @@ export function applyErrorsToFormFields(
   const fieldMeta: Record<string, any> = (state as any)?.fieldMeta ?? {};
 
   errors.forEach((error) => {
-    const normalizedField = normalizeErrorFieldPath(error.field);
-    if (!normalizedField) return;
+    const normalizedField = ensureCanonicalErrorField(error.field);
     const targets = resolveFieldMatches(normalizedField, fieldMeta);
     const applyTargets = targets.length ? targets : [normalizedField];
+    const isConflict =
+      CONFLICT_CODES.has(String(error.code ?? "").toUpperCase()) ||
+      Boolean((error.details as Record<string, unknown> | undefined)?.conflict);
     applyTargets.forEach((targetName) => {
       form.setFieldMeta(targetName as any, (prev) => {
         const prevErrors = Array.isArray(prev?.errors)
@@ -89,6 +113,12 @@ export function applyErrorsToFormFields(
           errorMap: {
             ...(prev?.errorMap ?? {}),
             onSubmit: error.message,
+            ...(isConflict
+              ? {
+                  onSubmitConflictInstruction:
+                    "Conflict detected. Refresh the form data and retry.",
+                }
+              : {}),
           },
         };
       });
@@ -98,7 +128,7 @@ export function applyErrorsToFormFields(
 
 export function applyServerErrors(
   errors: MutationError[] | null | undefined,
-  form: UseFormReturn<any>,
+  form: FormInstance,
   setMutationErrors: Dispatch<SetStateAction<MutationError[]>>
 ) {
   const normalized = normalizeMutationErrors(errors);
@@ -150,7 +180,7 @@ export function normalizeMutationErrors(
       ?.filter((error): error is MutationError => Boolean(error))
       .map((error) => ({
         ...error,
-        field: normalizeErrorFieldPath(error.field),
+        field: ensureCanonicalErrorField(error.field),
         message: error.message ?? "Une erreur est survenue.",
         severity: normalizeSeverity(error.severity),
       })) ?? []
@@ -158,14 +188,26 @@ export function normalizeMutationErrors(
 }
 
 export function normalizeGeneratedErrorsForForm(
-  errors: unknown
+  errors: unknown,
+  options: {
+    formErrorKey?: string;
+    visibleFieldPaths?: Iterable<string>;
+  } = {},
 ): MutationError[] {
-  return normalizeGeneratedMutationErrors(errors).map((error) => ({
-    field: mapBulkErrorField(error),
+  const formErrorKey = resolveCanonicalFormErrorKey(options.formErrorKey);
+  return normalizeGeneratedMutationErrors(errors, {
+    formErrorKey,
+    visibleFieldPaths: options.visibleFieldPaths,
+  }).map((error) => ({
+    field: mapBulkErrorField(error, formErrorKey),
     message: error.message,
     code: error.code,
     severity: "error",
-    details: error.meta ?? undefined,
+    details: {
+      ...(error.meta ?? {}),
+      conflict: Boolean(error.conflict),
+      refreshRequired: Boolean(error.conflict),
+    },
   }));
 }
 

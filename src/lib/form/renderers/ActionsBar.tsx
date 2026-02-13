@@ -48,9 +48,12 @@ export const ActionsBar = <TValues extends Record<string, any>>({
     confirmSubmit,
     showDirtyIndicator = true,
     undoRedo,
+    isSubmitting: externalSubmitting,
+    submitOutcome,
   } = config ?? {};
 
-  const isSubmitting = useStore(form.store, (state) => state.isSubmitting);
+  const formSubmitting = useStore(form.store, (state) => state.isSubmitting);
+  const isSubmitting = Boolean(formSubmitting || externalSubmitting);
   const canSubmit = useStore(form.store, (state) => state.canSubmit);
   const isDirty = useStore(form.store, (state) => state.isDirty);
 
@@ -166,6 +169,25 @@ export const ActionsBar = <TValues extends Record<string, any>>({
               </>
             )}
           </Button>
+
+          {submitOutcome ? (
+            <span
+              className={cn(
+                "text-xs font-medium",
+                submitOutcome.ok
+                  ? "text-emerald-600"
+                  : submitOutcome.conflict
+                    ? "text-amber-600"
+                    : "text-destructive",
+              )}
+            >
+              {submitOutcome.ok
+                ? "Saved"
+                : submitOutcome.conflict
+                  ? "Refresh required"
+                  : `${submitOutcome.errorCount} error(s)`}
+            </span>
+          ) : null}
         </div>
       </div>
 

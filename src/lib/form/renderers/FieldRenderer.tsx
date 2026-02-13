@@ -163,24 +163,34 @@ export const FieldRenderer = <TValues extends Record<string, any>>({
       name={path as any}
       validators={validators}
     >
-      {(fieldApi) => (
-        <div
-          className="animate-in fade-in slide-in-from-bottom-1 duration-200"
-          style={
-            colSpan
-              ? { gridColumn: `span ${colSpan} / span ${colSpan}` }
-              : undefined
-          }
-        >
-          {Component ? (
-            <Component
-              config={effectiveConfig as PrimitiveField}
-              field={fieldApi}
-              form={form as any}
-            />
-          ) : null}
-        </div>
-      )}
+      {(fieldApi) => {
+        const refreshInstruction = resolveConflictRefreshInstruction(
+          fieldApi.state.meta,
+        );
+        return (
+          <div
+            className="animate-in fade-in slide-in-from-bottom-1 duration-200"
+            style={
+              colSpan
+                ? { gridColumn: `span ${colSpan} / span ${colSpan}` }
+                : undefined
+            }
+          >
+            {Component ? (
+              <Component
+                config={effectiveConfig as PrimitiveField}
+                field={fieldApi}
+                form={form as any}
+              />
+            ) : null}
+            {refreshInstruction ? (
+              <p className="mt-1 text-xs font-medium text-amber-700">
+                {refreshInstruction}
+              </p>
+            ) : null}
+          </div>
+        );
+      }}
     </form.Field>
   );
 };
@@ -279,4 +289,13 @@ function isPromise<T = unknown>(value: unknown): value is Promise<T> {
     value !== null &&
     typeof (value as Promise<T>).then === "function"
   );
+}
+
+export function resolveConflictRefreshInstruction(meta: unknown): string | null {
+  const errorMap = (meta as { errorMap?: Record<string, unknown> } | undefined)?.errorMap;
+  const hint = errorMap?.onSubmitConflictInstruction;
+  if (typeof hint === "string" && hint.trim()) {
+    return hint;
+  }
+  return null;
 }

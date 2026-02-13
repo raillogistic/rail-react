@@ -28,6 +28,8 @@ export interface FormStateConfig<TValues> {
   disabled?: boolean;
   /** External loading state that disables interactions */
   isLoading?: boolean;
+  /** External submit lifecycle loading state (separate from data loading). */
+  isSubmitting?: boolean;
   /** Fired once the form instance is initialized */
   onReady?: (form: UseFormReturn<TValues>) => void;
   /**
