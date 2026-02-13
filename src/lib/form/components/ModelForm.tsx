@@ -189,8 +189,7 @@ function parseRelationNestedFormConfig(
   const rawColumns = layout?.columns ?? record.columns;
 
   return {
-    enabled:
-      typeof record.enabled === "boolean" ? record.enabled : undefined,
+    enabled: typeof record.enabled === "boolean" ? record.enabled : undefined,
     fields: toOptionalStringArray(record.fields),
     excludeFields: toOptionalStringArray(
       record.excludeFields ?? record.exclude_fields,
@@ -232,7 +231,9 @@ function collectUniqueTopLevelFields(
   schema: FormSchema<Record<string, unknown>>,
 ): FormFieldConfig[] {
   const sourceFields =
-    schema.sections?.flatMap((section) => section.fields) ?? schema.fields ?? [];
+    schema.sections?.flatMap((section) => section.fields) ??
+    schema.fields ??
+    [];
   const uniqueFields = new Map<string, FormFieldConfig>();
 
   for (const field of sourceFields) {
@@ -283,7 +284,9 @@ function buildNestedRelationFieldConfig(
   } as FormFieldConfig;
 }
 
-function materializeNestedRelationFields<TValues extends Record<string, unknown>>(
+function materializeNestedRelationFields<
+  TValues extends Record<string, unknown>,
+>(
   schema: FormSchema<TValues>,
   options: {
     contract: ModelFormContract | null;
@@ -333,7 +336,9 @@ function materializeNestedRelationFields<TValues extends Record<string, unknown>
         relatedContract,
       );
 
-      const nestedFormConfig = parseRelationNestedFormConfig(relation.nestedForm);
+      const nestedFormConfig = parseRelationNestedFormConfig(
+        relation.nestedForm,
+      );
       const includeNestedSelectors = mergePathLists(
         nestedFormConfig?.fields,
         nestedControl.onlyFields ?? nestedControl.fields,
@@ -967,11 +972,7 @@ export function ModelForm<
       );
 
     return nestedPaths.length > 0 ? nestedPaths : undefined;
-  }, [
-    nestedControls,
-    resolvedOnlyRelationships,
-    resolvedExcludeRelationships,
-  ]);
+  }, [nestedControls, resolvedOnlyRelationships, resolvedExcludeRelationships]);
   const updateRequiresObjectId =
     resolvedMode === "UPDATE" &&
     requireObjectIdForUpdate &&
@@ -991,10 +992,12 @@ export function ModelForm<
         includeNested: shouldIncludeNested,
       },
       skip: !generatedEnabled || !resolvedApp || !resolvedModel,
-      fetchPolicy: "cache-and-network",
+      fetchPolicy: "network-only",
+      nextFetchPolicy: "cache-first",
+      returnPartialData: false,
+      notifyOnNetworkStatusChange: true,
     },
   );
-
   const initialDataQuery = useQuery<
     InitialDataQueryData,
     InitialDataQueryVariables
@@ -1208,7 +1211,6 @@ export function ModelForm<
     sectionOverrides,
     nestedControls,
   ]);
-
   const mergedBehavior = React.useMemo<
     FormBehaviorConfig<TFormValues> | undefined
   >(() => {
@@ -1358,16 +1360,20 @@ export function ModelForm<
     const baseKey = `${resolvedApp}:${resolvedModel}:${resolvedMode}:${
       resolvedObjectIdValue ?? "new"
     }`;
+    const schemaHash = stableHashOfValue({
+      sections: controlledSchema.sections ?? [],
+      fields: controlledSchema.fields ?? [],
+    });
 
     if (!shouldFetchInitialData) {
-      return `${baseKey}:standard`;
+      return `${baseKey}:standard:${schemaHash}`;
     }
 
     if (initialDataQuery.loading) {
-      return `${baseKey}:loading`;
+      return `${baseKey}:loading:${schemaHash}`;
     }
 
-    return `${baseKey}:hydrated:${stableHashOfValue(
+    return `${baseKey}:hydrated:${schemaHash}:${stableHashOfValue(
       hydratedDefaultValues ?? {},
     )}`;
   }, [
@@ -1378,6 +1384,8 @@ export function ModelForm<
     shouldFetchInitialData,
     initialDataQuery.loading,
     hydratedDefaultValues,
+    controlledSchema.sections,
+    controlledSchema.fields,
   ]);
 
   const contractError = contractQuery.error
@@ -1386,10 +1394,14 @@ export function ModelForm<
   const initialDataError = initialDataQuery.error
     ? toError(initialDataQuery.error)
     : null;
+  const shouldWaitForNestedRelationContracts =
+    generatedEnabled && nestedRelationModelRefs.length > 0;
 
   const isLoading =
     (generatedEnabled && contractQuery.loading) ||
-    (shouldFetchInitialData && initialDataQuery.loading);
+    (shouldFetchInitialData && initialDataQuery.loading) ||
+    (shouldWaitForNestedRelationContracts &&
+      nestedRelationContractsQuery.loading);
 
   const hasRenderableFields = Boolean(
     controlledSchema.sections?.some((section) => section.fields.length > 0) ||
@@ -1457,8 +1469,6 @@ export function ModelForm<
       )
     );
   }
-  console.log(finalState);
-
   return (
     <div className={cn("space-y-4", containerClassName)}>
       {showHeading && (title || description) ? (

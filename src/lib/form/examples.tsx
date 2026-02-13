@@ -1236,7 +1236,10 @@ export function StoreProductUpdateModelFormExample({
         runtimeOverrides={PRODUCT_UPDATE_RUNTIME_OVERRIDES}
         description="Auto-wired update example: initial values load from modelFormInitialData and Save runs generated updateOperation."
         formProps={{
-          layout: { columns: 2, showSectionHeaders: true },
+          layout: {
+            columns: 3,
+            showSectionHeaders: true,
+          },
           actions: {
             submitLabel: "Update Product",
             resetLabel: "Reset",

@@ -324,4 +324,66 @@ describe("useGeneratedModelForm adapter", () => {
     expect(result.current.initialValues.order_items).toEqual([5, 8, 17]);
     expect(result.current.initialValues).not.toHaveProperty("orderItems");
   });
+
+  it("injects non-section contract fields when section paths are incomplete", () => {
+    const contract: ModelFormContract = {
+      ...sampleModelFormContract,
+      fields: [
+        {
+          ...sampleModelFormContract.fields[0],
+          path: "name",
+          fieldName: "name",
+          label: "Name",
+        },
+        {
+          ...sampleModelFormContract.fields[1],
+          path: "price",
+          fieldName: "price",
+          label: "Price",
+        },
+        {
+          ...sampleModelFormContract.fields[1],
+          path: "inventory_count",
+          fieldName: "inventory_count",
+          label: "Inventory",
+          kind: "NUMBER",
+        },
+      ],
+      sections: [
+        {
+          ...sampleModelFormContract.sections[0],
+          fieldPaths: ["name"],
+        },
+      ],
+      relations: [
+        {
+          path: "category",
+          label: "Category",
+          relationType: "FOREIGN_KEY",
+          toMany: false,
+          relatedAppLabel: "store",
+          relatedModelName: "Category",
+          policy: {
+            path: "category",
+            allowedActions: ["CONNECT", "SET"],
+            blockedActions: [],
+            nestedEnabled: false,
+          },
+          nestedForm: null,
+        },
+      ],
+    };
+
+    const { result } = renderHook(() =>
+      useGeneratedModelForm({
+        generatedEnabled: true,
+        contract,
+      }),
+    );
+
+    const fieldNames = result.current.schema.sections?.[0]?.fields.map(
+      (field) => field.name,
+    );
+    expect(fieldNames).toEqual(["name", "price", "inventory_count", "category"]);
+  });
 });

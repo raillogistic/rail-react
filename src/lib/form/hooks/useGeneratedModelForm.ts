@@ -332,16 +332,13 @@ export function buildSchemaFromContract(
     })
     .filter((section) => section.fields.length > 0);
 
-  const danglingRelationFields = (contract.relations ?? [])
-    .map((relation) => fieldsByPath.get(relation.path))
-    .filter(
-      (field): field is FormFieldConfig =>
-        Boolean(field) && !assignedPaths.has(field.name),
-    );
+  const danglingFields = Array.from(fieldsByPath.values()).filter(
+    (field) => !assignedPaths.has(field.name),
+  );
 
-  if (danglingRelationFields.length > 0) {
+  if (danglingFields.length > 0) {
     const seen = new Set<string>();
-    const deduped = danglingRelationFields.filter((field) => {
+    const deduped = danglingFields.filter((field) => {
       if (seen.has(field.name)) return false;
       seen.add(field.name);
       return true;
@@ -353,17 +350,15 @@ export function buildSchemaFromContract(
       };
     } else {
       sections.push({
-        id: "relations",
-        title: "Relations",
+        id: "default",
         fields: deduped,
       });
     }
   }
 
-  const fallbackFields = Array.from(fieldsByPath.values());
   return {
     id: contract.id,
-    sections: sections.length ? sections : [{ id: "default", fields: fallbackFields }],
+    sections,
   };
 }
 
