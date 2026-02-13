@@ -1235,6 +1235,7 @@ export function StoreProductUpdateModelFormExample({
         nested={{
           order_items: {
             sortable: { enabled: true, mode: "buttons" },
+            itemLabel: "Ordres",
           },
         }}
         runtimeOverrides={PRODUCT_UPDATE_RUNTIME_OVERRIDES}

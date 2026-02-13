@@ -67,9 +67,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         "overflow-hidden border-r border-sidebar-border/40 bg-sidebar text-sidebar-foreground transition-all duration-500",
         layout === "mixed" && "top-14 h-[calc(100svh-3.5rem)]",
       )}
+      style={{
+        ...props.style,
+        "--foreground": "var(--sidebar-foreground)",
+        "--muted-foreground": "var(--sidebar-foreground)",
+      } as React.CSSProperties}
     >
       {/* Premium Glass & Mesh Background */}
-      <div className="absolute inset-0 z-0 bg-background/50 backdrop-blur-xl" />
+      <div className="absolute inset-0 z-0 bg-background/10 backdrop-blur-xl" />
       <div
         className="absolute inset-0 z-0 opacity-[0.03] pointer-events-none"
         style={{
