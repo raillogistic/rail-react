@@ -243,6 +243,17 @@ export interface ListFieldConfig extends BaseFieldConfig {
     activate: boolean;
     toField: string;
   };
+  relationOps?: {
+    scalarListOperation?: "connect" | "set";
+    removeOperation?: "disconnect" | "delete";
+  };
+  deleteMutation?: {
+    enabled?: boolean;
+    operationName?: string;
+    modelName?: string;
+    idPath?: string;
+    selection?: string;
+  };
   fields: FormFieldConfig[];
 }
 

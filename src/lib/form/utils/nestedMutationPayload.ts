@@ -31,6 +31,22 @@ type IdentityResolution = {
   value: string | number;
 };
 
+export type NestedRelationOperationOverride = {
+  scalarListOperation?: "connect" | "set";
+  removeOperation?: "disconnect" | "delete";
+};
+
+export type NestedMutationOperationOverrides = Record<
+  string,
+  NestedRelationOperationOverride
+>;
+
+export type BuildNestedMutationPayloadOptions = {
+  mode?: NestedPayloadMode;
+  operationOverrides?: NestedMutationOperationOverrides;
+  baselineValues?: Record<string, unknown>;
+};
+
 function buildRelationLookupKeys(relation: ModelFormContractRelation): string[] {
   const keys = new Set<string>();
   const add = (value: string | undefined | null) => {
@@ -61,6 +77,13 @@ function isPresentIdentityValue(value: unknown): value is string | number {
   if (typeof value === "number") return Number.isFinite(value);
   if (typeof value !== "string") return false;
   return value.trim().length > 0;
+}
+
+function isPersistableIdentityValue(value: unknown): value is string | number {
+  return (
+    (typeof value === "string" && value.trim().length > 0) ||
+    (typeof value === "number" && Number.isFinite(value))
+  );
 }
 
 export function resolveNestedIdentityKey(
@@ -226,6 +249,10 @@ function normalizeToManyRelationArrayInput(
   relationPath: string,
   values: unknown[],
   mode: NestedPayloadMode,
+  options: {
+    override?: NestedRelationOperationOverride;
+    baselineValue?: unknown;
+  },
 ) {
   if (values.length === 0) {
     if (mode === "UPDATE") {
@@ -279,10 +306,16 @@ function normalizeToManyRelationArrayInput(
 
   const normalized: Record<string, unknown> = {};
   const hasObjectValues = createValues.length > 0 || updateValues.length > 0;
+  const scalarModeOverride = options.override?.scalarListOperation;
+  const removeModeOverride = options.override?.removeOperation;
 
   if (scalarValues.length > 0) {
     const scalarAction =
-      mode === "UPDATE" && !hasObjectValues ? "SET" : "CONNECT";
+      mode === "UPDATE" && !hasObjectValues
+        ? scalarModeOverride === "connect"
+          ? "CONNECT"
+          : "SET"
+        : "CONNECT";
     assertActionAllowed(relation, relationPath, scalarAction, true);
     normalized[scalarAction === "SET" ? "set" : "connect"] =
       mode === "UPDATE" && !hasObjectValues ? scalarValues : [...scalarValues];
@@ -296,6 +329,28 @@ function normalizeToManyRelationArrayInput(
     normalized.create = createValues;
   }
 
+  if (mode === "UPDATE" && removeModeOverride) {
+    const baselinePersistedIds = extractPersistedRelationIdsFromArray(
+      Array.isArray(options.baselineValue) ? options.baselineValue : [],
+    );
+    if (baselinePersistedIds.length > 0) {
+      const currentPersistedIds = extractPersistedRelationIdsFromArray(values);
+      const currentIdKeys = new Set(currentPersistedIds.map((item) => String(item)));
+      const removedIds = baselinePersistedIds.filter(
+        (item) => !currentIdKeys.has(String(item)),
+      );
+      const usesSetReplacement = typeof normalized.set !== "undefined";
+
+      if (removedIds.length > 0 && !usesSetReplacement) {
+        const removedAction =
+          removeModeOverride === "delete" ? "DELETE" : "DISCONNECT";
+        assertActionAllowed(relation, relationPath, removedAction, true);
+        normalized[removedAction === "DELETE" ? "delete" : "disconnect"] =
+          removedIds;
+      }
+    }
+  }
+
   return normalized;
 }
 
@@ -304,6 +359,10 @@ function normalizeToManyRelationInput(
   relationPath: string,
   value: unknown,
   mode: NestedPayloadMode,
+  options: {
+    override?: NestedRelationOperationOverride;
+    baselineValue?: unknown;
+  },
 ) {
   if (value === null) {
     assertActionAllowed(relation, relationPath, "CLEAR", true);
@@ -316,6 +375,7 @@ function normalizeToManyRelationInput(
       relationPath,
       value,
       mode,
+      options,
     );
   }
 
@@ -347,6 +407,10 @@ function normalizeRelationInput(
   relationPath: string,
   value: unknown,
   mode: NestedPayloadMode,
+  options: {
+    override?: NestedRelationOperationOverride;
+    baselineValue?: unknown;
+  },
 ) {
   if (classifyRelationInputShape(value) === "EXPLICIT_OPERATION") {
     return normalizeExplicitOperationInput(
@@ -357,16 +421,99 @@ function normalizeRelationInput(
   }
 
   if (relation?.toMany) {
-    return normalizeToManyRelationInput(relation, relationPath, value, mode);
+    return normalizeToManyRelationInput(
+      relation,
+      relationPath,
+      value,
+      mode,
+      options,
+    );
   }
   return normalizeToOneRelationInput(relation, relationPath, value);
+}
+
+function resolveRelationOverride(
+  overrides: NestedMutationOperationOverrides | undefined,
+  relation: ModelFormContractRelation | undefined,
+  relationPath: string,
+): NestedRelationOperationOverride | undefined {
+  if (!overrides) return undefined;
+  const lookupKeys = new Set<string>();
+  const add = (value?: string | null) => {
+    const normalized = String(value ?? "").trim();
+    if (normalized) {
+      lookupKeys.add(normalized);
+    }
+  };
+
+  add(relationPath);
+  add(relation?.name);
+  add(relation?.path);
+
+  for (const key of lookupKeys) {
+    const override = overrides[key];
+    if (override) return override;
+  }
+
+  return undefined;
+}
+
+function resolveBaselineRelationValue(
+  baselineValues: Record<string, unknown> | undefined,
+  relation: ModelFormContractRelation | undefined,
+  relationPath: string,
+): unknown {
+  if (!baselineValues) return undefined;
+
+  const lookupKeys = new Set<string>();
+  const add = (value?: string | null) => {
+    const normalized = String(value ?? "").trim();
+    if (normalized) {
+      lookupKeys.add(normalized);
+    }
+  };
+
+  add(relationPath);
+  add(relation?.name);
+  add(relation?.path);
+
+  for (const key of lookupKeys) {
+    if (Object.prototype.hasOwnProperty.call(baselineValues, key)) {
+      return baselineValues[key];
+    }
+  }
+
+  return undefined;
+}
+
+function extractPersistedRelationIdsFromArray(values: unknown[]) {
+  const ids: Array<string | number> = [];
+  for (const item of values) {
+    if (isPersistableIdentityValue(item)) {
+      ids.push(item);
+      continue;
+    }
+    const identity = resolveNestedIdentityKey(item);
+    if (identity && isPersistableIdentityValue(identity.value)) {
+      ids.push(identity.value);
+    }
+  }
+  return ids;
 }
 
 export function buildNestedMutationPayload(
   values: Record<string, unknown>,
   relations: ModelFormContractRelation[] = [],
-  mode: NestedPayloadMode = "CREATE",
+  modeOrOptions: NestedPayloadMode | BuildNestedMutationPayloadOptions = "CREATE",
 ) {
+  const options: BuildNestedMutationPayloadOptions =
+    typeof modeOrOptions === "string"
+      ? { mode: modeOrOptions }
+      : modeOrOptions ?? {};
+  const mode = options.mode ?? "CREATE";
+  const operationOverrides = options.operationOverrides;
+  const baselineValues = options.baselineValues;
+
   const relationByPath = new Map<string, ModelFormContractRelation>();
   for (const relation of relations) {
     for (const key of buildRelationLookupKeys(relation)) {
@@ -397,6 +544,18 @@ export function buildNestedMutationPayload(
       canonicalRelationName,
       value,
       mode,
+      {
+        override: resolveRelationOverride(
+          operationOverrides,
+          relation,
+          canonicalRelationName,
+        ),
+        baselineValue: resolveBaselineRelationValue(
+          baselineValues,
+          relation,
+          canonicalRelationName,
+        ),
+      },
     );
   }
 

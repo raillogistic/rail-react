@@ -83,6 +83,17 @@ export type ModelFormNestedFieldsOrderMode =
   | "fields"
   | "custom";
 
+export type ModelFormNestedScalarListOperation = "connect" | "set";
+export type ModelFormNestedRemoveOperation = "disconnect" | "delete";
+
+export type ModelFormNestedDeleteMutationConfig = {
+  enabled?: boolean;
+  operationName?: string;
+  modelName?: string;
+  idPath?: string;
+  selection?: string;
+};
+
 export type ModelFormNestedDefinition<TValues extends Record<string, unknown>> = {
   enabled?: boolean;
   title?: string;
@@ -101,6 +112,20 @@ export type ModelFormNestedDefinition<TValues extends Record<string, unknown>> =
   minItems?: number;
   maxItems?: number;
   collapsible?: boolean;
+  /**
+   * Override inferred scalar-list action for to-many relations in UPDATE mode.
+   * - "set": replacement semantics (default generated behavior)
+   * - "connect": additive semantics (pair with `removeOperation` if needed)
+   */
+  scalarListOperation?: ModelFormNestedScalarListOperation;
+  /**
+   * Override action used for persisted rows removed from nested to-many lists.
+   */
+  removeOperation?: ModelFormNestedRemoveOperation;
+  /**
+   * Optional direct delete mutation triggered by nested list remove button.
+   */
+  deleteMutation?: ModelFormNestedDeleteMutationConfig;
   fieldOverrides?: ModelFormFieldOverrides;
   sectionOverrides?: ModelFormSectionOverrides<TValues>;
 };

@@ -328,6 +328,66 @@ describe("generated submit workflow", () => {
     );
   });
 
+  it("applies nested operation overrides during submit payload build", async () => {
+    const updateExecutor = vi.fn().mockResolvedValue({
+      ok: true,
+      errors: [],
+      conflict: false,
+      formErrorKey: "__all__",
+    });
+
+    const { result } = renderHook(() =>
+      useGeneratedModelForm({
+        generatedEnabled: true,
+        contract: {
+          ...sampleModelFormContractWithRelations,
+          relations: [manyItemsRelation],
+        },
+        submitMode: "UPDATE",
+        objectId: "order-1",
+        relationOperationOverrides: {
+          items: {
+            removeOperation: "disconnect",
+          },
+        },
+        initialData: {
+          appLabel: "store",
+          modelName: "Product",
+          objectId: "order-1",
+          values: {
+            items: [
+              { id: "item-1", quantity: 2 },
+              { id: "item-2", quantity: 1 },
+            ],
+          },
+          readonlyValues: null,
+          loadedAt: "2026-02-14T00:00:00Z",
+        },
+        executeMutation: updateExecutor,
+      }),
+    );
+
+    await act(async () => {
+      await result.current.submit({
+        items: [{ id: "item-2", quantity: 9 }],
+      });
+    });
+
+    expect(updateExecutor).toHaveBeenCalledWith(
+      "updateProduct",
+      {
+        objectId: "order-1",
+        input: {
+          items: {
+            update: [{ id: "item-2", quantity: 9 }],
+            disconnect: ["item-1"],
+          },
+        },
+      },
+      expect.anything(),
+    );
+  });
+
   it("fails fast with relation-scoped validation errors for blocked inferred actions", async () => {
     const executeMutation = vi.fn().mockResolvedValue({
       ok: true,
@@ -360,7 +420,7 @@ describe("generated submit workflow", () => {
     expect(outcome?.ok).toBe(false);
     expect(outcome?.errors[0]?.field).toBe("items");
     expect(outcome?.errors[0]?.source).toBe("OPERATION");
-    expect(outcome?.errors[0]?.message).toMatch(/blocked/i);
+    expect(outcome?.errors[0]?.message).toMatch(/(blocked|bloqu)/i);
   });
 
   it("preserves explicit operation payloads and still enforces blocked explicit actions", async () => {

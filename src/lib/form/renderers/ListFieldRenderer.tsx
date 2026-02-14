@@ -5,6 +5,7 @@
 import React from "react";
 import type { UseFormReturn } from "@tanstack/react-form";
 import { useStore } from "@tanstack/react-form";
+import { gql, useApolloClient } from "@apollo/client";
 import { Button } from "@/lib/components/ui/button";
 import { cn } from "@/lib/utils";
 import {
@@ -22,6 +23,11 @@ import { FieldRenderer } from "./FieldRenderer";
 import { buildResponsiveGridClass } from "./utils";
 import { buildDefaultsFromFields } from "../hooks/useFormDefaults";
 import { createValidators } from "./FieldRenderer";
+import {
+  buildGeneratedDeleteMutationDocument,
+  getMutationFieldName,
+} from "../mutations";
+import { resolveNestedIdentityKey } from "../utils/nestedMutationPayload";
 
 import {
   DndContext,
@@ -123,6 +129,7 @@ const ListFieldItems = <TValues extends Record<string, any>>({
   globalDisabled,
   hiddenFields,
 }: ListFieldItemsProps<TValues>) => {
+  const apolloClient = useApolloClient();
   const meta = fieldApi.state?.meta;
   const submitCount = useStore(
     form.store,
@@ -148,6 +155,84 @@ const ListFieldItems = <TValues extends Record<string, any>>({
     (config.sortable ?? config.ordering?.activate ?? false) && !isReadOnly && !globalDisabled;
   const useDragAndDrop = isOrderingEnabled && sortingMode === "drag&drop";
   const useButtonsOrdering = isOrderingEnabled && sortingMode === "buttons";
+  const [pendingDeleteKeys, setPendingDeleteKeys] = React.useState<Set<string>>(
+    () => new Set(),
+  );
+
+  const resolveIdentityValue = React.useCallback(
+    (item: unknown) => {
+      if (!item || typeof item !== "object" || Array.isArray(item)) {
+        return null;
+      }
+
+      const deleteIdPath = config.deleteMutation?.idPath?.trim();
+      if (deleteIdPath) {
+        const value = deleteIdPath
+          .split(".")
+          .reduce<unknown>((cursor, token) => {
+            if (!cursor || typeof cursor !== "object" || Array.isArray(cursor)) {
+              return undefined;
+            }
+            return (cursor as Record<string, unknown>)[token];
+          }, item);
+
+        if (
+          (typeof value === "string" && value.trim().length > 0) ||
+          (typeof value === "number" && Number.isFinite(value))
+        ) {
+          return value;
+        }
+      }
+
+      return resolveNestedIdentityKey(item)?.value ?? null;
+    },
+    [config.deleteMutation?.idPath],
+  );
+
+  const directDeleteConfig = React.useMemo(() => {
+    if (!config.deleteMutation?.enabled) {
+      return null;
+    }
+
+    const operationName =
+      config.deleteMutation.operationName?.trim() ||
+      (config.deleteMutation.modelName
+        ? getMutationFieldName(config.deleteMutation.modelName, "delete")
+        : "");
+
+    const modelName = config.deleteMutation.modelName?.trim();
+    if (!operationName || !modelName) {
+      return null;
+    }
+
+    const selection = config.deleteMutation.selection?.trim() || "id";
+
+    return {
+      operationName,
+      modelName,
+      selection,
+    };
+  }, [config.deleteMutation]);
+
+  const withPendingDelete = React.useCallback(
+    async (deleteKey: string, run: () => Promise<void>) => {
+      setPendingDeleteKeys((prev) => {
+        const next = new Set(prev);
+        next.add(deleteKey);
+        return next;
+      });
+      try {
+        await run();
+      } finally {
+        setPendingDeleteKeys((prev) => {
+          const next = new Set(prev);
+          next.delete(deleteKey);
+          return next;
+        });
+      }
+    },
+    [],
+  );
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -176,11 +261,57 @@ const ListFieldItems = <TValues extends Record<string, any>>({
   }, [config.fields, config.ordering, enforceOrdering, fieldApi, items]);
 
   const handleRemove = React.useCallback(
-    (index: number) => {
-      const next = (items ?? []).filter((_: any, idx: number) => idx !== index);
-      fieldApi.setValue(enforceOrdering(next));
+    async (index: number) => {
+      const targetItem = (items ?? [])[index];
+      if (!targetItem) return;
+
+      const identity = resolveIdentityValue(targetItem);
+      const deleteKey = String(identity ?? index);
+
+      const removeLocalItem = () => {
+        const next = (items ?? []).filter((_: any, idx: number) => idx !== index);
+        fieldApi.setValue(enforceOrdering(next));
+      };
+
+      if (!directDeleteConfig || identity === null || identity === undefined) {
+        removeLocalItem();
+        return;
+      }
+
+      await withPendingDelete(deleteKey, async () => {
+        const mutation = gql(
+          buildGeneratedDeleteMutationDocument(
+            directDeleteConfig.operationName,
+            directDeleteConfig.modelName,
+            directDeleteConfig.selection,
+          ),
+        );
+
+        const result = await apolloClient.mutate({
+          mutation,
+          variables: { id: identity },
+        });
+        const response = (result?.data as Record<string, any> | undefined)?.response;
+        if (response && response.ok === false) {
+          throw new Error(
+            Array.isArray(response.errors) && response.errors.length > 0
+              ? String(response.errors[0]?.message ?? "Delete mutation failed.")
+              : "Delete mutation failed.",
+          );
+        }
+
+        removeLocalItem();
+      });
     },
-    [enforceOrdering, fieldApi, items],
+    [
+      apolloClient,
+      directDeleteConfig,
+      enforceOrdering,
+      fieldApi,
+      items,
+      resolveIdentityValue,
+      withPendingDelete,
+    ],
   );
 
   const handleDragEnd = React.useCallback(
@@ -298,11 +429,15 @@ const ListFieldItems = <TValues extends Record<string, any>>({
                     hiddenFields={hiddenFields}
                     isOrderingEnabled={useDragAndDrop}
                     orderingMode={sortingMode}
+                    itemValue={(items ?? [])[index]}
+                    deletePending={pendingDeleteKeys.has(
+                      String(resolveIdentityValue((items ?? [])[index]) ?? index),
+                    )}
                     canMoveUp={useButtonsOrdering ? index > 0 : false}
                     canMoveDown={useButtonsOrdering ? index < items.length - 1 : false}
                     onMoveUp={() => handleMove(index, "up")}
                     onMoveDown={() => handleMove(index, "down")}
-                    onRemove={() => handleRemove(index)}
+                    onRemove={() => void handleRemove(index)}
                   />
                 ))}
               </div>
@@ -319,6 +454,7 @@ const ListFieldItems = <TValues extends Record<string, any>>({
 type SortableListItemProps<TValues> = {
   id: string;
   index: number;
+  itemValue: unknown;
   config: ListFieldConfig;
   path: string;
   form: UseFormReturn<TValues>;
@@ -329,6 +465,7 @@ type SortableListItemProps<TValues> = {
   hiddenFields?: Set<string>;
   isOrderingEnabled?: boolean;
   orderingMode?: "drag&drop" | "buttons";
+  deletePending?: boolean;
   canMoveUp?: boolean;
   canMoveDown?: boolean;
   onMoveUp?: () => void;
@@ -339,6 +476,7 @@ type SortableListItemProps<TValues> = {
 const SortableListItem = <TValues extends Record<string, any>>({
   id,
   index,
+  itemValue,
   config,
   path,
   form,
@@ -349,6 +487,7 @@ const SortableListItem = <TValues extends Record<string, any>>({
   hiddenFields,
   isOrderingEnabled,
   orderingMode,
+  deletePending,
   canMoveUp,
   canMoveDown,
   onMoveUp,
@@ -369,6 +508,9 @@ const SortableListItem = <TValues extends Record<string, any>>({
     transition,
     zIndex: isDragging ? 50 : undefined,
   } as React.CSSProperties;
+
+  const identity = resolveNestedIdentityKey(itemValue)?.value;
+  const isPersisted = identity !== undefined && identity !== null;
 
   return (
     <div 
@@ -405,6 +547,16 @@ const SortableListItem = <TValues extends Record<string, any>>({
             <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/40">
               {config.itemLabel ?? "Item"}
             </span>
+            <span
+              className={cn(
+                "rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide",
+                isPersisted
+                  ? "bg-emerald-500/10 text-emerald-700"
+                  : "bg-amber-500/10 text-amber-700",
+              )}
+            >
+              {isPersisted ? "Existing" : "New"}
+            </span>
           </div>
 
           <div className="flex items-center gap-1.5 opacity-0 transition-opacity group-hover/item:opacity-100 focus-within:opacity-100">
@@ -440,7 +592,7 @@ const SortableListItem = <TValues extends Record<string, any>>({
                     variant="ghost"
                     className="size-5 rounded-md text-muted-foreground/30 hover:bg-destructive/10 hover:text-destructive"
                     onClick={onRemove}
-                    disabled={!!globalDisabled}
+                    disabled={!!globalDisabled || !!deletePending}
                   >
                     <Trash2 className="size-2.5" />
                   </Button>

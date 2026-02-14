@@ -2,7 +2,10 @@ import type {
   ModelFormContractRelation,
   ModelFormMode,
 } from "../types/generatedContract";
-import { buildNestedMutationPayload } from "./nestedMutationPayload";
+import {
+  buildNestedMutationPayload,
+  type NestedMutationOperationOverrides,
+} from "./nestedMutationPayload";
 import type { ResolvedSubmitIdentifier } from "./resolveSubmitIdentifier";
 
 export type SubmitPayloadEnvelope = {
@@ -17,6 +20,8 @@ export type BuildSubmitPayloadOptions = {
   operationName: string;
   resolvedValues: Record<string, unknown>;
   relations?: ModelFormContractRelation[];
+  relationOperationOverrides?: NestedMutationOperationOverrides;
+  baselineValues?: Record<string, unknown>;
   identifier?: ResolvedSubmitIdentifier | null;
 };
 
@@ -26,7 +31,11 @@ export function buildSubmitPayload(
   const input = buildNestedMutationPayload(
     options.resolvedValues,
     options.relations ?? [],
-    options.mode,
+    {
+      mode: options.mode,
+      operationOverrides: options.relationOperationOverrides,
+      baselineValues: options.baselineValues,
+    },
   );
 
   if (options.mode !== "UPDATE") {

@@ -1,7 +1,10 @@
 import type {
   ModelFormNestedConfig,
+  ModelFormNestedDeleteMutationConfig,
   ModelFormNestedDefinition,
   ModelFormNestedFieldsOrderMode,
+  ModelFormNestedRemoveOperation,
+  ModelFormNestedScalarListOperation,
 } from "../../types.model";
 
 export type RelationNestedFormConfig = {
@@ -27,6 +30,9 @@ export type RelationNestedFormConfig = {
   };
   minItems?: number;
   maxItems?: number;
+  scalarListOperation?: ModelFormNestedScalarListOperation;
+  removeOperation?: ModelFormNestedRemoveOperation;
+  deleteMutation?: ModelFormNestedDeleteMutationConfig;
   metadata?: Record<string, unknown> | null;
 };
 
@@ -99,6 +105,26 @@ function parseFieldsOrderMode(
   ) {
     return "custom";
   }
+  return undefined;
+}
+
+function parseScalarListOperation(
+  value: unknown,
+): ModelFormNestedScalarListOperation | undefined {
+  if (typeof value !== "string") return undefined;
+  const normalized = value.trim().toLowerCase();
+  if (normalized === "connect") return "connect";
+  if (normalized === "set") return "set";
+  return undefined;
+}
+
+function parseRemoveOperation(
+  value: unknown,
+): ModelFormNestedRemoveOperation | undefined {
+  if (typeof value !== "string") return undefined;
+  const normalized = value.trim().toLowerCase();
+  if (normalized === "disconnect") return "disconnect";
+  if (normalized === "delete") return "delete";
   return undefined;
 }
 
@@ -177,6 +203,43 @@ function parseSortableConfig(value: unknown):
   };
 }
 
+function parseDeleteMutationConfig(
+  value: unknown,
+): ModelFormNestedDeleteMutationConfig | undefined {
+  if (typeof value === "boolean") {
+    return { enabled: value };
+  }
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return undefined;
+  }
+  const record = value as Record<string, unknown>;
+  const enabled = toOptionalBoolean(record.enabled ?? record.activate);
+  const operationName = toOptionalString(
+    record.operationName ?? record.operation_name,
+  );
+  const modelName = toOptionalString(record.modelName ?? record.model_name);
+  const idPath = toOptionalString(record.idPath ?? record.id_path);
+  const selection = toOptionalString(record.selection);
+
+  if (
+    enabled === undefined &&
+    !operationName &&
+    !modelName &&
+    !idPath &&
+    !selection
+  ) {
+    return undefined;
+  }
+
+  return {
+    ...(enabled !== undefined ? { enabled } : {}),
+    ...(operationName ? { operationName } : {}),
+    ...(modelName ? { modelName } : {}),
+    ...(idPath ? { idPath } : {}),
+    ...(selection ? { selection } : {}),
+  };
+}
+
 function mergeAddButtonConfig(
   left:
     | {
@@ -213,6 +276,17 @@ function mergeSortableConfig(
         mode?: "drag&drop" | "buttons";
       }
     | undefined,
+) {
+  if (!left && !right) return undefined;
+  return {
+    ...(left ?? {}),
+    ...(right ?? {}),
+  };
+}
+
+function mergeDeleteMutationConfig(
+  left: ModelFormNestedDeleteMutationConfig | undefined,
+  right: ModelFormNestedDeleteMutationConfig | undefined,
 ) {
   if (!left && !right) return undefined;
   return {
@@ -315,6 +389,32 @@ export function parseRelationNestedFormConfig(
     ...(toOptionalNumber(record.max_items) !== undefined
       ? { maxItems: toOptionalNumber(record.max_items) }
       : {}),
+    ...(parseScalarListOperation(record.scalarListOperation)
+      ? {
+          scalarListOperation: parseScalarListOperation(
+            record.scalarListOperation,
+          ),
+        }
+      : {}),
+    ...(parseScalarListOperation(record.scalar_list_operation)
+      ? {
+          scalarListOperation: parseScalarListOperation(
+            record.scalar_list_operation,
+          ),
+        }
+      : {}),
+    ...(parseRemoveOperation(record.removeOperation)
+      ? { removeOperation: parseRemoveOperation(record.removeOperation) }
+      : {}),
+    ...(parseRemoveOperation(record.remove_operation)
+      ? { removeOperation: parseRemoveOperation(record.remove_operation) }
+      : {}),
+    ...(parseDeleteMutationConfig(record.deleteMutation)
+      ? { deleteMutation: parseDeleteMutationConfig(record.deleteMutation) }
+      : {}),
+    ...(parseDeleteMutationConfig(record.delete_mutation)
+      ? { deleteMutation: parseDeleteMutationConfig(record.delete_mutation) }
+      : {}),
     ...(toOptionalRecord(record.metadata)
       ? { metadata: toOptionalRecord(record.metadata) }
       : {}),
@@ -391,3 +491,4 @@ export function mergePathLists(...lists: Array<string[] | undefined>): string[] 
 }
 
 export { mergeAddButtonConfig, mergeSortableConfig };
+export { mergeDeleteMutationConfig };

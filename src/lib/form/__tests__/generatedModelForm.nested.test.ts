@@ -60,6 +60,25 @@ describe("nested mutation payload builder", () => {
     expect(payload.tags).toEqual({ set: ["VGFnOjE=", "VGFnOjI="] });
   });
 
+  it("supports connect override for update to-many scalar list values", () => {
+    const payload = buildNestedMutationPayload(
+      {
+        tags: ["VGFnOjE=", "VGFnOjI="],
+      },
+      [manyTagsRelation],
+      {
+        mode: "UPDATE",
+        operationOverrides: {
+          tags: {
+            scalarListOperation: "connect",
+          },
+        },
+      },
+    );
+
+    expect(payload.tags).toEqual({ connect: ["VGFnOjE=", "VGFnOjI="] });
+  });
+
   it("normalizes relation values using contract camelCase relation name", () => {
     const payload = buildNestedMutationPayload(
       {
@@ -141,6 +160,56 @@ describe("nested mutation payload builder", () => {
         { object_id: "item-legacy", quantity: 9 },
       ],
       create: [{ quantity: 2, sku: "SKU-2" }],
+    });
+  });
+
+  it("supports removed persisted rows mapped to disconnect", () => {
+    const payload = buildNestedMutationPayload(
+      {
+        items: [{ id: "item-2", quantity: 9 }],
+      },
+      [manyItemsRelation],
+      {
+        mode: "UPDATE",
+        operationOverrides: {
+          items: {
+            removeOperation: "disconnect",
+          },
+        },
+        baselineValues: {
+          items: [{ id: "item-1", quantity: 2 }, { id: "item-2", quantity: 7 }],
+        },
+      },
+    );
+
+    expect(payload.items).toEqual({
+      update: [{ id: "item-2", quantity: 9 }],
+      disconnect: ["item-1"],
+    });
+  });
+
+  it("supports removed persisted rows mapped to delete", () => {
+    const payload = buildNestedMutationPayload(
+      {
+        items: [{ id: "item-2", quantity: 9 }],
+      },
+      [manyItemsRelation],
+      {
+        mode: "UPDATE",
+        operationOverrides: {
+          items: {
+            removeOperation: "delete",
+          },
+        },
+        baselineValues: {
+          items: [{ id: "item-1", quantity: 2 }, { id: "item-2", quantity: 7 }],
+        },
+      },
+    );
+
+    expect(payload.items).toEqual({
+      update: [{ id: "item-2", quantity: 9 }],
+      delete: ["item-1"],
     });
   });
 

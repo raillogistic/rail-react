@@ -31,6 +31,7 @@ import {
   measureSubmitOrchestration,
 } from "../utils/submitPerformance";
 import { buildSubmitPayload, type SubmitPayloadEnvelope } from "../utils/buildSubmitPayload";
+import type { NestedMutationOperationOverrides } from "../utils/nestedMutationPayload";
 import { resolveSubmitIdentifier } from "../utils/resolveSubmitIdentifier";
 import {
   buildSubmitErrorOutcome,
@@ -61,6 +62,7 @@ export type UseGeneratedModelFormOptions = {
   submitMode?: ModelFormMode;
   objectId?: string | number | null;
   identifierKeyOverride?: string | null;
+  relationOperationOverrides?: NestedMutationOperationOverrides;
   executeMutation?: (
     operationName: string,
     variables: Record<string, unknown>,
@@ -429,6 +431,7 @@ export function useGeneratedModelForm(options: UseGeneratedModelFormOptions) {
     submitMode,
     objectId,
     identifierKeyOverride,
+    relationOperationOverrides,
     executeMutation,
     submitOverride,
   } = options;
@@ -550,6 +553,8 @@ export function useGeneratedModelForm(options: UseGeneratedModelFormOptions) {
               operationName,
               resolvedValues,
               relations: contract.relations,
+              relationOperationOverrides,
+              baselineValues: runtimeValues,
               identifier,
             });
             return { mode, resolvedValues, envelope };
@@ -664,7 +669,9 @@ export function useGeneratedModelForm(options: UseGeneratedModelFormOptions) {
       formErrorKey,
       identifierKeyOverride,
       objectId,
+      relationOperationOverrides,
       rawSubmitMode,
+      runtimeValues,
       submitOverride,
       visibleFieldPaths,
     ],

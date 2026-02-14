@@ -1002,6 +1002,14 @@ describe("ModelForm", () => {
             sortable: { enabled: true, orderField: "order", mode: "buttons" },
             customOrder: ["order", "name"],
             itemLabel: "Tag Row",
+            scalarListOperation: "connect",
+            removeOperation: "disconnect",
+            deleteMutation: {
+              enabled: true,
+              operationName: "deleteTag",
+              modelName: "Tag",
+              idPath: "id",
+            },
           },
         }}
       />,
@@ -1024,6 +1032,18 @@ describe("ModelForm", () => {
     expect((tagsField?.ordering as { toField?: string } | undefined)?.toField).toBe(
       "order",
     );
+    expect(
+      (tagsField?.relationOps as { scalarListOperation?: string } | undefined)
+        ?.scalarListOperation,
+    ).toBe("connect");
+    expect(
+      (tagsField?.relationOps as { removeOperation?: string } | undefined)
+        ?.removeOperation,
+    ).toBe("disconnect");
+    expect(
+      (tagsField?.deleteMutation as { operationName?: string } | undefined)
+        ?.operationName,
+    ).toBe("deleteTag");
     expect(
       (tagsField?.fields as Array<{ name: string }>).map((field) => field.name),
     ).toEqual(["order", "name"]);
@@ -1963,7 +1983,7 @@ describe("ModelForm", () => {
     const tagsMeta = fieldMetaStore.tags as
       | { errorMap?: { onSubmit?: string } }
       | undefined;
-    expect(tagsMeta?.errorMap?.onSubmit).toMatch(/blocked/i);
+    expect(tagsMeta?.errorMap?.onSubmit).toMatch(/(blocked|bloqu)/i);
   });
 
   it("maps unrendered submit errors to the canonical form-level key", async () => {

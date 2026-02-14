@@ -14,6 +14,7 @@ import type {
 import { asRecord } from "../../utils/jsonCoercion";
 import {
   mergeAddButtonConfig,
+  mergeDeleteMutationConfig,
   mergePathLists,
   mergeSortableConfig,
   parseRelationNestedFormConfig,
@@ -200,6 +201,20 @@ function buildNestedRelationFieldConfig<
     relationField.description;
   const nestedColumns = nestedControl.columns ?? nestedFormConfig?.columns;
   const resolvedLabel = nestedTitle ?? relationField.label ?? relation.label;
+  const scalarListOperation =
+    nestedControl.scalarListOperation ?? nestedFormConfig?.scalarListOperation;
+  const removeOperation =
+    nestedControl.removeOperation ?? nestedFormConfig?.removeOperation;
+  const deleteMutation = mergeDeleteMutationConfig(
+    nestedFormConfig?.deleteMutation,
+    nestedControl.deleteMutation,
+  );
+  const deleteMutationWithDefaults = deleteMutation
+    ? {
+        ...deleteMutation,
+        modelName: deleteMutation.modelName ?? relation.relatedModelName,
+      }
+    : undefined;
 
   const base = {
     name: relationField.name,
@@ -220,6 +235,13 @@ function buildNestedRelationFieldConfig<
       relatedAppLabel: relation.relatedAppLabel,
       relatedModelName: relation.relatedModelName,
       relationToMany: relation.toMany,
+      nestedOps: {
+        ...(scalarListOperation ? { scalarListOperation } : {}),
+        ...(removeOperation ? { removeOperation } : {}),
+      },
+      ...(deleteMutationWithDefaults
+        ? { deleteMutation: deleteMutationWithDefaults }
+        : {}),
     },
   };
 
@@ -257,6 +279,13 @@ function buildNestedRelationFieldConfig<
               toField: sortableConfig.orderField,
             },
           }
+        : {}),
+      relationOps: {
+        ...(scalarListOperation ? { scalarListOperation } : {}),
+        ...(removeOperation ? { removeOperation } : {}),
+      },
+      ...(deleteMutationWithDefaults
+        ? { deleteMutation: deleteMutationWithDefaults }
         : {}),
     } as FormFieldConfig;
   }

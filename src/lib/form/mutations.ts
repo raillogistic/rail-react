@@ -381,3 +381,14 @@ export function buildGeneratedMutationDocument(
     operationName,
   );
 }
+
+export function buildGeneratedDeleteMutationDocument(
+  operationName: string,
+  modelName: string,
+  selection = "id",
+) {
+  return build_delete_mutation(modelName, selection).replace(
+    new RegExp(`\\b${getMutationFieldName(modelName, "delete")}\\b`, "g"),
+    operationName,
+  );
+}

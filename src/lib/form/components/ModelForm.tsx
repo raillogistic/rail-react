@@ -23,6 +23,7 @@ import { resolveSubmitIdentifier } from "../utils/resolveSubmitIdentifier";
 import {
   mergePathLists,
   normalizeNestedControls,
+  parseRelationNestedFormConfig,
 } from "./modelForm/nestedSchema";
 import { collectInitialDataNestedFields } from "./modelForm/queryLifecycle";
 import {
@@ -45,6 +46,7 @@ import {
   toError,
 } from "./modelForm/modelFormUtils";
 import { useModelFormQueries } from "./modelForm/useModelFormQueries";
+import type { NestedMutationOperationOverrides } from "../utils/nestedMutationPayload";
 
 function collectEditableFieldPaths(schema: FormSchema<any>): string[] {
   const sections = schema.sections?.length
@@ -114,6 +116,15 @@ function resolveContractFieldName(field: {
   const declaredName = String(field.name ?? "").trim();
   if (declaredName) return declaredName;
   return String(field.path ?? field.fieldName ?? "").trim();
+}
+
+function resolveRelationFieldName(relation: {
+  name?: string | null;
+  path?: string | null;
+}) {
+  const declaredName = String(relation.name ?? "").trim();
+  if (declaredName) return declaredName;
+  return String(relation.path ?? "").trim();
 }
 
 function normalizeMutationVariablesForGraphQL(
@@ -361,6 +372,42 @@ export function ModelForm<
     onLoadError,
   });
 
+  const relationOperationOverrides = React.useMemo<NestedMutationOperationOverrides>(
+    () => {
+      if (!contract) return {};
+      const overrides: NestedMutationOperationOverrides = {};
+
+      for (const relation of contract.relations ?? []) {
+        const relationFieldName = resolveRelationFieldName(relation);
+        const nestedControl =
+          nestedControls?.[relationFieldName] ?? nestedControls?.[relation.path];
+        const nestedFormConfig = parseRelationNestedFormConfig(relation.nestedForm);
+
+        const scalarListOperation =
+          nestedControl?.scalarListOperation ?? nestedFormConfig.scalarListOperation;
+        const removeOperation =
+          nestedControl?.removeOperation ?? nestedFormConfig.removeOperation;
+
+        if (!scalarListOperation && !removeOperation) continue;
+
+        const overrideEntry = {
+          ...(scalarListOperation ? { scalarListOperation } : {}),
+          ...(removeOperation ? { removeOperation } : {}),
+        };
+
+        if (relationFieldName) {
+          overrides[relationFieldName] = overrideEntry;
+        }
+        if (relation.path) {
+          overrides[relation.path] = overrideEntry;
+        }
+      }
+
+      return overrides;
+    },
+    [contract, nestedControls],
+  );
+
   const executeGeneratedMutation = React.useCallback(
     async (
       operationName: string,
@@ -406,6 +453,7 @@ export function ModelForm<
       | undefined,
     submitMode: resolvedMode,
     objectId: resolvedObjectIdValue,
+    relationOperationOverrides,
     executeMutation: executeGeneratedMutation,
   });
 
@@ -636,6 +684,8 @@ export function ModelForm<
             operationName,
             resolvedValues,
             relations: contract.relations,
+            relationOperationOverrides,
+            baselineValues: generated.initialValues as Record<string, unknown>,
             identifier,
           });
 
@@ -675,6 +725,8 @@ export function ModelForm<
     contract,
     resolvedMode,
     generated.buildSubmissionValues,
+    generated.initialValues,
+    relationOperationOverrides,
     sanitizeValuesForControlledSchema,
     resolvedObjectIdValue,
   ]);

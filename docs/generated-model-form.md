@@ -64,6 +64,49 @@ Generated submit now normalizes relation fields without manual adapters:
 - Explicit operation objects (`connect`, `create`, `update`, `disconnect`, `set`, `delete`, `clear`) pass through unchanged.
 - Non-relation fields are preserved as submitted.
 
+## Nested relation operation controls
+
+Use `nested.<relationPath>` to override default generated behavior per relation:
+
+- `scalarListOperation`: choose update-mode scalar-list behavior (`"set"` or `"connect"`).
+- `removeOperation`: when a persisted nested row is removed in UPDATE mode, emit `"disconnect"` or `"delete"` (diffed against initial loaded values).
+- `deleteMutation`: enable direct server delete when removing list rows from the UI.
+
+```tsx
+<ModelForm
+  app="store"
+  model="Order"
+  mode="UPDATE"
+  objectId="42"
+  nested={{
+    items: {
+      scalarListOperation: "connect",
+      removeOperation: "disconnect",
+      deleteMutation: {
+        enabled: true,
+        operationName: "deleteOrderItem", // optional when modelName is provided
+        modelName: "OrderItem",
+        idPath: "id",
+        selection: "id",
+      },
+    },
+  }}
+/>
+```
+
+### Nested list row intent in UI
+
+- Rows with identity (`id`, `pk`, `objectId`, `object_id`) are labeled `Existing`.
+- Rows without identity are labeled `New`.
+- On submit:
+  - `Existing` rows map to nested `update`.
+  - `New` rows map to nested `create`.
+
+### Direct delete from list remove action
+
+- If `deleteMutation.enabled` is true and the row has identity, remove triggers a direct GraphQL delete mutation (`delete<Model>(id: ID!)` or `operationName`).
+- If direct delete is disabled or identity is missing, remove is local-only and payload diffing handles disconnect/delete later on submit.
+
 ## Nested policy enforcement (fail-fast)
 
 - Inferred and explicit relation actions are checked against relation policy before mutation dispatch.
