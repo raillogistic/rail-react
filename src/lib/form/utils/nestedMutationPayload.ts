@@ -31,27 +31,6 @@ type IdentityResolution = {
   value: string | number;
 };
 
-function toCamelToken(token: string) {
-  return token.replace(/_([a-zA-Z0-9])/g, (_, char: string) => char.toUpperCase());
-}
-
-function toSnakeToken(token: string) {
-  return token
-    .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
-    .replace(/([A-Z])([A-Z][a-z])/g, "$1_$2")
-    .toLowerCase();
-}
-
-function transformPathTokens(path: string, transformer: (token: string) => string): string {
-  return path
-    .split(".")
-    .map((token) => {
-      if (/^\d+$/.test(token)) return token;
-      return transformer(token);
-    })
-    .join(".");
-}
-
 function buildRelationLookupKeys(relation: ModelFormContractRelation): string[] {
   const keys = new Set<string>();
   const add = (value: string | undefined | null) => {
@@ -63,12 +42,6 @@ function buildRelationLookupKeys(relation: ModelFormContractRelation): string[] 
 
   add(relation.name);
   add(relation.path);
-  if (relation.path) {
-    add(transformPathTokens(relation.path, toCamelToken));
-  }
-  if (relation.name) {
-    add(transformPathTokens(relation.name, toSnakeToken));
-  }
   return Array.from(keys);
 }
 
@@ -411,7 +384,20 @@ export function buildNestedMutationPayload(
       continue;
     }
 
-    payload[path] = normalizeRelationInput(relation, path, value, mode);
+    const canonicalRelationName = String(relation.name ?? "").trim() || path;
+    if (
+      canonicalRelationName !== path &&
+      Object.prototype.hasOwnProperty.call(values, canonicalRelationName)
+    ) {
+      continue;
+    }
+
+    payload[canonicalRelationName] = normalizeRelationInput(
+      relation,
+      canonicalRelationName,
+      value,
+      mode,
+    );
   }
 
   return payload;

@@ -6,14 +6,20 @@ import { cn } from "@/lib/utils";
 import DynamicForm from "../inputs/form";
 import { useGeneratedModelForm } from "../hooks/useGeneratedModelForm";
 import { useGeneratedValidators } from "../hooks/useGeneratedValidators";
-import { buildGeneratedMutationDocument } from "../mutations";
-import type { FormBehaviorConfig, FormSchema } from "../types";
+import {
+  buildGeneratedMutationDocument,
+  selectGeneratedSubmitOperation,
+} from "../mutations";
+import type { FormBehaviorConfig, FormFieldConfig, FormSchema } from "../types";
 import type { ModelFormProps } from "../types.model";
+import { buildSubmitPayload } from "../utils/buildSubmitPayload";
 import {
   applyErrorsToFormFields,
   normalizeGeneratedErrorsForForm,
 } from "../utils/errors";
 import { serializeRuntimeOverridesForQuery } from "../utils/jsonCoercion";
+import { getValueByPath, setValueByPath } from "../utils/objectPath";
+import { resolveSubmitIdentifier } from "../utils/resolveSubmitIdentifier";
 import {
   mergePathLists,
   normalizeNestedControls,
@@ -40,6 +46,116 @@ import {
 } from "./modelForm/modelFormUtils";
 import { useModelFormQueries } from "./modelForm/useModelFormQueries";
 
+function collectEditableFieldPaths(schema: FormSchema<any>): string[] {
+  const sections = schema.sections?.length
+    ? schema.sections
+    : schema.fields
+      ? [{ fields: schema.fields }]
+      : [];
+  const paths = new Set<string>();
+
+  sections.forEach((section) => {
+    section.fields.forEach((field) => {
+      const name = String((field as FormFieldConfig).name ?? "").trim();
+      if (!name || field.readOnly) {
+        return;
+      }
+      paths.add(name);
+    });
+  });
+
+  return Array.from(paths);
+}
+
+function sanitizeValuesByFieldPaths(
+  values: Record<string, unknown>,
+  editableFieldPaths: string[],
+): Record<string, unknown> {
+  if (!editableFieldPaths.length) {
+    return {};
+  }
+
+  return editableFieldPaths.reduce<Record<string, unknown>>((acc, path) => {
+    const resolved = getValueByPath(values, path);
+    if (resolved === undefined) {
+      return acc;
+    }
+    return setValueByPath(acc, path, resolved);
+  }, {});
+}
+
+function filterErrorsByFieldPaths(
+  errors: Record<string, unknown> | undefined,
+  allowedFieldPaths: string[],
+): Record<string, unknown> | undefined {
+  if (!errors || typeof errors !== "object") {
+    return errors;
+  }
+
+  const allowed = new Set(allowedFieldPaths);
+  const filtered = Object.entries(errors).reduce<Record<string, unknown>>(
+    (acc, [path, message]) => {
+      if (allowed.has(path)) {
+        acc[path] = message;
+      }
+      return acc;
+    },
+    {},
+  );
+
+  return Object.keys(filtered).length > 0 ? filtered : undefined;
+}
+
+function resolveContractFieldName(field: {
+  name?: string | null;
+  path?: string | null;
+  fieldName?: string | null;
+}) {
+  const declaredName = String(field.name ?? "").trim();
+  if (declaredName) return declaredName;
+  return String(field.path ?? field.fieldName ?? "").trim();
+}
+
+function normalizeMutationVariablesForGraphQL(
+  variables: Record<string, unknown>,
+  identifier?: { key: string; value: string | number } | null,
+) {
+  const rawIdentifierName = String(identifier?.key ?? "").trim();
+  if (!rawIdentifierName) {
+    return variables;
+  }
+
+  const nextVariables: Record<string, unknown> = { ...variables };
+
+  if (Object.prototype.hasOwnProperty.call(nextVariables, rawIdentifierName)) {
+    nextVariables.id = nextVariables[rawIdentifierName];
+    if (rawIdentifierName !== "id") {
+      delete nextVariables[rawIdentifierName];
+    }
+  } else if (!Object.prototype.hasOwnProperty.call(nextVariables, "id")) {
+    nextVariables.id = identifier?.value;
+  }
+
+  if (
+    rawIdentifierName !== "id" &&
+    Object.prototype.hasOwnProperty.call(nextVariables, rawIdentifierName)
+  ) {
+    delete nextVariables[rawIdentifierName];
+  }
+
+  if (nextVariables.id === undefined || nextVariables.id === null) {
+    throw new Error("Update mutations require an `id` variable.");
+  }
+  if (typeof nextVariables.id === "string" && nextVariables.id.trim().length === 0) {
+    throw new Error("Update mutations require a non-empty `id` variable.");
+  }
+  if (typeof nextVariables.id === "number" && !Number.isFinite(nextVariables.id)) {
+    throw new Error("Update mutations require a finite numeric `id` variable.");
+  }
+
+  return nextVariables;
+}
+
 export function ModelForm<
   TFormValues extends Record<string, unknown> = Record<string, unknown>,
 >(props: ModelFormProps<TFormValues>) {
@@ -56,6 +172,7 @@ export function ModelForm<
     runtimeOverrides,
     onlyFields,
     excludeFields,
+    onlyRequired,
     onlyRelationships,
     excludeRelationships,
     fieldOverrides,
@@ -251,28 +368,11 @@ export function ModelForm<
       envelope: { identifier?: { key: string; value: string | number } | null },
     ) => {
       const mutationMode = envelope.identifier ? "update" : "create";
-      const rawIdentifierName = envelope.identifier?.key;
-      const identifierName =
-        rawIdentifierName === "objectId" ? "id" : rawIdentifierName;
 
-      const graphqlVariables =
-        rawIdentifierName &&
-        identifierName &&
-        rawIdentifierName !== identifierName &&
-        Object.prototype.hasOwnProperty.call(variables, rawIdentifierName)
-          ? {
-              ...variables,
-              [identifierName]: variables[rawIdentifierName],
-            }
-          : variables;
-
-      if (
-        rawIdentifierName &&
-        identifierName &&
-        rawIdentifierName !== identifierName
-      ) {
-        delete (graphqlVariables as Record<string, unknown>)[rawIdentifierName];
-      }
+      const graphqlVariables = normalizeMutationVariablesForGraphQL(
+        variables,
+        envelope.identifier,
+      );
 
       const mutation = gql(
         buildGeneratedMutationDocument(
@@ -280,12 +380,6 @@ export function ModelForm<
           operationName,
           resolvedModel,
           "id",
-          identifierName
-            ? {
-                identifierVariableName: identifierName,
-                identifierArgumentName: identifierName,
-              }
-            : {},
         ),
       );
 
@@ -335,6 +429,7 @@ export function ModelForm<
     const controlled = applySchemaControls(schemaWithNestedRelations, {
       onlyFields: resolvedOnlyFields,
       excludeFields: resolvedExcludeFields,
+      onlyRequired,
       onlyRelationships: resolvedOnlyRelationships,
       excludeRelationships: resolvedExcludeRelationships,
       fieldOverrides,
@@ -356,6 +451,7 @@ export function ModelForm<
     schemaWithNestedRelations,
     resolvedOnlyFields,
     resolvedExcludeFields,
+    onlyRequired,
     resolvedOnlyRelationships,
     resolvedExcludeRelationships,
     fieldOverrides,
@@ -364,6 +460,30 @@ export function ModelForm<
     generatedEnabled,
     contract,
   ]);
+
+  const editableFieldPaths = React.useMemo(
+    () => collectEditableFieldPaths(controlledSchema),
+    [controlledSchema],
+  );
+
+  const sanitizeValuesForControlledSchema = React.useCallback(
+    (values: Record<string, unknown>) =>
+      sanitizeValuesByFieldPaths(values, editableFieldPaths),
+    [editableFieldPaths],
+  );
+
+  const finalSchema = React.useMemo(() => {
+    if (!isRecord(controlledSchema.initialValues)) {
+      return controlledSchema;
+    }
+
+    return {
+      ...controlledSchema,
+      initialValues: sanitizeValuesForControlledSchema(
+        controlledSchema.initialValues as Record<string, unknown>,
+      ) as Partial<TFormValues>,
+    };
+  }, [controlledSchema, sanitizeValuesForControlledSchema]);
 
   const mergedBehavior = React.useMemo<
     FormBehaviorConfig<TFormValues> | undefined
@@ -392,7 +512,12 @@ export function ModelForm<
 
     const validate = (values: TFormValues) => {
       const generatedErrors = generatedValidate
-        ? generatedValidate(values as Record<string, unknown>)
+        ? filterErrorsByFieldPaths(
+            generatedValidate(values as Record<string, unknown>) as
+              | Record<string, unknown>
+              | undefined,
+            editableFieldPaths,
+          )
         : undefined;
       const customErrors = userValidate ? userValidate(values) : undefined;
       return mergeValidationErrors(generatedErrors, customErrors);
@@ -405,13 +530,17 @@ export function ModelForm<
             NonNullable<FormBehaviorConfig<TFormValues>["onSubmit"]>
           >[1],
         ) => {
-          const outcome = await generated.submit(
+          const sanitizedValues = sanitizeValuesForControlledSchema(
             values as Record<string, unknown>,
+          );
+          const outcome = await generated.submit(
+            sanitizedValues,
           );
           if (outcome.errors.length) {
             applyErrorsToFormFields(
               normalizeGeneratedErrorsForForm(outcome.errors, {
                 formErrorKey: outcome.formErrorKey,
+                visibleFieldPaths: editableFieldPaths,
               }),
               ctx.form as any,
             );
@@ -432,6 +561,8 @@ export function ModelForm<
     generated.canSubmit,
     generated.submit,
     resolvedMode,
+    sanitizeValuesForControlledSchema,
+    editableFieldPaths,
   ]);
 
   const mergedState = React.useMemo(() => {
@@ -469,6 +600,85 @@ export function ModelForm<
     generated.submitState.outcome,
   ]);
 
+  const resolvedDevtools = React.useMemo(() => {
+    if (!resolvedDevtoolsInput) {
+      return undefined;
+    }
+
+    if (!generatedEnabled || !contract || resolvedMode === "VIEW") {
+      return resolvedDevtoolsInput;
+    }
+
+    return {
+      ...resolvedDevtoolsInput,
+      transformValues: (values: TFormValues) => {
+        const rawFormValues = isRecord(values)
+          ? (values as Record<string, unknown>)
+          : {};
+
+        try {
+          const sanitizedValues = sanitizeValuesForControlledSchema(rawFormValues);
+          const resolvedValues = generated.buildSubmissionValues(sanitizedValues);
+          const submitMode = resolvedMode === "UPDATE" ? "UPDATE" : "CREATE";
+          const operationName = selectGeneratedSubmitOperation(
+            contract.mutationBindings,
+            submitMode,
+            contract.modelName,
+          );
+          const identifier = resolveSubmitIdentifier({
+            mode: submitMode,
+            values: resolvedValues,
+            objectId: resolvedObjectIdValue,
+            mutationBindings: contract.mutationBindings,
+          });
+          const envelope = buildSubmitPayload({
+            mode: submitMode,
+            operationName,
+            resolvedValues,
+            relations: contract.relations,
+            identifier,
+          });
+
+          return {
+            formValues: rawFormValues,
+            mutationRequest: {
+              operationName: envelope.operationName,
+              variables: normalizeMutationVariablesForGraphQL(
+                envelope.variables,
+                envelope.identifier,
+              ),
+            },
+            mutationRequestHints: {
+              jsonFieldPaths: (contract.fields ?? [])
+                .filter((field) => field.kind === "JSON")
+                .map((field) => resolveContractFieldName(field))
+                .filter(Boolean),
+            },
+          };
+        } catch (error) {
+          return {
+            formValues: rawFormValues,
+            mutationRequestError: toError(error).message,
+            mutationRequestHints: {
+              jsonFieldPaths: (contract.fields ?? [])
+                .filter((field) => field.kind === "JSON")
+                .map((field) => resolveContractFieldName(field))
+                .filter(Boolean),
+            },
+          };
+        }
+      },
+    };
+  }, [
+    resolvedDevtoolsInput,
+    generatedEnabled,
+    contract,
+    resolvedMode,
+    generated.buildSubmissionValues,
+    sanitizeValuesForControlledSchema,
+    resolvedObjectIdValue,
+  ]);
+
   const hydratedDefaultValues = React.useMemo<
     Partial<TFormValues> | undefined
   >(() => {
@@ -478,11 +688,14 @@ export function ModelForm<
     if (!isRecord(generated.initialValues)) {
       return {} as Partial<TFormValues>;
     }
-    return generated.initialValues as Partial<TFormValues>;
+    return sanitizeValuesForControlledSchema(
+      generated.initialValues as Record<string, unknown>,
+    ) as Partial<TFormValues>;
   }, [
     shouldFetchInitialData,
     initialDataQuery.loading,
     generated.initialValues,
+    sanitizeValuesForControlledSchema,
   ]);
 
   const finalState = React.useMemo(() => {
@@ -500,7 +713,9 @@ export function ModelForm<
     );
 
     if (mergedDefaultValues) {
-      baseState.defaultValues = mergedDefaultValues as Partial<TFormValues>;
+      baseState.defaultValues = sanitizeValuesForControlledSchema(
+        mergedDefaultValues,
+      ) as Partial<TFormValues>;
     }
 
     if (shouldFetchInitialData && hydratedDefaultValues !== undefined) {
@@ -508,7 +723,12 @@ export function ModelForm<
     }
 
     return Object.keys(baseState).length > 0 ? baseState : undefined;
-  }, [mergedState, hydratedDefaultValues, shouldFetchInitialData]);
+  }, [
+    mergedState,
+    hydratedDefaultValues,
+    shouldFetchInitialData,
+    sanitizeValuesForControlledSchema,
+  ]);
 
   const dynamicFormKey = React.useMemo(() => {
     const baseKey = `${resolvedApp}:${resolvedModel}:${resolvedMode}:${
@@ -558,8 +778,8 @@ export function ModelForm<
       nestedRelationContractsQuery.loading);
 
   const hasRenderableFields = Boolean(
-    controlledSchema.sections?.some((section) => section.fields.length > 0) ||
-    controlledSchema.fields?.length,
+    finalSchema.sections?.some((section) => section.fields.length > 0) ||
+    finalSchema.fields?.length,
   );
 
   const renderError = (error: Error, stage: "contract" | "initialData") => {
@@ -660,12 +880,12 @@ export function ModelForm<
         <div className="p-1">
           <DynamicForm<TFormValues>
             key={dynamicFormKey}
-            schema={controlledSchema}
+            schema={finalSchema}
             state={finalState}
             behavior={mergedBehavior}
             layout={resolvedLayoutInput}
             actions={mergedActions}
-            devtools={resolvedDevtoolsInput}
+            devtools={resolvedDevtools}
           />
         </div>
       </div>

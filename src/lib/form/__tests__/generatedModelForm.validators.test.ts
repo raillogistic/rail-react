@@ -39,6 +39,7 @@ describe("useGeneratedValidators", () => {
       fields: [
         {
           ...sampleModelFormContract.fields[0],
+          name: "inventoryCount",
           path: "inventory_count",
           fieldName: "inventory_count",
           label: "Quantite en stock",
@@ -56,7 +57,7 @@ describe("useGeneratedValidators", () => {
     const { result } = renderHook(() => useGeneratedValidators(contract));
     const validate = result.current.formValidator;
 
-    expect(validate({ inventory_count: 5 })).toBeUndefined();
+    expect(validate({ inventoryCount: 5 })).toBeUndefined();
   });
 
   it("uses Django MinValue/MaxValue validators when constraints are absent", () => {
@@ -65,6 +66,7 @@ describe("useGeneratedValidators", () => {
       fields: [
         {
           ...sampleModelFormContract.fields[0],
+          name: "inventoryCount",
           path: "inventory_count",
           fieldName: "inventory_count",
           label: "Quantite en stock",
@@ -93,9 +95,9 @@ describe("useGeneratedValidators", () => {
     const { result } = renderHook(() => useGeneratedValidators(contract));
     const validate = result.current.formValidator;
 
-    expect(validate({ inventory_count: -1 })?.inventory_count).toContain(
+    expect(validate({ inventoryCount: -1 })?.inventoryCount).toContain(
       "greater than or equal to 0",
     );
-    expect(validate({ inventory_count: 5 })).toBeUndefined();
+    expect(validate({ inventoryCount: 5 })).toBeUndefined();
   });
 });

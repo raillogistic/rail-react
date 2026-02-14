@@ -284,6 +284,34 @@ describe("DynamicForm", () => {
     expect(screen.getByText(/"firstName"/)).toBeInTheDocument();
   });
 
+  it("renders ModelForm-style debug tabs for formValues and mutationRequest", () => {
+    render(
+      <DynamicForm
+        schema={textSchema}
+        devtools={{
+          enabled: true,
+          transformValues: (values) => ({
+            formValues: values,
+            mutationRequest: {
+              operationName: "updateProduct",
+              variables: {
+                id: "42",
+                input: values,
+              },
+            },
+          }),
+        }}
+      />,
+    );
+
+    expect(screen.getByText("formValues")).toBeInTheDocument();
+    expect(screen.getByText("mutationRequest")).toBeInTheDocument();
+    expect(screen.getByText(/"firstName"/)).toBeInTheDocument();
+    expect(
+      screen.queryByTestId("debug-copy-mutation-request"),
+    ).not.toBeInTheDocument();
+  });
+
   it("does not render debug panel by default", () => {
     const { container } = render(<DynamicForm schema={textSchema} />);
     // No pre element for debug values
@@ -307,6 +335,43 @@ describe("DynamicForm", () => {
     );
     const form = container.querySelector("form");
     expect(form?.className).toContain("max-w-lg");
+  });
+
+  it("renders form-level submit errors from __all__", async () => {
+    const onSubmit = vi.fn(async (_values, ctx: { form: any }) => {
+      ctx.form.setFieldMeta("__all__", (prev: any) => ({
+        ...prev,
+        errorMap: {
+          ...(prev?.errorMap ?? {}),
+          onSubmit: "Save failed due to a server-side validation issue.",
+        },
+      }));
+    });
+
+    render(
+      <DynamicForm
+        schema={textSchema}
+        behavior={{
+          onSubmit,
+        }}
+      />,
+    );
+
+    fireEvent.change(screen.getAllByRole("textbox")[0], {
+      target: { value: "Alice" },
+    });
+    fireEvent.click(screen.getByText("Save"));
+
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledTimes(1);
+    });
+
+    expect(
+      await screen.findByText(
+        "Save failed due to a server-side validation issue.",
+      ),
+    ).toBeInTheDocument();
+    expect(screen.getByTestId("dynamic-form-global-errors")).toBeInTheDocument();
   });
 });
 

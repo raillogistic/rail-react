@@ -40,6 +40,7 @@ export type ModelFormValidator = {
 };
 
 export type ModelFormContractField = {
+  name?: string;
   path: string;
   fieldName: string;
   label: string;

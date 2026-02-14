@@ -78,6 +78,25 @@ describe("nested mutation payload builder", () => {
     expect(payload.orderItems).toEqual({ set: [5, 8, 17, 19, 29, "1"] });
   });
 
+  it("emits canonical relation name when legacy snake_case key is present", () => {
+    const payload = buildNestedMutationPayload(
+      {
+        order_items: [5, 8, 17],
+      },
+      [
+        {
+          ...manyItemsRelation,
+          name: "orderItems",
+          path: "order_items",
+        },
+      ],
+      "UPDATE",
+    );
+
+    expect(payload.orderItems).toEqual({ set: [5, 8, 17] });
+    expect(payload).not.toHaveProperty("order_items");
+  });
+
   it("maps singular null relation values to clear", () => {
     const payload = buildNestedMutationPayload(
       {

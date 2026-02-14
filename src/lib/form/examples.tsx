@@ -1232,6 +1232,8 @@ export function StoreProductUpdateModelFormExample({
         model="Product"
         mode="UPDATE"
         objectId={objectId}
+        excludeFields={["price"]}
+        // onlyRequired
         // excludeFields={["order_items"]}
         // nested={{
         //   order_items: {
@@ -1241,6 +1243,7 @@ export function StoreProductUpdateModelFormExample({
         runtimeOverrides={PRODUCT_UPDATE_RUNTIME_OVERRIDES}
         description="Auto-wired update example: initial values load from modelFormInitialData and Save runs generated updateOperation."
         formProps={{
+          devtools: { enabled: true },
           layout: {
             columns: 4,
 

@@ -110,7 +110,7 @@ describe("generated submit workflow", () => {
     );
   });
 
-  it("normalizes snake_case values to camelCase before dispatching generated mutations", async () => {
+  it("uses provided camelCase values without case normalization before dispatching generated mutations", async () => {
     const createExecutor = vi.fn().mockResolvedValue({
       ok: true,
       errors: [],
@@ -129,10 +129,10 @@ describe("generated submit workflow", () => {
 
     await act(async () => {
       await result.current.submit({
-        cost_price: "13.74",
-        created_at: "2026-02-07T19:38:42.943382+00:00",
-        metadata_blob: {
-          updated_from: "StoreProductUpdateModelFormExample",
+        costPrice: "13.74",
+        createdAt: "2026-02-07T19:38:42.943382+00:00",
+        metadataBlob: {
+          updatedFrom: "StoreProductUpdateModelFormExample",
         },
       });
     });

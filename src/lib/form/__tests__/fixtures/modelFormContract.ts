@@ -11,6 +11,7 @@ export const sampleModelFormContract: ModelFormContract = {
   generatedAt: "2026-02-12T12:00:00Z",
   fields: [
     {
+      name: "name",
       path: "name",
       fieldName: "name",
       label: "Name",
@@ -28,6 +29,7 @@ export const sampleModelFormContract: ModelFormContract = {
       metadata: null,
     },
     {
+      name: "price",
       path: "price",
       fieldName: "price",
       label: "Price",

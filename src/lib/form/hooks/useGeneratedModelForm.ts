@@ -129,36 +129,13 @@ function applyOverrides(
   }, { ...(input ?? {}) });
 }
 
-function toCamelToken(token: string): string {
-  return token.replace(/_([a-zA-Z0-9])/g, (_, char: string) => char.toUpperCase());
-}
-
-function toSnakeToken(token: string): string {
-  return token
-    .replace(/([a-z0-9])([A-Z])/g, "$1_$2")
-    .replace(/([A-Z])([A-Z][a-z])/g, "$1_$2")
-    .toLowerCase();
-}
-
-function transformPathTokens(path: string, transformer: (token: string) => string): string {
-  return path
-    .split(".")
-    .map((token) => {
-      if (/^\d+$/.test(token)) return token;
-      return transformer(token);
-    })
-    .join(".");
-}
-
 function resolveRelationFieldName(relation: {
   name?: string | null;
   path?: string | null;
 }) {
   const declaredName = String(relation.name ?? "").trim();
   if (declaredName) return declaredName;
-  const path = String(relation.path ?? "").trim();
-  if (!path) return "";
-  return transformPathTokens(path, toCamelToken);
+  return String(relation.path ?? "").trim();
 }
 
 function relationFieldCandidates(relation: {
@@ -175,62 +152,49 @@ function relationFieldCandidates(relation: {
 
   add(relation.name);
   add(relation.path);
-  if (relation.path) {
-    add(transformPathTokens(relation.path, toCamelToken));
-  }
-  if (relation.name) {
-    add(transformPathTokens(relation.name, toSnakeToken));
-  }
-
   return Array.from(candidates);
 }
 
-function normalizeSubmitValueKeysToCamel(value: unknown): unknown {
-  if (Array.isArray(value)) {
-    return value.map((entry) => normalizeSubmitValueKeysToCamel(entry));
-  }
+function resolveContractFieldName(field: {
+  name?: string | null;
+  fieldName?: string | null;
+  path?: string | null;
+}) {
+  const declaredName = String(field.name ?? "").trim();
+  if (declaredName) return declaredName;
+  return String(field.path ?? field.fieldName ?? "").trim();
+}
 
-  if (!value || typeof value !== "object") {
-    return value;
-  }
+function contractFieldCandidates(field: {
+  name?: string | null;
+  fieldName?: string | null;
+  path?: string | null;
+}) {
+  const candidates = new Set<string>();
+  const add = (value?: string | null) => {
+    const normalized = String(value ?? "").trim();
+    if (normalized) {
+      candidates.add(normalized);
+    }
+  };
 
-  const record = value as Record<string, unknown>;
-  const normalized: Record<string, unknown> = {};
-  const entries = Object.entries(record).sort(([left], [right]) => {
-    const leftIsSnake = left.includes("_");
-    const rightIsSnake = right.includes("_");
-    if (leftIsSnake === rightIsSnake) return 0;
-    return leftIsSnake ? -1 : 1;
-  });
+  add(field.name);
+  add(field.path);
 
-  for (const [key, entry] of entries) {
-    normalized[toCamelToken(key)] = normalizeSubmitValueKeysToCamel(entry);
-  }
-
-  return normalized;
+  return Array.from(candidates);
 }
 
 function resolveInitialPathValue(
   values: Record<string, any>,
   path: string,
 ): unknown {
-  const candidates = Array.from(
-    new Set([
-      path,
-      transformPathTokens(path, toCamelToken),
-      transformPathTokens(path, toSnakeToken),
-    ]),
-  );
+  if (Object.prototype.hasOwnProperty.call(values, path)) {
+    return values[path];
+  }
 
-  for (const candidate of candidates) {
-    if (Object.prototype.hasOwnProperty.call(values, candidate)) {
-      return values[candidate];
-    }
-
-    const nestedValue = getValueByPath(values, candidate);
-    if (nestedValue !== undefined) {
-      return nestedValue;
-    }
+  const nestedValue = getValueByPath(values, path);
+  if (nestedValue !== undefined) {
+    return nestedValue;
   }
 
   return undefined;
@@ -248,9 +212,16 @@ function normalizeInitialValuesByContract(
   let resolvedCount = 0;
 
   for (const field of contract.fields ?? []) {
-    const resolved = resolveInitialPathValue(values, field.path);
+    let resolved: unknown = undefined;
+    for (const candidate of contractFieldCandidates(field)) {
+      resolved = resolveInitialPathValue(values, candidate);
+      if (resolved !== undefined) break;
+    }
     if (resolved === undefined) continue;
-    nextValues = setValueByPath(nextValues, field.path, resolved);
+
+    const normalizedFieldName = resolveContractFieldName(field) || field.path;
+    if (!normalizedFieldName) continue;
+    nextValues = setValueByPath(nextValues, normalizedFieldName, resolved);
     resolvedCount += 1;
   }
 
@@ -276,16 +247,22 @@ function normalizeInitialValuesByContract(
 }
 
 function isGeneratedIdentifierField(field: {
+  name?: string;
   path: string;
   fieldName?: string;
 }): boolean {
+  const contractName = resolveContractFieldName(field)
+    .split(".")
+    .filter(Boolean)
+    .at(-1)
+    ?.toLowerCase();
   const fieldName = String(field.fieldName ?? "").trim().toLowerCase();
   const leafToken = String(field.path ?? "")
     .split(".")
     .filter(Boolean)
     .at(-1)
     ?.toLowerCase();
-  return fieldName === "id" || leafToken === "id";
+  return contractName === "id" || fieldName === "id" || leafToken === "id";
 }
 
 export function buildSchemaFromContract(
@@ -294,20 +271,7 @@ export function buildSchemaFromContract(
   const fieldsByPath = new Map<string, FormFieldConfig>();
   const resolveFieldByContractPath = (
     path: string,
-  ): FormFieldConfig | undefined => {
-    const candidates = Array.from(
-      new Set([
-        path,
-        transformPathTokens(path, toCamelToken),
-        transformPathTokens(path, toSnakeToken),
-      ]),
-    );
-    for (const candidate of candidates) {
-      const field = fieldsByPath.get(candidate);
-      if (field) return field;
-    }
-    return undefined;
-  };
+  ): FormFieldConfig | undefined => fieldsByPath.get(path);
 
   const buildGeneratedRelationField = (
     relation: ModelFormContract["relations"][number],
@@ -342,18 +306,24 @@ export function buildSchemaFromContract(
 
   for (const field of contract.fields) {
     if (field.hidden || field.readOnly || isGeneratedIdentifierField(field)) continue;
+    const contractFieldName = resolveContractFieldName(field) || field.path;
+    if (!contractFieldName) continue;
     const type = mapKindToInputType(field.kind);
     const uiConfig = asRecord(field.ui);
     const metadata = asRecord(field.metadata);
     const baseConfig: FormFieldConfig = {
-      name: field.path,
+      name: contractFieldName,
       type,
       label: field.label,
       required: field.required,
       readOnly: field.readOnly,
       defaultValue: parseJsonValue(field.defaultValue),
       inputProps: (uiConfig as Record<string, any>) ?? undefined,
-      meta: { graphqlType: field.graphqlType, pythonType: field.pythonType },
+      meta: {
+        graphqlType: field.graphqlType,
+        pythonType: field.pythonType,
+        fieldPath: field.path,
+      },
     } as FormFieldConfig;
 
     if (type === "select") {
@@ -368,7 +338,15 @@ export function buildSchemaFromContract(
         (baseConfig as any).multiple = true;
       }
     }
-    fieldsByPath.set(field.path, baseConfig);
+
+    const aliases = contractFieldCandidates(field);
+    if (aliases.length === 0) {
+      fieldsByPath.set(contractFieldName, baseConfig);
+    } else {
+      aliases.forEach((alias) => {
+        fieldsByPath.set(alias, baseConfig);
+      });
+    }
   }
 
   for (const relation of contract.relations ?? []) {
@@ -472,7 +450,13 @@ export function useGeneratedModelForm(options: UseGeneratedModelFormOptions) {
         [
           ...(contract?.fields ?? [])
             .filter((field) => !field.hidden)
-            .map((field) => field.path),
+            .flatMap((field) => {
+              const canonicalName = resolveContractFieldName(field);
+              return [
+                canonicalName,
+                ...contractFieldCandidates(field),
+              ].filter(Boolean) as string[];
+            }),
           ...((contract?.relations ?? []).flatMap((relation) => {
             const fieldName = resolveRelationFieldName(relation);
             return [fieldName, relation.path].filter(Boolean) as string[];
@@ -509,10 +493,9 @@ export function useGeneratedModelForm(options: UseGeneratedModelFormOptions) {
   }, [usingGenerated, contract, legacySchema, runtimeValues]);
 
   const buildSubmissionValues = React.useCallback(
-    (values: Record<string, any>) =>
-      normalizeSubmitValueKeysToCamel(
-        applyOverrides(values, runtimeOverrides),
-      ) as Record<string, any>,
+    (values: Record<string, any>) => {
+      return applyOverrides(values, runtimeOverrides);
+    },
     [runtimeOverrides],
   );
 

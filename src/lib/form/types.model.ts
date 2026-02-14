@@ -145,6 +145,8 @@ export interface ModelFormProps<
 
   onlyFields?: string[];
   excludeFields?: string[];
+  /** Render and submit only required fields. */
+  onlyRequired?: boolean;
   /**
    * Restrict relation paths (first path segment of nested fields) that are
    * allowed to render.

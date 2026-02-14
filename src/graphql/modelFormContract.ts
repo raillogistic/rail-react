@@ -21,6 +21,7 @@ export const MODEL_FORM_CONTRACT_QUERY = gql`
       configVersion
       generatedAt
       fields {
+        name
         path
         fieldName
         label
@@ -51,6 +52,7 @@ export const MODEL_FORM_CONTRACT_QUERY = gql`
         visible
       }
       relations {
+        name
         path
         label
         toMany
@@ -110,6 +112,7 @@ export const MODEL_FORM_CONTRACT_PAGES_QUERY = gql`
         configVersion
         generatedAt
         fields {
+          name
           path
           fieldName
           label
@@ -140,6 +143,7 @@ export const MODEL_FORM_CONTRACT_PAGES_QUERY = gql`
           visible
         }
         relations {
+          name
           path
           label
           toMany

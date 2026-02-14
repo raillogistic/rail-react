@@ -61,6 +61,7 @@ describe("useGeneratedModelForm adapter", () => {
         sampleModelFormContract.fields[0],
         {
           ...sampleModelFormContract.fields[1],
+          name: "sku",
           path: "sku",
           fieldName: "sku",
           label: "SKU",
@@ -93,6 +94,7 @@ describe("useGeneratedModelForm adapter", () => {
       fields: [
         {
           ...sampleModelFormContract.fields[0],
+          name: "id",
           path: "id",
           fieldName: "id",
           label: "ID",
@@ -101,6 +103,7 @@ describe("useGeneratedModelForm adapter", () => {
         },
         {
           ...sampleModelFormContract.fields[1],
+          name: "name",
           path: "name",
           fieldName: "name",
           label: "Name",
@@ -187,12 +190,13 @@ describe("useGeneratedModelForm adapter", () => {
     expect(result.current.initialValues.name).toBe("From JSON");
   });
 
-  it("maps camelCase initial values to snake_case contract paths", () => {
+  it("maps contract aliases to canonical field names", () => {
     const contract: ModelFormContract = {
       ...sampleModelFormContract,
       fields: [
         {
           ...sampleModelFormContract.fields[0],
+          name: "inventoryCount",
           path: "inventory_count",
           fieldName: "inventory_count",
           kind: "NUMBER",
@@ -226,9 +230,9 @@ describe("useGeneratedModelForm adapter", () => {
       }),
     );
 
-    expect(result.current.initialValues.inventory_count).toBe(12);
-    expect(result.current.schema.initialValues?.inventory_count).toBe(12);
-    expect(result.current.initialValues).not.toHaveProperty("inventoryCount");
+    expect(result.current.initialValues.inventoryCount).toBe(12);
+    expect(result.current.schema.initialValues?.inventoryCount).toBe(12);
+    expect(result.current.initialValues).not.toHaveProperty("inventory_count");
   });
 
   it("injects relation query fields when sections do not declare them", () => {
@@ -237,6 +241,7 @@ describe("useGeneratedModelForm adapter", () => {
       fields: [
         {
           ...sampleModelFormContract.fields[0],
+          name: "name",
           path: "name",
           fieldName: "name",
           label: "Name",
@@ -339,12 +344,14 @@ describe("useGeneratedModelForm adapter", () => {
         },
         {
           ...sampleModelFormContract.fields[1],
+          name: "price",
           path: "price",
           fieldName: "price",
           label: "Price",
         },
         {
           ...sampleModelFormContract.fields[1],
+          name: "inventoryCount",
           path: "inventory_count",
           fieldName: "inventory_count",
           label: "Inventory",
@@ -386,7 +393,7 @@ describe("useGeneratedModelForm adapter", () => {
     const fieldNames = result.current.schema.sections?.[0]?.fields.map(
       (field) => field.name,
     );
-    expect(fieldNames).toEqual(["name", "price", "inventory_count", "category"]);
+    expect(fieldNames).toEqual(["name", "price", "inventoryCount", "category"]);
   });
 
   it("keeps section order when relation path casing differs from fieldPaths", () => {

@@ -212,6 +212,255 @@ describe("ModelForm", () => {
     expect(payload.initialValues.price).toBe(10);
   });
 
+  it("removes readonly and excluded values from DynamicForm defaults", async () => {
+    const updateContract: ModelFormContract = {
+      ...sampleModelFormContract,
+      appLabel: "store",
+      modelName: "Product",
+      mode: "UPDATE",
+      fields: [
+        {
+          ...sampleModelFormContract.fields[0],
+          name: "name",
+          path: "name",
+          fieldName: "name",
+          readOnly: false,
+          hidden: false,
+          kind: "TEXT",
+        },
+        {
+          ...sampleModelFormContract.fields[1],
+          name: "status",
+          path: "status",
+          fieldName: "status",
+          readOnly: false,
+          hidden: false,
+          kind: "TEXT",
+        },
+        {
+          ...sampleModelFormContract.fields[0],
+          name: "createdAt",
+          path: "created_at",
+          fieldName: "created_at",
+          label: "Created at",
+          readOnly: true,
+          hidden: false,
+          kind: "DATETIME",
+        },
+        {
+          ...sampleModelFormContract.fields[0],
+          name: "updatedAt",
+          path: "updated_at",
+          fieldName: "updated_at",
+          label: "Updated at",
+          readOnly: true,
+          hidden: false,
+          kind: "DATETIME",
+        },
+      ],
+      sections: [
+        {
+          ...sampleModelFormContract.sections[0],
+          fieldPaths: ["name", "status", "created_at", "updated_at"],
+        },
+      ],
+    };
+
+    const mocks = [
+      {
+        request: {
+          query: MODEL_FORM_CONTRACT_QUERY,
+          variables: {
+            appLabel: "store",
+            modelName: "Product",
+            mode: "UPDATE",
+            includeNested: false,
+          },
+        },
+        result: {
+          data: {
+            modelFormContract: updateContract,
+          },
+        },
+      },
+      {
+        request: {
+          query: MODEL_FORM_INITIAL_DATA_QUERY,
+          variables: {
+            appLabel: "store",
+            modelName: "Product",
+            objectId: "42",
+            includeNested: false,
+            runtimeOverrides: [],
+          },
+        },
+        result: {
+          data: {
+            modelFormInitialData: {
+              appLabel: "store",
+              modelName: "Product",
+              objectId: "42",
+              values: JSON.stringify({
+                name: "Starter",
+                status: "ACTIVE",
+                createdAt: "2026-02-12T12:00:00Z",
+                updatedAt: "2026-02-13T12:00:00Z",
+              }),
+              readonlyValues: null,
+              loadedAt: "2026-02-12T12:00:00Z",
+            },
+          },
+        },
+      },
+    ];
+
+    renderWithMocks(
+      <ModelForm
+        app="store"
+        model="Product"
+        mode="UPDATE"
+        objectId="42"
+        excludeFields={["status"]}
+      />,
+      mocks,
+    );
+
+    const config = await getRenderedConfig();
+    expect(config.state?.defaultValues?.name).toBe("Starter");
+    expect(config.state?.defaultValues).not.toHaveProperty("status");
+    expect(config.state?.defaultValues).not.toHaveProperty("createdAt");
+    expect(config.state?.defaultValues).not.toHaveProperty("updatedAt");
+
+    const schema = await getRenderedSchema();
+    expect(schema.initialValues).toEqual({ name: "Starter" });
+  });
+
+  it("renders and submits only required fields when onlyRequired is enabled", async () => {
+    const contract: ModelFormContract = {
+      ...sampleModelFormContract,
+      appLabel: "store",
+      modelName: "Product",
+      mode: "CREATE",
+      fields: [
+        {
+          ...sampleModelFormContract.fields[0],
+          name: "name",
+          path: "name",
+          fieldName: "name",
+          label: "Name",
+          required: true,
+          readOnly: false,
+          hidden: false,
+          kind: "TEXT",
+        },
+        {
+          ...sampleModelFormContract.fields[1],
+          name: "status",
+          path: "status",
+          fieldName: "status",
+          label: "Status",
+          required: false,
+          readOnly: false,
+          hidden: false,
+          kind: "TEXT",
+        },
+      ],
+      sections: [
+        {
+          ...sampleModelFormContract.sections[0],
+          fieldPaths: ["name", "status"],
+        },
+      ],
+      relations: [],
+    };
+
+    const createMutationSpy = vi.fn();
+    const createMutationDocument = gql(
+      buildGeneratedMutationDocument("create", "createProduct", "Product", "id"),
+    );
+
+    const mocks = [
+      {
+        request: {
+          query: MODEL_FORM_CONTRACT_QUERY,
+          variables: {
+            appLabel: "store",
+            modelName: "Product",
+            mode: "CREATE",
+            includeNested: false,
+          },
+        },
+        result: {
+          data: {
+            modelFormContract: contract,
+          },
+        },
+      },
+      {
+        request: {
+          query: createMutationDocument,
+          variables: {
+            input: {
+              name: "Widget",
+            },
+          },
+        },
+        result: () => {
+          createMutationSpy();
+          return {
+            data: {
+              createProduct: {
+                ok: true,
+                object: { id: "UHJvZHVjdDox" },
+                errors: [],
+              },
+            },
+          };
+        },
+      },
+    ];
+
+    renderWithMocks(
+      <ModelForm
+        app="store"
+        model="Product"
+        mode="CREATE"
+        onlyRequired
+      />,
+      mocks,
+    );
+
+    const payload = await getRenderedSchema();
+    const fieldNames = payload.sections[0].fields.map(
+      (field: { name: string }) => field.name,
+    );
+    expect(fieldNames).toEqual(["name"]);
+
+    const onSubmit = latestDynamicFormProps?.behavior?.onSubmit as
+      | ((values: Record<string, unknown>, ctx: Record<string, unknown>) => Promise<void>)
+      | undefined;
+    expect(typeof onSubmit).toBe("function");
+
+    const { form } = createMockFormContext({
+      name: {},
+      __all__: {},
+    });
+
+    await act(async () => {
+      await onSubmit?.(
+        {
+          name: "Widget",
+          status: "ACTIVE",
+        },
+        { form } as Record<string, unknown>,
+      );
+    });
+
+    await waitFor(() => {
+      expect(createMutationSpy).toHaveBeenCalledTimes(1);
+    });
+  });
+
   it("serializes runtime override values as JSONString variables", async () => {
     const updateContract: ModelFormContract = {
       ...sampleModelFormContract,
@@ -300,12 +549,14 @@ describe("ModelForm", () => {
         ...sampleModelFormContract.fields,
         {
           ...sampleModelFormContract.fields[0],
+          name: "customer.email",
           path: "customer.email",
           fieldName: "email",
           label: "Customer Email",
         },
         {
           ...sampleModelFormContract.fields[0],
+          name: "customer.phone",
           path: "customer.phone",
           fieldName: "phone",
           label: "Customer Phone",
@@ -374,6 +625,7 @@ describe("ModelForm", () => {
       fields: [
         {
           ...sampleModelFormContract.fields[0],
+          name: "name",
           path: "name",
           fieldName: "name",
           label: "Name",
@@ -437,6 +689,7 @@ describe("ModelForm", () => {
       fields: [
         {
           ...sampleModelFormContract.fields[0],
+          name: "name",
           path: "name",
           fieldName: "name",
           label: "Category Name",
@@ -444,6 +697,7 @@ describe("ModelForm", () => {
         },
         {
           ...sampleModelFormContract.fields[0],
+          name: "description",
           path: "description",
           fieldName: "description",
           label: "Category Description",
@@ -486,6 +740,7 @@ describe("ModelForm", () => {
       fields: [
         {
           ...sampleModelFormContract.fields[0],
+          name: "name",
           path: "name",
           fieldName: "name",
           label: "Tag Name",
@@ -628,6 +883,7 @@ describe("ModelForm", () => {
       fields: [
         {
           ...sampleModelFormContract.fields[0],
+          name: "name",
           path: "name",
           fieldName: "name",
           label: "Name",
@@ -667,6 +923,7 @@ describe("ModelForm", () => {
       fields: [
         {
           ...sampleModelFormContract.fields[0],
+          name: "name",
           path: "name",
           fieldName: "name",
           label: "Tag Name",
@@ -674,6 +931,7 @@ describe("ModelForm", () => {
         },
         {
           ...sampleModelFormContract.fields[1],
+          name: "order",
           path: "order",
           fieldName: "order",
           label: "Order",
@@ -780,6 +1038,7 @@ describe("ModelForm", () => {
       fields: [
         {
           ...sampleModelFormContract.fields[0],
+          name: "name",
           path: "name",
           fieldName: "name",
           label: "Name",
@@ -819,6 +1078,7 @@ describe("ModelForm", () => {
       fields: [
         {
           ...sampleModelFormContract.fields[0],
+          name: "name",
           path: "name",
           fieldName: "name",
           label: "Tag Name",
@@ -826,6 +1086,7 @@ describe("ModelForm", () => {
         },
         {
           ...sampleModelFormContract.fields[1],
+          name: "order",
           path: "order",
           fieldName: "order",
           label: "Order",
@@ -937,12 +1198,14 @@ describe("ModelForm", () => {
         ...sampleModelFormContract.fields,
         {
           ...sampleModelFormContract.fields[0],
+          name: "customer.email",
           path: "customer.email",
           fieldName: "email",
           label: "Customer Email",
         },
         {
           ...sampleModelFormContract.fields[0],
+          name: "supplier.name",
           path: "supplier.name",
           fieldName: "name",
           label: "Supplier Name",
@@ -1002,12 +1265,14 @@ describe("ModelForm", () => {
       fields: [
         {
           ...sampleModelFormContract.fields[0],
+          name: "name",
           path: "name",
           fieldName: "name",
           label: "Name",
         },
         {
           ...sampleModelFormContract.fields[1],
+          name: "status",
           path: "status",
           fieldName: "status",
           kind: "TEXT",
@@ -1050,6 +1315,7 @@ describe("ModelForm", () => {
       fields: [
         {
           ...sampleModelFormContract.fields[0],
+          name: "name",
           path: "name",
           fieldName: "name",
           label: "Tag Name",
@@ -1132,12 +1398,14 @@ describe("ModelForm", () => {
       fields: [
         {
           ...sampleModelFormContract.fields[0],
+          name: "name",
           path: "name",
           fieldName: "name",
           label: "Name",
         },
         {
           ...sampleModelFormContract.fields[1],
+          name: "status",
           path: "status",
           fieldName: "status",
           kind: "TEXT",
@@ -1180,6 +1448,7 @@ describe("ModelForm", () => {
       fields: [
         {
           ...sampleModelFormContract.fields[0],
+          name: "name",
           path: "name",
           fieldName: "name",
           label: "Tag Name",
@@ -1295,7 +1564,6 @@ describe("ModelForm", () => {
           variables: {
             input: {
               name: "Widget",
-              status: "ACTIVE",
               customer: { connect: "Q3VzdG9tZXI6MQ==" },
             },
           },
@@ -1338,6 +1606,148 @@ describe("ModelForm", () => {
           name: "Widget",
           status: "ACTIVE",
           customer: "Q3VzdG9tZXI6MQ==",
+        },
+        { form } as Record<string, unknown>,
+      );
+    });
+
+    await waitFor(() => {
+      expect(createMutationSpy).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it("omits readonly and excluded fields from generated submit payload", async () => {
+    const contract: ModelFormContract = {
+      ...sampleModelFormContract,
+      appLabel: "store",
+      modelName: "Product",
+      mode: "CREATE",
+      fields: [
+        {
+          ...sampleModelFormContract.fields[0],
+          name: "name",
+          path: "name",
+          fieldName: "name",
+          readOnly: false,
+          hidden: false,
+          kind: "TEXT",
+        },
+        {
+          ...sampleModelFormContract.fields[1],
+          name: "status",
+          path: "status",
+          fieldName: "status",
+          readOnly: false,
+          hidden: false,
+          kind: "TEXT",
+        },
+        {
+          ...sampleModelFormContract.fields[0],
+          name: "createdAt",
+          path: "created_at",
+          fieldName: "created_at",
+          label: "Created at",
+          readOnly: true,
+          hidden: false,
+          kind: "DATETIME",
+        },
+        {
+          ...sampleModelFormContract.fields[0],
+          name: "internalNote",
+          path: "internal_note",
+          fieldName: "internal_note",
+          label: "Internal note",
+          readOnly: false,
+          hidden: false,
+          kind: "TEXT",
+        },
+      ],
+      sections: [
+        {
+          ...sampleModelFormContract.sections[0],
+          fieldPaths: ["name", "status", "created_at", "internal_note"],
+        },
+      ],
+      relations: [],
+    };
+
+    const createMutationSpy = vi.fn();
+    const createMutationDocument = gql(
+      buildGeneratedMutationDocument("create", "createProduct", "Product", "id"),
+    );
+
+    const mocks = [
+      {
+        request: {
+          query: MODEL_FORM_CONTRACT_QUERY,
+          variables: {
+            appLabel: "store",
+            modelName: "Product",
+            mode: "CREATE",
+            includeNested: false,
+          },
+        },
+        result: {
+          data: {
+            modelFormContract: contract,
+          },
+        },
+      },
+      {
+        request: {
+          query: createMutationDocument,
+          variables: {
+            input: {
+              name: "Widget",
+              status: "ACTIVE",
+            },
+          },
+        },
+        result: () => {
+          createMutationSpy();
+          return {
+            data: {
+              createProduct: {
+                ok: true,
+                object: { id: "UHJvZHVjdDox" },
+                errors: [],
+              },
+            },
+          };
+        },
+      },
+    ];
+
+    renderWithMocks(
+      <ModelForm
+        app="store"
+        model="Product"
+        mode="CREATE"
+        excludeFields={["internalNote"]}
+      />,
+      mocks,
+    );
+
+    await getRenderedSchema();
+
+    const onSubmit = latestDynamicFormProps?.behavior?.onSubmit as
+      | ((values: Record<string, unknown>, ctx: Record<string, unknown>) => Promise<void>)
+      | undefined;
+    expect(typeof onSubmit).toBe("function");
+
+    const { form } = createMockFormContext({
+      name: {},
+      status: {},
+      __all__: {},
+    });
+
+    await act(async () => {
+      await onSubmit?.(
+        {
+          name: "Widget",
+          status: "ACTIVE",
+          createdAt: "2026-02-12T12:00:00Z",
+          internalNote: "hidden",
         },
         { form } as Record<string, unknown>,
       );
@@ -1554,6 +1964,305 @@ describe("ModelForm", () => {
       | { errorMap?: { onSubmit?: string } }
       | undefined;
     expect(tagsMeta?.errorMap?.onSubmit).toMatch(/blocked/i);
+  });
+
+  it("maps unrendered submit errors to the canonical form-level key", async () => {
+    const contract: ModelFormContract = {
+      ...sampleModelFormContract,
+      appLabel: "store",
+      modelName: "Product",
+      mode: "CREATE",
+      fields: [
+        {
+          ...sampleModelFormContract.fields[0],
+          name: "name",
+          path: "name",
+          fieldName: "name",
+          readOnly: false,
+          hidden: false,
+          kind: "TEXT",
+        },
+      ],
+      sections: [
+        {
+          ...sampleModelFormContract.sections[0],
+          fieldPaths: ["name"],
+        },
+      ],
+      relations: [],
+    };
+
+    const createMutationDocument = gql(
+      buildGeneratedMutationDocument("create", "createProduct", "Product", "id"),
+    );
+
+    const mocks = [
+      {
+        request: {
+          query: MODEL_FORM_CONTRACT_QUERY,
+          variables: {
+            appLabel: "store",
+            modelName: "Product",
+            mode: "CREATE",
+            includeNested: false,
+          },
+        },
+        result: {
+          data: {
+            modelFormContract: contract,
+          },
+        },
+      },
+      {
+        request: {
+          query: createMutationDocument,
+          variables: {
+            input: {
+              name: "Widget",
+            },
+          },
+        },
+        result: {
+          data: {
+            createProduct: {
+              ok: false,
+              object: null,
+              errors: [
+                {
+                  field: "order_items",
+                  message: "Order items payload is invalid.",
+                },
+              ],
+            },
+          },
+        },
+      },
+    ];
+
+    renderWithMocks(
+      <ModelForm app="store" model="Product" mode="CREATE" />,
+      mocks,
+    );
+
+    await getRenderedSchema();
+
+    const onSubmit = latestDynamicFormProps?.behavior?.onSubmit as
+      | ((values: Record<string, unknown>, ctx: Record<string, unknown>) => Promise<void>)
+      | undefined;
+
+    const { form, fieldMetaStore } = createMockFormContext({
+      name: {},
+      __all__: {},
+    });
+
+    await act(async () => {
+      await onSubmit?.(
+        {
+          name: "Widget",
+        },
+        { form } as Record<string, unknown>,
+      );
+    });
+
+    await waitFor(() => {
+      expect(form.setFieldMeta).toHaveBeenCalled();
+    });
+
+    const calls = (form.setFieldMeta as any).mock.calls as Array<[string]>;
+    expect(calls.some(([name]) => name === "__all__")).toBe(true);
+
+    const formMeta = fieldMetaStore.__all__ as
+      | { errorMap?: { onSubmit?: string } }
+      | undefined;
+    expect(formMeta?.errorMap?.onSubmit).toMatch(/order items/i);
+  });
+
+  it("exposes normalized mutation variables in ModelForm devtools transform", async () => {
+    const contract: ModelFormContract = {
+      ...sampleModelFormContract,
+      appLabel: "store",
+      modelName: "Product",
+      mode: "UPDATE",
+      relations: [singularCustomerRelation, manyItemsRelation],
+    };
+
+    const mocks = [
+      {
+        request: {
+          query: MODEL_FORM_CONTRACT_QUERY,
+          variables: {
+            appLabel: "store",
+            modelName: "Product",
+            mode: "UPDATE",
+            includeNested: false,
+          },
+        },
+        result: {
+          data: {
+            modelFormContract: contract,
+          },
+        },
+      },
+      {
+        request: {
+          query: MODEL_FORM_INITIAL_DATA_QUERY,
+          variables: {
+            appLabel: "store",
+            modelName: "Product",
+            objectId: "42",
+            includeNested: false,
+            runtimeOverrides: [],
+          },
+        },
+        result: {
+          data: {
+            modelFormInitialData: {
+              appLabel: "store",
+              modelName: "Product",
+              objectId: "42",
+              values: JSON.stringify({ name: "Starter" }),
+              readonlyValues: null,
+              loadedAt: "2026-02-12T12:00:00Z",
+            },
+          },
+        },
+      },
+    ];
+
+    renderWithMocks(
+      <ModelForm
+        app="store"
+        model="Product"
+        mode="UPDATE"
+        objectId="42"
+        devtools={{ enabled: true }}
+      />,
+      mocks,
+    );
+
+    await getRenderedSchema();
+
+    const transformValues = latestDynamicFormProps?.devtools?.transformValues as
+      | ((values: Record<string, unknown>) => Record<string, unknown>)
+      | undefined;
+
+    expect(typeof transformValues).toBe("function");
+
+    const preview = transformValues?.({
+      name: "Widget",
+      customer: "Q3VzdG9tZXI6MQ==",
+      items: [{ quantity: 2, sku: "SKU-2" }],
+    });
+    const previewValues = preview?.formValues as Record<string, unknown> | undefined;
+    expect(previewValues?.name).toBe("Widget");
+    expect(previewValues?.customer).toBe("Q3VzdG9tZXI6MQ==");
+    expect(previewValues).not.toHaveProperty("mutationRequest");
+
+    const request = preview?.mutationRequest as
+      | {
+          operationName?: string;
+          variables?: Record<string, unknown>;
+        }
+      | undefined;
+
+    expect(request?.operationName).toBe("updateProduct");
+    expect(request?.variables?.id).toBe("42");
+    expect(request?.variables).not.toHaveProperty("objectId");
+    expect((request?.variables?.input as Record<string, unknown>)?.customer).toEqual({
+      connect: "Q3VzdG9tZXI6MQ==",
+    });
+    expect((request?.variables?.input as Record<string, unknown>)?.items).toEqual({
+      create: [{ quantity: 2, sku: "SKU-2" }],
+    });
+  });
+
+  it("normalizes custom update identifier variables to backend `id`", async () => {
+    const contract: ModelFormContract = {
+      ...sampleModelFormContract,
+      appLabel: "store",
+      modelName: "Product",
+      mode: "UPDATE",
+      fields: [
+        {
+          ...sampleModelFormContract.fields[0],
+          name: "sku",
+          path: "sku",
+          fieldName: "sku",
+          label: "SKU",
+          kind: "TEXT",
+          required: true,
+        },
+        ...sampleModelFormContract.fields,
+      ],
+      sections: [
+        {
+          ...sampleModelFormContract.sections[0],
+          fieldPaths: ["sku", ...sampleModelFormContract.sections[0].fieldPaths],
+        },
+      ],
+      mutationBindings: {
+        ...sampleModelFormContract.mutationBindings,
+        updateIdentifierKey: "sku",
+      },
+      relations: [],
+    };
+
+    const mocks = [
+      {
+        request: {
+          query: MODEL_FORM_CONTRACT_QUERY,
+          variables: {
+            appLabel: "store",
+            modelName: "Product",
+            mode: "UPDATE",
+            includeNested: false,
+          },
+        },
+        result: {
+          data: {
+            modelFormContract: contract,
+          },
+        },
+      },
+    ];
+
+    renderWithMocks(
+      <ModelForm
+        app="store"
+        model="Product"
+        mode="UPDATE"
+        requireObjectIdForUpdate={false}
+        devtools={{ enabled: true }}
+      />,
+      mocks,
+    );
+
+    await getRenderedSchema();
+
+    const transformValues = latestDynamicFormProps?.devtools?.transformValues as
+      | ((values: Record<string, unknown>) => Record<string, unknown>)
+      | undefined;
+    expect(typeof transformValues).toBe("function");
+
+    const preview = transformValues?.({
+      sku: "SKU-42",
+      name: "Widget",
+      price: "24.99",
+    });
+
+    const request = preview?.mutationRequest as
+      | {
+          operationName?: string;
+          variables?: Record<string, unknown>;
+        }
+      | undefined;
+
+    expect(request?.operationName).toBe("updateProduct");
+    expect(request?.variables?.id).toBe("SKU-42");
+    expect(request?.variables).not.toHaveProperty("sku");
+    expect((request?.variables?.input as Record<string, unknown>)?.name).toBe(
+      "Widget",
+    );
   });
 
   it("applies view defaults with canonical props", async () => {

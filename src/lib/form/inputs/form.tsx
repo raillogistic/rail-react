@@ -9,7 +9,7 @@ import { useForm, type UseFormReturn, useStore } from "@tanstack/react-form";
 import { cn } from "@/lib/utils";
 import { Loader2 } from "lucide-react";
 import type { DynamicFormProps } from "../types/props";
-import type { FormSectionConfig } from "../types/schema";
+import type { FormFieldConfig, FormSectionConfig } from "../types/schema";
 import { useFormDefaults } from "../hooks/useFormDefaults";
 import { useFormAutoReset } from "../hooks/useFormAutoReset";
 import { useFormChangeTracking } from "../hooks/useFormChangeTracking";
@@ -29,6 +29,108 @@ import { ReviewMode } from "../renderers/modes/ReviewMode";
 import { normalizeFieldOrder } from "./fieldOrder";
 
 const DEFAULT_COLUMNS = 2;
+const CANONICAL_FORM_ERROR_KEY = "__all__";
+
+function collectSubmitMessages(meta: unknown): string[] {
+  if (!meta || typeof meta !== "object") {
+    return [];
+  }
+
+  const payload = meta as {
+    errors?: unknown;
+    errorMap?: Record<string, unknown>;
+  };
+  const collected: string[] = [];
+
+  if (Array.isArray(payload.errors)) {
+    payload.errors.forEach((entry) => {
+      const normalized = String(entry ?? "").trim();
+      if (normalized) {
+        collected.push(normalized);
+      }
+    });
+  }
+
+  const submitError = payload.errorMap?.onSubmit;
+  if (submitError !== undefined && submitError !== null) {
+    const normalized = String(submitError).trim();
+    if (normalized) {
+      collected.push(normalized);
+    }
+  }
+
+  return collected;
+}
+
+function collectRenderableFieldPaths(
+  sections: FormSectionConfig[],
+  hiddenFields: Set<string>,
+) {
+  const paths = new Set<string>();
+
+  const walkField = (field: FormFieldConfig, path: string) => {
+    if (!path || field.hidden || hiddenFields.has(path)) {
+      return;
+    }
+
+    paths.add(path);
+
+    if (field.type !== "group" && field.type !== "object") {
+      return;
+    }
+
+    field.fields.forEach((child) => {
+      const childName = String((child as FormFieldConfig).name ?? "").trim();
+      if (!childName) return;
+      walkField(child as FormFieldConfig, `${path}.${childName}`);
+    });
+  };
+
+  sections.forEach((section) => {
+    section.fields.forEach((field) => {
+      const name = String((field as FormFieldConfig).name ?? "").trim();
+      if (!name) return;
+      walkField(field as FormFieldConfig, name);
+    });
+  });
+
+  return paths;
+}
+
+function isRenderableFieldPath(path: string, renderableFieldPaths: Set<string>) {
+  if (renderableFieldPaths.has(path)) {
+    return true;
+  }
+
+  const segments = path.split(".").filter(Boolean);
+  for (let index = segments.length - 1; index > 0; index -= 1) {
+    const parent = segments.slice(0, index).join(".");
+    if (renderableFieldPaths.has(parent)) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+function collectGlobalSubmitErrors(
+  fieldMeta: Record<string, unknown>,
+  renderableFieldPaths: Set<string>,
+) {
+  const errors: string[] = [];
+
+  Object.entries(fieldMeta).forEach(([path, meta]) => {
+    const isFormLevel =
+      path === CANONICAL_FORM_ERROR_KEY ||
+      !isRenderableFieldPath(path, renderableFieldPaths);
+
+    if (!isFormLevel) return;
+
+    errors.push(...collectSubmitMessages(meta));
+  });
+
+  return Array.from(new Set(errors));
+}
 
 const DynamicForm = <TValues extends Record<string, any> = Record<string, any>>(
   props: DynamicFormProps<TValues>,
@@ -138,6 +240,10 @@ const DynamicForm = <TValues extends Record<string, any> = Record<string, any>>(
   // ─── Store subscriptions ─────────────────────────────────────────────
 
   const formValues = useStore(form.store, (state) => state.values) as TValues;
+  const fieldMeta = useStore(
+    form.store,
+    (state) => (state as { fieldMeta?: Record<string, unknown> }).fieldMeta ?? {},
+  );
 
   // ─── Persistence ─────────────────────────────────────────────────────
 
@@ -208,6 +314,20 @@ const DynamicForm = <TValues extends Record<string, any> = Record<string, any>>(
     form,
     sections,
     conditions,
+  );
+
+  const renderableFieldPaths = React.useMemo(
+    () => collectRenderableFieldPaths(sections, hiddenFields),
+    [sections, hiddenFields],
+  );
+
+  const globalSubmitErrors = React.useMemo(
+    () =>
+      collectGlobalSubmitErrors(
+        fieldMeta as Record<string, unknown>,
+        renderableFieldPaths,
+      ),
+    [fieldMeta, renderableFieldPaths],
   );
 
   // ─── Computed fields ─────────────────────────────────────────────────
@@ -310,6 +430,18 @@ const DynamicForm = <TValues extends Record<string, any> = Record<string, any>>(
             {renderMode()}
           </div>
         </div>
+
+        {globalSubmitErrors.length > 0 ? (
+          <div
+            data-testid="dynamic-form-global-errors"
+            role="alert"
+            className="mx-1 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs text-destructive"
+          >
+            {globalSubmitErrors.map((message, index) => (
+              <p key={`global-submit-error-${index}`}>{message}</p>
+            ))}
+          </div>
+        ) : null}
 
         {!isWizardMode ? (
           <ActionsBar

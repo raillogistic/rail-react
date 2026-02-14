@@ -658,6 +658,7 @@ export function applySchemaControls<TValues extends Record<string, unknown>>(
   options: {
     onlyFields?: string[];
     excludeFields?: string[];
+    onlyRequired?: boolean;
     onlyRelationships?: string[];
     excludeRelationships?: string[];
     fieldOverrides?: Record<string, ModelFormFieldOverrideValue>;
@@ -765,7 +766,7 @@ export function applySchemaControls<TValues extends Record<string, unknown>>(
               ) ?? currentField;
           }
 
-          return applyFieldOverride(
+          const globallyOverridden = applyFieldOverride(
             currentField,
             resolveFieldOverride(
               options.fieldOverrides,
@@ -773,6 +774,15 @@ export function applySchemaControls<TValues extends Record<string, unknown>>(
               relationPath,
             ),
           );
+          if (!globallyOverridden) {
+            return null;
+          }
+
+          if (options.onlyRequired && !globallyOverridden.required) {
+            return null;
+          }
+
+          return globallyOverridden;
         })
         .filter(Boolean) as FormFieldConfig[];
 

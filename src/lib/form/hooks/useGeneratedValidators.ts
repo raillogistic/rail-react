@@ -133,6 +133,28 @@ function asValidatorList(value: ValidatorFn | ValidatorFn[] | undefined): Valida
   return Array.isArray(value) ? value : [value];
 }
 
+function resolveContractFieldName(field: ModelFormContractField): string {
+  const declaredName = String(field.name ?? "").trim();
+  if (declaredName) return declaredName;
+  return String(field.path ?? field.fieldName ?? "").trim();
+}
+
+function contractFieldExtensionKeys(field: ModelFormContractField): string[] {
+  const keys = new Set<string>();
+  const add = (value: unknown) => {
+    const normalized = String(value ?? "").trim();
+    if (normalized) {
+      keys.add(normalized);
+    }
+  };
+
+  add(field.name);
+  add(field.path);
+  add(resolveContractFieldName(field));
+
+  return Array.from(keys);
+}
+
 export function useGeneratedValidators(
   contract: ModelFormContract | null | undefined,
   extensions?: GeneratedValidatorExtensionMap,
@@ -140,9 +162,13 @@ export function useGeneratedValidators(
   const fieldValidators = useMemo(() => {
     const output: Record<string, ValidatorFn[]> = {};
     for (const field of contract?.fields ?? []) {
+      const fieldName = resolveContractFieldName(field) || field.path;
+      if (!fieldName) continue;
       const baseValidators = getConstraintValidators(field);
-      const custom = asValidatorList(extensions?.[field.path]);
-      output[field.path] = [...baseValidators, ...custom];
+      const custom = contractFieldExtensionKeys(field).flatMap((key) =>
+        asValidatorList(extensions?.[key]),
+      );
+      output[fieldName] = [...baseValidators, ...custom];
     }
     return output;
   }, [contract, extensions]);
@@ -150,12 +176,12 @@ export function useGeneratedValidators(
   const formValidator = useMemo(() => {
     return (values: Record<string, any>) => {
       const errors: Record<string, string> = {};
-      for (const [path, validators] of Object.entries(fieldValidators)) {
-        const value = getValueByPath(values, path);
+      for (const [fieldName, validators] of Object.entries(fieldValidators)) {
+        const value = getValueByPath(values, fieldName);
         for (const validator of validators) {
-          const result = validator(value, { values, name: path });
+          const result = validator(value, { values, name: fieldName });
           if (typeof result === "string" && result.trim()) {
-            errors[path] = result;
+            errors[fieldName] = result;
             break;
           }
         }
