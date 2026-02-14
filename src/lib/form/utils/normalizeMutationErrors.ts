@@ -85,7 +85,7 @@ export function normalizeGeneratedMutationErrors(
       if (typeof item !== "object") {
         return {
           field: formErrorKey,
-          message: "An unexpected error occurred.",
+          message: "Une erreur inattendue est survenue.",
           source: DEFAULT_SOURCE,
           conflict: false,
           meta: null,
@@ -105,7 +105,7 @@ export function normalizeGeneratedMutationErrors(
         nextMeta.originalField = rawField;
         return {
           field,
-          message: String(payload.message ?? "An unexpected error occurred."),
+          message: String(payload.message ?? "Une erreur inattendue est survenue."),
           code: payload.code ? String(payload.code) : null,
           source: normalizeSource(payload.source),
           conflict,
@@ -120,7 +120,7 @@ export function normalizeGeneratedMutationErrors(
 
       return {
         field,
-        message: String(payload.message ?? "An unexpected error occurred."),
+        message: String(payload.message ?? "Une erreur inattendue est survenue."),
         code: payload.code ? String(payload.code) : null,
         source: normalizeSource(payload.source),
         conflict,

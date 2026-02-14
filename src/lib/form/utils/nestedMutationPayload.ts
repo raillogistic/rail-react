@@ -153,13 +153,13 @@ function assertActionAllowed(
   inferred: boolean,
 ) {
   if (isActionAllowed(relation, action)) return;
-  const source = inferred ? "Inferred" : "Explicit";
+  const source = inferred ? "Inférée" : "Explicite";
   throw new NestedMutationPayloadError({
     field: relationPath,
     code: "NESTED_RELATION_POLICY_BLOCKED",
     action,
     inferred,
-    message: `${source} nested action '${action}' is blocked for relation '${relationPath}'.`,
+    message: `L'action imbriquée ${source} '${action}' est bloquée pour la relation '${relationPath}'.`,
   });
 }
 
@@ -177,7 +177,7 @@ function normalizeExplicitOperationInput(
         field: relationPath,
         code: "NESTED_RELATION_INVALID_ACTION",
         inferred: false,
-        message: `Unsupported nested action '${key}' for relation '${relationPath}'.`,
+        message: `Action imbriquée non supportée '${key}' pour la relation '${relationPath}'.`,
       });
     }
     assertActionAllowed(relation, relationPath, action, false);
@@ -207,7 +207,7 @@ function normalizeToOneRelationInput(
       field: relationPath,
       code: "NESTED_RELATION_INVALID_INPUT",
       inferred: true,
-      message: `Unable to infer nested action for relation '${relationPath}'.`,
+      message: `Impossible d'inférer l'action imbriquée pour la relation '${relationPath}'.`,
     });
   }
 
@@ -246,7 +246,7 @@ function normalizeToManyRelationArrayInput(
         field: relationPath,
         code: "NESTED_RELATION_INVALID_INPUT",
         inferred: true,
-        message: `Unable to infer nested action for relation '${relationPath}' from null list item.`,
+        message: `Impossible d'inférer l'action imbriquée pour la relation '${relationPath}' à partir d'un élément de liste nul.`,
       });
     }
     if (isScalarValue(item)) {
@@ -258,7 +258,7 @@ function normalizeToManyRelationArrayInput(
         field: relationPath,
         code: "NESTED_RELATION_INVALID_INPUT",
         inferred: true,
-        message: `Unable to infer nested action for relation '${relationPath}'.`,
+        message: `Impossible d'inférer l'action imbriquée pour la relation '${relationPath}'.`,
       });
     }
     if (classifyRelationInputShape(item) === "EXPLICIT_OPERATION") {
@@ -266,7 +266,7 @@ function normalizeToManyRelationArrayInput(
         field: relationPath,
         code: "NESTED_RELATION_INVALID_INPUT",
         inferred: true,
-        message: `List relation '${relationPath}' does not accept explicit operation objects as list entries.`,
+        message: `La relation de liste '${relationPath}' n'accepte pas d'objets d'opération explicites comme éléments de liste.`,
       });
     }
 
@@ -329,7 +329,7 @@ function normalizeToManyRelationInput(
       field: relationPath,
       code: "NESTED_RELATION_INVALID_INPUT",
       inferred: true,
-      message: `Unable to infer nested action for relation '${relationPath}'.`,
+      message: `Impossible d'inférer l'action imbriquée pour la relation '${relationPath}'.`,
     });
   }
 

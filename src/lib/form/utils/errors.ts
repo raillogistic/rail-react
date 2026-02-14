@@ -116,7 +116,7 @@ export function applyErrorsToFormFields(
             ...(isConflict
               ? {
                   onSubmitConflictInstruction:
-                    "Conflict detected. Refresh the form data and retry.",
+                    "Conflit détecté. Actualisez les données du formulaire et réessayez.",
                 }
               : {}),
           },

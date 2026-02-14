@@ -41,8 +41,8 @@ export const ActionsBar = <TValues extends Record<string, any>>({
   history,
 }: ActionsBarProps<TValues>) => {
   const {
-    submitLabel = "Save",
-    resetLabel = "Reset",
+    submitLabel = "Enregistrer",
+    resetLabel = "Réinitialiser",
     hidden = false,
     extra,
     confirmSubmit,
@@ -96,7 +96,7 @@ export const ActionsBar = <TValues extends Record<string, any>>({
               className="bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800 animate-in fade-in slide-in-from-left-2"
             >
               <CheckCircle2 className="mr-1.5 size-3.5" />
-              Unsaved changes
+              Modifications non enregistrées
             </Badge>
           ) : (
              <div className="w-1" />
@@ -115,7 +115,7 @@ export const ActionsBar = <TValues extends Record<string, any>>({
                 className="size-8 text-muted-foreground"
                 onClick={history.undo}
                 disabled={!history.canUndo || isSubmitting}
-                title="Undo"
+                title="Annuler"
               >
                 <Undo className="size-4" />
               </Button>
@@ -126,7 +126,7 @@ export const ActionsBar = <TValues extends Record<string, any>>({
                 className="size-8 text-muted-foreground"
                 onClick={history.redo}
                 disabled={!history.canRedo || isSubmitting}
-                title="Redo"
+                title="Rétablir"
               >
                 <Redo className="size-4" />
               </Button>
@@ -160,7 +160,7 @@ export const ActionsBar = <TValues extends Record<string, any>>({
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 size-4 animate-spin" />
-                Saving...
+                Enregistrement...
               </>
             ) : (
               <>
@@ -182,10 +182,10 @@ export const ActionsBar = <TValues extends Record<string, any>>({
               )}
             >
               {submitOutcome.ok
-                ? "Saved"
+                ? "Enregistré"
                 : submitOutcome.conflict
-                  ? "Refresh required"
-                  : `${submitOutcome.errorCount} error(s)`}
+                  ? "Actualisation requise"
+                  : `${submitOutcome.errorCount} erreur(s)`}
             </span>
           ) : null}
         </div>
@@ -197,11 +197,11 @@ export const ActionsBar = <TValues extends Record<string, any>>({
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <AlertTriangle className="size-5 text-warning text-amber-500" />
-                {confirmSubmit.title ?? "Confirm Submission"}
+                {confirmSubmit.title ?? "Confirmer la soumission"}
               </DialogTitle>
               <DialogDescription className="pt-2">
                 {confirmSubmit.message ??
-                  "Are you sure you want to submit this form?"}
+                  "Êtes-vous sûr de vouloir soumettre ce formulaire ?"}
               </DialogDescription>
             </DialogHeader>
             <DialogFooter className="mt-4 gap-2">
@@ -209,7 +209,7 @@ export const ActionsBar = <TValues extends Record<string, any>>({
                 variant="outline"
                 onClick={() => setConfirmOpen(false)}
               >
-                Cancel
+                Annuler
               </Button>
               <Button
                 onClick={() => {
@@ -217,7 +217,7 @@ export const ActionsBar = <TValues extends Record<string, any>>({
                   form.handleSubmit();
                 }}
               >
-                Confirm
+                Confirmer
               </Button>
             </DialogFooter>
           </DialogContent>

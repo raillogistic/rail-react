@@ -39,7 +39,7 @@ export function buildSubmitPayload(
   }
 
   if (!options.identifier) {
-    throw new Error("Update submissions require a resolved identifier.");
+    throw new Error("Les soumissions de mise à jour nécessitent un identifiant résolu.");
   }
 
   return {

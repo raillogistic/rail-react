@@ -141,7 +141,7 @@ const TextInput: React.FC<Props> = ({ config, field, form }) => {
           <div className="flex items-center justify-between bg-muted/20 px-3 py-1.5 border-b border-border/30">
             <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
               <FileJson className="size-3.5" />
-              JSON Editor
+              Éditeur JSON
             </div>
           </div>
           <textarea

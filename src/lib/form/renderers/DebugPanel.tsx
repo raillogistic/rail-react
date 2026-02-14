@@ -308,9 +308,9 @@ export const DebugPanel = <TValues extends Record<string, any>>({
       }));
 
     const reasons: string[] = [];
-    if (shouldSurface && !canSubmit) reasons.push("form invalid or untouched");
-    if (isSubmitting) reasons.push("form is submitting");
-    if (isLoading) reasons.push("external loading flag");
+    if (shouldSurface && !canSubmit) reasons.push("formulaire invalide ou non modifié");
+    if (isSubmitting) reasons.push("formulaire en cours de soumission");
+    if (isLoading) reasons.push("indicateur de chargement externe");
 
     return { reasons, invalid };
   }, [fieldMeta, canSubmit, isSubmitting, isLoading, config.showDiagnostics]);
@@ -347,7 +347,7 @@ export const DebugPanel = <TValues extends Record<string, any>>({
                     data-testid="debug-copy-mutation-request"
                     onClick={handleCopyMutationRequest}
                   >
-                    {copiedMutationRequest ? "Copied" : "Copy"}
+                    {copiedMutationRequest ? "Copié" : "Copier"}
                   </Button>
                 </div>
                 <pre
@@ -375,10 +375,10 @@ export const DebugPanel = <TValues extends Record<string, any>>({
       </pre>
       {diagnostics && diagnostics.reasons.length ? (
         <div className="text-xs text-destructive space-y-1">
-          <p>Submit blocked: {diagnostics.reasons.join(", ")}</p>
+          <p>Soumission bloquée : {diagnostics.reasons.join(", ")}</p>
           {diagnostics.invalid.length ? (
             <div>
-              <p>Invalid fields:</p>
+              <p>Champs invalides :</p>
               <ul className="list-disc pl-4 space-y-0.5">
                 {diagnostics.invalid.map(({ name, errors }) => (
                   <li key={name}>

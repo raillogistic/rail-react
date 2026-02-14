@@ -458,7 +458,7 @@ const DynamicForm = <TValues extends Record<string, any> = Record<string, any>>(
             <div className="flex flex-col items-center gap-3 rounded-xl border bg-background p-6 shadow-2xl">
               <Loader2 className="size-8 animate-spin text-primary" />
               <p className="text-sm font-bold tracking-tight text-muted-foreground">
-                Loading...
+                Chargement...
               </p>
             </div>
           </div>

@@ -64,12 +64,12 @@ export const ReviewMode = <TValues extends Record<string, any>>({
           </div>
           <div className="flex flex-col">
             <span className="text-sm font-bold tracking-tight">
-              {locked ? "Review mode" : "Editing mode"}
+              {locked ? "Mode révision" : "Mode édition"}
             </span>
             <span className="text-xs text-muted-foreground/80">
               {locked
-                ? "The form is locked for review."
-                : "You can edit the form fields."}
+                ? "Le formulaire est verrouillé pour révision."
+                : "Vous pouvez modifier les champs du formulaire."}
             </span>
           </div>
         </div>
@@ -85,9 +85,9 @@ export const ReviewMode = <TValues extends Record<string, any>>({
           onClick={() => setLocked((c) => !c)}
         >
           {locked ? (
-            <><Unlock className="mr-2 size-4" /> Unlock</>
+            <><Unlock className="mr-2 size-4" /> Déverrouiller</>
           ) : (
-            <><Lock className="mr-2 size-4" /> Lock for review</>
+            <><Lock className="mr-2 size-4" /> Verrouiller pour révision</>
           )}
         </Button>
       </div>
@@ -96,7 +96,7 @@ export const ReviewMode = <TValues extends Record<string, any>>({
         <div className="flex flex-col gap-4 animate-in slide-in-from-top-4 duration-500">
           <div className="flex items-center gap-2 px-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
              <ClipboardCheck className="size-4 text-primary" />
-             Submission Summary
+             Résumé de la soumission
           </div>
           <Card className="overflow-hidden border-border/40 bg-muted/5 shadow-inner">
             <div className="p-6">
@@ -111,7 +111,7 @@ export const ReviewMode = <TValues extends Record<string, any>>({
           <div className="pointer-events-none absolute inset-0 z-10 flex items-start justify-center pt-20">
              <div className="flex items-center gap-2 rounded-full bg-background/80 px-4 py-2 text-xs font-bold text-muted-foreground shadow-lg backdrop-blur-md border border-border/40">
                 <Info className="size-3.5 text-amber-500" />
-                Read only
+                Lecture seule
              </div>
           </div>
         )}

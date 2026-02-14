@@ -144,13 +144,13 @@ function normalizeMutationVariablesForGraphQL(
   }
 
   if (nextVariables.id === undefined || nextVariables.id === null) {
-    throw new Error("Update mutations require an `id` variable.");
+    throw new Error("Les mutations de mise à jour nécessitent une variable `id`.");
   }
   if (typeof nextVariables.id === "string" && nextVariables.id.trim().length === 0) {
-    throw new Error("Update mutations require a non-empty `id` variable.");
+    throw new Error("Les mutations de mise à jour nécessitent une variable `id` non vide.");
   }
   if (typeof nextVariables.id === "number" && !Number.isFinite(nextVariables.id)) {
-    throw new Error("Update mutations require a finite numeric `id` variable.");
+    throw new Error("Les mutations de mise à jour nécessitent une variable `id` numérique finie.");
   }
 
   return nextVariables;
@@ -804,14 +804,14 @@ export function ModelForm<
 
   if (!resolvedApp || !resolvedModel) {
     return renderError(
-      new Error("ModelForm requires both `app` and `model` props."),
+      new Error("ModelForm nécessite les props `app` et `model`."),
       "contract",
     );
   }
 
   if (updateRequiresObjectId) {
     return renderError(
-      new Error("ModelForm requires `objectId` when mode is UPDATE."),
+      new Error("ModelForm nécessite `objectId` lorsque le mode est UPDATE."),
       "initialData",
     );
   }
@@ -828,7 +828,7 @@ export function ModelForm<
     return (
       loadingFallback ?? (
         <div className="rounded-md border p-3 text-sm text-muted-foreground">
-          Loading model form contract...
+          Chargement du contrat du formulaire...
         </div>
       )
     );
@@ -838,7 +838,7 @@ export function ModelForm<
     return (
       emptySchemaFallback ?? (
         <div className="rounded-md border p-3 text-sm text-muted-foreground">
-          No fields are available for this model form.
+          Aucun champ n'est disponible pour ce formulaire.
         </div>
       )
     );

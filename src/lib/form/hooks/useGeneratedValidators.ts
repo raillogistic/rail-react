@@ -81,7 +81,7 @@ function getConstraintValidators(field: ModelFormContractField): ValidatorFn[] {
   if (field.required) {
     validators.push((value) => {
       if (value === undefined || value === null || value === "") {
-        return `${field.label} is required.`;
+        return `${field.label} est requis.`;
       }
       return undefined;
     });
@@ -93,7 +93,7 @@ function getConstraintValidators(field: ModelFormContractField): ValidatorFn[] {
   if (Number.isFinite(maxLength) && maxLength > 0) {
     validators.push((value) => {
       if (typeof value === "string" && value.length > maxLength) {
-        return `${field.label} must be at most ${maxLength} characters.`;
+        return `${field.label} doit contenir au maximum ${maxLength} caractères.`;
       }
       return undefined;
     });
@@ -106,7 +106,7 @@ function getConstraintValidators(field: ModelFormContractField): ValidatorFn[] {
     validators.push((value) => {
       const numericValue = coerceValueToNumber(value);
       if (numericValue !== undefined && numericValue < minValue) {
-        return `${field.label} must be greater than or equal to ${minValue}.`;
+        return `${field.label} doit être supérieur ou égal à ${minValue}.`;
       }
       return undefined;
     });
@@ -119,7 +119,7 @@ function getConstraintValidators(field: ModelFormContractField): ValidatorFn[] {
     validators.push((value) => {
       const numericValue = coerceValueToNumber(value);
       if (numericValue !== undefined && numericValue > maxValue) {
-        return `${field.label} must be less than or equal to ${maxValue}.`;
+        return `${field.label} doit être inférieur ou égal à ${maxValue}.`;
       }
       return undefined;
     });

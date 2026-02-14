@@ -47,7 +47,7 @@ const RichTextInput: React.FC<Props> = ({ config, field, form }) => {
         openOnClick: false,
       }),
       Placeholder.configure({
-        placeholder: config.placeholder ?? "Write something...",
+        placeholder: config.placeholder ?? "Écrivez quelque chose...",
       }),
     ],
     content: (field.state.value as string) ?? "",

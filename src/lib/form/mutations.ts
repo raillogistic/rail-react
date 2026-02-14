@@ -308,7 +308,7 @@ export function createSubmitDispatchGuard(): SubmitDispatchGuard {
     },
     async run<T>(task: () => Promise<T> | T): Promise<T> {
       if (active) {
-        throw new Error("Submit dispatch already in progress.");
+        throw new Error("Envoi déjà en cours.");
       }
       active = true;
       try {
@@ -339,7 +339,7 @@ export function resolveGeneratedMutationOperation(
   }
 
   if (!fallbackModelName) {
-    throw new Error(`Missing mutation binding for mode '${mode}'.`);
+    throw new Error(`Liaison de mutation manquante pour le mode '${mode}'.`);
   }
 
   return getMutationFieldName(fallbackModelName, mode);

@@ -48,7 +48,7 @@ function resolveIdentifierKey(options: ResolveSubmitIdentifierOptions): string {
     FALLBACK_IDENTIFIER_KEY;
   const normalized = String(key ?? "").trim();
   if (!normalized) {
-    throw new Error("Unable to resolve update identifier key.");
+    throw new Error("Impossible de résoudre la clé d'identification de mise à jour.");
   }
   return normalized;
 }
@@ -106,7 +106,7 @@ export function resolveSubmitIdentifier(
 
   if (value === null) {
     throw new Error(
-      `Missing update identifier value for key '${key}'.`,
+      `Valeur d'identifiant de mise à jour manquante pour la clé '${key}'.`,
     );
   }
 

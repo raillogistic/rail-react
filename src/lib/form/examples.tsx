@@ -32,19 +32,19 @@ import { Button } from "@/lib/components/ui/button";
 
 const contactSchema: FormSchema = {
   fields: [
-    { name: "firstName", type: "text", label: "First Name", required: true },
-    { name: "lastName", type: "text", label: "Last Name", required: true },
+    { name: "firstName", type: "text", label: "Prénom", required: true },
+    { name: "lastName", type: "text", label: "Nom", required: true },
     {
       name: "email",
       type: "email",
-      label: "Email",
-      placeholder: "you@example.com",
+      label: "E-mail",
+      placeholder: "vous@exemple.com",
     },
     {
       name: "phone",
       type: "text",
-      label: "Phone",
-      placeholder: "+1 (555) 000-0000",
+      label: "Téléphone",
+      placeholder: "+33 (0) 0 00 00 00 00",
     },
     {
       name: "message",
@@ -61,17 +61,17 @@ export const ContactForm = () => (
     schema={contactSchema}
     behavior={{
       onSubmit: async (values) => {
-        console.log("Contact submitted:", values);
+        console.log("Contact soumis :", values);
       },
     }}
     layout={{ columns: 2, variant: "default" }}
     actions={{
-      submitLabel: "Send Message",
-      resetLabel: "Clear",
+      submitLabel: "Envoyer le message",
+      resetLabel: "Effacer",
       showDirtyIndicator: true,
       extra: (
         <Button type="button" variant="outline">
-          Cancel
+          Annuler
         </Button>
       ),
     }}
@@ -96,54 +96,54 @@ const settingsSchema: FormSchema<SettingsValues> = {
     {
       id: "notifications",
       title: "Notifications",
-      description: "Configure how you receive alerts.",
+      description: "Configurez la manière dont vous recevez les alertes.",
       fields: [
         {
           name: "enableNotifications",
           type: "switch",
-          label: "Enable Notifications",
+          label: "Activer les notifications",
           defaultValue: false,
         },
         {
           name: "notifyEmail",
           type: "email",
-          label: "Notification Email",
-          placeholder: "alerts@company.com",
+          label: "E-mail de notification",
+          placeholder: "alertes@entreprise.com",
         },
         {
           name: "notifyFrequency",
           type: "select",
-          label: "Frequency",
+          label: "Fréquence",
           options: [
-            { label: "Instant", value: "instant" },
-            { label: "Hourly Digest", value: "hourly" },
-            { label: "Daily Digest", value: "daily" },
+            { label: "Instantané", value: "instant" },
+            { label: "Résumé horaire", value: "hourly" },
+            { label: "Résumé quotidien", value: "daily" },
           ],
         },
       ],
     },
     {
       id: "api",
-      title: "API Access",
-      description: "Manage your API credentials and limits.",
+      title: "Accès API",
+      description: "Gérez vos identifiants API et vos limites.",
       fields: [
         {
           name: "enableApi",
           type: "switch",
-          label: "Enable API Access",
+          label: "Activer l'accès API",
           defaultValue: false,
         },
         {
           name: "apiKey",
           type: "text",
-          label: "API Key",
+          label: "Clé API",
           readOnly: true,
           defaultValue: "sk_live_xxxxxxxxxxxxxxxx",
         },
         {
           name: "rateLimit",
           type: "slider",
-          label: "Rate Limit (req/min)",
+          label: "Limite de débit (req/min)",
           min: 10,
           max: 1000,
           step: 10,
@@ -152,7 +152,7 @@ const settingsSchema: FormSchema<SettingsValues> = {
         {
           name: "estimatedCost",
           type: "number",
-          label: "Estimated Monthly Cost ($)",
+          label: "Coût mensuel estimé ($)",
           readOnly: true,
         },
       ],
@@ -165,7 +165,7 @@ export const SettingsForm = () => (
     schema={settingsSchema}
     behavior={{
       onSubmit: async (values) => {
-        console.log("Settings saved:", values);
+        console.log("Paramètres enregistrés :", values);
       },
       conditions: {
         notifyEmail: (v) => v.enableNotifications,
@@ -186,7 +186,7 @@ export const SettingsForm = () => (
         allowMultiple: true,
       },
     }}
-    actions={{ submitLabel: "Save Settings" }}
+    actions={{ submitLabel: "Enregistrer les paramètres" }}
   />
 );
 
@@ -207,26 +207,31 @@ const onboardingSchema: FormSchema<OnboardingValues> = {
   sections: [
     {
       id: "identity",
-      title: "Your Identity",
+      title: "Votre identité",
       step: {
-        label: "Identity",
+        label: "Identité",
         canAdvance: (v) => !!v.fullName && !!v.email,
       },
       fields: [
-        { name: "fullName", type: "text", label: "Full Name", required: true },
+        {
+          name: "fullName",
+          type: "text",
+          label: "Nom complet",
+          required: true,
+        },
         {
           name: "email",
           type: "email",
-          label: "Email Address",
+          label: "Adresse e-mail",
           required: true,
         },
         {
           name: "accountType",
           type: "radio",
-          label: "Account Type",
+          label: "Type de compte",
           options: [
-            { label: "Personal", value: "personal" },
-            { label: "Business", value: "business" },
+            { label: "Personnel", value: "personal" },
+            { label: "Professionnel", value: "business" },
           ],
           defaultValue: "personal",
         },
@@ -234,20 +239,20 @@ const onboardingSchema: FormSchema<OnboardingValues> = {
     },
     {
       id: "company",
-      title: "Company Details",
-      step: { label: "Company", optional: true },
+      title: "Détails de l'entreprise",
+      step: { label: "Entreprise", optional: true },
       visible: (v) => v.accountType === "business",
       fields: [
         {
           name: "companyName",
           type: "text",
-          label: "Company Name",
+          label: "Nom de l'entreprise",
           required: true,
         },
         {
           name: "companySize",
           type: "select",
-          label: "Company Size",
+          label: "Taille de l'entreprise",
           options: [
             { label: "1-10", value: "small" },
             { label: "11-50", value: "medium" },
@@ -259,14 +264,14 @@ const onboardingSchema: FormSchema<OnboardingValues> = {
     },
     {
       id: "profile",
-      title: "Profile",
-      step: { label: "Profile" },
+      title: "Profil",
+      step: { label: "Profil" },
       fields: [
         {
           name: "bio",
           type: "textarea",
-          label: "Short Bio",
-          placeholder: "Tell us about yourself...",
+          label: "Courte biographie",
+          placeholder: "Parlez-nous de vous...",
           rows: 3,
           colSpan: 2,
         },
@@ -274,16 +279,17 @@ const onboardingSchema: FormSchema<OnboardingValues> = {
     },
     {
       id: "confirm",
-      title: "Confirm & Agree",
+      title: "Confirmer et Accepter",
       step: {
-        label: "Confirm",
+        label: "Confirmer",
         canAdvance: (v) => v.agreeTerms === true,
       },
       fields: [
         {
           name: "agreeTerms",
           type: "checkbox",
-          label: "I agree to the Terms of Service and Privacy Policy",
+          label:
+            "J'accepte les conditions d'utilisation et la politique de confidentialité",
           defaultValue: false,
         },
       ],
@@ -296,7 +302,7 @@ export const OnboardingWizard = () => (
     schema={onboardingSchema}
     behavior={{
       onSubmit: async (values) => {
-        console.log("Onboarding complete:", values);
+        console.log("Onboarding terminé :", values);
       },
     }}
     layout={{
@@ -329,17 +335,17 @@ const invoiceSchema: FormSchema<InvoiceValues> = {
   sections: [
     {
       id: "header",
-      title: "Invoice Details",
+      title: "Détails de la facture",
       columns: 3,
       fields: [
         {
           name: "invoiceNumber",
           type: "text",
-          label: "Invoice #",
-          defaultValue: "INV-001",
+          label: "Facture n°",
+          defaultValue: "FAC-001",
         },
-        { name: "issueDate", type: "date", label: "Issue Date" },
-        { name: "dueDate", type: "date", label: "Due Date" },
+        { name: "issueDate", type: "date", label: "Date d'émission" },
+        { name: "dueDate", type: "date", label: "Date d'échéance" },
       ],
     },
     {
@@ -349,15 +355,15 @@ const invoiceSchema: FormSchema<InvoiceValues> = {
         {
           name: "client",
           type: "object",
-          label: "Client Information",
+          label: "Informations client",
           columns: 2,
           fields: [
-            { name: "name", type: "text", label: "Client Name" },
-            { name: "email", type: "email", label: "Client Email" },
+            { name: "name", type: "text", label: "Nom du client" },
+            { name: "email", type: "email", label: "E-mail du client" },
             {
               name: "address",
               type: "textarea",
-              label: "Address",
+              label: "Adresse",
               rows: 2,
               colSpan: 2,
             },
@@ -367,13 +373,13 @@ const invoiceSchema: FormSchema<InvoiceValues> = {
     },
     {
       id: "items",
-      title: "Line Items",
+      title: "Lignes de facture",
       fields: [
         {
           name: "lineItems",
           type: "list",
-          label: "Items",
-          addLabel: "Add Line Item",
+          label: "Articles",
+          addLabel: "Ajouter un article",
           minItems: 1,
           maxItems: 20,
           columns: 3,
@@ -387,14 +393,14 @@ const invoiceSchema: FormSchema<InvoiceValues> = {
             {
               name: "quantity",
               type: "number",
-              label: "Qty",
+              label: "Qté",
               min: 1,
               defaultValue: 1,
             },
             {
               name: "unitPrice",
               type: "decimal",
-              label: "Unit Price",
+              label: "Prix unitaire",
               min: 0,
               step: 0.01,
               defaultValue: 0,
@@ -405,19 +411,19 @@ const invoiceSchema: FormSchema<InvoiceValues> = {
     },
     {
       id: "totals",
-      title: "Totals",
+      title: "Totaux",
       columns: 3,
       fields: [
         {
           name: "subtotal",
           type: "decimal",
-          label: "Subtotal",
+          label: "Sous-total",
           readOnly: true,
         },
         {
           name: "taxRate",
           type: "number",
-          label: "Tax %",
+          label: "TVA %",
           min: 0,
           max: 100,
           defaultValue: 10,
@@ -432,10 +438,10 @@ const invoiceSchema: FormSchema<InvoiceValues> = {
         {
           name: "notes",
           type: "textarea",
-          label: "Notes / Payment Terms",
+          label: "Notes / Conditions de paiement",
           rows: 3,
           colSpan: 2,
-          placeholder: "Payment due within 30 days...",
+          placeholder: "Paiement dû sous 30 jours...",
         },
       ],
     },
@@ -446,7 +452,7 @@ const InvoicePreview = ({ values }: { values: InvoiceValues }) => (
   <div className="space-y-4 text-sm">
     <div className="flex justify-between">
       <div>
-        <p className="text-lg font-bold">{values.invoiceNumber || "INV-..."}</p>
+        <p className="text-lg font-bold">{values.invoiceNumber || "FAC-..."}</p>
         <p className="text-muted-foreground">
           {values.issueDate || "—"} &rarr; {values.dueDate || "—"}
         </p>
@@ -459,10 +465,10 @@ const InvoicePreview = ({ values }: { values: InvoiceValues }) => (
     <table className="w-full text-left text-xs">
       <thead>
         <tr className="border-b">
-          <th className="pb-1">Item</th>
-          <th className="pb-1 text-right">Qty</th>
-          <th className="pb-1 text-right">Price</th>
-          <th className="pb-1 text-right">Line</th>
+          <th className="pb-1">Article</th>
+          <th className="pb-1 text-right">Qté</th>
+          <th className="pb-1 text-right">Prix</th>
+          <th className="pb-1 text-right">Ligne</th>
         </tr>
       </thead>
       <tbody>
@@ -471,10 +477,10 @@ const InvoicePreview = ({ values }: { values: InvoiceValues }) => (
             <td className="py-1">{item.description || "—"}</td>
             <td className="py-1 text-right">{item.quantity}</td>
             <td className="py-1 text-right">
-              ${(item.unitPrice ?? 0).toFixed(2)}
+              {(item.unitPrice ?? 0).toFixed(2)} €
             </td>
             <td className="py-1 text-right">
-              ${((item.quantity ?? 0) * (item.unitPrice ?? 0)).toFixed(2)}
+              {((item.quantity ?? 0) * (item.unitPrice ?? 0)).toFixed(2)} €
             </td>
           </tr>
         ))}
@@ -483,21 +489,21 @@ const InvoicePreview = ({ values }: { values: InvoiceValues }) => (
     <div className="flex justify-end">
       <div className="w-48 space-y-1 text-right">
         <div className="flex justify-between">
-          <span>Subtotal</span>
-          <span>${(values.subtotal ?? 0).toFixed(2)}</span>
+          <span>Sous-total</span>
+          <span>{(values.subtotal ?? 0).toFixed(2)} €</span>
         </div>
         <div className="flex justify-between text-muted-foreground">
-          <span>Tax ({values.taxRate ?? 0}%)</span>
+          <span>TVA ({values.taxRate ?? 0}%)</span>
           <span>
-            $
             {(((values.subtotal ?? 0) * (values.taxRate ?? 0)) / 100).toFixed(
               2,
-            )}
+            )}{" "}
+            €
           </span>
         </div>
         <div className="flex justify-between border-t pt-1 font-bold">
           <span>Total</span>
-          <span>${(values.total ?? 0).toFixed(2)}</span>
+          <span>{(values.total ?? 0).toFixed(2)} €</span>
         </div>
       </div>
     </div>
@@ -509,7 +515,7 @@ export const InvoiceForm = () => (
     schema={invoiceSchema}
     behavior={{
       onSubmit: async (values) => {
-        console.log("Invoice created:", values);
+        console.log("Facture créée :", values);
       },
       computed: {
         subtotal: (v) =>
@@ -527,7 +533,10 @@ export const InvoiceForm = () => (
       },
       validate: (v) => {
         if (v.dueDate && v.issueDate && v.dueDate < v.issueDate) {
-          return { dueDate: "Due date must be after issue date" };
+          return {
+            dueDate:
+              "La date d'échéance doit être postérieure à la date d'émission",
+          };
         }
         return undefined;
       },
@@ -541,11 +550,11 @@ export const InvoiceForm = () => (
       },
     }}
     actions={{
-      submitLabel: "Create Invoice",
+      submitLabel: "Créer la facture",
       confirmSubmit: {
         enabled: true,
-        title: "Create Invoice",
-        message: "This will finalize the invoice. Continue?",
+        title: "Créer la facture",
+        message: "Cela finalisera la facture. Continuer ?",
       },
     }}
   />
@@ -571,68 +580,68 @@ const applicationSchema: FormSchema<ApplicationValues> = {
   sections: [
     {
       id: "applicant",
-      title: "Applicant Information",
+      title: "Informations sur le candidat",
       icon: "👤",
       fields: [
         {
           name: "applicantName",
           type: "text",
-          label: "Full Name",
+          label: "Nom complet",
           required: true,
         },
         {
           name: "applicantEmail",
           type: "email",
-          label: "Email",
+          label: "E-mail",
           required: true,
         },
       ],
     },
     {
       id: "position",
-      title: "Position Details",
+      title: "Détails du poste",
       icon: "💼",
       fields: [
         {
           name: "department",
           type: "select",
-          label: "Department",
+          label: "Département",
           options: [
-            { label: "Engineering", value: "engineering" },
+            { label: "Ingénierie", value: "engineering" },
             { label: "Design", value: "design" },
             { label: "Marketing", value: "marketing" },
-            { label: "Sales", value: "sales" },
+            { label: "Ventes", value: "sales" },
           ],
         },
         {
           name: "role",
           type: "select",
-          label: "Role",
+          label: "Rôle",
           options: [
             { label: "Junior", value: "junior" },
-            { label: "Mid-Level", value: "mid" },
+            { label: "Intermédiaire", value: "mid" },
             { label: "Senior", value: "senior" },
-            { label: "Lead", value: "lead" },
+            { label: "Responsable", value: "lead" },
           ],
         },
-        { name: "startDate", type: "date", label: "Proposed Start Date" },
+        { name: "startDate", type: "date", label: "Date de début proposée" },
       ],
     },
     {
       id: "compensation",
-      title: "Compensation",
+      title: "Rémunération",
       icon: "💰",
       fields: [
         {
           name: "salary",
           type: "number",
-          label: "Annual Salary",
+          label: "Salaire annuel",
           min: 0,
         },
         {
           name: "currency",
           type: "select",
-          label: "Currency",
+          label: "Devise",
           options: [
             { label: "USD ($)", value: "USD" },
             { label: "EUR (€)", value: "EUR" },
@@ -643,14 +652,14 @@ const applicationSchema: FormSchema<ApplicationValues> = {
         {
           name: "salaryDisplay",
           type: "text",
-          label: "Formatted Salary",
+          label: "Salaire formaté",
           readOnly: true,
         },
       ],
     },
     {
       id: "review",
-      title: "Review Decision",
+      title: "Décision de révision",
       icon: "✅",
       fields: [
         {
@@ -659,12 +668,12 @@ const applicationSchema: FormSchema<ApplicationValues> = {
           label: "Justification / Notes",
           rows: 4,
           colSpan: 2,
-          placeholder: "Provide reasoning for the hiring decision...",
+          placeholder: "Fournir les raisons de la décision d'embauche...",
         },
         {
           name: "approved",
           type: "switch",
-          label: "Approve Application",
+          label: "Approuver la candidature",
           defaultValue: false,
         },
       ],
@@ -680,21 +689,21 @@ const currencySymbol: Record<string, string> = {
 
 const ApplicationSummary = ({ values }: { values: ApplicationValues }) => (
   <div className="space-y-3 text-sm">
-    <h4 className="font-semibold">Application Summary</h4>
+    <h4 className="font-semibold">Résumé de la candidature</h4>
     <dl className="grid grid-cols-2 gap-x-4 gap-y-1">
-      <dt className="text-muted-foreground">Name</dt>
+      <dt className="text-muted-foreground">Nom</dt>
       <dd>{values.applicantName || "—"}</dd>
-      <dt className="text-muted-foreground">Department</dt>
+      <dt className="text-muted-foreground">Département</dt>
       <dd>{values.department || "—"}</dd>
-      <dt className="text-muted-foreground">Role</dt>
+      <dt className="text-muted-foreground">Rôle</dt>
       <dd>{values.role || "—"}</dd>
-      <dt className="text-muted-foreground">Start Date</dt>
+      <dt className="text-muted-foreground">Date de début</dt>
       <dd>{values.startDate || "—"}</dd>
-      <dt className="text-muted-foreground">Salary</dt>
+      <dt className="text-muted-foreground">Salaire</dt>
       <dd>{values.salaryDisplay || "—"}</dd>
-      <dt className="text-muted-foreground">Status</dt>
+      <dt className="text-muted-foreground">Statut</dt>
       <dd className={values.approved ? "text-green-600" : "text-amber-600"}>
-        {values.approved ? "Approved" : "Pending"}
+        {values.approved ? "Approuvé" : "En attente"}
       </dd>
     </dl>
     {values.justification && (
@@ -713,13 +722,13 @@ export const ApplicationReviewForm = () => (
     schema={applicationSchema}
     behavior={{
       onSubmit: async (values) => {
-        console.log("Application decision:", values);
+        console.log("Décision de candidature :", values);
       },
       computed: {
         salaryDisplay: (v) => {
           if (!v.salary) return "";
           const sym = currencySymbol[v.currency] ?? "$";
-          return `${sym}${v.salary.toLocaleString()}/yr`;
+          return `${v.salary.toLocaleString()} ${sym}/an`;
         },
       },
       dependencies: {
@@ -729,12 +738,14 @@ export const ApplicationReviewForm = () => (
         enabled: true,
         debounceMs: 2000,
         onSave: async (values) => {
-          console.log("Draft saved:", values);
+          console.log("Brouillon enregistré :", values);
         },
       },
       validate: (v) => {
         if (v.approved && !v.justification?.trim()) {
-          return { justification: "Justification is required when approving" };
+          return {
+            justification: "La justification est requise lors de l'approbation",
+          };
         }
         return undefined;
       },
@@ -747,12 +758,12 @@ export const ApplicationReviewForm = () => (
       },
     }}
     actions={{
-      submitLabel: "Submit Decision",
+      submitLabel: "Soumettre la décision",
       showDirtyIndicator: true,
       confirmSubmit: {
         enabled: true,
-        title: "Submit Decision",
-        message: "This action cannot be undone. Proceed?",
+        title: "Soumettre la décision",
+        message: "Cette action ne peut pas être annulée. Continuer ?",
       },
     }}
     devtools={{ enabled: true, showDiagnostics: true, logChanges: true }}
@@ -781,53 +792,61 @@ const advancedSchema: FormSchema<AdvancedValues> = {
     {
       name: "projectTitle",
       type: "text",
-      label: "Project Title",
-      placeholder: "My Awesome Project",
+      label: "Titre du projet",
+      placeholder: "Mon Super Projet",
       required: true,
     },
     {
       name: "description",
       type: "rich-text",
-      label: "Project Description",
+      label: "Description du projet",
       minHeight: "150px",
       toolbar: ["bold", "italic", "heading", "list", "link"],
     },
     {
       name: "tasks",
       type: "list",
-      label: "Prioritized Tasks (Drag to Reorder)",
+      label: "Tâches prioritaires (Glisser pour réordonner)",
       ordering: { activate: true, toField: "order" },
       columns: 1,
       fields: [
-        { name: "title", type: "text", label: "Task Name" },
+        { name: "title", type: "text", label: "Nom de la tâche" },
         // 'order' field is managed automatically but can be hidden or shown if needed
-        { name: "order", type: "number", label: "Order", hidden: true },
+        { name: "order", type: "number", label: "Ordre", hidden: true },
       ],
       defaultValue: [
-        { title: "Research", order: 0 },
-        { title: "Design", order: 1 },
-        { title: "Implementation", order: 2 },
+        { title: "Recherche", order: 0 },
+        { title: "Conception", order: 1 },
+        { title: "Mise en œuvre", order: 2 },
       ],
     },
     {
       name: "metadata",
       type: "group",
-      label: "Metadata (Card Group)",
+      label: "Métadonnées (Groupe Carte)",
       collapsible: true,
       ui: { variant: "card" },
       fields: [
-        { name: "author", type: "text", label: "Author Name" },
-        { name: "tags", type: "text", label: "Tags (comma separated)" },
+        { name: "author", type: "text", label: "Nom de l'auteur" },
+        {
+          name: "tags",
+          type: "text",
+          label: "Tags (séparés par des virgules)",
+        },
       ],
     },
     {
       name: "settings",
       type: "group",
-      label: "Settings (Fieldset Group)",
+      label: "Paramètres (Groupe Fieldset)",
       ui: { variant: "fieldset" },
       fields: [
-        { name: "isPublic", type: "switch", label: "Public Project" },
-        { name: "allowComments", type: "checkbox", label: "Allow Comments" },
+        { name: "isPublic", type: "switch", label: "Projet public" },
+        {
+          name: "allowComments",
+          type: "checkbox",
+          label: "Autoriser les commentaires",
+        },
       ],
     },
   ],
@@ -846,12 +865,12 @@ export const AdvancedFeaturesForm = () => (
         enabled: true,
         showInActionBar: true,
       },
-      submitLabel: "Save Project",
-      resetLabel: "Reset All",
+      submitLabel: "Enregistrer le projet",
+      resetLabel: "Tout réinitialiser",
     }}
     behavior={{
       onSubmit: async (values) => {
-        console.log("Advanced form submitted:", values);
+        console.log("Formulaire avancé soumis :", values);
       },
     }}
   />
@@ -955,7 +974,7 @@ function toErrorMessage(error: unknown): string {
   if (error instanceof Error && error.message.trim()) {
     return error.message;
   }
-  return "Request failed.";
+  return "La requête a échoué.";
 }
 
 function useStoreGeneratedForm(options: {
@@ -1060,7 +1079,7 @@ export function StoreProductCreateGeneratedFormExample() {
 
       setSubmission({
         status: "saving",
-        message: "Submitting product create mutation...",
+        message: "Soumission de la mutation de création de produit...",
         conflict: false,
         errors: [],
       });
@@ -1105,13 +1124,13 @@ export function StoreProductCreateGeneratedFormExample() {
           ok
             ? {
                 status: "success",
-                message: "Product created successfully.",
+                message: "Produit créé avec succès.",
                 conflict: false,
                 errors: [],
               }
             : {
                 status: "error",
-                message: "Product create failed.",
+                message: "Échec de la création du produit.",
                 conflict: Boolean(response.conflict),
                 errors,
               },
@@ -1133,11 +1152,13 @@ export function StoreProductCreateGeneratedFormExample() {
   );
 
   if (generated.loading) {
-    return <p>Loading generated Product form contract...</p>;
+    return <p>Chargement du contrat du formulaire Product généré...</p>;
   }
 
   if (generated.error) {
-    return <p>Failed to load Product contract: {generated.error.message}</p>;
+    return (
+      <p>Échec du chargement du contrat Product : {generated.error.message}</p>
+    );
   }
 
   const snapshot = metrics.getSnapshot();
@@ -1145,7 +1166,7 @@ export function StoreProductCreateGeneratedFormExample() {
   return (
     <section className="space-y-4">
       <h2 className="text-lg font-semibold">
-        Store Product Create (Generated Form)
+        Création de produit Store (Formulaire généré)
       </h2>
       <DynamicForm
         schema={generated.schema}
@@ -1164,7 +1185,7 @@ export function StoreProductCreateGeneratedFormExample() {
           <p>{submission.message}</p>
           {submission.conflict ? (
             <p className="mt-1 text-destructive">
-              Update conflict detected. Reload contract and try again.
+              Conflit de mise à jour détecté. Rechargez le contrat et réessayez.
             </p>
           ) : null}
           {submission.errors.length > 0 ? (
@@ -1180,8 +1201,8 @@ export function StoreProductCreateGeneratedFormExample() {
         </div>
       ) : null}
       <p className="text-xs text-muted-foreground">
-        Submission attempts: {snapshot.totalSubmissions}, correction success
-        rate: {Math.round(snapshot.correctionRate * 100)}%
+        Tentatives de soumission : {snapshot.totalSubmissions}, taux de succès
+        de correction : {Math.round(snapshot.correctionRate * 100)}%
       </p>
     </section>
   );
@@ -1191,19 +1212,19 @@ export function StoreProductCreateModelFormExample() {
   return (
     <section className="space-y-4">
       <h2 className="text-lg font-semibold">
-        Store Product Create (ModelForm)
+        Création de produit Store (ModelForm)
       </h2>
       <ModelForm
         app="store"
         model="Product"
         mode="CREATE"
         runtimeOverrides={PRODUCT_CREATE_RUNTIME_OVERRIDES}
-        description="Auto-wired create example: Save runs generated createOperation with no manual mutation wiring."
+        description="Exemple de création auto-câblée : Enregistrer lance createOperation généré sans câblage manuel de mutation."
         formProps={{
           layout: { columns: 2, showSectionHeaders: true },
           actions: {
-            submitLabel: "Create Product",
-            resetLabel: "Reset",
+            submitLabel: "Créer le produit",
+            resetLabel: "Réinitialiser",
             showDirtyIndicator: true,
           },
         }}
@@ -1220,12 +1241,17 @@ export function StoreProductUpdateModelFormExample({
   objectId,
 }: StoreProductUpdateModelFormExampleProps) {
   if (!objectId) {
-    return <p>Pass a valid `objectId` to load the Product update ModelForm.</p>;
+    return (
+      <p>
+        Veuillez fournir un `objectId` valide pour charger le ModelForm de mise
+        à jour du produit.
+      </p>
+    );
   }
   return (
     <section className="space-y-4">
       <h2 className="text-lg font-semibold">
-        Store Product Update (ModelForm)
+        Mise à jour de produit Store (ModelForm)
       </h2>
       <ModelForm
         app="store"
@@ -1241,7 +1267,7 @@ export function StoreProductUpdateModelFormExample({
         //   },
         // }}
         runtimeOverrides={PRODUCT_UPDATE_RUNTIME_OVERRIDES}
-        description="Auto-wired update example: initial values load from modelFormInitialData and Save runs generated updateOperation."
+        description="Exemple de mise à jour auto-câblée : les valeurs initiales sont chargées depuis modelFormInitialData et Enregistrer lance updateOperation générée."
         formProps={{
           devtools: { enabled: true },
           layout: {
@@ -1250,8 +1276,8 @@ export function StoreProductUpdateModelFormExample({
             showSectionHeaders: true,
           },
           actions: {
-            submitLabel: "Update Product",
-            resetLabel: "Reset",
+            submitLabel: "Mettre à jour le produit",
+            resetLabel: "Réinitialiser",
             showDirtyIndicator: true,
           },
         }}
@@ -1268,18 +1294,25 @@ export function StoreOrderViewModelFormExample({
   objectId,
 }: StoreOrderViewModelFormExampleProps) {
   if (!objectId) {
-    return <p>Pass a valid `objectId` to load the Order view ModelForm.</p>;
+    return (
+      <p>
+        Veuillez fournir un `objectId` valide pour charger le ModelForm de
+        consultation de commande.
+      </p>
+    );
   }
 
   return (
     <section className="space-y-4">
-      <h2 className="text-lg font-semibold">Store Order View (ModelForm)</h2>
+      <h2 className="text-lg font-semibold">
+        Consultation de commande Store (ModelForm)
+      </h2>
       <ModelForm
         app="store"
         model="Order"
         mode="VIEW"
         objectId={objectId}
-        description="Read-only order details with contract-driven field visibility."
+        description="Détails de commande en lecture seule avec visibilité des champs pilotée par le contrat."
       />
     </section>
   );
@@ -1288,17 +1321,19 @@ export function StoreOrderViewModelFormExample({
 export function StoreOrderCreateModelFormExample() {
   return (
     <section className="space-y-4">
-      <h2 className="text-lg font-semibold">Store Order Create (ModelForm)</h2>
+      <h2 className="text-lg font-semibold">
+        Création de commande Store (ModelForm)
+      </h2>
       <ModelForm
         app="store"
         model="Order"
         mode="CREATE"
         nested={["customer", "items"]}
         excludeFields={["payment_token", "raw_payload"]}
-        description="Create order form with nested customer/items enabled."
+        description="Formulaire de création de commande avec client/articles imbriqués activés."
         behavior={{
           onSubmit: async (values) => {
-            console.log("Order create values:", values);
+            console.log("Valeurs de création de commande :", values);
           },
         }}
       />
@@ -1310,20 +1345,23 @@ export function StoreOrderItemCreateModelFormExample() {
   return (
     <section className="space-y-4">
       <h2 className="text-lg font-semibold">
-        Store OrderItem Create (ModelForm)
+        Création de ligne de commande Store (ModelForm)
       </h2>
       <ModelForm
         app="store"
         model="OrderItem"
         mode="CREATE"
-        description="Contract-driven create form for order line items."
+        description="Formulaire de création piloté par contrat pour les lignes de commande."
         formProps={{
           layout: { columns: 2, showSectionHeaders: true },
-          actions: { submitLabel: "Create Order Item", resetLabel: "Reset" },
+          actions: {
+            submitLabel: "Créer une ligne de commande",
+            resetLabel: "Réinitialiser",
+          },
         }}
         behavior={{
           onSubmit: async (values) => {
-            console.log("OrderItem create values:", values);
+            console.log("Valeurs de création de ligne de commande :", values);
           },
         }}
       />
@@ -1358,7 +1396,7 @@ export function StoreOrderUpdateGeneratedFormExample({
 
       setSubmission({
         status: "saving",
-        message: "Submitting order update mutation...",
+        message: "Soumission de la mutation de mise à jour de la commande...",
         conflict: false,
         errors: [],
       });
@@ -1410,13 +1448,13 @@ export function StoreOrderUpdateGeneratedFormExample({
           ok
             ? {
                 status: "success",
-                message: "Order updated successfully.",
+                message: "Commande mise à jour avec succès.",
                 conflict: false,
                 errors: [],
               }
             : {
                 status: "error",
-                message: "Order update failed.",
+                message: "Échec de la mise à jour de la commande.",
                 conflict: Boolean(response.conflict),
                 errors,
               },
@@ -1439,16 +1477,21 @@ export function StoreOrderUpdateGeneratedFormExample({
 
   if (!objectId) {
     return (
-      <p>Pass a valid `objectId` to load the generated Order update form.</p>
+      <p>
+        Veuillez fournir un `objectId` valide pour charger le formulaire de mise
+        à jour de commande généré.
+      </p>
     );
   }
 
   if (generated.loading) {
-    return <p>Loading generated Order form contract...</p>;
+    return <p>Chargement du contrat du formulaire Order généré...</p>;
   }
 
   if (generated.error) {
-    return <p>Failed to load Order contract: {generated.error.message}</p>;
+    return (
+      <p>Échec du chargement du contrat Order : {generated.error.message}</p>
+    );
   }
 
   const snapshot = metrics.getSnapshot();
@@ -1456,7 +1499,7 @@ export function StoreOrderUpdateGeneratedFormExample({
   return (
     <section className="space-y-4">
       <h2 className="text-lg font-semibold">
-        Store Order Update (Generated Form)
+        Mise à jour de commande Store (Formulaire généré)
       </h2>
       <DynamicForm
         schema={generated.schema}
@@ -1465,8 +1508,8 @@ export function StoreOrderUpdateGeneratedFormExample({
           onSubmit,
         }}
         actions={{
-          submitLabel: "Update Order",
-          resetLabel: "Reset",
+          submitLabel: "Mettre à jour la commande",
+          resetLabel: "Réinitialiser",
           showDirtyIndicator: true,
         }}
       />
@@ -1475,7 +1518,8 @@ export function StoreOrderUpdateGeneratedFormExample({
           <p>{submission.message}</p>
           {submission.conflict ? (
             <p className="mt-1 text-destructive">
-              Conflict response received. Refresh initial data and retry.
+              Réponse de conflit reçue. Actualisez les données initiales et
+              réessayez.
             </p>
           ) : null}
           {submission.errors.length > 0 ? (
@@ -1491,8 +1535,8 @@ export function StoreOrderUpdateGeneratedFormExample({
         </div>
       ) : null}
       <p className="text-xs text-muted-foreground">
-        Submission attempts: {snapshot.totalSubmissions}, correction success
-        rate: {Math.round(snapshot.correctionRate * 100)}%
+        Tentatives de soumission : {snapshot.totalSubmissions}, taux de succès
+        de correction : {Math.round(snapshot.correctionRate * 100)}%
       </p>
     </section>
   );
@@ -1502,11 +1546,13 @@ export function StoreModelTableExamples() {
   return (
     <section className="space-y-8">
       <div>
-        <h2 className="mb-2 text-lg font-semibold">Store Product Table</h2>
+        <h2 className="mb-2 text-lg font-semibold">Table des produits Store</h2>
         <ModelTableV2 app="store" model="Product" />
       </div>
       <div>
-        <h2 className="mb-2 text-lg font-semibold">Store Order Table</h2>
+        <h2 className="mb-2 text-lg font-semibold">
+          Table des commandes Store
+        </h2>
         <ModelTableV2 app="store" model="Order" />
       </div>
     </section>
