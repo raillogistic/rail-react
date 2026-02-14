@@ -250,6 +250,7 @@ describe("useGeneratedModelForm adapter", () => {
       ],
       relations: [
         {
+          name: "category",
           path: "category",
           label: "Category",
           relationType: "FOREIGN_KEY",
@@ -265,6 +266,7 @@ describe("useGeneratedModelForm adapter", () => {
           nestedForm: null,
         },
         {
+          name: "orderItems",
           path: "order_items",
           label: "Order Items",
           relationType: "REVERSE_FK",
@@ -310,7 +312,7 @@ describe("useGeneratedModelForm adapter", () => {
     );
 
     const categoryField = fieldMap.get("category") as Record<string, unknown>;
-    const orderItemsField = fieldMap.get("order_items") as Record<string, unknown>;
+    const orderItemsField = fieldMap.get("orderItems") as Record<string, unknown>;
 
     expect(categoryField?.type).toBe("select-query");
     expect(categoryField?.relatedModel).toBe("store.Category");
@@ -321,8 +323,8 @@ describe("useGeneratedModelForm adapter", () => {
     expect(orderItemsField?.multiple).toBe(true);
 
     expect(result.current.initialValues.category).toBe(4);
-    expect(result.current.initialValues.order_items).toEqual([5, 8, 17]);
-    expect(result.current.initialValues).not.toHaveProperty("orderItems");
+    expect(result.current.initialValues.orderItems).toEqual([5, 8, 17]);
+    expect(result.current.initialValues).not.toHaveProperty("order_items");
   });
 
   it("injects non-section contract fields when section paths are incomplete", () => {
@@ -385,5 +387,61 @@ describe("useGeneratedModelForm adapter", () => {
       (field) => field.name,
     );
     expect(fieldNames).toEqual(["name", "price", "inventory_count", "category"]);
+  });
+
+  it("keeps section order when relation path casing differs from fieldPaths", () => {
+    const contract: ModelFormContract = {
+      ...sampleModelFormContract,
+      fields: [
+        {
+          ...sampleModelFormContract.fields[0],
+          path: "name",
+          fieldName: "name",
+          label: "Name",
+        },
+        {
+          ...sampleModelFormContract.fields[1],
+          path: "price",
+          fieldName: "price",
+          label: "Price",
+        },
+      ],
+      sections: [
+        {
+          ...sampleModelFormContract.sections[0],
+          fieldPaths: ["name", "orderItems", "price"],
+        },
+      ],
+      relations: [
+        {
+          name: "orderItems",
+          path: "order_items",
+          label: "Order Items",
+          relationType: "REVERSE_FK",
+          toMany: true,
+          relatedAppLabel: "store",
+          relatedModelName: "OrderItem",
+          policy: {
+            path: "order_items",
+            allowedActions: ["CONNECT", "SET"],
+            blockedActions: [],
+            nestedEnabled: false,
+          },
+          nestedForm: null,
+        },
+      ],
+    };
+
+    const { result } = renderHook(() =>
+      useGeneratedModelForm({
+        generatedEnabled: true,
+        contract,
+      }),
+    );
+
+    const fieldNames = result.current.schema.sections?.[0]?.fields.map(
+      (field) => field.name,
+    );
+    expect(fieldNames).toEqual(["name", "orderItems", "price"]);
   });
 });

@@ -32,6 +32,11 @@ import {
 } from "../utils/submitPerformance";
 import { buildSubmitPayload, type SubmitPayloadEnvelope } from "../utils/buildSubmitPayload";
 import { resolveSubmitIdentifier } from "../utils/resolveSubmitIdentifier";
+import {
+  buildSubmitErrorOutcome,
+  unwrapMutationPayload,
+  toExecutionErrorMessage,
+} from "./generatedSubmit/submitExecution";
 
 const INITIAL_SUBMIT_STATE: ModelFormSubmitState = {
   status: "IDLE",
@@ -145,6 +150,41 @@ function transformPathTokens(path: string, transformer: (token: string) => strin
     .join(".");
 }
 
+function resolveRelationFieldName(relation: {
+  name?: string | null;
+  path?: string | null;
+}) {
+  const declaredName = String(relation.name ?? "").trim();
+  if (declaredName) return declaredName;
+  const path = String(relation.path ?? "").trim();
+  if (!path) return "";
+  return transformPathTokens(path, toCamelToken);
+}
+
+function relationFieldCandidates(relation: {
+  name?: string | null;
+  path?: string | null;
+}) {
+  const candidates = new Set<string>();
+  const add = (value?: string | null) => {
+    const normalized = String(value ?? "").trim();
+    if (normalized) {
+      candidates.add(normalized);
+    }
+  };
+
+  add(relation.name);
+  add(relation.path);
+  if (relation.path) {
+    add(transformPathTokens(relation.path, toCamelToken));
+  }
+  if (relation.name) {
+    add(transformPathTokens(relation.name, toSnakeToken));
+  }
+
+  return Array.from(candidates);
+}
+
 function normalizeSubmitValueKeysToCamel(value: unknown): unknown {
   if (Array.isArray(value)) {
     return value.map((entry) => normalizeSubmitValueKeysToCamel(entry));
@@ -215,9 +255,16 @@ function normalizeInitialValuesByContract(
   }
 
   for (const relation of contract.relations ?? []) {
-    const resolved = resolveInitialPathValue(values, relation.path);
+    let resolved: unknown = undefined;
+    for (const candidate of relationFieldCandidates(relation)) {
+      resolved = resolveInitialPathValue(values, candidate);
+      if (resolved !== undefined) break;
+    }
     if (resolved === undefined) continue;
-    nextValues = setValueByPath(nextValues, relation.path, resolved);
+
+    const relationFieldName = resolveRelationFieldName(relation) || relation.path;
+    if (!relationFieldName) continue;
+    nextValues = setValueByPath(nextValues, relationFieldName, resolved);
     resolvedCount += 1;
   }
 
@@ -245,15 +292,32 @@ export function buildSchemaFromContract(
   contract: ModelFormContract,
 ): FormSchema<Record<string, any>> {
   const fieldsByPath = new Map<string, FormFieldConfig>();
+  const resolveFieldByContractPath = (
+    path: string,
+  ): FormFieldConfig | undefined => {
+    const candidates = Array.from(
+      new Set([
+        path,
+        transformPathTokens(path, toCamelToken),
+        transformPathTokens(path, toSnakeToken),
+      ]),
+    );
+    for (const candidate of candidates) {
+      const field = fieldsByPath.get(candidate);
+      if (field) return field;
+    }
+    return undefined;
+  };
 
   const buildGeneratedRelationField = (
     relation: ModelFormContract["relations"][number],
   ): FormFieldConfig => {
+    const relationFieldName = resolveRelationFieldName(relation) || relation.path;
     const relatedModel = [relation.relatedAppLabel, relation.relatedModelName]
       .filter(Boolean)
       .join(".");
     return {
-      name: relation.path,
+      name: relationFieldName,
       type: "select-query",
       label: relation.label,
       required: false,
@@ -267,6 +331,8 @@ export function buildSchemaFromContract(
           }
         : undefined,
       meta: {
+        relationName: relationFieldName,
+        relationPath: relation.path,
         relationType: relation.relationType,
         relatedAppLabel: relation.relatedAppLabel,
         relatedModelName: relation.relatedModelName,
@@ -306,8 +372,17 @@ export function buildSchemaFromContract(
   }
 
   for (const relation of contract.relations ?? []) {
-    if (!relation.path || fieldsByPath.has(relation.path)) continue;
-    fieldsByPath.set(relation.path, buildGeneratedRelationField(relation));
+    const relationFieldName = resolveRelationFieldName(relation) || relation.path;
+    if (!relationFieldName) continue;
+    if (!fieldsByPath.has(relationFieldName)) {
+      fieldsByPath.set(relationFieldName, buildGeneratedRelationField(relation));
+    }
+    if (relation.path && !fieldsByPath.has(relation.path)) {
+      const relationField = fieldsByPath.get(relationFieldName);
+      if (relationField) {
+        fieldsByPath.set(relation.path, relationField);
+      }
+    }
   }
 
   const assignedPaths = new Set<string>();
@@ -316,9 +391,9 @@ export function buildSchemaFromContract(
     .map((section) => {
       const sectionFields = section.fieldPaths
         .map((path) => {
-          const field = fieldsByPath.get(path);
+          const field = resolveFieldByContractPath(path);
           if (field) {
-            assignedPaths.add(path);
+            assignedPaths.add(field.name);
           }
           return field;
         })
@@ -366,58 +441,6 @@ function normalizeSubmitMode(mode: ModelFormMode | undefined): "CREATE" | "UPDAT
   return mode === "UPDATE" ? "UPDATE" : "CREATE";
 }
 
-function toExecutionErrorMessage(error: unknown) {
-  if (error instanceof Error && error.message.trim()) {
-    return error.message;
-  }
-  return "Submit execution failed.";
-}
-
-function unwrapMutationPayload(
-  payload: unknown,
-  operationName: string,
-): Record<string, unknown> {
-  if (!payload || typeof payload !== "object") {
-    return {};
-  }
-  const dictionary = payload as Record<string, unknown>;
-  if (dictionary.ok !== undefined || dictionary.errors !== undefined) {
-    return dictionary;
-  }
-  const response = dictionary.response;
-  if (response && typeof response === "object") {
-    return response as Record<string, unknown>;
-  }
-  const operationData = dictionary[operationName];
-  if (operationData && typeof operationData === "object") {
-    return operationData as Record<string, unknown>;
-  }
-  const data = dictionary.data;
-  if (data && typeof data === "object") {
-    return unwrapMutationPayload(data, operationName);
-  }
-  return {};
-}
-
-function buildErrorOutcome(
-  message: string,
-  formErrorKey: string,
-  visibleFieldPaths: Set<string>,
-): ModelFormMutationOutcome {
-  return {
-    ok: false,
-    conflict: false,
-    formErrorKey,
-    errors: normalizeGeneratedMutationErrors(
-      [{ message, source: "EXECUTION", field: formErrorKey }],
-      {
-        formErrorKey,
-        visibleFieldPaths,
-      },
-    ),
-  };
-}
-
 export function useGeneratedModelForm(options: UseGeneratedModelFormOptions) {
   const {
     contract,
@@ -450,7 +473,10 @@ export function useGeneratedModelForm(options: UseGeneratedModelFormOptions) {
           ...(contract?.fields ?? [])
             .filter((field) => !field.hidden)
             .map((field) => field.path),
-          ...((contract?.relations ?? []).map((relation) => relation.path) ?? []),
+          ...((contract?.relations ?? []).flatMap((relation) => {
+            const fieldName = resolveRelationFieldName(relation);
+            return [fieldName, relation.path].filter(Boolean) as string[];
+          }) ?? []),
         ],
       ),
     [contract],
@@ -623,17 +649,20 @@ export function useGeneratedModelForm(options: UseGeneratedModelFormOptions) {
 
         return result.outcome;
       } catch (error) {
-        const message = toExecutionErrorMessage(error);
-        const outcome = buildErrorOutcome(
-          message,
+        const outcome = buildSubmitErrorOutcome(error, {
           formErrorKey,
           visibleFieldPaths,
+        });
+        const primaryMessage =
+          outcome.errors[0]?.message ?? toExecutionErrorMessage(error);
+        const isReentrantError = /already in progress/i.test(primaryMessage);
+        const hasValidationErrors = outcome.errors.some(
+          (entry) => entry.source === "OPERATION",
         );
-        const isReentrantError = /already in progress/i.test(message);
 
         if (!isReentrantError) {
           setSubmitState({
-            status: "FAILED_EXECUTION",
+            status: hasValidationErrors ? "FAILED_VALIDATION" : "FAILED_EXECUTION",
             isSubmitting: false,
             lockActive: false,
             outcome,

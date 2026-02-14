@@ -447,17 +447,15 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
       any
     >;
     const {
-      appName: _appName,
-      modelName: _modelName,
       onCompleted: userOnCompleted,
       showSectionHeaders,
       ...restOverrides
     } = rawOverrides;
     return {
       ...restOverrides,
-      appName: inlineAppName ?? undefined,
-      modelName: inlineModelName ?? undefined,
-      mutationMode: "create",
+      app: inlineAppName ?? undefined,
+      model: inlineModelName ?? undefined,
+      mode: "CREATE",
       showSectionHeaders: showSectionHeaders ?? false,
       layout: {
         ...(restOverrides.layout ?? {}),

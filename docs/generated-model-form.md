@@ -51,6 +51,25 @@ GraphQL documents live in `src/graphql/modelFormContract.ts`.
   - `mutationBindings.updateIdentifierKey`
   - fallback `objectId`
 
+## Nested relation normalization defaults
+
+Generated submit now normalizes relation fields without manual adapters:
+
+- Singular scalar relation values normalize to `{ connect: <id> }`.
+- Update-mode to-many scalar lists normalize to `{ set: [...] }` (replacement semantics).
+- Singular `null` values normalize to `{ clear: true }`.
+- To-many object lists infer per-item intent:
+  - object with `id`/`pk`/`objectId`/`object_id` -> `update`
+  - object without identity key -> `create`
+- Explicit operation objects (`connect`, `create`, `update`, `disconnect`, `set`, `delete`, `clear`) pass through unchanged.
+- Non-relation fields are preserved as submitted.
+
+## Nested policy enforcement (fail-fast)
+
+- Inferred and explicit relation actions are checked against relation policy before mutation dispatch.
+- Blocked actions fail fast with relation-scoped validation errors (`field=<relationPath>`).
+- No fallback action is applied when policy denies an action.
+
 ### Loading + duplicate-submit guarantees
 
 - One submit lock exists per form instance.
@@ -117,11 +136,7 @@ export function ProductCreateForm() {
 />
 ```
 
-### Compatibility aliases
+### Relationship filters
 
-`ModelForm` also accepts legacy aliases:
-
-- `appName` / `modelName` / `mutationMode` / `mutationId`
-- `only` / `exclude`
-- `nestedFields`
-- `onlyRelationships` / `excludeRelationships`
+Use `onlyRelationships` / `excludeRelationships` to control which nested
+relation paths can render.

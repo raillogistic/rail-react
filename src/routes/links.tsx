@@ -33,6 +33,7 @@ import {
   InvoiceForm,
   OnboardingWizard,
   SettingsForm,
+  StoreOrderUpdateGeneratedFormExample,
   StoreProductUpdateModelFormExample,
 } from "@/lib/form/examples";
 import {

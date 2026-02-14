@@ -26,6 +26,7 @@ export function buildSubmitPayload(
   const input = buildNestedMutationPayload(
     options.resolvedValues,
     options.relations ?? [],
+    options.mode,
   );
 
   if (options.mode !== "UPDATE") {

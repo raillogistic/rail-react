@@ -5,7 +5,17 @@ import {
   selectGeneratedSubmitOperation,
 } from "../mutations";
 import { useGeneratedModelForm } from "../hooks/useGeneratedModelForm";
-import { sampleModelFormContract } from "./fixtures/modelFormContract";
+import {
+  sampleModelFormContract,
+  sampleModelFormContractWithRelations,
+} from "./fixtures/modelFormContract";
+import {
+  blockedCreateItemsRelation,
+  blockedDeleteTagsRelation,
+  manyItemsRelation,
+  manyTagsRelation,
+  singularCustomerRelation,
+} from "./fixtures/nestedRelationPayloads";
 
 describe("generated submit workflow", () => {
   it("selects submit operation from mode-driven bindings", () => {
@@ -189,5 +199,246 @@ describe("generated submit workflow", () => {
         identifier: { key: "sku_code", value: "SKU-001" },
       }),
     );
+  });
+
+  it("maps direct relation values into generated submit payloads", async () => {
+    const createExecutor = vi.fn().mockResolvedValue({
+      ok: true,
+      errors: [],
+      conflict: false,
+      formErrorKey: "__all__",
+    });
+
+    const createHook = renderHook(() =>
+      useGeneratedModelForm({
+        generatedEnabled: true,
+        contract: {
+          ...sampleModelFormContract,
+          relations: [singularCustomerRelation],
+        },
+        submitMode: "CREATE",
+        executeMutation: createExecutor,
+      }),
+    );
+
+    await act(async () => {
+      await createHook.result.current.submit({
+        name: "Widget",
+        customer: "Q3VzdG9tZXI6MQ==",
+      });
+    });
+
+    expect(createExecutor).toHaveBeenCalledWith(
+      "createProduct",
+      {
+        input: {
+          name: "Widget",
+          customer: { connect: "Q3VzdG9tZXI6MQ==" },
+        },
+      },
+      expect.objectContaining({
+        operationName: "createProduct",
+      }),
+    );
+
+    const updateExecutor = vi.fn().mockResolvedValue({
+      ok: true,
+      errors: [],
+      conflict: false,
+      formErrorKey: "__all__",
+    });
+
+    const updateHook = renderHook(() =>
+      useGeneratedModelForm({
+        generatedEnabled: true,
+        contract: {
+          ...sampleModelFormContractWithRelations,
+          relations: [manyTagsRelation],
+        },
+        submitMode: "UPDATE",
+        objectId: "T3JkZXI6MTA=",
+        executeMutation: updateExecutor,
+      }),
+    );
+
+    await act(async () => {
+      await updateHook.result.current.submit({
+        name: "Widget",
+        tags: ["VGFnOjE=", "VGFnOjI="],
+      });
+    });
+
+    expect(updateExecutor).toHaveBeenCalledWith(
+      "updateProduct",
+      {
+        objectId: "T3JkZXI6MTA=",
+        input: {
+          name: "Widget",
+          tags: { set: ["VGFnOjE=", "VGFnOjI="] },
+        },
+      },
+      expect.objectContaining({
+        operationName: "updateProduct",
+      }),
+    );
+  });
+
+  it("builds mixed inferred update/create relation buckets during submit", async () => {
+    const updateExecutor = vi.fn().mockResolvedValue({
+      ok: true,
+      errors: [],
+      conflict: false,
+      formErrorKey: "__all__",
+    });
+
+    const { result } = renderHook(() =>
+      useGeneratedModelForm({
+        generatedEnabled: true,
+        contract: {
+          ...sampleModelFormContractWithRelations,
+          relations: [manyItemsRelation],
+        },
+        submitMode: "UPDATE",
+        objectId: "order-1",
+        executeMutation: updateExecutor,
+      }),
+    );
+
+    await act(async () => {
+      await result.current.submit({
+        items: [
+          { id: "item-1", quantity: 5 },
+          { quantity: 2, sku: "SKU-2" },
+        ],
+      });
+    });
+
+    expect(updateExecutor).toHaveBeenCalledWith(
+      "updateProduct",
+      {
+        objectId: "order-1",
+        input: {
+          items: {
+            update: [{ id: "item-1", quantity: 5 }],
+            create: [{ quantity: 2, sku: "SKU-2" }],
+          },
+        },
+      },
+      expect.anything(),
+    );
+  });
+
+  it("fails fast with relation-scoped validation errors for blocked inferred actions", async () => {
+    const executeMutation = vi.fn().mockResolvedValue({
+      ok: true,
+      errors: [],
+      conflict: false,
+      formErrorKey: "__all__",
+    });
+
+    const { result } = renderHook(() =>
+      useGeneratedModelForm({
+        generatedEnabled: true,
+        contract: {
+          ...sampleModelFormContractWithRelations,
+          relations: [blockedCreateItemsRelation],
+        },
+        submitMode: "UPDATE",
+        objectId: "order-1",
+        executeMutation,
+      }),
+    );
+
+    let outcome: Awaited<ReturnType<typeof result.current.submit>> | null = null;
+    await act(async () => {
+      outcome = await result.current.submit({
+        items: [{ quantity: 4 }],
+      });
+    });
+
+    expect(executeMutation).not.toHaveBeenCalled();
+    expect(outcome?.ok).toBe(false);
+    expect(outcome?.errors[0]?.field).toBe("items");
+    expect(outcome?.errors[0]?.source).toBe("OPERATION");
+    expect(outcome?.errors[0]?.message).toMatch(/blocked/i);
+  });
+
+  it("preserves explicit operation payloads and still enforces blocked explicit actions", async () => {
+    const allowedExecutor = vi.fn().mockResolvedValue({
+      ok: true,
+      errors: [],
+      conflict: false,
+      formErrorKey: "__all__",
+    });
+
+    const allowedHook = renderHook(() =>
+      useGeneratedModelForm({
+        generatedEnabled: true,
+        contract: {
+          ...sampleModelFormContractWithRelations,
+          relations: [manyTagsRelation],
+        },
+        submitMode: "UPDATE",
+        objectId: "order-1",
+        executeMutation: allowedExecutor,
+      }),
+    );
+
+    await act(async () => {
+      await allowedHook.result.current.submit({
+        tags: {
+          connect: ["VGFnOjE="],
+          create: [{ name: "Featured" }],
+        },
+      });
+    });
+
+    expect(allowedExecutor).toHaveBeenCalledWith(
+      "updateProduct",
+      {
+        objectId: "order-1",
+        input: {
+          tags: {
+            connect: ["VGFnOjE="],
+            create: [{ name: "Featured" }],
+          },
+        },
+      },
+      expect.anything(),
+    );
+
+    const blockedExecutor = vi.fn().mockResolvedValue({
+      ok: true,
+      errors: [],
+      conflict: false,
+      formErrorKey: "__all__",
+    });
+
+    const blockedHook = renderHook(() =>
+      useGeneratedModelForm({
+        generatedEnabled: true,
+        contract: {
+          ...sampleModelFormContractWithRelations,
+          relations: [blockedDeleteTagsRelation],
+        },
+        submitMode: "UPDATE",
+        objectId: "order-1",
+        executeMutation: blockedExecutor,
+      }),
+    );
+
+    let blockedOutcome: Awaited<ReturnType<typeof blockedHook.result.current.submit>> | null =
+      null;
+    await act(async () => {
+      blockedOutcome = await blockedHook.result.current.submit({
+        tags: {
+          delete: ["VGFnOjE="],
+        },
+      });
+    });
+
+    expect(blockedExecutor).not.toHaveBeenCalled();
+    expect(blockedOutcome?.ok).toBe(false);
+    expect(blockedOutcome?.errors[0]?.field).toBe("tags");
   });
 });

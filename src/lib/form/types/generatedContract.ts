@@ -75,6 +75,7 @@ export type ModelFormRelationActionPolicy = {
 };
 
 export type ModelFormContractRelation = {
+  name?: string;
   path: string;
   label: string;
   relationType?: string;

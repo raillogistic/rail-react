@@ -1,6 +1,7 @@
 import React from "react";
+import { gql } from "@apollo/client";
 import { MockedProvider } from "@apollo/client/testing";
-import { render, screen, waitFor } from "@testing-library/react";
+import { act, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
 import {
@@ -10,8 +11,25 @@ import {
 } from "@/graphql/modelFormContract";
 import type { ModelFormContract } from "../types/generatedContract";
 import type { FormSchema } from "../types/schema";
+import { buildGeneratedMutationDocument } from "../mutations";
 import { ModelForm } from "../components/ModelForm";
 import { sampleModelFormContract } from "./fixtures/modelFormContract";
+import {
+  blockedDeleteTagsRelation,
+  manyItemsRelation,
+  singularCustomerRelation,
+} from "./fixtures/nestedRelationPayloads";
+
+type MockDynamicFormProps = {
+  schema: FormSchema<Record<string, unknown>>;
+  state?: Record<string, unknown>;
+  behavior?: Record<string, unknown>;
+  layout?: Record<string, unknown>;
+  actions?: Record<string, unknown>;
+  devtools?: Record<string, unknown>;
+};
+
+let latestDynamicFormProps: MockDynamicFormProps | null = null;
 
 vi.mock("../inputs/form", () => ({
   __esModule: true,
@@ -22,21 +40,24 @@ vi.mock("../inputs/form", () => ({
     layout,
     actions,
     devtools,
-  }: {
-    schema: FormSchema<Record<string, unknown>>;
-    state?: Record<string, unknown>;
-    behavior?: Record<string, unknown>;
-    layout?: Record<string, unknown>;
-    actions?: Record<string, unknown>;
-    devtools?: Record<string, unknown>;
-  }) => (
-    <>
-      <pre data-testid="model-form-schema">{JSON.stringify(schema)}</pre>
-      <pre data-testid="model-form-config">
-        {JSON.stringify({ state, behavior, layout, actions, devtools })}
-      </pre>
-    </>
-  ),
+  }: MockDynamicFormProps) => {
+    latestDynamicFormProps = {
+      schema,
+      state,
+      behavior,
+      layout,
+      actions,
+      devtools,
+    };
+    return (
+      <>
+        <pre data-testid="model-form-schema">{JSON.stringify(schema)}</pre>
+        <pre data-testid="model-form-config">
+          {JSON.stringify({ state, behavior, layout, actions, devtools })}
+        </pre>
+      </>
+    );
+  },
 }));
 
 function renderWithMocks(
@@ -54,6 +75,21 @@ async function getRenderedSchema() {
 async function getRenderedConfig() {
   const configNode = await screen.findByTestId("model-form-config");
   return JSON.parse(configNode.textContent ?? "{}");
+}
+
+function createMockFormContext(initialMeta: Record<string, unknown> = {}) {
+  const fieldMetaStore: Record<string, unknown> = { ...initialMeta };
+  const form = {
+    store: {
+      getState: () => ({
+        fieldMeta: fieldMetaStore,
+      }),
+    },
+    setFieldMeta: vi.fn((name: string, updater: (prev: unknown) => unknown) => {
+      fieldMetaStore[name] = updater(fieldMetaStore[name]);
+    }),
+  };
+  return { form, fieldMetaStore };
 }
 
 describe("ModelForm", () => {
@@ -944,7 +980,7 @@ describe("ModelForm", () => {
         app="store"
         model="Order"
         mode="CREATE"
-        nestedFields={["customer", "supplier"]}
+        nested={["customer", "supplier"]}
         onlyRelationships={["customer"]}
       />,
       mocks,
@@ -957,7 +993,570 @@ describe("ModelForm", () => {
     expect(fields.some((field) => field.name === "name")).toBe(true);
   });
 
-  it("supports legacy aliases and view defaults", async () => {
+  it("keeps backend field order for relation-backed nested list fields", async () => {
+    const rootContract: ModelFormContract = {
+      ...sampleModelFormContract,
+      appLabel: "store",
+      modelName: "Product",
+      mode: "CREATE",
+      fields: [
+        {
+          ...sampleModelFormContract.fields[0],
+          path: "name",
+          fieldName: "name",
+          label: "Name",
+        },
+        {
+          ...sampleModelFormContract.fields[1],
+          path: "status",
+          fieldName: "status",
+          kind: "TEXT",
+          label: "Status",
+          graphqlType: "String",
+          pythonType: "str",
+        },
+      ],
+      sections: [
+        {
+          ...sampleModelFormContract.sections[0],
+          fieldPaths: ["name", "tags", "status"],
+        },
+      ],
+      relations: [
+        {
+          path: "tags",
+          label: "Tags",
+          relationType: "MANY_TO_MANY",
+          toMany: true,
+          relatedAppLabel: "store",
+          relatedModelName: "Tag",
+          policy: {
+            path: "tags",
+            allowedActions: ["CONNECT", "CREATE", "UPDATE", "SET", "CLEAR"],
+            blockedActions: [],
+            nestedEnabled: true,
+          },
+          nestedForm: null,
+        },
+      ],
+    };
+
+    const tagContract: ModelFormContract = {
+      ...sampleModelFormContract,
+      id: "store.Tag.CREATE",
+      appLabel: "store",
+      modelName: "Tag",
+      mode: "CREATE",
+      fields: [
+        {
+          ...sampleModelFormContract.fields[0],
+          path: "name",
+          fieldName: "name",
+          label: "Tag Name",
+          kind: "TEXT",
+        },
+      ],
+      sections: [
+        {
+          ...sampleModelFormContract.sections[0],
+          fieldPaths: ["name"],
+        },
+      ],
+      relations: [],
+    };
+
+    const mocks = [
+      {
+        request: {
+          query: MODEL_FORM_CONTRACT_QUERY,
+          variables: {
+            appLabel: "store",
+            modelName: "Product",
+            mode: "CREATE",
+            includeNested: true,
+          },
+        },
+        result: {
+          data: {
+            modelFormContract: rootContract,
+          },
+        },
+      },
+      {
+        request: {
+          query: MODEL_FORM_CONTRACT_PAGES_QUERY,
+          variables: {
+            page: 1,
+            perPage: 1,
+            models: [{ appLabel: "store", modelName: "Tag" }],
+            mode: "CREATE",
+            includeNested: false,
+          },
+        },
+        result: {
+          data: {
+            modelFormContractPages: {
+              page: 1,
+              perPage: 1,
+              total: 1,
+              results: [tagContract],
+            },
+          },
+        },
+      },
+    ];
+
+    renderWithMocks(
+      <ModelForm
+        app="store"
+        model="Product"
+        mode="CREATE"
+        nested={["tags"]}
+      />,
+      mocks,
+    );
+
+    const payload = await getRenderedSchema();
+    const fieldNames = payload.sections[0].fields.map(
+      (field: { name: string }) => field.name,
+    );
+    expect(fieldNames).toEqual(["name", "tags", "status"]);
+  });
+
+  it("does not force nested list fields to the end when explicit order hints exist", async () => {
+    const rootContract: ModelFormContract = {
+      ...sampleModelFormContract,
+      appLabel: "store",
+      modelName: "Product",
+      mode: "CREATE",
+      fields: [
+        {
+          ...sampleModelFormContract.fields[0],
+          path: "name",
+          fieldName: "name",
+          label: "Name",
+        },
+        {
+          ...sampleModelFormContract.fields[1],
+          path: "status",
+          fieldName: "status",
+          kind: "TEXT",
+          label: "Status",
+          graphqlType: "String",
+          pythonType: "str",
+        },
+      ],
+      sections: [
+        {
+          ...sampleModelFormContract.sections[0],
+          fieldPaths: ["name", "tags", "status"],
+        },
+      ],
+      relations: [
+        {
+          path: "tags",
+          label: "Tags",
+          relationType: "MANY_TO_MANY",
+          toMany: true,
+          relatedAppLabel: "store",
+          relatedModelName: "Tag",
+          policy: {
+            path: "tags",
+            allowedActions: ["CONNECT", "CREATE", "UPDATE", "SET", "CLEAR"],
+            blockedActions: [],
+            nestedEnabled: true,
+          },
+          nestedForm: null,
+        },
+      ],
+    };
+
+    const tagContract: ModelFormContract = {
+      ...sampleModelFormContract,
+      id: "store.Tag.CREATE",
+      appLabel: "store",
+      modelName: "Tag",
+      mode: "CREATE",
+      fields: [
+        {
+          ...sampleModelFormContract.fields[0],
+          path: "name",
+          fieldName: "name",
+          label: "Tag Name",
+          kind: "TEXT",
+        },
+      ],
+      sections: [
+        {
+          ...sampleModelFormContract.sections[0],
+          fieldPaths: ["name"],
+        },
+      ],
+      relations: [],
+    };
+
+    const mocks = [
+      {
+        request: {
+          query: MODEL_FORM_CONTRACT_QUERY,
+          variables: {
+            appLabel: "store",
+            modelName: "Product",
+            mode: "CREATE",
+            includeNested: true,
+          },
+        },
+        result: {
+          data: {
+            modelFormContract: rootContract,
+          },
+        },
+      },
+      {
+        request: {
+          query: MODEL_FORM_CONTRACT_PAGES_QUERY,
+          variables: {
+            page: 1,
+            perPage: 1,
+            models: [{ appLabel: "store", modelName: "Tag" }],
+            mode: "CREATE",
+            includeNested: false,
+          },
+        },
+        result: {
+          data: {
+            modelFormContractPages: {
+              page: 1,
+              perPage: 1,
+              total: 1,
+              results: [tagContract],
+            },
+          },
+        },
+      },
+    ];
+
+    renderWithMocks(
+      <ModelForm
+        app="store"
+        model="Product"
+        mode="CREATE"
+        nested={["tags"]}
+        fieldOverrides={{
+          tags: { order: 0 },
+          name: { order: 1 },
+          status: { order: 2 },
+        }}
+      />,
+      mocks,
+    );
+
+    const payload = await getRenderedSchema();
+    const fieldNames = payload.sections[0].fields.map(
+      (field: { name: string }) => field.name,
+    );
+    expect(fieldNames).toEqual(["name", "tags", "status"]);
+  });
+
+  it("submits direct relation mappings through generated ModelForm behavior", async () => {
+    const contract: ModelFormContract = {
+      ...sampleModelFormContract,
+      appLabel: "store",
+      modelName: "Product",
+      mode: "CREATE",
+      relations: [singularCustomerRelation],
+    };
+
+    const createMutationSpy = vi.fn();
+    const createMutationDocument = gql(
+      buildGeneratedMutationDocument("create", "createProduct", "Product", "id"),
+    );
+
+    const mocks = [
+      {
+        request: {
+          query: MODEL_FORM_CONTRACT_QUERY,
+          variables: {
+            appLabel: "store",
+            modelName: "Product",
+            mode: "CREATE",
+            includeNested: false,
+          },
+        },
+        result: {
+          data: {
+            modelFormContract: contract,
+          },
+        },
+      },
+      {
+        request: {
+          query: createMutationDocument,
+          variables: {
+            input: {
+              name: "Widget",
+              status: "ACTIVE",
+              customer: { connect: "Q3VzdG9tZXI6MQ==" },
+            },
+          },
+        },
+        result: () => {
+          createMutationSpy();
+          return {
+            data: {
+              createProduct: {
+                ok: true,
+                object: { id: "UHJvZHVjdDox" },
+                errors: [],
+              },
+            },
+          };
+        },
+      },
+    ];
+
+    renderWithMocks(
+      <ModelForm app="store" model="Product" mode="CREATE" />,
+      mocks,
+    );
+
+    await getRenderedSchema();
+
+    const onSubmit = latestDynamicFormProps?.behavior?.onSubmit as
+      | ((values: Record<string, unknown>, ctx: Record<string, unknown>) => Promise<void>)
+      | undefined;
+    expect(typeof onSubmit).toBe("function");
+
+    const { form } = createMockFormContext({
+      customer: {},
+      __all__: {},
+    });
+
+    await act(async () => {
+      await onSubmit?.(
+        {
+          name: "Widget",
+          status: "ACTIVE",
+          customer: "Q3VzdG9tZXI6MQ==",
+        },
+        { form } as Record<string, unknown>,
+      );
+    });
+
+    await waitFor(() => {
+      expect(createMutationSpy).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it("submits mixed nested object lists as update/create buckets", async () => {
+    const contract: ModelFormContract = {
+      ...sampleModelFormContract,
+      appLabel: "store",
+      modelName: "Product",
+      mode: "UPDATE",
+      relations: [manyItemsRelation],
+    };
+
+    const updateMutationSpy = vi.fn();
+    const updateMutationDocument = gql(
+      buildGeneratedMutationDocument("update", "updateProduct", "Product", "id", {
+        identifierVariableName: "id",
+        identifierArgumentName: "id",
+      }),
+    );
+
+    const mocks = [
+      {
+        request: {
+          query: MODEL_FORM_CONTRACT_QUERY,
+          variables: {
+            appLabel: "store",
+            modelName: "Product",
+            mode: "UPDATE",
+            includeNested: false,
+          },
+        },
+        result: {
+          data: {
+            modelFormContract: contract,
+          },
+        },
+      },
+      {
+        request: {
+          query: MODEL_FORM_INITIAL_DATA_QUERY,
+          variables: {
+            appLabel: "store",
+            modelName: "Product",
+            objectId: "42",
+            includeNested: false,
+            runtimeOverrides: [],
+          },
+        },
+        result: {
+          data: {
+            modelFormInitialData: {
+              appLabel: "store",
+              modelName: "Product",
+              objectId: "42",
+              values: JSON.stringify({ name: "Starter" }),
+              readonlyValues: null,
+              loadedAt: "2026-02-12T12:00:00Z",
+            },
+          },
+        },
+      },
+      {
+        request: {
+          query: updateMutationDocument,
+          variables: {
+            id: "42",
+            input: {
+              items: {
+                update: [{ id: "item-1", quantity: 5 }],
+                create: [{ quantity: 2, sku: "SKU-2" }],
+              },
+            },
+          },
+        },
+        result: () => {
+          updateMutationSpy();
+          return {
+            data: {
+              updateProduct: {
+                ok: true,
+                object: { id: "UHJvZHVjdDo0Mg==" },
+                errors: [],
+              },
+            },
+          };
+        },
+      },
+    ];
+
+    renderWithMocks(
+      <ModelForm app="store" model="Product" mode="UPDATE" objectId="42" />,
+      mocks,
+    );
+
+    await getRenderedSchema();
+
+    const onSubmit = latestDynamicFormProps?.behavior?.onSubmit as
+      | ((values: Record<string, unknown>, ctx: Record<string, unknown>) => Promise<void>)
+      | undefined;
+
+    const { form } = createMockFormContext({
+      items: {},
+      __all__: {},
+    });
+
+    await act(async () => {
+      await onSubmit?.(
+        {
+          items: [
+            { id: "item-1", quantity: 5 },
+            { quantity: 2, sku: "SKU-2" },
+          ],
+        },
+        { form } as Record<string, unknown>,
+      );
+    });
+
+    await waitFor(() => {
+      expect(updateMutationSpy).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  it("renders relation-scoped submit errors for blocked nested actions", async () => {
+    const contract: ModelFormContract = {
+      ...sampleModelFormContract,
+      appLabel: "store",
+      modelName: "Product",
+      mode: "UPDATE",
+      relations: [blockedDeleteTagsRelation],
+    };
+
+    const mocks = [
+      {
+        request: {
+          query: MODEL_FORM_CONTRACT_QUERY,
+          variables: {
+            appLabel: "store",
+            modelName: "Product",
+            mode: "UPDATE",
+            includeNested: false,
+          },
+        },
+        result: {
+          data: {
+            modelFormContract: contract,
+          },
+        },
+      },
+      {
+        request: {
+          query: MODEL_FORM_INITIAL_DATA_QUERY,
+          variables: {
+            appLabel: "store",
+            modelName: "Product",
+            objectId: "42",
+            includeNested: false,
+            runtimeOverrides: [],
+          },
+        },
+        result: {
+          data: {
+            modelFormInitialData: {
+              appLabel: "store",
+              modelName: "Product",
+              objectId: "42",
+              values: JSON.stringify({ name: "Starter" }),
+              readonlyValues: null,
+              loadedAt: "2026-02-12T12:00:00Z",
+            },
+          },
+        },
+      },
+    ];
+
+    renderWithMocks(
+      <ModelForm app="store" model="Product" mode="UPDATE" objectId="42" />,
+      mocks,
+    );
+
+    await getRenderedSchema();
+
+    const onSubmit = latestDynamicFormProps?.behavior?.onSubmit as
+      | ((values: Record<string, unknown>, ctx: Record<string, unknown>) => Promise<void>)
+      | undefined;
+
+    const { form, fieldMetaStore } = createMockFormContext({
+      tags: {},
+      __all__: {},
+    });
+
+    await act(async () => {
+      await onSubmit?.(
+        {
+          tags: {
+            delete: ["VGFnOjE="],
+          },
+        },
+        { form } as Record<string, unknown>,
+      );
+    });
+
+    await waitFor(() => {
+      expect(form.setFieldMeta).toHaveBeenCalled();
+    });
+
+    const tagsMeta = fieldMetaStore.tags as
+      | { errorMap?: { onSubmit?: string } }
+      | undefined;
+    expect(tagsMeta?.errorMap?.onSubmit).toMatch(/blocked/i);
+  });
+
+  it("applies view defaults with canonical props", async () => {
     const mocks = [
       {
         request: {
@@ -984,10 +1583,10 @@ describe("ModelForm", () => {
 
     renderWithMocks(
       <ModelForm
-        appName="store"
-        modelName="Product"
-        mutationMode="view"
-        only={["name"]}
+        app="store"
+        model="Product"
+        mode="view"
+        onlyFields={["name"]}
         formProps={{
           layout: { columns: 1 },
           actions: { submitLabel: "Save" },

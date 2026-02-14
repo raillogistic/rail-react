@@ -138,28 +138,13 @@ export interface ModelFormProps<
   mode?: ModelFormModeInput;
   objectId?: string | number | null;
 
-  /**
-   * Optional legacy aliases kept for compatibility with previous model-form
-   * wrappers in this codebase.
-   */
-  appName?: string;
-  modelName?: string;
-  mutationMode?: "create" | "update" | "view" | null;
-  mutationId?: string;
-
   generatedEnabled?: boolean;
   includeNested?: boolean;
   nested?: ModelFormNestedConfig<TFormValues>;
-  /** Legacy nested relation alias mapped to {@link nested}. */
-  nestedFields?: string[];
   runtimeOverrides?: ModelFormRuntimeOverride[];
 
   onlyFields?: string[];
   excludeFields?: string[];
-  /** Legacy field alias mapped to {@link onlyFields}. */
-  only?: string[];
-  /** Legacy field alias mapped to {@link excludeFields}. */
-  exclude?: string[];
   /**
    * Restrict relation paths (first path segment of nested fields) that are
    * allowed to render.

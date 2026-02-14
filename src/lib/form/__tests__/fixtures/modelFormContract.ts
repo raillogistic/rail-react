@@ -1,4 +1,5 @@
 import type { ModelFormContract } from "../../types/generatedContract";
+import { allNestedRelationFixtures } from "./nestedRelationPayloads";
 
 export const sampleModelFormContract: ModelFormContract = {
   id: "test_app.Product.CREATE",
@@ -71,6 +72,13 @@ export const sampleModelFormContract: ModelFormContract = {
     fieldPathNotation: "dot",
     bulkRowPrefixPattern: "items.<row>.<field>",
   },
+};
+
+export const sampleModelFormContractWithRelations: ModelFormContract = {
+  ...sampleModelFormContract,
+  id: "test_app.Product.UPDATE",
+  mode: "UPDATE",
+  relations: allNestedRelationFixtures,
 };
 
 export const sampleCreateSubmitBindings = {

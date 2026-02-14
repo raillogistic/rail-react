@@ -1232,16 +1232,18 @@ export function StoreProductUpdateModelFormExample({
         model="Product"
         mode="UPDATE"
         objectId={objectId}
-        nested={{
-          order_items: {
-            sortable: { enabled: true, mode: "buttons" },
-          },
-        }}
+        // excludeFields={["order_items"]}
+        // nested={{
+        //   order_items: {
+        //     sortable: { enabled: true, mode: "buttons" },
+        //   },
+        // }}
         runtimeOverrides={PRODUCT_UPDATE_RUNTIME_OVERRIDES}
         description="Auto-wired update example: initial values load from modelFormInitialData and Save runs generated updateOperation."
         formProps={{
           layout: {
-            columns: 3,
+            columns: 4,
+
             showSectionHeaders: true,
           },
           actions: {
@@ -1289,7 +1291,7 @@ export function StoreOrderCreateModelFormExample() {
         model="Order"
         mode="CREATE"
         nested={["customer", "items"]}
-        exclude={["payment_token", "raw_payload"]}
+        excludeFields={["payment_token", "raw_payload"]}
         description="Create order form with nested customer/items enabled."
         behavior={{
           onSubmit: async (values) => {
