@@ -1255,6 +1255,24 @@ export function StoreProductUpdateModelFormExample({
       </h2>
       <ModelForm
         app="store"
+        model="Order"
+        mode="UPDATE"
+        objectId="9"
+        formProps={{
+          devtools: { enabled: true },
+        }}
+        nested={{
+          items: {
+            scalarListOperation: "connect",
+            removeOperation: "delete",
+            deleteMutation: {
+              enabled: true,
+            },
+          },
+        }}
+      />
+      {/* <ModelForm
+        app="store"
         model="Product"
         mode="UPDATE"
         objectId={objectId}
@@ -1281,7 +1299,7 @@ export function StoreProductUpdateModelFormExample({
             showDirtyIndicator: true,
           },
         }}
-      />
+      /> */}
     </section>
   );
 }

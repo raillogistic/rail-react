@@ -278,6 +278,25 @@ const ListFieldItems = <TValues extends Record<string, any>>({
         return;
       }
 
+      const itemLabel = config.itemLabel?.trim() || "élément";
+      const confirmMessage = `Cette action supprimera définitivement cet ${itemLabel} de la base de données. Voulez-vous continuer ?`;
+      const shouldDelete = (() => {
+        try {
+          if (
+            typeof window !== "undefined" &&
+            typeof window.confirm === "function"
+          ) {
+            return window.confirm(confirmMessage);
+          }
+        } catch {
+          return true;
+        }
+        return true;
+      })();
+      if (!shouldDelete) {
+        return;
+      }
+
       await withPendingDelete(deleteKey, async () => {
         const mutation = gql(
           buildGeneratedDeleteMutationDocument(
