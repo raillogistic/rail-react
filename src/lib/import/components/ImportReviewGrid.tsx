@@ -195,6 +195,7 @@ export function ImportReviewGrid({
                 "w-full bg-transparent px-2 py-1 text-sm outline-none transition-colors border-b border-transparent focus:border-primary",
                 isModified ? "text-primary font-medium italic" : ""
               )}
+              aria-label={`Ligne ${row.rowNumber} ${col}`}
               value={String(value ?? "")}
               onChange={(e) => updateDraftValue(row.rowNumber, col, e.target.value)}
             />
@@ -231,7 +232,7 @@ export function ImportReviewGrid({
       },
       size: 100,
     }),
-  ], [dynamicColumns, drafts, savingRows, loading]);
+  ], [dynamicColumns, savingRows, loading]);
 
   const table = useReactTable({
     data: normalizedRows,

@@ -1,6 +1,7 @@
 import React from "react";
 import { render, screen, fireEvent, waitFor, act } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { MockedProvider } from "@apollo/client/testing";
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import DynamicForm from "../inputs/form";
 import type { FormSchema } from "../types/schema";
@@ -83,8 +84,8 @@ describe("DynamicForm - New Features", () => {
       );
 
       const input = getByLabelText("Name");
-      const undoBtn = getByTitle("Undo");
-      const redoBtn = getByTitle("Redo");
+      const undoBtn = getByTitle("Annuler");
+      const redoBtn = getByTitle("Rétablir");
 
       expect(undoBtn).toBeDisabled();
       expect(redoBtn).toBeDisabled();
@@ -246,18 +247,14 @@ describe("DynamicForm - New Features", () => {
         ],
       };
 
-      const { container } = render(<DynamicForm schema={schema} />);
+      render(
+        <MockedProvider mocks={[]}>
+          <DynamicForm schema={schema} />
+        </MockedProvider>,
+      );
 
-      // Check for grip icon (lucide-react GripVertical)
-      // Usually rendered as SVG. We can check class or attributes if needed.
-      // Or checking if `DndContext` is rendered effectively?
-      // Checking if sortable items are present.
-
-      // In our code: config.ordering.activate renders SortableContext
-      // The items should have drag listeners.
-
-      const items = container.querySelectorAll(".group\\/list .relative");
-      expect(items.length).toBeGreaterThan(0);
+      expect(screen.getByDisplayValue("A")).toBeInTheDocument();
+      expect(screen.getByDisplayValue("B")).toBeInTheDocument();
 
       // Without full DnD browser environment mocking, full drag simulation is hard.
       // But we verify it doesn't crash and renders items.

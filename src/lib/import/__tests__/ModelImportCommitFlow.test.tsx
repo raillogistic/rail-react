@@ -47,10 +47,21 @@ describe("ModelImport commit flow", () => {
       </div>,
     );
 
-    await user.click(screen.getByRole("button", { name: /^valider$/i }));
-    await user.click(screen.getByRole("button", { name: /simuler/i }));
-    await user.click(screen.getByRole("button", { name: /commiter le lot/i }));
-    await user.click(screen.getByRole("button", { name: /supprimer le lot/i }));
+    await user.click(
+      screen.getByRole("button", { name: /(lancer la validation|valider)/i }),
+    );
+    await user.click(
+      screen.getByRole("button", { name: /(d[ée]marrer la simulation|simuler)/i }),
+    );
+    await user.click(
+      screen.getByRole("button", { name: /(confirmer l['’]importation|commiter le lot)/i }),
+    );
+    await user.click(
+      screen.getByRole("button", { name: /(abandonner le lot|supprimer le lot)/i }),
+    );
+    await user.click(
+      screen.getByRole("button", { name: /supprimer d[ée]finitivement/i }),
+    );
 
     expect(validateSpy).toHaveBeenCalledTimes(1);
     expect(simulateSpy).toHaveBeenCalledTimes(1);
@@ -74,7 +85,9 @@ describe("ModelImport commit flow", () => {
       />,
     );
 
-    expect(screen.getByRole("button", { name: /commiter le lot/i })).toBeDisabled();
-    expect(screen.getByText(/le commit est bloque/i)).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: /(confirmer l['’]importation|commiter le lot)/i }),
+    ).toBeDisabled();
+    expect(screen.getByText(/commit bloqu/i)).toBeInTheDocument();
   });
 });

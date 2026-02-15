@@ -27,8 +27,8 @@ describe("useGeneratedValidators", () => {
     );
 
     const validate = result.current.formValidator;
-    expect(validate({ name: "" })?.name).toContain("required");
-    expect(validate({ name: "hello" })?.name).toContain("at most 4");
+    expect(validate({ name: "" })?.name).toMatch(/(required|requis)/i);
+    expect(validate({ name: "hello" })?.name).toMatch(/(at most|au maximum)\s*4/i);
     expect(validate({ name: "bad" })?.name).toContain("Forbidden");
     expect(validate({ name: "ok" })).toBeUndefined();
   });
@@ -95,8 +95,8 @@ describe("useGeneratedValidators", () => {
     const { result } = renderHook(() => useGeneratedValidators(contract));
     const validate = result.current.formValidator;
 
-    expect(validate({ inventoryCount: -1 })?.inventoryCount).toContain(
-      "greater than or equal to 0",
+    expect(validate({ inventoryCount: -1 })?.inventoryCount).toMatch(
+      /(greater than or equal to|sup[ée]rieur.*[ée]gal).*(0)/i,
     );
     expect(validate({ inventoryCount: 5 })).toBeUndefined();
   });

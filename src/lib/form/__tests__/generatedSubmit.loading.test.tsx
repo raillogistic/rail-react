@@ -46,7 +46,9 @@ describe("generated submit loading lifecycle", () => {
       reentrant = await result.current.submit({ name: "Loading", price: 10 });
     });
     expect(reentrant?.ok).toBe(false);
-    expect(reentrant?.errors[0]?.message).toMatch(/already in progress/i);
+    expect(reentrant?.errors[0]?.message).toMatch(
+      /(already in progress|envoi\s+d[eé]j[àa]\s+en\s+cours)/i,
+    );
 
     deferred.resolve({
       ok: true,

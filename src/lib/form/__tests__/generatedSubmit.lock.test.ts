@@ -47,7 +47,9 @@ describe("generated submit lock", () => {
 
     expect(executeMutation).toHaveBeenCalledTimes(1);
     expect(secondOutcome?.ok).toBe(false);
-    expect(secondOutcome?.errors[0]?.message).toMatch(/already in progress/i);
+    expect(secondOutcome?.errors[0]?.message).toMatch(
+      /(already in progress|envoi\s+d[eé]j[àa]\s+en\s+cours)/i,
+    );
 
     deferred.resolve({
       ok: true,

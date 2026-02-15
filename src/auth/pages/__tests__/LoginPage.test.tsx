@@ -20,6 +20,11 @@ vi.mock('lucide-react', () => ({
   Lock: () => <span data-testid="lock-icon" />,
   AlertCircle: () => <span data-testid="alert-icon" />,
   WifiOff: () => <span data-testid="wifi-off-icon" />,
+  ArrowRight: () => <span data-testid="arrow-right-icon" />,
+  Loader2: () => <span data-testid="loader-2-icon" />,
+  ShieldCheck: () => <span data-testid="shield-check-icon" />,
+  Sparkles: () => <span data-testid="sparkles-icon" />,
+  CheckIcon: () => <span data-testid="check-icon" />,
   // Icons used in routes/links.tsx which are imported by LoginPage indirectly
   LayoutDashboard: () => <span data-testid="dashboard-icon" />,
   Settings: () => <span data-testid="settings-icon" />,
@@ -52,6 +57,8 @@ describe('LoginPage', () => {
     error: null,
     clearError: clearErrorMock,
     status: 'idle',
+    mfaSetupRequired: false,
+    ephemeralToken: null,
     user: null,
     isAuthenticated: false,
     hasPermission: vi.fn(),
@@ -75,10 +82,10 @@ describe('LoginPage', () => {
 
     // Wait for the connectivity check effect to settle
     await waitFor(() => {
-      expect(screen.getByLabelText(/nom d'utilisateur/i)).toBeInTheDocument();
+      expect(screen.getByPlaceholderText(/e-mail ou nom d'utilisateur/i)).toBeInTheDocument();
     });
 
-    expect(screen.getByLabelText(/mot de passe/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/saisissez votre code/i)).toBeInTheDocument();
     expect(screen.queryByTestId('mfa-challenge')).not.toBeInTheDocument();
   });
 
@@ -99,8 +106,8 @@ describe('LoginPage', () => {
       expect(screen.getByTestId('mfa-challenge')).toBeInTheDocument();
     });
 
-    expect(screen.queryByLabelText(/nom d'utilisateur/i)).not.toBeInTheDocument();
-    expect(screen.getByText('Double authentification')).toBeInTheDocument();
+    expect(screen.queryByPlaceholderText(/e-mail ou nom d'utilisateur/i)).not.toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /s.curit/i })).toBeInTheDocument();
   });
 
   it('calls verifyMFA when code is submitted', async () => {

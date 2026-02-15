@@ -1,4 +1,4 @@
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { MFAChallenge } from '../MFAChallenge';
 
@@ -10,6 +10,14 @@ describe('MFAChallenge', () => {
     vi.clearAllMocks();
   });
 
+  const fillCode = (value = '123456') => {
+    const inputs = screen.getAllByRole('textbox');
+    expect(inputs).toHaveLength(6);
+    value.split('').forEach((digit, idx) => {
+      fireEvent.change(inputs[idx], { target: { value: digit } });
+    });
+  };
+
   it('renders TOTP method correctly', () => {
     render(
       <MFAChallenge
@@ -19,8 +27,10 @@ describe('MFAChallenge', () => {
       />
     );
 
-    expect(screen.getByText('Authenticator App')).toBeInTheDocument();
-    expect(screen.getByText(/enter the code from your authenticator app/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /double sécurité/i })).toBeInTheDocument();
+    expect(
+      screen.getByText(/application d'authentification/i)
+    ).toBeInTheDocument();
   });
 
   it('renders SMS method correctly', () => {
@@ -33,11 +43,11 @@ describe('MFAChallenge', () => {
       />
     );
 
-    expect(screen.getByText('SMS Verification')).toBeInTheDocument();
-    expect(screen.getByText(/ending in 1234/i)).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: /double sécurité/i })).toBeInTheDocument();
+    expect(screen.getByText(/envoyé à votre mobile/i)).toBeInTheDocument();
   });
 
-  it('handles input and submission', () => {
+  it('handles input and submission', async () => {
     onVerifyMock.mockResolvedValue(undefined);
 
     render(
@@ -48,13 +58,14 @@ describe('MFAChallenge', () => {
       />
     );
 
-    const input = screen.getByLabelText('Verification Code');
-    fireEvent.change(input, { target: { value: '123456' } });
+    fillCode('123456');
 
-    const submitBtn = screen.getByRole('button', { name: 'Verify' });
+    const submitBtn = screen.getByRole('button', { name: /valider l.?acc.s/i });
     fireEvent.click(submitBtn);
 
-    expect(onVerifyMock).toHaveBeenCalledWith('123456');
+    await waitFor(() => {
+      expect(onVerifyMock).toHaveBeenCalledWith('123456');
+    });
   });
 
   it('disables submit when empty', () => {
@@ -66,7 +77,7 @@ describe('MFAChallenge', () => {
       />
     );
 
-    const submitBtn = screen.getByRole('button', { name: 'Verify' });
+    const submitBtn = screen.getByRole('button', { name: /valider l.?acc.s/i });
     expect(submitBtn).toBeDisabled();
   });
 
@@ -80,8 +91,11 @@ describe('MFAChallenge', () => {
       />
     );
 
-    expect(screen.getByRole('button', { name: 'Verifying...' })).toBeDisabled();
-    expect(screen.getByLabelText('Verification Code')).toBeDisabled();
+    const [submitBtn] = screen.getAllByRole('button');
+    expect(submitBtn).toBeDisabled();
+    screen.getAllByRole('textbox').forEach((input) => {
+      expect(input).toBeDisabled();
+    });
   });
 
   it('shows error message', () => {

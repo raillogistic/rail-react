@@ -96,6 +96,7 @@ export function ImportIssuesPanel({ issues, onDownloadReport }: ImportIssuesPane
           <div className="relative flex-1">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
+              aria-label="Filtrer les problemes"
               value={filter}
               onChange={(event) => setFilter(event.target.value)}
               placeholder="Rechercher par code, ligne, message..."

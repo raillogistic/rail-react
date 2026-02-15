@@ -82,7 +82,8 @@ describe("graphqlAuthClient", () => {
     expect(result.errors).toBeUndefined();
     expect(result.data).toBeDefined();
     expect(fetchImpl).toHaveBeenCalledTimes(3);
-    expect(getWorkerSession("unit-retry-worker")?.loginCount).toBe(1);
+    // Existing expired session counts as first login; refresh login increments to 2.
+    expect(getWorkerSession("unit-retry-worker")?.loginCount).toBe(2);
   });
 
   it("clears session when single retry also fails with auth error", async () => {

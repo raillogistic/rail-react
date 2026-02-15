@@ -191,8 +191,8 @@ describe("DynamicForm", () => {
 
   it("renders submit and reset buttons with default labels", () => {
     render(<DynamicForm schema={textSchema} />);
-    expect(screen.getByText("Save")).toBeInTheDocument();
-    expect(screen.getByText("Reset")).toBeInTheDocument();
+    expect(screen.getByText("Enregistrer")).toBeInTheDocument();
+    expect(screen.getByText("Réinitialiser")).toBeInTheDocument();
   });
 
   it("rejects legacy top-level props", () => {
@@ -223,8 +223,8 @@ describe("DynamicForm", () => {
     render(
       <DynamicForm schema={textSchema} actions={{ hidden: true }} />,
     );
-    expect(screen.queryByText("Save")).not.toBeInTheDocument();
-    expect(screen.queryByText("Reset")).not.toBeInTheDocument();
+    expect(screen.queryByText("Enregistrer")).not.toBeInTheDocument();
+    expect(screen.queryByText("Réinitialiser")).not.toBeInTheDocument();
   });
 
   it("renders sections with titles", () => {
@@ -373,7 +373,7 @@ describe("DynamicForm", () => {
     fireEvent.change(screen.getAllByRole("textbox")[0], {
       target: { value: "Alice" },
     });
-    fireEvent.click(screen.getByText("Save"));
+    fireEvent.click(screen.getByText("Enregistrer"));
 
     await waitFor(() => {
       expect(onSubmit).toHaveBeenCalledTimes(1);
@@ -468,9 +468,9 @@ describe("DynamicForm - modes", () => {
 
     // "Step One" appears in both step indicator and section header
     expect(screen.getAllByText("Step One").length).toBeGreaterThanOrEqual(1);
-    // "Previous" and "Continue" buttons should be present
-    expect(screen.getByText("Continue")).toBeInTheDocument();
-    expect(screen.getByText("Previous")).toBeInTheDocument();
+    // "Précédent" and "Continuer" buttons should be present
+    expect(screen.getByText("Continuer")).toBeInTheDocument();
+    expect(screen.getByText("Précédent")).toBeInTheDocument();
   });
 
   it("renders review mode with lock/unlock toggle", () => {
@@ -481,10 +481,8 @@ describe("DynamicForm - modes", () => {
       />,
     );
 
-    expect(screen.getByText("Lock for review")).toBeInTheDocument();
-    expect(
-      screen.getByText(/Editing mode/),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Verrouiller pour révision")).toBeInTheDocument();
+    expect(screen.getByText(/Mode édition/)).toBeInTheDocument();
   });
 
   it("toggles review mode lock state", async () => {
@@ -495,11 +493,11 @@ describe("DynamicForm - modes", () => {
       />,
     );
 
-    const lockButton = screen.getByText("Lock for review");
+    const lockButton = screen.getByText("Verrouiller pour révision");
     fireEvent.click(lockButton);
 
-    expect(screen.getByText("Unlock")).toBeInTheDocument();
-    expect(screen.getByText(/Review mode/)).toBeInTheDocument();
+    expect(screen.getByText("Déverrouiller")).toBeInTheDocument();
+    expect(screen.getByText(/Mode révision/)).toBeInTheDocument();
   });
 
   it("renders accordion mode with collapsible sections", () => {

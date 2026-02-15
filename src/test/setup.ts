@@ -1,6 +1,13 @@
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 
+// Recharts and some UI primitives rely on ResizeObserver in jsdom tests.
+globalThis.ResizeObserver ??= class ResizeObserver {
+  observe() {}
+  unobserve() {}
+  disconnect() {}
+};
+
 // Global suppression of specific console warnings/errors
 const originalError = console.error;
 const originalWarn = console.warn;

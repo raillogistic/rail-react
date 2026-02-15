@@ -1,17 +1,16 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { MockedProvider } from '@apollo/client/testing';
 import { InMemoryCache } from '@apollo/client';
 import { MFASetupPage } from '../MFASetupPage';
 import { SETUP_MFA_MUTATION, VERIFY_MFA_SETUP_MUTATION } from '@/graphql/mutations';
+import { GET_MFA_STATUS } from '@/graphql/queries';
 import * as useAuthHook from '../../hooks/useAuth';
 
 // Mock useAuth
 vi.mock('../../hooks/useAuth', () => ({
   useAuth: vi.fn(),
 }));
-
-const cache = new InMemoryCache();
 
 // Mock react-router-dom
 const navigateMock = vi.fn();
@@ -33,7 +32,37 @@ Object.assign(navigator, {
 describe('MFASetupPage', () => {
   const mockUser = { id: '1', username: 'test' };
 
-  const mocks = [
+  const buildMocks = () => [
+    {
+      request: {
+        query: GET_MFA_STATUS,
+        variables: {},
+      },
+      result: {
+        data: {
+          me: {
+            id: '1',
+            mfa_enabled: false,
+            __typename: 'UserType',
+          },
+        },
+      },
+    },
+    {
+      request: {
+        query: GET_MFA_STATUS,
+        variables: {},
+      },
+      result: {
+        data: {
+          me: {
+            id: '1',
+            mfa_enabled: false,
+            __typename: 'UserType',
+          },
+        },
+      },
+    },
     {
       request: {
         query: SETUP_MFA_MUTATION,
@@ -67,83 +96,72 @@ describe('MFASetupPage', () => {
     }
   ];
 
+  const renderPage = () =>
+    render(
+      <MockedProvider mocks={buildMocks()} cache={new InMemoryCache()}>
+        <MFASetupPage />
+      </MockedProvider>
+    );
+
   beforeEach(() => {
     vi.clearAllMocks();
+    navigateMock.mockReset();
+    (navigator.clipboard.writeText as any).mockResolvedValue(undefined);
     (useAuthHook.useAuth as any).mockReturnValue({
       user: mockUser,
     });
   });
 
-  it('renders intro step initially', () => {
-    render(
-      <MockedProvider mocks={mocks} cache={cache}>
-        <MFASetupPage />
-      </MockedProvider>
-    );
-    expect(screen.getByText('Set up Multi-Factor Authentication')).toBeInTheDocument();
+  it('renders intro step initially', async () => {
+    renderPage();
+
+    expect(await screen.findByText('Set up Multi-Factor Authentication')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Start Setup' })).toBeInTheDocument();
   });
 
   it('progresses to setup step on start', async () => {
-    render(
-      <MockedProvider mocks={mocks} cache={cache}>
-        <MFASetupPage />
-      </MockedProvider>
-    );
+    renderPage();
+
+    await screen.findByRole('button', { name: 'Start Setup' });
 
     fireEvent.click(screen.getByRole('button', { name: 'Start Setup' }));
 
-    await waitFor(() => {
-      expect(screen.getByText('Scan QR Code')).toBeInTheDocument();
-    });
-
+    expect(await screen.findByText('Scan QR Code')).toBeInTheDocument();
     expect(screen.getByText('TESTSECRET123')).toBeInTheDocument();
   });
 
   it('allows copying secret to clipboard', async () => {
-    render(
-      <MockedProvider mocks={mocks} cache={cache}>
-        <MFASetupPage />
-      </MockedProvider>
-    );
+    renderPage();
+
+    await screen.findByRole('button', { name: 'Start Setup' });
 
     fireEvent.click(screen.getByRole('button', { name: 'Start Setup' }));
-    await waitFor(() => {
-      expect(screen.getByText('TESTSECRET123')).toBeInTheDocument();
-    });
+    await screen.findByText('TESTSECRET123');
 
     fireEvent.click(screen.getByRole('button', { name: 'Copy' }));
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith('TESTSECRET123');
   });
 
   it('progresses to verify step', async () => {
-    render(
-      <MockedProvider mocks={mocks} cache={cache}>
-        <MFASetupPage />
-      </MockedProvider>
-    );
+    renderPage();
+
+    await screen.findByRole('button', { name: 'Start Setup' });
 
     fireEvent.click(screen.getByRole('button', { name: 'Start Setup' }));
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Next' })).toBeInTheDocument();
-    });
+    await screen.findByRole('button', { name: 'Next' });
 
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-    expect(screen.getByText('Verify Code')).toBeInTheDocument();
+    expect(await screen.findByText('Verify Code')).toBeInTheDocument();
   });
 
   it('handles verification success', async () => {
-    render(
-      <MockedProvider mocks={mocks} cache={cache}>
-        <MFASetupPage />
-      </MockedProvider>
-    );
+    renderPage();
+
+    await screen.findByRole('button', { name: 'Start Setup' });
 
     // Go to setup
     fireEvent.click(screen.getByRole('button', { name: 'Start Setup' }));
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Next' })).toBeInTheDocument();
-    });
+    await screen.findByRole('button', { name: 'Next' });
 
     // Go to verify
     fireEvent.click(screen.getByRole('button', { name: 'Next' }));
@@ -155,9 +173,7 @@ describe('MFASetupPage', () => {
     // Submit
     fireEvent.click(screen.getByRole('button', { name: 'Verify' }));
 
-    await waitFor(() => {
-      expect(screen.getByText('MFA Enabled')).toBeInTheDocument();
-    });
+    expect(await screen.findByText('MFA Enabled')).toBeInTheDocument();
 
     expect(screen.getByText('Backup Codes')).toBeInTheDocument();
     expect(screen.getByText('code1')).toBeInTheDocument();

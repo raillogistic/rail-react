@@ -756,7 +756,9 @@ export function useGeneratedModelForm(options: UseGeneratedModelFormOptions) {
         });
         const primaryMessage =
           outcome.errors[0]?.message ?? toExecutionErrorMessage(error);
-        const isReentrantError = /already in progress/i.test(primaryMessage);
+        const isReentrantError =
+          /already in progress/i.test(primaryMessage) ||
+          /envoi\s+d[eé]j[àa]\s+en\s+cours/i.test(primaryMessage);
         const hasValidationErrors = outcome.errors.some(
           (entry) => entry.source === "OPERATION",
         );
