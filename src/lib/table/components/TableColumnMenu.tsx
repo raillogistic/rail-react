@@ -3,6 +3,7 @@ import {
   ArrowDownAZ,
   ArrowUpAZ,
   Check,
+  ClipboardList,
   EyeOff,
   Filter,
   GripVertical,
@@ -37,6 +38,7 @@ interface TableColumnMenuProps {
   field?: FieldSchema;
   disabled?: boolean;
   fullWidthTrigger?: boolean;
+  variant?: "default" | "primary";
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -49,6 +51,7 @@ export function TableColumnMenu({
   field,
   disabled,
   fullWidthTrigger = false,
+  variant = "default",
 }: TableColumnMenuProps) {
   const triggerTitle = typeof title === "string" ? title : "Options de colonne";
 
@@ -65,7 +68,8 @@ export function TableColumnMenu({
     dragModeEnabled,
     setDragModeEnabled,
   } = useTable();
-  const { advancedFilters, filterVariables, setAdvancedFilters } = useTableFilters();
+  const { advancedFilters, filterVariables, setAdvancedFilters } =
+    useTableFilters();
   const metadataFilters = metadata?.filters ?? [];
 
   const resolvedField = useMemo(() => {
@@ -76,7 +80,8 @@ export function TableColumnMenu({
     );
   }, [field, metadata, columnId]);
 
-  const normalizeSortKey = (value: string) => value.replace(/^-/, "").replace(/\./g, "__");
+  const normalizeSortKey = (value: string) =>
+    value.replace(/^-/, "").replace(/\./g, "__");
   const sortKey = resolvedField?.name || columnId;
   const normalizedKey = normalizeSortKey(sortKey);
 
@@ -107,13 +112,19 @@ export function TableColumnMenu({
       delete nextVariables.orderBy;
     }
 
-    setAdvancedFilters({ ...advancedFilters, orderBy: nextOrderBy }, nextVariables);
+    setAdvancedFilters(
+      { ...advancedFilters, orderBy: nextOrderBy },
+      nextVariables,
+    );
   };
 
-  const isGrouped = groupingField === (resolvedField?.fieldName || resolvedField?.name);
+  const isGrouped =
+    groupingField === (resolvedField?.fieldName || resolvedField?.name);
   const canGroup =
     resolvedField &&
-    !["DateField", "DateTimeField", "TextField"].includes(resolvedField.fieldType);
+    !["DateField", "DateTimeField", "TextField"].includes(
+      resolvedField.fieldType,
+    );
 
   const handleGroup = () => {
     const key = resolvedField?.fieldName || resolvedField?.name;
@@ -163,7 +174,8 @@ export function TableColumnMenu({
 
   const relationSource = useMemo(() => {
     if (!resolvedField) return null;
-    if (resolvedField.isRelation) return resolvedField.name || resolvedField.fieldName;
+    if (resolvedField.isRelation)
+      return resolvedField.name || resolvedField.fieldName;
     return getSyntheticRelationCountSource(resolvedField) ?? null;
   }, [resolvedField]);
 
@@ -204,17 +216,24 @@ export function TableColumnMenu({
               variant="ghost"
               size="sm"
               className={cn(
-                "h-full w-full min-h-0 m-0 self-stretch rounded-none justify-between px-0 py-0 data-[state=open]:bg-accent data-[state=open]:text-accent-foreground",
-                "font-medium",
-                currentSort
-                  ? "text-primary"
-                  : "text-foreground hover:text-foreground",
+                "h-full w-full min-h-0 m-0 self-stretch rounded-none justify-between px-0 py-0 data-[state=open]:bg-white/10 data-[state=open]:text-white",
+                "font-medium transition-colors duration-200",
+                variant === "primary"
+                  ? currentSort
+                    ? "text-white font-black"
+                    : "text-primary-foreground/80 hover:text-white hover:bg-white/5"
+                  : currentSort
+                    ? "text-primary"
+                    : "text-foreground hover:text-foreground",
               )}
             >
               <span className="truncate text-left px-2">{triggerTitle}</span>
               {currentSort && (
-                <span className="px-2 text-xs font-semibold" aria-hidden="true">
-                  {currentSort === "asc" ? "^" : "v"}
+                <span
+                  className="px-2 text-[10px] font-black"
+                  aria-hidden="true"
+                >
+                  {currentSort === "asc" ? "↑" : "↓"}
                 </span>
               )}
             </Button>
@@ -223,20 +242,30 @@ export function TableColumnMenu({
               variant="ghost"
               size="sm"
               className={cn(
-                "h-8 w-8 p-0 data-[state=open]:bg-accent data-[state=open]:text-accent-foreground ml-1",
-                currentSort
-                  ? "text-primary"
-                  : "text-muted-foreground/50 hover:text-foreground",
+                "h-8 w-8 p-0 ml-1 transition-all duration-200 rounded-lg",
+                variant === "primary"
+                  ? "text-primary-foreground/60 hover:text-white hover:bg-white/10 data-[state=open]:bg-white/20 data-[state=open]:text-white"
+                  : "text-muted-foreground/50 hover:text-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground",
+                currentSort &&
+                  (variant === "primary"
+                    ? "text-white scale-110"
+                    : "text-primary scale-110"),
               )}
             >
               {currentSort === "asc" && <ArrowUpAZ className="h-3.5 w-3.5" />}
-              {currentSort === "desc" && <ArrowDownAZ className="h-3.5 w-3.5" />}
+              {currentSort === "desc" && (
+                <ArrowDownAZ className="h-3.5 w-3.5" />
+              )}
               {!currentSort && <MoreVertical className="h-3.5 w-3.5" />}
             </Button>
           )}
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-56">
-          <div className="px-2 py-1.5 text-xs font-semibold text-foreground/70 border-b border-border/50 mb-1">
+        <DropdownMenuContent
+          align="start"
+          className="w-64 rounded-2xl border-none p-2 shadow-2xl backdrop-blur-2xl bg-background/95"
+        >
+          <div className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 border-b border-border/40 mb-1 flex items-center gap-2">
+            <ClipboardList className="h-3.5 w-3.5" />
             {triggerTitle}
           </div>
 
@@ -249,15 +278,22 @@ export function TableColumnMenu({
               <DropdownMenuItem onClick={() => handleSort("asc")}>
                 <ArrowUpAZ className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
                 <span>Croissant (A-Z)</span>
-                {currentSort === "asc" && <Check className="ml-auto h-3.5 w-3.5" />}
+                {currentSort === "asc" && (
+                  <Check className="ml-auto h-3.5 w-3.5" />
+                )}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleSort("desc")}>
                 <ArrowDownAZ className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
                 <span>Décroissant (Z-A)</span>
-                {currentSort === "desc" && <Check className="ml-auto h-3.5 w-3.5" />}
+                {currentSort === "desc" && (
+                  <Check className="ml-auto h-3.5 w-3.5" />
+                )}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => handleSort(null)} disabled={!currentSort}>
+              <DropdownMenuItem
+                onClick={() => handleSort(null)}
+                disabled={!currentSort}
+              >
                 <X className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
                 <span>Effacer le tri</span>
               </DropdownMenuItem>
@@ -271,16 +307,18 @@ export function TableColumnMenu({
             </DropdownMenuItem>
           )}
 
-          {supportsRelationFunctions && relationFunctionKeys && relationBaseName && (
-            <RelationFilterDialog
-              columnId={columnId}
-              metadataFilters={metadataFilters}
-              relationBaseName={relationBaseName}
-              relationFunctionKeys={relationFunctionKeys}
-              advancedFilters={advancedFilters}
-              setAdvancedFilters={setAdvancedFilters}
-            />
-          )}
+          {supportsRelationFunctions &&
+            relationFunctionKeys &&
+            relationBaseName && (
+              <RelationFilterDialog
+                columnId={columnId}
+                metadataFilters={metadataFilters}
+                relationBaseName={relationBaseName}
+                relationFunctionKeys={relationFunctionKeys}
+                advancedFilters={advancedFilters}
+                setAdvancedFilters={setAdvancedFilters}
+              />
+            )}
 
           <DropdownMenuSeparator />
 
