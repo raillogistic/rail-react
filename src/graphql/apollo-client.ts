@@ -233,8 +233,12 @@ const createErrorLink = () => {
     const context = operation.getContext() as {
       skipAuthRefresh?: boolean;
       skipAuthRedirect?: boolean;
+      skipAuthErrorHandling?: boolean;
     } | undefined;
     const skipAuthRefresh = context?.skipAuthRefresh === true;
+    const skipAuthErrorHandling =
+      context?.skipAuthErrorHandling === true ||
+      operation.operationName === 'Logout';
 
     // Handle GraphQL errors
     if (graphQLErrors) {
@@ -242,19 +246,27 @@ const createErrorLink = () => {
         extensions?.code === 'UNAUTHENTICATED' || (typeof message === 'string' && message.toLowerCase().includes('authentication'))
       );
 
-      graphQLErrors.forEach(({ message, locations, path }) => {
-        console.error(
-          `GraphQL error: Message: ${message}, Location: ${locations}, Path: ${path}`
-        );
+      // Logout is best-effort and may legitimately receive unauthenticated responses.
+      if (!(skipAuthErrorHandling && hasUnauthenticated)) {
+        graphQLErrors.forEach(({ message, locations, path }) => {
+          console.error(
+            `GraphQL error: Message: ${message}, Location: ${locations}, Path: ${path}`
+          );
 
-        // Handle authentication errors
-        if (!hasUnauthenticated) {
-          return;
-        }
-      });
+          // Handle authentication errors
+          if (!hasUnauthenticated) {
+            return;
+          }
+        });
+      }
 
       // Attempt silent refresh + retry once, per docs.
-      if (hasUnauthenticated && !skipAuthRefresh && operation.operationName !== 'RefreshToken') {
+      if (
+        hasUnauthenticated &&
+        !skipAuthRefresh &&
+        !skipAuthErrorHandling &&
+        operation.operationName !== 'RefreshToken'
+      ) {
         operation.setContext({ ...context, skipAuthRefresh: true });
         return fromPromise(refreshAccessToken()).flatMap((refreshed) => {
           if (refreshed) {
@@ -279,13 +291,27 @@ const createErrorLink = () => {
 
     // Handle network errors
     if (networkError) {
+      const statusCode =
+        'statusCode' in networkError ? networkError.statusCode : undefined;
+      if (
+        skipAuthErrorHandling &&
+        (statusCode === 401 || statusCode === 403)
+      ) {
+        return;
+      }
+
       console.error(`Network error: ${networkError}`);
 
       // Handle specific network error cases
       if ('statusCode' in networkError) {
-        const statusCode = networkError.statusCode;
+        const numericStatusCode =
+          typeof statusCode === 'number' ? statusCode : undefined;
 
-        if ((statusCode === 401 || statusCode === 403) && !skipAuthRefresh) {
+        if (
+          (numericStatusCode === 401 || numericStatusCode === 403) &&
+          !skipAuthRefresh &&
+          !skipAuthErrorHandling
+        ) {
           // Only redirect to login for definitive authentication errors
           // Check if this is during app initialization to avoid aggressive redirects
           const isInitializing = !tokenStorage.getAccessToken() || window.location.pathname === '/login';
@@ -311,12 +337,15 @@ const createErrorLink = () => {
               throw authError;
             });
           }
-        } else if (statusCode >= 500 || !statusCode) {
+        } else if (
+          numericStatusCode === undefined ||
+          numericStatusCode >= 500
+        ) {
           // Server error or network connectivity issue
           // Trigger offline alert instead of auth error
           const event = new CustomEvent('backend-offline', {
             detail: {
-              message: statusCode >= 500
+              message: numericStatusCode !== undefined && numericStatusCode >= 500
                 ? 'Server is experiencing issues. Please try again later.'
                 : 'Unable to connect to the server. Please check your connection.'
             }

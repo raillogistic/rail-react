@@ -73,6 +73,52 @@ const extractSessionIdFromToken = (
   return selectSessionIdFromTokenPayload(decoded);
 };
 
+const isExpectedLogoutAuthError = (error: unknown): boolean => {
+  const maybeError = error as
+    | {
+        message?: string;
+        graphQLErrors?: Array<{
+          message?: string;
+          extensions?: Record<string, unknown>;
+        }>;
+        networkError?: {
+          statusCode?: number;
+        };
+      }
+    | undefined;
+
+  if (!maybeError) {
+    return false;
+  }
+
+  const message = String(maybeError.message ?? "").toLowerCase();
+  const hasAuthMessage =
+    message.includes("authentication") ||
+    message.includes("unauthorized") ||
+    message.includes("forbidden") ||
+    message.includes("unauthenticated");
+  const hasAuthGraphQLError = Array.isArray(maybeError.graphQLErrors)
+    ? maybeError.graphQLErrors.some((graphQLError) => {
+        const code = String(graphQLError?.extensions?.code ?? "").toUpperCase();
+        const graphQLMessage = String(graphQLError?.message ?? "").toLowerCase();
+        return (
+          code === "UNAUTHENTICATED" ||
+          code === "FORBIDDEN" ||
+          graphQLMessage.includes("authentication") ||
+          graphQLMessage.includes("unauthorized")
+        );
+      })
+    : false;
+  const statusCode = maybeError.networkError?.statusCode;
+
+  return (
+    hasAuthMessage ||
+    hasAuthGraphQLError ||
+    statusCode === 401 ||
+    statusCode === 403
+  );
+};
+
 export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
@@ -208,9 +254,19 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const handleLogout = useCallback(async () => {
     try {
-      await client.mutate({ mutation: LOGOUT_MUTATION });
+      await client.mutate({
+        mutation: LOGOUT_MUTATION,
+        context: {
+          skipAuthRefresh: true,
+          skipAuthRedirect: true,
+          skipAuthErrorHandling: true,
+        },
+        errorPolicy: "ignore",
+      });
     } catch (e) {
-      console.warn("Logout mutation failed", e);
+      if (!isExpectedLogoutAuthError(e)) {
+        console.warn("Logout mutation failed", e);
+      }
     }
     await client.clearStore();
   }, [client]);

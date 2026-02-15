@@ -70,11 +70,7 @@ export function AuthProvider({
       if (detail?.isActive === false && manager.getState().isAuthenticated) {
         // Keep manager state in sync with tokenStorage-driven session invalidation
         // (e.g. Apollo auth failures clearing tokens outside manager APIs).
-        void manager.logout({ silent: true, reason: 'session_expired' }).then(() => {
-          if (onLogout) {
-            void onLogout();
-          }
-        });
+        void manager.logout({ silent: true, reason: 'session_expired' });
       }
     };
 
@@ -89,7 +85,7 @@ export function AuthProvider({
       unsubscribe();
       manager.destroy();
     };
-  }, [manager, onValidateSession, onLogout]);
+  }, [manager, onValidateSession]);
 
   const login = useCallback(async (credentials: LoginCredentials) => {
     if (!onLogin) throw new Error('onLogin handler not provided');
@@ -102,8 +98,19 @@ export function AuthProvider({
   }, [manager, onVerifyMFA]);
 
   const logout = useCallback(async (options?: LogoutOptions) => {
-    await manager.logout(options);
-    if (onLogout) await onLogout();
+    const shouldCallRemoteLogout =
+      !!onLogout &&
+      options?.silent !== true &&
+      options?.reason !== 'session_expired' &&
+      options?.reason !== 'forced_logout';
+
+    try {
+      if (shouldCallRemoteLogout) {
+        await onLogout();
+      }
+    } finally {
+      await manager.logout(options);
+    }
   }, [manager, onLogout]);
 
   const hasPermission = useCallback((permission: string) => {

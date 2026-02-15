@@ -3,6 +3,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useAuth } from '../useAuth';
 import { AuthProvider } from '../../context/AuthProvider';
 import { AuthUser, TokenPair } from '../../types';
+import { tokenStorage, AUTH_SESSION_EVENT } from '../../utils/token-storage';
 
 // Mock legacy token storage to avoid side effects and decoding errors
 vi.mock('../../utils/token-storage', () => ({
@@ -109,7 +110,32 @@ describe('useAuth', () => {
       await result.current.logout();
     });
 
-    expect(onLogout).toHaveBeenCalled();
+    expect(onLogout).toHaveBeenCalledTimes(1);
+    expect(tokenStorage.clearAllTokens).toHaveBeenCalled();
+    expect(onLogout.mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(tokenStorage.clearAllTokens).mock.invocationCallOrder[0],
+    );
+    expect(result.current.isAuthenticated).toBe(false);
+    expect(result.current.user).toBeNull();
+  });
+
+  it('does not call remote logout on session invalidation events', async () => {
+    const { result } = renderHook(() => useAuth(), { wrapper });
+
+    await act(async () => {
+      await result.current.login({ username: 'test', password: 'password' });
+    });
+
+    await act(async () => {
+      window.dispatchEvent(
+        new CustomEvent(AUTH_SESSION_EVENT, {
+          detail: { isActive: false },
+        }),
+      );
+      await Promise.resolve();
+    });
+
+    expect(onLogout).not.toHaveBeenCalled();
     expect(result.current.isAuthenticated).toBe(false);
     expect(result.current.user).toBeNull();
   });

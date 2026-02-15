@@ -80,15 +80,42 @@ function sanitizePersistedModelSchema<T>(schema: T): T {
       )
     : source.relationships;
 
+  const relationFilters = Array.isArray(source.relationFilters)
+    ? source.relationFilters
+    : [];
+
+  const fieldGroups = Array.isArray(source.fieldGroups)
+    ? source.fieldGroups
+    : [];
+
   return {
     ...source,
     fields,
     relationships,
+    relationFilters,
+    fieldGroups,
     permissions: DENIED_PERMISSIONS,
     mutations: [],
     templates: [],
   } as T;
 }
+
+const sanitizePersistedQueryData = (data: unknown): Record<string, unknown> => {
+  if (!data || typeof data !== "object") {
+    return {};
+  }
+
+  const source = data as Record<string, unknown>;
+
+  if (!("modelSchema" in source)) {
+    return source;
+  }
+
+  return {
+    ...source,
+    modelSchema: sanitizePersistedModelSchema(source.modelSchema),
+  };
+};
 
 const readLatestUserKey = (): string | null => {
   if (!isBrowser()) return null;
@@ -356,7 +383,7 @@ export const hydrateMetadataCache = (
       cache.writeQuery({
         query: FILTER_METADATA_QUERY,
         variables: { app, model },
-        data: entry.filter.data as Record<string, unknown>,
+        data: sanitizePersistedQueryData(entry.filter.data),
       });
       hydratedEntries += 1;
     }
@@ -365,7 +392,7 @@ export const hydrateMetadataCache = (
       cache.writeQuery({
         query: GET_MODEL_SCHEMA,
         variables: { app, model },
-        data: entry.table.data as Record<string, unknown>,
+        data: sanitizePersistedQueryData(entry.table.data),
       });
       hydratedEntries += 1;
     }
