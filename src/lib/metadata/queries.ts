@@ -119,11 +119,35 @@ export const TABLE_MODEL_METADATA_QUERY = gql`
           description
         }
       }
+      relationFilters {
+        name
+        fieldName
+        relationType
+        supportsSome
+        supportsEvery
+        supportsNone
+        supportsCount
+        nestedFilterType
+      }
       mutations {
         name
         operation
         description
         methodName
+        inputFields {
+          name
+          fieldName
+          fieldType
+          graphqlType
+          required
+          defaultValue
+          description
+          choices {
+            value
+            label
+          }
+          relatedModel
+        }
         allowed
         requiredPermissions
         reason
@@ -142,6 +166,30 @@ export const TABLE_MODEL_METADATA_QUERY = gql`
         canBulkDelete
         canExport
         denialReasons
+      }
+      fieldGroups {
+        key
+        label
+        description
+        fields
+        collapsed
+      }
+      templates {
+        key
+        templateType
+        title
+        description
+        endpoint
+        urlPath
+        guard
+        requireAuthentication
+        roles
+        permissions
+        allowed
+        denialReason
+        allowClientData
+        clientDataFields
+        clientDataSchema
       }
       metadataVersion
       customMetadata
@@ -376,6 +424,7 @@ export const MODEL_METADATA_QUERY = gql`
       
       templates {
         key
+        templateType
         title
         description
         endpoint

@@ -235,6 +235,10 @@ function buildNestedRelationFieldConfig<
       relatedAppLabel: relation.relatedAppLabel,
       relatedModelName: relation.relatedModelName,
       relationToMany: relation.toMany,
+      relationPolicy: {
+        allowedActions: relation.policy?.allowedActions ?? [],
+        blockedActions: relation.policy?.blockedActions ?? [],
+      },
       nestedOps: {
         ...(scalarListOperation ? { scalarListOperation } : {}),
         ...(removeOperation ? { removeOperation } : {}),

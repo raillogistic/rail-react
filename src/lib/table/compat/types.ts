@@ -58,6 +58,8 @@ export interface ModelPermissionMatrix {
 export interface ModelPdfTemplateMetadata {
   /** Unique identifier combining app, model and method */
   key: string;
+  /** Template kind supplied by backend metadata */
+  templateType?: string;
   /** Model method name registered via decorator */
   methodName: string;
   /** Display title for dropdowns */
@@ -488,6 +490,7 @@ export interface ModelPermissionsType {
 
 export interface TemplateInfoType {
   key: string;
+  templateType?: string;
   title: string;
   endpoint: string;
   urlPath: string;

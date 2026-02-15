@@ -143,18 +143,6 @@ export type ModelFormErrorFallbackContext = {
   objectId?: string;
 };
 
-type ModelFormStateConfig<
-  TFormValues extends Record<string, unknown>,
-> = NonNullable<DynamicFormProps<TFormValues>["state"]>;
-
-type ModelFormBehaviorConfig<
-  TFormValues extends Record<string, unknown>,
-> = NonNullable<DynamicFormProps<TFormValues>["behavior"]>;
-
-type ModelFormLayoutConfig<
-  TFormValues extends Record<string, unknown>,
-> = NonNullable<DynamicFormProps<TFormValues>["layout"]>;
-
 export interface ModelFormProps<
   TFormValues extends Record<string, unknown> = Record<string, unknown>,
 > extends Partial<DynamicFormProps<TFormValues>> {
@@ -190,28 +178,6 @@ export interface ModelFormProps<
    * `behavior`, `layout`, `actions`, `devtools` props still take precedence.
    */
   formProps?: Partial<DynamicFormProps<TFormValues>>;
-
-  /** Convenience alias merged into `behavior.onSubmit`. */
-  onSubmit?: ModelFormBehaviorConfig<TFormValues>["onSubmit"];
-  /** Convenience alias merged into `behavior.onChange`. */
-  onChange?: ModelFormBehaviorConfig<TFormValues>["onChange"];
-  /** Convenience alias merged into `behavior.validate`. */
-  validate?: ModelFormBehaviorConfig<TFormValues>["validate"];
-
-  /** Convenience alias merged into `state.defaultValues`. */
-  defaultValues?: ModelFormStateConfig<TFormValues>["defaultValues"];
-  /** Convenience alias merged into `state.readOnly`. */
-  readOnly?: ModelFormStateConfig<TFormValues>["readOnly"];
-  /** Convenience alias merged into `state.disabled`. */
-  disabled?: ModelFormStateConfig<TFormValues>["disabled"];
-  /** Convenience alias merged into `state.isLoading`. */
-  isLoading?: ModelFormStateConfig<TFormValues>["isLoading"];
-  /** Convenience alias merged into `state.onReady`. */
-  onFormReady?: ModelFormStateConfig<TFormValues>["onReady"];
-  /** Convenience alias merged into `layout.showSectionHeaders`. */
-  showSectionHeaders?: ModelFormLayoutConfig<TFormValues>["showSectionHeaders"];
-  /** Convenience alias that sets layout variant to `popup` if not provided. */
-  inPopup?: boolean;
 
   title?: React.ReactNode;
   description?: React.ReactNode;

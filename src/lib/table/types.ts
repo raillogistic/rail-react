@@ -215,6 +215,28 @@ export interface ModelPermissions {
   denialReasons?: string; // JSON string
 }
 
+export interface TemplateClientField {
+  name: string;
+  type?: string | null;
+}
+
+export interface TemplateInfo {
+  key: string;
+  templateType?: string;
+  title: string;
+  endpoint: string;
+  urlPath?: string;
+  guard?: string | null;
+  requireAuthentication?: boolean;
+  roles?: string[];
+  permissions?: string[];
+  allowed?: boolean;
+  denialReason?: string | null;
+  allowClientData?: boolean;
+  clientDataFields?: string[];
+  clientDataSchema?: string | TemplateClientField[] | null;
+}
+
 export interface ModelSchema {
   // Identity
   app: string;
@@ -244,7 +266,7 @@ export interface ModelSchema {
 
   // Hints
   fieldGroups?: unknown[];
-  templates?: unknown[];
+  templates?: TemplateInfo[];
 
   // Cache
   metadataVersion: string;

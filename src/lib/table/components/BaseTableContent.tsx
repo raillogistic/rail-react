@@ -331,6 +331,11 @@ export function BaseTableContent({
     ],
   );
   const { refetch } = useTableData(queryConfig);
+  const resolvedEnableSelection = React.useMemo(() => {
+    if (enableSelection) return true;
+    const templates = metadata?.templates ?? [];
+    return templates.length > 0;
+  }, [enableSelection, metadata?.templates]);
 
   const columnDefs = React.useMemo(() => {
     if (!metadata) return null;
@@ -790,7 +795,12 @@ export function BaseTableContent({
 
   if (metadataLoading) {
     return (
-      <div className="flex h-[400px] w-full flex-col gap-4 p-4 animate-in fade-in duration-500">
+      <div
+        className="flex h-[400px] w-full flex-col gap-4 p-4 animate-in fade-in duration-500"
+        role="status"
+        aria-live="polite"
+        aria-label="Loading table metadata"
+      >
         <div className="flex items-center justify-between">
           <div className="h-10 w-64 animate-pulse rounded-lg bg-muted/40" />
           <div className="flex gap-2">
@@ -869,7 +879,7 @@ export function BaseTableContent({
                     columns={columnDefs ?? undefined}
                     columnOrdering={columnOrdering}
                     disableSorting={disableSorting}
-                    enableSelection={enableSelection}
+                    enableSelection={resolvedEnableSelection}
                   />
                 </SortableContext>
                 <TableBody>
@@ -877,7 +887,7 @@ export function BaseTableContent({
                     emptyState={tableConfig?.emptyState}
                     loadingText={tableConfig?.loadingText}
                     columns={columnDefs ?? undefined}
-                    enableSelection={enableSelection}
+                    enableSelection={resolvedEnableSelection}
                     refetch={refetch}
                     columnActions={columnActions}
                     relationStats={relationStats}
@@ -925,7 +935,7 @@ export function BaseTableContent({
         <div className="flex-none animate-in slide-in-from-bottom-4 duration-500">
           <TablePagination
             labels={tableConfig?.paginationLabels}
-            enableSelection={enableSelection}
+            enableSelection={resolvedEnableSelection}
           />
         </div>
       )}

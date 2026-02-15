@@ -73,6 +73,22 @@ const isAuthFailure = <TData>(response: GraphQLResponse<TData>, status: number):
   });
 };
 
+/**
+ * Some deployments silently coerce auth-protected root fields to null for
+ * invalid/expired tokens without returning GraphQL errors.
+ */
+const isSilentNullAuthFailure = <TData>(response: GraphQLResponse<TData>): boolean => {
+  const data = response.data;
+  if (!data || typeof data !== "object" || Array.isArray(data)) {
+    return false;
+  }
+  const values = Object.values(data as Record<string, unknown>);
+  if (values.length === 0) {
+    return false;
+  }
+  return values.every((value) => value === null);
+};
+
 const postGraphQL = async <TData>(
   fetchImpl: typeof fetch,
   endpoint: string,
@@ -105,7 +121,9 @@ export const createGraphQLAuthClient = (
     username: `${config.username.slice(0, 2)}***`,
   };
 
-  const login = async (): Promise<string> => {
+  const login = async (
+    previousSessionOverride?: ReturnType<typeof getWorkerSession>
+  ): Promise<string> => {
     const { status, payload } = await postGraphQL<LoginResponse>(
       fetchImpl,
       config.endpoint,
@@ -122,7 +140,10 @@ export const createGraphQLAuthClient = (
         `Integration login failed (${JSON.stringify(safeDebugMeta)})`
       );
     }
-    const previous = getWorkerSession(workerId);
+    const previous =
+      previousSessionOverride !== undefined
+        ? previousSessionOverride
+        : getWorkerSession(workerId);
     setWorkerSessionToken(token, workerId, previous);
     return token;
   };
@@ -149,13 +170,17 @@ export const createGraphQLAuthClient = (
       token
     );
     trackWorkerRequest(hadCachedToken, workerId);
-    if (!isAuthFailure(firstAttempt.payload, firstAttempt.status)) {
+    const retryForAuthFailure =
+      isAuthFailure(firstAttempt.payload, firstAttempt.status) ||
+      (hadCachedToken && isSilentNullAuthFailure(firstAttempt.payload));
+    if (!retryForAuthFailure) {
       return firstAttempt.payload;
     }
 
     // Exactly one re-login + one retry on auth failures.
+    const previousSession = getWorkerSession(workerId);
     clearWorkerSession(workerId);
-    const refreshedToken = await login();
+    const refreshedToken = await login(previousSession);
     const secondAttempt = await postGraphQL<TData>(
       fetchImpl,
       config.endpoint,

@@ -13,7 +13,30 @@ import type { FormBehaviorConfig } from "./behavior";
 import type { FormLayoutConfig } from "./layout";
 import type { FormActionsConfig } from "./actions";
 
-// ─── State Config ────────────────────────────────────────────────────────────
+type DisallowedLegacyDynamicFormProps = {
+  defaultValues?: never;
+  disableAutoReset?: never;
+  readOnly?: never;
+  disabled?: never;
+  isLoading?: never;
+  isSubmitting?: never;
+  onReady?: never;
+  persistKey?: never;
+  onSubmit?: never;
+  onChange?: never;
+  validate?: never;
+  conditions?: never;
+  computed?: never;
+  dependencies?: never;
+  autosave?: never;
+  columns?: never;
+  variant?: never;
+  showSectionHeaders?: never;
+  mode?: never;
+  submitLabel?: never;
+  resetLabel?: never;
+  onReset?: never;
+};
 
 export interface FormStateConfig<TValues> {
   /** External TanStack form instance (for shared state across components) */
@@ -22,9 +45,9 @@ export interface FormStateConfig<TValues> {
   defaultValues?: Partial<TValues>;
   /** Skip automatic form resets when defaults change */
   disableAutoReset?: boolean;
-  /** Global read-only mode — all fields become non-editable */
+  /** Global read-only mode - all fields become non-editable */
   readOnly?: boolean;
-  /** Global disabled mode — all fields become disabled */
+  /** Global disabled mode - all fields become disabled */
   disabled?: boolean;
   /** External loading state that disables interactions */
   isLoading?: boolean;
@@ -39,8 +62,6 @@ export interface FormStateConfig<TValues> {
   persistKey?: string;
 }
 
-// ─── Devtools Config ─────────────────────────────────────────────────────────
-
 export interface FormDevtoolsConfig<TValues> {
   /** Enable the debug panel */
   enabled?: boolean;
@@ -54,11 +75,9 @@ export interface FormDevtoolsConfig<TValues> {
   logChanges?: boolean;
 }
 
-// ─── DynamicForm Props ───────────────────────────────────────────────────────
-
 export interface DynamicFormProps<
   TValues extends Record<string, any> = Record<string, any>,
-> {
+> extends DisallowedLegacyDynamicFormProps {
   /** Declarative schema describing sections, fields, and initial values */
   schema: FormSchema<TValues>;
   /** State control: external form, defaults, loading, read-only */

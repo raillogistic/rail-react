@@ -41,6 +41,9 @@ export const MODEL_FORM_CONTRACT_QUERY = gql`
         }
         ui
         metadata
+        readable
+        writable
+        visibility
       }
       sections {
         id
@@ -58,6 +61,8 @@ export const MODEL_FORM_CONTRACT_QUERY = gql`
         toMany
         relatedAppLabel
         relatedModelName
+        readable
+        writable
         policy {
           path
           allowedActions
@@ -65,6 +70,42 @@ export const MODEL_FORM_CONTRACT_QUERY = gql`
           nestedEnabled
         }
         nestedForm
+      }
+      permissions {
+        canCreate
+        canUpdate
+        canDelete
+        canView
+        create {
+          allowed
+          requiredPermissions
+          requiresAuthentication
+          reason
+        }
+        update {
+          allowed
+          requiredPermissions
+          requiresAuthentication
+          reason
+        }
+        delete {
+          allowed
+          requiredPermissions
+          requiresAuthentication
+          reason
+        }
+        view {
+          allowed
+          requiredPermissions
+          requiresAuthentication
+          reason
+        }
+        fieldPermissions {
+          field
+          canRead
+          canWrite
+          visibility
+        }
       }
       mutationBindings {
         createOperation
@@ -132,6 +173,9 @@ export const MODEL_FORM_CONTRACT_PAGES_QUERY = gql`
           }
           ui
           metadata
+          readable
+          writable
+          visibility
         }
         sections {
           id
@@ -149,6 +193,8 @@ export const MODEL_FORM_CONTRACT_PAGES_QUERY = gql`
           toMany
           relatedAppLabel
           relatedModelName
+          readable
+          writable
           policy {
             path
             allowedActions
@@ -156,6 +202,42 @@ export const MODEL_FORM_CONTRACT_PAGES_QUERY = gql`
             nestedEnabled
           }
           nestedForm
+        }
+        permissions {
+          canCreate
+          canUpdate
+          canDelete
+          canView
+          create {
+            allowed
+            requiredPermissions
+            requiresAuthentication
+            reason
+          }
+          update {
+            allowed
+            requiredPermissions
+            requiresAuthentication
+            reason
+          }
+          delete {
+            allowed
+            requiredPermissions
+            requiresAuthentication
+            reason
+          }
+          view {
+            allowed
+            requiredPermissions
+            requiresAuthentication
+            reason
+          }
+          fieldPermissions {
+            field
+            canRead
+            canWrite
+            visibility
+          }
         }
         mutationBindings {
           createOperation

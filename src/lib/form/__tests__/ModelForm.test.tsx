@@ -93,6 +93,22 @@ function createMockFormContext(initialMeta: Record<string, unknown> = {}) {
 }
 
 describe("ModelForm", () => {
+  it("rejects legacy top-level convenience props", () => {
+    expect(() =>
+      renderWithMocks(
+        <ModelForm
+          {...({
+            app: "store",
+            model: "Product",
+            mode: "CREATE",
+            inPopup: true,
+          } as any)}
+        />,
+        [],
+      ),
+    ).toThrow(/Legacy props are not supported/);
+  });
+
   it("renders generated schema for CREATE mode", async () => {
     const mocks = [
       {
@@ -2317,11 +2333,13 @@ describe("ModelForm", () => {
         mode="view"
         onlyFields={["name"]}
         formProps={{
-          layout: { columns: 1 },
+          layout: {
+            columns: 1,
+            showSectionHeaders: false,
+            variant: "popup",
+          },
           actions: { submitLabel: "Save" },
         }}
-        showSectionHeaders={false}
-        inPopup
       />,
       mocks,
     );

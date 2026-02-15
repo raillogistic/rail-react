@@ -1257,7 +1257,7 @@ export function StoreProductUpdateModelFormExample({
         app="store"
         model="Order"
         mode="UPDATE"
-        objectId="9"
+        objectId={objectId}
         formProps={{
           devtools: { enabled: true },
         }}

@@ -59,6 +59,50 @@ export const sampleModelFormContract: ModelFormContract = {
     },
   ],
   relations: [],
+  permissions: {
+    canCreate: true,
+    canUpdate: true,
+    canDelete: true,
+    canView: true,
+    create: {
+      allowed: true,
+      requiredPermissions: [],
+      requiresAuthentication: false,
+      reason: null,
+    },
+    update: {
+      allowed: true,
+      requiredPermissions: [],
+      requiresAuthentication: false,
+      reason: null,
+    },
+    delete: {
+      allowed: true,
+      requiredPermissions: [],
+      requiresAuthentication: false,
+      reason: null,
+    },
+    view: {
+      allowed: true,
+      requiredPermissions: [],
+      requiresAuthentication: false,
+      reason: null,
+    },
+    fieldPermissions: [
+      {
+        field: "name",
+        canRead: true,
+        canWrite: true,
+        visibility: "VISIBLE",
+      },
+      {
+        field: "price",
+        canRead: true,
+        canWrite: true,
+        visibility: "VISIBLE",
+      },
+    ],
+  },
   mutationBindings: {
     createOperation: "createProduct",
     updateOperation: "updateProduct",

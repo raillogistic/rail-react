@@ -216,18 +216,25 @@ export function ActionDialog({
           <DynamicForm
             key={actionMeta.name}
             schema={schema}
-            defaultValues={defaults ?? {}}
-            submitLabel={
-              (actionMeta.action?.submit_label as string | undefined) ??
-              "Exécuter"
-            }
-            resetLabel={cancelLabel}
-            disableAutoReset
-            onSubmit={(values) => {
-              onExecute(values as Record<string, unknown>);
+            state={{
+              defaultValues: defaults ?? {},
+              disableAutoReset: true,
+              isLoading: submitting,
             }}
-            isLoading={submitting}
-            showSectionHeaders
+            behavior={{
+              onSubmit: (values) => {
+                onExecute(values as Record<string, unknown>);
+              },
+            }}
+            actions={{
+              submitLabel:
+                (actionMeta.action?.submit_label as string | undefined) ??
+                "Exécuter",
+              resetLabel: cancelLabel,
+            }}
+            layout={{
+              showSectionHeaders: true,
+            }}
           />
         ) : null}
       </DialogContent>
@@ -268,17 +275,21 @@ export function PrintDialog({
         </DialogHeader>
         <DynamicForm
           schema={schema}
-          defaultValues={defaultValues ?? {}}
-          submitLabel={submitLabel}
-          resetLabel={cancelLabel}
-          onSubmit={(values) => {
-            onSubmit(values);
+          state={{
+            defaultValues: defaultValues ?? {},
+            disableAutoReset: true,
           }}
-          onReset={onCancel}
-          disableAutoReset
+          behavior={{
+            onSubmit: (values) => {
+              onSubmit(values);
+            },
+          }}
+          actions={{
+            submitLabel,
+            resetLabel: cancelLabel,
+          }}
         />
       </DialogContent>
     </Dialog>
   );
 }
-

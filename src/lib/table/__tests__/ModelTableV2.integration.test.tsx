@@ -6,6 +6,8 @@ import { gql } from '@apollo/client';
 import { describe, it, expect, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 
+vi.stubEnv('VITE_METADATA_GATEWAY_TABLE', '0');
+
 // Mock FilterPanel to avoid extra Apollo queries in tests
 vi.mock('../../filters/FilterPanel', () => ({
   FilterPanel: () => <div data-testid="dynamic-filter-form-mock">Filter Form</div>
@@ -299,6 +301,193 @@ const MOCK_DATA_QUERY = {
   },
 };
 
+const MOCK_METADATA_QUERY_WITH_TEMPLATE = {
+  request: {
+    query: GET_MODEL_SCHEMA,
+    variables: { app: 'auth', model: 'User' },
+  },
+  result: {
+    data: {
+      modelSchema: {
+        __typename: 'ModelSchema',
+        app: 'auth',
+        model: 'User',
+        verboseName: 'User',
+        verboseNamePlural: 'Users',
+        primaryKey: 'id',
+        ordering: ['username'],
+        permissions: {
+          __typename: 'ModelPermissions',
+          canList: true,
+          canRetrieve: true,
+          canCreate: true,
+          canUpdate: true,
+          canDelete: true,
+          canBulkCreate: false,
+          canBulkUpdate: false,
+          canBulkDelete: false,
+          canExport: true,
+          denialReasons: null,
+        },
+        filterConfig: {
+          __typename: 'FilterConfig',
+          style: 'nested',
+          argumentName: 'where',
+          inputTypeName: 'UserWhereInput',
+          supportsAnd: true,
+          supportsOr: true,
+          supportsNot: true,
+          supportsQuick: true,
+          supportsFts: true,
+          supportsAggregation: false,
+          dualModeEnabled: false,
+          presets: [],
+          computedFilters: [],
+        },
+        filters: [
+          {
+            __typename: 'FilterSchema',
+            name: 'username',
+            fieldName: 'username',
+            fieldLabel: 'Username',
+            baseType: 'String',
+            isNested: false,
+            relatedModel: null,
+            options: [
+              {
+                __typename: 'FilterOption',
+                name: 'username__icontains',
+                lookup: 'icontains',
+                label: 'Contient',
+                helpText: 'Filtrer par username',
+                choices: [],
+                graphqlType: 'String',
+                isList: false,
+              },
+            ],
+            filterInputType: 'StringFilter',
+            availableOperators: ['icontains'],
+          },
+        ],
+        fields: [
+          {
+            __typename: 'FieldSchema',
+            name: 'id',
+            fieldName: 'id',
+            verboseName: 'ID',
+            helpText: '',
+            fieldType: 'AutoField',
+            graphqlType: 'ID',
+            required: true,
+            nullable: false,
+            blank: false,
+            editable: false,
+            unique: true,
+            hasDefault: false,
+            autoNow: false,
+            autoNowAdd: false,
+            isPrimaryKey: true,
+            isIndexed: true,
+            isRelation: false,
+            isComputed: false,
+            isFile: false,
+            isImage: false,
+            isJson: false,
+            isDate: false,
+            isDatetime: false,
+            isNumeric: false,
+            isBoolean: false,
+            isText: false,
+            isRichText: false,
+            isFsmField: false,
+            readable: true,
+            writable: false,
+            visibility: 'list',
+            validators: [],
+            regexPattern: null,
+            choices: null,
+            defaultValue: null,
+            maxDigits: null,
+            decimalPlaces: null,
+            maxValue: null,
+            minValue: null,
+            minLength: null,
+            maxLength: null,
+          },
+          {
+            __typename: 'FieldSchema',
+            name: 'username',
+            fieldName: 'username',
+            verboseName: 'Username',
+            helpText: 'Required',
+            fieldType: 'CharField',
+            graphqlType: 'String',
+            required: true,
+            nullable: false,
+            blank: false,
+            editable: true,
+            unique: true,
+            hasDefault: false,
+            autoNow: false,
+            autoNowAdd: false,
+            isPrimaryKey: false,
+            isIndexed: true,
+            isRelation: false,
+            isComputed: false,
+            isFile: false,
+            isImage: false,
+            isJson: false,
+            isDate: false,
+            isDatetime: false,
+            isNumeric: false,
+            isBoolean: false,
+            isText: true,
+            isRichText: false,
+            isFsmField: false,
+            readable: true,
+            writable: true,
+            visibility: 'list',
+            validators: [],
+            regexPattern: null,
+            choices: null,
+            defaultValue: null,
+            maxDigits: null,
+            decimalPlaces: null,
+            maxValue: null,
+            minValue: null,
+            minLength: null,
+            maxLength: 150,
+          },
+        ],
+        relationships: [],
+        mutations: [],
+        templates: [
+          {
+            __typename: 'TemplateInfo',
+            key: 'auth/user/export_excel',
+            templateType: 'excel',
+            title: 'User export',
+            description: null,
+            endpoint: '/api/excel/auth/user/export_excel/',
+            urlPath: 'auth/user/export_excel',
+            guard: null,
+            requireAuthentication: true,
+            roles: [],
+            permissions: [],
+            allowed: true,
+            denialReason: null,
+            allowClientData: false,
+            clientDataFields: [],
+            clientDataSchema: null,
+          },
+        ],
+        metadataVersion: '2.0',
+        customMetadata: null,
+      },
+    },
+  },
+};
+
 describe('ModelTableV2 Integration', () => {
   it('should render table with headers based on metadata', async () => {
     render(
@@ -330,5 +519,21 @@ describe('ModelTableV2 Integration', () => {
     });
 
     expect(screen.getAllByText('Filtrer').length).toBeGreaterThan(0);
+  });
+
+  it('should enable row selection automatically when templates are present', async () => {
+    render(
+      <MockedProvider mocks={[MOCK_METADATA_QUERY_WITH_TEMPLATE, MOCK_DATA_QUERY]}>
+        <MemoryRouter>
+          <ModelTableV2 app="auth" model="User" />
+        </MemoryRouter>
+      </MockedProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getAllByText('Username').length).toBeGreaterThan(0);
+    });
+
+    expect(screen.getByRole('checkbox', { name: /Tout/i })).toBeInTheDocument();
   });
 });

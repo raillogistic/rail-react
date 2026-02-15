@@ -283,6 +283,7 @@ function normalizeExplicitOperationInput(
 
     const action = toNormalizedAction(key);
     if (action === "DELETE") {
+      assertActionAllowed(relation, relationPath, "DELETE", false);
       throw new NestedMutationPayloadError({
         field: relationPath,
         code: "NESTED_RELATION_INVALID_ACTION",

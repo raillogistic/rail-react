@@ -57,6 +57,63 @@ export type ListFieldRendererProps<TValues> = {
   hiddenFields?: Set<string>;
 };
 
+const EMPTY_ACTIONS: string[] = [];
+
+function toActionList(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return EMPTY_ACTIONS;
+  }
+  return value
+    .map((item) => String(item ?? "").trim().toUpperCase())
+    .filter(Boolean);
+}
+
+export function isRelationActionAllowed(
+  config: ListFieldConfig,
+  action: string,
+): boolean {
+  const normalizedAction = String(action ?? "").trim().toUpperCase();
+  if (!normalizedAction) return true;
+
+  const meta =
+    config.meta && typeof config.meta === "object" && !Array.isArray(config.meta)
+      ? (config.meta as Record<string, unknown>)
+      : null;
+  const rawPolicy = meta?.relationPolicy;
+  const policy =
+    rawPolicy && typeof rawPolicy === "object" && !Array.isArray(rawPolicy)
+      ? (rawPolicy as Record<string, unknown>)
+      : null;
+  if (!policy) return true;
+
+  const blockedActions = toActionList(policy.blockedActions);
+  if (blockedActions.includes(normalizedAction)) {
+    return false;
+  }
+
+  const allowedActions = toActionList(policy.allowedActions);
+  if (allowedActions.length > 0) {
+    return allowedActions.includes(normalizedAction);
+  }
+
+  return true;
+}
+
+export function shouldDisableDeleteForItem(
+  config: ListFieldConfig,
+  options: {
+    identity: unknown;
+    hasDirectDeleteConfig: boolean;
+  },
+): boolean {
+  const isPersisted =
+    options.identity !== undefined && options.identity !== null;
+  if (!options.hasDirectDeleteConfig || !isPersisted) {
+    return false;
+  }
+  return !isRelationActionAllowed(config, "DELETE");
+}
+
 export const ListFieldRenderer = <TValues extends Record<string, any>>({
   config,
   form,
@@ -213,6 +270,10 @@ const ListFieldItems = <TValues extends Record<string, any>>({
       selection,
     };
   }, [config.deleteMutation]);
+  const deleteActionAllowed = React.useMemo(
+    () => isRelationActionAllowed(config, "DELETE"),
+    [config],
+  );
 
   const withPendingDelete = React.useCallback(
     async (deleteKey: string, run: () => Promise<void>) => {
@@ -273,6 +334,15 @@ const ListFieldItems = <TValues extends Record<string, any>>({
         fieldApi.setValue(enforceOrdering(next));
       };
 
+      if (
+        identity !== null &&
+        identity !== undefined &&
+        directDeleteConfig &&
+        !deleteActionAllowed
+      ) {
+        return;
+      }
+
       if (!directDeleteConfig || identity === null || identity === undefined) {
         removeLocalItem();
         return;
@@ -328,6 +398,7 @@ const ListFieldItems = <TValues extends Record<string, any>>({
       enforceOrdering,
       fieldApi,
       items,
+      deleteActionAllowed,
       resolveIdentityValue,
       withPendingDelete,
     ],
@@ -433,32 +504,40 @@ const ListFieldItems = <TValues extends Record<string, any>>({
               strategy={verticalListSortingStrategy}
             >
               <div className="space-y-2">
-                {items.map((_: unknown, index: number) => (
-                  <SortableListItem
-                    key={`item-${index}`}
-                    id={`item-${index}`}
-                    index={index}
-                    config={config}
-                    path={path}
-                    form={form}
-                    itemGridClassName={itemGridClassName}
-                    itemGridGapStyle={itemGridGapStyle}
-                    isReadOnly={isReadOnly}
-                    globalDisabled={globalDisabled}
-                    hiddenFields={hiddenFields}
-                    isOrderingEnabled={useDragAndDrop}
-                    orderingMode={sortingMode}
-                    itemValue={(items ?? [])[index]}
-                    deletePending={pendingDeleteKeys.has(
-                      String(resolveIdentityValue((items ?? [])[index]) ?? index),
-                    )}
-                    canMoveUp={useButtonsOrdering ? index > 0 : false}
-                    canMoveDown={useButtonsOrdering ? index < items.length - 1 : false}
-                    onMoveUp={() => handleMove(index, "up")}
-                    onMoveDown={() => handleMove(index, "down")}
-                    onRemove={() => void handleRemove(index)}
-                  />
-                ))}
+                {items.map((item: unknown, index: number) => {
+                  const identity = resolveIdentityValue(item);
+                  const deleteKey = String(identity ?? index);
+                  const deleteBlocked = shouldDisableDeleteForItem(config, {
+                    identity,
+                    hasDirectDeleteConfig: Boolean(directDeleteConfig),
+                  });
+
+                  return (
+                    <SortableListItem
+                      key={`item-${index}`}
+                      id={`item-${index}`}
+                      index={index}
+                      config={config}
+                      path={path}
+                      form={form}
+                      itemGridClassName={itemGridClassName}
+                      itemGridGapStyle={itemGridGapStyle}
+                      isReadOnly={isReadOnly}
+                      globalDisabled={globalDisabled}
+                      hiddenFields={hiddenFields}
+                      isOrderingEnabled={useDragAndDrop}
+                      orderingMode={sortingMode}
+                      itemValue={item}
+                      deleteBlocked={deleteBlocked}
+                      deletePending={pendingDeleteKeys.has(deleteKey)}
+                      canMoveUp={useButtonsOrdering ? index > 0 : false}
+                      canMoveDown={useButtonsOrdering ? index < items.length - 1 : false}
+                      onMoveUp={() => handleMove(index, "up")}
+                      onMoveDown={() => handleMove(index, "down")}
+                      onRemove={() => void handleRemove(index)}
+                    />
+                  );
+                })}
               </div>
             </SortableContext>
           </DndContext>
@@ -485,6 +564,7 @@ type SortableListItemProps<TValues> = {
   isOrderingEnabled?: boolean;
   orderingMode?: "drag&drop" | "buttons";
   deletePending?: boolean;
+  deleteBlocked?: boolean;
   canMoveUp?: boolean;
   canMoveDown?: boolean;
   onMoveUp?: () => void;
@@ -507,6 +587,7 @@ const SortableListItem = <TValues extends Record<string, any>>({
   isOrderingEnabled,
   orderingMode,
   deletePending,
+  deleteBlocked,
   canMoveUp,
   canMoveDown,
   onMoveUp,
@@ -611,7 +692,12 @@ const SortableListItem = <TValues extends Record<string, any>>({
                     variant="ghost"
                     className="size-5 rounded-md text-muted-foreground/30 hover:bg-destructive/10 hover:text-destructive"
                     onClick={onRemove}
-                    disabled={!!globalDisabled || !!deletePending}
+                    disabled={!!globalDisabled || !!deletePending || !!deleteBlocked}
+                    title={
+                      deleteBlocked
+                        ? "Delete action is blocked by relation permissions."
+                        : undefined
+                    }
                   >
                     <Trash2 className="size-2.5" />
                   </Button>

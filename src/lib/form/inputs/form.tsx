@@ -30,6 +30,45 @@ import { normalizeFieldOrder } from "./fieldOrder";
 
 const DEFAULT_COLUMNS = 2;
 const CANONICAL_FORM_ERROR_KEY = "__all__";
+const LEGACY_DYNAMIC_FORM_PROP_KEYS = [
+  "defaultValues",
+  "disableAutoReset",
+  "readOnly",
+  "disabled",
+  "isLoading",
+  "isSubmitting",
+  "onReady",
+  "persistKey",
+  "onSubmit",
+  "onChange",
+  "validate",
+  "conditions",
+  "computed",
+  "dependencies",
+  "autosave",
+  "columns",
+  "variant",
+  "showSectionHeaders",
+  "mode",
+  "submitLabel",
+  "resetLabel",
+  "onReset",
+] as const;
+
+function assertNoLegacyDynamicFormProps(props: Record<string, unknown>): void {
+  if (import.meta.env.PROD) return;
+
+  const invalid = LEGACY_DYNAMIC_FORM_PROP_KEYS.filter((key) =>
+    Object.prototype.hasOwnProperty.call(props, key),
+  );
+  if (!invalid.length) return;
+
+  throw new Error(
+    `[DynamicForm] Legacy props are not supported: ${invalid.join(
+      ", ",
+    )}. Use state/behavior/layout/actions/devtools.`,
+  );
+}
 
 function collectSubmitMessages(meta: unknown): string[] {
   if (!meta || typeof meta !== "object") {
@@ -135,6 +174,8 @@ function collectGlobalSubmitErrors(
 const DynamicForm = <TValues extends Record<string, any> = Record<string, any>>(
   props: DynamicFormProps<TValues>,
 ) => {
+  assertNoLegacyDynamicFormProps(props as Record<string, unknown>);
+
   const {
     schema,
     state: stateConfig,

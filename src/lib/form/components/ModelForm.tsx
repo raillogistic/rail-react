@@ -11,6 +11,10 @@ import {
   selectGeneratedSubmitOperation,
 } from "../mutations";
 import type { FormBehaviorConfig, FormFieldConfig, FormSchema } from "../types";
+import type {
+  ModelFormContractPermissions,
+  ModelFormOperationPermission,
+} from "../types/generatedContract";
 import type { ModelFormProps } from "../types.model";
 import { buildSubmitPayload } from "../utils/buildSubmitPayload";
 import {
@@ -19,6 +23,7 @@ import {
 } from "../utils/errors";
 import { serializeRuntimeOverridesForQuery } from "../utils/jsonCoercion";
 import { getValueByPath, setValueByPath } from "../utils/objectPath";
+import { shouldEnforceOperationDeny } from "../utils/operationPermissions";
 import { resolveSubmitIdentifier } from "../utils/resolveSubmitIdentifier";
 import {
   mergePathLists,
@@ -47,6 +52,34 @@ import {
 } from "./modelForm/modelFormUtils";
 import { useModelFormQueries } from "./modelForm/useModelFormQueries";
 import type { NestedMutationOperationOverrides } from "../utils/nestedMutationPayload";
+
+const LEGACY_MODEL_FORM_PROP_KEYS = [
+  "onSubmit",
+  "onChange",
+  "validate",
+  "defaultValues",
+  "readOnly",
+  "disabled",
+  "isLoading",
+  "onFormReady",
+  "showSectionHeaders",
+  "inPopup",
+] as const;
+
+function assertNoLegacyModelFormProps(props: Record<string, unknown>): void {
+  if (import.meta.env.PROD) return;
+
+  const invalid = LEGACY_MODEL_FORM_PROP_KEYS.filter((key) =>
+    Object.prototype.hasOwnProperty.call(props, key),
+  );
+  if (!invalid.length) return;
+
+  throw new Error(
+    `[ModelForm] Legacy props are not supported: ${invalid.join(
+      ", ",
+    )}. Use state/behavior/layout/actions/devtools or formProps.`,
+  );
+}
 
 function collectEditableFieldPaths(schema: FormSchema<any>): string[] {
   const sections = schema.sections?.length
@@ -127,6 +160,39 @@ function resolveRelationFieldName(relation: {
   return String(relation.path ?? "").trim();
 }
 
+function resolveModeOperationPermission(
+  permissions: ModelFormContractPermissions | null | undefined,
+  mode: "CREATE" | "UPDATE" | "VIEW",
+): ModelFormOperationPermission | null {
+  if (!permissions) return null;
+
+  const operation =
+    mode === "CREATE"
+      ? permissions.create
+      : mode === "UPDATE"
+        ? permissions.update
+        : permissions.view;
+  if (operation) {
+    return operation;
+  }
+
+  const allowed =
+    mode === "CREATE"
+      ? permissions.canCreate
+      : mode === "UPDATE"
+        ? permissions.canUpdate
+        : permissions.canView;
+  if (typeof allowed === "boolean") {
+    return {
+      allowed,
+      requiredPermissions: [],
+      requiresAuthentication: false,
+    };
+  }
+
+  return null;
+}
+
 function normalizeMutationVariablesForGraphQL(
   variables: Record<string, unknown>,
   identifier?: { key: string; value: string | number } | null,
@@ -170,6 +236,7 @@ function normalizeMutationVariablesForGraphQL(
 export function ModelForm<
   TFormValues extends Record<string, unknown> = Record<string, unknown>,
 >(props: ModelFormProps<TFormValues>) {
+  assertNoLegacyModelFormProps(props as Record<string, unknown>);
   const apolloClient = useApolloClient();
 
   const {
@@ -191,16 +258,6 @@ export function ModelForm<
     validatorExtensions,
     legacySchema,
     formProps,
-    onSubmit,
-    onChange,
-    validate,
-    defaultValues,
-    readOnly,
-    disabled,
-    isLoading: externalLoading,
-    onFormReady,
-    showSectionHeaders,
-    inPopup,
     state,
     behavior,
     layout,
@@ -264,47 +321,25 @@ export function ModelForm<
     const merged = {
       ...(formProps?.state ?? {}),
       ...(state ?? {}),
-      ...(defaultValues !== undefined ? { defaultValues } : {}),
-      ...(readOnly !== undefined ? { readOnly } : {}),
-      ...(disabled !== undefined ? { disabled } : {}),
-      ...(externalLoading !== undefined ? { isLoading: externalLoading } : {}),
-      ...(onFormReady ? { onReady: onFormReady } : {}),
     };
     return Object.keys(merged).length > 0 ? merged : undefined;
-  }, [
-    formProps?.state,
-    state,
-    defaultValues,
-    readOnly,
-    disabled,
-    externalLoading,
-    onFormReady,
-  ]);
+  }, [formProps?.state, state]);
 
   const resolvedBehaviorInput = React.useMemo(() => {
     const merged = {
       ...(formProps?.behavior ?? {}),
       ...(behavior ?? {}),
-      ...(onSubmit ? { onSubmit } : {}),
-      ...(onChange ? { onChange } : {}),
-      ...(validate ? { validate } : {}),
     };
     return Object.keys(merged).length > 0 ? merged : undefined;
-  }, [formProps?.behavior, behavior, onSubmit, onChange, validate]);
+  }, [formProps?.behavior, behavior]);
 
   const resolvedLayoutInput = React.useMemo(() => {
     const merged = {
       ...(formProps?.layout ?? {}),
       ...(layout ?? {}),
-      ...(showSectionHeaders !== undefined ? { showSectionHeaders } : {}),
     };
-
-    if (inPopup && (merged as { variant?: string }).variant === undefined) {
-      (merged as { variant?: string }).variant = "popup";
-    }
-
     return Object.keys(merged).length > 0 ? merged : undefined;
-  }, [formProps?.layout, layout, showSectionHeaders, inPopup]);
+  }, [formProps?.layout, layout]);
 
   const resolvedActionsInput = React.useMemo(() => {
     const merged = {
@@ -461,6 +496,30 @@ export function ModelForm<
     relationOperationOverrides,
     executeMutation: executeGeneratedMutation,
   });
+
+  const modePermissionDenied = React.useMemo(() => {
+    const permissions = contract?.permissions;
+    if (!permissions) return false;
+    if (resolvedMode === "CREATE") {
+      return shouldEnforceOperationDeny(
+        resolveModeOperationPermission(permissions, "CREATE"),
+        "CREATE",
+      );
+    }
+    if (resolvedMode === "UPDATE") {
+      return shouldEnforceOperationDeny(
+        resolveModeOperationPermission(permissions, "UPDATE"),
+        "UPDATE",
+      );
+    }
+    if (resolvedMode === "VIEW") {
+      return shouldEnforceOperationDeny(
+        resolveModeOperationPermission(permissions, "VIEW"),
+        "VIEW",
+      );
+    }
+    return false;
+  }, [contract?.permissions, resolvedMode]);
 
   const { formValidator } = useGeneratedValidators(
     contract,
@@ -625,12 +684,20 @@ export function ModelForm<
         resolvedStateInput?.isSubmitting || generated.submitState.isSubmitting,
       ),
     };
+    if (modePermissionDenied) {
+      submitAwareState.readOnly = true;
+    }
     if (resolvedMode !== "VIEW") return submitAwareState;
     return {
       ...submitAwareState,
       readOnly: submitAwareState.readOnly ?? true,
     };
-  }, [resolvedMode, resolvedStateInput, generated.submitState.isSubmitting]);
+  }, [
+    modePermissionDenied,
+    resolvedMode,
+    resolvedStateInput,
+    generated.submitState.isSubmitting,
+  ]);
 
   const mergedActions = React.useMemo(() => {
     const submitAwareActions = {
@@ -641,6 +708,9 @@ export function ModelForm<
       ),
       submitOutcome: toActionSubmitOutcome(generated.submitState.outcome),
     };
+    if (modePermissionDenied) {
+      submitAwareActions.hidden = true;
+    }
     if (resolvedMode !== "VIEW") return submitAwareActions;
     return {
       ...submitAwareActions,
@@ -648,6 +718,7 @@ export function ModelForm<
     };
   }, [
     resolvedActionsInput,
+    modePermissionDenied,
     resolvedMode,
     generated.submitState.isSubmitting,
     generated.submitState.outcome,

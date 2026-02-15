@@ -9,6 +9,7 @@ import type {
   ModelFormInitialData,
   ModelFormMode,
   ModelFormMutationOutcome,
+  ModelFormOperationPermission,
   ModelFormRuntimeOverride,
 } from "../types/generatedContract";
 import type { ModelFormSubmitState } from "../types.model";
@@ -38,6 +39,7 @@ import {
   unwrapMutationPayload,
   toExecutionErrorMessage,
 } from "./generatedSubmit/submitExecution";
+import { shouldEnforceOperationDeny } from "../utils/operationPermissions";
 
 const INITIAL_SUBMIT_STATE: ModelFormSubmitState = {
   status: "IDLE",
@@ -45,6 +47,16 @@ const INITIAL_SUBMIT_STATE: ModelFormSubmitState = {
   lockActive: false,
   outcome: null,
 };
+
+const WRITE_RELATION_ACTIONS = new Set([
+  "CONNECT",
+  "CREATE",
+  "UPDATE",
+  "DISCONNECT",
+  "DELETE",
+  "SET",
+  "CLEAR",
+]);
 
 export type GeneratedSubmitExecutionContext = {
   mode: "CREATE" | "UPDATE";
@@ -155,6 +167,65 @@ function relationFieldCandidates(relation: {
   add(relation.name);
   add(relation.path);
   return Array.from(candidates);
+}
+
+function normalizeVisibility(value: unknown): string {
+  const normalized = String(value ?? "").trim().toUpperCase();
+  if (["VISIBLE", "HIDDEN", "MASKED", "REDACTED"].includes(normalized)) {
+    return normalized;
+  }
+  return "VISIBLE";
+}
+
+function isRelationReadable(relation: {
+  readable?: boolean;
+}): boolean {
+  if (typeof relation.readable === "boolean") {
+    return relation.readable;
+  }
+  return true;
+}
+
+function isRelationWritable(relation: {
+  writable?: boolean;
+  policy?: { allowedActions?: string[] | null } | null;
+}): boolean {
+  if (typeof relation.writable === "boolean") {
+    return relation.writable;
+  }
+  const allowedActions = relation.policy?.allowedActions;
+  if (!Array.isArray(allowedActions) || allowedActions.length === 0) {
+    return true;
+  }
+  return allowedActions.some((action) => WRITE_RELATION_ACTIONS.has(action));
+}
+
+function resolveSubmitPermission(
+  contract: ModelFormContract | null | undefined,
+  mode: "CREATE" | "UPDATE",
+): ModelFormOperationPermission | null {
+  const permissions = contract?.permissions;
+  if (!permissions) return null;
+
+  const operation =
+    mode === "CREATE" ? permissions.create : permissions.update;
+  if (operation) {
+    return operation;
+  }
+
+  const allowed =
+    mode === "CREATE"
+      ? permissions.canCreate
+      : permissions.canUpdate;
+  if (typeof allowed === "boolean") {
+    return {
+      allowed,
+      requiredPermissions: [],
+      requiresAuthentication: false,
+    };
+  }
+
+  return null;
 }
 
 function resolveContractFieldName(field: {
@@ -279,6 +350,8 @@ export function buildSchemaFromContract(
     relation: ModelFormContract["relations"][number],
   ): FormFieldConfig => {
     const relationFieldName = resolveRelationFieldName(relation) || relation.path;
+    const relationReadable = isRelationReadable(relation);
+    const relationWritable = isRelationWritable(relation);
     const relatedModel = [relation.relatedAppLabel, relation.relatedModelName]
       .filter(Boolean)
       .join(".");
@@ -287,7 +360,8 @@ export function buildSchemaFromContract(
       type: "select-query",
       label: relation.label,
       required: false,
-      readOnly: false,
+      readOnly: !relationWritable,
+      hidden: !relationReadable,
       defaultValue: relation.toMany ? [] : null,
       multiple: relation.toMany,
       relatedModel: relatedModel || relation.relatedModelName,
@@ -302,12 +376,24 @@ export function buildSchemaFromContract(
         relationType: relation.relationType,
         relatedAppLabel: relation.relatedAppLabel,
         relatedModelName: relation.relatedModelName,
+        relationPolicy: {
+          allowedActions: relation.policy?.allowedActions ?? [],
+          blockedActions: relation.policy?.blockedActions ?? [],
+        },
       },
     } as FormFieldConfig;
   };
 
   for (const field of contract.fields) {
-    if (field.hidden || field.readOnly || isGeneratedIdentifierField(field)) continue;
+    const readable = field.readable ?? true;
+    const writable = field.writable ?? !field.readOnly;
+    const visibility = normalizeVisibility(field.visibility);
+    const hidden = Boolean(
+      field.hidden || !readable || visibility === "HIDDEN",
+    );
+    const readOnly = Boolean(field.readOnly || !writable);
+    if (hidden || readOnly || isGeneratedIdentifierField(field)) continue;
+
     const contractFieldName = resolveContractFieldName(field) || field.path;
     if (!contractFieldName) continue;
     const type = mapKindToInputType(field.kind);
@@ -318,13 +404,16 @@ export function buildSchemaFromContract(
       type,
       label: field.label,
       required: field.required,
-      readOnly: field.readOnly,
+      readOnly,
       defaultValue: parseJsonValue(field.defaultValue),
       inputProps: (uiConfig as Record<string, any>) ?? undefined,
       meta: {
         graphqlType: field.graphqlType,
         pythonType: field.pythonType,
         fieldPath: field.path,
+        readable,
+        writable,
+        visibility,
       },
     } as FormFieldConfig;
 
@@ -439,6 +528,15 @@ export function useGeneratedModelForm(options: UseGeneratedModelFormOptions) {
   const usingGenerated = Boolean(generatedEnabled && contract);
   const rawSubmitMode = submitMode ?? contract?.mode ?? "CREATE";
   const activeSubmitMode = normalizeSubmitMode(rawSubmitMode);
+  const submitPermission = React.useMemo(
+    () => resolveSubmitPermission(contract, activeSubmitMode),
+    [contract, activeSubmitMode],
+  );
+  const submitPermissionDenied = React.useMemo(
+    () => shouldEnforceOperationDeny(submitPermission, activeSubmitMode),
+    [submitPermission, activeSubmitMode],
+  );
+  const submitPermissionAllowed = !submitPermissionDenied;
   const formErrorKey = resolveCanonicalFormErrorKey(
     contract?.errorPolicy?.canonicalFormErrorKey ?? CANONICAL_FORM_ERROR_KEY,
   );
@@ -452,7 +550,12 @@ export function useGeneratedModelForm(options: UseGeneratedModelFormOptions) {
       new Set(
         [
           ...(contract?.fields ?? [])
-            .filter((field) => !field.hidden)
+            .filter(
+              (field) =>
+                !field.hidden &&
+                (field.readable ?? true) &&
+                normalizeVisibility(field.visibility) !== "HIDDEN",
+            )
             .flatMap((field) => {
               const canonicalName = resolveContractFieldName(field);
               return [
@@ -460,10 +563,12 @@ export function useGeneratedModelForm(options: UseGeneratedModelFormOptions) {
                 ...contractFieldCandidates(field),
               ].filter(Boolean) as string[];
             }),
-          ...((contract?.relations ?? []).flatMap((relation) => {
-            const fieldName = resolveRelationFieldName(relation);
-            return [fieldName, relation.path].filter(Boolean) as string[];
-          }) ?? []),
+          ...((contract?.relations ?? [])
+            .filter((relation) => isRelationReadable(relation))
+            .flatMap((relation) => {
+              const fieldName = resolveRelationFieldName(relation);
+              return [fieldName, relation.path].filter(Boolean) as string[];
+            }) ?? []),
         ],
       ),
     [contract],
@@ -506,6 +611,7 @@ export function useGeneratedModelForm(options: UseGeneratedModelFormOptions) {
     usingGenerated &&
       contract &&
       rawSubmitMode !== "VIEW" &&
+      submitPermissionAllowed &&
       (executeMutation || submitOverride),
   );
 
@@ -514,10 +620,17 @@ export function useGeneratedModelForm(options: UseGeneratedModelFormOptions) {
       values: Record<string, any>,
     ): Promise<ModelFormMutationOutcome> => {
       if (!canSubmit || !contract) {
-        return buildErrorOutcome(
-          "Generated submit executor is not configured.",
-          formErrorKey,
-          visibleFieldPaths,
+        const permissionMessage =
+          submitPermissionAllowed
+            ? null
+            : submitPermission?.reason ??
+              "Permission denied for this form operation.";
+        return buildSubmitErrorOutcome(
+          new Error(permissionMessage ?? "Generated submit executor is not configured."),
+          {
+            formErrorKey,
+            visibleFieldPaths,
+          },
         );
       }
 
@@ -673,6 +786,8 @@ export function useGeneratedModelForm(options: UseGeneratedModelFormOptions) {
       rawSubmitMode,
       runtimeValues,
       submitOverride,
+      submitPermission,
+      submitPermissionAllowed,
       visibleFieldPaths,
     ],
   );
@@ -687,5 +802,6 @@ export function useGeneratedModelForm(options: UseGeneratedModelFormOptions) {
     submit,
     submitState,
     canSubmit,
+    permissions: contract?.permissions,
   };
 }

@@ -56,6 +56,9 @@ export type ModelFormContractField = {
   validators: ModelFormValidator[];
   ui?: Record<string, unknown> | null;
   metadata?: Record<string, unknown> | null;
+  readable?: boolean;
+  writable?: boolean;
+  visibility?: string | null;
 };
 
 export type ModelFormContractSection = {
@@ -84,7 +87,35 @@ export type ModelFormContractRelation = {
   relatedAppLabel: string;
   relatedModelName: string;
   policy: ModelFormRelationActionPolicy;
+  readable?: boolean;
+  writable?: boolean;
   nestedForm?: Record<string, unknown> | null;
+};
+
+export type ModelFormOperationPermission = {
+  allowed: boolean;
+  requiredPermissions: string[];
+  requiresAuthentication: boolean;
+  reason?: string | null;
+};
+
+export type ModelFormFieldPermission = {
+  field: string;
+  canRead: boolean;
+  canWrite: boolean;
+  visibility: string;
+};
+
+export type ModelFormContractPermissions = {
+  canCreate: boolean;
+  canUpdate: boolean;
+  canDelete: boolean;
+  canView: boolean;
+  create: ModelFormOperationPermission;
+  update: ModelFormOperationPermission;
+  delete: ModelFormOperationPermission;
+  view: ModelFormOperationPermission;
+  fieldPermissions: ModelFormFieldPermission[];
 };
 
 export type ModelFormMutationBindings = {
@@ -128,6 +159,7 @@ export type ModelFormContract = {
   fields: ModelFormContractField[];
   sections: ModelFormContractSection[];
   relations: ModelFormContractRelation[];
+  permissions?: ModelFormContractPermissions | null;
   mutationBindings: ModelFormMutationBindings;
   errorPolicy: ModelFormErrorPolicy;
 };

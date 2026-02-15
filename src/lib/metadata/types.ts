@@ -247,6 +247,7 @@ export interface FieldGroup {
 
 export interface TemplateInfo {
   key: string;
+  templateType?: string;
   title: string;
   description?: string;
   endpoint: string;
@@ -261,7 +262,10 @@ export interface TemplateInfo {
   denialReason?: string;
   allowClientData?: boolean;
   clientDataFields?: string[];
-  clientDataSchema?: string; // JSON string
+  clientDataSchema?:
+    | string
+    | Array<{ name: string; type?: string | null }>
+    | null;
 }
 
 export interface ModelMetadata {

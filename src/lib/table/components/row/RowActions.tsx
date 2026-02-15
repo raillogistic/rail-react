@@ -1,6 +1,13 @@
 import React, { useMemo, useState } from "react";
 import { gql, useMutation } from "@apollo/client";
-import { Loader2, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import {
+  FileSpreadsheet,
+  FileText,
+  Loader2,
+  MoreHorizontal,
+  Pencil,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 import {
   AlertDialog,
@@ -17,17 +24,27 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/lib/components/ui/dropdown-menu";
+import type { FormSchema } from "@/lib/form/inputs/types";
 import { useMetadata } from "../../context/MetadataContext";
 import { useTable } from "../../context/TableContext";
 import { findMutation, normalizeMutationType } from "../../utils";
+import {
+  buildTemplateClientSchema,
+  executeTemplateForRows,
+  normalizeTemplateType,
+  parseTemplateClientFields,
+} from "../../utils/templateExecution";
+import { PrintDialog } from "../ModelTableOverlays";
 import type {
   BaseModelTableColumnActionContext,
   BaseModelTableColumnActionsInput,
   BaseModelTableRefetch,
   RowMutationPermissions,
+  TemplateInfo,
 } from "../../types";
 
 type RowActionsProps = {
@@ -48,9 +65,19 @@ export function RowActions({
   const { model, metadata } = useMetadata();
   const { refresh } = useTable();
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [printTemplate, setPrintTemplate] = useState<TemplateInfo | null>(null);
+  const [printTemplateSchema, setPrintTemplateSchema] =
+    useState<FormSchema | null>(null);
   const rowIdValue = row.id;
   const rowId =
     rowIdValue === undefined || rowIdValue === null ? "" : String(rowIdValue);
+  const templateEntries = useMemo(
+    () =>
+      (metadata?.templates ?? []).filter(
+        (entry): entry is TemplateInfo => !!entry && typeof entry === "object",
+      ),
+    [metadata?.templates],
+  );
   const baseMutations = metadata?.mutations ?? [];
   const baseDeleteMutation = findMutation(baseMutations, "delete");
   const baseUpdateMutation = findMutation(baseMutations, "update");
@@ -77,8 +104,10 @@ export function RowActions({
         : columnActions;
     return source ?? [];
   }, [actionContext, columnActions]);
+  const hasTemplateActions = templateEntries.length > 0;
   const hasBuiltinActions = canEdit || canDelete;
-  const hasAnyActions = hasBuiltinActions || customActions.length > 0;
+  const hasAnyActions =
+    hasBuiltinActions || hasTemplateActions || customActions.length > 0;
 
   const deleteMutationName = baseDeleteMutation?.name || `delete${model}`;
   const deleteDocument = useMemo(
@@ -124,6 +153,54 @@ export function RowActions({
     console.info("Edit row action triggered", row);
   };
 
+  const closePrintDialog = () => {
+    setPrintTemplate(null);
+    setPrintTemplateSchema(null);
+  };
+
+  const runTemplate = async (
+    template: TemplateInfo,
+    clientData: Record<string, unknown> = {},
+  ) => {
+    if (!rowId) {
+      toast.error("This row does not expose a valid identifier.");
+      return;
+    }
+    const result = await executeTemplateForRows(template, [rowId], clientData);
+    if (result.templateType === "pdf") {
+      toast.success(`Template "${template.title}" generated.`);
+    } else {
+      toast.success(`Template "${template.title}" downloaded.`);
+    }
+  };
+
+  const handleTemplateAction = (template: TemplateInfo) => {
+    if (template.allowed === false) {
+      toast.error(
+        template.denialReason ||
+          "You do not have permission to use this template.",
+      );
+      return;
+    }
+    if (!rowId) {
+      toast.error("This row does not expose a valid identifier.");
+      return;
+    }
+
+    const clientFields = parseTemplateClientFields(template);
+    if (clientFields.length > 0) {
+      setPrintTemplate(template);
+      setPrintTemplateSchema(buildTemplateClientSchema(clientFields));
+      return;
+    }
+
+    void runTemplate(template).catch((error: unknown) => {
+      const message =
+        error instanceof Error ? error.message : "Failed to generate template.";
+      toast.error(message);
+    });
+  };
+
   const runCustomAction = (
     onClick: (context: BaseModelTableColumnActionContext) => void | Promise<void>,
   ) => {
@@ -136,7 +213,7 @@ export function RowActions({
     });
   };
 
-  if (!hasRowActions && customActions.length === 0) {
+  if (!hasRowActions && !hasTemplateActions && customActions.length === 0) {
     return null;
   }
 
@@ -159,6 +236,43 @@ export function RowActions({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-44">
+            {hasTemplateActions ? (
+              <>
+                <DropdownMenuLabel>Templates</DropdownMenuLabel>
+                {templateEntries.map((template) => {
+                  const templateType = normalizeTemplateType(template);
+                  const disabledReason =
+                    template.allowed === false
+                      ? template.denialReason ||
+                        "You do not have permission to use this template."
+                      : !rowId
+                        ? "This row does not expose a valid identifier."
+                        : null;
+                  const disabled = Boolean(disabledReason);
+                  return (
+                    <DropdownMenuItem
+                      key={`row-template:${rowId}:${template.key}`}
+                      disabled={disabled}
+                      title={disabledReason ?? undefined}
+                      onClick={() => {
+                        if (disabled) return;
+                        handleTemplateAction(template);
+                      }}
+                    >
+                      {templateType === "excel" ? (
+                        <FileSpreadsheet className="h-3.5 w-3.5" />
+                      ) : (
+                        <FileText className="h-3.5 w-3.5" />
+                      )}
+                      {template.title || template.key}
+                    </DropdownMenuItem>
+                  );
+                })}
+                {(hasBuiltinActions || customActions.length > 0) ? (
+                  <DropdownMenuSeparator />
+                ) : null}
+              </>
+            ) : null}
             {canEdit ? (
               <DropdownMenuItem onClick={handleEdit}>
                 <Pencil className="h-3.5 w-3.5" />
@@ -236,6 +350,30 @@ export function RowActions({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <PrintDialog
+        open={Boolean(printTemplate && printTemplateSchema)}
+        title={printTemplate?.title ?? "Template Parameters"}
+        schema={printTemplateSchema ?? { fields: [] }}
+        submitLabel={
+          printTemplate && normalizeTemplateType(printTemplate) === "excel"
+            ? "Download"
+            : "Generate"
+        }
+        cancelLabel="Cancel"
+        onCancel={closePrintDialog}
+        onSubmit={(values) => {
+          if (!printTemplate) return;
+          const template = printTemplate;
+          closePrintDialog();
+          void runTemplate(template, values).catch((error: unknown) => {
+            const message =
+              error instanceof Error
+                ? error.message
+                : "Failed to generate template.";
+            toast.error(message);
+          });
+        }}
+      />
     </>
   );
 }

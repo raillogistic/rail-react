@@ -195,6 +195,19 @@ describe("DynamicForm", () => {
     expect(screen.getByText("Reset")).toBeInTheDocument();
   });
 
+  it("rejects legacy top-level props", () => {
+    expect(() =>
+      render(
+        <DynamicForm
+          {...({
+            schema: textSchema,
+            onSubmit: vi.fn(),
+          } as any)}
+        />,
+      ),
+    ).toThrow(/Legacy props are not supported/);
+  });
+
   it("renders custom submit/reset labels", () => {
     render(
       <DynamicForm

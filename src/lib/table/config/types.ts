@@ -30,6 +30,8 @@ export type ModelTableV2TopAction = {
   size?: "sm" | "md" | "lg" | "icon";
   order?: number;
   show_when?: "always" | "has_selection";
+  disabled?: boolean;
+  disabledReason?: string;
   dataAttributes?: Record<string, string | number | boolean | undefined>;
   on_click: (ctx: {
     selected_rows: Record<string, unknown>[];

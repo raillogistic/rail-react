@@ -448,25 +448,36 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
     >;
     const {
       onCompleted: userOnCompleted,
-      showSectionHeaders,
+      state: overrideState,
+      layout: overrideLayout,
+      onFormReady: _legacyOnFormReady,
+      inPopup: _legacyInPopup,
+      showSectionHeaders: _legacyShowSectionHeaders,
       ...restOverrides
     } = rawOverrides;
+    void _legacyOnFormReady;
+    void _legacyInPopup;
+    void _legacyShowSectionHeaders;
+    const onReady =
+      typeof overrideState?.onReady === "function"
+        ? overrideState.onReady
+        : undefined;
     return {
       ...restOverrides,
       app: inlineAppName ?? undefined,
       model: inlineModelName ?? undefined,
       mode: "CREATE",
-      showSectionHeaders: showSectionHeaders ?? false,
       layout: {
-        ...(restOverrides.layout ?? {}),
-        card: false,
+        ...(overrideLayout ?? {}),
+        variant: overrideLayout?.variant ?? "popup",
+        showSectionHeaders: overrideLayout?.showSectionHeaders ?? false,
       },
-      inPopup: true,
-      onFormReady: (readyForm: UseFormReturn<Record<string, any>>) => {
-        inlineFormRef.current = readyForm;
-        if (typeof rawOverrides.onFormReady === "function") {
-          rawOverrides.onFormReady(readyForm);
-        }
+      state: {
+        ...(overrideState ?? {}),
+        onReady: (readyForm: UseFormReturn<Record<string, any>>) => {
+          inlineFormRef.current = readyForm;
+          onReady?.(readyForm);
+        },
       },
       onCompleted: (payload: any) => {
         if (payload?.ok === false) {

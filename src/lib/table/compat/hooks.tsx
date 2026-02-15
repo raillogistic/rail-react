@@ -22,6 +22,8 @@ import {
 import { useModelMetadata } from "@/lib/metadata/hooks";
 import type { ModelMetadata } from "@/lib/metadata/types";
 import { DEFAULT_PAGINATION_ORDERING } from "@/graphql/queries";
+import { buildModelQueryField } from "../utils/queryNaming";
+import { toCamelCase } from "../utils/caseConversion";
 import type {
   FilterBaseType,
   FilterableField,
@@ -71,6 +73,23 @@ function safeParseUnknown(value: string): unknown {
   }
 }
 
+function parsePermissionReasons(
+  value: unknown
+): Record<string, string | null> | null {
+  if (!value) return null;
+  if (typeof value === "string") {
+    const parsed = safeParseUnknown(value);
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return null;
+    }
+    return parsed as Record<string, string | null>;
+  }
+  if (typeof value === "object" && !Array.isArray(value)) {
+    return value as Record<string, string | null>;
+  }
+  return null;
+}
+
 /**
  * Map V2 metadata response to ModelTableMetadataV2 type
  * Maps camelCase API response to internal types (which may use snake_case keys like field_type)
@@ -98,8 +117,8 @@ export function mapV2MetadataToTableMetadata(
     managed: true,
     fields: modelSchema.fields.map((f) => ({
       name: f.name,
-      accessor: f.name,
-      display: f.name,
+      accessor: f.fieldName ?? f.name,
+      display: f.fieldName ?? f.name,
       editable: f.editable,
       field_type: f.fieldType as any,
       filterable: true,
@@ -129,7 +148,7 @@ export function mapV2MetadataToTableMetadata(
       name: m.name,
       method_name: m.methodName,
       description: m.description,
-      input_fields: m.inputFields.map((input) => ({
+      input_fields: (m.inputFields ?? []).map((input) => ({
         name: input.name,
         field_type: input.fieldType,
         required: input.required,
@@ -152,7 +171,7 @@ export function mapV2MetadataToTableMetadata(
       })),
       requires_authentication: m.requiresAuthentication ?? false,
       required_permissions: m.requiredPermissions ?? [],
-      mutation_type: m.mutationType ?? "custom",
+      mutation_type: m.mutationType ?? m.operation ?? "custom",
       model_name: m.modelName,
       form_config:
         typeof m.formConfig === "string"
@@ -169,6 +188,7 @@ export function mapV2MetadataToTableMetadata(
     })),
     templates: (modelSchema.templates ?? []).map((t) => ({
       key: t.key,
+      templateType: t.templateType,
       methodName: t.key.split(":").pop() ?? "",
       title: t.title,
       endpoint: t.endpoint,
@@ -196,12 +216,11 @@ export function mapV2MetadataToTableMetadata(
       can_create: modelSchema.permissions.canCreate,
       can_update: modelSchema.permissions.canUpdate,
       can_delete: modelSchema.permissions.canDelete,
-      can_read: modelSchema.permissions.canRetrieve,
+      can_read:
+        modelSchema.permissions.canRead ?? modelSchema.permissions.canRetrieve,
       can_list: modelSchema.permissions.canList,
       can_history: modelSchema.permissions.canHistory ?? false,
-      reasons: typeof modelSchema.permissions.denialReasons === "string" 
-        ? JSON.parse(modelSchema.permissions.denialReasons) 
-        : modelSchema.permissions.denialReasons,
+      reasons: parsePermissionReasons(modelSchema.permissions.denialReasons),
     },
     filterConfig: modelSchema.filterConfig as any, // Cast due to strict type matching if needed
     relationFilters: (modelSchema.relationFilters ?? []).map(rf => ({
@@ -256,6 +275,7 @@ export function mapV2MetadataToTableMetadata(
     // Map to legacy pdfTemplates
     pdfTemplates: (modelSchema.templates ?? []).map((t) => ({
       key: t.key,
+      templateType: t.templateType,
       methodName: t.key.split(":").pop() ?? "",
       title: t.title,
       endpoint: t.endpoint,
@@ -445,9 +465,12 @@ export function useModelTableMetadata(
 
 type DataQueryOptions = {
   fieldName?: string;
+  managerName?: string;
   includeQuickArgument?: boolean;
   filterTypeName?: string;
 };
+
+type LegacyFilterObject = Record<string, unknown>;
 
 type SelectionBuilderArgs = {
   fields: TableFieldMetadataType[];
@@ -499,6 +522,149 @@ const buildSelectionSet = ({
   );
 };
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === "object" && !Array.isArray(value);
+}
+
+const LOOKUP_OPERATORS = new Set<string>([
+  "eq",
+  "neq",
+  "in",
+  "not_in",
+  "notIn",
+  "contains",
+  "icontains",
+  "startswith",
+  "istartswith",
+  "startsWith",
+  "endswith",
+  "iendswith",
+  "endsWith",
+  "gt",
+  "gte",
+  "lt",
+  "lte",
+  "isNull",
+  "regex",
+  "iregex",
+  "year",
+  "month",
+  "day",
+  "weekDay",
+  "hour",
+  "minute",
+  "second",
+  "range",
+  "between",
+  "hasKey",
+  "hasKeys",
+  "hasAnyKeys",
+]);
+
+const LOOKUP_OPERATOR_ALIASES: Record<string, string> = {
+  not_in: "notIn",
+  startswith: "startsWith",
+  istartswith: "startsWith",
+  endswith: "endsWith",
+  iendswith: "endsWith",
+  iexact: "eq",
+};
+
+function normalizeLookupOperator(operator: string): string {
+  return LOOKUP_OPERATOR_ALIASES[operator] ?? operator;
+}
+
+function mergeWhereClauses(
+  clauses: Array<ComplexFilterInput<string> | null | undefined>,
+): ComplexFilterInput<string> | null {
+  const normalized = clauses.filter(
+    (entry): entry is ComplexFilterInput<string> =>
+      !!entry && Object.keys(entry).length > 0,
+  );
+  if (normalized.length === 0) return null;
+  if (normalized.length === 1) return normalized[0];
+  return { AND: normalized };
+}
+
+function buildNestedRelationClause(
+  pathSegments: string[],
+  operator: string,
+  value: unknown,
+): ComplexFilterInput<string> | null {
+  if (pathSegments.length === 0) return null;
+  const normalizedPath = pathSegments.map((segment) => toCamelCase(segment));
+  const [root, ...rest] = normalizedPath;
+  if (!root) return null;
+
+  if (rest.length === 0) {
+    return { [root]: { [operator]: value } } as ComplexFilterInput<string>;
+  }
+
+  let nested: Record<string, unknown> = {
+    [rest[rest.length - 1]]: { [operator]: value },
+  };
+  for (let index = rest.length - 2; index >= 0; index -= 1) {
+    nested = { [rest[index]]: nested };
+  }
+  return { [`${root}Rel`]: nested } as ComplexFilterInput<string>;
+}
+
+function legacyEntryToWhereClause(
+  rawKey: string,
+  rawValue: unknown,
+): ComplexFilterInput<string> | null {
+  if (!rawKey) return null;
+
+  const normalizedKey = rawKey.replace(/\./g, "__");
+  const segments = normalizedKey.split("__").filter(Boolean);
+  if (segments.length === 0) return null;
+
+  const lastSegment = segments[segments.length - 1] ?? "";
+  const hasExplicitLookup = LOOKUP_OPERATORS.has(lastSegment);
+  const isIdSuffix = !hasExplicitLookup && lastSegment === "id";
+  const operator = hasExplicitLookup
+    ? normalizeLookupOperator(lastSegment)
+    : "eq";
+  const pathSegments = hasExplicitLookup
+    ? segments.slice(0, -1)
+    : isIdSuffix
+      ? segments.slice(0, -1)
+      : segments;
+
+  if (pathSegments.length === 1 && isRecord(rawValue)) {
+    const operatorEntries = Object.entries(rawValue)
+      .map(([key, value]) => [normalizeLookupOperator(key), value] as const)
+      .filter(([key]) => LOOKUP_OPERATORS.has(key));
+    if (operatorEntries.length > 0) {
+      return {
+        [toCamelCase(pathSegments[0])]: Object.fromEntries(operatorEntries),
+      } as ComplexFilterInput<string>;
+    }
+  }
+
+  return buildNestedRelationClause(pathSegments, operator, rawValue);
+}
+
+export function normalizeLegacyFiltersToWhere(
+  filters: unknown,
+): ComplexFilterInput<string> | null {
+  if (!filters) return null;
+  if (!isRecord(filters)) return null;
+
+  const hasLogicalOperators =
+    Array.isArray(filters.AND) ||
+    Array.isArray(filters.OR) ||
+    isRecord(filters.NOT);
+  if (hasLogicalOperators) {
+    return filters as ComplexFilterInput<string>;
+  }
+
+  const clauses = Object.entries(filters).map(([key, value]) =>
+    legacyEntryToWhereClause(key, value),
+  );
+  return mergeWhereClauses(clauses);
+}
+
 /**
  * Normalizes ordering payloads into a trimmed string array.
  */
@@ -540,34 +706,16 @@ function buildAutoDataQuery(
   additionalSelectionFields: string[] = [],
   options?: DataQueryOptions
 ) {
-  // Use camelCase convention for field name (e.g. Products -> products)
-  // rail-django auto_camelcase converts models to snake_case first, then camelCase.
-  // BUT the root query field usually matches the model name in plural.
-  // If model is "Product", query is "products".
-  // If fieldName override is provided, use it.
-  // We assume default query name is `camelCase(plural(modelName))`.
-  // The backend might expose `products` or `products_pages`.
-  // Since pagination is standard, `products` (list) with pagination args is expected if Relay is off?
-  // The provided context says "Fixed issue where root query fields were PascalCase... instead of camelCase".
-  // So query name should be camelCase.
-  // We construct it roughly.
-  
-  const defaultQueryName = options?.fieldName ?? (() => {
-    // Basic pluralization
-    const lower = modelName.toLowerCase();
-    const plural = lower.endsWith("s") ? lower : `${lower}s`;
-    return plural;
-  })();
-  
-  const queryName = defaultQueryName.replace(/[^a-zA-Z0-9_]/g, "_");
-  const fieldName = defaultQueryName;
+  const fieldName =
+    options?.fieldName ??
+    buildModelQueryField(modelName, "page", options?.managerName);
+  const queryName = `${fieldName.replace(/[^a-zA-Z0-9_]/g, "_")}Query`;
   const includeQuick = options?.includeQuickArgument ?? true;
 
-  const typeName = 
-    options?.filterTypeName ??
-    `${modelName.charAt(0).toUpperCase() + modelName.slice(1)}ComplexFilter`;
+  const typeName =
+    options?.filterTypeName ?? `${modelName.charAt(0).toUpperCase() + modelName.slice(1)}WhereInput`;
 
-  const selection = 
+  const selection =
     customSelection ??
     buildSelectionSet({
       fields,
@@ -580,8 +728,8 @@ function buildAutoDataQuery(
   const quickArgument = includeQuick ? ",quick:$quick" : "";
 
   return gql`
-    query ${queryName}($filters: ${typeName}, $ordering: [String], $page: Int, $perPage: Int${quickVariable}, $presets: [String], $distinctOn: [String]) {
-      ${fieldName}(filters: $filters, orderBy: $ordering, page: $page, perPage: $perPage${quickArgument}, presets: $presets, distinctOn: $distinctOn) {
+    query ${queryName}($where: ${typeName}, $orderBy: [String], $page: Int, $perPage: Int${quickVariable}, $presets: [String], $distinctOn: [String], $skipCount: Boolean) {
+      ${fieldName}(where: $where, orderBy: $orderBy, page: $page, perPage: $perPage${quickArgument}, presets: $presets, distinctOn: $distinctOn, skipCount: $skipCount) {
         pageInfo {
           totalCount
           pageCount
@@ -639,10 +787,16 @@ export function useGraphQLModelTable({
   appendColumns?: ColumnDef<any>[];
   customItems?: any[] | null;
   initVariables?: {
-    filters?: Record<string, any>;
+    filters?: LegacyFilterObject | ComplexFilterInput<string>;
+    where?: ComplexFilterInput<string>;
     per_page?: number;
+    perPage?: number;
     page?: number;
     order_by?: string | string[];
+    orderBy?: string | string[];
+    presets?: string[];
+    distinctOn?: string[];
+    skipCount?: boolean;
   };
   initialPageSize?: number;
   customSelection?: string;
@@ -680,11 +834,26 @@ export function useGraphQLModelTable({
   );
 
   /* --- 2. Table state --- */
-  const [pageIndex, setPageIndex] = useState(0);
-  const [pageSize, setPageSize] = useState(initialPageSize);
+  const [pageIndex, setPageIndex] = useState(() => {
+    const initialPage = Number(initVariables?.page ?? 1);
+    if (!Number.isFinite(initialPage) || initialPage <= 1) return 0;
+    return Math.floor(initialPage - 1);
+  });
+  const [pageSize, setPageSize] = useState(() => {
+    const rawSize = Number(
+      initVariables?.per_page ?? initVariables?.perPage ?? initialPageSize,
+    );
+    if (!Number.isFinite(rawSize) || rawSize <= 0) {
+      return initialPageSize;
+    }
+    return Math.floor(rawSize);
+  });
   const initialOrdering = useMemo(
-    () => resolveOrderingWithDefault(initVariables?.order_by),
-    [initVariables?.order_by]
+    () =>
+      resolveOrderingWithDefault(
+        initVariables?.order_by ?? initVariables?.orderBy,
+      ),
+    [initVariables?.order_by, initVariables?.orderBy]
   );
   const [sorting, setSorting] = useState<SortingState>(() =>
     buildInitialSortingState(initialOrdering)
@@ -694,8 +863,12 @@ export function useGraphQLModelTable({
   const [quick, setQuick] = useState<string>("");
   const [advancedFilters,
     setAdvancedFilters] = useState<ComplexFilterInput<string> | null>(null);
-  const [presets, setPresets] = useState<string[]>([]);
-  const [distinctOn, setDistinctOn] = useState<string[]>([]);
+  const [presets, setPresets] = useState<string[]>(
+    () => initVariables?.presets ?? [],
+  );
+  const [distinctOn, setDistinctOn] = useState<string[]>(
+    () => initVariables?.distinctOn ?? [],
+  );
 
   useEffect(() => {
     if (!fields.length) return;
@@ -717,18 +890,26 @@ export function useGraphQLModelTable({
   }, [fields]);
 
   /* --- 3. Build GraphQL Query --- */
-  const includeQuickArgument = queryOptions?.includeQuickArgument ?? true;
-  const responseKey = 
-    queryOptions?.responseKey ??
+  const supportsQuickSearch =
+    (queryOptions?.includeQuickArgument ?? true) &&
+    (modelMeta?.filterConfig?.supportsQuick ?? true);
+  const queryFieldName =
     queryOptions?.fieldName ??
-    (function autoResolveKey() {
-      // Logic duplicated from buildAutoDataQuery for consistency
-      const lower = modelName.toLowerCase();
-      return lower.endsWith("s") ? lower : `${lower}s`;
-    })();
+    buildModelQueryField(modelName, "page", queryOptions?.managerName);
+  const responseKey = queryOptions?.responseKey ?? queryFieldName;
+  const filterTypeName =
+    queryOptions?.filterTypeName ??
+    modelMeta?.filterConfig?.inputTypeName ??
+    `${modelName.charAt(0).toUpperCase() + modelName.slice(1)}WhereInput`;
 
   const dataQuery = useMemo(() => {
     if (!fields.length) return null;
+    const resolvedQueryOptions: DataQueryOptions = {
+      ...queryOptions,
+      fieldName: queryFieldName,
+      includeQuickArgument: supportsQuickSearch,
+      filterTypeName,
+    };
     const q = buildAutoDataQuery(
       modelName,
       fields,
@@ -736,7 +917,7 @@ export function useGraphQLModelTable({
       filters,
       customSelection,
       additionalSelectionFields,
-      queryOptions
+      resolvedQueryOptions
     );
     if (onQueryBuilt) onQueryBuilt(q.loc?.source.body ?? "");
     return q;
@@ -748,68 +929,89 @@ export function useGraphQLModelTable({
     customSelection,
     additionalSelectionFields,
     queryOptions,
+    queryFieldName,
+    supportsQuickSearch,
+    filterTypeName,
     onQueryBuilt,
   ]);
 
   /* --- 4. Filters Payload --- */
-  const filtersPayload = useMemo(() => {
-    // Build an array of per-column filters (as the API expects)
-    const and = columnFilters
-      .filter((f: any) => f.value)
+  const initialWherePayload = useMemo(() => {
+    if (initVariables?.where && Object.keys(initVariables.where).length > 0) {
+      return initVariables.where;
+    }
+    return normalizeLegacyFiltersToWhere(initVariables?.filters);
+  }, [initVariables?.filters, initVariables?.where]);
+
+  const wherePayload = useMemo(() => {
+    const columnClauses = columnFilters
+      .filter((f: any) => f.value !== undefined && f.value !== null && f.value !== "")
       .map((f: any) => {
-        // Support "field__lookup" syntax
-        const [field, lookup] = f.id.split("__");
-        // Field name is likely already camelCase if metadata is camelCase
-        return {
-          [field]: { [lookup || "icontains"]: f.value },
-        } as ComplexFilterInput<string>;
-      });
+        const normalizedId = String(f.id ?? "").replace(/\./g, "__");
+        const segments = normalizedId.split("__").filter(Boolean);
+        if (segments.length === 0) return null;
+        const maybeLookup = segments[segments.length - 1] ?? "";
+        const hasLookup = LOOKUP_OPERATORS.has(maybeLookup);
+        const operator = hasLookup
+          ? maybeLookup
+          : typeof f.value === "string"
+            ? "icontains"
+            : "eq";
+        const pathSegments = hasLookup ? segments.slice(0, -1) : segments;
+        return buildNestedRelationClause(pathSegments, operator, f.value);
+      })
+      .filter((entry): entry is ComplexFilterInput<string> => !!entry);
 
     const parts: ComplexFilterInput<string>[] = [];
 
-    // Include advanced (manually constructed) filters when present
-    if (advancedFilters) {
+    if (advancedFilters && Object.keys(advancedFilters).length > 0) {
       parts.push(advancedFilters);
     }
 
-    // Include column filters when present
-    if (and.length) {
-      const columnFiltersPayload =
-        and.length === 1
-          ? and[0]
-          : ({ AND: and } as ComplexFilterInput<string>);
-      parts.push(columnFiltersPayload);
+    if (columnClauses.length > 0) {
+      parts.push(
+        columnClauses.length === 1
+          ? columnClauses[0]
+          : ({ AND: columnClauses } as ComplexFilterInput<string>),
+      );
     }
 
-    // If no parts built from UI state, fallback to initVariables.filters
-    if (parts.length === 0) {
-      return (
-        initVariables?.filters ??
-        null
-      ) as ComplexFilterInput<string> | null;
+    if (initialWherePayload && Object.keys(initialWherePayload).length > 0) {
+      parts.push(initialWherePayload);
     }
 
-    // If only one part, return it directly; otherwise combine with AND
-    if (parts.length === 1) {
-      if (initVariables?.filters) {
-        return {
-          AND: [parts[0], initVariables.filters],
-        } as ComplexFilterInput<string>;
-      }
-      return parts[0];
-    }
-
-    if (initVariables?.filters) {
-      parts.push(initVariables.filters as ComplexFilterInput<string>);
-    }
-    return { AND: parts } as ComplexFilterInput<string>;
-  }, [columnFilters, initVariables, advancedFilters]);
+    return mergeWhereClauses(parts);
+  }, [advancedFilters, columnFilters, initialWherePayload]);
 
   /* --- 5. Ordering Payload --- */
   const orderingPayload = useMemo(() => {
     if (sorting.length === 0) return initialOrdering;
     return sorting.map((s) => (s.desc ? `-${s.id}` : s.id));
   }, [sorting, initialOrdering]);
+  const skipCount = Boolean(initVariables?.skipCount ?? false);
+  const queryVariables = useMemo(
+    () => ({
+      where: wherePayload ?? undefined,
+      orderBy: orderingPayload,
+      page: pageIndex + 1,
+      perPage: pageSize,
+      presets: presets.length > 0 ? presets : undefined,
+      distinctOn: distinctOn.length > 0 ? distinctOn : undefined,
+      skipCount,
+      ...(supportsQuickSearch ? { quick: quick || undefined } : {}),
+    }),
+    [
+      wherePayload,
+      orderingPayload,
+      pageIndex,
+      pageSize,
+      presets,
+      distinctOn,
+      skipCount,
+      supportsQuickSearch,
+      quick,
+    ],
+  );
 
   /* --- 6. Fetch Data (or use custom items) --- */
   const {
@@ -827,16 +1029,7 @@ export function useGraphQLModelTable({
     {
       skip: skip || !dataQuery || !!customItems,
       initialFetchPolicy: "cache-and-network",
-      variables: {
-        ...initVariables,
-        filters: filtersPayload,
-        ordering: orderingPayload,
-        page: pageIndex + 1,
-        perPage: pageSize, // camelCase
-        presets,
-        distinctOn, // camelCase
-        ...(includeQuickArgument ? { quick } : {}),
-      },
+      variables: queryVariables,
       // Prefer cache-first to avoid unnecessary network calls that can cause latency
       fetchPolicy: "cache-first",
       nextFetchPolicy: "cache-first",
@@ -1031,7 +1224,7 @@ export function useGraphQLModelTable({
       distinctOn,
     },
     payloads: {
-      filters: filtersPayload,
+      filters: wherePayload,
       ordering: orderingPayload,
       quick,
       presets,
@@ -1039,6 +1232,6 @@ export function useGraphQLModelTable({
     },
     setters,
     metadataLoading: metadataLoadingState,
-    supportsQuickSearch: includeQuickArgument,
+    supportsQuickSearch,
   };
 }
