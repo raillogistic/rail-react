@@ -16,7 +16,7 @@ import {
   toGraphqlFieldName,
   toSnakeCase,
 } from "../utils";
-import { ModelSchema } from "../config/types";
+import { buildAccessorPath, resolveValueOptimized } from "../utils/valueResolution";
 
 interface UseTableColumnsOptions {
   metadata?: ModelSchema;
@@ -124,16 +124,6 @@ export function useTableColumns({
       return null;
     };
 
-    const resolveRootValue = (row: Record<string, unknown>, root: string) => {
-      const candidates = [root, toCamelCase(root), toSnakeCase(root)];
-      for (const key of candidates) {
-        if (Object.prototype.hasOwnProperty.call(row, key)) {
-          return row[key];
-        }
-      }
-      return undefined;
-    };
-
     const buildColumnDef = (
       accessor: string,
       titleOverride?: string,
@@ -175,7 +165,7 @@ export function useTableColumns({
       const relationCountRender: BaseModelTableColumnDef["render"] | undefined =
         relationCountSource
           ? (_value, row) => {
-              const relationValue = resolveRootValue(row, relationCountSource);
+              const relationValue = resolveValueOptimized(row, [relationCountSource]);
               if (Array.isArray(relationValue)) return relationValue.length;
               return 0;
             }

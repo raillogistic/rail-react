@@ -2,6 +2,7 @@ import { useQuery } from "@apollo/client";
 import { useEffect, useMemo } from "react";
 import { GET_MODEL_SCHEMA } from "../queries";
 import { ModelSchema } from "../types";
+import { toGraphqlFieldName } from "../utils";
 import { useMetadata } from "@/lib/metadata/gateway";
 import {
   persistTableMetadata,
@@ -71,10 +72,26 @@ export function useTableMetadata(
 
     const base = (activeMetadata ?? persistedMetadata) as ModelSchema | null;
     if (!base) return undefined;
+    
+    // Standardize all field and relationship names to camelCase
+    const standardized = {
+      ...base,
+      fields: base.fields.map((f) => ({
+        ...f,
+        name: toGraphqlFieldName(f.name),
+        fieldName: f.fieldName ? toGraphqlFieldName(f.fieldName) : f.fieldName,
+      })),
+      relationships: base.relationships.map((r) => ({
+        ...r,
+        name: toGraphqlFieldName(r.name),
+        fieldName: r.fieldName ? toGraphqlFieldName(r.fieldName) : r.fieldName,
+      })),
+    };
+
     const serverMutations = activeMetadata?.mutations;
 
     return {
-      ...base,
+      ...standardized,
       // Mutations can be permission-sensitive; only trust the server response.
       mutations: serverMutations ?? [],
     };
