@@ -116,7 +116,7 @@ describe("nested mutation payload builder", () => {
     expect(payload).not.toHaveProperty("order_items");
   });
 
-  it("maps singular null relation values to clear", () => {
+  it("maps singular null relation values to disconnect operation payload", () => {
     const payload = buildNestedMutationPayload(
       {
         customer: null,
@@ -125,7 +125,43 @@ describe("nested mutation payload builder", () => {
       "UPDATE",
     );
 
-    expect(payload.customer).toEqual({ clear: true });
+    expect(payload.customer).toEqual({ disconnect: true });
+  });
+
+  it("maps to-many null relation values to set [] in update mode", () => {
+    const payload = buildNestedMutationPayload(
+      {
+        tags: null,
+      },
+      [manyTagsRelation],
+      "UPDATE",
+    );
+
+    expect(payload.tags).toEqual({ set: [] });
+  });
+
+  it("treats explicit clear on singular relation as disconnect operation payload", () => {
+    const payload = buildNestedMutationPayload(
+      {
+        customer: { clear: true },
+      },
+      [singularCustomerRelation],
+      "UPDATE",
+    );
+
+    expect(payload.customer).toEqual({ disconnect: true });
+  });
+
+  it("treats explicit clear on to-many relation as set []", () => {
+    const payload = buildNestedMutationPayload(
+      {
+        tags: { clear: true },
+      },
+      [manyTagsRelation],
+      "UPDATE",
+    );
+
+    expect(payload.tags).toEqual({ set: [] });
   });
 
   it("preserves non-relation fields unchanged", () => {
@@ -145,9 +181,9 @@ describe("nested mutation payload builder", () => {
     const payload = buildNestedMutationPayload(
       {
         items: [
-          { id: "item-1", quantity: 5 },
+          { pk: "item-1", quantity: 5 },
           { quantity: 2, sku: "SKU-2" },
-          { object_id: "item-legacy", quantity: 9 },
+          { objectId: "item-legacy", quantity: 9 },
         ],
       },
       [manyItemsRelation],
@@ -157,9 +193,25 @@ describe("nested mutation payload builder", () => {
     expect(payload.items).toEqual({
       update: [
         { id: "item-1", quantity: 5 },
-        { object_id: "item-legacy", quantity: 9 },
+        { id: "item-legacy", quantity: 9 },
       ],
       create: [{ quantity: 2, sku: "SKU-2" }],
+    });
+  });
+
+  it("normalizes explicit nested update identities to id", () => {
+    const payload = buildNestedMutationPayload(
+      {
+        tags: {
+          update: [{ object_id: "tag-1", name: "Tag One" }, { pk: "tag-2" }],
+        },
+      },
+      [manyTagsRelation],
+      "UPDATE",
+    );
+
+    expect(payload.tags).toEqual({
+      update: [{ id: "tag-1", name: "Tag One" }, { id: "tag-2" }],
     });
   });
 
@@ -188,7 +240,29 @@ describe("nested mutation payload builder", () => {
     });
   });
 
-  it("supports removed persisted rows mapped to delete", () => {
+  it("rejects removeOperation delete without direct deleteMutation handling", () => {
+    expect(() =>
+      buildNestedMutationPayload(
+        {
+          items: [{ id: "item-2", quantity: 9 }],
+        },
+        [manyItemsRelation],
+        {
+          mode: "UPDATE",
+          operationOverrides: {
+            items: {
+              removeOperation: "delete",
+            },
+          },
+          baselineValues: {
+            items: [{ id: "item-1", quantity: 2 }, { id: "item-2", quantity: 7 }],
+          },
+        },
+      ),
+    ).toThrowError(/deleteMutation\.enabled/i);
+  });
+
+  it("skips removed-row nested delete payload when direct deleteMutation handles deletion", () => {
     const payload = buildNestedMutationPayload(
       {
         items: [{ id: "item-2", quantity: 9 }],
@@ -199,6 +273,7 @@ describe("nested mutation payload builder", () => {
         operationOverrides: {
           items: {
             removeOperation: "delete",
+            deleteMutationEnabled: true,
           },
         },
         baselineValues: {
@@ -209,7 +284,6 @@ describe("nested mutation payload builder", () => {
 
     expect(payload.items).toEqual({
       update: [{ id: "item-2", quantity: 9 }],
-      delete: ["item-1"],
     });
   });
 

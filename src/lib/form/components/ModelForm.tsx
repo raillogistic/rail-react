@@ -387,12 +387,17 @@ export function ModelForm<
           nestedControl?.scalarListOperation ?? nestedFormConfig.scalarListOperation;
         const removeOperation =
           nestedControl?.removeOperation ?? nestedFormConfig.removeOperation;
+        const deleteMutationEnabled = Boolean(
+          nestedControl?.deleteMutation?.enabled ??
+            nestedFormConfig.deleteMutation?.enabled,
+        );
 
-        if (!scalarListOperation && !removeOperation) continue;
+        if (!scalarListOperation && !removeOperation && !deleteMutationEnabled) continue;
 
         const overrideEntry = {
           ...(scalarListOperation ? { scalarListOperation } : {}),
           ...(removeOperation ? { removeOperation } : {}),
+          ...(deleteMutationEnabled ? { deleteMutationEnabled } : {}),
         };
 
         if (relationFieldName) {

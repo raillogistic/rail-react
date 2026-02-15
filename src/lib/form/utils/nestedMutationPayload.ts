@@ -34,6 +34,7 @@ type IdentityResolution = {
 export type NestedRelationOperationOverride = {
   scalarListOperation?: "connect" | "set";
   removeOperation?: "disconnect" | "delete";
+  deleteMutationEnabled?: boolean;
 };
 
 export type NestedMutationOperationOverrides = Record<
@@ -84,6 +85,37 @@ function isPersistableIdentityValue(value: unknown): value is string | number {
     (typeof value === "string" && value.trim().length > 0) ||
     (typeof value === "number" && Number.isFinite(value))
   );
+}
+
+function normalizeUpdateIdentityPayload(
+  value: Record<string, unknown>,
+): Record<string, unknown> {
+  const identity = resolveNestedIdentityKey(value);
+  const normalized: Record<string, unknown> = {
+    ...value,
+  };
+
+  delete normalized.pk;
+  delete normalized.objectId;
+  delete normalized.object_id;
+
+  if (identity && isPresentIdentityValue(identity.value)) {
+    normalized.id = identity.value;
+  }
+
+  return normalized;
+}
+
+function normalizeExplicitUpdateValue(value: unknown): unknown {
+  if (Array.isArray(value)) {
+    return value.map((item) =>
+      isPlainRecord(item) ? normalizeUpdateIdentityPayload(item) : item,
+    );
+  }
+  if (isPlainRecord(value)) {
+    return normalizeUpdateIdentityPayload(value);
+  }
+  return value;
 }
 
 export function resolveNestedIdentityKey(
@@ -191,33 +223,108 @@ function normalizeExplicitOperationInput(
   relationPath: string,
   value: Record<string, unknown>,
 ) {
+  const isToManyRelation = Boolean(relation?.toMany);
   const normalized: Record<string, unknown> = {};
+  let shouldDisconnectSingular = false;
 
   for (const [key, nestedValue] of Object.entries(value)) {
+    if (key === "connect") {
+      assertActionAllowed(relation, relationPath, "CONNECT", false);
+      normalized.connect = nestedValue;
+      continue;
+    }
+
+    if (key === "create") {
+      assertActionAllowed(relation, relationPath, "CREATE", false);
+      normalized.create = nestedValue;
+      continue;
+    }
+
+    if (key === "update") {
+      assertActionAllowed(relation, relationPath, "UPDATE", false);
+      normalized.update = normalizeExplicitUpdateValue(nestedValue);
+      continue;
+    }
+
+    if (key === "disconnect") {
+      assertActionAllowed(relation, relationPath, "DISCONNECT", false);
+      if (isToManyRelation) {
+        normalized.disconnect = nestedValue;
+      } else {
+        shouldDisconnectSingular = true;
+      }
+      continue;
+    }
+
+    if (key === "set") {
+      if (isToManyRelation) {
+        assertActionAllowed(relation, relationPath, "SET", false);
+        normalized.set = nestedValue;
+      } else if (nestedValue === null) {
+        assertActionAllowed(relation, relationPath, "DISCONNECT", false);
+        shouldDisconnectSingular = true;
+      } else {
+        assertActionAllowed(relation, relationPath, "CONNECT", false);
+        normalized.connect = nestedValue;
+      }
+      continue;
+    }
+
+    if (key === "clear") {
+      if (isToManyRelation) {
+        assertActionAllowed(relation, relationPath, "SET", false);
+        normalized.set = [];
+      } else {
+        assertActionAllowed(relation, relationPath, "DISCONNECT", false);
+        shouldDisconnectSingular = true;
+      }
+      continue;
+    }
+
     const action = toNormalizedAction(key);
-    if (!action) {
+    if (action === "DELETE") {
       throw new NestedMutationPayloadError({
         field: relationPath,
         code: "NESTED_RELATION_INVALID_ACTION",
         inferred: false,
-        message: `Action imbriquée non supportée '${key}' pour la relation '${relationPath}'.`,
+        message: `Nested action 'delete' is not supported by Rail Django generated mutation inputs for relation '${relationPath}'. Use 'disconnect' or direct deleteMutation handling.`,
       });
     }
-    assertActionAllowed(relation, relationPath, action, false);
-    normalized[key] = nestedValue;
+
+    throw new NestedMutationPayloadError({
+      field: relationPath,
+      code: "NESTED_RELATION_INVALID_ACTION",
+      inferred: false,
+      message: `Unsupported nested action '${key}' for relation '${relationPath}'.`,
+    });
+  }
+
+  if (!isToManyRelation && shouldDisconnectSingular) {
+    if (Object.keys(normalized).length > 0) {
+      throw new NestedMutationPayloadError({
+        field: relationPath,
+        code: "NESTED_RELATION_INVALID_INPUT",
+        inferred: false,
+        message: `Relation '${relationPath}' cannot combine disconnect/clear with other explicit operations.`,
+      });
+    }
+    return { disconnect: true };
   }
 
   return normalized;
 }
-
 function normalizeToOneRelationInput(
   relation: ModelFormContractRelation | undefined,
   relationPath: string,
   value: unknown,
+  mode: NestedPayloadMode,
 ) {
   if (value === null) {
-    assertActionAllowed(relation, relationPath, "CLEAR", true);
-    return { clear: true };
+    if (mode === "UPDATE") {
+      assertActionAllowed(relation, relationPath, "DISCONNECT", true);
+      return { disconnect: true };
+    }
+    return null;
   }
 
   if (isScalarValue(value)) {
@@ -237,7 +344,7 @@ function normalizeToOneRelationInput(
   const identity = resolveNestedIdentityKey(value);
   if (identity) {
     assertActionAllowed(relation, relationPath, "UPDATE", true);
-    return { update: value };
+    return { update: normalizeUpdateIdentityPayload(value) };
   }
 
   assertActionAllowed(relation, relationPath, "CREATE", true);
@@ -298,7 +405,7 @@ function normalizeToManyRelationArrayInput(
     }
 
     if (resolveNestedIdentityKey(item)) {
-      updateValues.push(item);
+      updateValues.push(normalizeUpdateIdentityPayload(item));
     } else {
       createValues.push(item);
     }
@@ -341,12 +448,22 @@ function normalizeToManyRelationArrayInput(
       );
       const usesSetReplacement = typeof normalized.set !== "undefined";
 
-      if (removedIds.length > 0 && !usesSetReplacement) {
-        const removedAction =
-          removeModeOverride === "delete" ? "DELETE" : "DISCONNECT";
+      const deleteHandledExternally =
+        Boolean(options.override?.deleteMutationEnabled) &&
+        removeModeOverride === "delete";
+
+      if (removedIds.length > 0 && !usesSetReplacement && !deleteHandledExternally) {
+        if (removeModeOverride === "delete") {
+          throw new NestedMutationPayloadError({
+            field: relationPath,
+            code: "NESTED_RELATION_INVALID_ACTION",
+            inferred: true,
+            message: `removeOperation='delete' requires deleteMutation.enabled for relation '${relationPath}' because generated Rail Django relation inputs do not support nested delete operation.`,
+          });
+        }
+        const removedAction = "DISCONNECT";
         assertActionAllowed(relation, relationPath, removedAction, true);
-        normalized[removedAction === "DELETE" ? "delete" : "disconnect"] =
-          removedIds;
+        normalized.disconnect = removedIds;
       }
     }
   }
@@ -365,8 +482,9 @@ function normalizeToManyRelationInput(
   },
 ) {
   if (value === null) {
-    assertActionAllowed(relation, relationPath, "CLEAR", true);
-    return { clear: true };
+    const action = mode === "UPDATE" ? "SET" : "CONNECT";
+    assertActionAllowed(relation, relationPath, action, true);
+    return mode === "UPDATE" ? { set: [] } : { connect: [] };
   }
 
   if (Array.isArray(value)) {
@@ -395,7 +513,7 @@ function normalizeToManyRelationInput(
 
   if (resolveNestedIdentityKey(value)) {
     assertActionAllowed(relation, relationPath, "UPDATE", true);
-    return { update: [value] };
+    return { update: [normalizeUpdateIdentityPayload(value)] };
   }
 
   assertActionAllowed(relation, relationPath, "CREATE", true);
@@ -429,7 +547,7 @@ function normalizeRelationInput(
       options,
     );
   }
-  return normalizeToOneRelationInput(relation, relationPath, value);
+  return normalizeToOneRelationInput(relation, relationPath, value, mode);
 }
 
 function resolveRelationOverride(
