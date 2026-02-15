@@ -19,6 +19,7 @@ import { useTableData } from "../hooks/useTableData";
 import { TableHeader } from "./TableHeader";
 import { TableRows } from "./TableRow";
 import { TablePagination } from "./TablePagination";
+import { TableMobileCard } from "./TableMobileCard";
 import { TableFrame, TableBody } from "./TableFrame";
 import type {
   BaseModelTableColumnActionsInput,
@@ -853,6 +854,12 @@ export function BaseTableContent({
       <div className="flex-none">
         {children}
       </div>
+
+      {hideTableOnMobile ? (
+        <div className="flex-1 min-h-0 min-w-0 my-2 md:hidden">
+          <TableMobileCard emptyState={tableConfig?.emptyState} />
+        </div>
+      ) : null}
 
       <div
         className={cn(

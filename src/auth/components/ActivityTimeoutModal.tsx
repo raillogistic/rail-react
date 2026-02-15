@@ -1,5 +1,5 @@
-import React from 'react';
 import { useActivityMonitor } from '../hooks/useActivityMonitor';
+import { useAuth } from '../hooks/useAuth';
 import {
   Dialog,
   DialogContent,
@@ -23,6 +23,7 @@ export function ActivityTimeoutModal({
     idleTimeoutMs,
     warningThresholdMs,
   });
+  const { logout } = useAuth();
 
   const formatTime = (ms: number | null) => {
     if (ms === null) return '';
@@ -55,7 +56,12 @@ export function ActivityTimeoutModal({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={() => {}}>
+          <Button
+            variant="outline"
+            onClick={() => {
+              void logout({ reason: 'idle_timeout' });
+            }}
+          >
             Log Out Now
           </Button>
           <Button onClick={extendSession}>

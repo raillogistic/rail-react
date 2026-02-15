@@ -34,6 +34,7 @@ export class AuthenticationManager {
   private permissionService: PermissionService;
   public deviceService: DeviceService;
   public mfaService: MFAService;
+  private logoutInProgress = false;
 
   private state: AuthState = {
     status: "idle",
@@ -123,10 +124,20 @@ export class AuthenticationManager {
     this.tokenService.syncFromStorage();
 
     // Validate existing session
-    const isValid = await this.sessionService.validateSession();
+    const isValid = await this.sessionService.validateSession({
+      allowIndeterminate: false,
+    });
     if (isValid) {
       const payload = this.tokenService.decodeToken(accessToken);
       if (payload) {
+        if (this.isPayloadExpired(payload)) {
+          this.tokenService.clearTokens();
+          this.updateState({
+            status: "unauthenticated",
+            isLoading: false,
+          });
+          return;
+        }
         const userFromToken = this.extractUserFromPayload(payload);
         if (!userFromToken.id) {
           this.tokenService.clearTokens();
@@ -402,26 +413,36 @@ export class AuthenticationManager {
 
   // Logout
   async logout(options: LogoutOptions = {}): Promise<void> {
+    if (this.logoutInProgress) {
+      return;
+    }
+    this.logoutInProgress = true;
+
     const userId = this.state.user?.id;
     const reason = options.reason || "user_initiated";
 
-    this.tokenService.clearTokens();
-    this.clearStorageTokens("session");
-    this.clearStorageTokens("local");
-    this.persistRememberMeFlag(false);
-    this.sessionService.endSession(reason);
-    this.permissionService.invalidate();
+    try {
+      this.tokenService.clearTokens();
+      this.clearStorageTokens("session");
+      this.clearStorageTokens("local");
+      this.persistRememberMeFlag(false);
 
-    this.updateState({
-      status: "unauthenticated",
-      isAuthenticated: false,
-      user: null,
-      error: null,
-      sessionExpiresAt: null,
-    });
+      this.updateState({
+        status: "unauthenticated",
+        isAuthenticated: false,
+        user: null,
+        error: null,
+        sessionExpiresAt: null,
+      });
 
-    if (!options.silent) {
-      this.eventBus.emit("auth:logout", { reason, userId });
+      this.sessionService.endSession(reason);
+      this.permissionService.invalidate();
+
+      if (!options.silent) {
+        this.eventBus.emit("auth:logout", { reason, userId });
+      }
+    } finally {
+      this.logoutInProgress = false;
     }
   }
 
@@ -482,6 +503,20 @@ export class AuthenticationManager {
     this.eventBus.on("auth:token_refreshed", ({ expiresAt }) => {
       this.updateState({ sessionExpiresAt: expiresAt });
     });
+
+    // Handle explicit session expiration signals from session validation.
+    this.eventBus.on("auth:session_expired", () => {
+      if (this.state.isAuthenticated) {
+        this.logout({ silent: true, reason: "session_expired" });
+      }
+    });
+
+    // Handle token expiry signals from refresh pipeline.
+    this.eventBus.on("auth:token_expired", () => {
+      if (this.state.isAuthenticated) {
+        this.logout({ silent: true, reason: "session_expired" });
+      }
+    });
   }
 
   private extractUserFromPayload(payload: TokenPayload): AuthUser {
@@ -496,6 +531,13 @@ export class AuthenticationManager {
       roles: payload.roles || [],
       permissions: payload.permissions || [],
     };
+  }
+
+  private isPayloadExpired(payload: TokenPayload): boolean {
+    if (typeof payload.exp !== "number") {
+      return true;
+    }
+    return payload.exp * 1000 <= Date.now();
   }
 
   private shouldUseRememberMeFallback(): boolean {

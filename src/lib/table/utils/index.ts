@@ -4,3 +4,4 @@ export * from "./fieldMerging";
 export * from "./schemaHelpers";
 export * from "./groupingHelpers";
 export * from "./queryNaming";
+export * from "./visibility";

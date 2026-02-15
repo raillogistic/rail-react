@@ -18,19 +18,32 @@ interface Session {
   };
 }
 
+export interface ValidateSessionOptions {
+  allowIndeterminate?: boolean;
+}
+
+export class SessionValidationIndeterminateError extends Error {
+  constructor(message = "Unable to determine session validity") {
+    super(message);
+    this.name = "SessionValidationIndeterminateError";
+  }
+}
+
 export class SessionService {
   private eventBus: EventBus;
   private config: SessionConfig;
   private currentSession: Session | null = null;
-  private validationInterval: NodeJS.Timeout | null = null;
+  private validationInterval: ReturnType<typeof setInterval> | null = null;
   private validateFn: (() => Promise<boolean>) | null = null;
+  private readonly focusHandler: () => void;
 
   constructor(eventBus: EventBus, config: SessionConfig) {
     this.eventBus = eventBus;
     this.config = config;
+    this.focusHandler = this.handleFocus.bind(this);
 
     if (config.validateOnFocus && typeof window !== 'undefined') {
-      window.addEventListener('focus', this.handleFocus.bind(this));
+      window.addEventListener('focus', this.focusHandler);
     }
   }
 
@@ -78,7 +91,8 @@ export class SessionService {
   }
 
   // Validate session with server
-  async validateSession(): Promise<boolean> {
+  async validateSession(options: ValidateSessionOptions = {}): Promise<boolean> {
+    const { allowIndeterminate = false } = options;
     if (!this.validateFn) return this.isSessionValid();
 
     try {
@@ -93,7 +107,13 @@ export class SessionService {
       }
 
       return isValid;
-    } catch {
+    } catch (error) {
+      if (
+        allowIndeterminate &&
+        error instanceof SessionValidationIndeterminateError
+      ) {
+        return true;
+      }
       return false;
     }
   }
@@ -121,7 +141,7 @@ export class SessionService {
   private startValidationInterval(): void {
     this.stopValidationInterval();
     this.validationInterval = setInterval(
-      () => this.validateSession(),
+      () => this.validateSession({ allowIndeterminate: true }),
       this.config.validateIntervalMs
     );
   }
@@ -135,14 +155,14 @@ export class SessionService {
 
   private handleFocus(): void {
     if (this.currentSession) {
-      this.validateSession();
+      this.validateSession({ allowIndeterminate: true });
     }
   }
 
   destroy(): void {
     this.stopValidationInterval();
     if (typeof window !== 'undefined') {
-      window.removeEventListener('focus', this.handleFocus.bind(this));
+      window.removeEventListener('focus', this.focusHandler);
     }
   }
 }

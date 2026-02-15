@@ -1,5 +1,8 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { SessionService } from '../SessionService';
+import {
+  SessionService,
+  SessionValidationIndeterminateError,
+} from '../SessionService';
 import { EventBus } from '../../core/EventBus';
 import { AuthUser } from '../../types';
 
@@ -65,6 +68,23 @@ describe('SessionService', () => {
     expect(emitSpy).toHaveBeenCalledWith('auth:session_expired', expect.objectContaining({
       reason: 'server_validation_failed'
     }));
+  });
+
+  it('keeps active session when validation is indeterminate and allowed', async () => {
+    const validateFn = vi.fn().mockRejectedValue(
+      new SessionValidationIndeterminateError('transient network')
+    );
+    sessionService.setValidationFn(validateFn);
+    const emitSpy = vi.spyOn(eventBus, 'emit');
+
+    sessionService.startSession(user, 'session-1', new Date(Date.now() + 10000));
+    const isValid = await sessionService.validateSession({ allowIndeterminate: true });
+
+    expect(isValid).toBe(true);
+    expect(emitSpy).not.toHaveBeenCalledWith(
+      'auth:session_expired',
+      expect.anything()
+    );
   });
 
   it('detects client-side expiry', () => {

@@ -22,7 +22,9 @@ vi.mock("../../context/TableContext", () => ({
 }));
 
 vi.mock("../TableToolbar", () => ({
-  TableToolbar: () => <div data-testid="table-toolbar" />,
+  TableToolbar: (props: { extraActions?: React.ReactNode }) => (
+    <div data-testid="table-toolbar">{props.extraActions}</div>
+  ),
 }));
 
 vi.mock("@/lib/components/ui/dropdown-menu", () => ({
@@ -97,12 +99,17 @@ vi.mock("@/auth/utils/token-storage", () => ({
   }),
 }));
 
-async function openTemplatesDropdown() {
-  fireEvent.click(
-    screen.getByRole("button", { name: /templates/i }),
-  );
+async function openPdfTemplatesDropdown() {
+  fireEvent.click(screen.getByTestId("templates-pdf-dropdown-trigger"));
   await waitFor(() => {
-    expect(screen.getByText("Template Actions")).toBeInTheDocument();
+    expect(screen.getByText("PDF Templates")).toBeInTheDocument();
+  });
+}
+
+async function openExcelTemplatesDropdown() {
+  fireEvent.click(screen.getByTestId("templates-excel-dropdown-trigger"));
+  await waitFor(() => {
+    expect(screen.getByText("Excel Templates")).toBeInTheDocument();
   });
 }
 
@@ -163,7 +170,7 @@ describe("ModelTableV2Content template actions", () => {
 
     render(<ModelTableV2Content />);
 
-    await openTemplatesDropdown();
+    await openPdfTemplatesDropdown();
     fireEvent.click(screen.getByText(/Order invoice/i));
     expect(screen.getByTestId("print-dialog")).toBeInTheDocument();
 
@@ -224,7 +231,7 @@ describe("ModelTableV2Content template actions", () => {
 
     render(<ModelTableV2Content />);
 
-    await openTemplatesDropdown();
+    await openExcelTemplatesDropdown();
     fireEvent.click(screen.getByText(/Order export/i));
 
     await waitFor(() => {
@@ -278,7 +285,7 @@ describe("ModelTableV2Content template actions", () => {
 
     render(<ModelTableV2Content />);
 
-    await openTemplatesDropdown();
+    await openPdfTemplatesDropdown();
     fireEvent.click(screen.getByText(/Order invoice/i));
 
     await waitFor(() => {
@@ -318,7 +325,7 @@ describe("ModelTableV2Content template actions", () => {
 
     render(<ModelTableV2Content />);
 
-    await openTemplatesDropdown();
+    await openPdfTemplatesDropdown();
     const actionItem = screen.getByRole("button", {
       name: /Product fact sheet/i,
     });

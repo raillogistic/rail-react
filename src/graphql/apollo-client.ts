@@ -266,7 +266,7 @@ const createErrorLink = () => {
             tokenStorage.clearAllTokens();
           });
 
-          return forward(operation);
+          throw authError;
         });
       }
     }
@@ -302,7 +302,7 @@ const createErrorLink = () => {
                 tokenStorage.clearAllTokens();
               });
 
-              return forward(operation);
+              throw authError;
             });
           }
         } else if (statusCode >= 500 || !statusCode) {

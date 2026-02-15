@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { AuthenticationManager } from '../AuthenticationManager';
 import { LoginCredentials, AuthUser, TokenPair } from '../types';
+import { SessionValidationIndeterminateError } from '../services/SessionService';
 
 // Mock legacy token storage
 vi.mock('../utils/token-storage', () => ({
@@ -61,7 +62,12 @@ describe('AuthenticationManager', () => {
 
     authManager = new AuthenticationManager({
       token: { storageType: 'memory' },
-      rateLimit: { persistLockout: false }
+      rateLimit: { persistLockout: false },
+      eventBus: {
+        channelName: 'auth-events-test',
+        debounceMs: 0,
+        enableCrossTab: false,
+      },
     });
   });
 
@@ -196,6 +202,46 @@ describe('AuthenticationManager', () => {
     expect(authManager.getState().user?.id).toBe(mockUser.id);
   });
 
+  it('does not authenticate expired tokens during bootstrap validation', async () => {
+    const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
+    const payload = btoa(
+      JSON.stringify({
+        sub: mockUser.id,
+        email: mockUser.email,
+        roles: mockUser.roles,
+        permissions: mockUser.permissions,
+        exp: Math.floor(Date.now() / 1000) - 60,
+      })
+    );
+    const expiredAccessToken = `${header}.${payload}.sig`;
+
+    authManager.tokenService.setTokens({
+      ...mockTokens,
+      accessToken: expiredAccessToken,
+      accessTokenExpiresAt: new Date(Date.now() - 60_000),
+    });
+    authManager.sessionService.setValidationFn(async () => true);
+
+    await authManager.initialize();
+
+    expect(authManager.getState().isAuthenticated).toBe(false);
+    expect(authManager.getState().status).toBe('unauthenticated');
+    expect(authManager.tokenService.getAccessToken()).toBeNull();
+  });
+
+  it('fails closed during bootstrap when session validation is indeterminate', async () => {
+    authManager.tokenService.setTokens(mockTokens);
+    authManager.sessionService.setValidationFn(async () => {
+      throw new SessionValidationIndeterminateError('transient network issue');
+    });
+
+    await authManager.initialize();
+
+    expect(authManager.getState().isAuthenticated).toBe(false);
+    expect(authManager.getState().status).toBe('unauthenticated');
+    expect(authManager.tokenService.getAccessToken()).toBeNull();
+  });
+
   it('logs out', async () => {
     await authManager.login({ username: 'u', password: 'p' }, loginFn);
     expect(authManager.getState().isAuthenticated).toBe(true);
@@ -205,6 +251,17 @@ describe('AuthenticationManager', () => {
     expect(authManager.getState().isAuthenticated).toBe(false);
     expect(authManager.getState().user).toBeNull();
     expect(authManager.tokenService.getAccessToken()).toBeNull();
+  });
+
+  it('transitions to unauthenticated when session expires', async () => {
+    await authManager.login({ username: 'u', password: 'p' }, loginFn);
+    expect(authManager.getState().isAuthenticated).toBe(true);
+
+    authManager.sessionService.endSession('server_validation_failed');
+    await new Promise((resolve) => setTimeout(resolve, 0));
+
+    expect(authManager.getState().isAuthenticated).toBe(false);
+    expect(authManager.getState().status).toBe('unauthenticated');
   });
 
   it('handles remember me functionality', async () => {

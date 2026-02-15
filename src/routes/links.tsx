@@ -34,7 +34,7 @@ import {
   OnboardingWizard,
   SettingsForm,
   StoreOrderUpdateGeneratedFormExample,
-  StoreProductUpdateModelFormExample,
+  StoreOrderUpdateModelFormExample,
 } from "@/lib/form/examples";
 import {
   StoreGeneratedExamples,
@@ -42,6 +42,8 @@ import {
   StoreProductCreateModelFormExample,
 } from "@/lib/form/examples";
 import { ModelForm } from "@/lib/form";
+
+const STORE_ORDER_DEMO_ID = import.meta.env.VITE_STORE_ORDER_ID ?? "1";
 
 export const ROUTES = {
   LOGIN: "/login",
@@ -160,7 +162,7 @@ const CORE_NAVIGATION_LINKS: NavigationSection[] = [
         path: "/formold",
         component: (
           <>
-            <StoreProductUpdateModelFormExample objectId="9" />
+            <StoreOrderUpdateModelFormExample objectId={STORE_ORDER_DEMO_ID} />
             {/* <AdvancedFeaturesForm/> */}
           </>
         ),

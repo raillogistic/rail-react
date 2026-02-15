@@ -228,6 +228,68 @@ describe("ModelForm", () => {
     expect(payload.initialValues.price).toBe(10);
   });
 
+  it("reports initial-data authorization failures through onLoadError", async () => {
+    const onLoadError = vi.fn();
+    const updateContract: ModelFormContract = {
+      ...sampleModelFormContract,
+      appLabel: "store",
+      modelName: "Product",
+      mode: "UPDATE",
+    };
+
+    const mocks = [
+      {
+        request: {
+          query: MODEL_FORM_CONTRACT_QUERY,
+          variables: {
+            appLabel: "store",
+            modelName: "Product",
+            mode: "UPDATE",
+            includeNested: false,
+          },
+        },
+        result: {
+          data: {
+            modelFormContract: updateContract,
+          },
+        },
+      },
+      {
+        request: {
+          query: MODEL_FORM_INITIAL_DATA_QUERY,
+          variables: {
+            appLabel: "store",
+            modelName: "Product",
+            objectId: "42",
+            includeNested: false,
+            runtimeOverrides: [],
+          },
+        },
+        error: new Error("Authentication required."),
+      },
+    ];
+
+    renderWithMocks(
+      <ModelForm
+        app="store"
+        model="Product"
+        mode="UPDATE"
+        objectId="42"
+        onLoadError={onLoadError}
+      />,
+      mocks,
+    );
+
+    await waitFor(() => {
+      expect(onLoadError).toHaveBeenCalled();
+    });
+    expect(
+      onLoadError.mock.calls.some(
+        ([, stage]) => stage === "initialData",
+      ),
+    ).toBe(true);
+  });
+
   it("removes readonly and excluded values from DynamicForm defaults", async () => {
     const updateContract: ModelFormContract = {
       ...sampleModelFormContract,

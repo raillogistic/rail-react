@@ -9,6 +9,7 @@ import { useMetadata } from "../context/MetadataContext";
 import { Checkbox } from "@/lib/components/ui/checkbox";
 import { TableColumnMenu } from "./TableColumnMenu";
 import { ColumnFilter } from "./ColumnFilter";
+import { resolveColumnVisibility } from "../utils";
 import type {
   BaseModelTableColumnDef,
   BaseModelTableColumnOrderingConfig,
@@ -131,13 +132,25 @@ export function TableHeader({
       return orderedIds
         .map((id) => byId.get(id))
         .filter((column): column is BaseModelTableColumnDef => !!column)
-        .filter((column) => columnVisibility[column.id] ?? true);
+        .filter((column) =>
+          resolveColumnVisibility(columnVisibility, [
+            column.id,
+            "accessor" in column ? column.accessor : undefined,
+            "accessor" in column
+              ? column.accessor.replace(/__/g, ".").split(".")[0]
+              : undefined,
+          ]),
+        );
     }
 
     if (!metadata) return [];
     return columnOrder
       .map((colId) => metadata.fields.find((f) => f.name === colId))
-      .filter((f) => f && columnVisibility[f.name]);
+      .filter(
+        (f) =>
+          f &&
+          resolveColumnVisibility(columnVisibility, [f.name, f.fieldName]),
+      );
   })();
 
   const allowDrag = columnOrdering?.draggable !== false;

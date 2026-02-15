@@ -1,11 +1,20 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { AuthenticationManager } from '../AuthenticationManager';
-import type { AuthState, AuthConfig, LoginCredentials, AuthResult, AuthUser, TokenPair } from '../types';
+import type {
+  AuthState,
+  AuthConfig,
+  LoginCredentials,
+  AuthResult,
+  AuthUser,
+  TokenPair,
+  LogoutOptions,
+} from '../types';
+import { AUTH_SESSION_EVENT } from '../utils/token-storage';
 
 interface AuthContextValue extends AuthState {
   login: (credentials: LoginCredentials) => Promise<AuthResult>;
   verifyMFA: (code: string) => Promise<AuthResult>;
-  logout: () => Promise<void>;
+  logout: (options?: LogoutOptions) => Promise<void>;
   hasPermission: (permission: string) => boolean;
   hasRole: (role: string) => boolean;
   refreshSession: () => Promise<void>;
@@ -56,11 +65,31 @@ export function AuthProvider({
     // Initialize on mount
     manager.initialize();
 
+    const handleSessionChange = (event: Event) => {
+      const detail = (event as CustomEvent<{ isActive?: boolean }>).detail;
+      if (detail?.isActive === false && manager.getState().isAuthenticated) {
+        // Keep manager state in sync with tokenStorage-driven session invalidation
+        // (e.g. Apollo auth failures clearing tokens outside manager APIs).
+        void manager.logout({ silent: true, reason: 'session_expired' }).then(() => {
+          if (onLogout) {
+            void onLogout();
+          }
+        });
+      }
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener(AUTH_SESSION_EVENT, handleSessionChange);
+    }
+
     return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener(AUTH_SESSION_EVENT, handleSessionChange);
+      }
       unsubscribe();
       manager.destroy();
     };
-  }, [manager, onValidateSession]);
+  }, [manager, onValidateSession, onLogout]);
 
   const login = useCallback(async (credentials: LoginCredentials) => {
     if (!onLogin) throw new Error('onLogin handler not provided');
@@ -72,8 +101,8 @@ export function AuthProvider({
     return manager.verifyMFA(code, onVerifyMFA);
   }, [manager, onVerifyMFA]);
 
-  const logout = useCallback(async () => {
-    await manager.logout();
+  const logout = useCallback(async (options?: LogoutOptions) => {
+    await manager.logout(options);
     if (onLogout) await onLogout();
   }, [manager, onLogout]);
 

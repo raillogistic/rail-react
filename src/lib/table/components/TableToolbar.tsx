@@ -41,10 +41,12 @@ export function TableToolbar({
   filterPanel,
   tableConfig,
   quickSearch,
+  extraActions,
 }: {
   filterPanel?: ModelTableFilterPanelProps;
   tableConfig?: ModelTableV2TableConfig;
   quickSearch?: boolean;
+  extraActions?: React.ReactNode;
 }) {
   const { app, model, metadata } = useMetadata();
   const {
@@ -287,6 +289,15 @@ export function TableToolbar({
           </div>
 
           <div className="flex items-center gap-1.5 w-full sm:w-auto px-1">
+            {extraActions ? (
+              <>
+                <div className="flex items-center p-1 bg-muted/20 rounded-xl border border-border/10">
+                  {extraActions}
+                </div>
+                <div className="h-6 w-px bg-border/20 mx-1" />
+              </>
+            ) : null}
+
             <div className="flex items-center p-1 bg-muted/20 rounded-xl border border-border/10">
               <ViewOptionsMenu
                 density={density}

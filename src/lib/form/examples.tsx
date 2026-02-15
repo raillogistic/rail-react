@@ -1255,35 +1255,10 @@ export function StoreProductUpdateModelFormExample({
       </h2>
       <ModelForm
         app="store"
-        model="Order"
-        mode="UPDATE"
-        objectId={objectId}
-        formProps={{
-          devtools: { enabled: true },
-        }}
-        nested={{
-          items: {
-            scalarListOperation: "connect",
-            removeOperation: "delete",
-            deleteMutation: {
-              enabled: true,
-            },
-          },
-        }}
-      />
-      {/* <ModelForm
-        app="store"
         model="Product"
         mode="UPDATE"
         objectId={objectId}
         excludeFields={["price"]}
-        // onlyRequired
-        // excludeFields={["order_items"]}
-        // nested={{
-        //   order_items: {
-        //     sortable: { enabled: true, mode: "buttons" },
-        //   },
-        // }}
         runtimeOverrides={PRODUCT_UPDATE_RUNTIME_OVERRIDES}
         description="Exemple de mise à jour auto-câblée : les valeurs initiales sont chargées depuis modelFormInitialData et Enregistrer lance updateOperation générée."
         formProps={{
@@ -1299,7 +1274,52 @@ export function StoreProductUpdateModelFormExample({
             showDirtyIndicator: true,
           },
         }}
-      /> */}
+      />
+    </section>
+  );
+}
+
+type StoreOrderUpdateModelFormExampleProps = {
+  objectId: string;
+};
+
+export function StoreOrderUpdateModelFormExample({
+  objectId,
+}: StoreOrderUpdateModelFormExampleProps) {
+  if (!objectId) {
+    return (
+      <p>
+        Veuillez fournir un `objectId` valide pour charger le ModelForm de mise
+        à jour de commande.
+      </p>
+    );
+  }
+  return (
+    <section className="space-y-4">
+      <h2 className="text-lg font-semibold">
+        Mise à jour de commande Store (ModelForm)
+      </h2>
+      <ModelForm
+        app="store"
+        model="Order"
+        mode="UPDATE"
+        objectId={objectId}
+        runtimeOverrides={ORDER_RUNTIME_OVERRIDES}
+        description="Exemple de mise à jour auto-câblée : les valeurs initiales sont chargées depuis modelFormInitialData et Enregistrer lance updateOperation générée."
+        formProps={{
+          devtools: { enabled: true },
+          layout: {
+            columns: 4,
+
+            showSectionHeaders: true,
+          },
+          actions: {
+            submitLabel: "Mettre à jour la commande",
+            resetLabel: "Réinitialiser",
+            showDirtyIndicator: true,
+          },
+        }}
+      />
     </section>
   );
 }
@@ -1579,16 +1599,20 @@ export function StoreModelTableExamples() {
 
 type StoreGeneratedExamplesProps = {
   orderId: string;
+  productId?: string;
 };
 
 export function StoreGeneratedExamples({
   orderId,
+  productId,
 }: StoreGeneratedExamplesProps) {
+  const resolvedProductId = productId ?? "";
+
   return (
     <div className="space-y-10">
       {/* 5 ready-to-use ModelForm usages: Product x2, Order x2, OrderItem x1 */}
       <StoreProductCreateModelFormExample />
-      <StoreProductUpdateModelFormExample objectId={orderId} />
+      <StoreProductUpdateModelFormExample objectId={resolvedProductId} />
       <StoreOrderCreateModelFormExample />
       <StoreOrderViewModelFormExample objectId={orderId} />
       <StoreOrderItemCreateModelFormExample />

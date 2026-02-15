@@ -1,6 +1,5 @@
 import React from "react";
 import {
-  ChevronDown,
   FileSpreadsheet,
   FileText,
   PlusCircle,
@@ -214,8 +213,117 @@ export function ModelTableV2Content({
       ),
     [metadata?.templates],
   );
+  const pdfTemplateEntries = React.useMemo(
+    () =>
+      templateEntries.filter(
+        (template) => normalizeTemplateType(template) === "pdf",
+      ),
+    [templateEntries],
+  );
+  const excelTemplateEntries = React.useMemo(
+    () =>
+      templateEntries.filter(
+        (template) => normalizeTemplateType(template) === "excel",
+      ),
+    [templateEntries],
+  );
 
   const hasSelection = selectedRowIds.length > 0;
+
+  const templateToolbarActions = React.useMemo(() => {
+    const renderTemplateDropdown = ({
+      kind,
+      templates,
+      label,
+      icon,
+      triggerTestId,
+      triggerClassName,
+    }: {
+      kind: "pdf" | "excel";
+      templates: TemplateInfo[];
+      label: string;
+      icon: React.ReactNode;
+      triggerTestId: string;
+      triggerClassName: string;
+    }) => {
+      if (templates.length === 0) return null;
+      return (
+        <DropdownMenu key={`template-toolbar-${kind}`}>
+          <DropdownMenuTrigger asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-8 w-8 p-0 rounded-lg hover:bg-background transition-all"
+              data-testid={triggerTestId}
+              aria-label={label}
+            >
+              <span className={triggerClassName}>{icon}</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-72">
+            <DropdownMenuLabel>{label}</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {templates.map((template) => {
+              const disabledReason = getTemplateDisabledReason(
+                template,
+                hasSelection,
+              );
+              const disabled = Boolean(disabledReason);
+              return (
+                <DropdownMenuItem
+                  key={`template-toolbar-item:${kind}:${template.key}`}
+                  disabled={disabled}
+                  title={disabledReason ?? undefined}
+                  onClick={() => {
+                    if (disabled) return;
+                    openTemplateAction(template, selectedRows);
+                  }}
+                >
+                  {kind === "excel" ? (
+                    <FileSpreadsheet className="h-4 w-4" />
+                  ) : (
+                    <FileText className="h-4 w-4" />
+                  )}
+                  <span>{template.title || template.key}</span>
+                </DropdownMenuItem>
+              );
+            })}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      );
+    };
+
+    if (!pdfTemplateEntries.length && !excelTemplateEntries.length) {
+      return null;
+    }
+
+    return (
+      <div className="flex items-center gap-1">
+        {renderTemplateDropdown({
+          kind: "pdf",
+          templates: pdfTemplateEntries,
+          label: "PDF Templates",
+          icon: <FileText className="h-4 w-4" />,
+          triggerTestId: "templates-pdf-dropdown-trigger",
+          triggerClassName: "text-red-600",
+        })}
+        {renderTemplateDropdown({
+          kind: "excel",
+          templates: excelTemplateEntries,
+          label: "Excel Templates",
+          icon: <FileSpreadsheet className="h-4 w-4" />,
+          triggerTestId: "templates-excel-dropdown-trigger",
+          triggerClassName: "text-green-600",
+        })}
+      </div>
+    );
+  }, [
+    excelTemplateEntries,
+    hasSelection,
+    openTemplateAction,
+    pdfTemplateEntries,
+    selectedRows,
+  ]);
 
   const resolvedTopActions = React.useMemo(() => {
     const userActions =
@@ -300,52 +408,6 @@ export function ModelTableV2Content({
                 {action.size === "icon" ? null : <span>{action.label}</span>}
               </Button>
             ))}
-
-            {templateEntries.length > 0 ? (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8"
-                    data-testid="templates-dropdown-trigger"
-                  >
-                    Templates
-                    <ChevronDown className="ml-2 h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-72">
-                  <DropdownMenuLabel>Template Actions</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  {templateEntries.map((template) => {
-                    const templateType = normalizeTemplateType(template);
-                    const disabledReason = getTemplateDisabledReason(
-                      template,
-                      hasSelection,
-                    );
-                    const disabled = Boolean(disabledReason);
-                    return (
-                      <DropdownMenuItem
-                        key={`template-dropdown:${template.key}`}
-                        disabled={disabled}
-                        title={disabledReason ?? undefined}
-                        onClick={() => {
-                          if (disabled) return;
-                          openTemplateAction(template, selectedRows);
-                        }}
-                      >
-                        {templateType === "excel" ? (
-                          <FileSpreadsheet className="h-4 w-4" />
-                        ) : (
-                          <FileText className="h-4 w-4" />
-                        )}
-                        <span>{template.title || template.key}</span>
-                      </DropdownMenuItem>
-                    );
-                  })}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ) : null}
           </div>
         </div>
 
@@ -353,6 +415,7 @@ export function ModelTableV2Content({
           filterPanel={filterPanel}
           tableConfig={tableConfig}
           quickSearch={quickSearch}
+          extraActions={templateToolbarActions}
         />
       </div>
       <PrintDialog

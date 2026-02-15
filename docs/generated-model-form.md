@@ -160,6 +160,9 @@ export function ProductCreateForm() {
 
 - `UPDATE` and `VIEW` fetch `modelFormInitialData` automatically when `objectId` is provided.
 - `VIEW` defaults to read-only and hides actions unless explicitly overridden.
+- `modelFormInitialData` now enforces backend `view` authorization. If access is
+  denied, `ModelForm` surfaces the error through `onLoadError` with
+  `stage="initialData"` and renders `errorFallback` when provided.
 
 ### Nested + field/section controls
 

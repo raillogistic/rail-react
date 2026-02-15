@@ -5,6 +5,7 @@ import { useTable } from "../context/TableContext";
 import { useMetadata } from "../context/MetadataContext";
 import {
   getSyntheticRelationCountSource,
+  resolveColumnVisibility,
   resolveGroupingKey,
   resolveGroupingLabel,
   toCamelCase,
@@ -262,14 +263,24 @@ export function TableRows({
       return orderedIds
         .map((id) => byId.get(id))
         .filter((column): column is BaseModelTableColumnDef => !!column)
-        .filter((column) => columnVisibility[column.id] ?? true);
+        .filter((column) =>
+          resolveColumnVisibility(columnVisibility, [
+            column.id,
+            "accessor" in column ? column.accessor : undefined,
+            "accessor" in column
+              ? column.accessor.replace(/__/g, ".").split(".")[0]
+              : undefined,
+          ]),
+        );
     }
 
     if (!metadata) return [];
     return columnOrder
       .map((colId) => metadata.fields.find((f) => f.name === colId))
       .filter(
-        (field): field is FieldSchema => !!field && columnVisibility[field.name],
+        (field): field is FieldSchema =>
+          !!field &&
+          resolveColumnVisibility(columnVisibility, [field.name, field.fieldName]),
       );
   }, [columnOrder, columnVisibility, columns, metadata]);
 

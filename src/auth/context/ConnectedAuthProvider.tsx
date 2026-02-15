@@ -7,10 +7,11 @@ import {
   REFRESH_TOKEN_MUTATION,
   VERIFY_MFA_LOGIN_MUTATION,
 } from "@/graphql/mutations";
-import { GET_CURRENT_USER } from "@/graphql/queries";
+import { GET_ACTIVE_SESSIONS, GET_CURRENT_USER } from "@/graphql/queries";
 import { AuthUser, LoginCredentials, TokenPair } from "../types";
 import { tokenStorage } from "../utils/token-storage";
 import { decodeToken } from "../utils/token";
+import { SessionValidationIndeterminateError } from "../services/SessionService";
 
 const normalizeAuthUser = (
   rawUser: Record<string, any> | null | undefined,
@@ -52,10 +53,96 @@ const normalizeAuthUser = (
   };
 };
 
+const normalizeSessionIdClaim = (value: unknown): string | null => {
+  if (typeof value === "string" && value.trim().length > 0) {
+    return value.trim();
+  }
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return String(value);
+  }
+  return null;
+};
+
+const extractSessionIdFromToken = (
+  token: string | null | undefined,
+): string | null => {
+  if (!token) {
+    return null;
+  }
+
+  const decoded = decodeToken(token) as Record<string, unknown> | null;
+  if (!decoded) {
+    return null;
+  }
+
+  const candidates = [
+    decoded.session_id,
+    decoded.sessionId,
+    decoded.sid,
+    decoded.jti,
+  ];
+
+  for (const candidate of candidates) {
+    const resolved = normalizeSessionIdClaim(candidate);
+    if (resolved) {
+      return resolved;
+    }
+  }
+
+  return null;
+};
+
 export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const client = useApolloClient();
+
+  const fetchCurrentSessionId = useCallback(
+    async (accessToken: string): Promise<string | null> => {
+      try {
+        const { data } = await client.query({
+          query: GET_ACTIVE_SESSIONS,
+          fetchPolicy: "network-only",
+          context: {
+            headers: { authorization: `Bearer ${accessToken}` },
+            skipAuthRefresh: true,
+          },
+        });
+
+        const sessions = Array.isArray(data?.my_sessions) ? data.my_sessions : [];
+        const currentSession = sessions.find(
+          (session: { id?: string | number; is_current?: boolean }) =>
+            session?.is_current === true,
+        );
+        return normalizeSessionIdClaim(currentSession?.id) ?? null;
+      } catch {
+        return null;
+      }
+    },
+    [client],
+  );
+
+  const resolveSessionId = useCallback(
+    async (
+      accessToken: string,
+      refreshToken?: string | null,
+    ): Promise<string> => {
+      const tokenSessionId =
+        extractSessionIdFromToken(refreshToken) ??
+        extractSessionIdFromToken(accessToken);
+      if (tokenSessionId) {
+        return tokenSessionId;
+      }
+
+      const backendSessionId = await fetchCurrentSessionId(accessToken);
+      if (backendSessionId) {
+        return backendSessionId;
+      }
+
+      return "unknown-session";
+    },
+    [fetchCurrentSessionId],
+  );
 
   const handleLogin = useCallback(
     async (credentials: LoginCredentials) => {
@@ -85,6 +172,7 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }
 
       const normalizedUser = normalizeAuthUser(login.user, login.permissions);
+      const sessionId = await resolveSessionId(login.token, login.refresh_token);
 
       return {
         success: true as const,
@@ -95,10 +183,10 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
           accessTokenExpiresAt: new Date(Date.now() + 15 * 60 * 1000), // Approximate if not returned
           refreshTokenExpiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
         },
-        sessionId: "session-" + Date.now(), // Backend should ideally return session ID
+        sessionId,
       };
     },
-    [client],
+    [client, resolveSessionId],
   );
 
   const handleVerifyMFA = useCallback(
@@ -118,6 +206,10 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
         verify_mfa_login.user,
         verify_mfa_login.permissions,
       );
+      const sessionId = await resolveSessionId(
+        verify_mfa_login.token,
+        verify_mfa_login.refresh_token,
+      );
 
       return {
         user: normalizedUser,
@@ -127,10 +219,10 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
           accessTokenExpiresAt: new Date(Date.now() + 15 * 60 * 1000),
           refreshTokenExpiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
         },
-        sessionId: "session-" + Date.now(),
+        sessionId,
       };
     },
-    [client],
+    [client, resolveSessionId],
   );
 
   const handleLogout = useCallback(async () => {
@@ -165,6 +257,17 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
   );
 
   const handleValidateSession = useCallback(async () => {
+    const isAuthError = (errorLike: { extensions?: Record<string, unknown>; message?: string }) => {
+      const code = String(errorLike.extensions?.code ?? "").toUpperCase();
+      const message = String(errorLike.message ?? "").toLowerCase();
+      return (
+        code === "UNAUTHENTICATED" ||
+        code === "FORBIDDEN" ||
+        message.includes("authentication") ||
+        message.includes("unauthorized")
+      );
+    };
+
     try {
       const accessToken = tokenStorage.getAccessToken();
       if (!accessToken) {
@@ -174,17 +277,32 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
       const decoded = decodeToken(accessToken);
       const expectedUserId =
         decoded?.user_id ?? decoded?.userId ?? decoded?.id ?? decoded?.sub;
-      if (expectedUserId == null) {
+      const accessTokenExpiryMs =
+        typeof decoded?.exp === "number" ? decoded.exp * 1000 : null;
+      if (
+        expectedUserId == null ||
+        accessTokenExpiryMs == null ||
+        Date.now() >= accessTokenExpiryMs
+      ) {
         return false;
       }
 
-      const { data } = await client.query({
+      const { data, errors } = await client.query({
         query: GET_CURRENT_USER,
         fetchPolicy: "network-only",
       });
 
+      if (Array.isArray(errors) && errors.some(isAuthError)) {
+        return false;
+      }
+
       const currentUserId = data?.me?.id;
       if (!currentUserId) {
+        if (Array.isArray(errors) && errors.length > 0) {
+          throw new SessionValidationIndeterminateError(
+            "Unable to verify current session identity.",
+          );
+        }
         return false;
       }
 
@@ -198,6 +316,35 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
       return isMatchingUser;
     } catch (e) {
+      if (e instanceof SessionValidationIndeterminateError) {
+        throw e;
+      }
+
+      const maybeError = e as {
+        message?: string;
+        networkError?: unknown;
+        graphQLErrors?: Array<{ extensions?: Record<string, unknown>; message?: string }>;
+      };
+
+      if (Array.isArray(maybeError.graphQLErrors) && maybeError.graphQLErrors.some(isAuthError)) {
+        return false;
+      }
+
+      const message = String(maybeError.message ?? "").toLowerCase();
+      const isTransientNetworkError =
+        !!maybeError.networkError ||
+        message.includes("network") ||
+        message.includes("fetch") ||
+        message.includes("offline") ||
+        message.includes("timeout") ||
+        message.includes("connection");
+
+      if (isTransientNetworkError) {
+        throw new SessionValidationIndeterminateError(
+          "Transient network error during session validation.",
+        );
+      }
+
       return false;
     }
   }, [client]);
