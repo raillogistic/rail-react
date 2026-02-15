@@ -267,7 +267,7 @@ export function TableHeader({
         <DraggableHead
           id="actions"
           draggable={false}
-          className="w-[70px] text-right sticky right-0 z-30 table-last-column border-l border-border/20 shadow-[-12px_0_15px_-10px_rgba(0,0,0,0.05)]"
+          className="w-[140px] text-right sticky right-0 z-30 table-last-column border-l border-border/20 shadow-[-12px_0_15px_-10px_rgba(0,0,0,0.05)]"
           density={density}
           isActions
         >

@@ -214,7 +214,7 @@ export function DataRow({
       <TableCell
         className={cn(
           cellPadding,
-          "w-[70px] shrink-0 px-3 text-right",
+          "w-[140px] shrink-0 px-3 text-right",
           "sticky right-0 z-10",
           "table-last-column table-sticky-cell",
           "bg-background/90 backdrop-blur-md border-l border-border/20",
