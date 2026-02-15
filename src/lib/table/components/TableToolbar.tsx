@@ -239,7 +239,7 @@ export function TableToolbar({
         {/* Main Toolbar Container */}
         <div
           className={cn(
-            "group flex flex-col gap-3 rounded-[2rem] border border-border/40 bg-background/50 p-2 shadow-2xl backdrop-blur-2xl transition-all duration-500 hover:border-primary/20 hover:bg-background/60",
+            "group flex flex-col gap-3 rounded-[2rem] border border-border/40 bg-background/50 p-2 shadow-sm backdrop-blur-2xl transition-all duration-500 hover:border-primary/20 hover:bg-background/60",
             hasActiveFilters && "ring-1 ring-primary/20 border-primary/30",
           )}
         >

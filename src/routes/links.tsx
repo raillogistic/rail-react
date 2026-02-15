@@ -124,7 +124,11 @@ const CORE_NAVIGATION_LINKS: NavigationSection[] = [
         description: "Progress view for ModelTableV2 (store.Order)",
         component: (
           <>
-            <ModelTableV2 app="store" model="Product" />
+            <ModelTableV2
+              app="store"
+              model="Product"
+              baseTable={{ tableConfig: { title: "Liste des produits" } }}
+            />
           </>
         ),
       },
@@ -137,7 +141,11 @@ const CORE_NAVIGATION_LINKS: NavigationSection[] = [
         description: "Progress view for ModelTableV2 (store.Order)",
         component: (
           <>
-            <BaseModelTable app="store" model="Product" />
+            <BaseModelTable
+              app="store"
+              model="Product"
+              tableConfig={{ title: "Liste des produits" }}
+            />
           </>
         ),
       },

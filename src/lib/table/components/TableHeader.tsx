@@ -68,21 +68,21 @@ function DraggableHead({
       style={style}
       className={cn(
         "group/col relative sticky top-0 z-20 whitespace-nowrap overflow-visible",
-        "border-b border-border/40",
-        "bg-background/80 backdrop-blur-md text-left",
+        "border-b border-border/60 shadow-sm",
+        "bg-muted/80 dark:bg-muted/90 backdrop-blur-xl text-left",
         "transition-all duration-300",
-        // Colored accent line on bottom
+        // Enhanced accent line on bottom
         "after:absolute after:left-0 after:bottom-[-1px] after:h-[2px] after:w-0 after:bg-primary after:transition-all hover:after:w-full",
         density === "compact"
-          ? "h-9 p-0 text-[11px] font-bold uppercase tracking-wider"
+          ? "h-10 p-0 text-[10px] font-black uppercase tracking-[0.2em]"
           : density === "spacious"
-            ? "h-14 p-0 text-[14px] font-semibold"
-            : "h-11 p-0 text-[13px] font-semibold",
+            ? "h-16 p-0 text-[14px] font-black tracking-tight"
+            : "h-12 p-0 text-[12px] font-black uppercase tracking-[0.15em]",
         isDragging &&
-          "opacity-30 scale-95 shadow-2xl z-30 ring-2 ring-primary/20 bg-muted",
-        "hover:bg-muted/40 hover:text-foreground text-muted-foreground/80",
+          "opacity-30 scale-95 shadow-3xl z-30 ring-2 ring-primary/30 bg-muted/80",
+        "hover:bg-muted/90 hover:text-primary dark:hover:bg-primary/10 text-muted-foreground/70 dark:text-muted-foreground/80",
         isActions &&
-          "bg-muted/30 font-bold text-[10px] uppercase tracking-widest",
+          "bg-muted/90 dark:bg-muted/20 font-black text-[10px] uppercase tracking-[0.25em] text-primary/70",
         className,
       )}
       aria-sort={ariaSort}
@@ -93,8 +93,8 @@ function DraggableHead({
             type="button"
             aria-label="Reordonner la colonne"
             className={cn(
-              "h-full px-2.5 border-r border-border/20",
-              "text-muted-foreground/40 hover:text-primary hover:bg-primary/5",
+              "h-full px-2.5 border-r border-border/10",
+              "text-muted-foreground/30 hover:text-primary hover:bg-primary/5",
               "cursor-grab active:cursor-grabbing transition-all",
               "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50",
             )}
@@ -102,7 +102,7 @@ function DraggableHead({
             {...listeners}
             onClick={(event) => event.stopPropagation()}
           >
-            <GripVertical className="h-3.5 w-3.5" />
+            <GripVertical className="h-4 w-4" />
           </button>
         ) : null}
         <div className="flex items-stretch gap-0 flex-1 min-w-0 h-full group/title">
@@ -118,8 +118,8 @@ function DraggableHead({
             "absolute right-0 top-0 z-40 h-full w-2 translate-x-1",
             "cursor-col-resize touch-none select-none",
             "opacity-0 transition-opacity group-hover/col:opacity-100",
-            "after:absolute after:right-1 after:top-1/2 after:h-8 after:w-px",
-            "after:-translate-y-1/2 after:bg-primary/60",
+            "after:absolute after:right-1 after:top-1/4 after:h-1/2 after:w-[2px]",
+            "after:bg-primary/40 after:rounded-full after:transition-all hover:after:bg-primary",
           )}
           onPointerDown={onResizePointerDown}
           onClick={(event) => event.stopPropagation()}
@@ -280,22 +280,20 @@ export function TableHeader({
     }
   };
 
-  if (!metadata && !columns) return null;
-
   return (
-    <ShadcnTableHeader className="bg-muted/5 group/header">
+    <ShadcnTableHeader className="bg-transparent group/header">
       <TableRow className="border-b-0 hover:bg-transparent transition-none">
         {enableSelection ? (
           <TableHead
             className={cn(
-              "w-[46px] table-first-column sticky top-0 z-20 overflow-visible",
-              "border-b border-border/40 bg-background/80 backdrop-blur-md",
+              "w-[50px] table-first-column sticky top-0 z-20 overflow-visible",
+              "border-b border-border/60 bg-muted/80 dark:bg-muted/90 backdrop-blur-xl shadow-sm",
               "transition-colors duration-200",
               density === "compact"
-                ? "py-0 px-2 h-9"
+                ? "py-0 px-2 h-10"
                 : density === "spacious"
-                  ? "py-0 px-3.5 h-14"
-                  : "py-0 px-3 h-11",
+                  ? "py-0 px-3.5 h-16"
+                  : "py-0 px-3 h-12",
             )}
           >
             <div className="flex items-center justify-center h-full">
@@ -305,7 +303,7 @@ export function TableHeader({
                 }
                 onCheckedChange={toggleSelectAll}
                 aria-label="Tout sélectionner"
-                className="h-4.5 w-4.5 transition-all duration-300 data-[state=checked]:bg-primary data-[state=checked]:scale-110 data-[state=checked]:shadow-lg data-[state=checked]:shadow-primary/20"
+                className="h-5 w-5 rounded-lg border-muted-foreground/30 transition-all duration-300 data-[state=checked]:bg-primary data-[state=checked]:border-primary data-[state=checked]:scale-110 data-[state=checked]:shadow-lg data-[state=checked]:shadow-primary/30"
               />
             </div>
           </TableHead>
@@ -373,17 +371,20 @@ export function TableHeader({
           );
         })}
 
-        {/* Actions Column */}
+        {/* Actions Column Header - Modern & Distinct */}
         <DraggableHead
           id="actions"
           draggable={false}
-          className="w-[140px] text-right sticky right-0 z-30 table-last-column border-l border-border/20 shadow-[-12px_0_15px_-10px_rgba(0,0,0,0.05)]"
+          className="w-[140px] text-right sticky right-0 z-30 table-last-column border-l border-border/10 shadow-[-15px_0_20px_-12px_rgba(0,0,0,0.1)] dark:shadow-[-15px_0_30px_-12px_rgba(0,0,0,0.3)] bg-background/95 backdrop-blur-xl"
           density={density}
           isActions
         >
-          <span className="block w-full pr-4 text-[10px] font-bold uppercase tracking-[0.15em] opacity-60">
-            {actionsLabel ?? ""}
-          </span>
+          <div className="flex w-full items-center justify-end pr-5 gap-2 group/action-header">
+             <span className="block text-[9px] font-black uppercase tracking-[0.25em] text-primary/80 dark:text-primary/60 group-hover/action-header:text-primary transition-colors">
+              {actionsLabel ?? "Actions"}
+            </span>
+            <div className="h-1.5 w-1.5 rounded-full bg-primary/20 group-hover/action-header:bg-primary transition-all group-hover/action-header:scale-125" />
+          </div>
         </DraggableHead>
       </TableRow>
     </ShadcnTableHeader>

@@ -240,9 +240,12 @@ function buildMutationOperationNames(
 }
 
 function buildMutationLabel(mutation: MutationSchema, actionUi: Record<string, unknown>): string {
+  const uiButtonTitle = actionUi.button_title ?? actionUi.buttonTitle;
+  if (typeof uiButtonTitle === "string" && uiButtonTitle.trim()) {
+    return uiButtonTitle.trim();
+  }
   const uiTitle = actionUi.title;
   if (typeof uiTitle === "string" && uiTitle.trim()) return uiTitle.trim();
-  if (mutation.description && mutation.description.trim()) return mutation.description.trim();
   return humanizeLabel(mutation.methodName || mutation.name || "Action");
 }
 
@@ -844,6 +847,15 @@ export function RowActions({
                   const modeBadgeLabel =
                     entry.mode === "form" ? "FORM" : "CONFIRM";
                   const severity = String(entry.ui.severity ?? "default");
+                  const description =
+                    typeof entry.mutation.description === "string" &&
+                    entry.mutation.description.trim()
+                      ? entry.mutation.description.trim()
+                      : null;
+                  const tooltipText =
+                    entry.disabledReason && description
+                      ? `${entry.disabledReason}\n${description}`
+                      : entry.disabledReason || description || undefined;
                   const iconClassName =
                     severity === "destructive"
                       ? "bg-rose-500/10 text-rose-600 dark:text-rose-400 group-hover/custom:bg-rose-500 group-hover/custom:text-white"
@@ -852,7 +864,7 @@ export function RowActions({
                     <DropdownMenuItem
                       key={`metadata-row-action:${rowId}:${entry.mutation.name}`}
                       disabled={entry.disabled}
-                      title={entry.disabledReason ?? undefined}
+                      title={tooltipText}
                       onClick={() => openMutationAction(entry)}
                       className="group/custom flex items-center gap-3 rounded-lg py-2.5 text-xs font-medium transition-all"
                     >
