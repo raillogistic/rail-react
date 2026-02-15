@@ -1,8 +1,20 @@
 export type PermissionMatchingUser = {
-  permissions?: string[] | null;
-  roles?: Array<{
-    permissions?: Array<{ codename: string }> | null;
-  }> | null;
+  permissions?:
+    | Array<string | { codename?: string | null; name?: string | null }>
+    | null;
+  roles?:
+    | Array<
+        | string
+        | {
+            permissions?:
+              | Array<
+                  | string
+                  | { codename?: string | null; name?: string | null }
+                >
+              | null;
+          }
+      >
+    | null;
 };
 
 const escapeRegExp = (value: string): string =>
@@ -63,17 +75,32 @@ export const userHasPermission = (
   for (const perm of user.permissions ?? []) {
     if (typeof perm === "string") {
       granted.push(perm);
+      continue;
+    }
+    if (perm?.codename) {
+      granted.push(perm.codename);
+      continue;
+    }
+    if (perm?.name) {
+      granted.push(perm.name);
     }
   }
 
   for (const role of user.roles ?? []) {
+    if (typeof role === "string") {
+      continue;
+    }
+
     for (const perm of role.permissions ?? []) {
-      if (perm?.codename) {
+      if (typeof perm === "string") {
+        granted.push(perm);
+      } else if (perm?.codename) {
         granted.push(perm.codename);
+      } else if (perm?.name) {
+        granted.push(perm.name);
       }
     }
   }
 
   return granted.some((g) => matchesPermission(g, requiredPermission));
 };
-

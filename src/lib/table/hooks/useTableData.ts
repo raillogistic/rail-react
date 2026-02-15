@@ -81,33 +81,27 @@ export function useTableData(config?: TableDataConfig) {
     },
   );
 
+  const primaryKey = metadata?.primaryKey || "id";
+
   const mergeUniqueRows = useMemo(
     () =>
       (
         existing: Record<string, unknown>[],
         incoming: Record<string, unknown>[],
       ) => {
-        const merged = [...existing];
-        const seen = new Set<string>();
-        existing.forEach((row) => {
-          if (row?.id !== undefined && row?.id !== null) {
-            seen.add(String(row.id));
-          }
+        if (incoming.length === 0) return existing;
+        const seen = new Set(existing.map((row) => String(row[primaryKey])));
+        const newRows = incoming.filter((row) => {
+          const key = row[primaryKey];
+          if (key === undefined || key === null) return true;
+          const strKey = String(key);
+          if (seen.has(strKey)) return false;
+          seen.add(strKey);
+          return true;
         });
-        incoming.forEach((row) => {
-          const rowId = row?.id;
-          if (rowId === undefined || rowId === null) {
-            merged.push(row);
-            return;
-          }
-          const key = String(rowId);
-          if (seen.has(key)) return;
-          seen.add(key);
-          merged.push(row);
-        });
-        return merged;
+        return [...existing, ...newRows];
       },
-    [],
+    [primaryKey],
   );
 
   useEffect(() => {

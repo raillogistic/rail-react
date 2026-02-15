@@ -22,6 +22,41 @@ const normalizeAuthUser = (
   rawUser: Record<string, any> | null | undefined,
   fallbackPermissions?: string[] | null,
 ): AuthUser => {
+  const normalizePermissionValue = (value: unknown): string | null => {
+    if (typeof value === "string" && value.trim().length > 0) {
+      return value;
+    }
+    if (!value || typeof value !== "object") {
+      return null;
+    }
+
+    const maybeObject = value as {
+      codename?: unknown;
+      name?: unknown;
+      permission?: unknown;
+    };
+
+    if (
+      typeof maybeObject.codename === "string" &&
+      maybeObject.codename.trim().length > 0
+    ) {
+      return maybeObject.codename;
+    }
+    if (
+      typeof maybeObject.name === "string" &&
+      maybeObject.name.trim().length > 0
+    ) {
+      return maybeObject.name;
+    }
+    if (
+      typeof maybeObject.permission === "string" &&
+      maybeObject.permission.trim().length > 0
+    ) {
+      return maybeObject.permission;
+    }
+    return null;
+  };
+
   const rawRoles = Array.isArray(rawUser?.roles) ? rawUser.roles : [];
   const roleNames = rawRoles
     .map((role) => {
@@ -35,11 +70,25 @@ const normalizeAuthUser = (
     })
     .filter((role): role is string => !!role);
 
-  const permissions = Array.isArray(rawUser?.permissions)
+  const directPermissions = Array.isArray(rawUser?.permissions)
     ? rawUser.permissions
     : Array.isArray(fallbackPermissions)
       ? fallbackPermissions
       : [];
+  const rolePermissions = rawRoles.flatMap((role) => {
+    if (!role || typeof role === "string") {
+      return [];
+    }
+    const maybePermissions = (role as { permissions?: unknown }).permissions;
+    return Array.isArray(maybePermissions) ? maybePermissions : [];
+  });
+  const permissions = Array.from(
+    new Set(
+      [...directPermissions, ...rolePermissions]
+        .map(normalizePermissionValue)
+        .filter((permission): permission is string => !!permission),
+    ),
+  );
 
   const resolvedId =
     rawUser?.id ?? rawUser?.user_id ?? rawUser?.userId ?? rawUser?.sub ?? "";
@@ -257,6 +306,7 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
       await client.mutate({
         mutation: LOGOUT_MUTATION,
         context: {
+          useAuthEndpoint: true,
           skipAuthRefresh: true,
           skipAuthRedirect: true,
           skipAuthErrorHandling: true,
@@ -276,6 +326,7 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
       const { data } = await client.mutate({
         mutation: REFRESH_TOKEN_MUTATION,
         variables: { refresh_token: refreshToken },
+        context: { useAuthEndpoint: true },
       });
 
       const { refresh_token } = data;

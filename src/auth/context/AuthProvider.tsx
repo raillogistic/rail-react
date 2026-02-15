@@ -148,6 +148,21 @@ export function AuthProvider({
   );
 }
 
+export function withAuth<P extends object>(
+  Component: React.ComponentType<P & { auth: AuthContextValue }>,
+): React.FC<P> {
+  const WithAuthComponent: React.FC<P> = (props) => {
+    const auth = useAuthContext();
+    return <Component {...(props as P)} auth={auth} />;
+  };
+
+  WithAuthComponent.displayName = `withAuth(${
+    Component.displayName ?? Component.name ?? 'Component'
+  })`;
+
+  return WithAuthComponent;
+}
+
 export function useAuthContext(): AuthContextValue {
   const context = useContext(AuthContext);
   if (!context) {

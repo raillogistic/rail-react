@@ -367,6 +367,8 @@ const createErrorLink = () => {
 
 const authOperationNames = new Set<string>([
   'Login',
+  'Logout',
+  'RefreshToken',
   'SetupMFA',
   'VerifyMFASetup',
   'VerifyMFALogin',

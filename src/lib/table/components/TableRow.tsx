@@ -24,6 +24,7 @@ import type {
 import { DataRow, GroupedRow } from "./row";
 import { normalizeRelationKey, toLabel } from "./row/utils/statsHelpers";
 import type { StatsRelationMeta } from "./row/RelationStatsHover";
+import { buildAccessorPath, resolveValueOptimized } from "../utils/valueResolution";
 
 export function TableRows({
   loadingText,
@@ -91,26 +92,23 @@ export function TableRows({
     return lookup;
   }, [metadata?.relationships]);
 
-  const resolveValue = (row: Record<string, unknown>, accessor: string) =>
-    accessor.split(".").reduce<unknown>((acc, key) => {
-      if (!acc || typeof acc !== "object") return undefined;
-      const record = acc as Record<string, unknown>;
-      if (Object.prototype.hasOwnProperty.call(record, key)) return record[key];
-      const camelKey = key.replace(/_([a-z])/g, (_, letter: string) =>
-        letter.toUpperCase(),
-      );
-      if (Object.prototype.hasOwnProperty.call(record, camelKey)) {
-        return record[camelKey];
-      }
-      const snakeKey = key
-        .replace(/([A-Z])/g, "_$1")
-        .toLowerCase()
-        .replace(/^_/, "");
-      if (Object.prototype.hasOwnProperty.call(record, snakeKey)) {
-        return record[snakeKey];
-      }
-      return undefined;
-    }, row);
+  // Pre-compute accessor paths for optimized resolution
+  const accessorPaths = useMemo(() => {
+    const paths = new Map<string, string[]>();
+    if (columns) {
+      columns.forEach((col) => {
+        if ("accessor" in col) {
+          paths.set(col.accessor, buildAccessorPath(col.accessor));
+        }
+      });
+    }
+    return paths;
+  }, [columns]);
+
+  const resolveValue = (row: Record<string, unknown>, accessor: string) => {
+    const path = accessorPaths.get(accessor) ?? buildAccessorPath(accessor);
+    return resolveValueOptimized(row, path);
+  };
 
   const formatFallbackValue = (value: unknown) => {
     if (value === null || value === undefined) return "-";

@@ -16,6 +16,7 @@ const CSRF_COOKIE_NAME =
   (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_CSRF_COOKIE_NAME) ||
   'csrftoken';
 const SESSION_STATUS_KEY = 'rail_session_active';
+const SESSION_INVALIDATION_BROADCAST_KEY = 'rail_session_invalidated_at';
 export const AUTH_SESSION_EVENT = 'auth-session-change';
 
 // Fallback storage keys for non-HttpOnly copies (session scoped)
@@ -42,9 +43,33 @@ let csrfToken: string | null = null;
 let memoryAccessToken: string | null = null;
 let memoryRefreshToken: string | null = null;
 let memoryAccessTokenExpiry: number | null = null;
+let crossTabSessionListenerRegistered = false;
 
 const isBrowserEnvironment = () =>
   typeof window !== 'undefined' && typeof window.sessionStorage !== 'undefined';
+
+const registerCrossTabSessionListener = (): void => {
+  if (!isBrowserEnvironment() || crossTabSessionListenerRegistered) {
+    return;
+  }
+
+  try {
+    window.addEventListener('storage', (event: StorageEvent) => {
+      if (
+        event.key !== SESSION_INVALIDATION_BROADCAST_KEY ||
+        event.newValue == null
+      ) {
+        return;
+      }
+
+      persistSessionFlag(false);
+      emitSessionEvent(false);
+    });
+    crossTabSessionListenerRegistered = true;
+  } catch {
+    // ignore
+  }
+};
 
 // Best-effort cleanup of any previously persisted token copies.
 // Keeping tokens out of Web Storage reduces the XSS blast radius.
@@ -52,6 +77,8 @@ const isBrowserEnvironment = () =>
   if (!isBrowserEnvironment()) {
     return;
   }
+
+  registerCrossTabSessionListener();
 
   try {
     const storage = window.sessionStorage;
@@ -91,6 +118,24 @@ const emitSessionEvent = (isActive: boolean): void => {
 
   try {
     window.dispatchEvent(new CustomEvent(AUTH_SESSION_EVENT, { detail: { isActive } }));
+  } catch {
+    // ignore
+  }
+};
+
+const broadcastSessionInvalidation = (): void => {
+  if (
+    typeof window === 'undefined' ||
+    typeof window.localStorage === 'undefined'
+  ) {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(
+      SESSION_INVALIDATION_BROADCAST_KEY,
+      Date.now().toString(),
+    );
   } catch {
     // ignore
   }
@@ -311,6 +356,9 @@ export const tokenStorage: TokenStorage = {
   setSessionActive: (isActive: boolean): void => {
     persistSessionFlag(isActive);
     emitSessionEvent(isActive);
+    if (!isActive) {
+      broadcastSessionInvalidation();
+    }
   },
 
   getAccessTokenTimeToExpiry: (): number => {
