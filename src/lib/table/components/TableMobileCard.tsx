@@ -59,34 +59,6 @@ export function TableMobileCard({
 
   if (!metadata) return null;
 
-  if (loading && data.length === 0) {
-    return (
-      <div className="space-y-3 md:hidden">
-        {[1, 2, 3].map((i) => (
-          <Card key={i}>
-            <CardHeader>
-              <Skeleton className="h-5 w-[180px]" />
-              <Skeleton className="h-3 w-[120px]" />
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-full" />
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    );
-  }
-
-  if (data.length === 0) {
-    return (
-      <div className="rounded-lg border p-4 text-center text-muted-foreground md:hidden">
-        {emptyState ?? "Aucun resultat."}
-      </div>
-    );
-  }
-
   const byName = useMemo(
     () => new Map(metadata.fields.map((field) => [field.name, field])),
     [metadata.fields],
@@ -290,6 +262,34 @@ export function TableMobileCard({
       </Card>
     );
   };
+
+  if (loading && data.length === 0) {
+    return (
+      <div className="space-y-3 md:hidden">
+        {[1, 2, 3].map((i) => (
+          <Card key={i}>
+            <CardHeader>
+              <Skeleton className="h-5 w-[180px]" />
+              <Skeleton className="h-3 w-[120px]" />
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-full" />
+              <Skeleton className="h-4 w-full" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
+  if (data.length === 0) {
+    return (
+      <div className="rounded-lg border p-4 text-center text-muted-foreground md:hidden">
+        {emptyState ?? "Aucun resultat."}
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-3 md:hidden">
