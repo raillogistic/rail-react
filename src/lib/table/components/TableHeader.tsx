@@ -67,7 +67,7 @@ function DraggableHead({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "group/col relative sticky top-0 z-20 whitespace-nowrap overflow-visible",
+        "group/col  font-bold sticky top-0 z-20 whitespace-nowrap overflow-visible",
         "border-b border-primary/20 shadow-sm",
         "bg-primary/95 dark:bg-primary backdrop-blur-xl text-left",
         "transition-all duration-300",
@@ -251,8 +251,7 @@ export function TableHeader({
       .map((colId) => metadata.fields.find((f) => f.name === colId))
       .filter(
         (f) =>
-          f &&
-          resolveColumnVisibility(columnVisibility, [f.name, f.fieldName]),
+          f && resolveColumnVisibility(columnVisibility, [f.name, f.fieldName]),
       );
   })();
 
@@ -323,7 +322,9 @@ export function TableHeader({
                   allowDrag && dragModeEnabled && !locked.has(columnId)
                 }
                 resizable={dragModeEnabled}
-                onResizePointerDown={(event) => startColumnResize(columnId, event)}
+                onResizePointerDown={(event) =>
+                  startColumnResize(columnId, event)
+                }
                 widthStyle={getColumnWidthStyle(columnWidths, columnId)}
                 density={density}
               >
@@ -352,7 +353,9 @@ export function TableHeader({
                 allowDrag && dragModeEnabled && !locked.has(field.name)
               }
               resizable={dragModeEnabled}
-              onResizePointerDown={(event) => startColumnResize(field.name, event)}
+              onResizePointerDown={(event) =>
+                startColumnResize(field.name, event)
+              }
               widthStyle={getColumnWidthStyle(columnWidths, field.name)}
               density={density}
             >
@@ -382,7 +385,7 @@ export function TableHeader({
           isActions
         >
           <div className="flex w-full items-center justify-end pr-5 gap-2 group/action-header">
-             <span className="block text-[9px] font-black uppercase tracking-[0.25em] text-primary-foreground/80 group-hover/action-header:text-primary-foreground transition-colors">
+            <span className="block text-[9px] font-black uppercase tracking-[0.25em] text-primary-foreground/80 group-hover/action-header:text-primary-foreground transition-colors">
               {actionsLabel ?? "Actions"}
             </span>
             <div className="h-1.5 w-1.5 rounded-full bg-primary-foreground/20 group-hover/action-header:bg-primary-foreground transition-all group-hover/action-header:scale-125" />

@@ -43,7 +43,7 @@ import {
 } from "@/lib/form/examples";
 import { ModelForm } from "@/lib/form";
 
-const STORE_ORDER_DEMO_ID = import.meta.env.VITE_STORE_ORDER_ID ?? "1";
+const STORE_ORDER_DEMO_ID = import.meta.env.VITE_STORE_ORDER_ID ?? "9";
 
 export const ROUTES = {
   LOGIN: "/login",
@@ -170,7 +170,7 @@ const CORE_NAVIGATION_LINKS: NavigationSection[] = [
         path: "/formold",
         component: (
           <>
-            <StoreOrderUpdateModelFormExample objectId={STORE_ORDER_DEMO_ID} />
+            <StoreOrderUpdateModelFormExample objectId={"1"} />
             {/* <AdvancedFeaturesForm/> */}
           </>
         ),

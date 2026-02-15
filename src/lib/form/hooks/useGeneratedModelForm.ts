@@ -281,7 +281,7 @@ function normalizeInitialValuesByContract(
     return { ...values };
   }
 
-  const nextValues: Record<string, any> = {};
+  let nextValues: Record<string, any> = {};
   let resolvedCount = 0;
 
   for (const field of contract.fields ?? []) {
@@ -299,8 +299,7 @@ function normalizeInitialValuesByContract(
     const normalizedFieldName = resolveContractFieldName(field) || field.path;
     if (!normalizedFieldName) continue;
     
-    // Use setValue directly for building (it handles nesting)
-    setValueByPath(nextValues, normalizedFieldName, resolved);
+    nextValues = setValueByPath(nextValues, normalizedFieldName, resolved);
     resolvedCount += 1;
   }
 
@@ -318,7 +317,7 @@ function normalizeInitialValuesByContract(
     const relationFieldName = resolveRelationFieldName(relation) || relation.path;
     if (!relationFieldName) continue;
     
-    setValueByPath(nextValues, relationFieldName, resolved);
+    nextValues = setValueByPath(nextValues, relationFieldName, resolved);
     resolvedCount += 1;
   }
 
