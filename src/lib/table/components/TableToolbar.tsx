@@ -33,7 +33,11 @@ import type {
   ModelTableFilterPanelProps,
   ModelTableV2TableConfig,
 } from "../config/types";
-import { getDefaultHiddenColumnIds, resolveGroupingKey } from "../utils";
+import {
+  getDefaultHiddenColumnIds,
+  resolveColumnVisibility,
+  resolveGroupingKey,
+} from "../utils";
 import { ModelTableExportDialog } from "./ExportDialog";
 import { ColumnsMenu, GroupingMenu, QuickSearch, ViewOptionsMenu } from "./toolbar";
 
@@ -139,8 +143,10 @@ export function TableToolbar({
   const allColumnsVisible =
     orderedColumns.length > 0 &&
     orderedColumns.every((column) => {
-      const id = column.fieldName || column.name;
-      return columnVisibility[id] ?? true;
+      return resolveColumnVisibility(columnVisibility, [
+        column.name,
+        column.fieldName,
+      ]);
     });
 
   const groupableFields = useMemo(() => {
@@ -163,10 +169,14 @@ export function TableToolbar({
     return Array.from(keys);
   }, [data, groupingField]);
 
-  const toggleColumn = (columnId: string, checked: boolean) => {
+  const toggleColumn = (
+    column: (typeof orderedColumns)[number],
+    checked: boolean,
+  ) => {
     setColumnVisibility({
       ...columnVisibility,
-      [columnId]: checked,
+      [column.name]: checked,
+      [column.fieldName]: checked,
     });
   };
 
@@ -195,8 +205,8 @@ export function TableToolbar({
   const setAllColumnsVisibility = (checked: boolean) => {
     const nextVisibility = { ...columnVisibility };
     orderedColumns.forEach((column) => {
-      const id = column.fieldName || column.name;
-      nextVisibility[id] = checked;
+      nextVisibility[column.name] = checked;
+      nextVisibility[column.fieldName] = checked;
     });
     setColumnVisibility(nextVisibility);
   };
@@ -206,8 +216,10 @@ export function TableToolbar({
     const defaultHidden = getDefaultHiddenColumnIds(metadata);
     const nextVisibility = { ...columnVisibility };
     orderedColumns.forEach((column) => {
-      const id = column.fieldName || column.name;
-      nextVisibility[id] = !defaultHidden.has(id);
+      const isVisible =
+        !defaultHidden.has(column.name) && !defaultHidden.has(column.fieldName);
+      nextVisibility[column.name] = isVisible;
+      nextVisibility[column.fieldName] = isVisible;
     });
     setColumnVisibility(nextVisibility);
   };

@@ -857,7 +857,11 @@ export function BaseTableContent({
 
       {hideTableOnMobile ? (
         <div className="flex-1 min-h-0 min-w-0 my-2 md:hidden">
-          <TableMobileCard emptyState={tableConfig?.emptyState} />
+          <TableMobileCard
+            emptyState={tableConfig?.emptyState}
+            refetch={refetch}
+            columnActions={columnActions}
+          />
         </div>
       ) : null}
 

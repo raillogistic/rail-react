@@ -12,6 +12,11 @@ import { AuthUser, LoginCredentials, TokenPair } from "../types";
 import { tokenStorage } from "../utils/token-storage";
 import { decodeToken } from "../utils/token";
 import { SessionValidationIndeterminateError } from "../services/SessionService";
+import {
+  createFallbackSessionId,
+  normalizeSessionIdClaim,
+  selectSessionIdFromTokenPayload,
+} from "./sessionIds";
 
 const normalizeAuthUser = (
   rawUser: Record<string, any> | null | undefined,
@@ -53,16 +58,6 @@ const normalizeAuthUser = (
   };
 };
 
-const normalizeSessionIdClaim = (value: unknown): string | null => {
-  if (typeof value === "string" && value.trim().length > 0) {
-    return value.trim();
-  }
-  if (typeof value === "number" && Number.isFinite(value)) {
-    return String(value);
-  }
-  return null;
-};
-
 const extractSessionIdFromToken = (
   token: string | null | undefined,
 ): string | null => {
@@ -75,21 +70,7 @@ const extractSessionIdFromToken = (
     return null;
   }
 
-  const candidates = [
-    decoded.session_id,
-    decoded.sessionId,
-    decoded.sid,
-    decoded.jti,
-  ];
-
-  for (const candidate of candidates) {
-    const resolved = normalizeSessionIdClaim(candidate);
-    if (resolved) {
-      return resolved;
-    }
-  }
-
-  return null;
+  return selectSessionIdFromTokenPayload(decoded);
 };
 
 export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
@@ -139,7 +120,7 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
         return backendSessionId;
       }
 
-      return "unknown-session";
+      return createFallbackSessionId();
     },
     [fetchCurrentSessionId],
   );

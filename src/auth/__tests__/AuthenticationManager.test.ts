@@ -200,6 +200,8 @@ describe('AuthenticationManager', () => {
 
     expect(authManager.getState().isAuthenticated).toBe(true);
     expect(authManager.getState().user?.id).toBe(mockUser.id);
+    expect(authManager.sessionService.getSession()?.userId).toBe(mockUser.id);
+    expect(authManager.hasPermission('profile:read')).toBe(true);
   });
 
   it('does not authenticate expired tokens during bootstrap validation', async () => {

@@ -147,11 +147,23 @@ export class AuthenticationManager {
           });
           return;
         }
+        const sessionExpiresAt = new Date(payload.exp * 1000);
+        const restoredSessionId = this.extractSessionIdFromPayload(payload);
+        this.permissionService.setPermissions(
+          userFromToken.permissions,
+          userFromToken.roles,
+        );
+        this.sessionService.startSession(
+          userFromToken,
+          restoredSessionId,
+          sessionExpiresAt,
+        );
         this.updateState({
           status: "authenticated",
           isAuthenticated: true,
           isLoading: false,
           user: userFromToken,
+          sessionExpiresAt,
         });
         return;
       }
@@ -538,6 +550,25 @@ export class AuthenticationManager {
       return true;
     }
     return payload.exp * 1000 <= Date.now();
+  }
+
+  private extractSessionIdFromPayload(payload: TokenPayload): string {
+    const candidates = [
+      payload.sessionId,
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (payload as any).session_id,
+      payload.jti,
+      payload.sub,
+      payload.user_id != null ? String(payload.user_id) : null,
+    ];
+
+    for (const candidate of candidates) {
+      if (typeof candidate === "string" && candidate.trim().length > 0) {
+        return candidate.trim();
+      }
+    }
+
+    return `restored-session-${Date.now()}`;
   }
 
   private shouldUseRememberMeFallback(): boolean {

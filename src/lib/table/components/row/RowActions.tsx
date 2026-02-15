@@ -1,6 +1,8 @@
-import React, { useMemo, useState } from "react";
+﻿import React, { useMemo, useState } from "react";
 import { gql, useMutation } from "@apollo/client";
 import {
+  FileSpreadsheet,
+  FileText,
   Loader2,
   MoreHorizontal,
   Pencil,
@@ -22,17 +24,27 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/lib/components/ui/dropdown-menu";
+import type { FormSchema } from "@/lib/form/inputs/types";
 import { useMetadata } from "../../context/MetadataContext";
 import { useTable } from "../../context/TableContext";
 import { findMutation, normalizeMutationType } from "../../utils";
+import {
+  buildTemplateClientSchema,
+  executeTemplateForRows,
+  normalizeTemplateType,
+  parseTemplateClientFields,
+} from "../../utils/templateExecution";
+import { PrintDialog } from "../ModelTableOverlays";
 import type {
   BaseModelTableColumnActionContext,
   BaseModelTableColumnActionsInput,
   BaseModelTableRefetch,
   RowMutationPermissions,
+  TemplateInfo,
 } from "../../types";
 
 type RowActionsProps = {
@@ -53,9 +65,22 @@ export function RowActions({
   const { model, metadata } = useMetadata();
   const { refresh } = useTable();
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [printTemplate, setPrintTemplate] = useState<TemplateInfo | null>(null);
+  const [printTemplateSchema, setPrintTemplateSchema] =
+    useState<FormSchema | null>(null);
+
   const rowIdValue = row.id;
   const rowId =
     rowIdValue === undefined || rowIdValue === null ? "" : String(rowIdValue);
+
+  const templateEntries = useMemo(
+    () =>
+      (metadata?.templates ?? []).filter(
+        (entry): entry is TemplateInfo => !!entry && typeof entry === "object",
+      ),
+    [metadata?.templates],
+  );
+
   const baseMutations = metadata?.mutations ?? [];
   const baseDeleteMutation = findMutation(baseMutations, "delete");
   const baseUpdateMutation = findMutation(baseMutations, "update");
@@ -65,8 +90,10 @@ export function RowActions({
     const type = normalizeMutationType(mutation);
     return type === "update" || type === "delete";
   });
+
   const canDelete = !!rowId && baseCanDelete && (permissions?.canDelete ?? true);
   const canEdit = baseCanEdit && (permissions?.canUpdate ?? true);
+
   const actionContext = useMemo<BaseModelTableColumnActionContext>(
     () => ({
       row,
@@ -75,6 +102,7 @@ export function RowActions({
     }),
     [data, refetch, row],
   );
+
   const customActions = useMemo(() => {
     const source =
       typeof columnActions === "function"
@@ -82,8 +110,11 @@ export function RowActions({
         : columnActions;
     return source ?? [];
   }, [actionContext, columnActions]);
+
+  const hasTemplateActions = templateEntries.length > 0;
   const hasBuiltinActions = canEdit || canDelete;
-  const hasAnyActions = hasBuiltinActions || customActions.length > 0;
+  const hasAnyActions =
+    hasBuiltinActions || hasTemplateActions || customActions.length > 0;
 
   const deleteMutationName = baseDeleteMutation?.name || `delete${model}`;
   const deleteDocument = useMemo(
@@ -97,6 +128,7 @@ export function RowActions({
       `,
     [deleteMutationName],
   );
+
   const [executeDelete, { loading: deleting }] = useMutation(deleteDocument, {
     errorPolicy: "all",
   });
@@ -106,19 +138,19 @@ export function RowActions({
       const result = await executeDelete({ variables: { id: rowId } });
       const ok = !!result.data?.response?.ok;
       if (ok) {
-        toast.success(`${metadata?.verboseName ?? "Enregistrement"} supprimé.`);
+        toast.success(`${metadata?.verboseName ?? "Record"} deleted.`);
         refresh();
       } else {
         const message =
           result.data?.response?.errors
             ?.map((error: { message?: string }) => error?.message)
             .filter(Boolean)
-            .join(", ") || "Échec de suppression.";
+            .join(", ") || "Delete failed.";
         toast.error(message);
       }
     } catch (error) {
       console.error("Failed to delete record", error);
-      const message = error instanceof Error ? error.message : "Échec de suppression.";
+      const message = error instanceof Error ? error.message : "Delete failed.";
       toast.error(message);
     } finally {
       setConfirmOpen(false);
@@ -129,6 +161,54 @@ export function RowActions({
     console.info("Edit row action triggered", row);
   };
 
+  const closePrintDialog = () => {
+    setPrintTemplate(null);
+    setPrintTemplateSchema(null);
+  };
+
+  const runTemplate = async (
+    template: TemplateInfo,
+    clientData: Record<string, unknown> = {},
+  ) => {
+    if (!rowId) {
+      toast.error("This row does not expose a valid identifier.");
+      return;
+    }
+    const result = await executeTemplateForRows(template, [rowId], clientData);
+    if (result.templateType === "pdf") {
+      toast.success(`Template "${template.title}" generated.`);
+    } else {
+      toast.success(`Template "${template.title}" downloaded.`);
+    }
+  };
+
+  const handleTemplateAction = (template: TemplateInfo) => {
+    if (template.allowed === false) {
+      toast.error(
+        template.denialReason ||
+          "You do not have permission to use this template.",
+      );
+      return;
+    }
+    if (!rowId) {
+      toast.error("This row does not expose a valid identifier.");
+      return;
+    }
+
+    const clientFields = parseTemplateClientFields(template);
+    if (clientFields.length > 0) {
+      setPrintTemplate(template);
+      setPrintTemplateSchema(buildTemplateClientSchema(clientFields));
+      return;
+    }
+
+    void runTemplate(template).catch((error: unknown) => {
+      const message =
+        error instanceof Error ? error.message : "Failed to generate template.";
+      toast.error(message);
+    });
+  };
+
   const runCustomAction = (
     onClick: (context: BaseModelTableColumnActionContext) => void | Promise<void>,
   ) => {
@@ -136,12 +216,12 @@ export function RowActions({
       const message =
         error instanceof Error
           ? error.message
-          : "Échec de l'action personnalisée.";
+          : "Custom action failed.";
       toast.error(message);
     });
   };
 
-  if (!hasRowActions && customActions.length === 0) {
+  if (!hasRowActions && !hasTemplateActions && customActions.length === 0) {
     return null;
   }
 
@@ -164,12 +244,51 @@ export function RowActions({
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-44">
+            {hasTemplateActions ? (
+              <>
+                <DropdownMenuLabel>Templates</DropdownMenuLabel>
+                {templateEntries.map((template) => {
+                  const templateType = normalizeTemplateType(template);
+                  const disabledReason =
+                    template.allowed === false
+                      ? template.denialReason ||
+                        "You do not have permission to use this template."
+                      : !rowId
+                        ? "This row does not expose a valid identifier."
+                        : null;
+                  const disabled = Boolean(disabledReason);
+                  return (
+                    <DropdownMenuItem
+                      key={`row-template:${rowId}:${template.key}`}
+                      disabled={disabled}
+                      title={disabledReason ?? undefined}
+                      onClick={() => {
+                        if (disabled) return;
+                        handleTemplateAction(template);
+                      }}
+                    >
+                      {templateType === "excel" ? (
+                        <FileSpreadsheet className="h-3.5 w-3.5" />
+                      ) : (
+                        <FileText className="h-3.5 w-3.5" />
+                      )}
+                      {template.title || template.key}
+                    </DropdownMenuItem>
+                  );
+                })}
+                {(hasBuiltinActions || customActions.length > 0) ? (
+                  <DropdownMenuSeparator />
+                ) : null}
+              </>
+            ) : null}
+
             {canEdit ? (
               <DropdownMenuItem onClick={handleEdit}>
                 <Pencil className="h-3.5 w-3.5" />
                 Modifier
               </DropdownMenuItem>
             ) : null}
+
             {canDelete ? (
               <DropdownMenuItem
                 variant="destructive"
@@ -184,28 +303,34 @@ export function RowActions({
                 Supprimer
               </DropdownMenuItem>
             ) : null}
+
             {hasBuiltinActions && customActions.length > 0 ? (
               <DropdownMenuSeparator />
             ) : null}
+
             {customActions.map((action, index) => {
               const key = action.key ?? `custom-row-action-${index}`;
               if (typeof (action as { render?: unknown }).render === "function") {
                 const renderAction = (
-                  action as { render: (context: BaseModelTableColumnActionContext) => React.ReactNode }
+                  action as {
+                    render: (
+                      context: BaseModelTableColumnActionContext,
+                    ) => React.ReactNode;
+                  }
                 ).render;
-                return <React.Fragment key={key}>{renderAction(actionContext)}</React.Fragment>;
+                return (
+                  <React.Fragment key={key}>{renderAction(actionContext)}</React.Fragment>
+                );
               }
               if (typeof (action as { onClick?: unknown }).onClick !== "function") {
                 return null;
               }
-              const clickAction = (
-                action as {
-                  onClick: (
-                    context: BaseModelTableColumnActionContext,
-                  ) => void | Promise<void>;
-                  label?: string;
-                }
-              );
+              const clickAction = action as {
+                onClick: (
+                  context: BaseModelTableColumnActionContext,
+                ) => void | Promise<void>;
+                label?: string;
+              };
               return (
                 <DropdownMenuItem
                   key={key}
@@ -222,6 +347,7 @@ export function RowActions({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -229,8 +355,7 @@ export function RowActions({
               Supprimer {metadata?.verboseName} ?
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Cette action est irréversible. L'enregistrement sera supprimé
-              définitivement.
+              This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -241,6 +366,31 @@ export function RowActions({
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <PrintDialog
+        open={Boolean(printTemplate && printTemplateSchema)}
+        title={printTemplate?.title ?? "Template Parameters"}
+        schema={printTemplateSchema ?? { fields: [] }}
+        submitLabel={
+          printTemplate && normalizeTemplateType(printTemplate) === "excel"
+            ? "Download"
+            : "Generate"
+        }
+        cancelLabel="Cancel"
+        onCancel={closePrintDialog}
+        onSubmit={(values) => {
+          if (!printTemplate) return;
+          const template = printTemplate;
+          closePrintDialog();
+          void runTemplate(template, values).catch((error: unknown) => {
+            const message =
+              error instanceof Error
+                ? error.message
+                : "Failed to generate template.";
+            toast.error(message);
+          });
+        }}
+      />
     </>
   );
 }

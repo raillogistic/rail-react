@@ -14,6 +14,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/lib/components/ui/tooltip";
+import { resolveColumnVisibility } from "../../utils";
 import type { FieldSchema } from "../../types";
 
 type ColumnsMenuProps = {
@@ -22,7 +23,7 @@ type ColumnsMenuProps = {
   visibleColumns: FieldSchema[];
   columnVisibility: Record<string, boolean>;
   allColumnsVisible: boolean;
-  onToggleColumn: (columnId: string, checked: boolean) => void;
+  onToggleColumn: (column: FieldSchema, checked: boolean) => void;
   onSetAllColumnsVisibility: (checked: boolean) => void;
   onApplyDefaultColumnsVisibility: () => void;
 };
@@ -80,8 +81,11 @@ export function ColumnsMenu({
             return (
               <DropdownMenuCheckboxItem
                 key={id}
-                checked={columnVisibility[id] ?? true}
-                onCheckedChange={(v) => onToggleColumn(id, !!v)}
+                checked={resolveColumnVisibility(columnVisibility, [
+                  col.name,
+                  col.fieldName,
+                ])}
+                onCheckedChange={(v) => onToggleColumn(col, !!v)}
               >
                 {col.verboseName || col.name}
               </DropdownMenuCheckboxItem>

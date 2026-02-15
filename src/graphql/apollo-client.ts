@@ -6,6 +6,7 @@ import { createUploadLink } from 'apollo-upload-client';
 import { tokenStorage, getSecureHeaders } from '../auth/utils/token-storage';
 import { ensureCsrfCookie } from '../auth/utils/csrf';
 import { AuthError, AuthErrorType, handleAuthError } from '../auth/utils/error-handler';
+import { hasExplicitAuthorizationHeader } from './authHeaders';
 
 // Prefer environment configuration; fall back to local dev.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -208,11 +209,16 @@ const createAuthLink = () => {
 
     const token = tokenStorage.getAccessToken();
     const secureHeaders = getSecureHeaders();
+    const normalizedHeaders = (headers ?? {}) as Record<string, unknown>;
+    const shouldAttachAuthorization =
+      !hasExplicitAuthorizationHeader(normalizedHeaders) && !!token;
 
     return {
       headers: {
         ...headers,
-        ...(token && { authorization: `Bearer ${token}` }),
+        ...(shouldAttachAuthorization
+          ? { authorization: `Bearer ${token}` }
+          : {}),
         ...secureHeaders,
       },
     };
