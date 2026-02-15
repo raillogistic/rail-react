@@ -181,17 +181,35 @@ export interface FilterConfig {
   computedFilters?: unknown[];
 }
 
+export interface MutationInputFieldSchema {
+  name: string;
+  fieldName?: string;
+  fieldType?: string;
+  graphqlType?: string;
+  required?: boolean;
+  defaultValue?: unknown;
+  description?: string;
+  choices?: Choice[];
+  relatedModel?: string;
+}
+
 export interface MutationSchema {
   name: string;
   operation: string;
   description?: string;
   methodName?: string | null;
-  inputFields?: unknown[];
+  inputFields?: MutationInputFieldSchema[];
+  inputType?: string | null;
+  returnType?: string | null;
   allowed: boolean;
   requiredPermissions?: string[];
   reason?: string | null;
   mutationType?: string | null;
   modelName?: string | null;
+  formConfig?: string | Record<string, unknown> | null;
+  successMessage?: string | null;
+  errorMessages?: string | Record<string, unknown> | null;
+  action?: string | Record<string, unknown> | null;
   requiresAuthentication?: boolean | null;
 }
 

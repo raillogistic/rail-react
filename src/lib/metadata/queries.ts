@@ -148,11 +148,17 @@ export const TABLE_MODEL_METADATA_QUERY = gql`
           }
           relatedModel
         }
+        inputType
+        returnType
         allowed
         requiredPermissions
         reason
         mutationType
         modelName
+        formConfig
+        successMessage
+        errorMessages
+        action
         requiresAuthentication
       }
       permissions {
@@ -390,6 +396,8 @@ export const MODEL_METADATA_QUERY = gql`
           }
           relatedModel
         }
+        inputType
+        returnType
         allowed
         requiredPermissions
         reason
@@ -398,6 +406,8 @@ export const MODEL_METADATA_QUERY = gql`
         modelName
         formConfig
         successMessage
+        errorMessages
+        action
         requiresAuthentication
       }
       

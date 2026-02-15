@@ -14,7 +14,6 @@ import {
 import { Button } from "@/lib/components/ui/button";
 import DynamicForm from "@/lib/form/inputs/form";
 import type { FormSchema } from "@/lib/form/inputs/types";
-import type { MutationMetadata } from "../compat/types";
 import { cn } from "@/lib/utils";
 
 /**
@@ -158,7 +157,11 @@ export function DeleteConfirmationDialog({
 export type ActionDialogProps = {
   open: boolean;
   mode: "confirm" | "form" | null;
-  actionMeta: MutationMetadata | null;
+  actionMeta: {
+    name: string;
+    description?: string | null;
+    action?: string | Record<string, unknown> | null;
+  } | null;
   schema?: FormSchema | null;
   defaults?: Record<string, unknown>;
   submitting?: boolean;
@@ -177,21 +180,36 @@ export function ActionDialog({
   onExecute,
 }: ActionDialogProps) {
   if (!open || !actionMeta || !mode) return null;
+  const actionPayload =
+    typeof actionMeta.action === "string"
+      ? (() => {
+          try {
+            const parsed = JSON.parse(actionMeta.action);
+            return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+              ? (parsed as Record<string, unknown>)
+              : {};
+          } catch {
+            return {};
+          }
+        })()
+      : actionMeta.action && typeof actionMeta.action === "object"
+        ? actionMeta.action
+        : {};
   const severity =
-    (actionMeta.action?.severity as string | undefined) === "destructive"
+    (actionPayload.severity as string | undefined) === "destructive"
       ? "destructive"
       : "default";
   const confirmLabel =
-    (actionMeta.action?.confirm_label as string | undefined) ?? "Confirmer";
+    (actionPayload.confirm_label as string | undefined) ?? "Confirmer";
   const cancelLabel =
-    (actionMeta.action?.cancel_label as string | undefined) ?? "Annuler";
+    (actionPayload.cancel_label as string | undefined) ?? "Annuler";
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onCancel()}>
       <DialogContent className="max-w-xl">
         <DialogHeader className={mode === "confirm" ? undefined : "sr-only"}>
           <DialogTitle>
-            {(actionMeta.action?.title as string | undefined) ??
+            {(actionPayload.title as string | undefined) ??
               actionMeta.description ??
               actionMeta.name}
           </DialogTitle>
@@ -199,7 +217,7 @@ export function ActionDialog({
         {mode === "confirm" ? (
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
-              {(actionMeta.action?.message as string | undefined) ??
+              {(actionPayload.message as string | undefined) ??
                 (actionMeta.description as string | undefined) ??
                 "Voulez-vous exécuter cette action ?"}
             </p>
@@ -228,7 +246,7 @@ export function ActionDialog({
             }}
             actions={{
               submitLabel:
-                (actionMeta.action?.submit_label as string | undefined) ??
+                (actionPayload.submit_label as string | undefined) ??
                 "Exécuter",
               resetLabel: cancelLabel,
             }}

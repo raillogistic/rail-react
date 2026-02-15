@@ -141,6 +141,8 @@ export interface MutationMetadata {
   description?: string;
   methodName?: string;
   inputFields: MutationInputField[];
+  inputType?: string;
+  returnType?: string;
   allowed: boolean;
   requiredPermissions?: string[];
   reason?: string;
@@ -151,8 +153,7 @@ export interface MutationMetadata {
   formConfig?: string; // JSON string
   successMessage?: string;
   errorMessages?: Record<string, string>;
-  action?: string; // JSON string
-  inputType?: string;
+  action?: string | Record<string, unknown> | null; // JSON string or parsed object
   requiresAuthentication?: boolean;
 }
 
