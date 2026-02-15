@@ -304,6 +304,10 @@ export interface ColumnVisibilityState {
   [columnId: string]: boolean;
 }
 
+export interface ColumnWidthState {
+  [columnId: string]: number;
+}
+
 export interface TableContextState {
   // Data
   data: Record<string, unknown>[];
@@ -318,6 +322,7 @@ export interface TableContextState {
   // State
   pagination: PaginationState;
   columnVisibility: ColumnVisibilityState;
+  columnWidths: ColumnWidthState;
   columnOrder: string[];
   rowSelection: Record<string, boolean>;
   groupingField: string | null;
@@ -337,6 +342,7 @@ export interface TableContextState {
   setPage: (page: number) => void;
   setPerPage: (perPage: number) => void;
   setColumnVisibility: (visibility: ColumnVisibilityState) => void;
+  setColumnWidths: (widths: ColumnWidthState) => void;
   setColumnOrder: (order: string[]) => void;
   setRowSelection: (selection: Record<string, boolean>) => void;
   setGroupingField: (field: string | null) => void;

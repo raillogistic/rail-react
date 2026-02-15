@@ -60,6 +60,7 @@ export function TableColumnMenu({
     setGroupingField,
     setGroupCollapsed,
     setColumnOrder,
+    setColumnWidths,
     setActiveColumnFilter,
     dragModeEnabled,
     setDragModeEnabled,
@@ -137,6 +138,7 @@ export function TableColumnMenu({
   const handleResetColumns = () => {
     setColumnVisibility({});
     setColumnOrder([]);
+    setColumnWidths({});
   };
 
   const handleToggleDragMode = () => {

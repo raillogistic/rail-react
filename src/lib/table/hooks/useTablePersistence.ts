@@ -1,7 +1,7 @@
 import { useEffect, useRef, useCallback } from "react";
 import { gql, useApolloClient, useMutation } from "@apollo/client";
 import { useTable } from "../context/TableContext";
-import { ColumnVisibilityState, TableDensity } from "../types";
+import { ColumnVisibilityState, ColumnWidthState, TableDensity } from "../types";
 import { useAuthContext } from "@/auth/context";
 import {
   UPSERT_USER_TABLE_CONFIG_MUTATION_RESOLVED,
@@ -15,6 +15,7 @@ const VISIBILITY_SCHEMA_VERSION = 3;
 export interface PersistedTableState {
   columnOrder: string[];
   columnVisibility: ColumnVisibilityState;
+  columnWidths?: ColumnWidthState;
   perPage: number;
   density: TableDensity;
   wrapCells: boolean;
@@ -98,6 +99,20 @@ function parsePersistedTableStateInput(
     );
     if (Object.keys(visibility).length > 0) {
       next.columnVisibility = visibility;
+    }
+  }
+
+  if (typeof parsed.columnWidths === "object" && parsed.columnWidths) {
+    const widths: ColumnWidthState = {};
+    Object.entries(parsed.columnWidths as Record<string, unknown>).forEach(
+      ([columnId, width]) => {
+        if (typeof width === "number" && Number.isFinite(width) && width > 0) {
+          widths[columnId] = width;
+        }
+      },
+    );
+    if (Object.keys(widths).length > 0) {
+      next.columnWidths = widths;
     }
   }
 
@@ -196,11 +211,13 @@ export function useTablePersistence(key: string) {
   const {
     columnOrder,
     columnVisibility,
+    columnWidths,
     pagination: { perPage },
     density,
     wrapCells,
     setColumnOrder,
     setColumnVisibility,
+    setColumnWidths,
     setPerPage,
     setDensity,
     setWrapCells,
@@ -242,6 +259,9 @@ export function useTablePersistence(key: string) {
       if (parsed.columnVisibility) {
         setColumnVisibility(parsed.columnVisibility);
       }
+      if (parsed.columnWidths) {
+        setColumnWidths(parsed.columnWidths);
+      }
       if (typeof parsed.perPage === "number") {
         setPerPage(parsed.perPage);
       }
@@ -256,7 +276,14 @@ export function useTablePersistence(key: string) {
         setWrapCells(parsed.wrapCells);
       }
     },
-    [setColumnOrder, setColumnVisibility, setPerPage, setDensity, setWrapCells],
+    [
+      setColumnOrder,
+      setColumnVisibility,
+      setColumnWidths,
+      setPerPage,
+      setDensity,
+      setWrapCells,
+    ],
   );
 
   useEffect(() => {
@@ -397,6 +424,7 @@ export function useTablePersistence(key: string) {
       const stateToSave: PersistedTableState = {
         columnOrder,
         columnVisibility,
+        columnWidths,
         perPage,
         density,
         wrapCells,
@@ -423,6 +451,7 @@ export function useTablePersistence(key: string) {
     storageKey,
     columnOrder,
     columnVisibility,
+    columnWidths,
     perPage,
     density,
     wrapCells,

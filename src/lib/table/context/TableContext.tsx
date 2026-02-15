@@ -2,6 +2,7 @@ import { createContext, useContext, useReducer, ReactNode, useCallback } from "r
 import {
   TableContextState,
   ColumnVisibilityState,
+  ColumnWidthState,
   TableDensity,
 } from "../types";
 import { FilterFormState } from "../../filters/types";
@@ -22,6 +23,7 @@ type TableAction =
       hasPreviousPage?: boolean | null;
     }
   | { type: "SET_COLUMN_VISIBILITY"; visibility: ColumnVisibilityState }
+  | { type: "SET_COLUMN_WIDTHS"; widths: ColumnWidthState }
   | { type: "SET_COLUMN_ORDER"; order: string[] }
   | { type: "SET_ROW_SELECTION"; selection: Record<string, boolean> }
   | { type: "SET_GROUPING_FIELD"; field: string | null }
@@ -68,6 +70,7 @@ const initialState: TableContextState = {
     hasPreviousPage: false,
   },
   columnVisibility: {},
+  columnWidths: {},
   columnOrder: [],
   rowSelection: {},
   groupingField: null,
@@ -90,6 +93,7 @@ const initialState: TableContextState = {
   setPage: () => {},
   setPerPage: () => {},
   setColumnVisibility: () => {},
+  setColumnWidths: () => {},
   setColumnOrder: () => {},
   setRowSelection: () => {},
   setGroupingField: () => {},
@@ -164,6 +168,8 @@ function tableReducer(state: TableContextState, action: TableAction): TableConte
     }
     case "SET_COLUMN_VISIBILITY":
       return { ...state, columnVisibility: action.visibility };
+    case "SET_COLUMN_WIDTHS":
+      return { ...state, columnWidths: action.widths };
     case "SET_COLUMN_ORDER":
       return { ...state, columnOrder: action.order };
     case "SET_ROW_SELECTION":
@@ -244,6 +250,7 @@ export function TableProvider({ children, initialState: initialProps }: TablePro
     setPage: useCallback((page: number) => dispatch({ type: "SET_PAGE", page }), []),
     setPerPage: useCallback((perPage: number) => dispatch({ type: "SET_PER_PAGE", perPage }), []),
     setColumnVisibility: useCallback((visibility: ColumnVisibilityState) => dispatch({ type: "SET_COLUMN_VISIBILITY", visibility }), []),
+    setColumnWidths: useCallback((widths: ColumnWidthState) => dispatch({ type: "SET_COLUMN_WIDTHS", widths }), []),
     setColumnOrder: useCallback((order: string[]) => dispatch({ type: "SET_COLUMN_ORDER", order }), []),
     setRowSelection: useCallback((selection: Record<string, boolean>) => dispatch({ type: "SET_ROW_SELECTION", selection }), []),
     setGroupingField: useCallback((field: string | null) => dispatch({ type: "SET_GROUPING_FIELD", field }), []),

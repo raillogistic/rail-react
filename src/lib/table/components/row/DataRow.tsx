@@ -40,6 +40,7 @@ type DataRowProps = {
   modelName: string;
   whereType: string;
   queryManager?: string;
+  resolveColumnStyle: (columnId: string) => React.CSSProperties | undefined;
 };
 
 export function DataRow({
@@ -65,6 +66,7 @@ export function DataRow({
   modelName,
   whereType,
   queryManager,
+  resolveColumnStyle,
 }: DataRowProps) {
   const rowId = String(row.id);
   const isSelected = enableSelection && rowSelection[rowId];
@@ -138,6 +140,7 @@ export function DataRow({
           return (
             <TableCell
               key={field.id}
+              style={resolveColumnStyle(field.id)}
               className={cn(
                 cellPadding,
                 cellTextSize,
@@ -179,6 +182,7 @@ export function DataRow({
         return (
           <TableCell
             key={field.name}
+            style={resolveColumnStyle(field.name)}
             className={cn(
               cellPadding,
               cellTextSize,

@@ -1,8 +1,7 @@
 import { useMemo, useState } from "react";
-import { Download, Filter, ListFilter, RefreshCw, X } from "lucide-react";
+import { Download, Filter, GripVertical, ListFilter, RefreshCw, X } from "lucide-react";
 import { Button } from "@/lib/components/ui/button";
 import { Badge } from "@/lib/components/ui/badge";
-import { Separator } from "@/lib/components/ui/separator";
 import {
   Dialog,
   DialogContent,
@@ -18,7 +17,10 @@ import {
   SheetTrigger,
 } from "@/lib/components/ui/sheet";
 import {
+  Tooltip,
+  TooltipContent,
   TooltipProvider,
+  TooltipTrigger,
 } from "@/lib/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { useTable } from "../context/TableContext";
@@ -65,6 +67,8 @@ export function TableToolbar({
     setDensity,
     wrapCells,
     setWrapCells,
+    dragModeEnabled,
+    setDragModeEnabled,
     loading,
     refresh,
   } = useTable();
@@ -317,6 +321,36 @@ export function TableToolbar({
                 wrapCells={wrapCells}
                 onWrapChange={setWrapCells}
               />
+
+              <div className="h-4 w-px bg-border/20 mx-1" />
+
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setDragModeEnabled(!dragModeEnabled)}
+                    aria-label={
+                      dragModeEnabled
+                        ? "Desactiver le glisser-deposer"
+                        : "Activer le glisser-deposer"
+                    }
+                    className={cn(
+                      "h-8 w-8 p-0 rounded-lg transition-all",
+                      dragModeEnabled
+                        ? "bg-primary/10 text-primary hover:bg-primary/20"
+                        : "hover:bg-background hover:text-primary",
+                    )}
+                  >
+                    <GripVertical className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  {dragModeEnabled
+                    ? "Desactiver le glisser-deposer"
+                    : "Activer le glisser-deposer"}
+                </TooltipContent>
+              </Tooltip>
 
               <div className="h-4 w-px bg-border/20 mx-1" />
 

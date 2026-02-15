@@ -27,6 +27,7 @@ import { normalizeRelationKey, toLabel } from "./row/utils/statsHelpers";
 import type { StatsRelationMeta } from "./row/RelationStatsHover";
 import { buildAccessorPath, resolveValueOptimized } from "../utils/valueResolution";
 import { flattenGroupedData, type FlattenedRow } from "../utils/flattenData";
+import { getColumnWidthStyle } from "../utils/columnSizing";
 
 export function TableRows({
   loadingText,
@@ -64,6 +65,7 @@ export function TableRows({
     loading,
     columnOrder,
     columnVisibility,
+    columnWidths,
     rowSelection,
     setRowSelection,
     groupingField,
@@ -111,6 +113,11 @@ export function TableRows({
     const path = accessorPaths.get(accessor) ?? buildAccessorPath(accessor);
     return resolveValueOptimized(row, path);
   }, [accessorPaths]);
+
+  const resolveColumnStyle = useCallback(
+    (columnId: string) => getColumnWidthStyle(columnWidths, columnId),
+    [columnWidths],
+  );
 
   // 3. Columns Visibility
   const visibleColumns = useMemo(() => {
@@ -330,6 +337,7 @@ export function TableRows({
         modelName={metadata?.model || "Model"}
         whereType={whereType}
         queryManager={queryManager}
+        resolveColumnStyle={resolveColumnStyle}
       />
     );
   };

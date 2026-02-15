@@ -55,9 +55,11 @@ describe('TableContext', () => {
     act(() => {
       result.current.setDensity('compact');
       result.current.setWrapCells(true);
+      result.current.setColumnWidths({ username: 320 });
     });
 
     expect(result.current.density).toBe('compact');
     expect(result.current.wrapCells).toBe(true);
+    expect(result.current.columnWidths).toEqual({ username: 320 });
   });
 });

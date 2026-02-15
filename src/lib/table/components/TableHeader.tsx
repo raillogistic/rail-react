@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import { GripVertical } from "lucide-react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -10,16 +10,26 @@ import { Checkbox } from "@/lib/components/ui/checkbox";
 import { TableColumnMenu } from "./TableColumnMenu";
 import { ColumnFilter } from "./ColumnFilter";
 import { resolveColumnVisibility } from "../utils";
+import {
+  clampColumnWidth,
+  getColumnWidthStyle,
+  MIN_COLUMN_WIDTH_PX,
+} from "../utils/columnSizing";
 import type {
   BaseModelTableColumnDef,
   BaseModelTableColumnOrderingConfig,
 } from "../types";
+
+type ResizePointerHandler = (event: React.PointerEvent<HTMLDivElement>) => void;
 
 interface DraggableHeadProps {
   id: string;
   children: React.ReactNode;
   className?: string;
   draggable?: boolean;
+  resizable?: boolean;
+  onResizePointerDown?: ResizePointerHandler;
+  widthStyle?: React.CSSProperties;
   ariaSort?: React.AriaAttributes["aria-sort"];
   density?: "compact" | "comfortable" | "spacious";
   isActions?: boolean;
@@ -30,6 +40,9 @@ function DraggableHead({
   children,
   className,
   draggable = true,
+  resizable = false,
+  onResizePointerDown,
+  widthStyle,
   ariaSort,
   density = "comfortable",
   isActions = false,
@@ -46,6 +59,7 @@ function DraggableHead({
   const style = {
     transform: CSS.Translate.toString(transform),
     transition,
+    ...widthStyle,
   };
 
   return (
@@ -53,7 +67,7 @@ function DraggableHead({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "group/col sticky top-0 z-20 whitespace-nowrap overflow-visible",
+        "group/col relative sticky top-0 z-20 whitespace-nowrap overflow-visible",
         "border-b border-border/40",
         "bg-background/80 backdrop-blur-md text-left",
         "transition-all duration-300",
@@ -95,6 +109,22 @@ function DraggableHead({
           {children}
         </div>
       </div>
+      {resizable && onResizePointerDown ? (
+        <div
+          role="separator"
+          aria-orientation="vertical"
+          aria-label="Redimensionner la colonne"
+          className={cn(
+            "absolute right-0 top-0 z-40 h-full w-2 translate-x-1",
+            "cursor-col-resize touch-none select-none",
+            "opacity-0 transition-opacity group-hover/col:opacity-100",
+            "after:absolute after:right-1 after:top-1/2 after:h-8 after:w-px",
+            "after:-translate-y-1/2 after:bg-primary/60",
+          )}
+          onPointerDown={onResizePointerDown}
+          onClick={(event) => event.stopPropagation()}
+        />
+      ) : null}
     </TableHead>
   );
 }
@@ -116,12 +146,85 @@ export function TableHeader({
   const {
     columnOrder,
     columnVisibility,
+    columnWidths,
     data,
     rowSelection,
     setRowSelection,
     density,
     dragModeEnabled,
+    setColumnWidths,
   } = useTable();
+
+  const columnWidthsRef = useRef(columnWidths);
+  const activeResizeHandlersRef = useRef<{
+    move: (event: PointerEvent) => void;
+    up: () => void;
+  } | null>(null);
+
+  useEffect(() => {
+    columnWidthsRef.current = columnWidths;
+  }, [columnWidths]);
+
+  const stopColumnResize = useCallback(() => {
+    const handlers = activeResizeHandlersRef.current;
+    if (!handlers) return;
+    window.removeEventListener("pointermove", handlers.move);
+    window.removeEventListener("pointerup", handlers.up);
+    activeResizeHandlersRef.current = null;
+    document.body.style.cursor = "";
+    document.body.style.userSelect = "";
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      stopColumnResize();
+    };
+  }, [stopColumnResize]);
+
+  const startColumnResize = useCallback(
+    (columnId: string, event: React.PointerEvent<HTMLDivElement>) => {
+      if (!dragModeEnabled) return;
+
+      event.preventDefault();
+      event.stopPropagation();
+      stopColumnResize();
+
+      const headerCell = event.currentTarget.closest("th");
+      const measuredWidth =
+        headerCell?.getBoundingClientRect().width ?? MIN_COLUMN_WIDTH_PX;
+      const persistedWidth = columnWidthsRef.current[columnId];
+      const baseWidth = clampColumnWidth(
+        typeof persistedWidth === "number" ? persistedWidth : measuredWidth,
+      );
+      const startX = event.clientX;
+
+      const handlePointerMove = (moveEvent: PointerEvent) => {
+        const delta = moveEvent.clientX - startX;
+        const nextWidth = clampColumnWidth(baseWidth + delta);
+        const nextWidths = {
+          ...columnWidthsRef.current,
+          [columnId]: nextWidth,
+        };
+        columnWidthsRef.current = nextWidths;
+        setColumnWidths(nextWidths);
+      };
+
+      const handlePointerUp = () => {
+        stopColumnResize();
+      };
+
+      activeResizeHandlersRef.current = {
+        move: handlePointerMove,
+        up: handlePointerUp,
+      };
+
+      window.addEventListener("pointermove", handlePointerMove);
+      window.addEventListener("pointerup", handlePointerUp);
+      document.body.style.cursor = "col-resize";
+      document.body.style.userSelect = "none";
+    },
+    [dragModeEnabled, setColumnWidths, stopColumnResize],
+  );
 
   // Determine visible columns in order
   const visibleColumns = (() => {
@@ -212,14 +315,18 @@ export function TableHeader({
           if (!field) return null;
 
           if ("accessor" in field) {
+            const columnId = field.id;
             // Custom column def
             return (
               <DraggableHead
-                key={field.id}
-                id={field.id}
+                key={columnId}
+                id={columnId}
                 draggable={
-                  allowDrag && dragModeEnabled && !locked.has(field.id)
+                  allowDrag && dragModeEnabled && !locked.has(columnId)
                 }
+                resizable={dragModeEnabled}
+                onResizePointerDown={(event) => startColumnResize(columnId, event)}
+                widthStyle={getColumnWidthStyle(columnWidths, columnId)}
                 density={density}
               >
                 <div className="flex h-full w-full items-stretch self-stretch">
@@ -245,6 +352,9 @@ export function TableHeader({
               draggable={
                 allowDrag && dragModeEnabled && !locked.has(field.name)
               }
+              resizable={dragModeEnabled}
+              onResizePointerDown={(event) => startColumnResize(field.name, event)}
+              widthStyle={getColumnWidthStyle(columnWidths, field.name)}
               density={density}
             >
               <div className="flex h-full w-full items-stretch self-stretch">
