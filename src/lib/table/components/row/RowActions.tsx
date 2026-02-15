@@ -6,6 +6,7 @@ import {
   Loader2,
   MoreHorizontal,
   Pencil,
+  Printer,
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -31,7 +32,7 @@ import {
 import type { FormSchema } from "@/lib/form/inputs/types";
 import { useMetadata } from "../../context/MetadataContext";
 import { useTable } from "../../context/TableContext";
-import { findMutation, normalizeMutationType } from "../../utils";
+import { findMutation } from "../../utils";
 import {
   buildTemplateClientSchema,
   executeTemplateForRows,
@@ -81,18 +82,28 @@ export function RowActions({
     [metadata?.templates],
   );
 
+  const pdfTemplates = useMemo(
+    () =>
+      templateEntries.filter(
+        (template) => normalizeTemplateType(template) === "pdf",
+      ),
+    [templateEntries],
+  );
+
+  const excelTemplates = useMemo(
+    () =>
+      templateEntries.filter(
+        (template) => normalizeTemplateType(template) === "excel",
+      ),
+    [templateEntries],
+  );
+
   const baseMutations = metadata?.mutations ?? [];
   const baseDeleteMutation = findMutation(baseMutations, "delete");
   const baseUpdateMutation = findMutation(baseMutations, "update");
-  const baseCanDelete = !!baseDeleteMutation?.allowed;
-  const baseCanEdit = !!baseUpdateMutation?.allowed;
-  const hasRowActions = baseMutations.some((mutation) => {
-    const type = normalizeMutationType(mutation);
-    return type === "update" || type === "delete";
-  });
-
-  const canDelete = !!rowId && baseCanDelete && (permissions?.canDelete ?? true);
-  const canEdit = baseCanEdit && (permissions?.canUpdate ?? true);
+  const canDelete =
+    !!rowId && !!baseDeleteMutation?.allowed && (permissions?.canDelete ?? true);
+  const canEdit = !!baseUpdateMutation?.allowed && (permissions?.canUpdate ?? true);
 
   const actionContext = useMemo<BaseModelTableColumnActionContext>(
     () => ({
@@ -113,8 +124,8 @@ export function RowActions({
 
   const hasTemplateActions = templateEntries.length > 0;
   const hasBuiltinActions = canEdit || canDelete;
-  const hasAnyActions =
-    hasBuiltinActions || hasTemplateActions || customActions.length > 0;
+  const hasCustomActions = customActions.length > 0;
+  const hasAnyActions = hasBuiltinActions || hasTemplateActions || hasCustomActions;
 
   const deleteMutationName = baseDeleteMutation?.name || `delete${model}`;
   const deleteDocument = useMemo(
@@ -122,7 +133,13 @@ export function RowActions({
         mutation ${deleteMutationName}($id: ID!) {
           response: ${deleteMutationName}(id: $id) {
             ok
-            errors { field message code severity details }
+            errors {
+              field
+              message
+              code
+              severity
+              details
+            }
           }
         }
       `,
@@ -174,6 +191,7 @@ export function RowActions({
       toast.error("This row does not expose a valid identifier.");
       return;
     }
+
     const result = await executeTemplateForRows(template, [rowId], clientData);
     if (result.templateType === "pdf") {
       toast.success(`Template "${template.title}" generated.`);
@@ -190,6 +208,7 @@ export function RowActions({
       );
       return;
     }
+
     if (!rowId) {
       toast.error("This row does not expose a valid identifier.");
       return;
@@ -214,138 +233,167 @@ export function RowActions({
   ) => {
     void Promise.resolve(onClick(actionContext)).catch((error: unknown) => {
       const message =
-        error instanceof Error
-          ? error.message
-          : "Custom action failed.";
+        error instanceof Error ? error.message : "Custom action failed.";
       toast.error(message);
     });
   };
-
-  if (!hasRowActions && !hasTemplateActions && customActions.length === 0) {
-    return null;
-  }
 
   if (!hasAnyActions) {
     return null;
   }
 
+  const renderTemplateItem = (template: TemplateInfo) => {
+    const templateType = normalizeTemplateType(template);
+    const disabledReason =
+      template.allowed === false
+        ? template.denialReason ||
+          "You do not have permission to use this template."
+        : !rowId
+          ? "This row does not expose a valid identifier."
+          : null;
+    const disabled = Boolean(disabledReason);
+
+    return (
+      <DropdownMenuItem
+        key={`row-template:${rowId}:${template.key}`}
+        disabled={disabled}
+        title={disabledReason ?? undefined}
+        onClick={() => {
+          if (disabled) return;
+          handleTemplateAction(template);
+        }}
+      >
+        {templateType === "excel" ? (
+          <FileSpreadsheet className="h-3.5 w-3.5" />
+        ) : (
+          <FileText className="h-3.5 w-3.5" />
+        )}
+        {template.title || template.key}
+      </DropdownMenuItem>
+    );
+  };
+
   return (
     <>
-      <div className="flex items-center justify-end">
-        <DropdownMenu modal={false}>
-          <DropdownMenuTrigger asChild>
-            <Button
-              size="icon"
-              variant="outline"
-              className="h-6 w-6 rounded-md border-border bg-background text-muted-foreground shadow-sm hover:bg-muted hover:text-foreground"
-              aria-label="Actions de la ligne"
-            >
-              <MoreHorizontal className="h-3.5 w-3.5" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-44">
-            {hasTemplateActions ? (
-              <>
-                <DropdownMenuLabel>Templates</DropdownMenuLabel>
-                {templateEntries.map((template) => {
-                  const templateType = normalizeTemplateType(template);
-                  const disabledReason =
-                    template.allowed === false
-                      ? template.denialReason ||
-                        "You do not have permission to use this template."
-                      : !rowId
-                        ? "This row does not expose a valid identifier."
-                        : null;
-                  const disabled = Boolean(disabledReason);
-                  return (
-                    <DropdownMenuItem
-                      key={`row-template:${rowId}:${template.key}`}
-                      disabled={disabled}
-                      title={disabledReason ?? undefined}
-                      onClick={() => {
-                        if (disabled) return;
-                        handleTemplateAction(template);
-                      }}
-                    >
-                      {templateType === "excel" ? (
-                        <FileSpreadsheet className="h-3.5 w-3.5" />
-                      ) : (
-                        <FileText className="h-3.5 w-3.5" />
-                      )}
-                      {template.title || template.key}
-                    </DropdownMenuItem>
-                  );
-                })}
-                {(hasBuiltinActions || customActions.length > 0) ? (
-                  <DropdownMenuSeparator />
-                ) : null}
-              </>
-            ) : null}
+      <div className="flex items-center justify-end gap-1">
+        {canEdit ? (
+          <Button
+            size="icon"
+            variant="outline"
+            className="h-7 w-7 rounded-md border-border bg-background text-muted-foreground shadow-sm hover:bg-muted hover:text-foreground"
+            aria-label="Modifier"
+            onClick={handleEdit}
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </Button>
+        ) : null}
 
-            {canEdit ? (
-              <DropdownMenuItem onClick={handleEdit}>
-                <Pencil className="h-3.5 w-3.5" />
-                Modifier
-              </DropdownMenuItem>
-            ) : null}
+        {canDelete ? (
+          <Button
+            size="icon"
+            variant="outline"
+            className="h-7 w-7 rounded-md border-border bg-background text-muted-foreground shadow-sm hover:bg-muted hover:text-foreground"
+            aria-label="Supprimer"
+            onClick={() => setConfirmOpen(true)}
+            disabled={deleting}
+          >
+            {deleting ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              <Trash2 className="h-3.5 w-3.5" />
+            )}
+          </Button>
+        ) : null}
 
-            {canDelete ? (
-              <DropdownMenuItem
-                variant="destructive"
-                onClick={() => setConfirmOpen(true)}
-                disabled={deleting}
+        {hasTemplateActions ? (
+          <DropdownMenu modal={false}>
+            <DropdownMenuTrigger asChild>
+              <Button
+                size="icon"
+                variant="outline"
+                className="h-7 w-7 rounded-md border-border bg-background text-muted-foreground shadow-sm hover:bg-muted hover:text-foreground"
+                aria-label="Templates"
               >
-                {deleting ? (
-                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                ) : (
-                  <Trash2 className="h-3.5 w-3.5" />
-                )}
-                Supprimer
-              </DropdownMenuItem>
-            ) : null}
+                <Printer className="h-3.5 w-3.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-64">
+              <DropdownMenuLabel>Templates</DropdownMenuLabel>
 
-            {hasBuiltinActions && customActions.length > 0 ? (
-              <DropdownMenuSeparator />
-            ) : null}
+              {pdfTemplates.length > 0 ? (
+                <>
+                  <DropdownMenuSeparator />
+                  {pdfTemplates.map((template) => renderTemplateItem(template))}
+                </>
+              ) : null}
 
-            {customActions.map((action, index) => {
-              const key = action.key ?? `custom-row-action-${index}`;
-              if (typeof (action as { render?: unknown }).render === "function") {
-                const renderAction = (
-                  action as {
-                    render: (
-                      context: BaseModelTableColumnActionContext,
-                    ) => React.ReactNode;
-                  }
-                ).render;
+              {pdfTemplates.length > 0 && excelTemplates.length > 0 ? (
+                <DropdownMenuSeparator />
+              ) : null}
+
+              {excelTemplates.length > 0
+                ? excelTemplates.map((template) => renderTemplateItem(template))
+                : null}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : null}
+
+        {hasCustomActions ? (
+          <DropdownMenu modal={false}>
+            <DropdownMenuTrigger asChild>
+              <Button
+                size="icon"
+                variant="outline"
+                className="h-7 w-7 rounded-md border-border bg-background text-muted-foreground shadow-sm hover:bg-muted hover:text-foreground"
+                aria-label="Actions de la ligne"
+              >
+                <MoreHorizontal className="h-3.5 w-3.5" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-44">
+              {customActions.map((action, index) => {
+                const key = action.key ?? `custom-row-action-${index}`;
+                if (typeof (action as { render?: unknown }).render === "function") {
+                  const renderAction = (
+                    action as {
+                      render: (
+                        context: BaseModelTableColumnActionContext,
+                      ) => React.ReactNode;
+                    }
+                  ).render;
+                  return (
+                    <React.Fragment key={key}>
+                      {renderAction(actionContext)}
+                    </React.Fragment>
+                  );
+                }
+                if (
+                  typeof (action as { onClick?: unknown }).onClick !== "function"
+                ) {
+                  return null;
+                }
+                const clickAction = action as {
+                  onClick: (
+                    context: BaseModelTableColumnActionContext,
+                  ) => void | Promise<void>;
+                  label?: string;
+                };
                 return (
-                  <React.Fragment key={key}>{renderAction(actionContext)}</React.Fragment>
+                  <DropdownMenuItem
+                    key={key}
+                    variant={action.variant}
+                    className={action.className}
+                    disabled={action.disabled}
+                    onClick={() => runCustomAction(clickAction.onClick)}
+                  >
+                    {action.icon}
+                    {clickAction.label ?? "Action"}
+                  </DropdownMenuItem>
                 );
-              }
-              if (typeof (action as { onClick?: unknown }).onClick !== "function") {
-                return null;
-              }
-              const clickAction = action as {
-                onClick: (
-                  context: BaseModelTableColumnActionContext,
-                ) => void | Promise<void>;
-                label?: string;
-              };
-              return (
-                <DropdownMenuItem
-                  key={key}
-                  variant={action.variant}
-                  className={action.className}
-                  disabled={action.disabled}
-                  onClick={() => runCustomAction(clickAction.onClick)}
-                >
-                  {action.icon}
-                  {clickAction.label ?? "Action"}
-                </DropdownMenuItem>
-              );
-            })}
-          </DropdownMenuContent>
-        </DropdownMenu>
+              })}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        ) : null}
       </div>
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>

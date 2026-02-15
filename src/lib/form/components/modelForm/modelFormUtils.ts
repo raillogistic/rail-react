@@ -81,39 +81,6 @@ export function deepMergeRecords(
   return hasSource ? result : undefined;
 }
 
-function sortSerializableValue(value: unknown): unknown {
-  if (Array.isArray(value)) {
-    return value.map((item) => sortSerializableValue(item));
-  }
-
-  if (!isRecord(value)) {
-    return value;
-  }
-
-  const sorted: Record<string, unknown> = {};
-  for (const key of Object.keys(value).sort()) {
-    sorted[key] = sortSerializableValue(value[key]);
-  }
-  return sorted;
-}
-
-function hashString(value: string): string {
-  let hash = 5381;
-  for (let index = 0; index < value.length; index += 1) {
-    hash = (hash * 33) ^ value.charCodeAt(index);
-  }
-  return (hash >>> 0).toString(36);
-}
-
-export function stableHashOfValue(value: unknown): string {
-  try {
-    const serialized = JSON.stringify(sortSerializableValue(value));
-    return hashString(serialized);
-  } catch {
-    return "0";
-  }
-}
-
 export function getMutationPayload(
   operationName: string,
   data: Record<string, unknown> | null | undefined,

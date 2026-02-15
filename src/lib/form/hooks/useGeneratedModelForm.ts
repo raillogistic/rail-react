@@ -281,12 +281,16 @@ function normalizeInitialValuesByContract(
     return { ...values };
   }
 
-  let nextValues: Record<string, any> = {};
+  const nextValues: Record<string, any> = {};
   let resolvedCount = 0;
 
   for (const field of contract.fields ?? []) {
     let resolved: unknown = undefined;
-    for (const candidate of contractFieldCandidates(field)) {
+    
+    // Inline candidates logic for performance
+    const candidates = [field.name, field.path].filter(Boolean) as string[];
+    
+    for (const candidate of candidates) {
       resolved = resolveInitialPathValue(values, candidate);
       if (resolved !== undefined) break;
     }
@@ -294,13 +298,18 @@ function normalizeInitialValuesByContract(
 
     const normalizedFieldName = resolveContractFieldName(field) || field.path;
     if (!normalizedFieldName) continue;
-    nextValues = setValueByPath(nextValues, normalizedFieldName, resolved);
+    
+    // Use setValue directly for building (it handles nesting)
+    setValueByPath(nextValues, normalizedFieldName, resolved);
     resolvedCount += 1;
   }
 
   for (const relation of contract.relations ?? []) {
     let resolved: unknown = undefined;
-    for (const candidate of relationFieldCandidates(relation)) {
+    
+    const candidates = [relation.name, relation.path].filter(Boolean) as string[];
+    
+    for (const candidate of candidates) {
       resolved = resolveInitialPathValue(values, candidate);
       if (resolved !== undefined) break;
     }
@@ -308,7 +317,8 @@ function normalizeInitialValuesByContract(
 
     const relationFieldName = resolveRelationFieldName(relation) || relation.path;
     if (!relationFieldName) continue;
-    nextValues = setValueByPath(nextValues, relationFieldName, resolved);
+    
+    setValueByPath(nextValues, relationFieldName, resolved);
     resolvedCount += 1;
   }
 
@@ -591,14 +601,20 @@ export function useGeneratedModelForm(options: UseGeneratedModelFormOptions) {
     [baseValues, runtimeOverrides],
   );
 
+  const baseSchema = React.useMemo(() => {
+    if (!usingGenerated || !contract) return null;
+    return buildSchemaFromContract(contract);
+  }, [usingGenerated, contract]);
+
   const schema = React.useMemo<FormSchema<Record<string, any>>>(() => {
-    if (!usingGenerated || !contract) {
+    if (!baseSchema) {
       return legacySchema ?? { sections: [], fields: [] };
     }
-    const generated = buildSchemaFromContract(contract);
-    generated.initialValues = runtimeValues;
-    return generated;
-  }, [usingGenerated, contract, legacySchema, runtimeValues]);
+    return {
+      ...baseSchema,
+      initialValues: runtimeValues,
+    };
+  }, [baseSchema, legacySchema, runtimeValues]);
 
   const buildSubmissionValues = React.useCallback(
     (values: Record<string, any>) => {
