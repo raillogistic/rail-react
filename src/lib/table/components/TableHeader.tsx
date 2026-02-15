@@ -303,7 +303,7 @@ export function TableHeader({
                 }
                 onCheckedChange={toggleSelectAll}
                 aria-label="Tout sélectionner"
-                className="h-5 w-5 rounded-lg border-primary-foreground/30 transition-all duration-300 data-[state=checked]:bg-primary-foreground data-[state=checked]:text-primary data-[state=checked]:border-primary-foreground data-[state=checked]:scale-110 data-[state=checked]:shadow-lg data-[state=checked]:shadow-black/20"
+                className="h-5 w-5 rounded-lg !border-primary-foreground/40 transition-all duration-300 data-[state=checked]:!bg-primary-foreground data-[state=checked]:!text-primary data-[state=checked]:!border-primary-foreground data-[state=checked]:scale-110 data-[state=checked]:shadow-lg data-[state=checked]:shadow-black/20"
               />
             </div>
           </TableHead>

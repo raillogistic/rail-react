@@ -89,8 +89,15 @@ export function ModelTableV2Content({
   topActions,
 }: ModelTableV2ContentProps) {
   const { metadata, app, model } = useMetadata();
-  const { data, rowSelection, pagination, setRowSelection, refresh, loading } =
-    useTable();
+  const {
+    data,
+    queryPage,
+    rowSelection,
+    pagination,
+    setRowSelection,
+    refresh,
+    loading,
+  } = useTable();
   const navigate = useNavigate();
 
   const [printTemplate, setPrintTemplate] = useState<TemplateInfo | null>(null);
@@ -100,10 +107,10 @@ export function ModelTableV2Content({
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
 
-  const showTitle = tableConfig?.showTitle !== false;
+  // const showTitle = tableConfig?.showTitle !== false;
   const resolvedTitle =
     tableConfig?.title || metadata?.verboseNamePlural || metadata?.model;
-  const totalCount = pagination.total;
+  const totalCount = queryPage?.pageInfo?.totalCount ?? pagination.total;
 
   useEffect(() => {
     if (!loading) setLastUpdated(new Date());
@@ -298,7 +305,7 @@ export function ModelTableV2Content({
                     {totalCount}
                   </Badge>
                   {hasSelection && (
-                    <Badge className="h-8 rounded-full px-4 bg-emerald-500 text-white border-none font-black text-sm shadow-lg shadow-emerald-200 animate-in zoom-in">
+                    <Badge className="h-8 rounded-full px-4 bg-secondary text-white border-none font-black text-sm shadow-lg  animate-in zoom-in">
                       {selectedCount} SÉLECTIONNÉS
                     </Badge>
                   )}

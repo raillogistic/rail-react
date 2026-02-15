@@ -10,6 +10,7 @@ import {
   type TableDataConfig,
 } from "./data";
 import { buildModelQueryField } from "../utils";
+import type { QueryPageData } from "../types";
 
 export function useTableData(config?: TableDataConfig) {
   const { app, model, metadata } = useMetadata();
@@ -22,6 +23,7 @@ export function useTableData(config?: TableDataConfig) {
     refreshKey,
     _setData,
     _setPageInfo,
+    _setQueryPage,
   } = useTable();
   const debouncedQuickSearch = useDebouncedValue(quickSearch, 300);
 
@@ -113,6 +115,7 @@ export function useTableData(config?: TableDataConfig) {
       );
       const result = data[queryName];
       if (result) {
+        _setQueryPage(result as QueryPageData);
         const nextItems = Array.isArray(result.items) ? result.items : [];
         const shouldAppend =
           config?.dataMode === "infinite" && pagination.page > 1;
@@ -126,8 +129,11 @@ export function useTableData(config?: TableDataConfig) {
           hasNextPage: result.pageInfo?.hasNextPage ?? null,
           hasPreviousPage: result.pageInfo?.hasPreviousPage ?? null,
         });
+      } else {
+        _setQueryPage(null);
       }
     } else if (error) {
+      _setQueryPage(null);
       _setData([], false, error);
     }
     if (loading && !data && !currentTableLoading) {
@@ -145,6 +151,7 @@ export function useTableData(config?: TableDataConfig) {
     pagination.page,
     _setData,
     _setPageInfo,
+    _setQueryPage,
   ]);
 
   useEffect(() => {

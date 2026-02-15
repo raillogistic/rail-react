@@ -256,7 +256,7 @@ const MOCK_DATA_QUERY = {
       where: undefined,
       presets: undefined,
       distinctOn: undefined,
-      skipCount: true,
+      skipCount: false,
     },
   },
   result: {

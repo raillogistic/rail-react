@@ -24,7 +24,7 @@ export function ModelTableV2({
       relationStats={baseTable?.relationStats}
       queryManager={baseTable?.queryManager}
       columnOrdering={baseTable?.columnOrdering}
-      skipCount={baseTable?.skipCount}
+      skipCount={baseTable?.skipCount ?? false}
       disableSorting={baseTable?.disableSorting}
       enableSelection={baseTable?.enableSelection}
       columnActions={baseTable?.columnActions}

@@ -305,6 +305,19 @@ export interface PaginationState {
   hasPreviousPage: boolean;
 }
 
+export interface QueryPageInfo {
+  totalCount?: number | null;
+  pageCount?: number | null;
+  hasNextPage?: boolean | null;
+  hasPreviousPage?: boolean | null;
+}
+
+export interface QueryPageData {
+  pageInfo?: QueryPageInfo | null;
+  items?: Record<string, unknown>[] | null;
+  [key: string]: unknown;
+}
+
 export type TableDensity = "compact" | "comfortable" | "spacious";
 
 export type ColumnOrderingMode = "persisted" | "config";
@@ -329,6 +342,7 @@ export interface ColumnWidthState {
 export interface TableContextState {
   // Data
   data: Record<string, unknown>[];
+  queryPage?: QueryPageData | null;
   loading: boolean;
   error?: Error | null;
 
@@ -380,6 +394,7 @@ export interface TableContextState {
     hasNextPage?: boolean | null;
     hasPreviousPage?: boolean | null;
   }) => void;
+  _setQueryPage: (queryPage: QueryPageData | null) => void;
   _setData: (data: Record<string, unknown>[], loading: boolean, error?: Error) => void;
 }
 

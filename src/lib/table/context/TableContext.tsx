@@ -4,6 +4,7 @@ import {
   ColumnVisibilityState,
   ColumnWidthState,
   TableDensity,
+  QueryPageData,
 } from "../types";
 import { FilterFormState } from "../../filters/types";
 import { normalizeFilterFormState } from "../../filters/engine";
@@ -35,6 +36,7 @@ type TableAction =
   | { type: "SET_QUICK_SEARCH"; term: string }
   | { type: "SET_ADVANCED_FILTERS"; filters: FilterFormState; variables?: Record<string, unknown> }
   | { type: "SET_DATA"; data: Record<string, unknown>[]; loading: boolean; error?: Error | null }
+  | { type: "SET_QUERY_PAGE"; queryPage: QueryPageData | null }
   | { type: "SET_LOADING"; loading: boolean }
   | { type: "REFRESH" };
 
@@ -57,6 +59,7 @@ function getErrorSignature(error?: Error | null): string {
 
 const initialState: TableContextState = {
   data: [],
+  queryPage: null,
   loading: false,
   error: null,
   metadataLoading: true,
@@ -106,6 +109,7 @@ const initialState: TableContextState = {
   setAdvancedFilters: () => {},
   refresh: () => {},
   _setPageInfo: () => {},
+  _setQueryPage: () => {},
   _setData: () => {},
 };
 
@@ -216,6 +220,14 @@ function tableReducer(state: TableContextState, action: TableAction): TableConte
         loading: action.loading,
         error: action.error || null,
       };
+    case "SET_QUERY_PAGE":
+      if (state.queryPage === action.queryPage) {
+        return state;
+      }
+      return {
+        ...state,
+        queryPage: action.queryPage,
+      };
     case "SET_LOADING":
       return { ...state, loading: action.loading };
     case "REFRESH":
@@ -272,6 +284,11 @@ export function TableProvider({ children, initialState: initialProps }: TablePro
       }) => dispatch({ type: "SET_PAGE_INFO", ...info }),
       [],
     ),
+    _setQueryPage: useCallback(
+      (queryPage: QueryPageData | null) =>
+        dispatch({ type: "SET_QUERY_PAGE", queryPage }),
+      [],
+    ),
     _setData: useCallback((data: Record<string, unknown>[], loading: boolean, error?: Error) => dispatch({ type: "SET_DATA", data, loading, error }), []),
   };
 
@@ -301,6 +318,7 @@ export function useTableDispatch() {
     // This is a pattern to separate read vs write if context gets large, but for now reuse.
     return {
         setPageInfo: context._setPageInfo,
+        setQueryPage: context._setQueryPage,
         setData: context._setData,
     };
 }
