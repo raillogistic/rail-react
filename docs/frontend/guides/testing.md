@@ -1,17 +1,21 @@
-# Frontend Testing Guide
+# Frontend testing guide
 
-This guide covers how to write and run tests for the React frontend application using **Vitest** and **React Testing Library**.
+This guide explains how you write and run tests for the React frontend with
+Vitest and React Testing Library.
 
 ## Overview
 
-We use the following tools for testing:
-- **[Vitest](https://vitest.dev/)**: A blazing fast unit test framework powered by Vite.
-- **[React Testing Library](https://testing-library.com/docs/react-testing-library/intro/)**: Simple and complete testing utilities that encourage good testing practices.
-- **[jest-dom](https://github.com/testing-library/jest-dom)**: Custom matchers for asserting on DOM nodes (e.g., `toBeInTheDocument`).
+Use the following tools in the frontend test stack:
 
-## Running Tests
+- **[Vitest](https://vitest.dev/)** for unit and integration test execution.
+- **[React Testing Library](https://testing-library.com/docs/react-testing-library/intro/)**
+  for DOM-focused interaction assertions.
+- **[jest-dom](https://github.com/testing-library/jest-dom)** for additional
+  DOM matchers, such as `toBeInTheDocument`.
 
-To run the tests, use the following commands:
+## Running tests
+
+Run these commands from `rail-react`:
 
 ```bash
 # Run tests in watch mode (default)
@@ -21,14 +25,28 @@ npm test
 npm run test:ui
 ```
 
-## Writing Tests
+When you change one frontend library, run a focused suite first to reduce
+feedback time before running the broader matrix.
 
-### File Location
-Tests can be co-located with components (e.g., `Component.test.tsx`) or placed in a dedicated `src/test` directory. We currently have a sample test in `src/test/sample.test.tsx`.
+```bash
+# Run Unit Field formatter tests only
+npx vitest run src/lib/details/units/unitFieldFormatters.test.ts
+```
 
-### Example Test
+## Writing tests
 
-Here is an example of a simple component test:
+Write tests next to components or in focused test folders based on ownership
+and reuse patterns.
+
+### File location
+
+You can co-locate tests with components, for example
+`Component.test.tsx`, or place them in `src/test` when they validate shared
+test infrastructure.
+
+### Example test
+
+This example shows a simple component render assertion:
 
 ```tsx
 import { render, screen } from '@testing-library/react';
@@ -46,4 +64,5 @@ describe('App', () => {
 
 ## Configuration
 
-The testing configuration is located in `vite.config.ts`. The setup file `src/test/setup.ts` imports `jest-dom` extensions to ensure matchers are available globally.
+Keep test runtime configuration in `vite.config.ts`. The setup file
+`src/test/setup.ts` imports `jest-dom` so matchers are available globally.

@@ -15,7 +15,7 @@ import {
   Lock,
 } from "lucide-react";
 import { getAppDefaultRoute, getAppNavigationLinks } from "@/apps/routes";
-import { DynamicDetail } from "@/lib/details";
+import { DynamicDetail, UnitFieldExamples } from "@/lib/details";
 import BaseDetail from "@/lib/details/BaseDetail";
 import DetailExample from "@/lib/details/DetailExample";
 
@@ -51,10 +51,6 @@ const BaseModelTable = lazy(() =>
   import("@/lib/table/components/BaseModelTable").then((module) => ({
     default: module.BaseModelTable,
   })),
-);
-
-const ModelDetailV2Page = lazy(
-  () => import("@/lib/details/v2/components/ModelDetailV2"),
 );
 
 const SettingsForm = lazy(() =>
@@ -234,7 +230,8 @@ const CORE_NAVIGATION_LINKS: NavigationSection[] = [
         path: "/form",
         component: withRouteSuspense(
           <div>
-            <DetailExample />
+            <UnitFieldExamples />
+            {/* <DetailExample /> */}
           </div>,
         ),
         description: "dd",

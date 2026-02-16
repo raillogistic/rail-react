@@ -69,6 +69,34 @@ Precedence is deterministic:
 
 Exclude rules are fail-closed and remove fields from render output.
 
+## Atomic field rendering
+
+When you need strict single-value rendering in a detail experience, compose
+`UnitFieldRenderer` from `@/lib/details` inside your field-level custom
+renderers. This keeps atomic formatting and accessibility behavior consistent
+without taking over section or page layout.
+
+```tsx
+import { UnitFieldRenderer } from "@/lib/details";
+
+customRenderers={{
+  status: (value) => (
+    <UnitFieldRenderer
+      mode="valueOnly"
+      field={{
+        id: "status",
+        label: "Status",
+        kind: "status",
+        value,
+      }}
+    />
+  ),
+}}
+```
+
+For the full API, see the
+[unit field renderer frontend guide](frontend/libs/unit-field-renderer.md).
+
 ## Actions and permissions
 
 `DynamicDetail` renders scoped action toolbars for `MODEL`, `SECTION`, `TABLE`,

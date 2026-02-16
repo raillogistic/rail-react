@@ -21,7 +21,6 @@ import { useGraphQLModelTable } from "../table/compat/hooks";
 import { useModelAccess, ModelAccessContext } from "@/lib/security/modelAccess";
 import { useModelTelemetry } from "@/lib/telemetry/useModelTelemetry";
 import { useAuditableAction } from "@/lib/security/useAuditableAction";
-import ModelDetailV2 from "./v2/components/ModelDetailV2";
 
 const numericFieldTypes = new Set([
   "IntegerField",
@@ -57,7 +56,7 @@ function formatValueByType(value: unknown, fieldType?: string) {
     const date = toDate(value);
     if (!date) return String(value);
     const base = `${pad(date.getDate())}-${pad(
-      date.getMonth() + 1
+      date.getMonth() + 1,
     )}-${date.getFullYear()}`;
     if (fieldType === "DateTimeField") {
       return `${base} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
@@ -82,7 +81,7 @@ const normalizeFieldValue = (field: string | undefined) =>
 
 function buildDetailFields(
   fields: DetailFieldConfig[],
-  requested?: string[] | undefined
+  requested?: string[] | undefined,
 ): DetailFieldConfig[] {
   if (!requested?.length) return fields;
   const targetSet = new Set(requested);
@@ -102,7 +101,7 @@ function LegacyModelDetail({
   const { metadata, tableMeta, item, loading, error } = useGraphQLModelDetail(
     appName,
     modelName,
-    id
+    id,
   );
   const modelAccess = useModelAccess({
     appName,
@@ -161,7 +160,7 @@ function LegacyModelDetail({
       }
       return undefined;
     },
-    [normalizedRelatedConfigs]
+    [normalizedRelatedConfigs],
   );
   const [openSections, setOpenSections] = React.useState<
     Record<string, boolean>
@@ -176,7 +175,7 @@ function LegacyModelDetail({
         return { ...prev, [relationName]: count };
       });
     },
-    []
+    [],
   );
 
   React.useEffect(() => {
@@ -211,11 +210,11 @@ function LegacyModelDetail({
 
   const includeSet = React.useMemo(
     () => (includeSections?.length ? new Set(includeSections) : null),
-    [includeSections]
+    [includeSections],
   );
   const excludeSet = React.useMemo(
     () => (excludeSections?.length ? new Set(excludeSections) : null),
-    [excludeSections]
+    [excludeSections],
   );
   const shouldIncludeSection = React.useCallback(
     (sectionId: string) => {
@@ -223,7 +222,7 @@ function LegacyModelDetail({
       if (excludeSet && excludeSet.size > 0) return !excludeSet.has(sectionId);
       return true;
     },
-    [includeSet, excludeSet]
+    [includeSet, excludeSet],
   );
 
   const overviewPanels: DetailPanelConfig[] = React.useMemo(() => {
@@ -259,7 +258,7 @@ function LegacyModelDetail({
           return {
             relation: metadata.relationships?.find(
               (rel) =>
-                normalizeFieldValue(rel.name) === normalizeFieldValue(entry)
+                normalizeFieldValue(rel.name) === normalizeFieldValue(entry),
             ),
             config: undefined,
           };
@@ -267,7 +266,7 @@ function LegacyModelDetail({
         const key = Object.keys(entry)[0];
         return {
           relation: metadata.relationships?.find(
-            (rel) => normalizeFieldValue(rel.name) === normalizeFieldValue(key)
+            (rel) => normalizeFieldValue(rel.name) === normalizeFieldValue(key),
           ),
           config: entry[key],
         };
@@ -299,64 +298,55 @@ function LegacyModelDetail({
   return (
     <ModelAccessContext.Provider value={modelAccess}>
       <div className={className}>
-      <div className="flex items-center justify-between mb-2">
-        <div className="text-lg font-semibold">
-          {metadata?.verbose_name ?? modelName}
+        <div className="flex items-center justify-between mb-2">
+          <div className="text-lg font-semibold">
+            {metadata?.verbose_name ?? modelName}
+          </div>
         </div>
-      </div>
-      {detailTabs.length ? (
-        <BaseDetail data={item} tabs={detailTabs} className="mb-4" />
-      ) : null}
-      {nestedEntries.length ? (
-        <div className="space-y-6">
-          {nestedEntries.map(({ relation, config }) =>
-            relation ? (
-              <NestedDetailCard
-                key={relation.name}
-                relation={relation}
-                config={config}
-                parentApp={appName}
-                parentItem={item}
+        {detailTabs.length ? (
+          <BaseDetail data={item} tabs={detailTabs} className="mb-4" />
+        ) : null}
+        {nestedEntries.length ? (
+          <div className="space-y-6">
+            {nestedEntries.map(({ relation, config }) =>
+              relation ? (
+                <NestedDetailCard
+                  key={relation.name}
+                  relation={relation}
+                  config={config}
+                  parentApp={appName}
+                  parentItem={item}
+                  parentId={id}
+                />
+              ) : null,
+            )}
+          </div>
+        ) : null}
+        {relatedSections.length ? (
+          <div className="space-y-4">
+            {relatedSections.map((rel) => (
+              <RelatedItemsSection
+                key={rel.name}
+                relation={rel}
+                parentModel={modelName}
                 parentId={id}
+                isOpen={openSections[rel.name] ?? false}
+                onToggle={(value) =>
+                  setOpenSections((prev) => ({ ...prev, [rel.name]: value }))
+                }
+                config={getRelationConfig(rel)}
+                count={relationCounts[rel.name]}
+                onCountChange={handleCountChange}
               />
-            ) : null
-          )}
-        </div>
-      ) : null}
-      {relatedSections.length ? (
-        <div className="space-y-4">
-          {relatedSections.map((rel) => (
-            <RelatedItemsSection
-              key={rel.name}
-              relation={rel}
-              parentModel={modelName}
-              parentId={id}
-              isOpen={openSections[rel.name] ?? false}
-              onToggle={(value) =>
-                setOpenSections((prev) => ({ ...prev, [rel.name]: value }))
-              }
-              config={getRelationConfig(rel)}
-              count={relationCounts[rel.name]}
-              onCountChange={handleCountChange}
-            />
-          ))}
-        </div>
-      ) : null}
+            ))}
+          </div>
+        ) : null}
       </div>
     </ModelAccessContext.Provider>
   );
 }
 
 export default function ModelDetail(props: ModelDetailProps) {
-  if (props.useV2) {
-    return (
-      <ModelDetailV2
-        appName={props.appName}
-        modelName={props.modelName}
-        id={props.id}
-      />
-    );
-  }
   return <LegacyModelDetail {...props} />;
 }
 
@@ -440,7 +430,7 @@ function RelatedItemsTable({
     targetModel,
     parentModel,
     parentId,
-    relation.to_field ?? undefined
+    relation.to_field ?? undefined,
   );
   return (
     <SimpleRelatedItemsTable
@@ -523,7 +513,7 @@ function SimpleRelatedItemsTable({
   const headerActions = simpleConfig.headerActions ?? [];
   const quickSearchEnabled = simpleConfig.enableQuickSearch ?? false;
   const [searchValue, setSearchValue] = React.useState(
-    tableHook.state.quick ?? ""
+    tableHook.state.quick ?? "",
   );
   const handleQuickSearch = React.useCallback(() => {
     tableHook.setters.setQuick(searchValue);
@@ -774,7 +764,7 @@ function NestedDetailCard({
   const relationValue = parentItem?.[relation.name];
   const resolvedId =
     (relationValue && typeof relationValue === "object"
-      ? relationValue.id ?? relationValue.pk ?? relationValue.value
+      ? (relationValue.id ?? relationValue.pk ?? relationValue.value)
       : undefined) ??
     parentItem?.[relation.to_field ?? ""] ??
     parentItem?.[relation.from_field ?? ""] ??
@@ -857,6 +847,6 @@ function getRelationTarget(relation: ModelMetadataRelationship): {
   const targetModel =
     typeof relation.related_model === "string"
       ? relation.related_model
-      : maybeObject?.model_name ?? undefined;
+      : (maybeObject?.model_name ?? undefined);
   return { targetApp, targetModel };
 }
