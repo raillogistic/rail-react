@@ -2,6 +2,10 @@ import * as React from "react";
 import { Card } from "@/lib/components/ui/card";
 import { Button } from "@/lib/components/ui/button";
 import { cn } from "@/lib/utils";
+import SectionHost from "./SectionHost";
+import TableDetail from "./components/TableDetail";
+import ListDetail from "./components/ListDetail";
+import UnitFieldRenderer from "./units/UnitFieldRenderer";
 import type {
   BaseDetailProps,
   BaseDetailSectionRenderContext,
@@ -9,26 +13,27 @@ import type {
   DetailTabSectionConfig,
   DetailTabSectionList,
   DetailTabSectionTable,
+  DetailTabSectionUnits,
 } from "./types";
-import {
-  Tabs,
-  TabsList,
-  TabsTrigger,
-  TabsContent,
-} from "@/lib/components/ui/tabs";
-import TableDetail from "./components/TableDetail";
-import ListDetail from "./components/ListDetail";
+import type { DetailsPageSchema, SectionDefinition } from "./sectionTypes";
 
 function resolveDataPathValue(data: unknown, dataPath?: string): unknown {
   const normalizedPath = String(dataPath || "").trim();
   if (!normalizedPath) return undefined;
-
   return normalizedPath.split(".").reduce<unknown>((current, key) => {
     if (!current || typeof current !== "object") {
       return undefined;
     }
     return (current as Record<string, unknown>)[key];
   }, data);
+}
+
+function sortSections(sections: DetailTabSectionConfig[]): DetailTabSectionConfig[] {
+  return [...sections].sort(
+    (left, right) =>
+      (left.order ?? Number.MAX_SAFE_INTEGER) -
+      (right.order ?? Number.MAX_SAFE_INTEGER),
+  );
 }
 
 function resolveSectionGridClasses(columns: number): string {
@@ -40,14 +45,22 @@ function resolveSectionGridClasses(columns: number): string {
   return classes.join(" ");
 }
 
-function sortSections(
-  sections: DetailTabSectionConfig[],
-): DetailTabSectionConfig[] {
-  return [...sections].sort(
-    (left, right) =>
-      (left.order ?? Number.MAX_SAFE_INTEGER) -
-      (right.order ?? Number.MAX_SAFE_INTEGER),
-  );
+function buildLegacySectionId(
+  tabKey: string,
+  section: DetailTabSectionConfig,
+  sectionIndex: number,
+): string {
+  if (section.id) return `${tabKey}:${section.id}`;
+  return `${tabKey}-${section.type}-${sectionIndex}`;
+}
+
+function sectionKindFromType(
+  section: DetailTabSectionConfig,
+): SectionDefinition["kind"] {
+  if (section.type === "list") return "list";
+  if (section.type === "table") return "table";
+  if (section.type === "units") return "general";
+  return "custom";
 }
 
 export default function BaseDetail<TData = Record<string, unknown>>({
@@ -69,16 +82,14 @@ export default function BaseDetail<TData = Record<string, unknown>>({
   renderSection,
   sectionRenderers,
 }: BaseDetailProps<TData>) {
-  const resolvedTabs = tabs ?? [];
+  const resolvedTabs = React.useMemo(() => tabs ?? [], [tabs]);
   const firstTabKey = resolvedTabs[0]?.key ?? "tab-0";
   const isControlled = value !== undefined;
   const [internalActive, setInternalActive] = React.useState<string>(
     defaultValue ?? initialTab ?? firstTabKey,
   );
 
-  const requestedActive = isControlled
-    ? (value ?? firstTabKey)
-    : internalActive;
+  const requestedActive = isControlled ? (value ?? firstTabKey) : internalActive;
   const active = resolvedTabs.some((tab) => tab.key === requestedActive)
     ? requestedActive
     : firstTabKey;
@@ -101,214 +112,256 @@ export default function BaseDetail<TData = Record<string, unknown>>({
 
   const dataRecord = data as Record<string, unknown>;
 
-  const renderSimpleTable = React.useCallback(
-    (section: DetailTabSectionTable) => {
-      const sourceRows: unknown[] = Array.isArray(section.rows)
-        ? section.rows
-        : (resolveDataPathValue(dataRecord, section.dataPath) as unknown[]);
-      const resolvedRows = Array.isArray(sourceRows) ? sourceRows : [];
+  const sectionLayoutMap = React.useMemo(() => {
+    const map = new Map<
+      string,
+      {
+        section: DetailTabSectionConfig;
+        tab: DetailTabConfig;
+      }
+    >();
+    resolvedTabs.forEach((tab) => {
+      sortSections(tab.sections).forEach((section, sectionIndex) => {
+        const id = buildLegacySectionId(tab.key, section, sectionIndex);
+        map.set(id, { section, tab });
+      });
+    });
+    return map;
+  }, [resolvedTabs]);
 
-      return (
-        <Card className="p-3 space-y-3">
-          {(section.title || section.actions?.length) && (
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                {section.title ? (
-                  <h4 className="text-sm font-semibold">{section.title}</h4>
-                ) : null}
-                {section.description ? (
-                  <p className="text-xs text-muted-foreground">
-                    {section.description}
-                  </p>
+  const buildDefaultSectionRenderer = React.useCallback(
+    (section: DetailTabSectionConfig): React.ReactNode => {
+      if (section.type === "list") {
+        return (
+          <ListDetail
+            data={dataRecord}
+            panels={(section as DetailTabSectionList).panels}
+            className={section.contentClassName}
+          />
+        );
+      }
+
+      if (section.type === "table") {
+        const tableSection = section as DetailTabSectionTable;
+        const sourceRows: unknown[] = Array.isArray(tableSection.rows)
+          ? tableSection.rows
+          : (resolveDataPathValue(dataRecord, tableSection.dataPath) as unknown[]);
+        const resolvedRows = Array.isArray(sourceRows) ? sourceRows : [];
+
+        return (
+          <Card className="p-3 space-y-3">
+            {(tableSection.title || tableSection.actions?.length) && (
+              <div className="flex items-center justify-between gap-3">
+                <div>
+                  {tableSection.title ? (
+                    <h4 className="text-sm font-semibold">{tableSection.title}</h4>
+                  ) : null}
+                  {tableSection.description ? (
+                    <p className="text-xs text-muted-foreground">
+                      {tableSection.description}
+                    </p>
+                  ) : null}
+                </div>
+                {tableSection.actions && tableSection.actions.length > 0 ? (
+                  <div className="flex flex-wrap items-center gap-2">
+                    {tableSection.actions.map((action) => (
+                      <Button
+                        key={action.key}
+                        size={action.size ?? "sm"}
+                        variant={action.variant ?? "outline"}
+                        onClick={() =>
+                          action.on_click?.({
+                            data: dataRecord,
+                            rows: resolvedRows,
+                          })
+                        }
+                      >
+                        {action.icon}
+                        {action.size === "icon" ? null : (
+                          <span className={action.icon ? "ml-1" : ""}>{action.label}</span>
+                        )}
+                      </Button>
+                    ))}
+                  </div>
                 ) : null}
               </div>
-              {section.actions && section.actions.length > 0 ? (
-                <div className="flex flex-wrap items-center gap-2">
-                  {section.actions.map((action) => (
-                    <Button
-                      key={action.key}
-                      size={action.size ?? "sm"}
-                      variant={action.variant ?? "outline"}
-                      onClick={() =>
-                        action.on_click?.({
-                          data: dataRecord,
-                          rows: resolvedRows,
-                        })
-                      }
-                    >
-                      {action.icon}
-                      {action.size === "icon" ? null : (
-                        <span className={action.icon ? "ml-1" : ""}>
-                          {action.label}
-                        </span>
-                      )}
-                    </Button>
-                  ))}
+            )}
+            <TableDetail
+              columns={tableSection.columns}
+              rows={resolvedRows}
+              enable_quick_search={tableSection.enable_quick_search}
+              enable_sorting={tableSection.enable_sorting}
+              initial_page_size={tableSection.initial_page_size}
+            />
+          </Card>
+        );
+      }
+
+      if (section.type === "units") {
+        const unitSection = section as DetailTabSectionUnits;
+        const fields = Array.isArray(unitSection.fields) ? unitSection.fields : [];
+        const columns = Math.max(1, Math.min(unitSection.columns ?? 1, 4));
+
+        return (
+          <Card className="p-3 space-y-3">
+            {(unitSection.title || unitSection.description) && (
+              <div>
+                {unitSection.title ? (
+                  <h4 className="text-sm font-semibold">{unitSection.title}</h4>
+                ) : null}
+                {unitSection.description ? (
+                  <p className="text-xs text-muted-foreground">{unitSection.description}</p>
+                ) : null}
+              </div>
+            )}
+            <div className={resolveSectionGridClasses(columns)}>
+              {fields.map((field, index) => (
+                <div key={field.id ?? `unit-field-${index}`} className="min-w-0">
+                  <UnitFieldRenderer
+                    field={field}
+                    mode={unitSection.mode}
+                    density={unitSection.density}
+                    defaultLocale={unitSection.defaultLocale}
+                    defaultTimezone={unitSection.defaultTimezone}
+                  />
                 </div>
-              ) : null}
+              ))}
             </div>
-          )}
-          <TableDetail
-            columns={section.columns}
-            rows={resolvedRows}
-            enable_quick_search={section.enable_quick_search}
-            enable_sorting={section.enable_sorting}
-            initial_page_size={section.initial_page_size}
-          />
-        </Card>
-      );
-    },
-    [dataRecord],
-  );
-
-  const renderListSections = React.useCallback(
-    (section: DetailTabSectionList) => (
-      <ListDetail
-        data={dataRecord}
-        panels={section.panels}
-        className={section.contentClassName}
-      />
-    ),
-    [dataRecord],
-  );
-
-  const renderBuiltInSection = React.useCallback(
-    (section: DetailTabSectionConfig) => {
-      if (section.type === "list") {
-        return renderListSections(section);
+          </Card>
+        );
       }
-      if (section.type === "table") {
-        return renderSimpleTable(section);
-      }
+
       return null;
     },
-    [renderListSections, renderSimpleTable],
+    [dataRecord],
   );
 
-  const defaultTabList = React.useCallback(() => {
-    if (!showTabs || resolvedTabs.length <= 1) return null;
-    return (
-      <TabsList className={cn("mb-2", tabListClassName)}>
-        {resolvedTabs.map((tab) => (
-          <TabsTrigger
-            key={tab.key}
-            value={tab.key}
-            className={cn(
-              tabTriggerClassName,
-              tab.key === active
-                ? activeTabTriggerClassName
-                : inactiveTabTriggerClassName,
-            )}
-          >
-            {tab.label}
-          </TabsTrigger>
-        ))}
-      </TabsList>
-    );
-  }, [
-    showTabs,
-    resolvedTabs,
-    tabListClassName,
-    tabTriggerClassName,
-    activeTabTriggerClassName,
-    inactiveTabTriggerClassName,
-    active,
-  ]);
+  const schema = React.useMemo<DetailsPageSchema>(() => {
+    const mappedTabs = resolvedTabs.map((tab) => {
+      const mappedSections: SectionDefinition[] = sortSections(tab.sections).map(
+        (section, sectionIndex) => {
+          const sectionId = buildLegacySectionId(tab.key, section, sectionIndex);
+          return {
+            id: sectionId,
+            kind: sectionKindFromType(section),
+            title: section.title,
+            description: section.description,
+            order: section.order,
+            loadingStrategy: "eager",
+            dataSource: "entity",
+            render: () => {
+              const builtInDefaultSection = () => buildDefaultSectionRenderer(section);
+              const typeRenderer = sectionRenderers?.[section.type];
 
-  const renderedTabList = renderTabList?.({
-    tabs: resolvedTabs,
-    activeTab: active,
-    setActiveTab: setActive,
-    defaultTabList,
-  });
+              const renderContextFactory = (
+                defaultSection: () => React.ReactNode,
+              ): BaseDetailSectionRenderContext<TData> => ({
+                tab,
+                section,
+                sectionIndex,
+                data,
+                activeTab: active,
+                defaultSection,
+              });
+
+              const defaultSection = () => {
+                if (!typeRenderer) return builtInDefaultSection();
+                const byType = typeRenderer(renderContextFactory(builtInDefaultSection));
+                return byType !== undefined ? byType : builtInDefaultSection();
+              };
+
+              const customSection = renderSection?.(renderContextFactory(defaultSection));
+              const renderedSection =
+                customSection !== undefined ? customSection : defaultSection();
+
+              return <div className={cn("min-w-0", section.contentClassName)}>{renderedSection}</div>;
+            },
+          };
+        },
+      );
+
+      return {
+        id: tab.key,
+        title: tab.label,
+        order: 0,
+        loadingStrategy: "lazy" as const,
+        sections: mappedSections,
+      };
+    });
+
+    return {
+      header: [],
+      tabs: mappedTabs,
+    };
+  }, [
+    active,
+    buildDefaultSectionRenderer,
+    data,
+    renderSection,
+    resolvedTabs,
+    sectionRenderers,
+  ]);
 
   if (resolvedTabs.length === 0) {
     return <div className={cn("flex flex-col gap-4", className)} />;
   }
 
+  const activeTabMeta = resolvedTabs.find((tab) => tab.key === active);
+  const computedSectionsContainerClassName = cn(
+    sectionsContainerClassName,
+    activeTabMeta?.sectionsContainerClassName,
+  );
+
   return (
-    <div className={cn("flex flex-col gap-4", className)}>
-      <Tabs value={active} onValueChange={setActive}>
-        {renderedTabList !== undefined ? renderedTabList : defaultTabList()}
-        {resolvedTabs.map((tab: DetailTabConfig) => (
-          <TabsContent key={tab.key} value={tab.key}>
-            <div
-              className={cn(
-                resolveSectionGridClasses(sectionsColumns),
-                sectionsContainerClassName,
-                tab.sectionsContainerClassName,
-              )}
-            >
-              {sortSections(tab.sections).map((section, sectionIndex) => {
-                const builtInDefaultSection = () =>
-                  renderBuiltInSection(section);
-                const typeRenderer = sectionRenderers?.[section.type];
-
-                const renderContextFactory = (
-                  defaultSection: () => React.ReactNode,
-                ): BaseDetailSectionRenderContext<TData> => ({
-                  tab,
-                  section,
-                  sectionIndex,
-                  data,
-                  activeTab: active,
-                  defaultSection,
-                });
-
-                const defaultSection = () => {
-                  if (!typeRenderer) {
-                    return builtInDefaultSection();
-                  }
-                  const sectionByType = typeRenderer(
-                    renderContextFactory(builtInDefaultSection),
-                  );
-                  return sectionByType !== undefined
-                    ? sectionByType
-                    : builtInDefaultSection();
-                };
-
-                const customSection = renderSection?.(
-                  renderContextFactory(defaultSection),
-                );
-                const renderedSection =
-                  customSection !== undefined
-                    ? customSection
-                    : defaultSection();
-
-                const sectionSpan = Math.max(
-                  1,
-                  Math.min(
-                    Number(section.span ?? 1) || 1,
-                    Math.max(1, Math.min(sectionsColumns, 4)),
-                  ),
-                );
-
-                const sectionStyle: React.CSSProperties = {
-                  order: section.order,
-                  gridColumn:
-                    sectionSpan > 1
-                      ? `span ${sectionSpan} / span ${sectionSpan}`
-                      : undefined,
-                };
-
-                return (
-                  <div
-                    key={
-                      section.id ?? `${tab.key}-${section.type}-${sectionIndex}`
-                    }
-                    className={cn("min-w-0", section.containerClassName)}
-                    style={sectionStyle}
-                  >
-                    <div className={cn("min-w-0", section.contentClassName)}>
-                      {renderedSection}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </TabsContent>
-        ))}
-      </Tabs>
-    </div>
+    <SectionHost
+      schema={schema}
+      runtime={{
+        entityId: "base-detail-entity",
+        entity: dataRecord,
+      }}
+      className={cn("flex flex-col gap-4", className)}
+      initialTabId={defaultValue ?? initialTab ?? firstTabKey}
+      activeTabId={active}
+      onActiveTabChange={setActive}
+      renderTabList={
+        renderTabList
+          ? ({ activeTab, setActiveTab, defaultTabList }) =>
+              renderTabList({
+                tabs: resolvedTabs,
+                activeTab,
+                setActiveTab,
+                defaultTabList: () => defaultTabList(),
+              })
+          : showTabs
+            ? undefined
+            : () => null
+      }
+      tabListClassName={tabListClassName}
+      tabTriggerClassName={tabTriggerClassName}
+      activeTabTriggerClassName={activeTabTriggerClassName}
+      inactiveTabTriggerClassName={inactiveTabTriggerClassName}
+      sectionColumns={sectionsColumns}
+      sectionsContainerClassName={computedSectionsContainerClassName}
+      resolveSectionContainer={(sectionDefinition) => {
+        const item = sectionLayoutMap.get(sectionDefinition.id);
+        if (!item) return undefined;
+        const section = item.section;
+        const sectionSpan = Math.max(
+          1,
+          Math.min(
+            Number(section.span ?? 1) || 1,
+            Math.max(1, Math.min(sectionsColumns, 4)),
+          ),
+        );
+        return {
+          className: section.containerClassName,
+          style: {
+            order: section.order,
+            gridColumn:
+              sectionSpan > 1 ? `span ${sectionSpan} / span ${sectionSpan}` : undefined,
+          },
+        };
+      }}
+    />
   );
 }

@@ -2,6 +2,8 @@ import * as React from "react";
 import { Card } from "@/lib/components/ui/card";
 import { cn } from "@/lib/utils";
 import type { DetailPanelConfig } from "../types";
+import UnitFieldRenderer from "../units/UnitFieldRenderer";
+import type { UnitFieldInput } from "../units/unitFieldTypes";
 
 function Grid({
   columns,
@@ -47,28 +49,63 @@ export default function ListDetail({
                 </p>
               ) : null}
               <Grid columns={section.columns ?? 2}>
-                {section.fields.map((field, fidx) => (
-                  <div
-                    key={`${field.name}-${fidx}`}
-                    style={
-                      field.colSpan
-                        ? {
-                            gridColumn: `span ${field.colSpan} / span ${field.colSpan}`,
-                          }
-                        : undefined
-                    }
-                    className="space-y-1"
-                  >
-                    <div className="text-xs text-muted-foreground">
-                      {field.label ?? field.name}
+                {section.fields.map((field, fidx) => {
+                  const shouldRenderUnit =
+                    field.type === "unit" || Boolean(field.unitField);
+                  const baseUnitField = shouldRenderUnit
+                    ? ((field.unitField ?? {
+                        kind: "text",
+                      }) as UnitFieldInput)
+                    : null;
+                  const resolvedUnitField = baseUnitField
+                    ? ({
+                        ...baseUnitField,
+                        id: baseUnitField.id || field.name,
+                        label: baseUnitField.label ?? field.label ?? field.name,
+                        value:
+                          baseUnitField.value !== undefined
+                            ? baseUnitField.value
+                            : data?.[field.name],
+                      } as UnitFieldInput)
+                    : null;
+                  const unitMode = field.unitMode ?? "valueOnly";
+                  const showLegacyLabel = !resolvedUnitField || unitMode === "valueOnly";
+
+                  return (
+                    <div
+                      key={`${field.name}-${fidx}`}
+                      style={
+                        field.colSpan
+                          ? {
+                              gridColumn: `span ${field.colSpan} / span ${field.colSpan}`,
+                            }
+                          : undefined
+                      }
+                      className="space-y-1"
+                    >
+                      {showLegacyLabel ? (
+                        <div className="text-xs text-muted-foreground">
+                          {field.label ?? field.name}
+                        </div>
+                      ) : null}
+                      <div className="text-sm">
+                        {resolvedUnitField ? (
+                          <UnitFieldRenderer
+                            field={resolvedUnitField}
+                            mode={unitMode}
+                            density={field.unitDensity}
+                            defaultLocale={field.unitDefaultLocale}
+                            defaultTimezone={field.unitDefaultTimezone}
+                          />
+                        ) : field.render ? (
+                          field.render(data?.[field.name], data)
+                        ) : (
+                          String(data?.[field.name] ?? "")
+                        )}
+                      </div>
                     </div>
-                    <div className="text-sm">
-                      {field.render
-                        ? field.render(data?.[field.name], data)
-                        : String(data?.[field.name] ?? "")}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </Grid>
             </div>
           ))}

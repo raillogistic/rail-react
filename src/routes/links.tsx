@@ -18,6 +18,7 @@ import { getAppDefaultRoute, getAppNavigationLinks } from "@/apps/routes";
 import { DynamicDetail, UnitFieldExamples } from "@/lib/details";
 import BaseDetail from "@/lib/details/BaseDetail";
 import DetailExample from "@/lib/details/DetailExample";
+import ExampleDetailsPage from "@/lib/details/example/ExampleDetailsPage";
 
 const routeFallback = (
   <div className="rounded-md border p-3 text-sm text-muted-foreground">
@@ -230,7 +231,7 @@ const CORE_NAVIGATION_LINKS: NavigationSection[] = [
         path: "/form",
         component: withRouteSuspense(
           <div>
-            <UnitFieldExamples />
+            <ExampleDetailsPage />
             {/* <DetailExample /> */}
           </div>,
         ),

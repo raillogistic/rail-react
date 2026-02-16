@@ -2,6 +2,11 @@ import type React from "react";
 import type { ColumnDef } from "@tanstack/react-table";
 import type { FilterFieldType } from "../table/compat/types";
 import type { ModelFormProps } from "../form";
+import type {
+  UnitFieldDensity,
+  UnitFieldInput,
+  UnitFieldMode,
+} from "./units/unitFieldTypes";
 
 export type DetailFieldConfig = {
   name: string;
@@ -9,7 +14,12 @@ export type DetailFieldConfig = {
   description?: string;
   render?: (value: unknown, data: Record<string, unknown>) => React.ReactNode;
   colSpan?: number;
-  type?: "text" | "table";
+  type?: "text" | "table" | "unit";
+  unitField?: UnitFieldInput;
+  unitMode?: UnitFieldMode;
+  unitDensity?: UnitFieldDensity;
+  unitDefaultLocale?: string;
+  unitDefaultTimezone?: string;
   table?: {
     columns: ColumnDef<unknown>[];
     rows?: unknown[];
@@ -115,9 +125,26 @@ export type DetailTabSectionTable = {
   initial_page_size?: number;
 };
 
+export type DetailTabSectionUnits = {
+  id?: string;
+  type: "units";
+  title?: string;
+  description?: string;
+  order?: number;
+  span?: number;
+  containerClassName?: string;
+  contentClassName?: string;
+  fields: UnitFieldInput[];
+  columns?: number;
+  mode?: UnitFieldMode;
+  density?: UnitFieldDensity;
+  defaultLocale?: string;
+  defaultTimezone?: string;
+};
+
 export type DetailTabSectionCustom = {
   id?: string;
-  type: Exclude<string, "list" | "table">;
+  type: Exclude<string, "list" | "table" | "units">;
   title?: string;
   description?: string;
   order?: number;
@@ -130,6 +157,7 @@ export type DetailTabSectionCustom = {
 export type DetailTabSectionConfig =
   | DetailTabSectionList
   | DetailTabSectionTable
+  | DetailTabSectionUnits
   | DetailTabSectionCustom;
 
 export type DetailTabConfig = {
