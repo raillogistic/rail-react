@@ -1,7 +1,7 @@
 import React from "react";
 import { selectGeneratedSubmitOperation } from "../../mutations";
 import type { FormBehaviorConfig, FormSchema } from "../../types";
-import type { ModelFormContract } from "../../types/generatedContract";
+import type { ModelFormContract, ModelFormContractRelation } from "../../types/generatedContract";
 import type { ModelFormProps, ModelFormSubmitOutcome } from "../../types.model";
 import { buildSubmitPayload } from "../../utils/buildSubmitPayload";
 import { applyErrorsToFormFields, normalizeGeneratedErrorsForForm } from "../../utils/errors";
@@ -18,10 +18,31 @@ export type UseModelFormLogicOptions<TFormValues extends Record<string, unknown>
   editableFieldPaths: string[];
   sanitizeValuesForControlledSchema: (values: Record<string, unknown>) => Record<string, unknown>;
   relationOperationOverrides: any;
+  submitRelations: ModelFormContractRelation[];
   modePermissionDenied: boolean;
   resolvedMode: "CREATE" | "UPDATE" | "VIEW";
   resolvedObjectIdValue?: string;
 };
+
+function normalizeMutationVariablesForDevtools(
+  variables: Record<string, unknown>,
+  identifier?: { key: string; value: string | number } | null,
+) {
+  const rawIdentifierName = String(identifier?.key ?? "").trim();
+  if (!rawIdentifierName) return variables;
+  const nextVariables: Record<string, unknown> = { ...variables };
+  if (rawIdentifierName !== "id") {
+    if (Object.prototype.hasOwnProperty.call(nextVariables, rawIdentifierName)) {
+      nextVariables.id = nextVariables[rawIdentifierName];
+      delete nextVariables[rawIdentifierName];
+    } else if (nextVariables.id === undefined || nextVariables.id === null) {
+      nextVariables.id = identifier?.value;
+    }
+  } else if (nextVariables.id === undefined || nextVariables.id === null) {
+    nextVariables.id = identifier?.value;
+  }
+  return nextVariables;
+}
 
 export function useModelFormLogic<TFormValues extends Record<string, unknown>>(
   options: UseModelFormLogicOptions<TFormValues>
@@ -34,6 +55,7 @@ export function useModelFormLogic<TFormValues extends Record<string, unknown>>(
     editableFieldPaths,
     sanitizeValuesForControlledSchema,
     relationOperationOverrides,
+    submitRelations,
     modePermissionDenied,
     resolvedMode,
     resolvedObjectIdValue,
@@ -172,7 +194,7 @@ export function useModelFormLogic<TFormValues extends Record<string, unknown>>(
             mode: submitMode,
             operationName,
             resolvedValues,
-            relations: contract.relations,
+            relations: submitRelations,
             relationOperationOverrides,
             baselineValues: generated.initialValues as Record<string, unknown>,
             identifier,
@@ -182,7 +204,10 @@ export function useModelFormLogic<TFormValues extends Record<string, unknown>>(
             formValues: rawFormValues,
             mutationRequest: {
               operationName: envelope.operationName,
-              variables: envelope.variables, // Note: ModelForm.tsx originally called normalizeMutationVariablesForGraphQL here too, but it's redundant if envelope is correct
+              variables: normalizeMutationVariablesForDevtools(
+                envelope.variables,
+                envelope.identifier,
+              ),
             },
           };
         } catch (error) {
@@ -201,6 +226,7 @@ export function useModelFormLogic<TFormValues extends Record<string, unknown>>(
     generated.buildSubmissionValues,
     generated.initialValues,
     relationOperationOverrides,
+    submitRelations,
     sanitizeValuesForControlledSchema,
     resolvedObjectIdValue,
   ]);

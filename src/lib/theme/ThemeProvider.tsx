@@ -93,6 +93,69 @@ const initialState: ThemeProviderState = {
 
 export const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
 
+const loadedFontFamilies = new Set<FontFamily>([
+  "inter",
+  "system",
+  "mono",
+  "serif",
+]);
+
+const fontFamilyLoaders: Partial<
+  Record<FontFamily, Array<() => Promise<unknown>>>
+> = {
+  "open-sans": [
+    () => import("@fontsource/open-sans/400.css"),
+    () => import("@fontsource/open-sans/700.css"),
+  ],
+  roboto: [
+    () => import("@fontsource/roboto/400.css"),
+    () => import("@fontsource/roboto/500.css"),
+    () => import("@fontsource/roboto/700.css"),
+  ],
+  lato: [
+    () => import("@fontsource/lato/400.css"),
+    () => import("@fontsource/lato/700.css"),
+  ],
+  montserrat: [
+    () => import("@fontsource/montserrat/400.css"),
+    () => import("@fontsource/montserrat/700.css"),
+  ],
+  "source-code-pro": [
+    () => import("@fontsource/source-code-pro/400.css"),
+    () => import("@fontsource/source-code-pro/700.css"),
+  ],
+  "playfair-display": [
+    () => import("@fontsource/playfair-display/400.css"),
+    () => import("@fontsource/playfair-display/700.css"),
+  ],
+  "fira-code": [
+    () => import("@fontsource/fira-code/400.css"),
+    () => import("@fontsource/fira-code/700.css"),
+  ],
+  oxanium: [
+    () => import("@fontsource/oxanium/400.css"),
+    () => import("@fontsource/oxanium/700.css"),
+    () => import("@fontsource/oxanium/800.css"),
+  ],
+  geist: [() => import("./fonts/geist.css")],
+  "baloo-tamma-2": [() => import("./fonts/baloo-tamma-2.css")],
+};
+
+const ensureFontFamilyLoaded = async (family: FontFamily) => {
+  if (loadedFontFamilies.has(family)) {
+    return;
+  }
+
+  const loaders = fontFamilyLoaders[family] ?? [];
+  if (!loaders.length) {
+    loadedFontFamilies.add(family);
+    return;
+  }
+
+  await Promise.all(loaders.map((loader) => loader()));
+  loadedFontFamilies.add(family);
+};
+
 const GET_CURRENT_USER_SETTINGS_RECORD = gql`
   query GetCurrentUserSettingsRecord {
     me {
@@ -542,6 +605,12 @@ export function ThemeProvider({
     if (defaultLineHeight && defaultLineHeight !== DEFAULT_LINE_HEIGHT) setLineHeightState(defaultLineHeight);
     if (defaultLetterSpacing && defaultLetterSpacing !== DEFAULT_LETTER_SPACING) setLetterSpacingState(defaultLetterSpacing);
   }, [defaultTheme, defaultMode, defaultLayout, defaultSidebarCollapseMode, defaultFontSize, defaultFontFamily, defaultLineHeight, defaultLetterSpacing]);
+
+  useEffect(() => {
+    void ensureFontFamilyLoaded(fontFamily).catch((error) => {
+      console.warn(`[ThemeProvider] Failed to load font family "${fontFamily}"`, error);
+    });
+  }, [fontFamily]);
 
   useEffect(() => {
     const root = window.document.documentElement;

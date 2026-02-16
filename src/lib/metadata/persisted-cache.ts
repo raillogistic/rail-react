@@ -366,6 +366,9 @@ export const isEntryStale = (
 export const hydrateMetadataCache = (
   cache: InMemoryCache,
   userKey?: string,
+  options?: {
+    routeHints?: Array<{ app: string; model: string }>;
+  },
 ): { hydrated: boolean; entries: number; userKey: string | null } => {
   const resolvedUserKey = userKey ?? getActiveMetadataUserKey();
   if (!resolvedUserKey) {
@@ -374,8 +377,23 @@ export const hydrateMetadataCache = (
 
   const store = readStore(resolvedUserKey);
   let hydratedEntries = 0;
+  const routeHints = options?.routeHints ?? [];
+  const hasRouteHintFilter = options?.routeHints !== undefined;
+  const hintedKeys = new Set(
+    routeHints
+      .map((hint) =>
+        `${String(hint.app ?? "").trim()}.${String(hint.model ?? "").trim()}`,
+      )
+      .filter((key) => key !== "."),
+  );
+  const shouldHydrate = (modelKey: string) =>
+    hasRouteHintFilter ? hintedKeys.has(modelKey) : true;
 
   Object.entries(store.entries).forEach(([modelKey, entry]) => {
+    if (!shouldHydrate(modelKey)) {
+      return;
+    }
+
     const [app, model] = splitModelKey(modelKey);
     if (!app || !model) return;
 

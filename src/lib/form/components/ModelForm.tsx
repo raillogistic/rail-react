@@ -30,6 +30,7 @@ import { useModelFormQueries } from "./modelForm/useModelFormQueries";
 import { useModelFormConfig } from "./modelForm/useModelFormConfig";
 import { useModelFormSchema } from "./modelForm/useModelFormSchema";
 import { useModelFormLogic } from "./modelForm/useModelFormLogic";
+import { buildSubmitRelationsFromContracts } from "./modelForm/submitRelations";
 import { shouldEnforceOperationDeny } from "../utils/operationPermissions";
 import { serializeRuntimeOverridesForQuery } from "../utils/jsonCoercion";
 import type { NestedMutationOperationOverrides } from "../utils/nestedMutationPayload";
@@ -165,6 +166,16 @@ export function ModelForm<TFormValues extends Record<string, unknown> = Record<s
     return overrides;
   }, [contract, nestedControls]);
 
+  const submitRelations = React.useMemo(
+    () =>
+      buildSubmitRelationsFromContracts({
+        contract,
+        nestedControls,
+        relatedContractsByModel,
+      }),
+    [contract, nestedControls, relatedContractsByModel],
+  );
+
   const executeGeneratedMutation = React.useCallback(async (operationName: string, variables: Record<string, unknown>, envelope: any) => {
     const mutationMode = envelope.identifier ? "update" : "create";
     const graphqlVariables = normalizeMutationVariablesForGraphQL(variables, envelope.identifier);
@@ -176,7 +187,7 @@ export function ModelForm<TFormValues extends Record<string, unknown> = Record<s
   const generated = useGeneratedModelForm({
     contract, initialData, runtimeOverrides: resolvedRuntimeOverrides, generatedEnabled,
     legacySchema: legacySchema as any, submitMode: resolvedMode, objectId: resolvedObjectIdValue,
-    relationOperationOverrides, executeMutation: executeGeneratedMutation,
+    relationOperationOverrides, submissionRelations: submitRelations, executeMutation: executeGeneratedMutation,
   });
 
   const modePermissionDenied = React.useMemo(() => {
@@ -194,9 +205,14 @@ export function ModelForm<TFormValues extends Record<string, unknown> = Record<s
     nestedControls, resolvedOnlyRelationships, resolvedExcludeRelationships,
   });
 
+  const resolvedLayout = React.useMemo(() => {
+    const merged = { ...(formProps?.layout ?? {}), ...(layout ?? {}) };
+    return Object.keys(merged).length > 0 ? merged : undefined;
+  }, [formProps?.layout, layout]);
+
   const { mergedBehavior, mergedState, mergedActions, resolvedDevtools } = useModelFormLogic({
     generatedEnabled, contract, generated, formValidator, editableFieldPaths, sanitizeValuesForControlledSchema,
-    relationOperationOverrides, modePermissionDenied, resolvedMode, resolvedObjectIdValue,
+    relationOperationOverrides, submitRelations, modePermissionDenied, resolvedMode, resolvedObjectIdValue,
     formProps, state, behavior, actions, devtools,
   });
 
@@ -254,7 +270,7 @@ export function ModelForm<TFormValues extends Record<string, unknown> = Record<s
             schema={finalSchema}
             state={finalState}
             behavior={mergedBehavior}
-            layout={layout}
+            layout={resolvedLayout}
             actions={mergedActions}
             devtools={resolvedDevtools}
           />

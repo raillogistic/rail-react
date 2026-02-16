@@ -75,6 +75,7 @@ export type UseGeneratedModelFormOptions = {
   objectId?: string | number | null;
   identifierKeyOverride?: string | null;
   relationOperationOverrides?: NestedMutationOperationOverrides;
+  submissionRelations?: ModelFormContract["relations"];
   executeMutation?: (
     operationName: string,
     variables: Record<string, unknown>,
@@ -120,6 +121,152 @@ function mapKindToInputType(kind: string): FormFieldConfig["type"] {
     default:
       return "text";
   }
+}
+
+function normalizeChoicePrimitive(value: unknown): string | number | undefined {
+  if (typeof value === "string" || typeof value === "number") {
+    return value;
+  }
+  if (typeof value === "boolean") {
+    return value ? "true" : "false";
+  }
+  return undefined;
+}
+
+function normalizeChoiceEntry(
+  entry: unknown,
+): { label: string; value: string | number; description?: string; disabled?: boolean } | null {
+  if (Array.isArray(entry)) {
+    const value = normalizeChoicePrimitive(entry[0]);
+    if (value === undefined) return null;
+    const label =
+      entry.length > 1 && entry[1] !== undefined && entry[1] !== null
+        ? String(entry[1])
+        : String(value);
+    const description =
+      entry.length > 2 && entry[2] !== undefined && entry[2] !== null
+        ? String(entry[2])
+        : undefined;
+    return {
+      label,
+      value,
+      ...(description ? { description } : {}),
+    };
+  }
+
+  if (entry && typeof entry === "object") {
+    const record = entry as Record<string, unknown>;
+    const value = normalizeChoicePrimitive(
+      record.value ?? record.id ?? record.key,
+    );
+    if (value === undefined) return null;
+
+    const label = String(
+      record.label ?? record.name ?? record.title ?? value,
+    );
+    const description =
+      record.description === undefined || record.description === null
+        ? undefined
+        : String(record.description);
+    const disabled =
+      typeof record.disabled === "boolean" ? record.disabled : undefined;
+
+    return {
+      label,
+      value,
+      ...(description ? { description } : {}),
+      ...(disabled !== undefined ? { disabled } : {}),
+    };
+  }
+
+  const primitive = normalizeChoicePrimitive(entry);
+  if (primitive === undefined) return null;
+  return {
+    label: String(primitive),
+    value: primitive,
+  };
+}
+
+function normalizeChoiceCollection(
+  source: unknown,
+): Array<{ label: string; value: string | number; description?: string; disabled?: boolean }> {
+  const parsed = parseJsonValue(source);
+  if (Array.isArray(parsed)) {
+    return parsed
+      .map((entry) => normalizeChoiceEntry(entry))
+      .filter(Boolean) as Array<{
+      label: string;
+      value: string | number;
+      description?: string;
+      disabled?: boolean;
+    }>;
+  }
+
+  if (!parsed || typeof parsed !== "object") {
+    return [];
+  }
+
+  const record = parsed as Record<string, unknown>;
+  const directChoice = normalizeChoiceEntry(record);
+  if (directChoice) {
+    return [directChoice];
+  }
+
+  return Object.entries(record)
+    .map(([value, labelOrConfig]) => {
+      if (
+        labelOrConfig &&
+        typeof labelOrConfig === "object" &&
+        !Array.isArray(labelOrConfig)
+      ) {
+        const config = labelOrConfig as Record<string, unknown>;
+        const description =
+          config.description === undefined || config.description === null
+            ? undefined
+            : String(config.description);
+        const disabled =
+          typeof config.disabled === "boolean" ? config.disabled : undefined;
+        return {
+          label: String(config.label ?? config.name ?? value),
+          value,
+          ...(description ? { description } : {}),
+          ...(disabled !== undefined ? { disabled } : {}),
+        };
+      }
+      return {
+        label: String(labelOrConfig ?? value),
+        value,
+      };
+    })
+    .filter((option) => option.value !== "");
+}
+
+function resolveChoiceOptions(
+  field: { kind?: string; constraints?: unknown; metadata?: unknown; ui?: unknown },
+): Array<{ label: string; value: string | number; description?: string; disabled?: boolean }> {
+  const metadata = asRecord(field.metadata) as Record<string, unknown> | undefined;
+  const constraints = asRecord(field.constraints) as Record<string, unknown> | undefined;
+  const ui = asRecord(field.ui) as Record<string, unknown> | undefined;
+
+  const candidateSources = [
+    metadata?.choices,
+    constraints?.choices,
+    ui?.choices,
+    ui?.options,
+    metadata?.enum,
+    constraints?.enum,
+    metadata?.allowed_values,
+    constraints?.allowed_values,
+  ];
+
+  for (const candidate of candidateSources) {
+    const normalized = normalizeChoiceCollection(candidate);
+    if (normalized.length > 0) {
+      return normalized;
+    }
+  }
+
+  return [];
 }
 
 function applyOverrides(
@@ -407,7 +554,6 @@ export function buildSchemaFromContract(
     if (!contractFieldName) continue;
     const type = mapKindToInputType(field.kind);
     const uiConfig = asRecord(field.ui);
-    const metadata = asRecord(field.metadata);
     const baseConfig: FormFieldConfig = {
       name: contractFieldName,
       type,
@@ -427,13 +573,7 @@ export function buildSchemaFromContract(
     } as FormFieldConfig;
 
     if (type === "select") {
-      const choices = (metadata as Record<string, any>)?.choices;
-      (baseConfig as any).options = Array.isArray(choices)
-        ? choices.map((choice: any) => ({
-            label: String(choice.label ?? choice.value),
-            value: choice.value,
-          }))
-        : [];
+      (baseConfig as any).options = resolveChoiceOptions(field);
       if (field.kind === "MULTI_CHOICE") {
         (baseConfig as any).multiple = true;
       }
@@ -530,11 +670,19 @@ export function useGeneratedModelForm(options: UseGeneratedModelFormOptions) {
     objectId,
     identifierKeyOverride,
     relationOperationOverrides,
+    submissionRelations,
     executeMutation,
     submitOverride,
   } = options;
 
   const usingGenerated = Boolean(generatedEnabled && contract);
+  const effectiveSubmissionRelations = React.useMemo(
+    () =>
+      (submissionRelations?.length
+        ? submissionRelations
+        : contract?.relations ?? []),
+    [submissionRelations, contract?.relations],
+  );
   const rawSubmitMode = submitMode ?? contract?.mode ?? "CREATE";
   const activeSubmitMode = normalizeSubmitMode(rawSubmitMode);
   const submitPermission = React.useMemo(
@@ -578,9 +726,15 @@ export function useGeneratedModelForm(options: UseGeneratedModelFormOptions) {
               const fieldName = resolveRelationFieldName(relation);
               return [fieldName, relation.path].filter(Boolean) as string[];
             }) ?? []),
+          ...((effectiveSubmissionRelations ?? [])
+            .filter((relation) => isRelationReadable(relation))
+            .flatMap((relation) => {
+              const fieldName = resolveRelationFieldName(relation);
+              return [fieldName, relation.path].filter(Boolean) as string[];
+            }) ?? []),
         ],
       ),
-    [contract],
+    [contract, effectiveSubmissionRelations],
   );
 
   const baseValues = React.useMemo(() => {
@@ -680,7 +834,7 @@ export function useGeneratedModelForm(options: UseGeneratedModelFormOptions) {
               mode,
               operationName,
               resolvedValues,
-              relations: contract.relations,
+              relations: effectiveSubmissionRelations,
               relationOperationOverrides,
               baselineValues: runtimeValues,
               identifier,
@@ -799,6 +953,7 @@ export function useGeneratedModelForm(options: UseGeneratedModelFormOptions) {
       formErrorKey,
       identifierKeyOverride,
       objectId,
+      effectiveSubmissionRelations,
       relationOperationOverrides,
       rawSubmitMode,
       runtimeValues,

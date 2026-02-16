@@ -100,4 +100,45 @@ describe("useGeneratedValidators", () => {
     );
     expect(validate({ inventoryCount: 5 })).toBeUndefined();
   });
+
+  it("skips required validation for non-editable generated fields", () => {
+    const contract: ModelFormContract = {
+      ...sampleModelFormContract,
+      fields: [
+        {
+          ...sampleModelFormContract.fields[0],
+          name: "orderNumber",
+          path: "order_number",
+          fieldName: "order_number",
+          label: "Numero de commande",
+          required: true,
+          readOnly: true,
+          hidden: false,
+          writable: false,
+          readable: true,
+          visibility: "VISIBLE",
+        },
+        {
+          ...sampleModelFormContract.fields[0],
+          name: "name",
+          path: "name",
+          fieldName: "name",
+          label: "Name",
+          required: true,
+          readOnly: false,
+          hidden: false,
+          writable: true,
+          readable: true,
+          visibility: "VISIBLE",
+        },
+      ],
+    };
+
+    const { result } = renderHook(() => useGeneratedValidators(contract));
+    const validate = result.current.formValidator;
+
+    expect(validate({ name: "Widget" })).toBeUndefined();
+    expect(validate({})?.name).toMatch(/(required|requis)/i);
+    expect(validate({})).not.toHaveProperty("orderNumber");
+  });
 });

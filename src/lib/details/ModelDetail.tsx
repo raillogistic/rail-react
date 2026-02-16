@@ -21,6 +21,7 @@ import { useGraphQLModelTable } from "../table/compat/hooks";
 import { useModelAccess, ModelAccessContext } from "@/lib/security/modelAccess";
 import { useModelTelemetry } from "@/lib/telemetry/useModelTelemetry";
 import { useAuditableAction } from "@/lib/security/useAuditableAction";
+import ModelDetailV2 from "./v2/components/ModelDetailV2";
 
 const numericFieldTypes = new Set([
   "IntegerField",
@@ -88,14 +89,13 @@ function buildDetailFields(
   return fields.filter((field) => targetSet.has(field.name));
 }
 
-export default function ModelDetail({
+function LegacyModelDetail({
   appName,
   modelName,
   id,
   className,
   includeSections,
   excludeSections,
-  onUpdate,
   relatedTableConfigs,
   nested,
 }: ModelDetailProps) {
@@ -347,6 +347,19 @@ export default function ModelDetail({
   );
 }
 
+export default function ModelDetail(props: ModelDetailProps) {
+  if (props.useV2) {
+    return (
+      <ModelDetailV2
+        appName={props.appName}
+        modelName={props.modelName}
+        id={props.id}
+      />
+    );
+  }
+  return <LegacyModelDetail {...props} />;
+}
+
 function RelatedItemsSection({
   relation,
   parentModel,
@@ -449,7 +462,6 @@ function SimpleRelatedItemsTable({
   lazyVariables,
   config,
   modelTableProps,
-  parentId,
   onCountChange,
 }: {
   relation: ModelMetadataRelationship;

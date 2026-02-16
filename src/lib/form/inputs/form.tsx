@@ -171,6 +171,22 @@ function collectGlobalSubmitErrors(
   return Array.from(new Set(errors));
 }
 
+function countFieldNodes(fields: FormFieldConfig[]): number {
+  return fields.reduce((count, field) => {
+    const current = field as FormFieldConfig;
+    const hasNestedFields =
+      (current.type === "group" || current.type === "object") &&
+      Array.isArray(current.fields) &&
+      current.fields.length > 0;
+
+    const nestedCount = hasNestedFields
+      ? countFieldNodes(current.fields as FormFieldConfig[])
+      : 0;
+
+    return count + 1 + nestedCount;
+  }, 0);
+}
+
 const DynamicForm = <TValues extends Record<string, any> = Record<string, any>>(
   props: DynamicFormProps<TValues>,
 ) => {
@@ -292,9 +308,24 @@ const DynamicForm = <TValues extends Record<string, any> = Record<string, any>>(
 
   // ─── History (Undo/Redo) ─────────────────────────────────────────────
 
+  const estimatedFieldCount = React.useMemo(() => {
+    const rootFields = schema.sections?.length
+      ? schema.sections.flatMap(
+          (section) => section.fields as FormFieldConfig[],
+        )
+      : (schema.fields as FormFieldConfig[] | undefined) ?? [];
+    return countFieldNodes(rootFields);
+  }, [schema.fields, schema.sections]);
+
+  const adaptiveHistoryMax =
+    estimatedFieldCount >= 80 ? 10 : estimatedFieldCount >= 40 ? 20 : 30;
+  const adaptiveHistoryDebounceMs = estimatedFieldCount >= 80 ? 600 : 300;
+
   const history = useFormHistory(
     form,
     actionsConfig?.undoRedo?.enabled ?? false,
+    actionsConfig?.undoRedo?.maxHistory ?? adaptiveHistoryMax,
+    actionsConfig?.undoRedo?.debounceMs ?? adaptiveHistoryDebounceMs,
   );
 
   // ─── Auto-reset on defaults change ───────────────────────────────────

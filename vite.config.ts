@@ -20,6 +20,86 @@ export default defineConfig({
       "react-dom": path.resolve(__dirname, "./node_modules/react-dom"),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          const normalizedId = id.replace(/\\/g, "/");
+
+          if (!normalizedId.includes("node_modules")) {
+            if (
+              normalizedId.includes("/src/lib/table/components/filtering/") ||
+              normalizedId.includes("/src/lib/filters/")
+            ) {
+              return "table-filtering";
+            }
+            if (normalizedId.includes("/src/lib/table/compat/")) {
+              return "table-compat";
+            }
+            if (normalizedId.includes("/src/lib/table/components/row/")) {
+              return "table-row-actions";
+            }
+            if (
+              normalizedId.includes("/src/lib/table/components/toolbar/") ||
+              normalizedId.includes("/src/lib/table/components/TableToolbar.tsx")
+            ) {
+              return "table-toolbar";
+            }
+            if (
+              normalizedId.includes(
+                "/src/lib/table/components/ModelTableOverlays.tsx",
+              )
+            ) {
+              return "table-overlays";
+            }
+            if (normalizedId.includes("/src/lib/table/hooks/")) {
+              return "table-hooks";
+            }
+            if (normalizedId.includes("/src/lib/table/context/")) {
+              return "table-context";
+            }
+            if (normalizedId.includes("/src/lib/reporting/")) {
+              return "reporting";
+            }
+            return;
+          }
+
+          if (
+            normalizedId.includes("/node_modules/react/") ||
+            normalizedId.includes("/node_modules/react-dom/") ||
+            normalizedId.includes("/node_modules/react-router/") ||
+            normalizedId.includes("/node_modules/react-router-dom/")
+          ) {
+            return "vendor-react";
+          }
+          if (
+            normalizedId.includes("/node_modules/@apollo/client/") ||
+            normalizedId.includes("/node_modules/graphql/")
+          ) {
+            return "vendor-apollo";
+          }
+          if (
+            normalizedId.includes("/node_modules/@tanstack/react-table/") ||
+            normalizedId.includes("/node_modules/@tanstack/react-virtual/")
+          ) {
+            return "vendor-table";
+          }
+          if (
+            normalizedId.includes("/node_modules/recharts/") ||
+            normalizedId.includes("/node_modules/d3-")
+          ) {
+            return "vendor-charts";
+          }
+          if (
+            normalizedId.includes("/node_modules/@radix-ui/") ||
+            normalizedId.includes("/node_modules/vaul/")
+          ) {
+            return "vendor-ui";
+          }
+        },
+      },
+    },
+  },
   test: {
     globals: true,
     environment: "jsdom",

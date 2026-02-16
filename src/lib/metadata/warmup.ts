@@ -4,24 +4,12 @@ import { GET_MODEL_SCHEMA } from "@/lib/table/queries";
 import {
   clearPersistedMetadataStore,
   getPersistedDeployVersion,
-  getRecentModelKeys,
   hasPersistedMetadataEntries,
-  isEntryStale,
   persistFilterMetadata,
   persistTableMetadata,
-  readPersistedModelEntry,
   setActiveMetadataUserKey,
   setPersistedDeployVersion,
 } from "./persisted-cache";
-
-const AVAILABLE_MODELS_QUERY = gql`
-  query AvailableModels {
-    availableModels {
-      app
-      model
-    }
-  }
-`;
 
 const METADATA_DEPLOY_VERSION_QUERY = gql`
   query MetadataDeployVersion {
@@ -29,7 +17,6 @@ const METADATA_DEPLOY_VERSION_QUERY = gql`
   }
 `;
 
-const DEFAULT_STALE_MS = 1000 * 60 * 60 * 6;
 const DEFAULT_PRIORITY_LIMIT = 12;
 const DEFAULT_CONCURRENCY = 3;
 const DEFAULT_PROFILES: MetadataProfileSlice[] = ["filter", "table"];
@@ -42,16 +29,16 @@ type WarmupModelHint = {
   profiles?: MetadataProfileSlice[];
 };
 
-type AvailableModel = {
-  app: string;
-  model: string;
-};
-
 type WarmupTarget = AvailableModel & {
   profiles: MetadataProfileSlice[];
 };
 
 const buildModelKey = (app: string, model: string) => `${app}.${model}`;
+
+type AvailableModel = {
+  app: string;
+  model: string;
+};
 
 const scheduleIdle = (task: () => void) => {
   if (typeof window !== "undefined" && "requestIdleCallback" in window) {
@@ -83,17 +70,6 @@ async function runWithConcurrency<T>(
   await Promise.all(runners);
 }
 
-const shouldFetchEntry = (
-  app: string,
-  model: string,
-  ttlMs: number,
-): { needsFilter: boolean; needsTable: boolean } => {
-  const entry = readPersistedModelEntry(app, model);
-  const needsFilter = isEntryStale(entry?.filter, ttlMs);
-  const needsTable = isEntryStale(entry?.table, ttlMs);
-  return { needsFilter, needsTable };
-};
-
 const normalizeProfiles = (
   profiles: MetadataProfileSlice[] | undefined,
 ): MetadataProfileSlice[] => {
@@ -110,10 +86,24 @@ const fetchMetadataForModel = async (
   client: ApolloClient<unknown>,
   app: string,
   model: string,
-  ttlMs: number,
   profiles: MetadataProfileSlice[],
 ): Promise<void> => {
-  const { needsFilter, needsTable } = shouldFetchEntry(app, model, ttlMs);
+  // Read currently cached values from Apollo cache to avoid unnecessary refetches.
+  const cachedFilterData = client.cache.readQuery<{
+    modelSchema?: unknown;
+    filterSchema?: unknown;
+  }>({
+    query: FILTER_METADATA_QUERY,
+    variables: { app, model },
+  });
+  const cachedTableData = client.cache.readQuery<{
+    modelSchema?: unknown;
+  }>({
+    query: GET_MODEL_SCHEMA,
+    variables: { app, model },
+  });
+  const needsFilter = !cachedFilterData?.modelSchema || !cachedFilterData?.filterSchema;
+  const needsTable = !cachedTableData?.modelSchema;
   const wantsFilter = profiles.includes("filter");
   const wantsTable = profiles.includes("table");
   if ((!needsFilter || !wantsFilter) && (!needsTable || !wantsTable)) {
@@ -162,60 +152,26 @@ const fetchMetadataForModel = async (
   await Promise.all(tasks);
 };
 
-const prioritizeModels = (
-  models: AvailableModel[],
-  recentKeys: string[],
-): AvailableModel[] => {
-  const recentIndex = new Map(
-    recentKeys.map((key, index) => [key, recentKeys.length - index]),
-  );
-
-  return [...models].sort((a, b) => {
-    const aKey = buildModelKey(a.app, a.model);
-    const bKey = buildModelKey(b.app, b.model);
-    const aScore = recentIndex.get(aKey) ?? 0;
-    const bScore = recentIndex.get(bKey) ?? 0;
-    if (aScore !== bScore) {
-      return bScore - aScore;
-    }
-    return aKey.localeCompare(bKey);
-  });
-};
-
-const buildWarmupTargets = (
-  models: AvailableModel[],
-  recentKeys: string[],
+const buildHintTargets = (
+  routeHints: WarmupModelHint[] | undefined,
   globalProfiles: MetadataProfileSlice[],
-  routeHints?: WarmupModelHint[],
 ): WarmupTarget[] => {
-  const availableByKey = new Map(
-    models.map((entry) => [buildModelKey(entry.app, entry.model), entry]),
-  );
-
-  const hintMap = new Map<string, MetadataProfileSlice[]>();
-  for (const hint of routeHints ?? []) {
-    const key = buildModelKey(hint.app, hint.model);
-    if (!availableByKey.has(key)) continue;
-    hintMap.set(key, normalizeProfiles(hint.profiles));
-  }
-
-  const prioritized = prioritizeModels(models, recentKeys);
-  const orderedKeys = [
-    ...Array.from(hintMap.keys()),
-    ...prioritized.map((entry) => buildModelKey(entry.app, entry.model)),
-  ];
-
   const seen = new Set<string>();
   const targets: WarmupTarget[] = [];
-  for (const key of orderedKeys) {
+
+  for (const hint of routeHints ?? []) {
+    const app = String(hint.app ?? "").trim();
+    const model = String(hint.model ?? "").trim();
+    if (!app || !model) continue;
+
+    const key = buildModelKey(app, model);
     if (seen.has(key)) continue;
     seen.add(key);
 
-    const model = availableByKey.get(key);
-    if (!model) continue;
     targets.push({
-      ...model,
-      profiles: hintMap.get(key) ?? globalProfiles,
+      app,
+      model,
+      profiles: normalizeProfiles(hint.profiles ?? globalProfiles),
     });
   }
 
@@ -226,7 +182,6 @@ export async function warmupMetadataCache(
   client: ApolloClient<unknown>,
   options: {
     userKey: string;
-    staleMs?: number;
     priorityLimit?: number;
     concurrency?: number;
     profiles?: MetadataProfileSlice[];
@@ -238,6 +193,11 @@ export async function warmupMetadataCache(
   if (typeof navigator !== "undefined" && navigator.onLine === false) {
     return;
   }
+
+  const profiles = normalizeProfiles(options.profiles);
+  // Route-hint-only warmup to avoid loading metadata for every model.
+  const targets = buildHintTargets(options.routeHints, profiles);
+  if (!targets.length) return;
 
   setActiveMetadataUserKey(userKey);
 
@@ -266,25 +226,8 @@ export async function warmupMetadataCache(
     }
   }
 
-  const { data } = await client.query({
-    query: AVAILABLE_MODELS_QUERY,
-    fetchPolicy: "network-only",
-  });
-
-  const models: AvailableModel[] = data?.availableModels ?? [];
-  if (!models.length) return;
-
-  const recentKeys = getRecentModelKeys(userKey);
   const priorityLimit = options.priorityLimit ?? DEFAULT_PRIORITY_LIMIT;
   const concurrency = options.concurrency ?? DEFAULT_CONCURRENCY;
-  const staleMs = options.staleMs ?? DEFAULT_STALE_MS;
-  const profiles = normalizeProfiles(options.profiles);
-  const targets = buildWarmupTargets(
-    models,
-    recentKeys,
-    profiles,
-    options.routeHints,
-  );
 
   const priorityBatch = targets.slice(0, priorityLimit);
   const remainingBatch = targets.slice(priorityLimit);
@@ -294,7 +237,6 @@ export async function warmupMetadataCache(
       client,
       target.app,
       target.model,
-      staleMs,
       target.profiles,
     ),
   );
@@ -309,7 +251,6 @@ export async function warmupMetadataCache(
             client,
             target.app,
             target.model,
-            staleMs,
             target.profiles,
           ),
       );

@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { Suspense, lazy, useMemo, useState } from "react";
 import { gql, useApolloClient, useMutation } from "@apollo/client";
 import {
   FileSpreadsheet,
@@ -51,7 +51,6 @@ import {
   normalizeTemplateType,
   parseTemplateClientFields,
 } from "../../utils/templateExecution";
-import { ActionDialog, PrintDialog } from "../ModelTableOverlays";
 import type {
   BaseModelTableColumnActionContext,
   BaseModelTableColumnActionsInput,
@@ -63,6 +62,18 @@ import type {
 } from "../../types";
 
 type MutationActionMode = "confirm" | "form";
+
+const ActionDialog = lazy(() =>
+  import("../ModelTableOverlays").then((module) => ({
+    default: module.ActionDialog,
+  })),
+);
+
+const PrintDialog = lazy(() =>
+  import("../ModelTableOverlays").then((module) => ({
+    default: module.PrintDialog,
+  })),
+);
 
 type MutationActionEntry = {
   mutation: MutationSchema;
@@ -992,50 +1003,52 @@ export function RowActions({
           </div>
         </AlertDialogContent>
       </AlertDialog>
+      <Suspense fallback={null}>
+        <ActionDialog
+          open={mutationDialogOpen && Boolean(activeMutationAction)}
+          mode={activeMutationAction?.mode ?? null}
+          actionMeta={
+            activeMutationAction
+              ? {
+                  name: activeMutationAction.mutation.name,
+                  description: activeMutationAction.mutation.description ?? null,
+                  action: activeMutationAction.ui,
+                }
+              : null
+          }
+          schema={activeMutationAction?.schema}
+          defaults={activeMutationAction?.defaults}
+          submitting={executingMutationAction}
+          onCancel={closeMutationDialog}
+          onExecute={(values) => runMutationAction(values ?? {})}
+        />
 
-      <ActionDialog
-        open={mutationDialogOpen && Boolean(activeMutationAction)}
-        mode={activeMutationAction?.mode ?? null}
-        actionMeta={
-          activeMutationAction
-            ? {
-                name: activeMutationAction.mutation.name,
-                description: activeMutationAction.mutation.description ?? null,
-                action: activeMutationAction.ui,
-              }
-            : null
-        }
-        schema={activeMutationAction?.schema}
-        defaults={activeMutationAction?.defaults}
-        submitting={executingMutationAction}
-        onCancel={closeMutationDialog}
-        onExecute={(values) => runMutationAction(values ?? {})}
-      />
-
-      <PrintDialog
-        open={Boolean(printTemplate && printTemplateSchema)}
-        title={printTemplate?.title ?? "Paramètres d'extraction"}
-        schema={printTemplateSchema ?? { fields: [] }}
-        submitLabel={
-          printTemplate && normalizeTemplateType(printTemplate) === "excel"
-            ? "Télécharger"
-            : "Générer"
-        }
-        cancelLabel="Annuler"
-        onCancel={closePrintDialog}
-        onSubmit={(values) => {
-          if (!printTemplate) return;
-          const template = printTemplate;
-          closePrintDialog();
-          void runTemplate(template, values).catch((error: unknown) => {
-            const message =
-              error instanceof Error
-                ? error.message
-                : "Échec de la génération du template.";
-            toast.error(message);
-          });
-        }}
-      />
+        <PrintDialog
+          open={Boolean(printTemplate && printTemplateSchema)}
+          title={printTemplate?.title ?? "Paramètres d'extraction"}
+          schema={printTemplateSchema ?? { fields: [] }}
+          submitLabel={
+            printTemplate && normalizeTemplateType(printTemplate) === "excel"
+              ? "Télécharger"
+              : "Générer"
+          }
+          cancelLabel="Annuler"
+          onCancel={closePrintDialog}
+          onSubmit={(values) => {
+            if (!printTemplate) return;
+            const template = printTemplate;
+            closePrintDialog();
+            void runTemplate(template, values).catch((error: unknown) => {
+              const message =
+                error instanceof Error
+                  ? error.message
+                  : "Échec de la génération du template.";
+              toast.error(message);
+            });
+          }}
+        />
+      </Suspense>
     </TooltipProvider>
   );
 }
+

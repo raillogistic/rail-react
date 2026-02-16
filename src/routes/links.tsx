@@ -5,9 +5,7 @@
  * sidebar, header, and routing table all share the same source of truth.
  */
 
-import type { ComponentType, ReactNode } from "react";
-import { MFASetupPage } from "@/auth/pages/MFASetupPage";
-import { SessionsPage } from "@/auth/pages/SessionsPage";
+import { lazy, Suspense, type ComponentType, type ReactNode } from "react";
 import {
   LayoutDashboard,
   Settings,
@@ -16,34 +14,120 @@ import {
   Smartphone,
   Lock,
 } from "lucide-react";
-import { AccountSettingsPage } from "@/views/settings/AccountSettingsPage";
-import { AdminUISettingsPage } from "@/views/settings/AdminUISettingsPage";
-import { AppearanceSettingsPage } from "@/views/settings/AppearanceSettingsPage";
-import { LayoutSettingsPage } from "@/views/settings/LayoutSettingsPage";
-import { DashboardPage } from "@/views/dashboard/DashboardPage";
-
 import { getAppDefaultRoute, getAppNavigationLinks } from "@/apps/routes";
-import { BaseModelTable, ModelTableV2 } from "@/lib/table";
-import { ModelImportPage } from "@/lib/import/pages";
-import DynamicForm from "@/lib/form/inputs/form";
-import {
-  AdvancedFeaturesForm,
-  ApplicationReviewForm,
-  ContactForm,
-  InvoiceForm,
-  OnboardingWizard,
-  SettingsForm,
-  StoreOrderUpdateGeneratedFormExample,
-  StoreOrderUpdateModelFormExample,
-} from "@/lib/form/examples";
-import {
-  StoreGeneratedExamples,
-  StoreProductCreateGeneratedFormExample,
-  StoreProductCreateModelFormExample,
-} from "@/lib/form/examples";
-import { ModelForm } from "@/lib/form";
+import { DynamicDetail } from "@/lib/details";
+import BaseDetail from "@/lib/details/BaseDetail";
+import DetailExample from "@/lib/details/DetailExample";
 
-const STORE_ORDER_DEMO_ID = import.meta.env.VITE_STORE_ORDER_ID ?? "9";
+const routeFallback = (
+  <div className="rounded-md border p-3 text-sm text-muted-foreground">
+    Chargement...
+  </div>
+);
+
+const withRouteSuspense = (component: ReactNode) => (
+  <Suspense fallback={routeFallback}>{component}</Suspense>
+);
+
+const DashboardPage = lazy(() =>
+  import("@/views/dashboard/DashboardPage").then((module) => ({
+    default: module.DashboardPage,
+  })),
+);
+
+const ModelImportPage = lazy(() =>
+  import("@/lib/import/pages").then((module) => ({
+    default: module.ModelImportPage,
+  })),
+);
+
+const ModelTableV2 = lazy(() =>
+  import("@/lib/table/components/ModelTableV2").then((module) => ({
+    default: module.ModelTableV2,
+  })),
+);
+
+const BaseModelTable = lazy(() =>
+  import("@/lib/table/components/BaseModelTable").then((module) => ({
+    default: module.BaseModelTable,
+  })),
+);
+
+const ModelDetailV2Page = lazy(
+  () => import("@/lib/details/v2/components/ModelDetailV2"),
+);
+
+const SettingsForm = lazy(() =>
+  import("@/lib/form/examples").then((module) => ({
+    default: module.SettingsForm,
+  })),
+);
+
+const ContactForm = lazy(() =>
+  import("@/lib/form/examples").then((module) => ({
+    default: module.ContactForm,
+  })),
+);
+
+const OnboardingWizard = lazy(() =>
+  import("@/lib/form/examples").then((module) => ({
+    default: module.OnboardingWizard,
+  })),
+);
+
+const InvoiceForm = lazy(() =>
+  import("@/lib/form/examples").then((module) => ({
+    default: module.InvoiceForm,
+  })),
+);
+
+const ApplicationReviewForm = lazy(() =>
+  import("@/lib/form/examples").then((module) => ({
+    default: module.ApplicationReviewForm,
+  })),
+);
+
+const StoreOrderUpdateModelFormExample = lazy(() =>
+  import("@/lib/form/examples").then((module) => ({
+    default: module.StoreOrderUpdateModelFormExample,
+  })),
+);
+
+const AccountSettingsPage = lazy(() =>
+  import("@/views/settings/AccountSettingsPage").then((module) => ({
+    default: module.AccountSettingsPage,
+  })),
+);
+
+const AdminUISettingsPage = lazy(() =>
+  import("@/views/settings/AdminUISettingsPage").then((module) => ({
+    default: module.AdminUISettingsPage,
+  })),
+);
+
+const AppearanceSettingsPage = lazy(() =>
+  import("@/views/settings/AppearanceSettingsPage").then((module) => ({
+    default: module.AppearanceSettingsPage,
+  })),
+);
+
+const LayoutSettingsPage = lazy(() =>
+  import("@/views/settings/LayoutSettingsPage").then((module) => ({
+    default: module.LayoutSettingsPage,
+  })),
+);
+
+const SessionsPage = lazy(() =>
+  import("@/auth/pages/SessionsPage").then((module) => ({
+    default: module.SessionsPage,
+  })),
+);
+
+const MFASetupPage = lazy(() =>
+  import("@/auth/pages/MFASetupPage").then((module) => ({
+    default: module.MFASetupPage,
+  })),
+);
 
 export const ROUTES = {
   LOGIN: "/login",
@@ -104,8 +188,8 @@ const CORE_NAVIGATION_LINKS: NavigationSection[] = [
         path: ROUTES.DASHBOARD,
         icon: LayoutDashboard,
         requiresAuth: true,
-        description: "Vue synthèse des indicateurs",
-        component: <DashboardPage />,
+        description: "Vue synthese des indicateurs",
+        component: withRouteSuspense(<DashboardPage />),
       },
       {
         id: "model-import",
@@ -113,7 +197,7 @@ const CORE_NAVIGATION_LINKS: NavigationSection[] = [
         path: ROUTES.MODEL_IMPORT,
         requiresAuth: true,
         hidden: true,
-        component: <ModelImportPage />,
+        component: withRouteSuspense(<ModelImportPage />),
       },
       {
         id: "orders-table-v2",
@@ -122,14 +206,12 @@ const CORE_NAVIGATION_LINKS: NavigationSection[] = [
         icon: LayoutDashboard,
         requiresAuth: true,
         description: "Progress view for ModelTableV2 (store.Order)",
-        component: (
-          <>
-            <ModelTableV2
-              app="store"
-              model="Product"
-              baseTable={{ tableConfig: { title: "Liste des produits" } }}
-            />
-          </>
+        component: withRouteSuspense(
+          <ModelTableV2
+            app="store"
+            model="Product"
+            baseTable={{ tableConfig: { title: "Liste des produits" } }}
+          />,
         ),
       },
       {
@@ -139,40 +221,31 @@ const CORE_NAVIGATION_LINKS: NavigationSection[] = [
         icon: LayoutDashboard,
         requiresAuth: true,
         description: "Progress view for ModelTableV2 (store.Order)",
-        component: (
-          <>
-            <BaseModelTable
-              app="store"
-              model="Product"
-              tableConfig={{ title: "Liste des produits" }}
-            />
-          </>
+        component: withRouteSuspense(
+          <BaseModelTable
+            app="store"
+            model="Product"
+            tableConfig={{ title: "Liste des produits" }}
+          />,
         ),
       },
       {
         id: "form-test",
         path: "/form",
-        component: (
+        component: withRouteSuspense(
           <div>
-            <SettingsForm />
-            <ContactForm />
-            <OnboardingWizard />
-            <InvoiceForm />
-            <ApplicationReviewForm />
-          </div>
+            <DetailExample />
+          </div>,
         ),
         description: "dd",
         requiresAuth: true,
-        title: "Test Form",
+        title: "Details",
       },
       {
         id: "old-form-test",
         path: "/formold",
-        component: (
-          <>
-            <StoreOrderUpdateModelFormExample objectId={"1"} />
-            {/* <AdvancedFeaturesForm/> */}
-          </>
+        component: withRouteSuspense(
+          <StoreOrderUpdateModelFormExample objectId={"10"} />,
         ),
         description: "old form",
         requiresAuth: true,
@@ -180,7 +253,6 @@ const CORE_NAVIGATION_LINKS: NavigationSection[] = [
       },
     ],
   },
-
   {
     id: "parametre",
     label: "parametre",
@@ -191,30 +263,30 @@ const CORE_NAVIGATION_LINKS: NavigationSection[] = [
         path: ROUTES.SETTINGS_ACCOUNT,
         icon: Settings,
         requiresAuth: true,
-        description: "Accéder aux paramètres",
+        description: "Acceder aux parametres",
         children: [
           {
             title: "Compte",
             path: ROUTES.SETTINGS_ACCOUNT,
             icon: User,
             requiresAuth: true,
-            component: <AccountSettingsPage />,
-            description: "Gérer votre profil",
+            component: withRouteSuspense(<AccountSettingsPage />),
+            description: "Gerer votre profil",
           },
           {
             title: "Apparence",
             path: ROUTES.SETTINGS_APPEARANCE,
             icon: Settings,
             requiresAuth: true,
-            component: <AppearanceSettingsPage />,
-            description: "Thème et affichage",
+            component: withRouteSuspense(<AppearanceSettingsPage />),
+            description: "Theme et affichage",
           },
           {
             title: "Disposition",
             path: ROUTES.SETTINGS_LAYOUT,
             icon: LayoutDashboard,
             requiresAuth: true,
-            component: <LayoutSettingsPage />,
+            component: withRouteSuspense(<LayoutSettingsPage />),
             description: "Disposition de l'interface",
           },
           {
@@ -222,7 +294,7 @@ const CORE_NAVIGATION_LINKS: NavigationSection[] = [
             path: ROUTES.SETTINGS_ADMIN,
             icon: Shield,
             requiresAuth: true,
-            component: <AdminUISettingsPage />,
+            component: withRouteSuspense(<AdminUISettingsPage />),
             description: "Configuration globale UI",
           },
           {
@@ -230,16 +302,16 @@ const CORE_NAVIGATION_LINKS: NavigationSection[] = [
             path: ROUTES.SETTINGS_SESSIONS,
             icon: Smartphone,
             requiresAuth: true,
-            component: <SessionsPage />,
-            description: "Gérer vos sessions actives",
+            component: withRouteSuspense(<SessionsPage />),
+            description: "Gerer vos sessions actives",
           },
           {
-            title: "Authentification à deux facteurs",
+            title: "Authentification a deux facteurs",
             path: ROUTES.SETTINGS_MFA,
             icon: Lock,
             requiresAuth: true,
-            component: <MFASetupPage />,
-            description: "Sécuriser votre compte",
+            component: withRouteSuspense(<MFASetupPage />),
+            description: "Securiser votre compte",
           },
         ],
       },

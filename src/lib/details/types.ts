@@ -79,28 +79,111 @@ export type DetailPanelConfig = {
 };
 
 export type DetailTabSectionList = {
+  id?: string;
   type: "list";
+  title?: string;
+  description?: string;
+  order?: number;
+  span?: number;
+  containerClassName?: string;
+  contentClassName?: string;
   panels: DetailPanelConfig[];
 };
 
 export type DetailTabSectionTable = {
+  id?: string;
   type: "table";
   title?: string;
   description?: string;
+  order?: number;
+  span?: number;
+  containerClassName?: string;
+  contentClassName?: string;
   columns: ColumnDef<unknown>[];
+  rows?: unknown[];
+  dataPath?: string;
+  actions?: Array<{
+    key: string;
+    label: string;
+    icon?: React.ReactNode;
+    variant?: "default" | "outline" | "destructive";
+    size?: "sm" | "md" | "lg" | "icon";
+    on_click?: (ctx: { data: Record<string, unknown>; rows: unknown[] }) => void;
+  }>;
+  enable_quick_search?: boolean;
+  enable_sorting?: boolean;
+  initial_page_size?: number;
 };
+
+export type DetailTabSectionCustom = {
+  id?: string;
+  type: Exclude<string, "list" | "table">;
+  title?: string;
+  description?: string;
+  order?: number;
+  span?: number;
+  containerClassName?: string;
+  contentClassName?: string;
+  [key: string]: unknown;
+};
+
+export type DetailTabSectionConfig =
+  | DetailTabSectionList
+  | DetailTabSectionTable
+  | DetailTabSectionCustom;
 
 export type DetailTabConfig = {
   key: string;
   label: string;
-  sections: Array<DetailTabSectionList | DetailTabSectionTable>;
+  sections: DetailTabSectionConfig[];
+  sectionsContainerClassName?: string;
 };
+
+export type BaseDetailTabListRenderContext = {
+  tabs: DetailTabConfig[];
+  activeTab: string;
+  setActiveTab: (tab: string) => void;
+  defaultTabList: () => React.ReactNode;
+};
+
+export type BaseDetailSectionRenderContext<
+  TData = Record<string, unknown>,
+  TSection extends DetailTabSectionConfig = DetailTabSectionConfig,
+> = {
+  tab: DetailTabConfig;
+  section: TSection;
+  sectionIndex: number;
+  data: TData;
+  activeTab: string;
+  defaultSection: () => React.ReactNode;
+};
+
+export type BaseDetailSectionRenderer<TData = Record<string, unknown>> = (
+  context: BaseDetailSectionRenderContext<TData>
+) => React.ReactNode | undefined;
 
 export type BaseDetailProps<TData = Record<string, unknown>> = {
   data: TData;
   tabs: DetailTabConfig[];
   className?: string;
   initialTab?: string;
+  defaultValue?: string;
+  value?: string;
+  onValueChange?: (tab: string) => void;
+  showTabs?: boolean;
+  sectionsColumns?: number;
+  sectionsContainerClassName?: string;
+  tabListClassName?: string;
+  tabTriggerClassName?: string;
+  activeTabTriggerClassName?: string;
+  inactiveTabTriggerClassName?: string;
+  renderTabList?: (
+    context: BaseDetailTabListRenderContext
+  ) => React.ReactNode | undefined;
+  renderSection?: (
+    context: BaseDetailSectionRenderContext<TData>
+  ) => React.ReactNode | undefined;
+  sectionRenderers?: Partial<Record<string, BaseDetailSectionRenderer<TData>>>;
 };
 
 export type NestedDetailConfig = {
@@ -167,6 +250,10 @@ export type ModelDetailProps = {
   onUpdate?: (data: Record<string, unknown>) => void;
   relatedTableConfigs?: Record<string, RelatedTableConfig>;
   nested?: NestedDetailReference[];
+  /**
+   * Optional compatibility flag to route to the v2 metadata-driven renderer.
+   */
+  useV2?: boolean;
   /** Overrides applied to the default update form renderer. */
   updateForm?: ModelDetailUpdateFormConfig;
 };
@@ -224,4 +311,3 @@ export type RelatedTableConfig = {
     };
   };
 };
-

@@ -1,80 +1,58 @@
-import { useParams } from "react-router-dom";
-import ModelDetail from "./ModelDetail";
+import * as React from "react";
+import {} from "lucide-react";
+
+import { Badge } from "@/lib/components/ui/badge";
+import { Button } from "@/lib/components/ui/button";
+import { Card } from "@/lib/components/ui/card";
+import { Input } from "@/lib/components/ui/input";
+import { ModelDetailV2 } from "./v2";
 
 export default function DetailExample() {
-  const id = "1";
-  // return <BaseDetail data={{ id: "EQ-1", name: "Capteur", status: "active", logs: [{ created_at: "2025-11-21", level: "INFO", message: "OK" }] }} tabs={tabs} initialTab="details" />
-  return (
-    <>
-      <ModelDetail
-        appName="assets"
-        modelName="Equipment"
-        id={"af4373a4-0424-4184-b7d9-997605bd182f"}
-        updateForm={{
-          formProps: {
-            onChange: (values) => {
-              console.log(values);
-            },
-          },
-          description: "dsds",
-          title: "dsd",
-          // mode: "drawer",
-          width: "50vw",
-        }}
-        nested={[
-          {
-            category: {
-              allowUpdate: true,
-              updateForm: {
-                layout: { columns: 1 },
-              },
-              title: "dsdsd",
-              showSectionHeaders: false,
-              // fields: ["name", "desc"],
-            },
-          },
-        ]}
-        // relatedTableConfigs={{
-        //   equipments: {
-        //     mode: "model-table",
+  const [orderIdDraft, setOrderIdDraft] = React.useState("1");
+  const [orderId, setOrderId] = React.useState("1");
 
-        //     modelTableProps: {
-        //       enableQuickSearch: true,
-        //       selection: { enabled: true },
-        //       creationForm: {
-        //         formProps: {
-        //           initialValues: { category: id },
-        //           onlyRequired: true,
-        //         },
-        //         mode: "modal",
-        //         triggerLabel: "Ajouter un équipement",
-        //       },
-        //       options: { enable_column_drag: false },
-        //     },
-        //   },
-        //   maintenanceplans: {
-        //     simple: {
-        //       fields: ["code"],
-        //       //   fields: ["code", "status", "created_at"],
-        //       enableQuickSearch: true,
-        //       rowActions: {
-        //         enableEdit: true,
-        //         enableDelete: true,
-        //         onEdit: ({ row }) => console.log("edit maintenance plan", row),
-        //         onDelete: ({ row }) =>
-        //           console.log("delete maintenance plan", row),
-        //       },
-        //       headerActions: [
-        //         {
-        //           key: "refresh",
-        //           label: "Rafraîchir",
-        //           onClick: ({ reload }) => reload(),
-        //         },
-        //       ],
-        //     },
-        //   },
-        // }}
+  const loadOrderDetail = React.useCallback(() => {
+    const nextId = orderIdDraft.trim();
+    if (!nextId) return;
+    setOrderId(nextId);
+  }, [orderIdDraft]);
+
+  return (
+    <div className="space-y-4 p-4">
+      <Card className="space-y-3 p-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-base font-semibold">store.Order Detail</h2>
+            <p className="text-xs text-muted-foreground">
+              Live metadata-driven detail view wired to
+              <code className="ml-1">rail_backend.apps.store.models.Order</code>
+              .
+            </p>
+          </div>
+          <Badge variant="secondary">Model: store.Order</Badge>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Input
+            value={orderIdDraft}
+            onChange={(event) => setOrderIdDraft(event.target.value)}
+            placeholder="Order ID"
+            className="w-full max-w-[220px]"
+          />
+          <Button onClick={loadOrderDetail} type="button">
+            Load Order
+          </Button>
+          <Badge variant="outline">Current ID: {orderId}</Badge>
+        </div>
+      </Card>
+
+      <ModelDetailV2
+        customization={{
+          modelFields: ["sku"],
+        }}
+        appName="store"
+        modelName="Product"
+        id={orderId}
       />
-    </>
+    </div>
   );
 }

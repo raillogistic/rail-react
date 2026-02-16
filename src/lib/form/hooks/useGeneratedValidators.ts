@@ -139,6 +139,24 @@ function resolveContractFieldName(field: ModelFormContractField): string {
   return String(field.path ?? field.fieldName ?? "").trim();
 }
 
+function normalizeVisibility(value: unknown): string {
+  const normalized = String(value ?? "").trim().toUpperCase();
+  if (["VISIBLE", "HIDDEN", "MASKED", "REDACTED"].includes(normalized)) {
+    return normalized;
+  }
+  return "VISIBLE";
+}
+
+function shouldValidateContractField(field: ModelFormContractField): boolean {
+  const readable = typeof field.readable === "boolean" ? field.readable : true;
+  const writable =
+    typeof field.writable === "boolean" ? field.writable : !field.readOnly;
+  const visibility = normalizeVisibility(field.visibility);
+  const hidden = Boolean(field.hidden || !readable || visibility === "HIDDEN");
+  const readOnly = Boolean(field.readOnly || !writable);
+  return !hidden && !readOnly;
+}
+
 function contractFieldExtensionKeys(field: ModelFormContractField): string[] {
   const keys = new Set<string>();
   const add = (value: unknown) => {
@@ -162,6 +180,9 @@ export function useGeneratedValidators(
   const fieldValidators = useMemo(() => {
     const output: Record<string, ValidatorFn[]> = {};
     for (const field of contract?.fields ?? []) {
+      if (!shouldValidateContractField(field)) {
+        continue;
+      }
       const fieldName = resolveContractFieldName(field) || field.path;
       if (!fieldName) continue;
       const baseValidators = getConstraintValidators(field);

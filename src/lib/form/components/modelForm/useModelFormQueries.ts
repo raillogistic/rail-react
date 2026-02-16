@@ -17,6 +17,7 @@ import { toError } from "./modelFormUtils";
 import {
   buildRelationModelKey,
   collectNestedRelationModelRefs,
+  expandInitialDataNestedFieldsWithRelatedContracts,
 } from "./queryLifecycle";
 
 type ContractQueryData = {
@@ -120,28 +121,7 @@ export function useModelFormQueries<TValues extends Record<string, unknown>>(
     },
   );
 
-  const initialDataQuery = useQuery<
-    InitialDataQueryData,
-    InitialDataQueryVariables
-  >(MODEL_FORM_INITIAL_DATA_QUERY, {
-    variables: {
-      appLabel: resolvedApp,
-      modelName: resolvedModel,
-      objectId: resolvedObjectIdValue ?? "",
-      includeNested: shouldIncludeNested,
-      ...(initialDataNestedFields
-        ? { nestedFields: initialDataNestedFields }
-        : {}),
-      runtimeOverrides: runtimeOverridesForQuery,
-    },
-    skip: !shouldFetchInitialData,
-    fetchPolicy: "network-only",
-  });
-
   const contract = contractQuery.data?.modelFormContract ?? null;
-  const initialData = shouldFetchInitialData
-    ? (initialDataQuery.data?.modelFormInitialData ?? null)
-    : null;
 
   const nestedRelationModelRefs = React.useMemo(() => {
     return collectNestedRelationModelRefs(contract, nestedControls);
@@ -180,6 +160,45 @@ export function useModelFormQueries<TValues extends Record<string, unknown>>(
 
     return map;
   }, [nestedRelationContractsQuery.data?.modelFormContractPages?.results]);
+
+  const resolvedInitialDataNestedFields = React.useMemo(() => {
+    return expandInitialDataNestedFieldsWithRelatedContracts(
+      initialDataNestedFields,
+      contract,
+      nestedControls,
+      relatedContractsByModel,
+    );
+  }, [initialDataNestedFields, contract, nestedControls, relatedContractsByModel]);
+
+  const shouldDelayInitialDataQuery = Boolean(
+    shouldFetchInitialData &&
+      generatedEnabled &&
+      shouldIncludeNested &&
+      nestedControls &&
+      (contract === null || nestedRelationContractsQuery.loading),
+  );
+
+  const initialDataQuery = useQuery<
+    InitialDataQueryData,
+    InitialDataQueryVariables
+  >(MODEL_FORM_INITIAL_DATA_QUERY, {
+    variables: {
+      appLabel: resolvedApp,
+      modelName: resolvedModel,
+      objectId: resolvedObjectIdValue ?? "",
+      includeNested: shouldIncludeNested,
+      ...(resolvedInitialDataNestedFields
+        ? { nestedFields: resolvedInitialDataNestedFields }
+        : {}),
+      runtimeOverrides: runtimeOverridesForQuery,
+    },
+    skip: !shouldFetchInitialData || shouldDelayInitialDataQuery,
+    fetchPolicy: "network-only",
+  });
+
+  const initialData = shouldFetchInitialData
+    ? (initialDataQuery.data?.modelFormInitialData ?? null)
+    : null;
 
   React.useEffect(() => {
     if (!contract || !onContractLoaded) return;

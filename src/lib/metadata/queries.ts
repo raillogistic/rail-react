@@ -455,3 +455,115 @@ export const MODEL_METADATA_QUERY = gql`
     }
   }
 `;
+
+export const MODEL_DETAIL_CONTRACT_QUERY = gql`
+  query ModelDetailContract($input: DetailContractInputType!) {
+    modelDetailContract(input: $input) {
+      ok
+      reason
+      contract {
+        appLabel
+        modelName
+        queryRoot
+        identifierArg
+        layoutVersion
+        defaultIncludeFields
+        defaultExcludeFields
+        metadataVersion
+        permissions {
+          modelReadable
+          fieldVisibility
+          relationVisibility
+          actionExecutability
+          sourceFlags
+          policy
+        }
+        layoutNodes {
+          id
+          type
+          title
+          order
+          relationSourceId
+          visibilityRule
+          fields {
+            name
+            title
+            type
+            include
+            exclude
+            nested
+            formatterKey
+            permissionKey
+          }
+          children {
+            id
+            type
+            title
+            order
+            relationSourceId
+            visibilityRule
+            fields {
+              name
+              title
+              type
+              include
+              exclude
+              nested
+              formatterKey
+              permissionKey
+            }
+            actions {
+              key
+              label
+              scope
+              mutationName
+              inputTemplate
+              confirmationTemplate
+              permissionKey
+              auditEnabled
+              allowed
+              reason
+            }
+          }
+          actions {
+            key
+            label
+            scope
+            mutationName
+            inputTemplate
+            confirmationTemplate
+            permissionKey
+            auditEnabled
+            allowed
+            reason
+          }
+        }
+        relationDataSources {
+          id
+          relationName
+          relatedApp
+          relatedModel
+          direction
+          mode
+          loadStrategy
+          queryName
+          lookupField
+          pagination
+          cacheKey
+        }
+        actions {
+          key
+          label
+          scope
+          mutationName
+          inputTemplate
+          confirmationTemplate
+          permissionKey
+          auditEnabled
+          allowed
+          reason
+        }
+      }
+    }
+  }
+`;

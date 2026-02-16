@@ -20,7 +20,13 @@ export const AuthDependentContent: React.FC = () => {
   const storageKey = user ? `vite-ui-theme-${user.id}` : "vite-ui-theme";
   const userKey = user?.id ? String(user.id) : null;
 
-  const { warming } = useMetadataWarmup({ enabled: isAuthenticated, userKey });
+  const { warming } = useMetadataWarmup({
+    enabled: isAuthenticated,
+    userKey,
+    // Warmup is intentionally route-hint only. Keep empty unless explicit
+    // app/model hints are supplied by the shell for the active workspace.
+    routeHints: [],
+  });
 
   // Extract settings with fallbacks
   const userSettings = user?.settings;

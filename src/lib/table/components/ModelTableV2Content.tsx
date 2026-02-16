@@ -1,4 +1,11 @@
-import React, { useState, useEffect, useCallback, useMemo } from "react";
+import React, {
+  Suspense,
+  lazy,
+  useState,
+  useEffect,
+  useCallback,
+  useMemo,
+} from "react";
 import {
   FileSpreadsheet,
   FileText,
@@ -62,7 +69,6 @@ import {
   parseTemplateClientFields,
 } from "../utils/templateExecution";
 import { TableToolbar } from "./TableToolbar";
-import { PrintDialog } from "./ModelTableOverlays";
 import { cn } from "@/lib/utils";
 import type {
   ModelTableFilterPanelProps,
@@ -77,6 +83,12 @@ type ModelTableV2ContentProps = {
   quickSearch?: boolean;
   topActions?: ModelTableV2TopActionsInput;
 };
+
+const PrintDialog = lazy(() =>
+  import("./ModelTableOverlays").then((module) => ({
+    default: module.PrintDialog,
+  })),
+);
 
 /**
  * ModelTableV2Content manages the top header, top actions, and global toolbar.
@@ -609,7 +621,8 @@ export function ModelTableV2Content({
       </div>
 
       {/* Overlays / Dialogs */}
-      <PrintDialog
+      <Suspense fallback={null}>
+        <PrintDialog
         open={Boolean(printTemplate && printTemplateSchema)}
         title={printTemplate?.title ?? "Paramètres d'extraction"}
         schema={printTemplateSchema ?? { fields: [] }}
@@ -631,7 +644,8 @@ export function ModelTableV2Content({
             ),
           );
         }}
-      />
+        />
+      </Suspense>
     </TooltipProvider>
   );
 }

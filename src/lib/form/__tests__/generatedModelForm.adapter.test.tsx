@@ -255,6 +255,46 @@ describe("useGeneratedModelForm adapter", () => {
     expect(result.current.initialValues.name).toBe("From JSON");
   });
 
+  it("builds CHOICE options from contract constraints choices", () => {
+    const contract: ModelFormContract = {
+      ...sampleModelFormContract,
+      fields: [
+        {
+          ...sampleModelFormContract.fields[0],
+          kind: "CHOICE",
+          constraints: JSON.stringify({
+            choices: [
+              ["placed", "Placed"],
+              ["paid", "Paid"],
+            ],
+          }) as unknown as Record<string, unknown>,
+          metadata: null,
+        },
+      ],
+      sections: [
+        {
+          ...sampleModelFormContract.sections[0],
+          fieldPaths: [sampleModelFormContract.fields[0].path],
+        },
+      ],
+    };
+
+    const { result } = renderHook(() =>
+      useGeneratedModelForm({
+        generatedEnabled: true,
+        contract,
+      }),
+    );
+
+    const field = result.current.schema.sections?.[0]?.fields[0] as {
+      options?: unknown[];
+    };
+    expect(field.options).toEqual([
+      { label: "Placed", value: "placed" },
+      { label: "Paid", value: "paid" },
+    ]);
+  });
+
   it("maps contract aliases to canonical field names", () => {
     const contract: ModelFormContract = {
       ...sampleModelFormContract,

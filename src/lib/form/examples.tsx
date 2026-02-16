@@ -1306,11 +1306,12 @@ export function StoreOrderUpdateModelFormExample({
         objectId={objectId}
         runtimeOverrides={ORDER_RUNTIME_OVERRIDES}
         description="Exemple de mise à jour auto-câblée : les valeurs initiales sont chargées depuis modelFormInitialData et Enregistrer lance updateOperation générée."
+        nested={["items"]}
+        excludeFields={["paymentToken"]}
         formProps={{
           devtools: { enabled: true },
           layout: {
             columns: 4,
-
             showSectionHeaders: true,
           },
           actions: {

@@ -48,6 +48,11 @@ export type BuildNestedMutationPayloadOptions = {
   baselineValues?: Record<string, unknown>;
 };
 
+type NestedRelationLookupContext = {
+  mode: NestedPayloadMode;
+  childRelationsByParentPath: Map<string, Map<string, ModelFormContractRelation>>;
+};
+
 function buildRelationLookupKeys(relation: ModelFormContractRelation): string[] {
   const keys = new Set<string>();
   const add = (value: string | undefined | null) => {
@@ -60,6 +65,107 @@ function buildRelationLookupKeys(relation: ModelFormContractRelation): string[] 
   add(relation.name);
   add(relation.path);
   return Array.from(keys);
+}
+
+function extractLeafPathToken(value: string | null | undefined) {
+  const normalized = String(value ?? "").trim();
+  if (!normalized) return "";
+  const segments = normalized.split(".").filter(Boolean);
+  if (!segments.length) return "";
+  return segments[segments.length - 1];
+}
+
+function resolveRelationPayloadFieldName(
+  relation: ModelFormContractRelation | undefined,
+  fallback: string,
+) {
+  const fromName = extractLeafPathToken(relation?.name);
+  if (fromName) return fromName;
+  const fromPath = extractLeafPathToken(relation?.path);
+  if (fromPath) return fromPath;
+  const fromFallback = extractLeafPathToken(fallback);
+  return fromFallback || fallback;
+}
+
+function buildNestedChildRelationLookup(
+  relations: ModelFormContractRelation[],
+): Map<string, Map<string, ModelFormContractRelation>> {
+  const lookup = new Map<string, Map<string, ModelFormContractRelation>>();
+  const register = (
+    parentPath: string,
+    childKey: string,
+    relation: ModelFormContractRelation,
+  ) => {
+    const normalizedParent = String(parentPath ?? "").trim();
+    const normalizedChild = String(childKey ?? "").trim();
+    if (!normalizedParent || !normalizedChild) return;
+    const parentLookup = lookup.get(normalizedParent) ?? new Map<string, ModelFormContractRelation>();
+    parentLookup.set(normalizedChild, relation);
+    lookup.set(normalizedParent, parentLookup);
+  };
+
+  for (const relation of relations) {
+    const relationLeafName = extractLeafPathToken(relation.name);
+    const relationLeafPath = extractLeafPathToken(relation.path);
+    for (const key of buildRelationLookupKeys(relation)) {
+      const segments = key.split(".").filter(Boolean);
+      if (segments.length < 2) continue;
+      const parentPath = segments.slice(0, -1).join(".");
+      const childToken = segments[segments.length - 1];
+      register(parentPath, childToken, relation);
+      if (relationLeafName) {
+        register(parentPath, relationLeafName, relation);
+      }
+      if (relationLeafPath) {
+        register(parentPath, relationLeafPath, relation);
+      }
+    }
+  }
+
+  return lookup;
+}
+
+function resolveNestedChildRelation(
+  parentRelationPath: string,
+  parentRelation: ModelFormContractRelation | undefined,
+  key: string,
+  context: NestedRelationLookupContext,
+) {
+  const parentCandidates = new Set<string>();
+  const addParentCandidate = (value?: string | null) => {
+    const normalized = String(value ?? "").trim();
+    if (normalized) {
+      parentCandidates.add(normalized);
+    }
+  };
+
+  addParentCandidate(parentRelationPath);
+  addParentCandidate(parentRelation?.name);
+  addParentCandidate(parentRelation?.path);
+
+  const keyCandidates = new Set<string>();
+  const addKeyCandidate = (value?: string | null) => {
+    const normalized = String(value ?? "").trim();
+    if (normalized) {
+      keyCandidates.add(normalized);
+    }
+  };
+
+  addKeyCandidate(key);
+  addKeyCandidate(extractLeafPathToken(key));
+
+  for (const parentCandidate of parentCandidates) {
+    const childLookup = context.childRelationsByParentPath.get(parentCandidate);
+    if (!childLookup) continue;
+    for (const keyCandidate of keyCandidates) {
+      const relation = childLookup.get(keyCandidate);
+      if (relation) {
+        return relation;
+      }
+    }
+  }
+
+  return undefined;
 }
 
 function isPlainRecord(value: unknown): value is Record<string, unknown> {
@@ -106,14 +212,94 @@ function normalizeUpdateIdentityPayload(
   return normalized;
 }
 
-function normalizeExplicitUpdateValue(value: unknown): unknown {
+function normalizeNestedChildRecordValue(
+  value: Record<string, unknown>,
+  options: {
+    parentRelation: ModelFormContractRelation | undefined;
+    parentRelationPath: string;
+    lookupContext: NestedRelationLookupContext | undefined;
+  },
+): Record<string, unknown> {
+  const { parentRelation, parentRelationPath, lookupContext } = options;
+  if (!lookupContext) {
+    return value;
+  }
+
+  let normalized: Record<string, unknown> | null = null;
+
+  for (const [key, childValue] of Object.entries(value)) {
+    const childRelation = resolveNestedChildRelation(
+      parentRelationPath,
+      parentRelation,
+      key,
+      lookupContext,
+    );
+    if (!childRelation) {
+      continue;
+    }
+
+    const childFieldName = resolveRelationPayloadFieldName(childRelation, key);
+    if (
+      childFieldName !== key &&
+      Object.prototype.hasOwnProperty.call(value, childFieldName)
+    ) {
+      continue;
+    }
+
+    const childRelationPath = `${parentRelationPath}.${childFieldName}`;
+    const normalizedChildValue = normalizeRelationInput(
+      childRelation,
+      childRelationPath,
+      childValue,
+      lookupContext.mode,
+      {
+        override: undefined,
+        baselineValue: undefined,
+      },
+      lookupContext,
+    );
+
+    if (!normalized) {
+      normalized = { ...value };
+    }
+    if (childFieldName !== key) {
+      delete normalized[key];
+    }
+    normalized[childFieldName] = normalizedChildValue;
+  }
+
+  return normalized ?? value;
+}
+
+function normalizeExplicitUpdateValue(
+  value: unknown,
+  options: {
+    relation: ModelFormContractRelation | undefined;
+    relationPath: string;
+    lookupContext: NestedRelationLookupContext | undefined;
+  },
+): unknown {
   if (Array.isArray(value)) {
     return value.map((item) =>
-      isPlainRecord(item) ? normalizeUpdateIdentityPayload(item) : item,
+      isPlainRecord(item)
+        ? normalizeUpdateIdentityPayload(
+            normalizeNestedChildRecordValue(item, {
+              parentRelation: options.relation,
+              parentRelationPath: options.relationPath,
+              lookupContext: options.lookupContext,
+            }),
+          )
+        : item,
     );
   }
   if (isPlainRecord(value)) {
-    return normalizeUpdateIdentityPayload(value);
+    return normalizeUpdateIdentityPayload(
+      normalizeNestedChildRecordValue(value, {
+        parentRelation: options.relation,
+        parentRelationPath: options.relationPath,
+        lookupContext: options.lookupContext,
+      }),
+    );
   }
   return value;
 }
@@ -222,6 +408,7 @@ function normalizeExplicitOperationInput(
   relation: ModelFormContractRelation | undefined,
   relationPath: string,
   value: Record<string, unknown>,
+  lookupContext: NestedRelationLookupContext | undefined,
 ) {
   const isToManyRelation = Boolean(relation?.toMany);
   const normalized: Record<string, unknown> = {};
@@ -242,7 +429,11 @@ function normalizeExplicitOperationInput(
 
     if (key === "update") {
       assertActionAllowed(relation, relationPath, "UPDATE", false);
-      normalized.update = normalizeExplicitUpdateValue(nestedValue);
+      normalized.update = normalizeExplicitUpdateValue(nestedValue, {
+        relation,
+        relationPath,
+        lookupContext,
+      });
       continue;
     }
 
@@ -319,6 +510,7 @@ function normalizeToOneRelationInput(
   relationPath: string,
   value: unknown,
   mode: NestedPayloadMode,
+  lookupContext: NestedRelationLookupContext | undefined,
 ) {
   if (value === null) {
     if (mode === "UPDATE") {
@@ -342,14 +534,20 @@ function normalizeToOneRelationInput(
     });
   }
 
-  const identity = resolveNestedIdentityKey(value);
+  const normalizedRecord = normalizeNestedChildRecordValue(value, {
+    parentRelation: relation,
+    parentRelationPath: relationPath,
+    lookupContext,
+  });
+
+  const identity = resolveNestedIdentityKey(normalizedRecord);
   if (identity) {
     assertActionAllowed(relation, relationPath, "UPDATE", true);
-    return { update: normalizeUpdateIdentityPayload(value) };
+    return { update: normalizeUpdateIdentityPayload(normalizedRecord) };
   }
 
   assertActionAllowed(relation, relationPath, "CREATE", true);
-  return { create: value };
+  return { create: normalizedRecord };
 }
 
 function normalizeToManyRelationArrayInput(
@@ -361,6 +559,7 @@ function normalizeToManyRelationArrayInput(
     override?: NestedRelationOperationOverride;
     baselineValue?: unknown;
   },
+  lookupContext: NestedRelationLookupContext | undefined,
 ) {
   if (values.length === 0) {
     if (mode === "UPDATE") {
@@ -405,10 +604,16 @@ function normalizeToManyRelationArrayInput(
       });
     }
 
-    if (resolveNestedIdentityKey(item)) {
-      updateValues.push(normalizeUpdateIdentityPayload(item));
+    const normalizedItem = normalizeNestedChildRecordValue(item, {
+      parentRelation: relation,
+      parentRelationPath: relationPath,
+      lookupContext,
+    });
+
+    if (resolveNestedIdentityKey(normalizedItem)) {
+      updateValues.push(normalizeUpdateIdentityPayload(normalizedItem));
     } else {
-      createValues.push(item);
+      createValues.push(normalizedItem);
     }
   }
 
@@ -481,6 +686,7 @@ function normalizeToManyRelationInput(
     override?: NestedRelationOperationOverride;
     baselineValue?: unknown;
   },
+  lookupContext: NestedRelationLookupContext | undefined,
 ) {
   if (value === null) {
     const action = mode === "UPDATE" ? "SET" : "CONNECT";
@@ -495,6 +701,7 @@ function normalizeToManyRelationInput(
       value,
       mode,
       options,
+      lookupContext,
     );
   }
 
@@ -512,13 +719,19 @@ function normalizeToManyRelationInput(
     });
   }
 
-  if (resolveNestedIdentityKey(value)) {
+  const normalizedRecord = normalizeNestedChildRecordValue(value, {
+    parentRelation: relation,
+    parentRelationPath: relationPath,
+    lookupContext,
+  });
+
+  if (resolveNestedIdentityKey(normalizedRecord)) {
     assertActionAllowed(relation, relationPath, "UPDATE", true);
-    return { update: [normalizeUpdateIdentityPayload(value)] };
+    return { update: [normalizeUpdateIdentityPayload(normalizedRecord)] };
   }
 
   assertActionAllowed(relation, relationPath, "CREATE", true);
-  return { create: [value] };
+  return { create: [normalizedRecord] };
 }
 
 function normalizeRelationInput(
@@ -530,12 +743,14 @@ function normalizeRelationInput(
     override?: NestedRelationOperationOverride;
     baselineValue?: unknown;
   },
+  lookupContext: NestedRelationLookupContext | undefined,
 ) {
   if (classifyRelationInputShape(value) === "EXPLICIT_OPERATION") {
     return normalizeExplicitOperationInput(
       relation,
       relationPath,
       value as Record<string, unknown>,
+      lookupContext,
     );
   }
 
@@ -546,9 +761,16 @@ function normalizeRelationInput(
       value,
       mode,
       options,
+      lookupContext,
     );
   }
-  return normalizeToOneRelationInput(relation, relationPath, value, mode);
+  return normalizeToOneRelationInput(
+    relation,
+    relationPath,
+    value,
+    mode,
+    lookupContext,
+  );
 }
 
 function resolveRelationOverride(
@@ -639,6 +861,10 @@ export function buildNestedMutationPayload(
       relationByPath.set(key, relation);
     }
   }
+  const lookupContext: NestedRelationLookupContext = {
+    mode,
+    childRelationsByParentPath: buildNestedChildRelationLookup(relations),
+  };
 
   const payload: Record<string, unknown> = {};
 
@@ -675,6 +901,7 @@ export function buildNestedMutationPayload(
           canonicalRelationName,
         ),
       },
+      lookupContext,
     );
   }
 

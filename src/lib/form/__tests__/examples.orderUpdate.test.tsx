@@ -35,7 +35,7 @@ describe("StoreOrderUpdateModelFormExample", () => {
     expect(props.model).toBe("Order");
     expect(props.mode).toBe("UPDATE");
     expect(props.objectId).toBe("42");
-    expect(props.nested).toBeUndefined();
+    expect(props.nested).toEqual(["items"]);
     expect(props.runtimeOverrides).toEqual(
       expect.arrayContaining([
         {

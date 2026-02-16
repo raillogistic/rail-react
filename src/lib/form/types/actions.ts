@@ -38,6 +38,10 @@ export interface FormActionsConfig<TValues = Record<string, any>> {
   undoRedo?: {
     enabled: boolean;
     showInActionBar?: boolean; // If true, shows in the main actions bar. If false, might be rendered elsewhere or strictly via keyboard.
+    /** Maximum number of snapshots kept in memory. */
+    maxHistory?: number;
+    /** Debounce window (ms) for grouping rapid edits into one snapshot. */
+    debounceMs?: number;
   };
   /** External submit state override (used by generated submit orchestration). */
   isSubmitting?: boolean;

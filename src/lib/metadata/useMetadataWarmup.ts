@@ -34,6 +34,16 @@ export function useMetadataWarmup(options: {
       return;
     }
 
+    const routeHints = options.routeHints ?? [];
+    if (!routeHints.length) {
+      hasWarmedUp.current = false;
+      lastUserKey.current = null;
+      setActiveMetadataUserKey(null);
+      setHydrated(false);
+      setWarming(false);
+      return;
+    }
+
     if (hasWarmedUp.current && lastUserKey.current === options.userKey) {
       return;
     }
@@ -44,22 +54,30 @@ export function useMetadataWarmup(options: {
     setActiveMetadataUserKey(options.userKey);
     const storedVersion = getPersistedDeployVersion(options.userKey);
     if (storedVersion || hasPersistedMetadataEntries(options.userKey)) {
-      hydrateMetadataCache(client.cache, options.userKey);
-      setHydrated(true);
+      const hydrateResult = hydrateMetadataCache(client.cache, options.userKey, {
+        routeHints,
+      });
+      setHydrated(hydrateResult.entries > 0);
     }
 
     setWarming(true);
     void warmupMetadataCache(client, {
       userKey: options.userKey,
       profiles: options.profiles,
-      routeHints: options.routeHints,
+      routeHints,
     })
       .catch(() => undefined)
       .finally(() => {
         if (!cancelled) {
           if (!storedVersion) {
-            hydrateMetadataCache(client.cache, options.userKey);
-            setHydrated(true);
+            const hydrateResult = hydrateMetadataCache(
+              client.cache,
+              options.userKey,
+              {
+                routeHints,
+              },
+            );
+            setHydrated(hydrateResult.entries > 0);
           }
           setWarming(false);
         }

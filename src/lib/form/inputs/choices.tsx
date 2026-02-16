@@ -133,7 +133,7 @@ const ChoiceInput: React.FC<Props> = ({ config, field, form }) => {
             <label
               key={option.value}
               className={cn(
-                "group relative flex cursor-pointer items-center gap-3 rounded-lg border border-border/40 bg-background/50 px-4 py-3 transition-all duration-200",
+                "group relative flex w-full cursor-pointer items-center gap-3 rounded-lg border border-border/40 bg-background/50 px-4 py-3 transition-all duration-200",
                 "hover:border-primary/30 hover:bg-background hover:shadow-sm",
                 value === option.value ? "border-primary/50 bg-primary/5 ring-1 ring-primary/20" : ""
               )}
@@ -177,36 +177,38 @@ const ChoiceInput: React.FC<Props> = ({ config, field, form }) => {
 
   return (
     <FieldWrapper config={config} fieldId={field.name} error={error} dirty={dirty}>
-      <Select
-        value={String(selectedValue)}
-        onValueChange={(next) => field.handleChange(next)}
-        disabled={config.disabled}
-      >
-        <SelectTrigger
-          id={field.name}
-          data-slot="select-trigger"
-          className="h-10 rounded-lg border-border/60 bg-background/50 px-4 transition-all focus:border-primary/50 focus:bg-background focus:ring-4 focus:ring-primary/5 focus-visible:ring-0"
+      <div className="w-full">
+        <Select
+          value={String(selectedValue)}
+          onValueChange={(next) => field.handleChange(next)}
+          disabled={config.disabled}
         >
-          <SelectValue placeholder={config.placeholder ?? "Choisir une option"} />
-        </SelectTrigger>
-        <SelectContent className="border-border/40 shadow-xl bg-background/95 backdrop-blur-sm">
-          {config.options.map((option) => (
-            <SelectItem
-              key={option.value}
-              value={String(option.value)}
-              disabled={option.disabled}
-              className="rounded-md py-2.5 transition-colors focus:bg-primary/5 focus:text-primary"
-            >
-              <div className="flex flex-col gap-0.5">
-                <span className="text-sm font-semibold">{option.label}</span>
-                {option.description && (
-                  <span className="text-[10px] text-muted-foreground/70">{option.description}</span>
-                )}
-              </div>
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+          <SelectTrigger
+            id={field.name}
+            data-slot="select-trigger"
+            className="h-10 w-full rounded-lg border-border/60 bg-background/50 px-4 transition-all focus:border-primary/50 focus:bg-background focus:ring-4 focus:ring-primary/5 focus-visible:ring-0"
+          >
+            <SelectValue placeholder={config.placeholder ?? "Choisir une option"} />
+          </SelectTrigger>
+          <SelectContent className="border-border/40 shadow-xl bg-background/95 backdrop-blur-sm">
+            {config.options.map((option) => (
+              <SelectItem
+                key={option.value}
+                value={String(option.value)}
+                disabled={option.disabled}
+                className="rounded-md py-2.5 transition-colors focus:bg-primary/5 focus:text-primary"
+              >
+                <div className="flex flex-col gap-0.5">
+                  <span className="text-sm font-semibold">{option.label}</span>
+                  {option.description && (
+                    <span className="text-[10px] text-muted-foreground/70">{option.description}</span>
+                  )}
+                </div>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
     </FieldWrapper>
   );
 };

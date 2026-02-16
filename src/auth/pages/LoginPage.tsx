@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { Suspense, lazy, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@/routes/links";
 import { useAuthContext } from "@/auth/context";
 import { MFAChallenge } from "@/auth/components";
-import { MFASetupPage } from "./MFASetupPage";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -27,7 +26,8 @@ import {
   testServerConnectivity,
 } from "@/utils/offline-detector";
 import Logo from "@/assets/logos/logo.png";
-import Cover from "@/assets/images/cover.jpg";
+import Cover960 from "@/assets/images/cover-960.jpg";
+import Cover1600 from "@/assets/images/cover-1600.jpg";
 
 const loginSchema = z.object({
   username: z.string().min(1, "Le nom d'utilisateur est requis"),
@@ -36,6 +36,12 @@ const loginSchema = z.object({
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
+
+const MFASetupPage = lazy(() =>
+  import("./MFASetupPage").then((module) => ({
+    default: module.MFASetupPage,
+  })),
+);
 
 // --- Custom Internal Components for Unique Design ---
 
@@ -203,7 +209,12 @@ export const LoginPage: React.FC = () => {
         <div className="absolute bottom-0 left-0 w-[600px] h-[600px] bg-blue-500/10 rounded-full blur-[100px] -ml-48 -mb-48 opacity-30" />
 
         <img
-          src={Cover}
+          src={Cover960}
+          srcSet={`${Cover960} 960w, ${Cover1600} 1600w`}
+          sizes="(min-width: 1536px) 60vw, (min-width: 1024px) 50vw, 100vw"
+          loading="lazy"
+          decoding="async"
+          fetchPriority="low"
           alt="Maintenance"
           className="absolute inset-0 w-full h-full object-cover opacity-40 mix-blend-luminosity grayscale transition-transform duration-[10s] hover:scale-110"
         />
@@ -306,11 +317,19 @@ export const LoginPage: React.FC = () => {
             {status === "mfa_required" ? (
               <div className="pt-2">
                 {mfaSetupRequired ? (
-                  <MFASetupPage
-                    embedded
-                    ephemeralToken={ephemeralToken || undefined}
-                    onComplete={handleMFAVerify}
-                  />
+                  <Suspense
+                    fallback={
+                      <div className="p-4 rounded-2xl border text-xs font-medium text-muted-foreground">
+                        Chargement de la configuration MFA...
+                      </div>
+                    }
+                  >
+                    <MFASetupPage
+                      embedded
+                      ephemeralToken={ephemeralToken || undefined}
+                      onComplete={handleMFAVerify}
+                    />
+                  </Suspense>
                 ) : (
                   <MFAChallenge
                     method="totp"

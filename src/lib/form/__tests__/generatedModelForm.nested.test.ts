@@ -215,6 +215,47 @@ describe("nested mutation payload builder", () => {
     });
   });
 
+  it("normalizes nested child relation scalars inside update rows", () => {
+    const payload = buildNestedMutationPayload(
+      {
+        items: {
+          update: [
+            {
+              id: "50",
+              quantity: 1,
+              unitPrice: "53.99",
+              createdAt: "2026-02-15T13:14:23.327937+00:00",
+              product: "9",
+            },
+          ],
+        },
+      },
+      [
+        manyItemsRelation,
+        {
+          ...singularCustomerRelation,
+          name: "product",
+          path: "items.product",
+          label: "Product",
+          relatedModelName: "Product",
+        },
+      ],
+      "UPDATE",
+    );
+
+    expect(payload.items).toEqual({
+      update: [
+        {
+          id: "50",
+          quantity: 1,
+          unitPrice: "53.99",
+          createdAt: "2026-02-15T13:14:23.327937+00:00",
+          product: { connect: "9" },
+        },
+      ],
+    });
+  });
+
   it("supports removed persisted rows mapped to disconnect", () => {
     const payload = buildNestedMutationPayload(
       {
