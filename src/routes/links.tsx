@@ -15,9 +15,6 @@ import {
   Lock,
 } from "lucide-react";
 import { getAppDefaultRoute, getAppNavigationLinks } from "@/apps/routes";
-import { DynamicDetail, UnitFieldExamples } from "@/lib/details";
-import BaseDetail from "@/lib/details/BaseDetail";
-import DetailExample from "@/lib/details/DetailExample";
 import ExampleDetailsPage from "@/lib/details/example/ExampleDetailsPage";
 
 const routeFallback = (
@@ -232,7 +229,6 @@ const CORE_NAVIGATION_LINKS: NavigationSection[] = [
         component: withRouteSuspense(
           <div>
             <ExampleDetailsPage />
-            {/* <DetailExample /> */}
           </div>,
         ),
         description: "dd",

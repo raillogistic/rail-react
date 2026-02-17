@@ -37,12 +37,16 @@ describe("retry and abort behavior", () => {
       />,
     );
 
+    const retryButtonMatcher = /retry|attempt reconnect/i;
+
     await waitFor(() => {
-      expect(screen.getByRole("button", { name: "Retry" })).toBeInTheDocument();
+      expect(
+        screen.getByRole("button", { name: retryButtonMatcher }),
+      ).toBeInTheDocument();
     });
     expect(load).toHaveBeenCalledTimes(1);
 
-    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+    fireEvent.click(screen.getByRole("button", { name: retryButtonMatcher }));
     await waitFor(() => {
       expect(screen.getByText("loaded")).toBeInTheDocument();
     });

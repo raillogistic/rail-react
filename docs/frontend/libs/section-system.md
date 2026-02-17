@@ -191,21 +191,6 @@ Then render:
 For a complete runnable example, see
 `src/lib/details/example/ExampleDetailsPage.tsx`.
 
-## BaseDetail compatibility
-
-`BaseDetail` now runs through `SectionHost` internally while preserving the
-existing `BaseDetailProps` API.
-
-This compatibility layer keeps:
-
-- controlled and uncontrolled tab state behavior.
-- `renderTabList`, `renderSection`, and `sectionRenderers`.
-- legacy section layout options (`span`, `order`, and section classes).
-- list, table, and unit section rendering behavior.
-
-Use `BaseDetail` when you need compatibility with existing tab and section
-configs. Use `SectionHost` directly for new enterprise detail pages.
-
 ## Testing the section system
 
 Run the focused section-system test suite from `rail-react`:
@@ -239,5 +224,4 @@ Use the section system for new detail pages, and migrate older views in phases:
 
 1. Move field-level formatting to `UnitFieldRenderer`.
 2. Move page orchestration to `SectionHost`.
-3. Keep legacy consumers on `BaseDetail` until each page can adopt schema-first
-   sections.
+3. Use built-in section factories to keep page behavior consistent.

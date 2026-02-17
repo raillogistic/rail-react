@@ -1,5 +1,3 @@
-export { default as ModelDetail } from "./ModelDetail";
-export { default as BaseDetail } from "./BaseDetail";
 export { default as SectionHost, useSectionHostContext } from "./SectionHost";
 export { default as TabHost } from "./TabHost";
 export { default as SectionFrame } from "./SectionFrame";
@@ -9,5 +7,4 @@ export * from "./sectionState";
 export * from "./sectionGovernance";
 export * from "./states";
 export * from "./builtInSections";
-// export * from "./v2";
 export * from "./units";

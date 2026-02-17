@@ -1,51 +1,26 @@
 # Model detail migration guide
 
-This guide explains how to migrate detail pages to the new section-based
-runtime in `rail-react`. You can keep existing `ModelDetail` and `BaseDetail`
-usage while adopting the section system in phases.
+This guide explains how to migrate detail pages to the section runtime in
+`rail-react`. It covers schema design, runtime wiring, and verification for
+the current `SectionHost` architecture.
 
 ## Migration overview
 
-The section system is now the recommended detail-page architecture. It gives
-you strict schema contracts, permission-aware rendering, lazy data loading, and
-consistent loading and error states.
+Use the section runtime for all detail pages. Build a page from
+`DetailsPageSchema`, render it with `SectionHost`, and use built-in section
+factories for standard layouts.
 
 Use this migration checklist:
 
-1. Keep existing `ModelDetail` usage working as-is.
-2. Move page-level composition to `SectionHost` for new pages.
-3. Keep legacy pages on `BaseDetail` until migration is complete.
-4. Move atomic value formatting to `UnitFieldRenderer`.
-5. Run the section and detail test matrix after each migration step.
-
-## Current detail APIs
-
-Use these exports from `@/lib/details`:
-
-- `ModelDetail` for existing metadata-driven detail flows.
-- `BaseDetail` for legacy tab and section config compatibility.
-- `SectionHost` for the new strict section runtime.
-
-For new work, prefer `SectionHost` and built-in section factories.
-
-## BaseDetail compatibility
-
-`BaseDetail` now runs through `SectionHost` internally. It preserves legacy
-public props and extension hooks:
-
-- controlled and uncontrolled tab selection
-- `renderTabList`
-- `renderSection`
-- `sectionRenderers`
-- section layout options like `span` and `order`
-
-Use `BaseDetail` when you need a low-risk migration path without changing
-existing callers.
+1. Define a `DetailsPageSchema` for your page.
+2. Add `header`, `body`, and optional `tabs` sections.
+3. Move field rendering to `UnitFieldRenderer` where needed.
+4. Add section-level `permissions`, `visibleIf`, and `disabledIf`.
+5. Verify behavior with focused details tests and TypeScript checks.
 
 ## Section-first usage
 
-When you build a new details page, define a `DetailsPageSchema` and render it
-with `SectionHost`.
+Render detail pages with `SectionHost` and a schema object.
 
 ```tsx
 import SectionHost, {
@@ -59,11 +34,15 @@ const schema: DetailsPageSchema = {
   body: [createGeneralSection({ id: "general-main" })],
 };
 
-<SectionHost
-  schema={schema}
-  runtime={{ entityId: id, permissions: userPermissions }}
-  entityLoader={async ({ abortSignal }) => loadEntity(id, abortSignal)}
-/>;
+export function ProductDetailPage({ id }: { id: string }) {
+  return (
+    <SectionHost
+      schema={schema}
+      runtime={{ entityId: id, permissions: ["detail.read"] }}
+      entityLoader={async ({ abortSignal }) => loadEntity(id, abortSignal)}
+    />
+  );
+}
 ```
 
 For full schema and built-in section coverage, read the
@@ -71,8 +50,7 @@ For full schema and built-in section coverage, read the
 
 ## Atomic field rendering
 
-Use `UnitFieldRenderer` for single-field formatting in custom sections and
-custom render callbacks.
+Use `UnitFieldRenderer` for strict single-value rendering in section content.
 
 ```tsx
 import { UnitFieldRenderer } from "@/lib/details";
@@ -88,7 +66,7 @@ import { UnitFieldRenderer } from "@/lib/details";
 />;
 ```
 
-For full field-kind and formatting details, read the
+For complete field-kind and format details, read the
 [unit field renderer guide](frontend/libs/unit-field-renderer.md).
 
 ## Verification
@@ -102,5 +80,5 @@ npx tsc -p tsconfig.app.json --noEmit
 
 ## Next steps
 
-After migration, standardize section schemas across your app models so page
-structure, state handling, and permissions stay consistent.
+After migration, standardize schemas across your models so detail pages share
+the same loading, permission, and state behavior.
