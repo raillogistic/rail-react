@@ -179,6 +179,7 @@ describe("modelSection engine", () => {
           {
             id: "main",
             title: "Main",
+            columns: 3,
             fields: ["status", { path: "name", label: "Display Name" }],
           },
         ],
@@ -198,6 +199,7 @@ describe("modelSection engine", () => {
       "Status",
       "Display Name",
     ]);
+    expect(result.groups[0].columns).toBe(3);
     expect(result.allFields).toHaveLength(2);
   });
 

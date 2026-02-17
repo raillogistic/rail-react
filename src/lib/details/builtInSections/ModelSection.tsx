@@ -5,6 +5,7 @@ import {
   MODEL_FORM_CONTRACT_QUERY,
   MODEL_FORM_INITIAL_DATA_QUERY,
 } from "@/graphql/modelFormContract";
+import { buildResponsiveGridClass } from "@/lib/form/renderers/utils";
 import type {
   ModelFormContract,
   ModelFormInitialData,
@@ -87,12 +88,8 @@ export type ModelSectionConfig = {
 };
 
 function resolveGridClasses(columns: number): string {
-  const normalized = Math.max(1, Math.min(columns, 4));
-  const classes = ["grid grid-cols-1 gap-x-12 gap-y-8"];
-  if (normalized >= 2) classes.push("md:grid-cols-2");
-  if (normalized >= 3) classes.push("xl:grid-cols-3");
-  if (normalized >= 4) classes.push("2xl:grid-cols-4");
-  return classes.join(" ");
+  const normalized = Math.max(1, Math.min(columns, 6));
+  return cn("grid gap-x-12 gap-y-8", buildResponsiveGridClass(normalized));
 }
 
 function resolveObjectId(

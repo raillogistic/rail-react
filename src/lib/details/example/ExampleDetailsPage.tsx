@@ -141,17 +141,21 @@ function buildExampleSchema(): DetailsPageSchema {
       createModelSection({
         id: "order-model",
         appLabel: "store",
-        modelName: "Order",
+        title: "Produit",
+        objectId: "1",
+        modelName: "Product",
         manifest: {
-          sections: [
-            {
-              id: "main",
-              title: "Main",
-              fields: ["order_number"],
-              columns: 4,
-            },
-          ],
-          includeUnassignedFields: false,
+          fields: ["sku", "name"],
+          // sections: [
+          //   {
+          //     id: "main",
+          //     title: "Main",
+          //     // fields: ["description", "sku", "category"],
+          //     columns: 3,
+          //     // order:[]
+          //   },
+          // ],
+          includeUnassignedFields: true,
         },
       }),
       //   createGeneralSection({

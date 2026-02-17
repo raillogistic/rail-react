@@ -49,6 +49,20 @@ function normalizePath(path: string | null | undefined): string {
   return normalizeObjectPath(path ?? "");
 }
 
+function normalizeColumns(value: unknown): number | undefined {
+  const raw =
+    typeof value === "number"
+      ? value
+      : typeof value === "string"
+        ? Number(value.trim())
+        : Number.NaN;
+  if (!Number.isFinite(raw)) return undefined;
+  const normalized = Math.floor(raw);
+  if (normalized < 1) return 1;
+  if (normalized > 6) return 6;
+  return normalized;
+}
+
 function toUnitFieldId(path: string): string {
   return normalizePath(path).replace(/[^\w]+/g, "_") || "model_field";
 }
@@ -354,7 +368,7 @@ function buildManifestGroups(manifest?: ModelSectionManifest): GroupBlueprint[] 
       title: section.title,
       description: section.description,
       order: section.order,
-      columns: section.columns,
+      columns: normalizeColumns(section.columns),
       fieldRefs: [...section.fields],
     }));
 }
@@ -368,6 +382,7 @@ function buildContractGroups(contract: ModelFormContract): GroupBlueprint[] {
       title: section.title ?? undefined,
       description: section.description ?? undefined,
       order: section.order ?? undefined,
+      columns: normalizeColumns(toRecord(section.layout).columns),
       fieldRefs: [...(section.fieldPaths ?? [])],
     }));
 }
