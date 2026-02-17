@@ -145,16 +145,9 @@ function buildExampleSchema(): DetailsPageSchema {
         objectId: "1",
         modelName: "Product",
         manifest: {
-          fields: ["sku", "name"],
-          // sections: [
-          //   {
-          //     id: "main",
-          //     title: "Main",
-          //     // fields: ["description", "sku", "category"],
-          //     columns: 3,
-          //     // order:[]
-          //   },
-          // ],
+          fields: {
+            sku: { label: "UNIQUE SKU" },
+          },
           includeUnassignedFields: true,
         },
       }),

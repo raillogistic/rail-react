@@ -53,37 +53,66 @@ type InitialDataQueryVariables = {
 export type ModelSectionData = ModelSectionEngineResult;
 
 export type ModelSectionConfig = {
+  /** Unique section identifier within the details schema. */
   id: string;
+  /** Optional section title rendered in the section frame header. */
   title?: string;
+  /** Optional section description rendered below the title. */
   description?: string;
+  /** Optional header icon displayed by the section frame. */
   icon?: React.ReactNode;
+  /** Sort order among sibling sections; lower values render first. */
   order?: number;
+  /** Django app label used to fetch the model contract and data. */
   appLabel: string;
+  /** Django model name used to fetch the model contract and data. */
   modelName: string;
+  /** Target record id, or resolver function, for initial value loading. */
   objectId?:
     | string
     | number
     | ((ctx: SectionRuntimeCtx) => string | number | null | undefined);
+  /** Contract mode used for metadata generation (defaults to "UPDATE"). */
   contractMode?: ModelFormMode;
+  /** Enables nested relation metadata and initial data retrieval. */
   includeNested?: boolean;
+  /** Limits nested initial data loading to specific nested field paths. */
   nestedFields?: string[];
+  /** Runtime overrides forwarded to `modelFormInitialData` query. */
   runtimeOverrides?: Array<Record<string, unknown>>;
+  /** Declarative low-code manifest for field/section composition. */
   manifest?: ModelSectionManifest;
+  /** Engine plugins for custom candidate/field/result transformations. */
   plugins?: ModelSectionEnginePlugin[];
+  /** Optional Apollo client override used for contract/data queries. */
   client?: ApolloClient<unknown>;
+  /** Default column count for rendered groups when group columns are missing. */
   columns?: number;
+  /** Unit field rendering mode. */
   fieldMode?: UnitFieldMode;
+  /** Unit field density preset. */
   fieldDensity?: UnitFieldDensity;
+  /** Locale fallback used by `UnitFieldRenderer`. */
   defaultLocale?: string;
+  /** Timezone fallback used by `UnitFieldRenderer`. */
   defaultTimezone?: string;
+  /** Section loading strategy (defaults to eager for model sections). */
   loadingStrategy?: "eager" | "lazy";
+  /** Required permissions to render this section. */
   permissions?: string[];
+  /** Visibility predicate evaluated against current section runtime context. */
   visibleIf?: (ctx: SectionRuntimeCtx) => boolean;
+  /** Disabled-state resolver for read-only/no-action presentation. */
   disabledIf?: SectionDefinition<ModelSectionData>["disabledIf"];
+  /** Section action factory rendered in the section frame header. */
   actions?: SectionDefinition<ModelSectionData>["actions"];
+  /** Optional custom skeleton renderer for loading state. */
   skeleton?: SectionDefinition<ModelSectionData>["skeleton"];
+  /** Optional custom empty-state renderer when computed data is empty. */
   empty?: SectionDefinition<ModelSectionData>["empty"];
+  /** Optional custom error-state renderer for load failures. */
   error?: SectionDefinition<ModelSectionData>["error"];
+  /** Optional deterministic test id for the section container/frame. */
   testId?: string;
 };
 
