@@ -34,11 +34,26 @@ export type SectionFrameProps = {
 
 function toneToVariant(
   tone: SectionActionTone | undefined,
-): "default" | "outline" | "destructive" | "secondary" {
+): "default" | "outline" | "destructive" | "secondary" | "ghost" | "link" {
   if (tone === "danger") return "destructive";
   if (tone === "primary") return "default";
   if (tone === "secondary") return "secondary";
+  if (tone === "ghost") return "ghost";
+  if (tone === "link") return "link";
   return "outline";
+}
+
+function toneToClassName(tone: SectionActionTone | undefined): string | undefined {
+  if (tone === "success") {
+    return "border-emerald-500/30 text-emerald-700 hover:bg-emerald-500/10 dark:text-emerald-400";
+  }
+  if (tone === "warning") {
+    return "border-amber-500/30 text-amber-700 hover:bg-amber-500/10 dark:text-amber-400";
+  }
+  if (tone === "info") {
+    return "border-blue-500/30 text-blue-700 hover:bg-blue-500/10 dark:text-blue-400";
+  }
+  return undefined;
 }
 
 export default function SectionFrame({
@@ -122,7 +137,10 @@ export default function SectionFrame({
                       onClick={() => {
                         void action.onClick();
                       }}
-                      className="h-8 px-3 text-xs font-semibold shadow-sm"
+                      className={cn(
+                        "h-8 px-3 text-xs font-semibold shadow-sm",
+                        toneToClassName(action.tone),
+                      )}
                     >
                       {action.icon && <span className="mr-1.5 size-3.5">{action.icon}</span>}
                       {action.label}

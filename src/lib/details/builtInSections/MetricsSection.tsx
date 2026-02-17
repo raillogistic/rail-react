@@ -38,6 +38,7 @@ export type MetricsSectionConfig = {
   disabledIf?: SectionDefinition<MetricsSectionData>["disabledIf"];
   select?: (ctx: SectionRuntimeCtx) => MetricsSectionData | undefined;
   load?: SectionDefinition<MetricsSectionData>["load"];
+  actions?: SectionDefinition<MetricsSectionData>["actions"];
   skeleton?: SectionDefinition<MetricsSectionData>["skeleton"];
   empty?: SectionDefinition<MetricsSectionData>["empty"];
   error?: SectionDefinition<MetricsSectionData>["error"];

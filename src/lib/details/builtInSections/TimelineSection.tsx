@@ -33,6 +33,7 @@ export type TimelineSectionConfig = {
   disabledIf?: SectionDefinition<TimelineSectionData>["disabledIf"];
   select?: (ctx: SectionRuntimeCtx) => TimelineSectionData | undefined;
   load?: SectionDefinition<TimelineSectionData>["load"];
+  actions?: SectionDefinition<TimelineSectionData>["actions"];
   skeleton?: SectionDefinition<TimelineSectionData>["skeleton"];
   empty?: SectionDefinition<TimelineSectionData>["empty"];
   error?: SectionDefinition<TimelineSectionData>["error"];

@@ -145,10 +145,20 @@ function buildExampleSchema(): DetailsPageSchema {
           const entity = ctx.entity as ExampleEntity | undefined;
           return entity ? generalFields(entity) : [];
         },
+        actions: (ctx) => [
+          {
+            id: "refresh",
+            label: "Refresh",
+            onClick: async ({ reload }) => {
+              await reload();
+            },
+          },
+        ],
       }),
       createMetricsSection({
         id: "metrics-main",
         title: "Metrics",
+
         select: (ctx) => {
           const entity = ctx.entity as ExampleEntity | undefined;
           if (!entity) return [];
@@ -171,11 +181,21 @@ function buildExampleSchema(): DetailsPageSchema {
       }),
       createCustomSection({
         id: "custom-note",
-        title: "Custom",
+        title: "Customx",
         loadingStrategy: "lazy",
         select: () => ({
-          note: "Custom section for product-specific content.",
+          note: "Custom section forx product-specific content.",
+          dd: "dmlsqkdmsqlk",
         }),
+        actions: (ctx) => [
+          {
+            id: "refresh",
+            label: "Refresh",
+            onClick: async ({ reload }) => {
+              await reload();
+            },
+          },
+        ],
         render: ({ data }) => (
           <div className="text-sm text-muted-foreground">
             {(data as { note?: string } | undefined)?.note}

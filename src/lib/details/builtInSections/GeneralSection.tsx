@@ -34,6 +34,7 @@ export type GeneralSectionConfig = {
   disabledIf?: SectionDefinition<GeneralSectionData>["disabledIf"];
   select?: (ctx: SectionRuntimeCtx) => GeneralSectionData | undefined;
   load?: SectionDefinition<GeneralSectionData>["load"];
+  actions?: SectionDefinition<GeneralSectionData>["actions"];
   skeleton?: SectionDefinition<GeneralSectionData>["skeleton"];
   empty?: SectionDefinition<GeneralSectionData>["empty"];
   error?: SectionDefinition<GeneralSectionData>["error"];

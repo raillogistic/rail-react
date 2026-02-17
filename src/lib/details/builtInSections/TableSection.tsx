@@ -30,6 +30,7 @@ export type TableSectionConfig<TRecord = Record<string, unknown>> = {
   disabledIf?: SectionDefinition<TableSectionData<TRecord>>["disabledIf"];
   select?: (ctx: SectionRuntimeCtx) => TableSectionData<TRecord> | undefined;
   load?: SectionDefinition<TableSectionData<TRecord>>["load"];
+  actions?: SectionDefinition<TableSectionData<TRecord>>["actions"];
   skeleton?: SectionDefinition<TableSectionData<TRecord>>["skeleton"];
   empty?: SectionDefinition<TableSectionData<TRecord>>["empty"];
   error?: SectionDefinition<TableSectionData<TRecord>>["error"];

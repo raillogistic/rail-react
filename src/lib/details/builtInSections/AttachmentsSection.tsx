@@ -48,6 +48,7 @@ export type AttachmentsSectionConfig = {
   disabledIf?: SectionDefinition<AttachmentsSectionData>["disabledIf"];
   select?: (ctx: SectionRuntimeCtx) => AttachmentsSectionData | undefined;
   load?: SectionDefinition<AttachmentsSectionData>["load"];
+  actions?: SectionDefinition<AttachmentsSectionData>["actions"];
   onUpload?: () => void | Promise<void>;
   onDownload?: (file: AttachmentItem) => void | Promise<void>;
   onDelete?: (file: AttachmentItem) => void | Promise<void>;

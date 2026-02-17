@@ -21,7 +21,17 @@ export type SectionDataSource =
 export type SectionLoadingStrategy = "eager" | "lazy";
 export type SectionStatus = "idle" | "loading" | "success" | "empty" | "error";
 export type NoAccessBehavior = "hide" | "state";
-export type SectionActionTone = "default" | "muted" | "danger" | "primary";
+export type SectionActionTone =
+  | "default"
+  | "muted"
+  | "danger"
+  | "primary"
+  | "secondary"
+  | "success"
+  | "warning"
+  | "info"
+  | "ghost"
+  | "link";
 export type RetryOptions = {
   retries?: number;
   backoffMs?: number;

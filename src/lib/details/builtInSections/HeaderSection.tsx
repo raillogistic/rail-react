@@ -1,7 +1,7 @@
 import * as React from "react";
 import { Badge } from "@/lib/components/ui/badge";
 import { cn } from "@/lib/utils";
-import type { SectionAction, SectionDefinition, SectionRuntimeCtx } from "../sectionTypes";
+import type { SectionDefinition, SectionRuntimeCtx } from "../sectionTypes";
 import { Avatar, AvatarFallback, AvatarImage } from "@/lib/components/ui/avatar";
 
 export type HeaderSectionBadge = {
@@ -29,7 +29,7 @@ export type HeaderSectionConfig = {
   disabledIf?: SectionDefinition<HeaderSectionData>["disabledIf"];
   select?: (ctx: SectionRuntimeCtx) => HeaderSectionData | undefined;
   load?: SectionDefinition<HeaderSectionData>["load"];
-  actions?: (ctx: SectionRuntimeCtx) => SectionAction<HeaderSectionData>[];
+  actions?: SectionDefinition<HeaderSectionData>["actions"];
   skeleton?: SectionDefinition<HeaderSectionData>["skeleton"];
   empty?: SectionDefinition<HeaderSectionData>["empty"];
   error?: SectionDefinition<HeaderSectionData>["error"];

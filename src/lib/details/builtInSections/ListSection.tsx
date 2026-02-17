@@ -30,6 +30,7 @@ export type ListSectionConfig = {
   disabledIf?: SectionDefinition<ListSectionData>["disabledIf"];
   select?: (ctx: SectionRuntimeCtx) => ListSectionData | undefined;
   load?: SectionDefinition<ListSectionData>["load"];
+  actions?: SectionDefinition<ListSectionData>["actions"];
   groupBy?: (item: ListSectionItem) => string;
   renderItem?: (item: ListSectionItem, index: number) => React.ReactNode;
   skeleton?: SectionDefinition<ListSectionData>["skeleton"];

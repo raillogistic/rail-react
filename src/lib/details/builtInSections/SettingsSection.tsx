@@ -57,6 +57,7 @@ export type SettingsSectionConfig = {
   disabledIf?: SectionDefinition<SettingsSectionData>["disabledIf"];
   select?: (ctx: SectionRuntimeCtx) => SettingsSectionData | undefined;
   load?: SectionDefinition<SettingsSectionData>["load"];
+  actions?: SectionDefinition<SettingsSectionData>["actions"];
   confirmDestructive?: (ctx: {
     action: SettingsDestructiveAction;
     runtime: SectionRuntimeCtx;
