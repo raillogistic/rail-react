@@ -6,6 +6,7 @@ import type { SectionLoadingStrategy } from "./sectionTypes";
 export type TabHostTab = {
   id: string;
   title: string;
+  icon?: React.ReactNode;
   loadingStrategy?: SectionLoadingStrategy;
   testId?: string;
 };
@@ -81,19 +82,29 @@ export default function TabHost({
   const defaultTabList = React.useCallback(() => {
     if (tabs.length <= 1) return null;
     return (
-      <TabsList className={cn("mb-2", tabListClassName)}>
+      <TabsList 
+        className={cn(
+          "inline-flex h-12 items-center justify-start rounded-xl bg-muted/30 p-1.5 text-muted-foreground border border-border/20 backdrop-blur-sm shadow-inner mb-6", 
+          tabListClassName
+        )}
+      >
         {tabs.map((tab) => (
           <TabsTrigger
             key={tab.id}
             value={tab.id}
             data-testid={tab.testId}
             className={cn(
+              "inline-flex items-center justify-center whitespace-nowrap rounded-lg px-5 py-2 text-sm font-bold transition-all",
+              "ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+              "data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-md data-[state=active]:scale-[1.02]",
+              "hover:bg-muted/50 hover:text-foreground/80",
               tabTriggerClassName,
               resolvedActive === tab.id
                 ? activeTabTriggerClassName
                 : inactiveTabTriggerClassName,
             )}
           >
+            {tab.icon && <span className="mr-2 size-4 opacity-70">{tab.icon}</span>}
             {tab.title}
           </TabsTrigger>
         ))}
@@ -118,7 +129,7 @@ export default function TabHost({
   if (tabs.length === 0) return null;
 
   return (
-    <Tabs value={resolvedActive} onValueChange={setActiveTab} className={className}>
+    <Tabs value={resolvedActive} onValueChange={setActiveTab} className={cn("w-full", className)}>
       {renderedTabList !== undefined ? renderedTabList : defaultTabList()}
       {tabs.map((tab) => {
         const isVisited =
@@ -127,7 +138,11 @@ export default function TabHost({
           resolvedActive === tab.id;
 
         return (
-          <TabsContent key={tab.id} value={tab.id}>
+          <TabsContent 
+            key={tab.id} 
+            value={tab.id}
+            className="mt-0 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 animate-in fade-in-50 duration-300"
+          >
             {renderContent(tab, isVisited)}
           </TabsContent>
         );

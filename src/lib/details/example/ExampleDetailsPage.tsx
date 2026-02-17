@@ -38,7 +38,7 @@ const relatedColumns: ColumnDef<RelatedRow>[] = [
 
 const fakeEntity: ExampleEntity = {
   id: "42",
-  name: "Enterprise Workspace",
+  name: "Enterprise Workspacexxxdqsd",
   status: "active",
   owner: "Ada Lovelace",
   createdAt: "2026-01-15T14:10:00Z",
@@ -80,7 +80,8 @@ const fakeFiles = [
     id: "f2",
     name: "pricing.xlsx",
     sizeBytes: 25300,
-    contentType: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    contentType:
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     href: "#",
   },
 ];
@@ -123,7 +124,7 @@ function buildExampleSchema(): DetailsPageSchema {
     header: [
       createHeaderSection({
         id: "header-main",
-        title: "Overview",
+        title: "Overviewxxx",
         select: (ctx) => {
           const entity = ctx.entity as ExampleEntity | undefined;
           if (!entity) return undefined;
@@ -172,7 +173,9 @@ function buildExampleSchema(): DetailsPageSchema {
         id: "custom-note",
         title: "Custom",
         loadingStrategy: "lazy",
-        select: () => ({ note: "Custom section for product-specific content." }),
+        select: () => ({
+          note: "Custom section for product-specific content.",
+        }),
         render: ({ data }) => (
           <div className="text-sm text-muted-foreground">
             {(data as { note?: string } | undefined)?.note}
@@ -192,7 +195,8 @@ function buildExampleSchema(): DetailsPageSchema {
             columns: relatedColumns,
             load: async ({ abortSignal }) => {
               await wait(250);
-              if (abortSignal.aborted) throw new DOMException("Aborted", "AbortError");
+              if (abortSignal.aborted)
+                throw new DOMException("Aborted", "AbortError");
               return fakeRelatedRows;
             },
           }),
@@ -217,7 +221,8 @@ function buildExampleSchema(): DetailsPageSchema {
             title: "Timeline",
             load: async ({ abortSignal }) => {
               await wait(150);
-              if (abortSignal.aborted) throw new DOMException("Aborted", "AbortError");
+              if (abortSignal.aborted)
+                throw new DOMException("Aborted", "AbortError");
               return fakeTimeline;
             },
           }),
@@ -232,7 +237,8 @@ function buildExampleSchema(): DetailsPageSchema {
             title: "Attachments",
             load: async ({ abortSignal }) => {
               await wait(180);
-              if (abortSignal.aborted) throw new DOMException("Aborted", "AbortError");
+              if (abortSignal.aborted)
+                throw new DOMException("Aborted", "AbortError");
               return fakeFiles;
             },
           }),
@@ -281,7 +287,27 @@ export default function ExampleDetailsPage() {
 
   return (
     <SectionHost<ExampleEntity>
-      schema={schema}
+      schema={[
+        {
+          header: [
+            createHeaderSection({
+              id: "header-main",
+              title: "Overviewxxx",
+              select: (ctx) => {
+                const entity = ctx.entity as ExampleEntity | undefined;
+                if (!entity) return undefined;
+                return {
+                  title: entity.name,
+                  subtitle: `Owner: ${entity.owner}`,
+                  badges: [
+                    { id: "status", label: entity.status.toUpperCase() },
+                  ],
+                };
+              },
+            }),
+          ],
+        },
+      ]}
       runtime={{
         entityId: fakeEntity.id,
         entity: fakeEntity,

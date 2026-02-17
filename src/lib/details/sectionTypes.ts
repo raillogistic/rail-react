@@ -133,6 +133,7 @@ export type SectionDefinition<TData = unknown> = {
   id: string;
   title?: string;
   description?: string;
+  icon?: React.ReactNode;
   kind: SectionKind;
   order?: number;
   dataSource?: SectionDataSource;
@@ -155,6 +156,7 @@ export type SectionDefinition<TData = unknown> = {
 export type TabDefinition = {
   id: string;
   title: string;
+  icon?: React.ReactNode;
   order?: number;
   loadingStrategy?: SectionLoadingStrategy;
   permissions?: string[];

@@ -207,17 +207,23 @@ function ManagedSection({
   return (
     <div
       key={instanceKey}
-      className={cn("min-w-0", sectionsContainerClassName, sectionContainerClassName)}
+      className={cn(
+        "min-w-0 animate-in fade-in slide-in-from-bottom-2 duration-500", 
+        sectionsContainerClassName, 
+        sectionContainerClassName
+      )}
       style={sectionContainerStyle}
       data-testid={section.testId ?? `section-${section.id}`}
     >
       <SectionFrame
         title={section.title}
         description={section.description}
+        icon={section.icon}
         actions={frameActions}
         disabled={visibility.disabledState?.disabled}
         disabledReason={visibility.disabledState?.reason}
         testId={section.testId ?? `section-frame-${section.id}`}
+        headerClassName={section.kind === "header" ? "bg-primary/5 border-primary/10 py-8" : undefined}
       >
         {content}
       </SectionFrame>
@@ -417,6 +423,7 @@ export default function SectionHost<TEntity = Record<string, unknown>>({
       visibleTabs.map((tab) => ({
         id: tab.id,
         title: tab.title,
+        icon: tab.icon,
         loadingStrategy: resolveTabLoadingStrategy(tab),
       })),
     [visibleTabs],
@@ -513,7 +520,7 @@ export default function SectionHost<TEntity = Record<string, unknown>>({
 
   return (
     <SectionHostContext.Provider value={contextValue}>
-      <div className={cn("space-y-4", className)}>
+      <div className={cn("space-y-8 animate-in fade-in duration-700", className)}>
         {renderSectionList(visibleHeaderSections)}
         {visibleTabs.length > 0 ? (
           <TabHost

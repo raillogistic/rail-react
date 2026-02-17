@@ -1,123 +1,106 @@
-# ModelDetailV2 migration guide
+# Model detail migration guide
 
-This guide explains how you migrate legacy `ModelDetail` usage to
-`ModelDetailV2`, how you enable metadata-driven customization, and how you
-verify the migration with the expected tests.
+This guide explains how to migrate detail pages to the new section-based
+runtime in `rail-react`. You can keep existing `ModelDetail` and `BaseDetail`
+usage while adopting the section system in phases.
 
 ## Migration overview
 
-Use `ModelDetailV2` when you want metadata-driven rendering and shared behavior
-across sections, tabs, relation tables, permissions, and actions.
+The section system is now the recommended detail-page architecture. It gives
+you strict schema contracts, permission-aware rendering, lazy data loading, and
+consistent loading and error states.
 
 Use this migration checklist:
 
-1. Replace `ModelDetail` usage with `ModelDetailV2`.
-2. Pass `appName`, `modelName`, and `id`.
-3. Keep the view read-only and execute mutations through detail actions.
-4. Add customization only where metadata defaults are not enough.
-5. Run the detail test matrix after each migrated page.
+1. Keep existing `ModelDetail` usage working as-is.
+2. Move page-level composition to `SectionHost` for new pages.
+3. Keep legacy pages on `BaseDetail` until migration is complete.
+4. Move atomic value formatting to `UnitFieldRenderer`.
+5. Run the section and detail test matrix after each migration step.
 
-## Basic usage
+## Current detail APIs
 
-Render a detail page with only app/model/id values.
+Use these exports from `@/lib/details`:
+
+- `ModelDetail` for existing metadata-driven detail flows.
+- `BaseDetail` for legacy tab and section config compatibility.
+- `SectionHost` for the new strict section runtime.
+
+For new work, prefer `SectionHost` and built-in section factories.
+
+## BaseDetail compatibility
+
+`BaseDetail` now runs through `SectionHost` internally. It preserves legacy
+public props and extension hooks:
+
+- controlled and uncontrolled tab selection
+- `renderTabList`
+- `renderSection`
+- `sectionRenderers`
+- section layout options like `span` and `order`
+
+Use `BaseDetail` when you need a low-risk migration path without changing
+existing callers.
+
+## Section-first usage
+
+When you build a new details page, define a `DetailsPageSchema` and render it
+with `SectionHost`.
 
 ```tsx
-import { ModelDetailV2 } from "@/lib/details";
+import SectionHost, {
+  createGeneralSection,
+  createHeaderSection,
+  type DetailsPageSchema,
+} from "@/lib/details";
 
-export function ProductDetailPage({ id }: { id: string }) {
-  return (
-    <ModelDetailV2
-      appName="test_app"
-      modelName="Product"
-      id={id}
-    />
-  );
-}
+const schema: DetailsPageSchema = {
+  header: [createHeaderSection({ id: "header-main" })],
+  body: [createGeneralSection({ id: "general-main" })],
+};
+
+<SectionHost
+  schema={schema}
+  runtime={{ entityId: id, permissions: userPermissions }}
+  entityLoader={async ({ abortSignal }) => loadEntity(id, abortSignal)}
+/>;
 ```
 
-## Customization options
-
-`ModelDetailV2` accepts optional `customization` and `customRenderers` props so
-you can layer model/tab/section field overrides without replacing the renderer.
-
-```tsx
-<ModelDetailV2
-  appName="test_app"
-  modelName="Product"
-  id="1"
-  customization={{
-    modelFields: [
-      "category.desc",
-      { name: "secretCode", exclude: true },
-    ],
-    sectionFields: {
-      main: [{ name: "price", title: "Cost", include: true, exclude: false }],
-    },
-  }}
-  customRenderers={{
-    price: (value) => `USD ${value}`,
-  }}
-/>
-```
-
-Precedence is deterministic:
-
-1. Base metadata fields.
-2. Model-level overrides.
-3. Tab-level overrides.
-4. Section-level overrides.
-
-Exclude rules are fail-closed and remove fields from render output.
+For full schema and built-in section coverage, read the
+[section system guide](frontend/libs/section-system.md).
 
 ## Atomic field rendering
 
-When you need strict single-value rendering in a detail experience, compose
-`UnitFieldRenderer` from `@/lib/details` inside your field-level custom
-renderers. This keeps atomic formatting and accessibility behavior consistent
-without taking over section or page layout.
+Use `UnitFieldRenderer` for single-field formatting in custom sections and
+custom render callbacks.
 
 ```tsx
 import { UnitFieldRenderer } from "@/lib/details";
 
-customRenderers={{
-  status: (value) => (
-    <UnitFieldRenderer
-      mode="valueOnly"
-      field={{
-        id: "status",
-        label: "Status",
-        kind: "status",
-        value,
-      }}
-    />
-  ),
-}}
+<UnitFieldRenderer
+  mode="valueOnly"
+  field={{
+    id: "status",
+    label: "Status",
+    kind: "status",
+    value: statusValue,
+  }}
+/>;
 ```
 
-For the full API, see the
-[unit field renderer frontend guide](frontend/libs/unit-field-renderer.md).
-
-## Actions and permissions
-
-`DynamicDetail` renders scoped action toolbars for `MODEL`, `SECTION`, `TABLE`,
-and `ROW` actions. Visibility is fail-closed:
-
-- A field/action appears only when metadata and backend signals allow it.
-- Unauthorized actions are hidden or denied.
-- Action outcomes expose retry and refresh-required states.
-
-The detail view remains read-only. Inline field editing is intentionally blocked.
+For full field-kind and formatting details, read the
+[unit field renderer guide](frontend/libs/unit-field-renderer.md).
 
 ## Verification
 
 Run these commands from `rail-react`:
 
 ```bash
-npm run test -- src/lib/details --run
+npm run test -- src/lib/details/tests --run
 npx tsc -p tsconfig.app.json --noEmit
 ```
 
 ## Next steps
 
-After migration, add model-specific examples in your app docs that reference
-the same `ModelDetailV2` configuration patterns used here.
+After migration, standardize section schemas across your app models so page
+structure, state handling, and permissions stay consistent.

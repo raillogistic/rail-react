@@ -8,7 +8,7 @@ Vitest and React Testing Library.
 Use the following tools in the frontend test stack:
 
 - **[Vitest](https://vitest.dev/)** for unit and integration test execution.
-- **[React Testing Library](https://testing-library.com/docs/react-testing-library/intro/)**
+- **[React Testing Library](https://testing-library.com/docs/react-testing-library/)**
   for DOM-focused interaction assertions.
 - **[jest-dom](https://github.com/testing-library/jest-dom)** for additional
   DOM matchers, such as `toBeInTheDocument`.
@@ -31,6 +31,9 @@ feedback time before running the broader matrix.
 ```bash
 # Run Unit Field formatter tests only
 npx vitest run src/lib/details/units/unitFieldFormatters.test.ts
+
+# Run section-system tests only
+npm run test -- src/lib/details/tests --run
 ```
 
 ## Writing tests
@@ -66,3 +69,21 @@ describe('App', () => {
 
 Keep test runtime configuration in `vite.config.ts`. The setup file
 `src/test/setup.ts` imports `jest-dom` so matchers are available globally.
+
+## Details-focused matrix
+
+Use targeted commands for details and section runtime work so you can catch
+regressions quickly before running full frontend suites.
+
+Run these commands from `rail-react`:
+
+```bash
+# Section system behavior (schema, permissions, lazy load, retry, abort)
+npm run test -- src/lib/details/tests --run
+
+# Unit-field formatter coverage
+npx vitest run src/lib/details/units/unitFieldFormatters.test.ts
+
+# Type safety gate for frontend code
+npx tsc -p tsconfig.app.json --noEmit
+```

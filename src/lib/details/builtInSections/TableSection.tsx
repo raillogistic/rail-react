@@ -12,6 +12,7 @@ export type TableSectionConfig<TRecord = Record<string, unknown>> = {
   id: string;
   title?: string;
   description?: string;
+  icon?: React.ReactNode;
   order?: number;
   columns: ColumnDef<TRecord>[];
   rowKey?: (row: TRecord, index: number) => string;

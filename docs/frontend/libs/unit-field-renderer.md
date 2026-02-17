@@ -147,5 +147,8 @@ npx vitest run src/lib/details/units/unitFieldFormatters.test.ts
 ## Next steps
 
 If you are migrating existing detail views, replace ad-hoc atomic field
-formatting with `UnitFieldRenderer` and keep page-level layout in `BaseDetail`
-or your view container components.
+formatting with `UnitFieldRenderer`, then move page-level composition to
+`SectionHost` or keep compatibility through `BaseDetail`.
+
+For section-level architecture and schema patterns, read the
+[section system guide](section-system.md).
