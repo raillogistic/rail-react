@@ -450,14 +450,12 @@ export default function SectionHost<TEntity = Record<string, unknown>>({
         void loadSection(section);
       }
     }
-    if (visibleTabs.length === 0) {
-      for (const section of visibleBodySections) {
-        if (resolveSectionLoadingStrategy(section) === "eager") {
-          void loadSection(section);
-        }
+    for (const section of visibleBodySections) {
+      if (resolveSectionLoadingStrategy(section) === "eager") {
+        void loadSection(section);
       }
     }
-  }, [entityStatus, loadSection, visibleBodySections, visibleHeaderSections, visibleTabs.length]);
+  }, [entityStatus, loadSection, visibleBodySections, visibleHeaderSections]);
 
   const contextValue = React.useMemo<SectionHostContextValue<TEntity>>(
     () => ({
@@ -522,6 +520,7 @@ export default function SectionHost<TEntity = Record<string, unknown>>({
     <SectionHostContext.Provider value={contextValue}>
       <div className={cn("space-y-8 animate-in fade-in duration-700", className)}>
         {renderSectionList(visibleHeaderSections)}
+        {visibleBodySections.length > 0 ? renderSectionList(visibleBodySections) : null}
         {visibleTabs.length > 0 ? (
           <TabHost
             tabs={tabHostTabs}
@@ -556,9 +555,7 @@ export default function SectionHost<TEntity = Record<string, unknown>>({
             activeTabTriggerClassName={activeTabTriggerClassName}
             inactiveTabTriggerClassName={inactiveTabTriggerClassName}
           />
-        ) : (
-          renderSectionList(visibleBodySections)
-        )}
+        ) : null}
       </div>
     </SectionHostContext.Provider>
   );

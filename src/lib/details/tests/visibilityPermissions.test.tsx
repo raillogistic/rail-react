@@ -90,4 +90,45 @@ describe("section visibility and permissions", () => {
       expect(screen.getByText("Body visible")).toBeInTheDocument();
     });
   });
+
+  it("renders body sections when tabs are present", async () => {
+    const schema: DetailsPageSchema = {
+      header: [],
+      body: [
+        {
+          id: "body-summary",
+          kind: "general",
+          render: () => <div>Body summary</div>,
+        },
+      ],
+      tabs: [
+        {
+          id: "related",
+          title: "Related",
+          sections: [
+            {
+              id: "tab-section",
+              kind: "general",
+              render: () => <div>Tab content</div>,
+            },
+          ],
+        },
+      ],
+    };
+
+    render(
+      <SectionHost
+        schema={schema}
+        runtime={{
+          entityId: "3",
+          entity: { id: "3" },
+        }}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Body summary")).toBeInTheDocument();
+    });
+    expect(screen.getByText("Tab content")).toBeInTheDocument();
+  });
 });

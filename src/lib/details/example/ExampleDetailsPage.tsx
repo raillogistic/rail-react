@@ -38,7 +38,7 @@ const relatedColumns: ColumnDef<RelatedRow>[] = [
 
 const fakeEntity: ExampleEntity = {
   id: "42",
-  name: "Enterprise Workspacexxxdqsd",
+  name: "Enterprise Workspace",
   status: "active",
   owner: "Ada Lovelace",
   createdAt: "2026-01-15T14:10:00Z",
@@ -124,7 +124,7 @@ function buildExampleSchema(): DetailsPageSchema {
     header: [
       createHeaderSection({
         id: "header-main",
-        title: "Overviewxxx",
+        title: "Overview",
         select: (ctx) => {
           const entity = ctx.entity as ExampleEntity | undefined;
           if (!entity) return undefined;
@@ -283,170 +283,7 @@ function buildExampleSchema(): DetailsPageSchema {
 }
 
 export default function ExampleDetailsPage() {
-  // const schema = React.useMemo(() => buildExampleSchema(), []);
-  const schema = React.useMemo(
-    () => ({
-      header: [
-        createHeaderSection({
-          id: "header-main",
-          title: "Overview",
-          select: (ctx) => {
-            const entity = ctx.entity as ExampleEntity | undefined;
-            if (!entity) return undefined;
-            return {
-              title: entity.name,
-              subtitle: `Owner: ${entity.owner}`,
-              badges: [{ id: "status", label: entity.status.toUpperCase() }],
-            };
-          },
-        }),
-      ],
-      body: [
-        createGeneralSection({
-          id: "general-main",
-          title: "General",
-          columns: 2,
-          select: (ctx) => {
-            const entity = ctx.entity as ExampleEntity | undefined;
-            return entity ? generalFields(entity) : [];
-          },
-        }),
-        createMetricsSection({
-          id: "metrics-main",
-          title: "Metrics",
-          select: (ctx) => {
-            const entity = ctx.entity as ExampleEntity | undefined;
-            if (!entity) return [];
-            return [
-              {
-                id: "mrr",
-                label: "MRR",
-                value: entity.mrr,
-                kind: "currency",
-              },
-              {
-                id: "growth",
-                label: "Growth",
-                value: entity.growth,
-                kind: "percent",
-                trend: entity.growth >= 0 ? "up" : "down",
-              },
-            ];
-          },
-        }),
-        createCustomSection({
-          id: "custom-note",
-          title: "Custom",
-          loadingStrategy: "lazy",
-          select: () => ({
-            note: "Custom section for product-specific content.",
-          }),
-          render: ({ data }) => (
-            <div className="text-sm text-muted-foreground">
-              {(data as { note?: string } | undefined)?.note}
-            </div>
-          ),
-        }),
-      ],
-      tabs: [
-        {
-          id: "related",
-          title: "Related",
-          loadingStrategy: "lazy",
-          sections: [
-            createTableSection<RelatedRow>({
-              id: "related-table",
-              title: "Related records",
-              columns: relatedColumns,
-              load: async ({ abortSignal }) => {
-                await wait(250);
-                if (abortSignal.aborted)
-                  throw new DOMException("Aborted", "AbortError");
-                return fakeRelatedRows;
-              },
-            }),
-            createListSection({
-              id: "related-list",
-              title: "Quick list",
-              select: () =>
-                fakeRelatedRows.map((row) => ({
-                  id: row.id,
-                  title: row.desc,
-                  subtitle: `Quantity: ${row.quantity}`,
-                })),
-            }),
-          ],
-        },
-        {
-          id: "activity",
-          title: "Activity",
-          sections: [
-            createTimelineSection({
-              id: "activity-feed",
-              title: "Timeline",
-              load: async ({ abortSignal }) => {
-                await wait(150);
-                if (abortSignal.aborted)
-                  throw new DOMException("Aborted", "AbortError");
-                return fakeTimeline;
-              },
-            }),
-          ],
-        },
-        {
-          id: "documents",
-          title: "Documents",
-          sections: [
-            createAttachmentsSection({
-              id: "docs-files",
-              title: "Attachments",
-              load: async ({ abortSignal }) => {
-                await wait(180);
-                if (abortSignal.aborted)
-                  throw new DOMException("Aborted", "AbortError");
-                return fakeFiles;
-              },
-            }),
-          ],
-        },
-        {
-          id: "settings",
-          title: "Settings",
-          sections: [
-            createSettingsSection({
-              id: "advanced-settings",
-              title: "Advanced settings",
-              select: (ctx) => {
-                const entity = ctx.entity as ExampleEntity | undefined;
-                if (!entity) return [];
-                return [
-                  {
-                    id: "group-general",
-                    title: "General controls",
-                    fields: [
-                      {
-                        id: "settings-status",
-                        label: "Status",
-                        kind: "status",
-                        value: entity.status,
-                      },
-                      {
-                        id: "settings-owner",
-                        label: "Owner",
-                        kind: "text",
-                        value: entity.owner,
-                      },
-                    ],
-                  },
-                ];
-              },
-            }),
-          ],
-        },
-      ],
-    }),
-    [],
-  );
+  const schema = React.useMemo(() => buildExampleSchema(), []);
 
   return (
     <SectionHost<ExampleEntity>
