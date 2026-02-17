@@ -53,6 +53,41 @@ describe("retry and abort behavior", () => {
     expect(load).toHaveBeenCalledTimes(2);
   });
 
+  it("does not swallow abort-like errors when the signal was not aborted", async () => {
+    const load = vi
+      .fn<() => Promise<{ value: string }>>()
+      .mockRejectedValueOnce(new Error("signal is aborted without reason"))
+      .mockResolvedValueOnce({ value: "loaded" });
+
+    const schema: DetailsPageSchema = {
+      header: [],
+      body: [
+        {
+          id: "abort-like-retry",
+          kind: "general",
+          load: async () => load(),
+          render: ({ data }) => <div>{(data as { value: string }).value}</div>,
+        },
+      ],
+    };
+
+    render(
+      <SectionHost
+        schema={schema}
+        runtime={{
+          entityId: "1",
+          entity: { id: "1" },
+        }}
+        retryOptions={{ backoffMs: 0 }}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("loaded")).toBeInTheDocument();
+    });
+    expect(load).toHaveBeenCalledTimes(2);
+  });
+
   it("aborts in-flight section loads on unmount", async () => {
     let aborted = false;
     const schema: DetailsPageSchema = {
@@ -89,6 +124,27 @@ describe("retry and abort behavior", () => {
     unmount();
     await waitFor(() => {
       expect(aborted).toBe(true);
+    });
+  });
+
+  it("treats abort-like entity loader failures as errors when not explicitly aborted", async () => {
+    const schema: DetailsPageSchema = {
+      header: [],
+      body: [],
+    };
+
+    render(
+      <SectionHost
+        schema={schema}
+        runtime={{ entityId: "3" }}
+        entityLoader={async () => {
+          throw new Error("signal is aborted without reason");
+        }}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Unable to load details")).toBeInTheDocument();
     });
   });
 });

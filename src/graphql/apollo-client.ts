@@ -225,6 +225,48 @@ const createAuthLink = () => {
   });
 };
 
+const hasAbortMessage = (message?: string): boolean => {
+  if (!message) return false;
+  return message.toLowerCase().includes('abort');
+};
+
+const isAbortLikeNetworkError = (error: unknown): boolean => {
+  const visited = new Set<unknown>();
+  const walk = (value: unknown): boolean => {
+    if (!value) return false;
+    if (value instanceof DOMException && value.name === 'AbortError') return true;
+    if (value instanceof Error) {
+      if (value.name === 'AbortError') return true;
+      if (hasAbortMessage(value.message)) return true;
+    }
+    if (typeof value !== 'object') return false;
+    if (visited.has(value)) return false;
+    visited.add(value);
+    const candidate = value as {
+      name?: unknown;
+      message?: unknown;
+      cause?: unknown;
+      networkError?: unknown;
+      originalError?: unknown;
+    };
+    if (typeof candidate.name === 'string' && candidate.name === 'AbortError') {
+      return true;
+    }
+    if (
+      typeof candidate.message === 'string' &&
+      hasAbortMessage(candidate.message)
+    ) {
+      return true;
+    }
+    return (
+      walk(candidate.networkError) ||
+      walk(candidate.cause) ||
+      walk(candidate.originalError)
+    );
+  };
+  return walk(error);
+};
+
 /**
  * Create error link for handling authentication and network errors
  */
@@ -291,6 +333,9 @@ const createErrorLink = () => {
 
     // Handle network errors
     if (networkError) {
+      if (isAbortLikeNetworkError(networkError)) {
+        return;
+      }
       const statusCode =
         'statusCode' in networkError ? networkError.statusCode : undefined;
       if (

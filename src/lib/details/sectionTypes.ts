@@ -9,6 +9,7 @@ export type SectionKind =
   | "timeline"
   | "attachments"
   | "settings"
+  | "model"
   | "custom";
 
 export type SectionDataSource =

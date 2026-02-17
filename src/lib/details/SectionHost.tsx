@@ -11,6 +11,7 @@ import {
   evaluateSectionVisibility,
   evaluateTabVisibility,
   getSectionInstanceKey,
+  isAbortLikeError,
   isSectionDataEmpty,
   loadSectionData,
   resolveSectionActions,
@@ -82,13 +83,6 @@ type SectionMeta = {
 function toRecord(value: unknown): Record<string, unknown> {
   if (!value || typeof value !== "object") return {};
   return value as Record<string, unknown>;
-}
-
-function isAbortError(error: unknown): boolean {
-  return (
-    (error instanceof DOMException && error.name === "AbortError") ||
-    (error instanceof Error && error.name === "AbortError")
-  );
 }
 
 function ManagedSection({
@@ -297,7 +291,7 @@ export default function SectionHost<TEntity = Record<string, unknown>>({
         setEntityStatus("ready");
       })
       .catch((error) => {
-        if (isAbortError(error)) return;
+        if (controller.signal.aborted && isAbortLikeError(error)) return;
         setEntityStatus("error");
       });
 
@@ -360,7 +354,23 @@ export default function SectionHost<TEntity = Record<string, unknown>>({
             },
           }));
         } catch (error) {
-          if (isAbortError(error)) return;
+          if (controller.signal.aborted && isAbortLikeError(error)) {
+            const activeController =
+              inFlightControllersRef.current.get(instanceKey);
+            if (activeController === controller) {
+              setSectionStates((current) => {
+                const existing = current[instanceKey];
+                if (!existing || existing.status !== "loading") {
+                  return current;
+                }
+                return {
+                  ...current,
+                  [instanceKey]: { status: "idle" },
+                };
+              });
+            }
+            return;
+          }
           setSectionStates((current) => ({
             ...current,
             [instanceKey]: {
@@ -478,14 +488,14 @@ export default function SectionHost<TEntity = Record<string, unknown>>({
     );
   }
 
-  const resolveGridClasses = React.useCallback((columns: number) => {
+  const resolveGridClasses = (columns: number) => {
     const normalized = Math.max(1, Math.min(columns, 4));
     const classes = ["grid grid-cols-1 gap-4"];
     if (normalized >= 2) classes.push("md:grid-cols-2");
     if (normalized >= 3) classes.push("xl:grid-cols-3");
     if (normalized >= 4) classes.push("2xl:grid-cols-4");
     return classes.join(" ");
-  }, []);
+  };
 
   const renderSectionList = (sections: SectionDefinition[], tabId?: string) => (
     <div

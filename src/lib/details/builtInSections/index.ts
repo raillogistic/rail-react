@@ -7,3 +7,4 @@ export * from "./TimelineSection";
 export * from "./AttachmentsSection";
 export * from "./SettingsSection";
 export * from "./CustomSection";
+export * from "./ModelSection";

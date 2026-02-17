@@ -8,3 +8,4 @@ export * from "./sectionGovernance";
 export * from "./states";
 export * from "./builtInSections";
 export * from "./units";
+export * from "./modelSection";

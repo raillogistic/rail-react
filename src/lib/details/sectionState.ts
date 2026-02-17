@@ -27,6 +27,7 @@ export const DEFAULT_SECTION_LOADING_STRATEGY_BY_KIND: Record<
   timeline: "lazy",
   attachments: "lazy",
   settings: "lazy",
+  model: "eager",
   custom: "lazy",
 };
 
@@ -91,11 +92,51 @@ export function getSectionInstanceKey(
   return `${scope}|entity:${String(runtime.entityId)}|section:${stable}`;
 }
 
-function isAbortError(error: unknown): boolean {
+function hasAbortMessage(message: string | undefined): boolean {
+  if (!message) return false;
+  const normalized = message.toLowerCase();
+  return normalized.includes("abort");
+}
+
+function isAbortErrorInternal(error: unknown, visited: Set<unknown>): boolean {
+  if (!error) return false;
+
+  if (error instanceof DOMException && error.name === "AbortError") {
+    return true;
+  }
+  if (error instanceof Error) {
+    if (error.name === "AbortError") return true;
+    if (hasAbortMessage(error.message)) return true;
+  }
+
+  if (typeof error !== "object") return false;
+  if (visited.has(error)) return false;
+  visited.add(error);
+
+  const candidate = error as {
+    name?: unknown;
+    message?: unknown;
+    cause?: unknown;
+    networkError?: unknown;
+    originalError?: unknown;
+  };
+
+  if (typeof candidate.name === "string" && candidate.name === "AbortError") {
+    return true;
+  }
+  if (typeof candidate.message === "string" && hasAbortMessage(candidate.message)) {
+    return true;
+  }
+
   return (
-    (error instanceof DOMException && error.name === "AbortError") ||
-    (error instanceof Error && error.name === "AbortError")
+    isAbortErrorInternal(candidate.networkError, visited) ||
+    isAbortErrorInternal(candidate.cause, visited) ||
+    isAbortErrorInternal(candidate.originalError, visited)
   );
+}
+
+export function isAbortLikeError(error: unknown): boolean {
+  return isAbortErrorInternal(error, new Set<unknown>());
 }
 
 function toSafeError(error: unknown): Error {
@@ -153,6 +194,9 @@ export async function loadSectionData<TData>(
   const retries = Math.max(0, options.retries ?? 0);
   const backoffMs = Math.max(0, options.backoffMs ?? 200);
   const backoffMultiplier = Math.max(1, options.backoffMultiplier ?? 2);
+  // Some transport stacks can emit abort-like errors without this section's signal being aborted.
+  // Allow one implicit retry for that transient path.
+  const implicitAbortLikeRetries = 1;
 
   const cached = loadCtx.cache.get<TData>(loadCtx.sectionId);
   if (cached !== undefined) return cached;
@@ -163,6 +207,7 @@ export async function loadSectionData<TData>(
 
   let attempt = 0;
   let delayMs = backoffMs;
+  let abortLikeRetryCount = 0;
 
   while (true) {
     if (loadCtx.abortSignal.aborted) {
@@ -174,9 +219,18 @@ export async function loadSectionData<TData>(
       loadCtx.cache.set(loadCtx.sectionId, data);
       return data;
     } catch (error) {
-      if (isAbortError(error)) throw error;
-      if (attempt >= retries) throw toSafeError(error);
+      const abortLike = isAbortLikeError(error);
+      if (loadCtx.abortSignal.aborted && abortLike) throw error;
+
+      const canRetryConfigured = attempt < retries;
+      const canRetryAbortLike =
+        abortLike && abortLikeRetryCount < implicitAbortLikeRetries;
+      if (!canRetryConfigured && !canRetryAbortLike) throw toSafeError(error);
+
       attempt += 1;
+      if (canRetryAbortLike) {
+        abortLikeRetryCount += 1;
+      }
       await sleep(delayMs, loadCtx.abortSignal);
       delayMs = Math.ceil(delayMs * backoffMultiplier);
     }
