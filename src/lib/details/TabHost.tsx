@@ -82,33 +82,35 @@ export default function TabHost({
   const defaultTabList = React.useCallback(() => {
     if (tabs.length <= 1) return null;
     return (
-      <TabsList 
-        className={cn(
-          "inline-flex h-12 items-center justify-start rounded-xl bg-muted/30 p-1.5 text-muted-foreground border border-border/20 backdrop-blur-sm shadow-inner mb-6", 
-          tabListClassName
-        )}
-      >
-        {tabs.map((tab) => (
-          <TabsTrigger
-            key={tab.id}
-            value={tab.id}
-            data-testid={tab.testId}
-            className={cn(
-              "inline-flex items-center justify-center whitespace-nowrap rounded-lg px-5 py-2 text-sm font-bold transition-all",
-              "ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
-              "data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-md data-[state=active]:scale-[1.02]",
-              "hover:bg-muted/50 hover:text-foreground/80",
-              tabTriggerClassName,
-              resolvedActive === tab.id
-                ? activeTabTriggerClassName
-                : inactiveTabTriggerClassName,
-            )}
-          >
-            {tab.icon && <span className="mr-2 size-4 opacity-70">{tab.icon}</span>}
-            {tab.title}
-          </TabsTrigger>
-        ))}
-      </TabsList>
+      <div className="flex justify-start mb-10 overflow-x-auto pb-4 no-scrollbar">
+        <TabsList 
+          className={cn(
+            "inline-flex h-12 items-center justify-start rounded-[1.25rem] bg-muted/40 p-1.5 text-muted-foreground border border-border/20 backdrop-blur-xl shadow-xl shadow-primary/[0.02]", 
+            tabListClassName
+          )}
+        >
+          {tabs.map((tab) => (
+            <TabsTrigger
+              key={tab.id}
+              value={tab.id}
+              data-testid={tab.testId}
+              className={cn(
+                "inline-flex items-center justify-center whitespace-nowrap rounded-[0.9rem] px-6 py-2 text-[11px] font-black uppercase tracking-[0.1em] transition-all duration-300",
+                "ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
+                "data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-lg data-[state=active]:scale-[1.02]",
+                "hover:text-foreground/80 hover:bg-muted/50",
+                tabTriggerClassName,
+                resolvedActive === tab.id
+                  ? activeTabTriggerClassName
+                  : inactiveTabTriggerClassName,
+              )}
+            >
+              {tab.icon && <span className="mr-2.5 size-3.5 opacity-80 shrink-0">{tab.icon}</span>}
+              {tab.title}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+      </div>
     );
   }, [
     tabs,
@@ -141,9 +143,11 @@ export default function TabHost({
           <TabsContent 
             key={tab.id} 
             value={tab.id}
-            className="mt-0 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 animate-in fade-in-50 duration-300"
+            className="mt-0 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           >
-            {renderContent(tab, isVisited)}
+            <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out-expo fill-mode-forwards">
+               {renderContent(tab, isVisited)}
+            </div>
           </TabsContent>
         );
       })}

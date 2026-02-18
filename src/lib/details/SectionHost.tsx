@@ -202,8 +202,7 @@ function ManagedSection({
     <div
       key={instanceKey}
       className={cn(
-        "min-w-0 animate-in fade-in slide-in-from-bottom-2 duration-500", 
-        sectionsContainerClassName, 
+        "min-w-0 transition-all duration-700 ease-in-out",
         sectionContainerClassName
       )}
       style={sectionContainerStyle}
@@ -217,9 +216,11 @@ function ManagedSection({
         disabled={visibility.disabledState?.disabled}
         disabledReason={visibility.disabledState?.reason}
         testId={section.testId ?? `section-frame-${section.id}`}
-        headerClassName={section.kind === "header" ? "bg-primary/5 border-primary/10 py-8" : undefined}
+        headerClassName={section.kind === "header" ? "bg-primary/5 border-primary/10 py-10" : undefined}
       >
-        {content}
+        <div className="animate-in fade-in zoom-in-95 duration-500 fill-mode-forwards">
+          {content}
+        </div>
       </SectionFrame>
     </div>
   );
@@ -479,10 +480,10 @@ export default function SectionHost<TEntity = Record<string, unknown>>({
 
   if (entityStatus === "error") {
     return (
-      <div className={cn("space-y-4", className)}>
+      <div className={cn("space-y-4 max-w-5xl mx-auto py-12 px-6", className)}>
         <SectionErrorState
-          title="Unable to load details"
-          description="The details record could not be loaded."
+          title="System Sync Lost"
+          description="We were unable to establish a secure connection with the record server. This might be due to a session timeout or a temporary network disruption."
         />
       </div>
     );
@@ -490,7 +491,7 @@ export default function SectionHost<TEntity = Record<string, unknown>>({
 
   const resolveGridClasses = (columns: number) => {
     const normalized = Math.max(1, Math.min(columns, 4));
-    const classes = ["grid grid-cols-1 gap-4"];
+    const classes = ["grid grid-cols-1 gap-10"];
     if (normalized >= 2) classes.push("md:grid-cols-2");
     if (normalized >= 3) classes.push("xl:grid-cols-3");
     if (normalized >= 4) classes.push("2xl:grid-cols-4");
@@ -500,7 +501,7 @@ export default function SectionHost<TEntity = Record<string, unknown>>({
   const renderSectionList = (sections: SectionDefinition[], tabId?: string) => (
     <div
       className={cn(
-        sectionColumns > 1 ? resolveGridClasses(sectionColumns) : "space-y-4",
+        sectionColumns > 1 ? resolveGridClasses(sectionColumns) : "space-y-10",
         sectionsContainerClassName,
       )}
     >
@@ -528,43 +529,63 @@ export default function SectionHost<TEntity = Record<string, unknown>>({
 
   return (
     <SectionHostContext.Provider value={contextValue}>
-      <div className={cn("space-y-8 animate-in fade-in duration-700", className)}>
-        {renderSectionList(visibleHeaderSections)}
-        {visibleBodySections.length > 0 ? renderSectionList(visibleBodySections) : null}
+      <div className={cn("space-y-12 animate-in fade-in slide-in-from-top-4 duration-1000", className)}>
+        {visibleHeaderSections.length > 0 && (
+          <div className="space-y-10">
+            {renderSectionList(visibleHeaderSections)}
+          </div>
+        )}
+        
+        {visibleBodySections.length > 0 ? (
+          <div className="space-y-10">
+            {renderSectionList(visibleBodySections)}
+          </div>
+        ) : null}
+        
         {visibleTabs.length > 0 ? (
-          <TabHost
-            tabs={tabHostTabs}
-            activeTab={resolvedActiveTab}
-            defaultActiveTab={initialTabId ?? tabHostTabs[0]?.id}
-            onActiveTabChange={(tabId) => {
-              setInternalActiveTab(tabId);
-              onActiveTabChange?.(tabId);
-            }}
-            onTabActivated={(tabId) => {
-              const tab = visibleTabs.find((entry) => entry.id === tabId);
-              if (!tab) return;
-              const tabStrategy = resolveTabLoadingStrategy(tab);
-              for (const section of tab.sections) {
-                const sectionStrategy = resolveSectionLoadingStrategy(section);
-                if (tabStrategy === "eager" || sectionStrategy === "eager") {
-                  void loadSection(section, tab.id);
+          <div className="pt-4">
+            <TabHost
+              tabs={tabHostTabs}
+              activeTab={resolvedActiveTab}
+              defaultActiveTab={initialTabId ?? tabHostTabs[0]?.id}
+              onActiveTabChange={(tabId) => {
+                setInternalActiveTab(tabId);
+                onActiveTabChange?.(tabId);
+              }}
+              onTabActivated={(tabId) => {
+                const tab = visibleTabs.find((entry) => entry.id === tabId);
+                if (!tab) return;
+                const tabStrategy = resolveTabLoadingStrategy(tab);
+                for (const section of tab.sections) {
+                  const sectionStrategy = resolveSectionLoadingStrategy(section);
+                  if (tabStrategy === "eager" || sectionStrategy === "eager") {
+                    void loadSection(section, tab.id);
+                  }
                 }
-              }
-            }}
-            renderContent={(tab, isVisited) => {
-              if (!isVisited) {
-                return <SectionSkeleton lines={2} />;
-              }
-              const tabDefinition = visibleTabs.find((entry) => entry.id === tab.id);
-              if (!tabDefinition) return null;
-              return renderSectionList(tabDefinition.sections, tabDefinition.id);
-            }}
-            renderTabList={renderTabList}
-            tabListClassName={tabListClassName}
-            tabTriggerClassName={tabTriggerClassName}
-            activeTabTriggerClassName={activeTabTriggerClassName}
-            inactiveTabTriggerClassName={inactiveTabTriggerClassName}
-          />
+              }}
+              renderContent={(tab, isVisited) => {
+                if (!isVisited) {
+                  return (
+                    <div className="py-12">
+                      <SectionSkeleton lines={3} />
+                    </div>
+                  );
+                }
+                const tabDefinition = visibleTabs.find((entry) => entry.id === tab.id);
+                if (!tabDefinition) return null;
+                return (
+                  <div className="animate-in fade-in slide-in-from-bottom-6 duration-500">
+                    {renderSectionList(tabDefinition.sections, tabDefinition.id)}
+                  </div>
+                );
+              }}
+              renderTabList={renderTabList}
+              tabListClassName={tabListClassName}
+              tabTriggerClassName={tabTriggerClassName}
+              activeTabTriggerClassName={activeTabTriggerClassName}
+              inactiveTabTriggerClassName={inactiveTabTriggerClassName}
+            />
+          </div>
         ) : null}
       </div>
     </SectionHostContext.Provider>

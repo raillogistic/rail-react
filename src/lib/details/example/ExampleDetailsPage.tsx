@@ -148,6 +148,13 @@ function buildExampleSchema(): DetailsPageSchema {
           fields: {
             sku: { label: "UNIQUE SKU" },
           },
+          sections: [
+            {
+              fields: ["sku", "name", "description", "category", "createdAt"],
+              columns: 5,
+            },
+          ],
+
           includeUnassignedFields: true,
         },
       }),

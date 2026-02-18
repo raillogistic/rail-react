@@ -1,5 +1,6 @@
 import * as React from "react";
 import type { ApolloClient } from "@apollo/client";
+import { LayoutGrid, Layers, Info, Box, ChevronRight, Fingerprint } from "lucide-react";
 import defaultApolloClient from "@/graphql/apollo-client";
 import {
   MODEL_FORM_CONTRACT_QUERY,
@@ -12,6 +13,14 @@ import type {
   ModelFormMode,
 } from "@/lib/form/types/generatedContract";
 import { cn } from "@/lib/utils";
+import { Separator } from "@/lib/components/ui/separator";
+import { Badge } from "@/lib/components/ui/badge";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/lib/components/ui/tooltip";
 import type { SectionDefinition, SectionRuntimeCtx } from "../sectionTypes";
 import UnitFieldRenderer from "../units/UnitFieldRenderer";
 import type {
@@ -118,7 +127,7 @@ export type ModelSectionConfig = {
 
 function resolveGridClasses(columns: number): string {
   const normalized = Math.max(1, Math.min(columns, 6));
-  return cn("grid gap-x-12 gap-y-8", buildResponsiveGridClass(normalized));
+  return cn("grid gap-x-16 gap-y-12", buildResponsiveGridClass(normalized));
 }
 
 function resolveObjectId(
@@ -254,29 +263,58 @@ export function createModelSection(
       );
 
       return (
-        <div className="space-y-8">
-          {groups.map((group) => {
+        <div className="space-y-20">
+          {groups.map((group, index) => {
             const groupColumns = group.columns ?? config.columns ?? 2;
+            const hasHeader = Boolean(group.title || group.description);
+
             return (
-              <section key={group.id} className="space-y-3">
-                {group.title || group.description ? (
-                  <header className="space-y-1">
-                    {group.title ? (
-                      <h3 className="text-sm font-semibold tracking-tight">
-                        {group.title}
-                      </h3>
-                    ) : null}
-                    {group.description ? (
-                      <p className="text-xs text-muted-foreground">
-                        {group.description}
-                      </p>
-                    ) : null}
-                  </header>
+              <section key={group.id} className="space-y-10 group/section transition-all duration-500">
+                {hasHeader ? (
+                  <div className="space-y-6">
+                    <header className="flex items-center justify-between gap-6">
+                      <div className="space-y-2 min-w-0">
+                        {group.title ? (
+                          <div className="flex items-center gap-3.5">
+                            <div className="p-2.5 rounded-2xl bg-primary shadow-lg shadow-primary/10 text-primary-foreground shrink-0 transition-transform duration-500 group-hover/section:scale-110 group-hover/section:-rotate-2">
+                              <Box className="size-4" />
+                            </div>
+                            <h3 className="text-base font-black uppercase tracking-[0.15em] text-foreground/90">
+                              {group.title}
+                            </h3>
+                          </div>
+                        ) : null}
+                        {group.description ? (
+                          <div className="flex items-start gap-2.5 pl-[3.25rem]">
+                             <ChevronRight className="size-3.5 text-primary/40 mt-0.5 shrink-0" />
+                             <p className="text-xs font-bold text-muted-foreground/50 leading-relaxed max-w-4xl tracking-tight">
+                              {group.description}
+                            </p>
+                          </div>
+                        ) : null}
+                      </div>
+                      
+                      <div className="hidden sm:flex items-center gap-4 shrink-0">
+                         <div className="flex items-center gap-2.5 px-4 py-2 rounded-2xl bg-muted/30 border border-border/10 backdrop-blur-sm transition-all hover:bg-muted/50 cursor-default">
+                           <Layers className="size-3.5 text-muted-foreground/40" />
+                           <span className="text-[10px] font-black tracking-[0.2em] text-muted-foreground/60 uppercase">
+                             {group.fields.length} Entries
+                           </span>
+                         </div>
+                      </div>
+                    </header>
+                    <Separator className="bg-gradient-to-r from-border/60 via-border/20 to-transparent h-[1px]" />
+                  </div>
+                ) : index > 0 ? (
+                   <div className="py-4">
+                      <Separator className="bg-border/10 border-dashed" />
+                   </div>
                 ) : null}
-                <div className={cn(resolveGridClasses(groupColumns), "py-1")}>
-                  {group.fields.map((field, index) => (
+
+                <div className={cn(resolveGridClasses(groupColumns), "px-2 py-2")}>
+                  {group.fields.map((field, fIndex) => (
                     <div
-                      key={field.id ?? `${group.id}-field-${index}`}
+                      key={field.id ?? `${group.id}-field-${fIndex}`}
                       className="min-w-0"
                     >
                       <UnitFieldRenderer
@@ -285,6 +323,7 @@ export function createModelSection(
                         density={config.fieldDensity ?? "normal"}
                         defaultLocale={config.defaultLocale ?? runtime.locale}
                         defaultTimezone={config.defaultTimezone ?? runtime.timezone}
+                        className="transition-all duration-150 ease-out hover:bg-primary/[0.1] rounded-2xl p-4 -m-4 border border-transparent hover:border-primary/30 hover:shadow-2xl hover:shadow-primary/[0.15] hover:-translate-y-1.5 hover:scale-[1.02] active:scale-[0.98] cursor-default"
                       />
                     </div>
                   ))}

@@ -1,8 +1,33 @@
 import * as React from "react";
+import {
+  Calendar,
+  Check,
+  CheckCircle2,
+  Clock,
+  Copy,
+  Database,
+  ExternalLink,
+  Hash,
+  Info,
+  MapPin,
+  Star,
+  TrendingDown,
+  TrendingUp,
+  User as UserIcon,
+  XCircle,
+  Banknote,
+} from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/lib/components/ui/avatar";
 import { Badge } from "@/lib/components/ui/badge";
 import { Button } from "@/lib/components/ui/button";
+import { Label } from "@/lib/components/ui/label";
 import { Progress } from "@/lib/components/ui/progress";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/lib/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import {
   formatFieldValue,
@@ -53,6 +78,7 @@ function toBadgeVariant(tone: UnitFieldTone): BadgeVariant {
   if (tone === "danger") return "destructive";
   if (tone === "default") return "default";
   if (tone === "muted") return "outline";
+  if (tone === "success") return "secondary"; // Or a custom success variant if available
   return "secondary";
 }
 
@@ -91,9 +117,13 @@ function renderInteractiveText(
         target={field.link.external ? "_blank" : undefined}
         rel={field.link.external ? "noreferrer noopener" : undefined}
         aria-label={ariaLabel}
-        className={cn("underline underline-offset-4", className)}
+        className={cn(
+          "inline-flex items-center gap-1 font-semibold text-primary underline-offset-4 hover:underline",
+          className,
+        )}
       >
         {text}
+        {field.link.external && <ExternalLink className="size-3 opacity-70" />}
       </a>
     );
   }
@@ -106,7 +136,7 @@ function renderInteractiveText(
         disabled={isDisabled}
         aria-label={ariaLabel}
         className={cn(
-          "text-left underline underline-offset-4 disabled:no-underline disabled:opacity-60",
+          "inline-flex items-center gap-1 text-left font-semibold text-primary underline-offset-4 hover:underline disabled:no-underline disabled:opacity-60",
           className,
         )}
       >
@@ -115,7 +145,7 @@ function renderInteractiveText(
     );
   }
 
-  return <span className={className}>{text}</span>;
+  return <span className={cn("font-semibold text-foreground", className)}>{text}</span>;
 }
 
 function renderPlainText(ctx: UnitFieldRenderCtx): React.ReactNode {
@@ -134,7 +164,7 @@ function renderPlainText(ctx: UnitFieldRenderCtx): React.ReactNode {
 function renderCodeText(ctx: UnitFieldRenderCtx): React.ReactNode {
   return renderInteractiveText(
     ctx,
-    <code className="font-mono text-xs whitespace-pre-wrap break-all">
+    <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs whitespace-pre-wrap break-all border border-border/50">
       {ctx.formatted.text}
     </code>,
   );
@@ -143,7 +173,7 @@ function renderCodeText(ctx: UnitFieldRenderCtx): React.ReactNode {
 function renderJsonText(ctx: UnitFieldRenderCtx): React.ReactNode {
   return renderInteractiveText(
     ctx,
-    <pre className="font-mono text-xs whitespace-pre-wrap break-all">
+    <pre className="rounded-md border bg-muted/50 p-3 font-mono text-xs leading-relaxed whitespace-pre-wrap break-all shadow-inner">
       {ctx.formatted.text}
     </pre>,
   );
@@ -151,11 +181,14 @@ function renderJsonText(ctx: UnitFieldRenderCtx): React.ReactNode {
 
 function renderBoolean(ctx: UnitFieldRenderCtx): React.ReactNode {
   const normalized = Boolean(ctx.formatted.normalized);
-  const indicator = normalized ? "True" : "False";
   return (
-    <span className="inline-flex items-center gap-2">
-      <span aria-hidden="true">{normalized ? "[Y]" : "[N]"}</span>
-      {renderInteractiveText(ctx, `${ctx.formatted.text} (${indicator})`)}
+    <span className="inline-flex items-center gap-1.5 py-0.5">
+      {normalized ? (
+        <CheckCircle2 className="size-4 text-emerald-500 shadow-sm" />
+      ) : (
+        <XCircle className="size-4 text-destructive shadow-sm" />
+      )}
+      <span className="text-sm font-bold tracking-tight">{ctx.formatted.text}</span>
     </span>
   );
 }
@@ -165,7 +198,11 @@ function renderBadgeValue(ctx: UnitFieldRenderCtx): React.ReactNode {
   return (
     <Badge
       variant={toBadgeVariant(tone)}
-      className={cn("unit-field-badge", `unit-field-tone-${tone}`)}
+      className={cn(
+        "unit-field-badge font-bold uppercase tracking-wider text-[10px] px-2 py-0.5",
+        tone === "success" && "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800",
+        tone === "warning" && "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/30 dark:text-amber-400 dark:border-amber-800",
+      )}
     >
       {ctx.formatted.text}
     </Badge>
@@ -177,9 +214,9 @@ function renderTagList(ctx: UnitFieldRenderCtx): React.ReactNode {
     ? (ctx.formatted.normalized as string[])
     : [ctx.formatted.text];
   return (
-    <span className="inline-flex flex-wrap gap-1">
+    <span className="inline-flex flex-wrap gap-1.5 py-0.5">
       {values.map((value, index) => (
-        <Badge key={`${value}-${index}`} variant="outline">
+        <Badge key={`${value}-${index}`} variant="secondary" className="px-2 py-0.5 text-[10px] font-bold">
           {value}
         </Badge>
       ))}
@@ -192,11 +229,15 @@ function renderProgress(ctx: UnitFieldRenderCtx): React.ReactNode {
   const clamped = Math.min(100, Math.max(0, progress.percent));
   const showBar = ctx.field.format?.progress?.showBar ?? false;
   return (
-    <div className="flex min-w-0 flex-col gap-1">
-      <span>{ctx.formatted.text}</span>
+    <div className="flex min-w-0 flex-col gap-2 py-0.5">
+      <div className="flex items-center justify-between text-xs font-bold">
+        <span>{ctx.formatted.text}</span>
+        {showBar && <span className="text-muted-foreground/70">{clamped}%</span>}
+      </div>
       {showBar ? (
         <Progress
           value={clamped}
+          className="h-2 border border-border/20 bg-muted"
           aria-label={`${resolveLabelText(ctx.field)} progress ${ctx.formatted.text}`}
         />
       ) : null}
@@ -207,36 +248,94 @@ function renderProgress(ctx: UnitFieldRenderCtx): React.ReactNode {
 function renderRating(ctx: UnitFieldRenderCtx): React.ReactNode {
   const rating = ctx.formatted.normalized as FormattedRating;
   const rounded = Math.round(rating.value);
-  const stars = `${"★".repeat(rounded)}${"☆".repeat(Math.max(0, rating.max - rounded))}`;
+  const max = rating.max || 5;
+
   return (
-    <span className="inline-flex items-center gap-2">
-      <span aria-hidden="true">{stars}</span>
-      <span>{ctx.formatted.text}</span>
-    </span>
+    <div className="inline-flex items-center gap-2.5 py-0.5">
+      <div className="flex items-center gap-1">
+        {Array.from({ length: max }).map((_, i) => (
+          <Star
+            key={i}
+            className={cn(
+              "size-4",
+              i < rounded ? "fill-amber-400 text-amber-400 drop-shadow-sm" : "fill-muted text-muted-foreground/30",
+            )}
+          />
+        ))}
+      </div>
+      <span className="text-xs font-bold text-muted-foreground/70">{ctx.formatted.text}</span>
+    </div>
   );
 }
 
 function renderDelta(ctx: UnitFieldRenderCtx): React.ReactNode {
   const tone = resolveFieldTone(ctx.field, ctx.formatted);
   const numeric = Number(ctx.formatted.normalized);
-  const deltaText =
-    Number.isFinite(numeric) && numeric > 0
-      ? "Increase"
-      : Number.isFinite(numeric) && numeric < 0
-        ? "Decrease"
-        : "No change";
+  const isPositive = numeric > 0;
+  const isNegative = numeric < 0;
+
   return (
-    <span className={cn("inline-flex items-center gap-2", `unit-field-tone-${tone}`)}>
-      <span>{ctx.formatted.text}</span>
-      <Badge variant={toBadgeVariant(tone)}>{deltaText}</Badge>
-    </span>
+    <div className={cn("inline-flex items-center gap-1.5 py-0.5",
+      tone === "success" && "text-emerald-600 dark:text-emerald-400",
+      tone === "danger" && "text-destructive",
+      tone === "warning" && "text-amber-600 dark:text-amber-400"
+    )}>
+      {isPositive && <TrendingUp className="size-4" />}
+      {isNegative && <TrendingDown className="size-4" />}
+      <span className="font-extrabold tracking-tight text-sm">{ctx.formatted.text}</span>
+    </div>
   );
 }
 
 function renderMonospaceValue(ctx: UnitFieldRenderCtx): React.ReactNode {
   return renderInteractiveText(
     ctx,
-    <code className="font-mono text-xs break-all">{ctx.formatted.text}</code>,
+    <div className="flex items-center gap-1.5">
+      <Hash className="size-3 text-muted-foreground/50" />
+      <code className="rounded bg-muted/80 px-1.5 py-0.5 font-mono text-[11px] font-bold text-muted-foreground/80 break-all border border-border/10">
+        {ctx.formatted.text}
+      </code>
+    </div>,
+  );
+}
+
+function renderDateTime(ctx: UnitFieldRenderCtx): React.ReactNode {
+  return renderInteractiveText(
+    ctx,
+    <div className="flex items-center gap-2 py-0.5">
+      <Calendar className="size-3.5 text-muted-foreground/60" />
+      <span className="text-sm">{ctx.formatted.text}</span>
+    </div>,
+  );
+}
+
+function renderDuration(ctx: UnitFieldRenderCtx): React.ReactNode {
+  return renderInteractiveText(
+    ctx,
+    <div className="flex items-center gap-2 py-0.5">
+      <Clock className="size-3.5 text-muted-foreground/60" />
+      <span className="text-sm font-bold tracking-tight">{ctx.formatted.text}</span>
+    </div>,
+  );
+}
+
+function renderBytes(ctx: UnitFieldRenderCtx): React.ReactNode {
+  return renderInteractiveText(
+    ctx,
+    <div className="flex items-center gap-2 py-0.5">
+      <Database className="size-3.5 text-muted-foreground/60" />
+      <span className="text-sm font-bold tracking-tight">{ctx.formatted.text}</span>
+    </div>,
+  );
+}
+
+function renderCurrency(ctx: UnitFieldRenderCtx): React.ReactNode {
+  return renderInteractiveText(
+    ctx,
+    <div className="flex items-center gap-2 py-0.5">
+       <Banknote className="size-3.5 text-muted-foreground/60" />
+       <span className="text-sm font-bold tracking-tight text-foreground">{ctx.formatted.text}</span>
+    </div>,
   );
 }
 
@@ -270,16 +369,24 @@ function renderUser(ctx: UnitFieldRenderCtx): React.ReactNode {
   const fieldWithHref = normalized.href ? { ...ctx.field, link: { ...ctx.field.link, href: normalized.href } } : ctx.field;
 
   return (
-    <span className="inline-flex items-center gap-2">
-      <Avatar className="size-7">
+    <div className="flex items-center gap-3 py-1">
+      <Avatar className="size-9 border-2 border-background shadow-sm ring-1 ring-border/50">
         <AvatarImage src={normalized.avatarUrl} alt={displayName} />
-        <AvatarFallback>{userInitials(displayName)}</AvatarFallback>
+        <AvatarFallback className="bg-primary/5 text-[11px] font-extrabold text-primary">
+          {userInitials(displayName)}
+        </AvatarFallback>
       </Avatar>
-      <span className="inline-flex items-center gap-1">
-        {renderInteractiveText({ ...ctx, field: fieldWithHref }, displayName)}
-        {normalized.role ? <Badge variant="outline">{normalized.role}</Badge> : null}
-      </span>
-    </span>
+      <div className="flex flex-col min-w-0 gap-0.5">
+        <div className="flex items-center gap-1.5">
+          {renderInteractiveText({ ...ctx, field: fieldWithHref }, displayName, "text-sm font-bold")}
+          {normalized.role ? (
+            <Badge variant="outline" className="h-4 px-1.5 text-[9px] font-black uppercase tracking-widest border-primary/20 bg-primary/5 text-primary">
+              {normalized.role}
+            </Badge>
+          ) : null}
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -304,17 +411,22 @@ function renderImage(ctx: UnitFieldRenderCtx): React.ReactNode {
     width?: number;
     height?: number;
   };
-  if (!image.src) return <span>{ctx.formatted.text}</span>;
+  if (!image.src) return <span className="text-sm italic text-muted-foreground/50">{ctx.formatted.text}</span>;
 
   const content = (
-    <img
-      src={image.src}
-      alt={image.alt || resolveLabelText(ctx.field)}
-      width={image.width || 64}
-      height={image.height || 64}
-      className="unit-field-image h-16 w-16 rounded border object-cover"
-      loading="lazy"
-    />
+    <div className="group relative overflow-hidden rounded-lg border-2 border-background shadow-md ring-1 ring-border/50 transition-all hover:shadow-lg">
+      <img
+        src={image.src}
+        alt={image.alt || resolveLabelText(ctx.field)}
+        width={image.width || 80}
+        height={image.height || 80}
+        className="unit-field-image aspect-square h-20 w-20 object-cover transition-transform duration-500 group-hover:scale-110"
+        loading="lazy"
+      />
+      <div className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+        <ExternalLink className="size-6 text-white" />
+      </div>
+    </div>
   );
 
   if (ctx.field.link?.onClick || ctx.onClickValue) {
@@ -327,7 +439,7 @@ function renderImage(ctx: UnitFieldRenderCtx): React.ReactNode {
           ctx.onClickValue?.(ctx.field);
         }}
         aria-label={ctx.field.link?.ariaLabel || `Open ${resolveLabelText(ctx.field)}`}
-        className="inline-flex"
+        className="inline-flex transition-transform active:scale-95 py-1"
       >
         {content}
       </button>
@@ -341,18 +453,33 @@ function renderImage(ctx: UnitFieldRenderCtx): React.ReactNode {
         target={ctx.field.link.external ? "_blank" : undefined}
         rel={ctx.field.link.external ? "noreferrer noopener" : undefined}
         aria-label={ctx.field.link.ariaLabel || `Open ${resolveLabelText(ctx.field)}`}
-        className="inline-flex"
+        className="inline-flex transition-transform active:scale-95 py-1"
       >
         {content}
       </a>
     );
   }
 
-  return content;
+  return <div className="py-1">{content}</div>;
 }
 
 function renderAvatar(ctx: UnitFieldRenderCtx): React.ReactNode {
-  return renderImage(ctx);
+  const normalized = (ctx.formatted.normalized || {}) as {
+    src?: string;
+    alt?: string;
+  };
+  const displayName = normalized.alt || resolveLabelText(ctx.field);
+
+  return (
+    <div className="py-1">
+      <Avatar className="size-14 border-2 border-background shadow-md ring-1 ring-border/40">
+        <AvatarImage src={normalized.src} alt={displayName} />
+        <AvatarFallback className="bg-muted text-lg font-black uppercase tracking-tighter text-muted-foreground/50">
+          {userInitials(displayName)}
+        </AvatarFallback>
+      </Avatar>
+    </div>
+  );
 }
 
 function renderLocation(ctx: UnitFieldRenderCtx): React.ReactNode {
@@ -362,14 +489,22 @@ function renderLocation(ctx: UnitFieldRenderCtx): React.ReactNode {
     location.mapUrl ||
     `https://maps.google.com/?q=${location.lat},${location.lng}`;
   return (
-    <span className="inline-flex flex-wrap items-center gap-2">
-      <span>{ctx.formatted.text}</span>
+    <div className="flex flex-col gap-1.5 py-0.5">
+      <div className="flex items-center gap-2 font-bold tracking-tight text-foreground/90">
+        <MapPin className="size-3.5 text-primary/60" />
+        <span>{ctx.formatted.text}</span>
+      </div>
       {location.lat !== undefined && location.lng !== undefined ? (
-        <a href={mapLink} target="_blank" rel="noreferrer noopener">
-          Open map
+        <a
+          href={mapLink}
+          target="_blank"
+          rel="noreferrer noopener"
+          className="text-[11px] font-black uppercase tracking-widest text-primary/80 hover:text-primary transition-colors pl-5"
+        >
+          View on Map
         </a>
       ) : null}
-    </span>
+    </div>
   );
 }
 
@@ -387,7 +522,7 @@ const unitFieldRendererRegistry: Record<UnitField["kind"], UnitFieldRendererFn> 
   json: renderJsonText,
   number: renderPlainText,
   integer: renderPlainText,
-  currency: renderPlainText,
+  currency: renderCurrency,
   percent: renderPlainText,
   ratio: renderPlainText,
   scientific: renderPlainText,
@@ -400,14 +535,14 @@ const unitFieldRendererRegistry: Record<UnitField["kind"], UnitFieldRendererFn> 
   enum: renderPlainText,
   multiEnum: renderTagList,
   tags: renderTagList,
-  date: renderPlainText,
-  datetime: renderPlainText,
-  time: renderPlainText,
-  duration: renderPlainText,
-  relativeTime: renderPlainText,
+  date: renderDateTime,
+  datetime: renderDateTime,
+  time: renderDateTime,
+  duration: renderDuration,
+  relativeTime: renderDuration,
   timezone: renderPlainText,
-  bytes: renderPlainText,
-  fileSize: renderPlainText,
+  bytes: renderBytes,
+  fileSize: renderBytes,
   distance: renderPlainText,
   weight: renderPlainText,
   temperature: renderPlainText,
@@ -442,13 +577,13 @@ export function UnitFieldValue({ ctx }: UnitFieldValueProps) {
   return (
     <div
       className={cn(
-        "unit-field-value flex min-w-0 items-start gap-2",
+        "unit-field-value flex min-w-0 items-start gap-3",
         `unit-field-tone-${tone}`,
       )}
     >
       <div className="min-w-0 flex-1">{valueNode}</div>
       {dynamicBadge ? (
-        <Badge variant={toBadgeVariant(dynamicBadge.tone ?? tone)}>
+        <Badge variant={toBadgeVariant(dynamicBadge.tone ?? tone)} className="shrink-0 font-black uppercase tracking-tighter text-[9px] h-5 shadow-sm">
           {dynamicBadge.text}
         </Badge>
       ) : null}
@@ -480,11 +615,15 @@ export function UnitFieldRenderer({
   const labelText = resolveLabelText(field);
   const copyText = resolveCopyText(field, formatted);
 
+  const [copied, setCopied] = React.useState(false);
+
   const handleCopy = React.useCallback(async () => {
     if (!copyText) return;
     try {
       await copyTextToClipboard(copyText);
+      setCopied(true);
       onCopy?.(field, copyText);
+      setTimeout(() => setCopied(false), 2000);
     } catch {
       // Clipboard permissions can fail silently in restricted contexts.
     }
@@ -504,15 +643,20 @@ export function UnitFieldRenderer({
   };
 
   const valueContent = (
-    <>
+    <div className="space-y-2">
       <UnitFieldValue ctx={ctx} />
       {field.hint ? (
-        <div className="text-xs text-muted-foreground">{field.hint}</div>
+        <div className="flex items-start gap-1.5 text-[11px] font-medium text-muted-foreground/60 leading-tight pl-1">
+          <Info className="size-3 shrink-0 mt-0.5 opacity-70" />
+          <span>{field.hint}</span>
+        </div>
       ) : null}
       {field.disabled && field.disabledReason ? (
-        <div className="text-xs text-muted-foreground">{field.disabledReason}</div>
+        <div className="text-[11px] font-bold text-destructive/70 leading-tight pl-1 border-l-2 border-destructive/20 ml-1">
+          {field.disabledReason}
+        </div>
       ) : null}
-    </>
+    </div>
   );
 
   if (mode === "valueOnly") {
@@ -530,54 +674,73 @@ export function UnitFieldRenderer({
     );
   }
 
+  const isWide = field.size === "full" || field.kind === "json" || field.kind === "richText" || field.kind === "multiline";
+
   return (
-    <dl
-      data-testid={field.testId}
-      className={cn(
-        "unit-field unit-field-mode-labelValue",
-        `unit-field-kind-${field.kind}`,
-        `unit-field-size-${field.size}`,
-        `unit-field-align-${field.align}`,
-        `unit-field-density-${density}`,
-        "min-w-0",
-        className,
-      )}
-    >
-      <div className="flex min-w-0 items-start justify-between gap-3">
-        <div className="min-w-0 flex-1">
-          <dt className="text-xs text-muted-foreground">
-            {field.label}
-            {field.required ? (
-              <span aria-hidden="true" className="ml-1">
-                *
-              </span>
+    <TooltipProvider delayDuration={400}>
+      <dl
+        data-testid={field.testId}
+        className={cn(
+          "unit-field group/field relative min-w-0 transition-all rounded-xl",
+          `unit-field-kind-${field.kind}`,
+          `unit-field-size-${field.size}`,
+          `unit-field-align-${field.align}`,
+          `unit-field-density-${density}`,
+          density === "compact" ? "py-1" : "py-3 px-1 hover:bg-muted/30",
+          className,
+        )}
+      >
+        <div className={cn("flex min-w-0 flex-col gap-1.5", field.align === "end" && "items-end")}>
+          <div className="flex w-full items-center justify-between gap-2">
+            <dt className="flex items-center gap-2">
+              <Label className="text-[10px] font-black uppercase tracking-[0.15em] text-muted-foreground/60">
+                {field.label}
+              </Label>
+              {field.required ? (
+                <span aria-hidden="true" className="text-destructive font-black text-[11px] -mt-1">
+                  *
+                </span>
+              ) : null}
+            </dt>
+
+            {field.copyable && copyText && !formatted.isEmpty ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className={cn(
+                      "size-7 opacity-0 transition-all group-hover/field:opacity-100 hover:bg-background shadow-sm border border-transparent hover:border-border/50",
+                      copied && "opacity-100 text-emerald-600 hover:text-emerald-600 border-emerald-200 bg-emerald-50",
+                    )}
+                    onClick={handleCopy}
+                    disabled={field.disabled}
+                  >
+                    {copied ? <Check className="size-3.5" /> : <Copy className="size-3.5" />}
+                    <span className="sr-only">Copy {labelText}</span>
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="text-[10px] font-black uppercase tracking-widest bg-foreground text-background">
+                  {copied ? "Copied!" : "Copy to clipboard"}
+                </TooltipContent>
+              </Tooltip>
             ) : null}
-          </dt>
+          </div>
+
           <dd
             className={cn(
-              "mt-1 text-sm",
+              "text-sm leading-relaxed",
               field.align === "end" ? "text-right" : "text-left",
-              formatted.isEmpty ? "text-muted-foreground" : "",
+              formatted.isEmpty ? "italic text-muted-foreground/30 font-normal" : "font-semibold text-foreground/90",
+              isWide ? "w-full" : "max-w-prose",
             )}
           >
-            {valueContent}
+            {formatted.isEmpty ? field.emptyValue || "" : valueContent}
           </dd>
         </div>
-        {field.copyable && copyText ? (
-          <Button
-            type="button"
-            size="sm"
-            variant="outline"
-            aria-label={`Copy ${labelText}`}
-            onClick={handleCopy}
-            disabled={field.disabled}
-            className="shrink-0"
-          >
-            Copy
-          </Button>
-        ) : null}
-      </div>
-    </dl>
+      </dl>
+    </TooltipProvider>
   );
 }
 

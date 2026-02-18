@@ -1,6 +1,6 @@
 import * as React from "react";
 import { Button } from "@/lib/components/ui/button";
-import { AlertCircle, RefreshCw } from "lucide-react";
+import { Unplug, RefreshCw, ServerCrash, ShieldX } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export type SectionErrorStateProps = {
@@ -12,9 +12,9 @@ export type SectionErrorStateProps = {
 };
 
 export default function SectionErrorState({
-  title = "System synchronization failed",
-  description = "An unexpected error occurred while fetching section data. Our team has been notified. Please try refreshing or contact support if the issue persists.",
-  retryLabel = "Attempt Reconnect",
+  title = "Connection Interrupted",
+  description = "A communication error occurred between the server and this section. Your data is safe, but we couldn't load it right now.",
+  retryLabel = "Restore Connection",
   onRetry,
   className,
 }: SectionErrorStateProps) {
@@ -33,35 +33,51 @@ export default function SectionErrorState({
   return (
     <div 
       className={cn(
-        "flex flex-col items-center justify-center p-10 text-center rounded-2xl border border-rose-500/20 bg-rose-500/5 transition-all duration-300 backdrop-blur-sm",
+        "flex flex-col items-center justify-center p-16 text-center rounded-[2rem] border border-destructive/10 bg-destructive/5 transition-all duration-500 backdrop-blur-xl",
+        "animate-in fade-in slide-in-from-top-4 duration-700",
         className
       )} 
       aria-live="polite"
     >
-      <div className="size-16 rounded-full bg-rose-500/10 flex items-center justify-center mb-6 shadow-sm border border-rose-500/10">
-        <AlertCircle className="size-8 text-rose-500" />
+      <div className="relative mb-10 group">
+        <div className="absolute inset-0 rounded-full bg-destructive/10 blur-3xl group-hover:bg-destructive/20 transition-colors duration-500 animate-pulse" />
+        <div className="relative size-24 rounded-[2rem] bg-background border border-destructive/20 flex items-center justify-center shadow-2xl shadow-destructive/10 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6">
+          <ServerCrash className="size-10 text-destructive/60" />
+        </div>
+        <div className="absolute -top-3 -right-3 size-12 rounded-2xl bg-destructive shadow-xl shadow-destructive/20 flex items-center justify-center border-4 border-background transition-transform duration-500 hover:-translate-y-1">
+          <Unplug className="size-5 text-white" />
+        </div>
       </div>
-      <div className="max-w-[320px] space-y-3 mb-8">
-        <div className="text-sm font-black tracking-tight text-rose-600 uppercase tracking-widest">{title}</div>
-        <p className="text-xs font-semibold text-muted-foreground leading-relaxed">
-          {description}
-        </p>
+
+      <div className="max-w-[360px] space-y-5 mb-10">
+        <div className="space-y-2">
+          <h4 className="text-base font-black tracking-widest text-destructive uppercase leading-none">
+            {title}
+          </h4>
+          <p className="text-[11px] font-bold text-muted-foreground/60 leading-relaxed px-6 tracking-tight">
+            {description}
+          </p>
+        </div>
       </div>
+
       {onRetry ? (
         <Button
           type="button"
-          size="sm"
-          variant="outline"
           onClick={() => {
             void handleRetry();
           }}
           disabled={isRetrying}
-          className="h-10 px-6 rounded-xl border-rose-500/30 text-rose-500 font-black uppercase tracking-widest text-[10px] hover:bg-rose-500 hover:text-white transition-all shadow-lg shadow-rose-500/10 gap-2"
+          className="h-12 px-10 rounded-2xl bg-destructive text-white font-black uppercase tracking-[0.15em] text-[10px] hover:bg-destructive/90 transition-all shadow-2xl shadow-destructive/20 active:scale-95 gap-3"
         >
-          <RefreshCw className={cn("size-3.5", isRetrying && "animate-spin")} />
-          {isRetrying ? "Retrying..." : retryLabel}
+          <RefreshCw className={cn("size-4", isRetrying && "animate-spin")} />
+          {isRetrying ? "Restoring..." : retryLabel}
         </Button>
-      ) : null}
+      ) : (
+        <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-destructive/10 text-destructive border border-destructive/10">
+           <ShieldX className="size-3.5" />
+           <span className="text-[9px] font-black uppercase tracking-widest">Protocol error reported</span>
+        </div>
+      )}
     </div>
   );
 }
