@@ -5,6 +5,7 @@ import { GET_MODEL_SCHEMA } from '../queries';
 import { gql } from '@apollo/client';
 import { describe, it, expect, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
+import { GraphQLError } from 'graphql';
 
 vi.stubEnv('VITE_METADATA_GATEWAY_TABLE', '0');
 
@@ -301,6 +302,31 @@ const MOCK_DATA_QUERY = {
   },
 };
 
+const MOCK_DATA_QUERY_PERMISSION_ERROR = {
+  request: MOCK_DATA_QUERY.request,
+  error: new Error(
+    "GraphQL error: Message: Permission required: billing.view_invoice, Location: [object Object], Path: invoicePage",
+  ),
+};
+
+const MOCK_DATA_QUERY_PERMISSION_GRAPHQL_ERROR = {
+  request: MOCK_DATA_QUERY.request,
+  result: {
+    data: {
+      userPage: null,
+    },
+    errors: [
+      new GraphQLError(
+        "Permission required: billing.view_invoice",
+        undefined,
+        undefined,
+        undefined,
+        ["invoicePage"],
+      ),
+    ],
+  },
+};
+
 const MOCK_METADATA_QUERY_WITH_TEMPLATE = {
   request: {
     query: GET_MODEL_SCHEMA,
@@ -535,5 +561,45 @@ describe('ModelTableV2 Integration', () => {
     });
 
     expect(screen.getByRole('checkbox', { name: /Tout/i })).toBeInTheDocument();
+  });
+
+  it('should display a french permission error message when model read is denied', async () => {
+    render(
+      <MockedProvider
+        mocks={[MOCK_METADATA_QUERY, MOCK_DATA_QUERY_PERMISSION_ERROR]}
+      >
+        <MemoryRouter>
+          <ModelTableV2 app="auth" model="User" />
+        </MemoryRouter>
+      </MockedProvider>
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          "Erreur de données : Acces refuse : permission requise (billing.view_invoice).",
+        ),
+      ).toBeInTheDocument();
+    });
+  });
+
+  it('should display a french permission error message for GraphQL partial errors', async () => {
+    render(
+      <MockedProvider
+        mocks={[MOCK_METADATA_QUERY, MOCK_DATA_QUERY_PERMISSION_GRAPHQL_ERROR]}
+      >
+        <MemoryRouter>
+          <ModelTableV2 app="auth" model="User" />
+        </MemoryRouter>
+      </MockedProvider>
+    );
+
+    await waitFor(() => {
+      expect(
+        screen.getByText(
+          "Erreur de données : Acces refuse : permission requise (billing.view_invoice).",
+        ),
+      ).toBeInTheDocument();
+    });
   });
 });

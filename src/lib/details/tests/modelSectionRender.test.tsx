@@ -62,7 +62,7 @@ describe("ModelSection render", () => {
     };
 
     const { container } = renderModelSection(data);
-    const grid = container.querySelector("section div.grid.py-1");
+    const grid = container.querySelector("section div.grid.py-2");
     expect(grid).not.toBeNull();
     expect(grid?.className).toContain("lg:grid-cols-4");
   });
@@ -81,9 +81,8 @@ describe("ModelSection render", () => {
     };
 
     const { container } = renderModelSection(data);
-    const grid = container.querySelector("section div.grid.py-1");
+    const grid = container.querySelector("section div.grid.py-2");
     expect(grid).not.toBeNull();
     expect(grid?.className).toContain("sm:grid-cols-2");
   });
 });
-

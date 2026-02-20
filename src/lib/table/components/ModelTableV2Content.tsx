@@ -60,7 +60,7 @@ import {
 import type { FormSchema } from "@/lib/form/inputs/types";
 import { useMetadata } from "../context/MetadataContext";
 import { useTable } from "../context/TableContext";
-import type { TemplateInfo } from "../types";
+import type { BaseModelTableFieldsInput, TemplateInfo } from "../types";
 import { findMutation } from "../utils";
 import {
   buildTemplateClientSchema,
@@ -81,6 +81,7 @@ type ModelTableV2ContentProps = {
   filterPanel?: ModelTableFilterPanelProps;
   tableConfig?: ModelTableV2TableConfig;
   quickSearch?: boolean;
+  fields?: BaseModelTableFieldsInput;
   topActions?: ModelTableV2TopActionsInput;
 };
 
@@ -98,6 +99,7 @@ export function ModelTableV2Content({
   filterPanel,
   tableConfig,
   quickSearch,
+  fields,
   topActions,
 }: ModelTableV2ContentProps) {
   const { metadata, app, model } = useMetadata();
@@ -382,6 +384,7 @@ export function ModelTableV2Content({
           filterPanel={filterPanel}
           tableConfig={tableConfig}
           quickSearch={quickSearch}
+          fields={fields}
         />
 
         {/* Floating Bulk Selection Bar - Practical & Beautiful */}

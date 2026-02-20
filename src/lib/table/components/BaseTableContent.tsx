@@ -52,6 +52,26 @@ type BaseTableContentProps = {
   columnActions?: BaseModelTableColumnActionsInput;
 };
 
+/**
+ * Extracts the backend permission codename from a GraphQL error message.
+ */
+function extractPermissionCodeFromMessage(message: string): string | null {
+  const match = message.match(/Permission required:\s*([a-z0-9_.-]+)/i);
+  return match?.[1] ?? null;
+}
+
+/**
+ * Converts technical GraphQL errors into user-facing French messages.
+ */
+function localizeTableErrorMessage(error: Error): string {
+  const rawMessage = error.message || "Une erreur est survenue.";
+  const permissionCode = extractPermissionCodeFromMessage(rawMessage);
+  if (permissionCode) {
+    return `Acces refuse : permission requise (${permissionCode}).`;
+  }
+  return rawMessage;
+}
+
 export function BaseTableContent({
   persistenceKey,
   children,
@@ -275,7 +295,7 @@ function ErrorState({ error }: { error: Error }) {
     <div className="flex h-[400px] items-center justify-center p-8">
       <div className="max-w-md w-full rounded-2xl border border-red-200 bg-red-50/30 p-8 text-center backdrop-blur-sm animate-in zoom-in-95 duration-300">
         <h3 className="mb-2 text-lg font-bold text-red-900">Erreur de métadonnées</h3>
-        <p className="text-sm text-red-700/80 mb-6">{error.message}</p>
+        <p className="text-sm text-red-700/80 mb-6">{localizeTableErrorMessage(error)}</p>
         <button onClick={() => window.location.reload()} className="rounded-full bg-red-600 px-6 py-2 text-sm font-semibold text-white shadow-lg">Réessayer</button>
       </div>
     </div>
@@ -303,7 +323,7 @@ function InfiniteScrollFooter({ loading, pagination, dataLength }: { loading: bo
 function DataErrorDisplay({ error }: { error: Error }) {
   return (
     <div className="flex-none flex items-center gap-2 rounded-lg bg-red-50/50 border border-red-100 px-4 py-2 text-xs font-semibold text-red-600 mt-2">
-      Erreur de données : {error.message}
+      Erreur de données : {localizeTableErrorMessage(error)}
     </div>
   );
 }

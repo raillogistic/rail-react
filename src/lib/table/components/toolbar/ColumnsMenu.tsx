@@ -17,15 +17,23 @@ import {
 } from "@/lib/components/ui/tooltip";
 import { resolveColumnVisibility } from "../../utils";
 import { cn } from "@/lib/utils";
-import type { FieldSchema } from "../../types";
+
+/**
+ * Canonical shape for the toolbar column selector entries.
+ */
+export type ColumnsMenuOption = {
+  id: string;
+  label: string;
+  visibilityKeys: string[];
+};
 
 type ColumnsMenuProps = {
   columnSearch: string;
   onColumnSearchChange: (value: string) => void;
-  visibleColumns: FieldSchema[];
+  visibleColumns: ColumnsMenuOption[];
   columnVisibility: Record<string, boolean>;
   allColumnsVisible: boolean;
-  onToggleColumn: (column: FieldSchema, checked: boolean) => void;
+  onToggleColumn: (column: ColumnsMenuOption, checked: boolean) => void;
   onSetAllColumnsVisibility: (checked: boolean) => void;
   onApplyDefaultColumnsVisibility: () => void;
 };
@@ -104,11 +112,11 @@ export function ColumnsMenu({
 
         <div className="max-h-[320px] overflow-auto custom-scrollbar px-1 py-1">
           {visibleColumns.map((col) => {
-            const id = col.fieldName || col.name;
-            const isVisible = resolveColumnVisibility(columnVisibility, [
-              col.name,
-              col.fieldName,
-            ]);
+            const id = col.id;
+            const isVisible = resolveColumnVisibility(
+              columnVisibility,
+              col.visibilityKeys,
+            );
             return (
               <DropdownMenuCheckboxItem
                 key={id}
@@ -121,7 +129,7 @@ export function ColumnsMenu({
                     : "text-muted-foreground hover:bg-muted/50",
                 )}
               >
-                {col.verboseName || col.name}
+                {col.label}
               </DropdownMenuCheckboxItem>
             );
           })}

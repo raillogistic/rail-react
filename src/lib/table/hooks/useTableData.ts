@@ -131,6 +131,11 @@ export function useTableData(config?: TableDataConfig) {
         });
       } else {
         _setQueryPage(null);
+        // Some GraphQL permission failures return `{ modelPage: null }` with errors.
+        // Keep the error in table state so the UI can render a user-facing message.
+        if (error) {
+          _setData([], false, error);
+        }
       }
     } else if (error) {
       _setQueryPage(null);

@@ -290,16 +290,21 @@ export function resolveSectionActions<TData>(
   state: SectionState<TData>,
   reload: () => Promise<void>,
 ): ResolvedSectionAction<TData>[] {
-  const configured = section.actions?.(runtime) ?? [];
+  const configured = section.actions?.(runtime, state) ?? [];
   const actionCtx: SectionActionCtx<TData> = {
     section,
     runtime,
     state,
     reload,
   };
-  const visibleActions = configured.filter((action) =>
-    hasRequiredPermissions(action.permissions, runtime),
-  );
+  const visibleActions = configured.filter((action) => {
+    const visible =
+      typeof action.visible === "function"
+        ? action.visible(actionCtx)
+        : action.visible;
+    if (visible === false) return false;
+    return hasRequiredPermissions(action.permissions, runtime);
+  });
 
   return visibleActions.map((action) => {
     const isDisabled =

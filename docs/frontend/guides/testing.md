@@ -34,6 +34,9 @@ npx vitest run src/lib/details/units/unitFieldFormatters.test.ts
 
 # Run section-system tests only
 npm run test -- src/lib/details/tests --run
+
+# Run graphql model-query hook tests only
+npm run test -- src/lib/graphql/__tests__ --run
 ```
 
 ## Writing tests

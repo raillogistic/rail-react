@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { getAppDefaultRoute, getAppNavigationLinks } from "@/apps/routes";
 import ExampleDetailsPage from "@/lib/details/example/ExampleDetailsPage";
+import DashboardPage from "@/views/dashboard/DashboardPage";
 
 const routeFallback = (
   <div className="rounded-md border p-3 text-sm text-muted-foreground">
@@ -25,12 +26,6 @@ const routeFallback = (
 
 const withRouteSuspense = (component: ReactNode) => (
   <Suspense fallback={routeFallback}>{component}</Suspense>
-);
-
-const DashboardPage = lazy(() =>
-  import("@/views/dashboard/DashboardPage").then((module) => ({
-    default: module.DashboardPage,
-  })),
 );
 
 const ModelImportPage = lazy(() =>
@@ -183,7 +178,7 @@ const CORE_NAVIGATION_LINKS: NavigationSection[] = [
         icon: LayoutDashboard,
         requiresAuth: true,
         description: "Vue synthese des indicateurs",
-        component: withRouteSuspense(<DashboardPage />),
+        component: <DashboardPage />,
       },
       {
         id: "model-import",
@@ -195,16 +190,20 @@ const CORE_NAVIGATION_LINKS: NavigationSection[] = [
       },
       {
         id: "orders-table-v2",
-        title: "Orders Table V2",
+        title: "Factures",
         path: "/orders-table-v2",
         icon: LayoutDashboard,
         requiresAuth: true,
         description: "Progress view for ModelTableV2 (store.Order)",
         component: withRouteSuspense(
           <ModelTableV2
-            app="store"
-            model="Product"
-            baseTable={{ tableConfig: { title: "Liste des produits" } }}
+            app="billing"
+            model="Invoice"
+            baseTable={{
+              topActions: () => [<></>],
+              tableConfig: { title: "Liste des factures" },
+              fields: ["id", "createdAt", "updatedAt", "status"],
+            }}
           />,
         ),
       },

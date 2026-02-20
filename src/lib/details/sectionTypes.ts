@@ -106,6 +106,8 @@ export type SectionAction<TData = unknown> = {
   icon?: React.ReactNode;
   ariaLabel?: string;
   permissions?: string[];
+  /** Controls action visibility after runtime/action-context evaluation. */
+  visible?: boolean | ((ctx: SectionActionCtx<TData>) => boolean);
   disabled?: boolean | ((ctx: SectionActionCtx<TData>) => boolean);
   disabledReason?: string | ((ctx: SectionActionCtx<TData>) => string | undefined);
   onClick: (ctx: SectionActionCtx<TData>) => void | Promise<void>;
@@ -160,7 +162,7 @@ export type SectionDefinition<TData = unknown> = {
   empty?: (args: SectionEmptyArgs<TData>) => React.ReactNode;
   error?: (args: SectionErrorArgs) => React.ReactNode;
   skeleton?: () => React.ReactNode;
-  actions?: (ctx: SectionRuntimeCtx) => SectionAction<TData>[];
+  actions?: (ctx: SectionRuntimeCtx, state: SectionState<TData>) => SectionAction<TData>[];
   testId?: string;
 };
 

@@ -56,8 +56,11 @@ import type {
   ModelTableFilterPanelProps,
   ModelTableV2TableConfig,
 } from "../config/types";
+import type { BaseModelTableFieldsInput } from "../types";
+import { buildColumnDefinitions } from "../builders/columnDefinitions";
 import {
   getDefaultHiddenColumnIds,
+  normalizeBaseModelTableFieldsInput,
   resolveColumnVisibility,
   resolveGroupingKey,
 } from "../utils";
@@ -68,7 +71,16 @@ import {
   QuickSearch,
   ViewOptionsMenu,
 } from "./toolbar";
+import type { ColumnsMenuOption } from "./toolbar/ColumnsMenu";
 import { useIsMobile } from "@/hooks/use-mobile";
+
+type TableToolbarProps = {
+  filterPanel?: ModelTableFilterPanelProps;
+  tableConfig?: ModelTableV2TableConfig;
+  quickSearch?: boolean;
+  fields?: BaseModelTableFieldsInput;
+  extraActions?: React.ReactNode;
+};
 
 /**
  * Composant Toolbar pour le ModelTableV2.
@@ -78,19 +90,16 @@ import { useIsMobile } from "@/hooks/use-mobile";
  * @param {ModelTableFilterPanelProps} filterPanel - Configuration du panneau de filtres.
  * @param {ModelTableV2TableConfig} tableConfig - Configuration globale de la table.
  * @param {boolean} quickSearch - Active/Désactive la recherche rapide.
+ * @param {BaseModelTableFieldsInput} fields - Configuration des colonnes exposees dans le selecteur.
  * @param {React.ReactNode} extraActions - Actions supplémentaires à afficher.
  */
 export function TableToolbar({
   filterPanel,
   tableConfig,
   quickSearch,
+  fields,
   extraActions,
-}: {
-  filterPanel?: ModelTableFilterPanelProps;
-  tableConfig?: ModelTableV2TableConfig;
-  quickSearch?: boolean;
-  extraActions?: React.ReactNode;
-}) {
+}: TableToolbarProps) {
   const isMobile = useIsMobile();
   const { app, model, metadata } = useMetadata();
   const {
@@ -143,39 +152,50 @@ export function TableToolbar({
   );
 
   // Gestion des colonnes
-  const orderedColumns = useMemo(() => {
+  const orderedColumns = useMemo<ColumnsMenuOption[]>(() => {
     if (!metadata) return [];
-    const seen = new Set<string>();
-    const ordered: typeof metadata.fields = [];
+    const normalizedFieldsConfig = normalizeBaseModelTableFieldsInput(fields);
+    const definitions = buildColumnDefinitions(metadata, normalizedFieldsConfig);
+    const baseColumns = definitions.map((column) => {
+      const rootKey = column.id.split(".")[0];
+      return {
+        id: column.id,
+        label: column.title || column.id,
+        visibilityKeys: Array.from(
+          new Set(
+            [column.id, column.accessor, rootKey].filter(
+              (entry): entry is string => !!entry,
+            ),
+          ),
+        ),
+      };
+    });
+    if (columnOrder.length === 0) return baseColumns;
 
-    // On suit l'ordre défini par columnOrder
+    const byId = new Map(baseColumns.map((column) => [column.id, column]));
+    const seen = new Set<string>();
+    const ordered: ColumnsMenuOption[] = [];
+
     columnOrder.forEach((id) => {
-      const field = metadata.fields.find(
-        (f) => f.name === id || f.fieldName === id,
-      );
-      if (field && !seen.has(field.name)) {
-        ordered.push(field);
-        seen.add(field.name);
-      }
+      const column = byId.get(id);
+      if (!column || seen.has(column.id)) return;
+      ordered.push(column);
+      seen.add(column.id);
     });
 
-    // On ajoute le reste
-    metadata.fields.forEach((field) => {
-      if (!seen.has(field.name)) {
-        ordered.push(field);
-        seen.add(field.name);
-      }
+    baseColumns.forEach((column) => {
+      if (seen.has(column.id)) return;
+      ordered.push(column);
+      seen.add(column.id);
     });
 
     return ordered;
-  }, [columnOrder, metadata]);
+  }, [columnOrder, fields, metadata]);
 
   const visibleColumns = useMemo(
     () =>
       orderedColumns.filter((c) =>
-        (c.verboseName || c.name)
-          .toLowerCase()
-          .includes(columnSearch.toLowerCase()),
+        c.label.toLowerCase().includes(columnSearch.toLowerCase()),
       ),
     [columnSearch, orderedColumns],
   );
@@ -183,7 +203,7 @@ export function TableToolbar({
   const allColumnsVisible =
     orderedColumns.length > 0 &&
     orderedColumns.every((c) =>
-      resolveColumnVisibility(columnVisibility, [c.name, c.fieldName]),
+      resolveColumnVisibility(columnVisibility, c.visibilityKeys),
     );
 
   // Actions de groupe
@@ -203,12 +223,12 @@ export function TableToolbar({
       }));
   }, [metadata]);
 
-  const toggleColumn = (column: any, checked: boolean) => {
-    setColumnVisibility({
-      ...columnVisibility,
-      [column.name]: checked,
-      [column.fieldName]: checked,
+  const toggleColumn = (column: ColumnsMenuOption, checked: boolean) => {
+    const next = { ...columnVisibility };
+    column.visibilityKeys.forEach((key) => {
+      next[key] = checked;
     });
+    setColumnVisibility(next);
   };
 
   const handleApplyFilters = (
@@ -356,8 +376,9 @@ export function TableToolbar({
                       onSetAllColumnsVisibility={(v) => {
                         const next = { ...columnVisibility };
                         orderedColumns.forEach((c) => {
-                          next[c.name] = v;
-                          next[c.fieldName] = v;
+                          c.visibilityKeys.forEach((key) => {
+                            next[key] = v;
+                          });
                         });
                         setColumnVisibility(next);
                       }}
@@ -366,10 +387,15 @@ export function TableToolbar({
                         const defaults = getDefaultHiddenColumnIds(metadata);
                         const next = { ...columnVisibility };
                         orderedColumns.forEach((c) => {
+                          const rootKey = c.id.split(".")[0];
                           const vis =
-                            !defaults.has(c.name) && !defaults.has(c.fieldName);
-                          next[c.name] = vis;
-                          next[c.fieldName] = vis;
+                            !defaults.has(rootKey) &&
+                            !c.visibilityKeys.some((key) =>
+                              defaults.has(key),
+                            );
+                          c.visibilityKeys.forEach((key) => {
+                            next[key] = vis;
+                          });
                         });
                         setColumnVisibility(next);
                       }}
@@ -632,3 +658,6 @@ export function TableToolbar({
     </TooltipProvider>
   );
 }
+
+
+

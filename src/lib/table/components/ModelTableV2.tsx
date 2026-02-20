@@ -33,6 +33,7 @@ export function ModelTableV2({
         filterPanel={filterPanel}
         tableConfig={baseTable?.tableConfig}
         quickSearch={baseTable?.quickSearch ?? true}
+        fields={baseTable?.fields}
         topActions={baseTable?.topActions}
       />
     </BaseModelTable>

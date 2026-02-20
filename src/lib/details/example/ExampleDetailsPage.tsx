@@ -140,22 +140,18 @@ function buildExampleSchema(): DetailsPageSchema {
     body: [
       createModelSection({
         id: "order-model",
-        appLabel: "store",
-        title: "Produit",
+        appLabel: "billing",
+        title: "Invoice",
         objectId: "1",
-        modelName: "Product",
+        modelName: "Invoice",
         manifest: {
-          fields: {
-            sku: { label: "UNIQUE SKU" },
-          },
           sections: [
             {
-              fields: ["sku", "name", "description", "category", "createdAt"],
-              columns: 5,
+              fields: ["createdAt"],
+              columns: 2,
             },
           ],
-
-          includeUnassignedFields: true,
+          // includeUnassignedFields: true,
         },
       }),
       //   createGeneralSection({
@@ -327,15 +323,15 @@ export default function ExampleDetailsPage() {
   const schema = React.useMemo(() => buildExampleSchema(), []);
 
   return (
-    <SectionHost<ExampleEntity>
+    <SectionHost
       schema={schema}
-      runtime={{
-        entityId: fakeEntity.id,
-        entity: fakeEntity,
-        locale: "en-US",
-        timezone: "America/New_York",
-        permissions: ["details.read", "details.documents.read"],
-      }}
+      runtime={
+        {
+          // entityId: fakeEntity.id,
+          // entity: fakeEntity,
+          // permissions: ["billing.view_invoice"],
+        }
+      }
       className="space-y-4"
     />
   );
