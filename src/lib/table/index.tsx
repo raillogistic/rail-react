@@ -23,3 +23,4 @@ export * from "./components/ModelTableV2";
 
 export * from "./builders";
 export * from "./utils";
+export * from "../dynamic-table";
