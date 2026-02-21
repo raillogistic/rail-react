@@ -277,8 +277,6 @@ export function useModelMutationModelForm(
   );
 
   return {
-    contract,
-    initialData,
     fields: contract?.fields ?? [],
     permissions: contract?.permissions ?? null,
     mutationBindings: contract?.mutationBindings ?? null,

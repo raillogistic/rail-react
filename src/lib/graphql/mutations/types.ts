@@ -592,14 +592,6 @@ export type ExecuteModelMutationOptions = Omit<
  */
 export interface UseModelMutationModelFormResult {
   /**
-   * Resolved model-form contract.
-   */
-  contract: ModelFormContract | null;
-  /**
-   * Resolved model-form initial-data payload.
-   */
-  initialData: ModelFormInitialData | null;
-  /**
    * Contract fields from model-form metadata.
    */
   fields: ModelFormContractField[];

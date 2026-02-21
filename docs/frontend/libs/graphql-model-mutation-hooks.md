@@ -47,8 +47,6 @@ type UseModelMutationResult = {
   mutationDocument: DocumentNode;
   mutationName: string;
   operationName: string;
-  contract: ModelFormContract | null;
-  initialData: ModelFormInitialData | null;
   fields: ModelFormContractField[];
   permissions: ModelFormContractPermissions | null;
   mutationBindings: ModelFormMutationBindings | null;
