@@ -13,13 +13,13 @@ export default function DashboardPage() {
   const updateMutation = useModelUpdateMutation({
     identity: { app: "billing", model: "Invoice" },
     modelFormOptions: {
-      objectId: "2", // required to fetch initial data
+      objectId: "1", // required to fetch initial data
     },
   });
 
   const initValues = updateMutation.initialValues ?? {};
   const readonlyValues = updateMutation.readonlyValues ?? {};
-  console.log(readonlyValues, updateMutation.formError);
+  console.log(initValues, updateMutation.formError);
 
   return (
     <div>

@@ -3,7 +3,7 @@ import { useQuery, type OperationVariables } from "@apollo/client";
 import {
   MODEL_FORM_CONTRACT_QUERY,
   MODEL_FORM_INITIAL_DATA_QUERY,
-} from "@/graphql/modelFormContract";
+} from "../modelFormQueries";
 import type {
   ModelFormContract,
   ModelFormInitialData,
@@ -131,8 +131,22 @@ function normalizeObjectId(value: string | number | null | undefined): string {
 
 /**
  * Narrows unknown payload to object record.
+ * Supports both object payloads and JSON-encoded object strings.
  */
 function toRecord(value: unknown): Record<string, unknown> | null {
+  if (typeof value === "string") {
+    const normalized = value.trim();
+    if (!normalized) return null;
+    try {
+      const parsed = JSON.parse(normalized);
+      if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+        return parsed as Record<string, unknown>;
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  }
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     return null;
   }

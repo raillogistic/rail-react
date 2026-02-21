@@ -6,7 +6,7 @@ import { describe, expect, it } from "vitest";
 import {
   MODEL_FORM_CONTRACT_QUERY,
   MODEL_FORM_INITIAL_DATA_QUERY,
-} from "@/graphql/modelFormContract";
+} from "../modelFormQueries";
 import type { ModelFormContract } from "@/lib/form/types/generatedContract";
 import { buildModelMutationDocument } from "../mutationBuilder";
 import {
@@ -125,6 +125,20 @@ const initialDataFixture = {
   readonlyValues: {
     id: "42",
   },
+} as const;
+
+const initialDataStringFixture = {
+  appLabel: "inventory",
+  modelName: "Product",
+  objectId: "42",
+  loadedAt: "2026-02-21T00:00:00Z",
+  values: JSON.stringify({
+    id: "42",
+    name: "Desk",
+  }),
+  readonlyValues: JSON.stringify({
+    id: "42",
+  }),
 } as const;
 
 describe("generated graphql mutation hooks", () => {
@@ -341,6 +355,64 @@ describe("generated graphql mutation hooks", () => {
     expect(result.current.mutationName).toBe("updateProductFromContract");
     expect(result.current.fields.length).toBe(2);
     expect(result.current.permissions?.canUpdate).toBe(true);
+    expect(result.current.initialValues?.name).toBe("Desk");
+    expect(result.current.readonlyValues?.id).toBe("42");
+  });
+
+  it("parses JSON-string initial values for update hooks", async () => {
+    const mocks = [
+      {
+        request: {
+          query: MODEL_FORM_CONTRACT_QUERY,
+          variables: {
+            appLabel: "inventory",
+            modelName: "Product",
+            mode: "UPDATE",
+            includeNested: true,
+          },
+        },
+        result: {
+          data: {
+            modelFormContract: contractFixture,
+          },
+        },
+      },
+      {
+        request: {
+          query: MODEL_FORM_INITIAL_DATA_QUERY,
+          variables: {
+            appLabel: "inventory",
+            modelName: "Product",
+            objectId: "42",
+            includeNested: true,
+          },
+        },
+        result: {
+          data: {
+            modelFormInitialData: initialDataStringFixture,
+          },
+        },
+      },
+    ];
+
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <MockedProvider mocks={mocks}>{children}</MockedProvider>
+    );
+
+    const { result } = renderHook(
+      () =>
+        useModelUpdateMutation({
+          app: "inventory",
+          model: "Product",
+          modelFormOptions: {
+            objectId: "42",
+            includeNested: true,
+          },
+        }),
+      { wrapper },
+    );
+
+    await waitFor(() => expect(result.current.formLoading).toBe(false));
     expect(result.current.initialValues?.name).toBe("Desk");
     expect(result.current.readonlyValues?.id).toBe("42");
   });
