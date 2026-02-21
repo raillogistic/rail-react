@@ -1,24 +1,22 @@
-﻿import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook } from "@testing-library/react";
 import { useTableMetadata } from "../useTableMetadata";
 
-const mockUseQuery = vi.fn();
-const mockUseMetadata = vi.fn();
+const mockUseModelQueryMetadata = vi.fn();
 const mockReadPersisted = vi.fn();
 const mockPersist = vi.fn();
 const mockRecordUsage = vi.fn();
 
-vi.mock("@apollo/client", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("@apollo/client")>();
+vi.mock("@/lib/graphql", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/graphql")>(
+    "@/lib/graphql",
+  );
   return {
     ...actual,
-    useQuery: (...args: unknown[]) => mockUseQuery(...args),
+    useModelQueryMetadata: (...args: unknown[]) =>
+      mockUseModelQueryMetadata(...args),
   };
 });
-
-vi.mock("@/lib/graphql/metadata/gateway", () => ({
-  useMetadata: (...args: unknown[]) => mockUseMetadata(...args),
-}));
 
 vi.mock("@/lib/graphql/metadata/persisted-cache", () => ({
   readPersistedTableMetadata: (...args: unknown[]) => mockReadPersisted(...args),
@@ -31,7 +29,7 @@ describe("useTableMetadata", () => {
     vi.clearAllMocks();
   });
 
-  it("returns gateway metadata when available", () => {
+  it("returns query metadata when available", () => {
     const metadata = {
       app: "inventory",
       model: "Product",
@@ -46,13 +44,8 @@ describe("useTableMetadata", () => {
       metadataVersion: "1",
     };
 
-    mockUseMetadata.mockReturnValue({
+    mockUseModelQueryMetadata.mockReturnValue({
       metadata,
-      loading: false,
-      error: undefined,
-    });
-    mockUseQuery.mockReturnValue({
-      data: undefined,
       loading: false,
       error: undefined,
     });
@@ -64,18 +57,23 @@ describe("useTableMetadata", () => {
     expect(result.current.error).toBeUndefined();
     expect(result.current.metadata?.model).toBe("Product");
     expect(result.current.metadata?.mutations).toEqual(metadata.mutations);
-    expect(mockPersist).toHaveBeenCalled();
+    expect(mockPersist).toHaveBeenCalledWith("inventory", "Product", {
+      modelSchema: metadata,
+    });
     expect(mockRecordUsage).toHaveBeenCalledWith("inventory", "Product");
+    expect(mockUseModelQueryMetadata).toHaveBeenCalledWith(
+      expect.objectContaining({
+        app: "inventory",
+        model: "Product",
+        profile: "table",
+        skip: false,
+      }),
+    );
   });
 
-  it("falls back to persisted metadata when gateway returns null", () => {
-    mockUseMetadata.mockReturnValue({
+  it("falls back to persisted metadata when query metadata is null", () => {
+    mockUseModelQueryMetadata.mockReturnValue({
       metadata: null,
-      loading: false,
-      error: undefined,
-    });
-    mockUseQuery.mockReturnValue({
-      data: undefined,
       loading: false,
       error: undefined,
     });
@@ -97,6 +95,6 @@ describe("useTableMetadata", () => {
 
     expect(result.current.metadata?.model).toBe("Product");
     expect(result.current.metadata?.mutations).toEqual([]);
+    expect(mockPersist).not.toHaveBeenCalled();
   });
 });
-

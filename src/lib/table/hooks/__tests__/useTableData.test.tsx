@@ -1,62 +1,35 @@
-import { describe, it, expect, vi } from 'vitest';
-import { renderHook } from '@testing-library/react';
-import { MockedProvider } from '@apollo/client/testing';
-import { useTableData } from '../useTableData';
-import { TableProvider } from '../../context/TableContext';
-import { gql } from '@apollo/client';
+import { describe, it, expect, vi, beforeEach } from "vitest";
+import { renderHook, waitFor } from "@testing-library/react";
+import type { ReactNode } from "react";
+import { useTableData } from "../useTableData";
+import { useTable, TableProvider } from "../../context/TableContext";
 
-const MOCK_DATA_QUERY = gql`
-  query userPage(
-    $page: Int
-    $perPage: Int
-    $orderBy: [String]
-    $quick: String
-    $where: UserWhereInput
-    $presets: [String]
-    $distinctOn: [String]
-    $skipCount: Boolean
-  ) {
-    userPage(
-      page: $page
-      perPage: $perPage
-      orderBy: $orderBy
-      quick: $quick
-      where: $where
-      presets: $presets
-      distinctOn: $distinctOn
-      skipCount: $skipCount
-    ) {
-      pageInfo {
-        totalCount
-        pageCount
-        hasNextPage
-        hasPreviousPage
-      }
-      items {
-        id
-        username
-        rowPermissions {
-          canUpdate
-          canDelete
-          updateReason
-          deleteReason
-        }
-      }
-    }
-  }
-`;
+const mockUseModelPageQuery = vi.fn();
+const mockRefetch = vi.fn();
 
-// Since mocking the full GQL query for metadata is verbose, let's mock the useMetadata hook implementation
-// But 'vi.mock' needs to be top-level.
-vi.mock('../../context/MetadataContext', async () => {
-  const actual = await vi.importActual('../../context/MetadataContext');
+vi.mock("@/lib/graphql", async () => {
+  const actual = await vi.importActual<typeof import("@/lib/graphql")>(
+    "@/lib/graphql",
+  );
+  return {
+    ...actual,
+    useModelPageQuery: (...args: unknown[]) => mockUseModelPageQuery(...args),
+  };
+});
+
+vi.mock("../../context/MetadataContext", async () => {
+  const actual = await vi.importActual<typeof import("../../context/MetadataContext")>(
+    "../../context/MetadataContext",
+  );
   return {
     ...actual,
     useMetadata: () => ({
-      app: 'auth',
-      model: 'User',
+      app: "auth",
+      model: "User",
       metadata: {
-        fields: [{ name: 'username', fieldName: 'username', visibility: 'list' }],
+        primaryKey: "id",
+        fields: [{ name: "username", fieldName: "username", visibility: "list" }],
+        relationships: [],
         filterConfig: { supportsQuick: true },
       },
       loading: false,
@@ -64,65 +37,74 @@ vi.mock('../../context/MetadataContext', async () => {
   };
 });
 
-describe('useTableData', () => {
-  it('should fetch data and update table context', async () => {
-    const dataMocks = [
-      {
-        request: {
-          query: MOCK_DATA_QUERY,
-          variables: {
-            page: 1,
-            perPage: 20,
-            orderBy: undefined,
-            quick: undefined,
-            where: undefined,
-            presets: undefined,
-            distinctOn: undefined,
-            skipCount: false,
-          },
+/**
+ * Harness hook to run table data fetch logic and expose table context state.
+ */
+function useTableDataHarness() {
+  useTableData();
+  return useTable();
+}
+
+describe("useTableData", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockUseModelPageQuery.mockReturnValue({
+      data: {
+        pageInfo: {
+          totalCount: 1,
+          pageCount: 1,
+          hasNextPage: false,
+          hasPreviousPage: false,
         },
-        result: {
-          data: {
-            userPage: {
-              __typename: 'PaginatedUser',
-              pageInfo: {
-                __typename: 'PaginationInfo',
-                totalCount: 1,
-                pageCount: 1,
-                hasNextPage: false,
-                hasPreviousPage: false,
-              },
-              items: [
-                {
-                  __typename: 'User',
-                  id: '1',
-                  username: 'alice',
-                  rowPermissions: {
-                    __typename: 'RowMutationPermissionsType',
-                    canUpdate: true,
-                    canDelete: true,
-                    updateReason: null,
-                    deleteReason: null,
-                  },
-                },
-              ],
+        items: [
+          {
+            id: "1",
+            username: "alice",
+            rowPermissions: {
+              canUpdate: true,
+              canDelete: true,
+              updateReason: null,
+              deleteReason: null,
             },
           },
-        },
+        ],
       },
-    ];
+      loading: false,
+      error: undefined,
+      refetch: mockRefetch,
+    });
+  });
 
-    const wrapper = ({ children }: { children: React.ReactNode }) => (
-      <MockedProvider mocks={dataMocks}>
-        <TableProvider>
-           {/* MetadataProvider is mocked above */}
-           {children}
-        </TableProvider>
-      </MockedProvider>
+  it("maps table state to generated page query and updates context", async () => {
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <TableProvider>{children}</TableProvider>
     );
 
-    const { result } = renderHook(() => useTableData(), { wrapper });
+    const { result } = renderHook(() => useTableDataHarness(), { wrapper });
 
-    expect(result.current).toBeDefined();
+    await waitFor(() => {
+      expect(result.current.data).toHaveLength(1);
+    });
+
+    expect(result.current.pagination.total).toBe(1);
+    expect(result.current.pagination.numPages).toBe(1);
+    expect(mockUseModelPageQuery).toHaveBeenCalledWith(
+      expect.objectContaining({
+        identity: {
+          app: "auth",
+          model: "User",
+          managerName: undefined,
+        },
+        metadataOptions: expect.objectContaining({
+          metadataProfile: "table",
+          skipMetadata: true,
+        }),
+        variables: expect.objectContaining({
+          page: 1,
+          perPage: 20,
+          skipCount: false,
+        }),
+      }),
+    );
   });
 });

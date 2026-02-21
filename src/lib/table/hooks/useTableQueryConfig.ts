@@ -2,6 +2,7 @@ import React, { useMemo } from "react";
 import { useMetadata } from "../context/MetadataContext";
 import { useTable } from "../context/TableContext";
 import {
+  getSyntheticRelationCountSource,
   isAccessorExcluded,
   mergeBaseModelTableFields,
   toCamelCase,
@@ -26,6 +27,9 @@ interface UseTableQueryConfigOptions {
   persistedVisibility?: Record<string, boolean>;
 }
 
+/**
+ * Resolve query configuration from current metadata and table state.
+ */
 export function useTableQueryConfig({
   fields,
   relations,
@@ -54,16 +58,20 @@ export function useTableQueryConfig({
       const canonicalName = toGraphqlFieldName(field.name || field.fieldName);
       if (!canonicalName) return;
       fieldCanonicalByKey.set(field.name, canonicalName);
-      if (field.fieldName) fieldCanonicalByKey.set(field.fieldName, canonicalName);
+      if (field.fieldName)
+        fieldCanonicalByKey.set(field.fieldName, canonicalName);
       fieldCanonicalByKey.set(canonicalName, canonicalName);
     });
 
     const relationCanonicalByKey = new Map<string, string>();
     metadata.relationships.forEach((relation) => {
-      const canonicalName = toGraphqlFieldName(relation.name || relation.fieldName);
+      const canonicalName = toGraphqlFieldName(
+        relation.name || relation.fieldName,
+      );
       if (!canonicalName) return;
       relationCanonicalByKey.set(relation.name, canonicalName);
-      if (relation.fieldName) relationCanonicalByKey.set(relation.fieldName, canonicalName);
+      if (relation.fieldName)
+        relationCanonicalByKey.set(relation.fieldName, canonicalName);
       relationCanonicalByKey.set(canonicalName, canonicalName);
     });
 
@@ -95,7 +103,7 @@ export function useTableQueryConfig({
       excludedAccessors,
     })
       .map((entry) =>
-        canonicalizeAccessor(typeof entry === "string" ? entry : entry.accessor)
+        canonicalizeAccessor(typeof entry === "string" ? entry : entry.accessor),
       )
       .filter(Boolean);
 
@@ -103,7 +111,14 @@ export function useTableQueryConfig({
 
     const resolveVisibility = (accessor: string): boolean | undefined => {
       const root = accessor.split(".")[0];
-      const candidates = [accessor, toSnakeCase(accessor), toCamelCase(accessor), root, toSnakeCase(root), toCamelCase(root)];
+      const candidates = [
+        accessor,
+        toSnakeCase(accessor),
+        toCamelCase(accessor),
+        root,
+        toSnakeCase(root),
+        toCamelCase(root),
+      ];
       for (const candidate of candidates) {
         const value = visibilitySource[candidate];
         if (typeof value === "boolean") return value;
@@ -131,9 +146,40 @@ export function useTableQueryConfig({
   ]);
 
   const requiredDataAccessors = useMemo(() => {
-    if (!groupingField) return [];
-    return [groupingField];
-  }, [groupingField]);
+    const required = new Set<string>();
+
+    const primaryKeyAccessor =
+      toGraphqlFieldName(metadata?.primaryKey || "id") || "id";
+    required.add(primaryKeyAccessor);
+
+    if (groupingField) {
+      required.add(groupingField);
+    }
+
+    if (!metadata || !queryVisibleAccessors?.length) {
+      return Array.from(required);
+    }
+
+    const visibleRoots = new Set(
+      queryVisibleAccessors.map((accessor) => accessor.split(".")[0]),
+    );
+    const groupedRoot = groupingField?.split(".")[0] ?? null;
+
+    metadata.fields.forEach((field) => {
+      const source = getSyntheticRelationCountSource(field);
+      if (!source) return;
+
+      const countAccessor = toGraphqlFieldName(field.name || field.fieldName);
+      const sourceAccessor = toGraphqlFieldName(source);
+      if (!countAccessor || !sourceAccessor) return;
+
+      if (visibleRoots.has(countAccessor) || groupedRoot === countAccessor) {
+        required.add(sourceAccessor);
+      }
+    });
+
+    return Array.from(required);
+  }, [groupingField, metadata, queryVisibleAccessors]);
 
   const queryConfig = useMemo(
     () => ({
@@ -153,7 +199,7 @@ export function useTableQueryConfig({
       queryManager,
       requiredDataAccessors,
       skipCount,
-    ]
+    ],
   );
 
   return { queryConfig, queryVisibleAccessors, requiredDataAccessors };

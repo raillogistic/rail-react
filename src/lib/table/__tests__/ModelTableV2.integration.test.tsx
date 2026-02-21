@@ -3,11 +3,32 @@ import { MockedProvider } from '@apollo/client/testing';
 import { ModelTableV2 } from '../index';
 import { GET_MODEL_SCHEMA } from '../queries';
 import { gql } from '@apollo/client';
-import { describe, it, expect, vi } from 'vitest';
+import { beforeEach, describe, it, expect, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { GraphQLError } from 'graphql';
+import {
+  buildMetadataScopeKey,
+  clearMetadataScope,
+  stableSerialize,
+} from '@/lib/graphql/metadata/cache';
 
 vi.stubEnv('VITE_METADATA_GATEWAY_TABLE', '0');
+
+/**
+ * Clear metadata gateway cache between tests to avoid cross-test reuse.
+ */
+function clearTableScopeCache(app: string, model: string) {
+  const signature = stableSerialize({
+    profile: 'table',
+    objectId: null,
+    include: [],
+  });
+  clearMetadataScope('table', buildMetadataScopeKey(app, model, signature));
+}
+
+beforeEach(() => {
+  clearTableScopeCache('auth', 'User');
+});
 
 // Mock FilterPanel to avoid extra Apollo queries in tests
 vi.mock('../../filters/FilterPanel', () => ({

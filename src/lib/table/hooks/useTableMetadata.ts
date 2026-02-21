@@ -1,9 +1,7 @@
-﻿import { useQuery } from "@apollo/client";
 import { useEffect, useMemo } from "react";
-import { GET_MODEL_SCHEMA } from "../queries";
+import { useModelQueryMetadata } from "@/lib/graphql";
 import { ModelSchema } from "../types";
 import { toGraphqlFieldName } from "../utils";
-import { useMetadata } from "@/lib/graphql/metadata/gateway";
 import {
   persistTableMetadata,
   readPersistedTableMetadata,
@@ -16,34 +14,27 @@ export interface UseTableMetadataResult {
   error?: Error;
 }
 
+/**
+ * Resolve table metadata through generated GraphQL metadata hooks with
+ * persisted-cache fallback for offline/boot hydration scenarios.
+ */
 export function useTableMetadata(
   app: string,
   model: string,
 ): UseTableMetadataResult {
-  const gatewayEnabled = import.meta.env.VITE_METADATA_GATEWAY_TABLE !== "0";
-  const gatewayQueryOptions = useMemo(
+  const metadataQueryOptions = useMemo(
     () => ({
       fetchPolicy: "network-only" as const,
     }),
     [],
   );
 
-  const {
-    metadata: gatewayMetadata,
-    loading: gatewayLoading,
-    error: gatewayError,
-  } = useMetadata({
+  const { metadata: queryMetadata, loading, error } = useModelQueryMetadata({
     app,
     model,
     profile: "table",
-    skip: !gatewayEnabled || !app || !model,
-    queryOptions: gatewayQueryOptions,
-  });
-
-  const { data, loading, error } = useQuery(GET_MODEL_SCHEMA, {
-    variables: { app, model },
-    skip: gatewayEnabled || !app || !model,
-    fetchPolicy: "network-only",
+    skip: !app || !model,
+    queryOptions: metadataQueryOptions,
   });
 
   const persistedMetadata = useMemo(
@@ -57,34 +48,32 @@ export function useTableMetadata(
   }, [app, model]);
 
   useEffect(() => {
-    const activeMetadata = gatewayEnabled
-      ? (gatewayMetadata as ModelSchema | null)
-      : ((data?.modelSchema as ModelSchema | undefined) ?? null);
-
+    const activeMetadata = queryMetadata as ModelSchema | null;
     if (!activeMetadata) return;
     persistTableMetadata(app, model, { modelSchema: activeMetadata });
-  }, [gatewayEnabled, gatewayMetadata, data, app, model]);
+  }, [queryMetadata, app, model]);
 
   const metadata = useMemo(() => {
-    const activeMetadata = gatewayEnabled
-      ? (gatewayMetadata as ModelSchema | null)
-      : ((data?.modelSchema as ModelSchema | undefined) ?? null);
-
+    const activeMetadata = queryMetadata as ModelSchema | null;
     const base = (activeMetadata ?? persistedMetadata) as ModelSchema | null;
     if (!base) return undefined;
-    
-    // Standardize all field and relationship names to camelCase
+
+    // Standardize all field and relationship names to camelCase.
     const standardized = {
       ...base,
-      fields: base.fields.map((f) => ({
-        ...f,
-        name: toGraphqlFieldName(f.name),
-        fieldName: f.fieldName ? toGraphqlFieldName(f.fieldName) : f.fieldName,
+      fields: base.fields.map((field) => ({
+        ...field,
+        name: toGraphqlFieldName(field.name),
+        fieldName: field.fieldName
+          ? toGraphqlFieldName(field.fieldName)
+          : field.fieldName,
       })),
-      relationships: base.relationships.map((r) => ({
-        ...r,
-        name: toGraphqlFieldName(r.name),
-        fieldName: r.fieldName ? toGraphqlFieldName(r.fieldName) : r.fieldName,
+      relationships: base.relationships.map((relation) => ({
+        ...relation,
+        name: toGraphqlFieldName(relation.name),
+        fieldName: relation.fieldName
+          ? toGraphqlFieldName(relation.fieldName)
+          : relation.fieldName,
       })),
     };
 
@@ -92,20 +81,14 @@ export function useTableMetadata(
 
     return {
       ...standardized,
-      // Mutations can be permission-sensitive; only trust the server response.
+      // Mutations can be permission-sensitive; only trust the live server response.
       mutations: serverMutations ?? [],
     };
-  }, [gatewayEnabled, gatewayMetadata, data, persistedMetadata]);
-
-  const activeLoading = gatewayEnabled ? gatewayLoading : loading;
-  const activeError = gatewayEnabled
-    ? (gatewayError as Error | undefined)
-    : (error as Error | undefined);
+  }, [queryMetadata, persistedMetadata]);
 
   return {
     metadata,
-    loading: activeLoading,
-    error: activeError,
+    loading,
+    error: error as Error | undefined,
   };
 }
-
