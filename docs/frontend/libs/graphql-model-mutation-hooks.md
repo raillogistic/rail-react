@@ -1,15 +1,19 @@
 # GraphQL model mutation hooks
 
-This guide explains how to use the generated mutation hooks in
-`src/lib/graphql/mutations`. These hooks build GraphQL model mutations from a
-shared naming contract, normalize variables, and execute with Apollo
-`useMutation`.
+This guide explains how to use generated mutation hooks from
+`src/lib/graphql/mutations`. These hooks build mutation documents from the same
+naming contract used by query hooks, expose ModelForm-ready metadata, and run
+mutations with execute-time variables.
 
 ## Overview
 
-Use this module when you want model mutation generation without coupling to
-`ModelForm` or `ModelTableV2`. You can generate CRUD, bulk, and custom model
-method mutations with consistent operation naming and response parsing.
+Use this module when you need model-level GraphQL mutations without hard-coding
+mutation documents. The hooks support:
+
+- CRUD (`create`, `update`, `delete`)
+- Bulk operations (`bulkCreate`, `bulkUpdate`, `bulkDelete`)
+- Custom model methods (`method`)
+- ModelForm metadata and initial-data hydration for create/update flows
 
 ```tsx
 import {
@@ -23,107 +27,147 @@ import {
 } from "@/lib/graphql";
 ```
 
-## Choose a hook
+## Hook return shape
 
-Use one focused hook based on the backend mutation you need:
+Each `useModel<Operation>Mutation` hook returns mutation execution state and
+ModelForm metadata on the same object.
 
-- `useModelCreateMutation`
-- `useModelUpdateMutation`
-- `useModelDeleteMutation`
-- `useModelBulkCreateMutation`
-- `useModelBulkUpdateMutation`
-- `useModelBulkDeleteMutation`
-- `useModelMethodMutation`
+```ts
+type UseModelMutationResult = {
+  data: unknown;
+  rawData: Record<string, unknown> | undefined;
+  loading: boolean;
+  error: ApolloError | undefined;
+  called: boolean;
+  reset: () => void;
+  execute: (
+    variables: OperationVariablesInput,
+    options?: ExecuteModelMutationOptions,
+  ) => Promise<FetchResult>;
+  mutationDocument: DocumentNode;
+  mutationName: string;
+  operationName: string;
+  contract: ModelFormContract | null;
+  initialData: ModelFormInitialData | null;
+  fields: ModelFormContractField[];
+  permissions: ModelFormContractPermissions | null;
+  mutationBindings: ModelFormMutationBindings | null;
+  errorPolicy: ModelFormErrorPolicy | null;
+  initialValues: Record<string, unknown> | null;
+  readonlyValues: Record<string, unknown> | null;
+  formLoading: boolean;
+  contractLoading: boolean;
+  initialDataLoading: boolean;
+  formError: Error | undefined;
+  contractError: Error | undefined;
+  initialDataError: Error | undefined;
+  refetchContract: () => Promise<ModelFormContract | null>;
+  refetchInitialData: () => Promise<ModelFormInitialData | null>;
+};
+```
 
-Each hook returns:
+`execute` always takes variables at call time. The hook options no longer
+accept `variables`.
 
-- `data`
-- `rawData`
-- `loading`
-- `error`
-- `called`
-- `reset`
-- `execute`
-- `mutationDocument`
-- `mutationName`
-- `operationName`
+## Create and update usage
 
-## CRUD usage
-
-Use create, update, and delete hooks with model-based defaults.
+Use create and update hooks to build form screens where metadata and execution
+are managed together.
 
 ```tsx
-import {
-  useModelCreateMutation,
-  useModelUpdateMutation,
-  useModelDeleteMutation,
-} from "@/lib/graphql";
+import { useModelCreateMutation, useModelUpdateMutation } from "@/lib/graphql";
 
-export function ProductActions() {
+export function ProductFormActions() {
   const createMutation = useModelCreateMutation({
-    model: "Product",
-    selection: "id name status",
-    variables: { input: { name: "Desk", status: "DRAFT" } },
+    identity: {
+      app: "inventory",
+      model: "Product",
+    },
+    selectionOptions: {
+      selection: "id name status",
+    },
   });
 
   const updateMutation = useModelUpdateMutation({
-    model: "Product",
-    selection: "id name status",
-    variables: { id: "42", input: { status: "ACTIVE" } },
-  });
-
-  const deleteMutation = useModelDeleteMutation({
-    model: "Product",
-    selection: "id",
+    identity: {
+      app: "inventory",
+      model: "Product",
+    },
+    selectionOptions: {
+      selection: "id name status",
+    },
+    modelFormOptions: {
+      objectId: "42",
+    },
   });
 
   const onCreate = async () => {
-    await createMutation.execute();
+    await createMutation.execute({
+      input: { name: "Desk", status: "DRAFT" },
+    });
   };
 
   const onUpdate = async () => {
-    await updateMutation.execute();
-  };
-
-  const onDelete = async () => {
-    await deleteMutation.execute({ id: "42" });
+    await updateMutation.execute({
+      id: "42",
+      input: { status: "ACTIVE" },
+    });
   };
 
   return (
     <div>
       <button onClick={onCreate}>Create</button>
       <button onClick={onUpdate}>Update</button>
-      <button onClick={onDelete}>Delete</button>
     </div>
   );
 }
 ```
 
-## Bulk usage
+For update form hydration, provide `modelFormOptions.objectId` unless you pass
+`modelFormOptions.initialData` directly. If `objectId` is missing, the hook
+returns an explicit `initialDataError` and `formError`.
 
-Use bulk hooks for batched create, update, and delete mutations.
+## Delete and bulk usage
+
+Use delete and bulk hooks for entity removal and batched writes.
 
 ```tsx
-import { useModelBulkDeleteMutation } from "@/lib/graphql";
+import {
+  useModelDeleteMutation,
+  useModelBulkDeleteMutation,
+} from "@/lib/graphql";
 
-export function BulkDeleteProductsButton() {
-  const mutation = useModelBulkDeleteMutation({
+export function DeleteActions() {
+  const deleteOne = useModelDeleteMutation({
     model: "Product",
     selection: "id",
   });
 
-  const onBulkDelete = async () => {
-    await mutation.execute({ ids: ["101", "102", "103"] });
+  const deleteMany = useModelBulkDeleteMutation({
+    model: "Product",
+    selection: "id",
+  });
+
+  const onDeleteOne = async () => {
+    await deleteOne.execute({ id: "42" });
   };
 
-  return <button onClick={onBulkDelete}>Bulk delete</button>;
+  const onDeleteMany = async () => {
+    await deleteMany.execute({ ids: ["101", "102", "103"] });
+  };
+
+  return (
+    <div>
+      <button onClick={onDeleteOne}>Delete one</button>
+      <button onClick={onDeleteMany}>Delete many</button>
+    </div>
+  );
 }
 ```
 
-## Custom method usage
+## Custom model method usage
 
-Use `useModelMethodMutation` for model method mutations (`<method><Model>`
-naming contract).
+Use `useModelMethodMutation` for generated method mutations.
 
 ```tsx
 import { useModelMethodMutation } from "@/lib/graphql";
@@ -151,8 +195,7 @@ export function DatasetPreviewButton() {
 
 ## Grouped options
 
-The hooks support grouped options and backward-compatible flat options.
-Grouped options make larger mutation configs easier to read.
+Use grouped options to keep larger hook configuration readable.
 
 ```tsx
 import { useModelUpdateMutation } from "@/lib/graphql";
@@ -172,58 +215,19 @@ const mutation = useModelUpdateMutation({
     identifierArgumentName: "id",
     identifierType: "UUID!",
   },
+  modelFormOptions: {
+    objectId: "42",
+    includeNested: true,
+  },
 });
 ```
 
-## Naming and customization options
-
-By default, generated names follow the backend contract:
-
-- `create<Model>`
-- `update<Model>`
-- `delete<Model>`
-- `bulkCreate<Model>`
-- `bulkUpdate<Model>`
-- `bulkDelete<Model>`
-- `<method><Model>`
-
-Use execution options to customize generated documents:
-
-- `operationName`
-- `mutationName`
-- `responseAlias`
-- `identifierVariableName`
-- `identifierArgumentName`
-- `identifierType`
-- `inputTypeName`
-- `bulkInputTypeName`
-- `methodFieldName`
-- `customArgumentDefinitions`
-- `customArgumentAssignments`
-
-> **Note:** `app` is optional and is ignored for mutation operation naming.
-
-## Builder-only usage
-
-Use the document builder directly when you need generated documents outside the
-hooks.
-
-```tsx
-import { gql, useMutation } from "@apollo/client";
-import { buildModelMutationDocument } from "@/lib/graphql";
-
-const built = buildModelMutationDocument({
-  mode: "create",
-  model: "Product",
-  selection: "id name",
-});
-
-const [mutate] = useMutation(built.mutationDocument);
-```
+Flat options remain supported for backward compatibility.
 
 ## Variable normalizers
 
-You can build normalized variable payloads directly:
+You can normalize payloads directly with helpers from
+`src/lib/graphql/mutations/variables.ts`:
 
 - `buildModelCreateMutationVariables`
 - `buildModelUpdateMutationVariables`
@@ -233,8 +237,8 @@ You can build normalized variable payloads directly:
 - `buildModelBulkDeleteMutationVariables`
 - `buildModelMethodMutationVariables`
 
-These helpers apply consistent identifier mapping (`id` vs custom identifier)
-and merge `extra` payload fields when provided.
+Update, delete, and method normalizers require canonical `id` in the input and
+map it to `identifierVariableName` when configured.
 
 ## Testing this module
 
@@ -246,7 +250,6 @@ npm run test -- src/lib/graphql/mutations --run
 
 ## Next steps
 
-- Use generated query hooks for list/page/single reads:
-  [GraphQL model query hooks](./graphql-model-query-hooks.md)
-- Use generated model form workflows for mutation orchestration:
-  [DynamicForm guide](./dynamic-form.md)
+- For query generation, read
+  [GraphQL model query hooks](./graphql-model-query-hooks.md).
+- For form rendering, read [DynamicForm guide](./dynamic-form.md).

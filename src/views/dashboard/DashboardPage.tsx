@@ -1,35 +1,31 @@
-import {
-  useModelCreateMutation,
-  useModelListQuery,
-  useModelPageQuery,
-  useModelSingleQuery,
-  useModelUpdateMutation,
-} from "@/lib/graphql";
-import { buildQueries } from "@testing-library/dom";
+import { useModelListQuery, useModelUpdateMutation } from "@/lib/graphql";
 import React from "react";
 
-type Props = {};
-
-export default function DashboardPage({}: Props) {
-  const { data, loading, dev } = useModelListQuery({
+/**
+ * Dashboard demo page for generated GraphQL hooks.
+ */
+export default function DashboardPage() {
+  const { loading, dev } = useModelListQuery({
     app: "billing",
     model: "Invoice",
   });
 
-  const { data: dd } = useModelUpdateMutation({
+  const updateMutation = useModelUpdateMutation({
     app: "billing",
     model: "Invoice",
-    variables: {
-      id: "1",
+    modelFormOptions: {
+      objectId: "1",
+      contractMode: "UPDATE",
     },
   });
-  console.log(modelForm);
+  console.log(updateMutation);
 
   return (
     <div>
       {loading && <div>Loading...</div>}
       <div>dataFetchMs: {dev.dataFetchMs}</div>
       <div>metadataFetchMs: {dev.metadataFetchMs}</div>
+      <div>updateMutation: {updateMutation.mutationName}</div>
       {/* {data && <div>{JSON.stringify(data)}</div>} */}
     </div>
   );

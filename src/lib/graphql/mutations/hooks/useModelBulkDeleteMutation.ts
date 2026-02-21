@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { buildModelMutationDocument } from "../mutationBuilder";
 import { buildModelBulkDeleteMutationVariables } from "../variables";
 import { resolveModelMutationOptions } from "./shared";
@@ -6,15 +6,15 @@ import { useModelMutationModelForm } from "./useModelMutationModelForm";
 import { useModelMutationBase } from "./useModelMutationBase";
 import type {
   UseModelBulkDeleteMutationOptions,
-  UseModelMutationResult,
+  UseModelBulkDeleteMutationResult,
 } from "../types";
 
 /**
- * Executes a generated bulk-delete mutation with normalized defaults.
+ * Executes a generated bulk-delete mutation with execute-time variables.
  */
 export function useModelBulkDeleteMutation(
   options: UseModelBulkDeleteMutationOptions,
-): UseModelMutationResult {
+): UseModelBulkDeleteMutationResult {
   const resolved = resolveModelMutationOptions(options);
   const modelForm = useModelMutationModelForm({
     mode: "bulkDelete",
@@ -60,14 +60,14 @@ export function useModelBulkDeleteMutation(
     ],
   );
 
-  const variables = useMemo(
-    () => buildModelBulkDeleteMutationVariables(options.variables),
-    [options.variables],
+  const normalizeVariables = useCallback(
+    buildModelBulkDeleteMutationVariables,
+    [],
   );
 
   return useModelMutationBase({
     builtDocument,
-    defaultVariables: variables,
+    normalizeVariables,
     modelForm,
     apollo: options.apollo,
   });

@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { buildModelMutationDocument } from "../mutationBuilder";
 import { buildModelDeleteMutationVariables } from "../variables";
 import { resolveModelMutationOptions } from "./shared";
@@ -6,15 +6,15 @@ import { useModelMutationModelForm } from "./useModelMutationModelForm";
 import { useModelMutationBase } from "./useModelMutationBase";
 import type {
   UseModelDeleteMutationOptions,
-  UseModelMutationResult,
+  UseModelDeleteMutationResult,
 } from "../types";
 
 /**
- * Executes a generated delete mutation with normalized defaults.
+ * Executes a generated delete mutation with execute-time variables.
  */
 export function useModelDeleteMutation(
   options: UseModelDeleteMutationOptions,
-): UseModelMutationResult {
+): UseModelDeleteMutationResult {
   const resolved = resolveModelMutationOptions(options);
   const modelForm = useModelMutationModelForm({
     mode: "delete",
@@ -62,17 +62,17 @@ export function useModelDeleteMutation(
     ],
   );
 
-  const variables = useMemo(
-    () =>
-      buildModelDeleteMutationVariables(options.variables, {
+  const normalizeVariables = useCallback(
+    (variables: Parameters<typeof buildModelDeleteMutationVariables>[0]) =>
+      buildModelDeleteMutationVariables(variables, {
         identifierVariableName: resolved.identifierVariableName,
       }),
-    [options.variables, resolved.identifierVariableName],
+    [resolved.identifierVariableName],
   );
 
   return useModelMutationBase({
     builtDocument,
-    defaultVariables: variables,
+    normalizeVariables,
     modelForm,
     apollo: options.apollo,
   });

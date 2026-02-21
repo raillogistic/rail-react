@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { buildModelMutationDocument } from "../mutationBuilder";
 import { buildModelUpdateMutationVariables } from "../variables";
 import {
@@ -8,16 +8,16 @@ import {
 import { useModelMutationModelForm } from "./useModelMutationModelForm";
 import { useModelMutationBase } from "./useModelMutationBase";
 import type {
-  UseModelMutationResult,
+  UseModelUpdateMutationResult,
   UseModelUpdateMutationOptions,
 } from "../types";
 
 /**
- * Executes a generated update mutation with normalized defaults.
+ * Executes a generated update mutation with execute-time variables.
  */
 export function useModelUpdateMutation(
   options: UseModelUpdateMutationOptions,
-): UseModelMutationResult {
+): UseModelUpdateMutationResult {
   const resolved = resolveModelMutationOptions(options);
   const modelForm = useModelMutationModelForm({
     mode: "update",
@@ -77,17 +77,17 @@ export function useModelUpdateMutation(
     ],
   );
 
-  const variables = useMemo(
-    () =>
-      buildModelUpdateMutationVariables(options.variables, {
+  const normalizeVariables = useCallback(
+    (variables: Parameters<typeof buildModelUpdateMutationVariables>[0]) =>
+      buildModelUpdateMutationVariables(variables, {
         identifierVariableName: resolved.identifierVariableName,
       }),
-    [options.variables, resolved.identifierVariableName],
+    [resolved.identifierVariableName],
   );
 
   return useModelMutationBase({
     builtDocument,
-    defaultVariables: variables,
+    normalizeVariables,
     modelForm,
     apollo: options.apollo,
   });

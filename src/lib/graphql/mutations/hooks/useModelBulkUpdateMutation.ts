@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { buildModelMutationDocument } from "../mutationBuilder";
 import { buildModelBulkUpdateMutationVariables } from "../variables";
 import {
@@ -9,15 +9,15 @@ import { useModelMutationModelForm } from "./useModelMutationModelForm";
 import { useModelMutationBase } from "./useModelMutationBase";
 import type {
   UseModelBulkUpdateMutationOptions,
-  UseModelMutationResult,
+  UseModelBulkUpdateMutationResult,
 } from "../types";
 
 /**
- * Executes a generated bulk-update mutation with normalized defaults.
+ * Executes a generated bulk-update mutation with execute-time variables.
  */
 export function useModelBulkUpdateMutation(
   options: UseModelBulkUpdateMutationOptions,
-): UseModelMutationResult {
+): UseModelBulkUpdateMutationResult {
   const resolved = resolveModelMutationOptions(options);
   const modelForm = useModelMutationModelForm({
     mode: "bulkUpdate",
@@ -74,14 +74,14 @@ export function useModelBulkUpdateMutation(
     ],
   );
 
-  const variables = useMemo(
-    () => buildModelBulkUpdateMutationVariables(options.variables),
-    [options.variables],
+  const normalizeVariables = useCallback(
+    buildModelBulkUpdateMutationVariables,
+    [],
   );
 
   return useModelMutationBase({
     builtDocument,
-    defaultVariables: variables,
+    normalizeVariables,
     modelForm,
     apollo: options.apollo,
   });

@@ -115,6 +115,13 @@ function resolveDefaultContractMode(mode: ModelMutationMode): ModelFormMode {
 }
 
 /**
+ * Returns true when mode requires object identifier for initial-data lookups.
+ */
+function requiresObjectIdForInitialData(mode: ModelMutationMode): boolean {
+  return mode === "update";
+}
+
+/**
  * Normalizes object identifier to GraphQL-ready string.
  */
 function normalizeObjectId(value: string | number | null | undefined): string {
@@ -182,6 +189,17 @@ export function useModelMutationModelForm(
   const contract = explicitContract ?? contractQuery.data?.modelFormContract ?? null;
 
   const supportsInitialData = !isCreateLikeMode(options.mode);
+  const missingObjectIdError =
+    supportsInitialData &&
+    requiresObjectIdForInitialData(options.mode) &&
+    !skipModelForm &&
+    !skipInitialData &&
+    !explicitInitialData &&
+    !normalizedObjectId
+      ? new Error(
+          "Model mutation initial-data resolution requires `objectId` for update mode.",
+        )
+      : undefined;
   const shouldSkipInitialDataQuery =
     skipModelForm ||
     skipInitialData ||
@@ -217,8 +235,8 @@ export function useModelMutationModelForm(
 
   const initialData =
     explicitInitialData ?? initialDataQuery.data?.modelFormInitialData ?? null;
-  const initialObject = toRecord(initialData?.values) ?? null;
-  const readonlyObject = toRecord(initialData?.readonlyValues) ?? null;
+  const initialValues = toRecord(initialData?.values) ?? null;
+  const readonlyValues = toRecord(initialData?.readonlyValues) ?? null;
 
   const contractLoading = explicitContract ? false : contractQuery.loading;
   const initialDataLoading =
@@ -232,6 +250,10 @@ export function useModelMutationModelForm(
     explicitInitialData || shouldSkipInitialDataQuery
       ? undefined
       : (initialDataQuery.error as Error | undefined);
+  const formError =
+    (missingObjectIdError || contractError || initialDataError) as
+      | Error
+      | undefined;
 
   const refetchContract = useCallback(async (): Promise<ModelFormContract | null> => {
     if (explicitContract) return explicitContract;
@@ -261,14 +283,16 @@ export function useModelMutationModelForm(
     permissions: contract?.permissions ?? null,
     mutationBindings: contract?.mutationBindings ?? null,
     errorPolicy: contract?.errorPolicy ?? null,
-    initialObject,
-    readonlyObject,
-    loading: contractLoading || initialDataLoading,
+    initialValues,
+    readonlyValues,
+    formLoading: contractLoading || initialDataLoading,
     contractLoading,
     initialDataLoading,
-    error: (contractError || initialDataError) as Error | undefined,
+    formError,
     contractError,
-    initialDataError,
+    initialDataError: (missingObjectIdError || initialDataError) as
+      | Error
+      | undefined,
     refetchContract,
     refetchInitialData,
   };

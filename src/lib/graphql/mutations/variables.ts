@@ -31,7 +31,7 @@ function resolveIdentifierVariableName(
  * Builds normalized variables for create mutations.
  */
 export function buildModelCreateMutationVariables(
-  variables: ModelCreateMutationVariablesInput | undefined,
+  variables: ModelCreateMutationVariablesInput,
 ): Record<string, unknown> {
   return {
     ...(variables?.input !== undefined ? { input: variables.input } : {}),
@@ -43,18 +43,18 @@ export function buildModelCreateMutationVariables(
  * Builds normalized variables for update mutations.
  */
 export function buildModelUpdateMutationVariables(
-  variables: ModelUpdateMutationVariablesInput | undefined,
+  variables: ModelUpdateMutationVariablesInput,
   options: BuildModelMutationVariablesOptions = {},
 ): Record<string, unknown> {
   const identifierVariableName = resolveIdentifierVariableName(options);
-  const identifierValue = variables?.identifier ?? variables?.id;
+  const identifierValue = variables.id;
 
   return {
     ...(hasValue(identifierValue)
       ? { [identifierVariableName]: identifierValue }
       : {}),
-    ...(variables?.input !== undefined ? { input: variables.input } : {}),
-    ...(variables?.extra || {}),
+    ...(variables.input !== undefined ? { input: variables.input } : {}),
+    ...(variables.extra || {}),
   };
 }
 
@@ -62,17 +62,17 @@ export function buildModelUpdateMutationVariables(
  * Builds normalized variables for delete mutations.
  */
 export function buildModelDeleteMutationVariables(
-  variables: ModelDeleteMutationVariablesInput | undefined,
+  variables: ModelDeleteMutationVariablesInput,
   options: BuildModelMutationVariablesOptions = {},
 ): Record<string, unknown> {
   const identifierVariableName = resolveIdentifierVariableName(options);
-  const identifierValue = variables?.identifier ?? variables?.id;
+  const identifierValue = variables.id;
 
   return {
     ...(hasValue(identifierValue)
       ? { [identifierVariableName]: identifierValue }
       : {}),
-    ...(variables?.extra || {}),
+    ...(variables.extra || {}),
   };
 }
 
@@ -80,7 +80,7 @@ export function buildModelDeleteMutationVariables(
  * Builds normalized variables for bulk-create mutations.
  */
 export function buildModelBulkCreateMutationVariables(
-  variables: ModelBulkCreateMutationVariablesInput | undefined,
+  variables: ModelBulkCreateMutationVariablesInput,
 ): Record<string, unknown> {
   return {
     ...(Array.isArray(variables?.inputs) ? { inputs: variables.inputs } : {}),
@@ -92,7 +92,7 @@ export function buildModelBulkCreateMutationVariables(
  * Builds normalized variables for bulk-update mutations.
  */
 export function buildModelBulkUpdateMutationVariables(
-  variables: ModelBulkUpdateMutationVariablesInput | undefined,
+  variables: ModelBulkUpdateMutationVariablesInput,
 ): Record<string, unknown> {
   return {
     ...(Array.isArray(variables?.inputs) ? { inputs: variables.inputs } : {}),
@@ -104,7 +104,7 @@ export function buildModelBulkUpdateMutationVariables(
  * Builds normalized variables for bulk-delete mutations.
  */
 export function buildModelBulkDeleteMutationVariables(
-  variables: ModelBulkDeleteMutationVariablesInput | undefined,
+  variables: ModelBulkDeleteMutationVariablesInput,
 ): Record<string, unknown> {
   return {
     ...(Array.isArray(variables?.ids) ? { ids: variables.ids } : {}),
@@ -116,17 +116,17 @@ export function buildModelBulkDeleteMutationVariables(
  * Builds normalized variables for method mutations.
  */
 export function buildModelMethodMutationVariables(
-  variables: ModelMethodMutationVariablesInput | undefined,
+  variables: ModelMethodMutationVariablesInput,
   options: BuildModelMutationVariablesOptions = {},
 ): Record<string, unknown> {
   const identifierVariableName = resolveIdentifierVariableName(options);
-  const identifierValue = variables?.identifier ?? variables?.id;
+  const identifierValue = variables.id;
 
   return {
     ...(hasValue(identifierValue)
       ? { [identifierVariableName]: identifierValue }
       : {}),
-    ...(variables?.input !== undefined ? { input: variables.input } : {}),
-    ...(variables?.extra || {}),
+    ...(variables.input !== undefined ? { input: variables.input } : {}),
+    ...(variables.extra || {}),
   };
 }

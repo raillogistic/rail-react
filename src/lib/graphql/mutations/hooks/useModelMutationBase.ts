@@ -1,7 +1,6 @@
 import { useCallback } from "react";
 import {
   useMutation,
-  type MutationFunctionOptions,
   type MutationHookOptions,
   type OperationVariables,
 } from "@apollo/client";
@@ -15,15 +14,15 @@ import type {
 /**
  * Input options for shared generated mutation hook execution.
  */
-export interface UseModelMutationBaseHookOptions {
+export interface UseModelMutationBaseHookOptions<TVariables> {
   /**
    * Built mutation document metadata.
    */
   builtDocument: BuiltModelMutationDocument;
   /**
-   * Default variables merged into each execution call.
+   * Variable normalizer used before execute-time mutation calls.
    */
-  defaultVariables: Record<string, unknown>;
+  normalizeVariables: (variables: TVariables) => Record<string, unknown>;
   /**
    * Resolved model-form context returned with mutation state.
    */
@@ -37,39 +36,39 @@ export interface UseModelMutationBaseHookOptions {
 /**
  * Executes generated model mutations with consistent response extraction.
  */
-export function useModelMutationBase(
-  options: UseModelMutationBaseHookOptions,
-): UseModelMutationResult {
+export function useModelMutationBase<TVariables>(
+  options: UseModelMutationBaseHookOptions<TVariables>,
+): UseModelMutationResult<TVariables> {
+  const builtDocument = options.builtDocument;
+  const modelForm = options.modelForm;
+  const normalizeVariables = options.normalizeVariables;
+
   const [mutate, mutationState] = useMutation<
     Record<string, unknown>,
     OperationVariables
-  >(options.builtDocument.mutationDocument, options.apollo);
+  >(builtDocument.mutationDocument, options.apollo);
 
   const execute = useCallback(
     (
-      variables?: Record<string, unknown>,
+      variables: TVariables,
       executeOptions: ExecuteModelMutationOptions = {},
     ) => {
-      const { variables: optionVariables, ...restOptions } = executeOptions;
-      const mergedVariables = {
-        ...(options.defaultVariables || {}),
-        ...((optionVariables as Record<string, unknown> | undefined) || {}),
-        ...(variables || {}),
-      };
-      const hasVariables = Object.keys(mergedVariables).length > 0;
+      const normalizedVariables = normalizeVariables(variables);
+      const hasVariables = Object.keys(normalizedVariables).length > 0;
 
       return mutate({
-        ...restOptions,
-        ...(hasVariables ? { variables: mergedVariables } : {}),
-      } as MutationFunctionOptions<Record<string, unknown>, OperationVariables>);
+        ...executeOptions,
+        ...(hasVariables ? { variables: normalizedVariables } : {}),
+      });
     },
-    [mutate, options.defaultVariables],
+    [mutate, normalizeVariables],
   );
 
   const rawData = mutationState.data as Record<string, unknown> | undefined;
-  const data = rawData?.[options.builtDocument.responseAlias] ?? null;
+  const data = rawData?.[builtDocument.responseAlias] ?? null;
 
   return {
+    ...modelForm,
     data,
     rawData,
     loading: mutationState.loading,
@@ -77,9 +76,8 @@ export function useModelMutationBase(
     called: mutationState.called,
     reset: mutationState.reset,
     execute,
-    mutationDocument: options.builtDocument.mutationDocument,
-    mutationName: options.builtDocument.mutationName,
-    operationName: options.builtDocument.operationName,
-    modelForm: options.modelForm,
+    mutationDocument: builtDocument.mutationDocument,
+    mutationName: builtDocument.mutationName,
+    operationName: builtDocument.operationName,
   };
 }

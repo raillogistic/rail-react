@@ -128,7 +128,7 @@ const initialDataFixture = {
 } as const;
 
 describe("generated graphql mutation hooks", () => {
-  it("executes create mutation with default variables", async () => {
+  it("executes create mutation with execute-time variables", async () => {
     const built = buildModelMutationDocument({
       mode: "create",
       model: "Product",
@@ -168,15 +168,14 @@ describe("generated graphql mutation hooks", () => {
         useModelCreateMutation({
           model: "Product",
           selection: "id name",
-          variables: {
-            input: { name: "Desk" },
-          },
         }),
       { wrapper },
     );
 
     await act(async () => {
-      await result.current.execute();
+      await result.current.execute({
+        input: { name: "Desk" },
+      });
     });
 
     await waitFor(() => expect(result.current.loading).toBe(false));
@@ -210,9 +209,6 @@ describe("generated graphql mutation hooks", () => {
           },
           modelFormOptions: {
             skipModelForm: true,
-          },
-          variables: {
-            ids: ["1", "2"],
           },
         }),
       { wrapper },
@@ -268,16 +264,15 @@ describe("generated graphql mutation hooks", () => {
           methodName: "run_query",
           includeInput: true,
           resultSelection: "preview",
-          variables: {
-            id: "42",
-            input: { limit: 5 },
-          },
         }),
       { wrapper },
     );
 
     await act(async () => {
-      await result.current.execute();
+      await result.current.execute({
+        id: "42",
+        input: { limit: 5 },
+      });
     });
 
     await waitFor(() => expect(result.current.loading).toBe(false));
@@ -342,12 +337,12 @@ describe("generated graphql mutation hooks", () => {
       { wrapper },
     );
 
-    await waitFor(() => expect(result.current.modelForm.loading).toBe(false));
+    await waitFor(() => expect(result.current.formLoading).toBe(false));
     expect(result.current.mutationName).toBe("updateProductFromContract");
-    expect(result.current.modelForm.fields.length).toBe(2);
-    expect(result.current.modelForm.permissions?.canUpdate).toBe(true);
-    expect(result.current.modelForm.initialObject?.name).toBe("Desk");
-    expect(result.current.modelForm.readonlyObject?.id).toBe("42");
+    expect(result.current.fields.length).toBe(2);
+    expect(result.current.permissions?.canUpdate).toBe(true);
+    expect(result.current.initialValues?.name).toBe("Desk");
+    expect(result.current.readonlyValues?.id).toBe("42");
   });
 
   it("keeps default naming when contract bindings are disabled", () => {
@@ -366,5 +361,26 @@ describe("generated graphql mutation hooks", () => {
     );
 
     expect(result.current.mutationName).toBe("updateProduct");
+  });
+
+  it("returns explicit form error when update objectId is missing", async () => {
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <MockedProvider mocks={[]}>{children}</MockedProvider>
+    );
+
+    const { result } = renderHook(
+      () =>
+        useModelUpdateMutation({
+          app: "inventory",
+          model: "Product",
+          contract: contractFixture as unknown as ModelFormContract,
+        }),
+      { wrapper },
+    );
+
+    await waitFor(() =>
+      expect(result.current.initialDataError?.message).toContain("objectId"),
+    );
+    expect(result.current.formError?.message).toContain("objectId");
   });
 });

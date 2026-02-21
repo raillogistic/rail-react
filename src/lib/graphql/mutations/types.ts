@@ -53,13 +53,9 @@ export interface ModelCreateMutationVariablesInput {
  */
 export interface ModelUpdateMutationVariablesInput {
   /**
-   * Default identifier value mapped to `id` or custom identifier variable.
+   * Object identifier.
    */
-  id?: string | number | null;
-  /**
-   * Explicit identifier alias with higher precedence than `id`.
-   */
-  identifier?: string | number | null;
+  id: string | number;
   /**
    * Mutation input object.
    */
@@ -75,13 +71,9 @@ export interface ModelUpdateMutationVariablesInput {
  */
 export interface ModelDeleteMutationVariablesInput {
   /**
-   * Default identifier value mapped to `id` or custom identifier variable.
+   * Object identifier.
    */
-  id?: string | number | null;
-  /**
-   * Explicit identifier alias with higher precedence than `id`.
-   */
-  identifier?: string | number | null;
+  id: string | number;
   /**
    * Additional variables merged into the final payload.
    */
@@ -135,13 +127,9 @@ export interface ModelBulkDeleteMutationVariablesInput {
  */
 export interface ModelMethodMutationVariablesInput {
   /**
-   * Default identifier value mapped to `id` or custom identifier variable.
+   * Object identifier.
    */
-  id?: string | number | null;
-  /**
-   * Explicit identifier alias with higher precedence than `id`.
-   */
-  identifier?: string | number | null;
+  id: string | number;
   /**
    * Optional method input payload.
    */
@@ -449,79 +437,37 @@ export interface UseModelMutationBaseOptions {
 /**
  * Options for generated create mutation hook.
  */
-export interface UseModelCreateMutationOptions extends UseModelMutationBaseOptions {
-  /**
-   * Default variables used when `execute` is called without payload.
-   */
-  variables?: ModelCreateMutationVariablesInput;
-}
+export type UseModelCreateMutationOptions = UseModelMutationBaseOptions;
 
 /**
  * Options for generated update mutation hook.
  */
-export interface UseModelUpdateMutationOptions extends UseModelMutationBaseOptions {
-  /**
-   * Default variables used when `execute` is called without payload.
-   */
-  variables?: ModelUpdateMutationVariablesInput;
-}
+export type UseModelUpdateMutationOptions = UseModelMutationBaseOptions;
 
 /**
  * Options for generated delete mutation hook.
  */
-export interface UseModelDeleteMutationOptions extends UseModelMutationBaseOptions {
-  /**
-   * Default variables used when `execute` is called without payload.
-   */
-  variables?: ModelDeleteMutationVariablesInput;
-}
+export type UseModelDeleteMutationOptions = UseModelMutationBaseOptions;
 
 /**
  * Options for generated bulk-create mutation hook.
  */
-export interface UseModelBulkCreateMutationOptions
-  extends UseModelMutationBaseOptions {
-  /**
-   * Default variables used when `execute` is called without payload.
-   */
-  variables?: ModelBulkCreateMutationVariablesInput;
-}
+export type UseModelBulkCreateMutationOptions = UseModelMutationBaseOptions;
 
 /**
  * Options for generated bulk-update mutation hook.
  */
-export interface UseModelBulkUpdateMutationOptions
-  extends UseModelMutationBaseOptions {
-  /**
-   * Default variables used when `execute` is called without payload.
-   */
-  variables?: ModelBulkUpdateMutationVariablesInput;
-}
+export type UseModelBulkUpdateMutationOptions = UseModelMutationBaseOptions;
 
 /**
  * Options for generated bulk-delete mutation hook.
  */
-export interface UseModelBulkDeleteMutationOptions
-  extends UseModelMutationBaseOptions {
-  /**
-   * Default variables used when `execute` is called without payload.
-   */
-  variables?: ModelBulkDeleteMutationVariablesInput;
-}
+export type UseModelBulkDeleteMutationOptions = UseModelMutationBaseOptions;
 
 /**
  * Options for generated method mutation hook.
  */
-export interface UseModelMethodMutationOptions extends UseModelMutationBaseOptions {
-  /**
-   * Method name used to generate default method mutation field name.
-   */
-  methodName?: string;
-  /**
-   * Default variables used when `execute` is called without payload.
-   */
-  variables?: ModelMethodMutationVariablesInput;
-}
+export type UseModelMethodMutationOptions = UseModelMutationBaseOptions;
 
 /**
  * Input used by mutation document builder.
@@ -638,64 +584,11 @@ export interface BuildModelMutationVariablesOptions {
  */
 export type ExecuteModelMutationOptions = Omit<
   MutationFunctionOptions<Record<string, unknown>, OperationVariables>,
-  "mutation"
+  "mutation" | "variables"
 >;
 
 /**
- * Shared result shape returned by generated model mutation hooks.
- */
-export interface UseModelMutationResult {
-  /**
-   * Response payload extracted from mutation alias.
-   */
-  data: unknown;
-  /**
-   * Raw Apollo response object.
-   */
-  rawData: Record<string, unknown> | undefined;
-  /**
-   * Mutation loading state.
-   */
-  loading: boolean;
-  /**
-   * Mutation error state.
-   */
-  error: ApolloError | undefined;
-  /**
-   * Indicates whether mutation has been executed at least once.
-   */
-  called: boolean;
-  /**
-   * Resets mutation state.
-   */
-  reset: () => void;
-  /**
-   * Executes mutation with merged default and call-time variables.
-   */
-  execute: (
-    variables?: Record<string, unknown>,
-    options?: ExecuteModelMutationOptions,
-  ) => Promise<FetchResult<Record<string, unknown>>>;
-  /**
-   * Generated mutation document currently used by hook.
-   */
-  mutationDocument: DocumentNode;
-  /**
-   * Resolved root mutation field name.
-   */
-  mutationName: string;
-  /**
-   * Resolved GraphQL operation name.
-   */
-  operationName: string;
-  /**
-   * Resolved model-form context used for ModelForm-ready orchestration.
-   */
-  modelForm: UseModelMutationModelFormResult;
-}
-
-/**
- * Shared model-form context returned by generated mutation hooks.
+ * Shared form metadata context returned by generated mutation hooks.
  */
 export interface UseModelMutationModelFormResult {
   /**
@@ -723,17 +616,17 @@ export interface UseModelMutationModelFormResult {
    */
   errorPolicy: ModelFormErrorPolicy | null;
   /**
-   * Initial object payload from model-form initial data.
+   * Initial values payload from model-form initial data.
    */
-  initialObject: Record<string, unknown> | null;
+  initialValues: Record<string, unknown> | null;
   /**
-   * Read-only object payload from model-form initial data.
+   * Read-only values payload from model-form initial data.
    */
-  readonlyObject: Record<string, unknown> | null;
+  readonlyValues: Record<string, unknown> | null;
   /**
    * Combined model-form loading state.
    */
-  loading: boolean;
+  formLoading: boolean;
   /**
    * Contract query loading state.
    */
@@ -745,7 +638,7 @@ export interface UseModelMutationModelFormResult {
   /**
    * Combined model-form error state.
    */
-  error: Error | undefined;
+  formError: Error | undefined;
   /**
    * Contract query error state.
    */
@@ -763,3 +656,95 @@ export interface UseModelMutationModelFormResult {
    */
   refetchInitialData: () => Promise<ModelFormInitialData | null>;
 }
+
+/**
+ * Shared result shape returned by generated model mutation hooks.
+ */
+export interface UseModelMutationResult<TVariables>
+  extends UseModelMutationModelFormResult {
+  /**
+   * Response payload extracted from mutation alias.
+   */
+  data: unknown;
+  /**
+   * Raw Apollo response object.
+   */
+  rawData: Record<string, unknown> | undefined;
+  /**
+   * Mutation loading state.
+   */
+  loading: boolean;
+  /**
+   * Mutation error state.
+   */
+  error: ApolloError | undefined;
+  /**
+   * Indicates whether mutation has been executed at least once.
+   */
+  called: boolean;
+  /**
+   * Resets mutation state.
+   */
+  reset: () => void;
+  /**
+   * Executes mutation with call-time variables.
+   */
+  execute: (
+    variables: TVariables,
+    options?: ExecuteModelMutationOptions,
+  ) => Promise<FetchResult<Record<string, unknown>>>;
+  /**
+   * Generated mutation document currently used by hook.
+   */
+  mutationDocument: DocumentNode;
+  /**
+   * Resolved root mutation field name.
+   */
+  mutationName: string;
+  /**
+   * Resolved GraphQL operation name.
+   */
+  operationName: string;
+}
+
+/**
+ * Result returned by generated create mutation hook.
+ */
+export type UseModelCreateMutationResult =
+  UseModelMutationResult<ModelCreateMutationVariablesInput>;
+
+/**
+ * Result returned by generated update mutation hook.
+ */
+export type UseModelUpdateMutationResult =
+  UseModelMutationResult<ModelUpdateMutationVariablesInput>;
+
+/**
+ * Result returned by generated delete mutation hook.
+ */
+export type UseModelDeleteMutationResult =
+  UseModelMutationResult<ModelDeleteMutationVariablesInput>;
+
+/**
+ * Result returned by generated bulk-create mutation hook.
+ */
+export type UseModelBulkCreateMutationResult =
+  UseModelMutationResult<ModelBulkCreateMutationVariablesInput>;
+
+/**
+ * Result returned by generated bulk-update mutation hook.
+ */
+export type UseModelBulkUpdateMutationResult =
+  UseModelMutationResult<ModelBulkUpdateMutationVariablesInput>;
+
+/**
+ * Result returned by generated bulk-delete mutation hook.
+ */
+export type UseModelBulkDeleteMutationResult =
+  UseModelMutationResult<ModelBulkDeleteMutationVariablesInput>;
+
+/**
+ * Result returned by generated method mutation hook.
+ */
+export type UseModelMethodMutationResult =
+  UseModelMutationResult<ModelMethodMutationVariablesInput>;

@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useCallback, useMemo } from "react";
 import { buildModelMutationDocument } from "../mutationBuilder";
 import { buildModelMethodMutationVariables } from "../variables";
 import { resolveModelMutationOptions } from "./shared";
@@ -6,15 +6,15 @@ import { useModelMutationModelForm } from "./useModelMutationModelForm";
 import { useModelMutationBase } from "./useModelMutationBase";
 import type {
   UseModelMethodMutationOptions,
-  UseModelMutationResult,
+  UseModelMethodMutationResult,
 } from "../types";
 
 /**
- * Executes a generated custom method mutation with normalized defaults.
+ * Executes a generated custom method mutation with execute-time variables.
  */
 export function useModelMethodMutation(
   options: UseModelMethodMutationOptions,
-): UseModelMutationResult {
+): UseModelMethodMutationResult {
   const resolved = resolveModelMutationOptions(options);
   const modelForm = useModelMutationModelForm({
     mode: "method",
@@ -70,17 +70,17 @@ export function useModelMethodMutation(
     ],
   );
 
-  const variables = useMemo(
-    () =>
-      buildModelMethodMutationVariables(options.variables, {
+  const normalizeVariables = useCallback(
+    (variables: Parameters<typeof buildModelMethodMutationVariables>[0]) =>
+      buildModelMethodMutationVariables(variables, {
         identifierVariableName: resolved.identifierVariableName,
       }),
-    [options.variables, resolved.identifierVariableName],
+    [resolved.identifierVariableName],
   );
 
   return useModelMutationBase({
     builtDocument,
-    defaultVariables: variables,
+    normalizeVariables,
     modelForm,
     apollo: options.apollo,
   });
