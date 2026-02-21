@@ -1,4 +1,4 @@
-import { ReactNode, useEffect, useMemo, useCallback } from "react";
+﻿import { ReactNode, useEffect, useMemo, useCallback } from "react";
 import { useQuery } from "@apollo/client";
 import { closestCenter, DndContext, DragEndEvent } from "@dnd-kit/core";
 import {
@@ -25,7 +25,7 @@ import { cn } from "@/lib/utils";
 import {
   persistTableMetadata,
   readPersistedTableMetadata,
-} from "@/lib/metadata/persisted-cache";
+} from "@/lib/graphql/metadata/persisted-cache";
 import { GET_MODEL_SCHEMA } from "../queries";
 import { mergeModelSchemaWithRelationships } from "../utils";
 import type {
@@ -304,7 +304,7 @@ function RelationFieldRow({
       ) : null}
       {isCycle ? (
         <div className="ml-8 mt-1 border-l border-dashed border-orange-200 pl-4 py-2 text-[10px] font-bold uppercase tracking-widest text-orange-400/60">
-          Cycle détecté (récursion bloquée)
+          Cycle dÃ©tectÃ© (rÃ©cursion bloquÃ©e)
         </div>
       ) : null}
     </Collapsible>
@@ -396,7 +396,7 @@ export function ExportFieldTree({
           <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-muted/30 mb-4">
             <Layers className="h-6 w-6 text-muted-foreground/40" />
           </div>
-          <p className="text-xs font-black uppercase tracking-widest text-muted-foreground/40">Aucun champ trouvé</p>
+          <p className="text-xs font-black uppercase tracking-widest text-muted-foreground/40">Aucun champ trouvÃ©</p>
         </div>
       ) : (
         <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
@@ -462,3 +462,4 @@ export function ExportFieldTree({
     </div>
   );
 }
+

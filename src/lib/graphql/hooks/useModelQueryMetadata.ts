@@ -1,7 +1,7 @@
-import { useCallback } from "react";
-import { useMetadata } from "@/lib/metadata/gateway";
-import type { ModelMetadata } from "@/lib/metadata/types";
-import type { MetadataProfile } from "@/lib/metadata/telemetry";
+﻿import { useCallback } from "react";
+import { useMetadata } from "@/lib/graphql/metadata/gateway";
+import type { ModelMetadata } from "@/lib/graphql/metadata/types";
+import type { MetadataProfile } from "@/lib/graphql/metadata/telemetry";
 import type { UseModelQueryMetadataResult } from "../types";
 
 /**
@@ -67,3 +67,4 @@ export function useModelQueryMetadata(
     refetch,
   };
 }
+

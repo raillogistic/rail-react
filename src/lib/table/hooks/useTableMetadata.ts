@@ -1,14 +1,14 @@
-import { useQuery } from "@apollo/client";
+﻿import { useQuery } from "@apollo/client";
 import { useEffect, useMemo } from "react";
 import { GET_MODEL_SCHEMA } from "../queries";
 import { ModelSchema } from "../types";
 import { toGraphqlFieldName } from "../utils";
-import { useMetadata } from "@/lib/metadata/gateway";
+import { useMetadata } from "@/lib/graphql/metadata/gateway";
 import {
   persistTableMetadata,
   readPersistedTableMetadata,
   recordModelUsage,
-} from "@/lib/metadata/persisted-cache";
+} from "@/lib/graphql/metadata/persisted-cache";
 
 export interface UseTableMetadataResult {
   metadata?: ModelSchema;
@@ -108,3 +108,4 @@ export function useTableMetadata(
     error: activeError,
   };
 }
+

@@ -1,11 +1,11 @@
-import type {
+﻿import type {
   BuildModelQuerySelectionOptions,
   ModelQueryFieldConfig,
   ModelQueryFieldsInput,
   ModelQueryRelationFieldConfig,
   ModelQuerySelectionTree,
 } from "./types";
-import type { ModelMetadata } from "@/lib/metadata/types";
+import type { ModelMetadata } from "@/lib/graphql/metadata/types";
 import { toCamelCase, toGraphqlFieldName, toSnakeCase } from "./naming";
 
 type SelectionTreeNode = Record<string, SelectionTreeNode | true>;
@@ -26,6 +26,14 @@ function normalizeFieldAccessors(fields?: ModelQueryFieldsInput): string[] {
     .map((entry) => (isFieldConfig(entry) ? entry.accessor : entry))
     .map((entry) => String(entry || "").trim())
     .filter(Boolean);
+}
+
+/**
+ * Normalizes string array input by trimming empty values.
+ */
+function normalizeStringArray(values?: string[]): string[] {
+  if (!Array.isArray(values)) return [];
+  return values.map((value) => String(value || "").trim()).filter(Boolean);
 }
 
 /**
@@ -155,6 +163,7 @@ function getRelationDefaults(
   if (config?.includeDesc !== false) defaults.add("desc");
   if (config?.display) defaults.add(config.display);
   (config?.fields || []).forEach((entry) => defaults.add(entry));
+  (config?.include || []).forEach((entry) => defaults.add(entry));
 
   const relation = (metadata?.relationships || []).find((entry) => {
     const canonical = toGraphqlFieldName(entry.name || entry.fieldName || "");
@@ -162,7 +171,7 @@ function getRelationDefaults(
   });
 
   if (
-    config?.includeLookupField !== false &&
+    config?.includeLookupField === true &&
     relation?.lookupField &&
     relation.lookupField !== "id" &&
     relation.lookupField !== "__str__"
@@ -170,9 +179,71 @@ function getRelationDefaults(
     defaults.add(relation.lookupField);
   }
 
+  const excluded = new Set(
+    (config?.exclude || []).map((entry) => toGraphqlFieldName(entry)),
+  );
+
   return Array.from(defaults)
     .map((entry) => toGraphqlFieldName(entry))
+    .filter((entry) => !excluded.has(entry))
     .filter(Boolean);
+}
+
+/**
+ * Returns canonical accessor list from raw accessor strings.
+ */
+function normalizeCanonicalAccessors(
+  accessors: string[],
+  metadata?: ModelMetadata | null,
+): string[] {
+  return accessors
+    .map((entry) => canonicalizeAccessor(entry, metadata))
+    .filter(Boolean);
+}
+
+/**
+ * Resolves canonical relation roots from raw relation names.
+ */
+function normalizeRelationRoots(
+  relationNames: string[],
+  metadata?: ModelMetadata | null,
+): Set<string> {
+  const roots = new Set<string>();
+  relationNames.forEach((entry) => {
+    const canonical = canonicalizeAccessor(entry, metadata);
+    if (!canonical) return;
+    const root = canonical.split(".")[0];
+    if (root) {
+      roots.add(root);
+    }
+  });
+  return roots;
+}
+
+/**
+ * Returns true when a canonical accessor should be filtered out.
+ */
+function isAccessorExcluded(
+  canonicalAccessor: string,
+  excludedAccessors: Set<string>,
+  excludedRelationRoots: Set<string>,
+): boolean {
+  const root = canonicalAccessor.split(".")[0];
+  if (root && excludedRelationRoots.has(root)) {
+    return true;
+  }
+
+  if (excludedAccessors.has(canonicalAccessor)) {
+    return true;
+  }
+
+  for (const excluded of excludedAccessors) {
+    if (canonicalAccessor.startsWith(`${excluded}.`)) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 /**
@@ -237,12 +308,21 @@ function normalizePublicTree(tree: ModelQuerySelectionTree): SelectionTreeNode {
  */
 function getDefaultMetadataAccessors(metadata?: ModelMetadata | null): string[] {
   if (!metadata) return [];
-  return (metadata.fields || [])
+  const fieldAccessors = (metadata.fields || [])
     .filter(
       (field) => field.visibility !== "hidden" && field.readable !== false,
     )
     .map((field) => toGraphqlFieldName(field.name || field.fieldName || ""))
     .filter(Boolean);
+
+  const relationAccessors = (metadata.relationships || [])
+    .filter((relation) => relation.readable !== false)
+    .map((relation) =>
+      toGraphqlFieldName(relation.name || relation.fieldName || ""),
+    )
+    .filter(Boolean);
+
+  return [...fieldAccessors, ...relationAccessors];
 }
 
 /**
@@ -281,22 +361,49 @@ export function buildModelQuerySelection(
 
   const relationConfig = options.relations || {};
   const accessors = normalizeFieldAccessors(options.fields);
-  const resolvedAccessors =
+  const includeAccessors = normalizeFieldAccessors(options.includeFields);
+  const includeRelations = normalizeStringArray(options.includeRelations);
+  const excludeAccessorsRaw = normalizeStringArray(options.excludeFields);
+  const excludeRelationsRaw = normalizeStringArray(options.excludeRelations);
+
+  const baseAccessors =
     accessors.length > 0
       ? accessors
       : getDefaultMetadataAccessors(options.metadata);
+  const resolvedAccessors = Array.from(
+    new Set([...baseAccessors, ...includeAccessors, ...includeRelations]),
+  );
+
+  const excludedAccessors = new Set(
+    normalizeCanonicalAccessors(excludeAccessorsRaw, options.metadata),
+  );
+  const excludedRelationRoots = normalizeRelationRoots(
+    excludeRelationsRaw,
+    options.metadata,
+  );
+  const explicitlyIncludedRelationRoots = normalizeRelationRoots(
+    includeRelations,
+    options.metadata,
+  );
 
   const tree: SelectionTreeNode = {};
   resolvedAccessors.forEach((entry) => {
     const canonical = canonicalizeAccessor(entry, options.metadata);
     if (!canonical) return;
+    if (isAccessorExcluded(canonical, excludedAccessors, excludedRelationRoots)) {
+      return;
+    }
 
     const parts = canonical.split(".").filter(Boolean);
     if (parts.length === 0) return;
     const [root, ...rest] = parts;
     if (!root) return;
 
-    if (rest.length === 0 && isRelationRoot(root, options.metadata)) {
+    if (
+      rest.length === 0 &&
+      (isRelationRoot(root, options.metadata) ||
+        explicitlyIncludedRelationRoots.has(root))
+    ) {
       getRelationDefaults(root, options.metadata, relationConfig).forEach(
         (field) => addPath(tree, `${root}.${field}`),
       );
@@ -323,3 +430,4 @@ export function buildModelQuerySelection(
     "\n      ",
   );
 }
+

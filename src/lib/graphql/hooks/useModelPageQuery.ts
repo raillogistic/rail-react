@@ -4,8 +4,10 @@ import { buildModelQueryField } from "../naming";
 import { buildModelQueryDocument } from "../queryBuilder";
 import { buildModelPageQueryVariables } from "../variables";
 import { useModelQueryMetadata } from "./useModelQueryMetadata";
+import { useModelQueryDevMetrics } from "./useModelQueryDevMetrics";
 import {
   requiresMetadataForQuery,
+  resolveModelQueryOptions,
   resolveActiveDocument,
 } from "./shared";
 import type { UseModelPageQueryOptions, UseModelQueryResult } from "../types";
@@ -16,51 +18,61 @@ import type { UseModelPageQueryOptions, UseModelQueryResult } from "../types";
 export function useModelPageQuery(
   options: UseModelPageQueryOptions,
 ): UseModelQueryResult {
+  const resolved = resolveModelQueryOptions(options);
+
   const metadataState = useModelQueryMetadata({
-    app: options.app,
-    model: options.model,
-    metadata: options.metadata,
-    profile: options.metadataProfile ?? "table",
-    skip: options.skipMetadata,
-    queryOptions: options.metadataQueryOptions,
+    app: resolved.app,
+    model: resolved.model,
+    metadata: resolved.metadata,
+    profile: resolved.metadataProfile ?? "table",
+    skip: resolved.skipMetadata,
+    queryOptions: resolved.metadataQueryOptions,
   });
 
   const metadata = metadataState.metadata;
   const waitForMetadata =
-    requiresMetadataForQuery(options.selection, options.fields) && !metadata;
+    requiresMetadataForQuery(resolved.selection, resolved.fields, resolved.includeFields, resolved.includeRelations) && !metadata;
 
   const builtDocument = useMemo(() => {
     if (waitForMetadata) return null;
     return buildModelQueryDocument({
       mode: "page",
-      model: options.model,
-      managerName: options.managerName,
+      model: resolved.model,
+      managerName: resolved.managerName,
       metadata,
-      fields: options.fields,
-      relations: options.relations,
-      selection: options.selection,
-      whereTypeName: options.whereTypeName,
-      supportsQuick: options.supportsQuick,
-      includeRowPermissions: options.includeRowPermissions,
-      operationName: options.operationName,
-      queryName: options.queryName,
-      customArgumentDefinitions: options.customArgumentDefinitions,
-      customArgumentAssignments: options.customArgumentAssignments,
+      fields: resolved.fields,
+      includeFields: resolved.includeFields,
+      excludeFields: resolved.excludeFields,
+      relations: resolved.relations,
+      includeRelations: resolved.includeRelations,
+      excludeRelations: resolved.excludeRelations,
+      selection: resolved.selection,
+      whereTypeName: resolved.whereTypeName,
+      supportsQuick: resolved.supportsQuick,
+      includeRowPermissions: resolved.includeRowPermissions,
+      operationName: resolved.operationName,
+      queryName: resolved.queryName,
+      customArgumentDefinitions: resolved.customArgumentDefinitions,
+      customArgumentAssignments: resolved.customArgumentAssignments,
     });
   }, [
     metadata,
-    options.customArgumentAssignments,
-    options.customArgumentDefinitions,
-    options.fields,
-    options.includeRowPermissions,
-    options.managerName,
-    options.model,
-    options.operationName,
-    options.queryName,
-    options.relations,
-    options.selection,
-    options.supportsQuick,
-    options.whereTypeName,
+    resolved.customArgumentAssignments,
+    resolved.customArgumentDefinitions,
+    resolved.excludeFields,
+    resolved.excludeRelations,
+    resolved.fields,
+    resolved.includeFields,
+    resolved.includeRelations,
+    resolved.includeRowPermissions,
+    resolved.managerName,
+    resolved.model,
+    resolved.operationName,
+    resolved.queryName,
+    resolved.relations,
+    resolved.selection,
+    resolved.supportsQuick,
+    resolved.whereTypeName,
     waitForMetadata,
   ]);
 
@@ -68,22 +80,29 @@ export function useModelPageQuery(
     () =>
       buildModelPageQueryVariables(options.variables, {
         metadata,
-        supportsQuick: options.supportsQuick,
+        supportsQuick: resolved.supportsQuick,
       }),
-    [metadata, options.supportsQuick, options.variables],
+    [metadata, resolved.supportsQuick, options.variables],
   );
 
   const queryDocument = resolveActiveDocument(builtDocument);
   const queryName =
     builtDocument?.queryName ||
-    options.queryName ||
-    buildModelQueryField(options.model, "page", options.managerName);
+    resolved.queryName ||
+    buildModelQueryField(resolved.model, "page", resolved.managerName);
   const skipQuery = Boolean(options.apollo?.skip) || !builtDocument;
 
   const queryState = useQuery(queryDocument, {
     ...(options.apollo || {}),
     variables,
     skip: skipQuery,
+  });
+  const dev = useModelQueryDevMetrics({
+    metadataLoading: metadataState.loading,
+    dataLoading: queryState.loading,
+    skipQuery,
+    requestKey: `${queryName}|${JSON.stringify(variables)}|${String(skipQuery)}`,
+    metadataKey: `${resolved.app}|${resolved.model}|${String(resolved.skipMetadata)}`,
   });
 
   const refetch = useCallback(
@@ -117,5 +136,6 @@ export function useModelPageQuery(
     metadata,
     metadataLoading: metadataState.loading,
     metadataError: metadataState.error,
+    dev,
   };
 }

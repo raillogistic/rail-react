@@ -1,6 +1,6 @@
-import { describe, expect, it } from "vitest";
+﻿import { describe, expect, it } from "vitest";
 import { buildModelQuerySelection } from "../selection";
-import type { ModelMetadata } from "@/lib/metadata/types";
+import type { ModelMetadata } from "@/lib/graphql/metadata/types";
 
 /**
  * Creates a lightweight metadata fixture for selection tests.
@@ -134,7 +134,19 @@ describe("buildModelQuerySelection", () => {
     expect(selection).toContain("group");
     expect(selection).toContain("id");
     expect(selection).toContain("desc");
-    expect(selection).toContain("name");
+    expect(selection).not.toContain("name");
+  });
+
+  it("includes all relation roots in metadata-driven defaults", () => {
+    const metadata = createSelectionMetadataFixture();
+    const selection = buildModelQuerySelection({
+      metadata,
+      includeRowPermissions: false,
+    });
+
+    expect(selection).toContain("username");
+    expect(selection).toContain("group");
+    expect(selection).toMatch(/group\s*\{\s*desc\s*id\s*\}/s);
   });
 
   it("uses manual tree selection override", () => {
@@ -151,4 +163,44 @@ describe("buildModelQuerySelection", () => {
     expect(selection).toContain("group");
     expect(selection).toContain("name");
   });
+
+  it("applies include and exclude selectors for fields and relations", () => {
+    const metadata = createSelectionMetadataFixture();
+    const selection = buildModelQuerySelection({
+      metadata,
+      fields: ["username"],
+      includeFields: ["group.name"],
+      includeRelations: ["group"],
+      excludeFields: ["username", "group.name"],
+      includeRowPermissions: false,
+    });
+
+    expect(selection).toContain("group");
+    expect(selection).toContain("desc");
+    expect(selection).toContain("id");
+    expect(selection).not.toContain("username");
+    expect(selection).not.toContain("name");
+  });
+
+  it("applies relation-level include and exclude overrides", () => {
+    const metadata = createSelectionMetadataFixture();
+    const selection = buildModelQuerySelection({
+      metadata,
+      includeRelations: ["group"],
+      relations: {
+        group: {
+          include: ["name", "slug"],
+          exclude: ["name"],
+        },
+      },
+      includeRowPermissions: false,
+    });
+
+    expect(selection).toContain("group");
+    expect(selection).toContain("id");
+    expect(selection).toContain("desc");
+    expect(selection).toContain("slug");
+    expect(selection).not.toMatch(/\bname\b/);
+  });
 });
+

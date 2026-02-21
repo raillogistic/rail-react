@@ -40,10 +40,22 @@ type AvailableModel = {
   model: string;
 };
 
-const scheduleIdle = (task: () => void) => {
+type IdleSchedulerWindow = Window & {
+  requestIdleCallback?: (
+    callback: IdleRequestCallback,
+    options?: IdleRequestOptions,
+  ) => number;
+};
+
+/**
+ * Schedules a task during browser idle time, with a setTimeout fallback.
+ */
+const scheduleIdle = (task: () => void): void => {
   if (typeof window !== "undefined" && "requestIdleCallback" in window) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (window as any).requestIdleCallback(task, { timeout: 2000 });
+    (window as IdleSchedulerWindow).requestIdleCallback?.(
+      () => task(),
+      { timeout: 2000 },
+    );
   } else {
     setTimeout(task, 0);
   }
@@ -178,15 +190,23 @@ const buildHintTargets = (
   return targets;
 };
 
+/**
+ * Options used to warm metadata for a signed-in user.
+ */
+export interface WarmupMetadataCacheOptions {
+  userKey: string;
+  priorityLimit?: number;
+  concurrency?: number;
+  profiles?: MetadataProfileSlice[];
+  routeHints?: WarmupModelHint[];
+}
+
+/**
+ * Warms filter/table metadata for hinted models and persists it for reuse.
+ */
 export async function warmupMetadataCache(
   client: ApolloClient<unknown>,
-  options: {
-    userKey: string;
-    priorityLimit?: number;
-    concurrency?: number;
-    profiles?: MetadataProfileSlice[];
-    routeHints?: WarmupModelHint[];
-  },
+  options: WarmupMetadataCacheOptions,
 ): Promise<void> {
   const { userKey } = options;
   if (!userKey) return;

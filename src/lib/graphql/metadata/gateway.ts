@@ -60,6 +60,9 @@ function normalizeInclude(include?: string[]): string[] {
   return include.filter(Boolean).sort();
 }
 
+/**
+ * Builds a stable signature for metadata scope-sensitive options.
+ */
 export function buildMetadataSignature(params: MetadataGatewayParams): string {
   return stableSerialize({
     profile: params.profile,
@@ -98,6 +101,9 @@ function toPayloadSize(value: unknown): number {
   }
 }
 
+/**
+ * Normalizes unknown thrown values into a proper Error instance.
+ */
 export function normalizeMetadataError(error: unknown): ApolloError | Error {
   if (error instanceof Error) {
     return error;
@@ -105,6 +111,9 @@ export function normalizeMetadataError(error: unknown): ApolloError | Error {
   return new Error("Metadata request failed.");
 }
 
+/**
+ * Fetches a single metadata snapshot with cache/in-flight request dedupe.
+ */
 export async function fetchMetadataSnapshot(
   client: ReturnType<typeof useApolloClient>,
   params: MetadataGatewayParams,
@@ -189,6 +198,9 @@ export async function fetchMetadataSnapshot(
   return queryPromise;
 }
 
+/**
+ * Hook to read metadata with cache-first behavior and manual refetch.
+ */
 export function useMetadata(params: MetadataGatewayParams): UseMetadataResult {
   const client = useApolloClient();
   const includeSignature = React.useMemo(

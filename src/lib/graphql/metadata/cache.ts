@@ -97,10 +97,16 @@ export function useMetadataCacheEntry<TPayload>(kind: MetadataKind, scopeKey: st
   return React.useSyncExternalStore(subscribeMetadataCache, getSnapshot, getSnapshot);
 }
 
+/**
+ * Reads the latest cache entry for a metadata scope.
+ */
 export function readMetadataCacheEntry<TPayload>(kind: MetadataKind, scopeKey: string) {
   return readLatestEntry<TPayload>(kind, scopeKey);
 }
 
+/**
+ * Clears all cached versions for a scope key.
+ */
 export function clearMetadataScope(kind: MetadataKind, scopeKey: string) {
   const scopeEntries = Array.from(stores[kind].keys()).filter(
     (key) => stores[kind].get(key)?.scopeKey === scopeKey,
@@ -112,6 +118,9 @@ export function clearMetadataScope(kind: MetadataKind, scopeKey: string) {
   }
 }
 
+/**
+ * Returns true when a cache entry exists and is within TTL.
+ */
 export function isCacheEntryFresh(entry: MetadataCacheEntry<unknown> | null, ttlMs: number = METADATA_CACHE_TTL_MS) {
   if (!entry) {
     return false;
@@ -119,6 +128,9 @@ export function isCacheEntryFresh(entry: MetadataCacheEntry<unknown> | null, ttl
   return Date.now() - entry.cachedAt < ttlMs;
 }
 
+/**
+ * Deterministic serializer used for cache signatures and dedupe keys.
+ */
 export function stableSerialize(value: unknown): string {
   if (value === null) return "null";
   if (value === undefined) return "undefined";

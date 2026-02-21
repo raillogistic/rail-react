@@ -1,7 +1,20 @@
 import React from "react";
 import { Loader2 } from "lucide-react";
 
-export function MetadataWarmupIndicator({ active }: { active: boolean }) {
+/**
+ * Props for `MetadataWarmupIndicator`.
+ */
+export interface MetadataWarmupIndicatorProps {
+  /** Whether the warmup indicator is visible. */
+  active: boolean;
+}
+
+/**
+ * Small status badge shown while metadata cache warmup is in progress.
+ */
+export function MetadataWarmupIndicator({
+  active,
+}: MetadataWarmupIndicatorProps) {
   if (!active) return null;
 
   return (

@@ -1,10 +1,10 @@
-import { describe, expect, it } from "vitest";
+﻿import { describe, expect, it } from "vitest";
 import {
   buildModelListQueryVariables,
   buildModelPageQueryVariables,
   buildModelSingleQueryVariables,
 } from "../variables";
-import type { ModelMetadata } from "@/lib/metadata/types";
+import type { ModelMetadata } from "@/lib/graphql/metadata/types";
 
 /**
  * Creates metadata fixture used for variable normalization tests.
@@ -150,13 +150,10 @@ describe("graphql variable builders", () => {
   });
 
   it("builds single variables", () => {
-    const variables = buildModelSingleQueryVariables({
-      id: "1",
-      where: { archived: false },
-    });
+    const variables = buildModelSingleQueryVariables("1");
     expect(variables).toEqual({
       id: "1",
-      where: { archived: false },
     });
   });
 });
+

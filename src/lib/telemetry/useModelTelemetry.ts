@@ -1,6 +1,6 @@
-import * as React from "react";
+﻿import * as React from "react";
 import { SpanStatusCode, trace, context as otelContext } from "@opentelemetry/api";
-import { stableSerialize } from "@/lib/metadata/cache";
+import { stableSerialize } from "@/lib/graphql/metadata/cache";
 
 export interface UseModelTelemetryOptions {
   component: string;
@@ -68,3 +68,4 @@ export function useModelTelemetry(options: UseModelTelemetryOptions): ModelTelem
 
   return { logEvent, recordError };
 }
+

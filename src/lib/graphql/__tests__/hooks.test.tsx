@@ -1,4 +1,4 @@
-import React from "react";
+﻿import React from "react";
 import { describe, expect, it, vi } from "vitest";
 import { MockedProvider } from "@apollo/client/testing";
 import { renderHook, waitFor } from "@testing-library/react";
@@ -6,11 +6,11 @@ import { print } from "graphql";
 import { useModelPageQuery } from "../hooks/useModelPageQuery";
 import { buildModelQueryDocument } from "../queryBuilder";
 import { buildModelPageQueryVariables } from "../variables";
-import type { ModelMetadata } from "@/lib/metadata/types";
+import type { ModelMetadata } from "@/lib/graphql/metadata/types";
 
 const useMetadataMock = vi.fn();
 
-vi.mock("@/lib/metadata/gateway", () => ({
+vi.mock("@/lib/graphql/metadata/gateway", () => ({
   useMetadata: (args: unknown) => useMetadataMock(args),
 }));
 
@@ -119,6 +119,20 @@ function createHooksMetadataFixture(): ModelMetadata {
 }
 
 describe("generated graphql hooks", () => {
+  it("builds single query without default where argument", () => {
+    const built = buildModelQueryDocument({
+      mode: "single",
+      model: "User",
+      fields: ["id", "username"],
+    });
+
+    const queryText = print(built.queryDocument);
+    expect(queryText).toContain("$id: ID!");
+    expect(queryText).toContain("id: $id");
+    expect(queryText).not.toContain("$where:");
+    expect(queryText).not.toContain("where: $where");
+  });
+
   it("executes page query with predefined fields without metadata fetch", async () => {
     useMetadataMock.mockReturnValue({
       metadata: null,
@@ -192,6 +206,8 @@ describe("generated graphql hooks", () => {
       items: Array<{ username: string }>;
     };
     expect(data.items[0]?.username).toBe("alice");
+    expect(result.current.dev.metadataFetchMs).toBeGreaterThanOrEqual(0);
+    expect(result.current.dev.dataFetchMs).toBeGreaterThanOrEqual(0);
   });
 
   it("builds metadata-driven page query with quick and where input", () => {
@@ -224,4 +240,49 @@ describe("generated graphql hooks", () => {
     expect(queryText).toContain("$quick: String");
     expect(queryText).toContain("quick: $quick");
   });
+
+  it("supports grouped query options", () => {
+    useMetadataMock.mockReturnValue({
+      metadata: null,
+      loading: false,
+      error: undefined,
+      refetch: vi.fn(),
+    });
+
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <MockedProvider mocks={[]}>{children}</MockedProvider>
+    );
+
+    const { result } = renderHook(
+      () =>
+        useModelPageQuery({
+          identity: {
+            app: "auth",
+            model: "User",
+          },
+          metadataOptions: {
+            skipMetadata: true,
+          },
+          selectionOptions: {
+            fields: ["username"],
+            includeFields: ["id"],
+            excludeFields: ["username"],
+            includeRowPermissions: false,
+          },
+          executionOptions: {
+            queryName: "userPage",
+            supportsQuick: false,
+          },
+          apollo: { skip: true },
+        }),
+      { wrapper },
+    );
+
+    const queryText = print(result.current.queryDocument);
+    expect(result.current.queryName).toBe("userPage");
+    expect(queryText).toContain("id");
+    expect(queryText).not.toContain("username");
+    expect(queryText).not.toContain("rowPermissions");
+  });
 });
+

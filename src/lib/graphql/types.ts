@@ -1,6 +1,6 @@
-import type { DocumentNode, OperationVariables, QueryHookOptions } from "@apollo/client";
-import type { ModelMetadata } from "@/lib/metadata/types";
-import type { MetadataProfile } from "@/lib/metadata/telemetry";
+﻿import type { DocumentNode, OperationVariables, QueryHookOptions } from "@apollo/client";
+import type { ModelMetadata } from "@/lib/graphql/metadata/types";
+import type { MetadataProfile } from "@/lib/graphql/metadata/telemetry";
 
 /**
  * Supported generated model query modes.
@@ -37,6 +37,15 @@ export interface ModelQueryRelationFieldConfig {
    * Additional nested fields to include for a relation root.
    */
   fields?: string[];
+  /**
+   * Additional nested fields to include for a relation root.
+   * Alias of `fields` for include-oriented configuration.
+   */
+  include?: string[];
+  /**
+   * Nested fields to remove from the relation selection.
+   */
+  exclude?: string[];
   /**
    * Relation display field override.
    */
@@ -109,27 +118,9 @@ export interface ModelPageQueryVariablesInput extends ModelCommonQueryVariablesI
 export interface ModelListQueryVariablesInput extends ModelCommonQueryVariablesInput {}
 
 /**
- * Variable input for single model queries.
+ * Grouped identity options for generated model query hooks.
  */
-export interface ModelSingleQueryVariablesInput {
-  /**
-   * Object identifier.
-   */
-  id?: string | number | null;
-  /**
-   * Optional where payload for custom resolver variants.
-   */
-  where?: unknown;
-  /**
-   * Additional variables merged into final variable payload.
-   */
-  extra?: Record<string, unknown>;
-}
-
-/**
- * Shared options for generated model query hooks.
- */
-export interface UseModelQueryBaseOptions {
+export interface UseModelQueryIdentityOptions {
   /**
    * Django app label.
    */
@@ -142,6 +133,12 @@ export interface UseModelQueryBaseOptions {
    * Optional manager suffix used by backend query generators.
    */
   managerName?: string;
+}
+
+/**
+ * Grouped metadata options for generated model query hooks.
+ */
+export interface UseModelQueryMetadataOptions {
   /**
    * Preloaded metadata snapshot to bypass metadata fetching.
    */
@@ -158,18 +155,50 @@ export interface UseModelQueryBaseOptions {
    * Query options passed to metadata gateway requests.
    */
   metadataQueryOptions?: Record<string, unknown>;
+}
+
+/**
+ * Grouped selection options for generated model query hooks.
+ */
+export interface UseModelQuerySelectionOptions {
   /**
    * Predefined field accessors. When omitted, fields are derived from metadata.
    */
   fields?: ModelQueryFieldsInput;
   /**
+   * Field accessors to include in addition to default/generated field list.
+   */
+  includeFields?: ModelQueryFieldsInput;
+  /**
+   * Field accessors to remove from the final selection.
+   */
+  excludeFields?: string[];
+  /**
    * Relation defaults used when relation roots are selected.
    */
   relations?: Record<string, ModelQueryRelationFieldConfig>;
   /**
+   * Relation roots to include in the final selection.
+   */
+  includeRelations?: string[];
+  /**
+   * Relation roots to remove from the final selection.
+   */
+  excludeRelations?: string[];
+  /**
    * Manual selection override. Accepts raw selection string or a selection tree.
    */
   selection?: string | ModelQuerySelectionTree;
+  /**
+   * Include row permissions block in generated selection.
+   */
+  includeRowPermissions?: boolean;
+}
+
+/**
+ * Grouped execution options for generated model query hooks.
+ */
+export interface UseModelQueryExecutionOptions {
   /**
    * Explicit override for `where` input type.
    */
@@ -178,10 +207,6 @@ export interface UseModelQueryBaseOptions {
    * Override quick-search support detection.
    */
   supportsQuick?: boolean;
-  /**
-   * Include row permissions block in generated selection.
-   */
-  includeRowPermissions?: boolean;
   /**
    * Override GraphQL operation name.
    */
@@ -198,10 +223,116 @@ export interface UseModelQueryBaseOptions {
    * Replace generated field call arguments.
    */
   customArgumentAssignments?: string[];
+}
+
+/**
+ * Shared options for generated model query hooks.
+ */
+export interface UseModelQueryBaseOptions {
+  /**
+   * Identity options grouped by purpose.
+   */
+  identity?: UseModelQueryIdentityOptions;
+  /**
+   * Metadata options grouped by purpose.
+   */
+  metadataOptions?: UseModelQueryMetadataOptions;
+  /**
+   * Selection options grouped by purpose.
+   */
+  selectionOptions?: UseModelQuerySelectionOptions;
+  /**
+   * Query execution options grouped by purpose.
+   */
+  executionOptions?: UseModelQueryExecutionOptions;
   /**
    * Apollo `useQuery` options for generated query execution.
    */
   apollo?: QueryHookOptions<Record<string, unknown>, OperationVariables>;
+  /**
+   * Legacy flat app label. Prefer `identity.app`.
+   */
+  app?: string;
+  /**
+   * Legacy flat model name. Prefer `identity.model`.
+   */
+  model?: string;
+  /**
+   * Legacy flat manager name. Prefer `identity.managerName`.
+   */
+  managerName?: string;
+  /**
+   * Legacy flat metadata override. Prefer `metadataOptions.metadata`.
+   */
+  metadata?: ModelMetadata | null;
+  /**
+   * Legacy flat metadata profile. Prefer `metadataOptions.metadataProfile`.
+   */
+  metadataProfile?: MetadataProfile;
+  /**
+   * Legacy flat skip metadata flag. Prefer `metadataOptions.skipMetadata`.
+   */
+  skipMetadata?: boolean;
+  /**
+   * Legacy flat metadata query options. Prefer `metadataOptions.metadataQueryOptions`.
+   */
+  metadataQueryOptions?: Record<string, unknown>;
+  /**
+   * Legacy flat fields. Prefer `selectionOptions.fields`.
+   */
+  fields?: ModelQueryFieldsInput;
+  /**
+   * Legacy flat included fields. Prefer `selectionOptions.includeFields`.
+   */
+  includeFields?: ModelQueryFieldsInput;
+  /**
+   * Legacy flat excluded fields. Prefer `selectionOptions.excludeFields`.
+   */
+  excludeFields?: string[];
+  /**
+   * Legacy flat relations config. Prefer `selectionOptions.relations`.
+   */
+  relations?: Record<string, ModelQueryRelationFieldConfig>;
+  /**
+   * Legacy flat included relations. Prefer `selectionOptions.includeRelations`.
+   */
+  includeRelations?: string[];
+  /**
+   * Legacy flat excluded relations. Prefer `selectionOptions.excludeRelations`.
+   */
+  excludeRelations?: string[];
+  /**
+   * Legacy flat selection override. Prefer `selectionOptions.selection`.
+   */
+  selection?: string | ModelQuerySelectionTree;
+  /**
+   * Legacy flat row permissions flag. Prefer `selectionOptions.includeRowPermissions`.
+   */
+  includeRowPermissions?: boolean;
+  /**
+   * Legacy flat where type override. Prefer `executionOptions.whereTypeName`.
+   */
+  whereTypeName?: string;
+  /**
+   * Legacy flat quick support override. Prefer `executionOptions.supportsQuick`.
+   */
+  supportsQuick?: boolean;
+  /**
+   * Legacy flat operation name override. Prefer `executionOptions.operationName`.
+   */
+  operationName?: string;
+  /**
+   * Legacy flat query name override. Prefer `executionOptions.queryName`.
+   */
+  queryName?: string;
+  /**
+   * Legacy flat custom argument definitions. Prefer `executionOptions.customArgumentDefinitions`.
+   */
+  customArgumentDefinitions?: string[];
+  /**
+   * Legacy flat custom argument assignments. Prefer `executionOptions.customArgumentAssignments`.
+   */
+  customArgumentAssignments?: string[];
 }
 
 /**
@@ -229,9 +360,9 @@ export interface UseModelListQueryOptions extends UseModelQueryBaseOptions {
  */
 export interface UseModelSingleQueryOptions extends UseModelQueryBaseOptions {
   /**
-   * Variables for single model query.
+   * Object identifier used by default single query signature.
    */
-  variables?: ModelSingleQueryVariablesInput;
+  id?: string | number | null;
   /**
    * Indicates whether `id` is required to run the query.
    */
@@ -285,9 +416,25 @@ export interface BuildModelQueryDocumentOptions {
    */
   fields?: ModelQueryFieldsInput;
   /**
+   * Field accessors to include in addition to defaults/explicit fields.
+   */
+  includeFields?: ModelQueryFieldsInput;
+  /**
+   * Field accessors to exclude from the generated selection.
+   */
+  excludeFields?: string[];
+  /**
    * Relation defaults.
    */
   relations?: Record<string, ModelQueryRelationFieldConfig>;
+  /**
+   * Relation roots to include in addition to defaults.
+   */
+  includeRelations?: string[];
+  /**
+   * Relation roots to exclude from the generated selection.
+   */
+  excludeRelations?: string[];
   /**
    * Explicit where input type override.
    */
@@ -331,9 +478,25 @@ export interface BuildModelQuerySelectionOptions {
    */
   fields?: ModelQueryFieldsInput;
   /**
+   * Field accessors to include in addition to base/default fields.
+   */
+  includeFields?: ModelQueryFieldsInput;
+  /**
+   * Field accessors to exclude from the final selection.
+   */
+  excludeFields?: string[];
+  /**
    * Relation defaults.
    */
   relations?: Record<string, ModelQueryRelationFieldConfig>;
+  /**
+   * Relation roots to include in the final selection.
+   */
+  includeRelations?: string[];
+  /**
+   * Relation roots to exclude from the final selection.
+   */
+  excludeRelations?: string[];
   /**
    * Manual selection override.
    */
@@ -378,6 +541,20 @@ export interface UseModelQueryMetadataResult {
    * Metadata refetch callback.
    */
   refetch: () => Promise<ModelMetadata | null>;
+}
+
+/**
+ * Development timing metrics for generated query hooks.
+ */
+export interface UseModelQueryDevMetrics {
+  /**
+   * Time spent resolving metadata for the current request, in milliseconds.
+   */
+  metadataFetchMs: number | null;
+  /**
+   * Time spent resolving GraphQL data for the current request, in milliseconds.
+   */
+  dataFetchMs: number | null;
 }
 
 /**
@@ -428,4 +605,9 @@ export interface UseModelQueryResult {
    * Metadata error, if present.
    */
   metadataError: Error | undefined;
+  /**
+   * Development metrics for metadata/data fetch durations.
+   */
+  dev: UseModelQueryDevMetrics;
 }
+

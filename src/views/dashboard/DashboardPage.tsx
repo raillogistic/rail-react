@@ -1,26 +1,25 @@
-import { useModelPageQuery } from "@/lib/graphql";
+import {
+  useModelListQuery,
+  useModelPageQuery,
+  useModelSingleQuery,
+} from "@/lib/graphql";
 import { buildQueries } from "@testing-library/dom";
 import React from "react";
 
 type Props = {};
 
 export default function DashboardPage({}: Props) {
-  const { data, loading } = useModelPageQuery({
+  const { data, loading, dev } = useModelListQuery({
     app: "billing",
     model: "Invoice",
-    variables: {
-      page: 1,
-      perPage: 20,
-
-      orderBy: ["-id"],
-      skipCount: false,
-    },
   });
 
   return (
     <div>
       {loading && <div>Loading...</div>}
-      {data && <div>{data?.items?.length}</div>}
+      <div>dataFetchMs: {dev.dataFetchMs}</div>
+      <div>metadataFetchMs: {dev.metadataFetchMs}</div>
+      {/* {data && <div>{JSON.stringify(data)}</div>} */}
     </div>
   );
 }

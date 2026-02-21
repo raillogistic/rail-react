@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+﻿import { describe, it, expect, vi, beforeEach } from "vitest";
 import { renderHook } from "@testing-library/react";
 import { useTableMetadata } from "../useTableMetadata";
 
@@ -16,11 +16,11 @@ vi.mock("@apollo/client", async (importOriginal) => {
   };
 });
 
-vi.mock("@/lib/metadata/gateway", () => ({
+vi.mock("@/lib/graphql/metadata/gateway", () => ({
   useMetadata: (...args: unknown[]) => mockUseMetadata(...args),
 }));
 
-vi.mock("@/lib/metadata/persisted-cache", () => ({
+vi.mock("@/lib/graphql/metadata/persisted-cache", () => ({
   readPersistedTableMetadata: (...args: unknown[]) => mockReadPersisted(...args),
   persistTableMetadata: (...args: unknown[]) => mockPersist(...args),
   recordModelUsage: (...args: unknown[]) => mockRecordUsage(...args),
@@ -99,3 +99,4 @@ describe("useTableMetadata", () => {
     expect(result.current.metadata?.mutations).toEqual([]);
   });
 });
+

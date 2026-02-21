@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Dynamic Filters - useFilterMetadata Hook
  *
  * Fetches and merges metadata from modelSchema, filterSchema, and savedFilters.
@@ -14,7 +14,7 @@ import {
   persistFilterMetadata,
   readPersistedFilterMetadata,
   recordModelUsage,
-} from "@/lib/metadata/persisted-cache";
+} from "@/lib/graphql/metadata/persisted-cache";
 
 const SAVED_FILTERS_QUERY = gql`
   query SavedFilters($modelName: String!) {
@@ -440,3 +440,4 @@ export function useFilterMetadata({
     getSchemaForRelation,
   };
 }
+

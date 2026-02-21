@@ -8,16 +8,29 @@ import {
 } from "./persisted-cache";
 import { warmupMetadataCache } from "./warmup";
 
-export function useMetadataWarmup(options: {
+/**
+ * Hint describing a model that should be considered during metadata warmup.
+ */
+export interface MetadataWarmupRouteHint {
+  app: string;
+  model: string;
+  profiles?: Array<"filter" | "table">;
+}
+
+/**
+ * Options for `useMetadataWarmup`.
+ */
+export interface UseMetadataWarmupOptions {
   enabled: boolean;
   userKey: string | null;
   profiles?: Array<"filter" | "table">;
-  routeHints?: Array<{
-    app: string;
-    model: string;
-    profiles?: Array<"filter" | "table">;
-  }>;
-}) {
+  routeHints?: MetadataWarmupRouteHint[];
+}
+
+/**
+ * Hydrates persisted metadata and starts background warmup for route hints.
+ */
+export function useMetadataWarmup(options: UseMetadataWarmupOptions) {
   const client = useApolloClient();
   const [hydrated, setHydrated] = useState(false);
   const [warming, setWarming] = useState(false);

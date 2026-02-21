@@ -1,9 +1,9 @@
-import { render, screen } from "@testing-library/react";
+﻿import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { createModelSection, type ModelSectionData } from "../builtInSections/ModelSection";
 import { resolveSectionActions } from "../sectionState";
 import type { SectionRuntimeCtx, SectionState } from "../sectionTypes";
-import type { MutationMetadata, TemplateInfo } from "@/lib/metadata/types";
+import type { MutationMetadata, TemplateInfo } from "@/lib/graphql/metadata/types";
 
 /** Build deterministic section data payload for action and rendering tests. */
 function createModelData(overrides?: Partial<ModelSectionData>): ModelSectionData {
@@ -200,3 +200,4 @@ describe("ModelSection actions and access", () => {
     expect(screen.queryByText("Name")).toBeNull();
   });
 });
+

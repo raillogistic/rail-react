@@ -1,4 +1,4 @@
-import * as React from "react";
+﻿import * as React from "react";
 import { gql, type ApolloClient } from "@apollo/client";
 import {
   Layers,
@@ -15,13 +15,13 @@ import {
   MODEL_FORM_CONTRACT_QUERY,
   MODEL_FORM_INITIAL_DATA_QUERY,
 } from "@/graphql/modelFormContract";
-import { TABLE_MODEL_METADATA_QUERY } from "@/lib/metadata/queries";
+import { TABLE_MODEL_METADATA_QUERY } from "@/lib/graphql/metadata/queries";
 import type {
   ModelMetadata,
   MutationInputField,
   MutationMetadata,
   TemplateInfo,
-} from "@/lib/metadata/types";
+} from "@/lib/graphql/metadata/types";
 import { buildResponsiveGridClass } from "@/lib/form/renderers/utils";
 import { shouldEnforceOperationDeny } from "@/lib/form/utils/operationPermissions";
 import type {
@@ -1256,3 +1256,4 @@ export function createModelSection(
 }
 
 export default createModelSection;
+

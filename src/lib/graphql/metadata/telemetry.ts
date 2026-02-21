@@ -62,6 +62,9 @@ export function recordMetadataRequest(sample: MetadataRequestSample): void {
   state.lastSample = sample;
 }
 
+/**
+ * Returns a snapshot copy of the current metadata telemetry counters.
+ */
 export function getMetadataTelemetrySnapshot(): MetadataTelemetryState {
   return {
     totalRequests: state.totalRequests,
@@ -76,6 +79,9 @@ export function getMetadataTelemetrySnapshot(): MetadataTelemetryState {
   };
 }
 
+/**
+ * Resets all telemetry counters to their initial state.
+ */
 export function resetMetadataTelemetry(): void {
   state.totalRequests = 0;
   state.totalCacheHits = 0;
@@ -85,4 +91,3 @@ export function resetMetadataTelemetry(): void {
   state.profiles.filter = buildInitialProfileState();
   state.lastSample = null;
 }
-

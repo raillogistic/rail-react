@@ -41,8 +41,8 @@ function buildDefaultArguments(
 } {
   if (mode === "single") {
     return {
-      definitions: [`$id: ID!`, `$where: ${whereTypeName}`],
-      assignments: [`id: $id`, `where: $where`],
+      definitions: [`$id: ID!`],
+      assignments: [`id: $id`],
     };
   }
 
@@ -134,7 +134,11 @@ export function buildModelQueryDocument(
   const selection = buildModelQuerySelection({
     metadata: options.metadata,
     fields: options.fields,
+    includeFields: options.includeFields,
+    excludeFields: options.excludeFields,
     relations: options.relations,
+    includeRelations: options.includeRelations,
+    excludeRelations: options.excludeRelations,
     selection: options.selection,
     includeRowPermissions: options.includeRowPermissions,
   });

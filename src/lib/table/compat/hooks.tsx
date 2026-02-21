@@ -1,4 +1,4 @@
-// useGraphQLModelTable.tsx
+﻿// useGraphQLModelTable.tsx
 import { useState, useMemo, useEffect } from "react";
 import {
   gql,
@@ -19,8 +19,8 @@ import {
   type ModelTableFiltersOptions,
   ModelTableMetadataV2,
 } from "./types";
-import { useModelMetadata } from "@/lib/metadata/hooks";
-import type { ModelMetadata } from "@/lib/metadata/types";
+import { useModelMetadata } from "@/lib/graphql/metadata/hooks";
+import type { ModelMetadata } from "@/lib/graphql/metadata/types";
 import { DEFAULT_PAGINATION_ORDERING } from "@/graphql/queries";
 import { buildModelQueryField } from "../utils/queryNaming";
 import { toCamelCase } from "../utils/caseConversion";
@@ -35,9 +35,9 @@ import type {
 } from "@/lib/filters/types";
 
 /* ----------------------------
-   ⚡ Complete V2 Metadata Query
+   âš¡ Complete V2 Metadata Query
    ---------------------------- */
-// Replaced by @/lib/metadata/hooks
+// Replaced by @/lib/graphql/metadata/hooks
 
 /**
  * Convert V2 metadata to ModelTableMetadataV2 format
@@ -431,7 +431,7 @@ export function useModelTableMetadata(
   options?: { skip?: boolean }
 ) {
   void filtersOptions;
-  // Use the new hook from @/lib/metadata/hooks
+  // Use the new hook from @/lib/graphql/metadata/hooks
   const { metadata, loading, error, refetch } = useModelMetadata(
     appName,
     modelName,
@@ -695,7 +695,7 @@ const resolveOrderingWithDefault = (
 };
 
 /* ----------------------------
-   ⚙️ Helper: Build Data Query
+   âš™ï¸ Helper: Build Data Query
 ----------------------------- */
 function buildAutoDataQuery(
   modelName: string,
@@ -761,7 +761,7 @@ const buildInitialSortingState = (
 };
 
 /* ----------------------------
-   ⚡ Hook: useGraphQLModelTable
+   âš¡ Hook: useGraphQLModelTable
 ---------------------------- */
 export function useGraphQLModelTable({
   appName,
@@ -1130,7 +1130,7 @@ export function useGraphQLModelTable({
         meta: { display: f.display?.replace(".", "__") ?? f.name },
         cell: (info: any) => {
           const val = info.getValue();
-          if (f.field_type === "BooleanField") return val ? "✅" : "❌";
+          if (f.field_type === "BooleanField") return val ? "âœ…" : "âŒ";
           if (
             f.field_type === "DateField" ||
             f.field_type === "DateTimeField"
@@ -1235,3 +1235,4 @@ export function useGraphQLModelTable({
     supportsQuickSearch,
   };
 }
+

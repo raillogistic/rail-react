@@ -1,11 +1,11 @@
-import React from "react";
+﻿import React from "react";
 import { ThemeProvider } from "@/lib/theme/ThemeProvider";
 import { useAuthContext } from "@/auth/context";
 import { RouteBuilder } from "@/views/routes/RouteBuilder";
 import { Toaster } from "@/lib/components/ui/sonner";
 import { ActivityTimeoutModal } from "@/auth/components/ActivityTimeoutModal";
-import { useMetadataWarmup } from "@/lib/metadata/useMetadataWarmup";
-import { MetadataWarmupIndicator } from "@/lib/metadata/MetadataWarmupIndicator";
+import { useMetadataWarmup } from "@/lib/graphql/metadata/useMetadataWarmup";
+import { MetadataWarmupIndicator } from "@/lib/graphql/metadata/MetadataWarmupIndicator";
 import {
   ThemeKey,
   ThemeMode,
@@ -48,3 +48,4 @@ export const AuthDependentContent: React.FC = () => {
     </ThemeProvider>
   );
 };
+

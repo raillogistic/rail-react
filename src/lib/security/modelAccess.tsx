@@ -1,9 +1,9 @@
-import * as React from "react";
+﻿import * as React from "react";
 import { useModelTableMetadata } from "@/lib/table/compat/hooks";
 import type { ModelTableType, FieldPermissionSnapshot } from "@/lib/table/compat/types";
 import { useModelPermissions, type ModelPermissions } from "@/lib/auth/hooks/useModelPermissions";
 import { normalizeFieldPermission, type NormalizedFieldPermission } from "@/lib/modelMetadata/types";
-import { useMetadata } from "@/lib/metadata/gateway";
+import { useMetadata } from "@/lib/graphql/metadata/gateway";
 import type { ModelSchema } from "@/lib/table/types";
 
 export interface ModelAccessSnapshot {
@@ -226,3 +226,4 @@ export function useModelAccessContext(): ModelAccessSnapshot {
   }
   return ctx;
 }
+

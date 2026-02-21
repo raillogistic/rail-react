@@ -1,9 +1,8 @@
-import type { ModelMetadata } from "@/lib/metadata/types";
+﻿import type { ModelMetadata } from "@/lib/graphql/metadata/types";
 import type {
   BuildModelQueryVariablesOptions,
   ModelListQueryVariablesInput,
   ModelPageQueryVariablesInput,
-  ModelSingleQueryVariablesInput,
 } from "./types";
 import { toCamelCase, toGraphqlFieldName, toSnakeCase } from "./naming";
 
@@ -164,13 +163,10 @@ export function buildModelListQueryVariables(
  * Builds normalized variables for single queries.
  */
 export function buildModelSingleQueryVariables(
-  variables: ModelSingleQueryVariablesInput | undefined,
+  id: string | number | null | undefined,
 ): Record<string, unknown> {
   return {
-    ...(variables?.id !== undefined && variables?.id !== null
-      ? { id: variables.id }
-      : {}),
-    ...(variables?.where ? { where: variables.where } : {}),
-    ...(variables?.extra || {}),
+    ...(id !== undefined && id !== null ? { id } : {}),
   };
 }
+
