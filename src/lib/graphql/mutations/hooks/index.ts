@@ -1,4 +1,5 @@
 export * from "./shared";
+export * from "./useModelMutationModelForm";
 export * from "./useModelMutationBase";
 export * from "./useModelCreateMutation";
 export * from "./useModelUpdateMutation";

@@ -5,7 +5,17 @@ import type {
   MutationFunctionOptions,
   MutationHookOptions,
   OperationVariables,
+  QueryHookOptions,
 } from "@apollo/client";
+import type {
+  ModelFormContract,
+  ModelFormContractField,
+  ModelFormContractPermissions,
+  ModelFormErrorPolicy,
+  ModelFormInitialData,
+  ModelFormMode,
+  ModelFormMutationBindings,
+} from "@/lib/form/types/generatedContract";
 
 /**
  * Supported generated model mutation modes.
@@ -226,6 +236,66 @@ export interface UseModelMutationExecutionOptions {
    * Replace generated mutation field assignments.
    */
   customArgumentAssignments?: string[];
+  /**
+   * Prefers operation names from model-form mutation bindings when available.
+   */
+  preferContractBindings?: boolean;
+}
+
+/**
+ * Grouped model-form options for generated mutation hooks.
+ */
+export interface UseModelMutationModelFormOptions {
+  /**
+   * Preloaded model-form contract used to bypass contract fetching.
+   */
+  contract?: ModelFormContract | null;
+  /**
+   * Preloaded model-form initial data used to bypass initial-data fetching.
+   */
+  initialData?: ModelFormInitialData | null;
+  /**
+   * Contract mode used by `modelFormContract` query.
+   */
+  contractMode?: ModelFormMode;
+  /**
+   * Enables nested relation contract/initial-data semantics.
+   */
+  includeNested?: boolean;
+  /**
+   * Object identifier used by `modelFormInitialData` query.
+   */
+  objectId?: string | number | null;
+  /**
+   * Limits nested initial-data payload to selected nested fields.
+   */
+  initialDataNestedFields?: string[];
+  /**
+   * Runtime overrides forwarded to `modelFormInitialData`.
+   */
+  runtimeOverrides?: Array<Record<string, unknown>>;
+  /**
+   * Skips contract and initial-data queries.
+   */
+  skipModelForm?: boolean;
+  /**
+   * Skips `modelFormInitialData` query while keeping contract query enabled.
+   */
+  skipInitialData?: boolean;
+  /**
+   * Query options forwarded to `modelFormContract`.
+   */
+  contractQueryOptions?: QueryHookOptions<
+    Record<string, unknown>,
+    OperationVariables
+  >;
+  /**
+   * Query options forwarded to `modelFormInitialData`.
+   */
+  initialDataQueryOptions?: QueryHookOptions<
+    Record<string, unknown>,
+    OperationVariables
+  >;
 }
 
 /**
@@ -244,6 +314,10 @@ export interface UseModelMutationBaseOptions {
    * Mutation execution options grouped by purpose.
    */
   executionOptions?: UseModelMutationExecutionOptions;
+  /**
+   * Model-form options grouped by purpose.
+   */
+  modelFormOptions?: UseModelMutationModelFormOptions;
   /**
    * Apollo options forwarded to `useMutation`.
    */
@@ -316,6 +390,60 @@ export interface UseModelMutationBaseOptions {
    * Legacy flat field assignment override.
    */
   customArgumentAssignments?: string[];
+  /**
+   * Legacy flat contract-binding preference.
+   */
+  preferContractBindings?: boolean;
+  /**
+   * Legacy flat model-form contract.
+   */
+  contract?: ModelFormContract | null;
+  /**
+   * Legacy flat model-form initial data.
+   */
+  initialData?: ModelFormInitialData | null;
+  /**
+   * Legacy flat contract mode.
+   */
+  contractMode?: ModelFormMode;
+  /**
+   * Legacy flat nested-contract flag.
+   */
+  includeNested?: boolean;
+  /**
+   * Legacy flat object identifier used for initial-data fetch.
+   */
+  objectId?: string | number | null;
+  /**
+   * Legacy flat nested-fields filter for initial data.
+   */
+  initialDataNestedFields?: string[];
+  /**
+   * Legacy flat runtime overrides for initial-data fetch.
+   */
+  runtimeOverrides?: Array<Record<string, unknown>>;
+  /**
+   * Legacy flat skip flag for model-form query execution.
+   */
+  skipModelForm?: boolean;
+  /**
+   * Legacy flat skip flag for model-form initial-data query.
+   */
+  skipInitialData?: boolean;
+  /**
+   * Legacy flat query options for model-form contract query.
+   */
+  contractQueryOptions?: QueryHookOptions<
+    Record<string, unknown>,
+    OperationVariables
+  >;
+  /**
+   * Legacy flat query options for model-form initial-data query.
+   */
+  initialDataQueryOptions?: QueryHookOptions<
+    Record<string, unknown>,
+    OperationVariables
+  >;
 }
 
 /**
@@ -560,4 +688,78 @@ export interface UseModelMutationResult {
    * Resolved GraphQL operation name.
    */
   operationName: string;
+  /**
+   * Resolved model-form context used for ModelForm-ready orchestration.
+   */
+  modelForm: UseModelMutationModelFormResult;
+}
+
+/**
+ * Shared model-form context returned by generated mutation hooks.
+ */
+export interface UseModelMutationModelFormResult {
+  /**
+   * Resolved model-form contract.
+   */
+  contract: ModelFormContract | null;
+  /**
+   * Resolved model-form initial-data payload.
+   */
+  initialData: ModelFormInitialData | null;
+  /**
+   * Contract fields from model-form metadata.
+   */
+  fields: ModelFormContractField[];
+  /**
+   * Contract permissions block.
+   */
+  permissions: ModelFormContractPermissions | null;
+  /**
+   * Contract mutation bindings used for operation resolution.
+   */
+  mutationBindings: ModelFormMutationBindings | null;
+  /**
+   * Contract error policy.
+   */
+  errorPolicy: ModelFormErrorPolicy | null;
+  /**
+   * Initial object payload from model-form initial data.
+   */
+  initialObject: Record<string, unknown> | null;
+  /**
+   * Read-only object payload from model-form initial data.
+   */
+  readonlyObject: Record<string, unknown> | null;
+  /**
+   * Combined model-form loading state.
+   */
+  loading: boolean;
+  /**
+   * Contract query loading state.
+   */
+  contractLoading: boolean;
+  /**
+   * Initial-data query loading state.
+   */
+  initialDataLoading: boolean;
+  /**
+   * Combined model-form error state.
+   */
+  error: Error | undefined;
+  /**
+   * Contract query error state.
+   */
+  contractError: Error | undefined;
+  /**
+   * Initial-data query error state.
+   */
+  initialDataError: Error | undefined;
+  /**
+   * Refetch callback for model-form contract.
+   */
+  refetchContract: () => Promise<ModelFormContract | null>;
+  /**
+   * Refetch callback for model-form initial data.
+   */
+  refetchInitialData: () => Promise<ModelFormInitialData | null>;
 }

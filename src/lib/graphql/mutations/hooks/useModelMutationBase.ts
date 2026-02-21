@@ -8,6 +8,7 @@ import {
 import type {
   BuiltModelMutationDocument,
   ExecuteModelMutationOptions,
+  UseModelMutationModelFormResult,
   UseModelMutationResult,
 } from "../types";
 
@@ -23,6 +24,10 @@ export interface UseModelMutationBaseHookOptions {
    * Default variables merged into each execution call.
    */
   defaultVariables: Record<string, unknown>;
+  /**
+   * Resolved model-form context returned with mutation state.
+   */
+  modelForm: UseModelMutationModelFormResult;
   /**
    * Apollo options forwarded to `useMutation`.
    */
@@ -75,5 +80,6 @@ export function useModelMutationBase(
     mutationDocument: options.builtDocument.mutationDocument,
     mutationName: options.builtDocument.mutationName,
     operationName: options.builtDocument.operationName,
+    modelForm: options.modelForm,
   };
 }

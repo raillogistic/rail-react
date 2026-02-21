@@ -1,7 +1,11 @@
 import { useMemo } from "react";
 import { buildModelMutationDocument } from "../mutationBuilder";
 import { buildModelBulkCreateMutationVariables } from "../variables";
-import { resolveModelMutationOptions } from "./shared";
+import {
+  resolveContractBoundMutationName,
+  resolveModelMutationOptions,
+} from "./shared";
+import { useModelMutationModelForm } from "./useModelMutationModelForm";
 import { useModelMutationBase } from "./useModelMutationBase";
 import type {
   UseModelBulkCreateMutationOptions,
@@ -15,6 +19,33 @@ export function useModelBulkCreateMutation(
   options: UseModelBulkCreateMutationOptions,
 ): UseModelMutationResult {
   const resolved = resolveModelMutationOptions(options);
+  const modelForm = useModelMutationModelForm({
+    mode: "bulkCreate",
+    app: resolved.app,
+    model: resolved.model,
+    contract: resolved.contract,
+    initialData: resolved.initialData,
+    contractMode: resolved.contractMode,
+    includeNested: resolved.includeNested,
+    objectId: resolved.objectId,
+    initialDataNestedFields: resolved.initialDataNestedFields,
+    runtimeOverrides: resolved.runtimeOverrides,
+    skipModelForm: resolved.skipModelForm,
+    skipInitialData: resolved.skipInitialData,
+    contractQueryOptions:
+      resolved.contractQueryOptions as Record<string, unknown>,
+    initialDataQueryOptions:
+      resolved.initialDataQueryOptions as Record<string, unknown>,
+  });
+
+  const contractMutationName =
+    resolved.preferContractBindings === false
+      ? undefined
+      : resolveContractBoundMutationName(
+          "bulkCreate",
+          modelForm.mutationBindings,
+        );
+  const mutationName = resolved.mutationName || contractMutationName;
 
   const builtDocument = useMemo(
     () =>
@@ -24,7 +55,7 @@ export function useModelBulkCreateMutation(
         app: resolved.app,
         selection: resolved.selection,
         operationName: resolved.operationName,
-        mutationName: resolved.mutationName,
+        mutationName,
         responseAlias: resolved.responseAlias,
         inputTypeName: resolved.inputTypeName,
         customArgumentDefinitions: resolved.customArgumentDefinitions,
@@ -35,8 +66,8 @@ export function useModelBulkCreateMutation(
       resolved.customArgumentAssignments,
       resolved.customArgumentDefinitions,
       resolved.inputTypeName,
+      mutationName,
       resolved.model,
-      resolved.mutationName,
       resolved.operationName,
       resolved.responseAlias,
       resolved.selection,
@@ -51,6 +82,7 @@ export function useModelBulkCreateMutation(
   return useModelMutationBase({
     builtDocument,
     defaultVariables: variables,
+    modelForm,
     apollo: options.apollo,
   });
 }

@@ -172,5 +172,7 @@ npm run test -- src/lib/graphql/__tests__ --run
 
 - Use `ModelTableV2` when you also need UI state, columns, and toolbar behavior:
   [ModelTableV2 guide](./tablev2.md)
+- Use generated mutation hooks for CRUD, bulk, and model method mutations:
+  [GraphQL model mutation hooks](./graphql-model-mutation-hooks.md)
 - Use `FilterPanel` to build complex where payloads for these hooks:
   [Filter panel guide](./filter-panel.md)

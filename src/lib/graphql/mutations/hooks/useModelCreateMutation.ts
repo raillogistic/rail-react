@@ -1,7 +1,11 @@
 import { useMemo } from "react";
 import { buildModelMutationDocument } from "../mutationBuilder";
 import { buildModelCreateMutationVariables } from "../variables";
-import { resolveModelMutationOptions } from "./shared";
+import {
+  resolveContractBoundMutationName,
+  resolveModelMutationOptions,
+} from "./shared";
+import { useModelMutationModelForm } from "./useModelMutationModelForm";
 import { useModelMutationBase } from "./useModelMutationBase";
 import type {
   UseModelCreateMutationOptions,
@@ -15,6 +19,30 @@ export function useModelCreateMutation(
   options: UseModelCreateMutationOptions,
 ): UseModelMutationResult {
   const resolved = resolveModelMutationOptions(options);
+  const modelForm = useModelMutationModelForm({
+    mode: "create",
+    app: resolved.app,
+    model: resolved.model,
+    contract: resolved.contract,
+    initialData: resolved.initialData,
+    contractMode: resolved.contractMode,
+    includeNested: resolved.includeNested,
+    objectId: resolved.objectId,
+    initialDataNestedFields: resolved.initialDataNestedFields,
+    runtimeOverrides: resolved.runtimeOverrides,
+    skipModelForm: resolved.skipModelForm,
+    skipInitialData: resolved.skipInitialData,
+    contractQueryOptions:
+      resolved.contractQueryOptions as Record<string, unknown>,
+    initialDataQueryOptions:
+      resolved.initialDataQueryOptions as Record<string, unknown>,
+  });
+
+  const contractMutationName =
+    resolved.preferContractBindings === false
+      ? undefined
+      : resolveContractBoundMutationName("create", modelForm.mutationBindings);
+  const mutationName = resolved.mutationName || contractMutationName;
 
   const builtDocument = useMemo(
     () =>
@@ -24,7 +52,7 @@ export function useModelCreateMutation(
         app: resolved.app,
         selection: resolved.selection,
         operationName: resolved.operationName,
-        mutationName: resolved.mutationName,
+        mutationName,
         responseAlias: resolved.responseAlias,
         inputTypeName: resolved.inputTypeName,
         customArgumentDefinitions: resolved.customArgumentDefinitions,
@@ -35,8 +63,8 @@ export function useModelCreateMutation(
       resolved.customArgumentAssignments,
       resolved.customArgumentDefinitions,
       resolved.inputTypeName,
+      mutationName,
       resolved.model,
-      resolved.mutationName,
       resolved.operationName,
       resolved.responseAlias,
       resolved.selection,
@@ -51,6 +79,7 @@ export function useModelCreateMutation(
   return useModelMutationBase({
     builtDocument,
     defaultVariables: variables,
+    modelForm,
     apollo: options.apollo,
   });
 }
