@@ -1,7 +1,13 @@
 import React from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { ModelTableV2Content } from "../ModelTableV2Content";
+import { TooltipProvider } from "@/lib/components/ui/tooltip";
+import { ModelTableBulkActionsBar } from "../content/ModelTableBulkActionsBar";
+import { ModelTableDialogs } from "../content/ModelTableDialogs";
+import { ModelTableHeader } from "../content/ModelTableHeader";
+import { ModelTableToolbarSection } from "../content/ModelTableToolbarSection";
+import { ModelTableTopActions } from "../content/ModelTableTopActions";
+import { useModelTableContentController } from "../content/useModelTableContentController";
 
 const mockUseMetadata = vi.fn();
 const mockUseTable = vi.fn();
@@ -113,7 +119,28 @@ async function openExcelTemplatesDropdown() {
   });
 }
 
-describe("ModelTableV2Content template actions", () => {
+function DynamicContentSectionsHarness() {
+  const controller = useModelTableContentController({});
+  if (!controller.metadata) {
+    return null;
+  }
+
+  return (
+    <TooltipProvider delayDuration={200}>
+      <div>
+        <ModelTableHeader
+          controller={controller}
+          TopActionsComponent={ModelTableTopActions}
+        />
+        <ModelTableToolbarSection controller={controller} />
+        <ModelTableBulkActionsBar controller={controller} />
+        <ModelTableDialogs controller={controller} />
+      </div>
+    </TooltipProvider>
+  );
+}
+
+describe("Dynamic section composition template actions", () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.stubGlobal("fetch", vi.fn());
@@ -168,7 +195,7 @@ describe("ModelTableV2Content template actions", () => {
       rowSelection: { "1": true },
     });
 
-    render(<ModelTableV2Content />);
+    render(<DynamicContentSectionsHarness />);
 
     await openPdfTemplatesDropdown();
     fireEvent.click(screen.getByText(/Order invoice/i));
@@ -229,7 +256,7 @@ describe("ModelTableV2Content template actions", () => {
       rowSelection: { "1": true },
     });
 
-    render(<ModelTableV2Content />);
+    render(<DynamicContentSectionsHarness />);
 
     await openExcelTemplatesDropdown();
     fireEvent.click(screen.getByText(/Order export/i));
@@ -283,7 +310,7 @@ describe("ModelTableV2Content template actions", () => {
       rowSelection: { "9": true, "2": true },
     });
 
-    render(<ModelTableV2Content />);
+    render(<DynamicContentSectionsHarness />);
 
     await openPdfTemplatesDropdown();
     fireEvent.click(screen.getByText(/Order invoice/i));
@@ -323,7 +350,7 @@ describe("ModelTableV2Content template actions", () => {
       rowSelection: {},
     });
 
-    render(<ModelTableV2Content />);
+    render(<DynamicContentSectionsHarness />);
 
     await openPdfTemplatesDropdown();
     const actionItem = screen.getByRole("button", {

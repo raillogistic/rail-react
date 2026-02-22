@@ -19,6 +19,7 @@ import {
   type DynamicTableColumnInput,
 } from "@/lib/dynamic-table";
 import type { DynamicTableFeatureFlags } from "@/lib/dynamic-table";
+import { TooltipProvider } from "@/lib/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { MetadataProvider, useMetadata } from "../context/MetadataContext";
 import { TableProvider, useTable } from "../context/TableContext";
@@ -35,6 +36,8 @@ import type {
 } from "../types";
 import type {
   DynamicModelTableProps,
+  ModelTableFilterPanelProps,
+  ModelTableV2TopActionsInput,
   ModelTableV2PerformanceOptions,
   ModelTableV2TableConfig,
   ModelTableV2ViewOptions,
@@ -50,8 +53,22 @@ import { useTableLayout } from "../hooks/useTableLayout";
 import { useTableQueryConfig } from "../hooks/useTableQueryConfig";
 import { useTableFilters } from "../hooks/useTableFilters";
 import { ColumnFilter } from "./ColumnFilter";
-import { ModelTableV2Content } from "./ModelTableV2Content";
 import { RowActions } from "./row/RowActions";
+import {
+  useModelTableContentController,
+  type UseModelTableContentControllerInput,
+} from "./content/useModelTableContentController";
+import { ModelTableBulkActionsBar } from "./content/ModelTableBulkActionsBar";
+import { ModelTableDialogs } from "./content/ModelTableDialogs";
+import { ModelTableFooter } from "./content/ModelTableFooter";
+import { ModelTableHeader } from "./content/ModelTableHeader";
+import { ModelTableToolbarSection } from "./content/ModelTableToolbarSection";
+import { ModelTableTopActions } from "./content/ModelTableTopActions";
+import type {
+  ModelTableContentConfig,
+  ModelTableContentSectionVisibility,
+  ModelTableTopActionsSlotProps,
+} from "./content/types";
 import {
   RelationStatsHover,
   type StatsRelationMeta,
@@ -75,10 +92,13 @@ import {
  */
 type DynamicBaseTableContentProps = {
   persistenceKey?: string;
-  children?: React.ReactNode;
+  filterPanel?: ModelTableFilterPanelProps;
   tableConfig?: ModelTableV2TableConfig;
   view?: ModelTableV2ViewOptions;
   performance?: ModelTableV2PerformanceOptions;
+  quickSearch?: boolean;
+  topActions?: ModelTableV2TopActionsInput;
+  content?: ModelTableContentConfig;
   hideTableOnMobile?: boolean;
   fields?: BaseModelTableFieldsInput;
   relations?: Record<string, BaseModelTableRelationConfig>;
@@ -90,6 +110,38 @@ type DynamicBaseTableContentProps = {
   enableSelection?: boolean;
   columnActions?: BaseModelTableColumnActionsInput;
 };
+
+/**
+ * Default section visibility when no content.show overrides are provided.
+ */
+const DEFAULT_SECTION_VISIBILITY: Required<ModelTableContentSectionVisibility> =
+  {
+    header: true,
+    topActions: true,
+    toolbar: true,
+    bulkActionsBar: true,
+    footer: false,
+    dialogs: true,
+  };
+
+/**
+ * Resolves effective section visibility from defaults and optional overrides.
+ */
+function resolveSectionVisibility(
+  visibility?: ModelTableContentSectionVisibility,
+): Required<ModelTableContentSectionVisibility> {
+  return {
+    ...DEFAULT_SECTION_VISIBILITY,
+    ...(visibility ?? {}),
+  };
+}
+
+/**
+ * Empty top-actions renderer used when topActions are intentionally hidden.
+ */
+function HiddenTopActions({}: ModelTableTopActionsSlotProps) {
+  return null;
+}
 
 /**
  * Returns true when the input is a plain object record.
@@ -245,8 +297,11 @@ function resolveRowId(
  */
 function DynamicBaseTableContent({
   persistenceKey,
-  children,
+  filterPanel,
   tableConfig,
+  quickSearch,
+  topActions,
+  content,
   performance,
   hideTableOnMobile,
   fields,
@@ -820,6 +875,28 @@ function DynamicBaseTableContent({
     }
   }, [groupCollapsed, groupingField]);
 
+  const sectionControllerInput: UseModelTableContentControllerInput = {
+    filterPanel,
+    tableConfig,
+    quickSearch,
+    fields,
+    topActions,
+  };
+  const sectionController = useModelTableContentController(sectionControllerInput);
+  const sectionVisibility = resolveSectionVisibility(content?.show);
+  const HeaderSlot = content?.slots?.Header ?? ModelTableHeader;
+  const TopActionsSlot = content?.slots?.TopActions ?? ModelTableTopActions;
+  const ToolbarSlot = content?.slots?.Toolbar ?? ModelTableToolbarSection;
+  const BulkActionsBarSlot =
+    content?.slots?.BulkActionsBar ?? ModelTableBulkActionsBar;
+  const FooterSlot = content?.slots?.Footer ?? ModelTableFooter;
+  const DialogsSlot = content?.slots?.Dialogs ?? ModelTableDialogs;
+  const headerTopActionsSlot = sectionVisibility.topActions
+    ? TopActionsSlot
+    : HiddenTopActions;
+  const showStandaloneTopActions =
+    !sectionVisibility.header && sectionVisibility.topActions;
+
   if (metadataLoading) {
     return <LoadingSkeleton />;
   }
@@ -828,85 +905,117 @@ function DynamicBaseTableContent({
   }
 
   return (
-    <div className="flex h-full w-full max-w-full min-w-0 flex-col overflow-hidden animate-in fade-in duration-700 p-1 sm:p-2">
-      <div className="flex-none">{children}</div>
+    <TooltipProvider delayDuration={200}>
+      <div className="flex h-full w-full max-w-full min-w-0 flex-col overflow-hidden animate-in fade-in duration-700 p-1 sm:p-2">
+        {sectionController.metadata && (
+          <div className="flex-none">
+            <div className="flex flex-col gap-6 w-full animate-in fade-in duration-700">
+              {sectionVisibility.header && (
+                <HeaderSlot
+                  controller={sectionController}
+                  TopActionsComponent={headerTopActionsSlot}
+                />
+              )}
 
-      {hideTableOnMobile && (
-        <div className="flex-1 min-h-0 min-w-0 my-2 md:hidden">
-          <TableMobileCard
-            emptyState={tableConfig?.emptyState}
-            refetch={refetch}
-            columnActions={columnActions}
-          />
-        </div>
-      )}
+              {showStandaloneTopActions && (
+                <div className="flex w-full justify-end px-1">
+                  <TopActionsSlot controller={sectionController} />
+                </div>
+              )}
 
-      <div
-        className={cn(
-          "flex-1 min-h-0 min-w-0 transition-all duration-300 my-2",
-          hideTableOnMobile ? "hidden md:block" : "block",
+              {sectionVisibility.toolbar && (
+                <ToolbarSlot controller={sectionController} />
+              )}
+              {sectionVisibility.bulkActionsBar && (
+                <BulkActionsBarSlot controller={sectionController} />
+              )}
+              {sectionVisibility.footer && (
+                <FooterSlot controller={sectionController} />
+              )}
+            </div>
+          </div>
         )}
-      >
-        <div ref={tableScrollRef} className="h-full min-h-0 w-full">
-          <DynamicTable
-            className="h-full"
-            rows={data}
-            columns={dynamicColumns}
-            getRowId={(row, index) => resolveRowId(row, index, primaryKey)}
-            loading={tableLoading}
-            loadingText={tableConfig?.loadingText}
-            emptyState={tableConfig?.emptyState ?? "Aucun resultat."}
-            state={dynamicState}
-            onStateChange={handleStateChange}
-            onOrderByChange={handleOrderByChange}
-            onRowSelectionChange={handleRowSelectionChange}
-            onPaginationChange={handlePaginationChange}
-            sortMode="server"
-            paginationMode="server"
-            features={features}
-            layout={{
-              containerClassName:
-                "group/frame relative flex h-full flex-col overflow-hidden rounded-[1.25rem] border border-border/40 bg-card/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-xl transition-all duration-500 hover:shadow-[0_8px_40px_rgb(0,0,0,0.08)] hover:border-border/60",
-              actions: {
-                headerLabel: tableConfig?.actionsLabel ?? "Actions",
-                sticky: true,
-                size: 140,
-                renderCell: ({ row }) => (
-                  <RowActions
-                    row={row}
-                    data={data}
-                    refetch={refetch}
-                    permissions={
-                      row.rowPermissions as RowMutationPermissions | undefined
-                    }
-                    columnActions={columnActions}
-                  />
-                ),
-              },
-            }}
-            totalRows={pagination.totalKnown ? pagination.total : undefined}
-            pageCount={pagination.totalKnown ? pagination.numPages : undefined}
-            hasNextPage={pagination.hasNextPage}
-            hasPreviousPage={pagination.hasPreviousPage}
-            onLoadMore={() => {
-              if (!isInfiniteMode || tableLoading || !pagination.hasNextPage) {
-                return;
-              }
-              setPage(pagination.page + 1);
-            }}
-          />
+
+        {hideTableOnMobile && (
+          <div className="flex-1 min-h-0 min-w-0 my-2 md:hidden">
+            <TableMobileCard
+              emptyState={tableConfig?.emptyState}
+              refetch={refetch}
+              columnActions={columnActions}
+            />
+          </div>
+        )}
+
+        <div
+          className={cn(
+            "flex-1 min-h-0 min-w-0 transition-all duration-300 my-2",
+            hideTableOnMobile ? "hidden md:block" : "block",
+          )}
+        >
+          <div ref={tableScrollRef} className="h-full min-h-0 w-full">
+            <DynamicTable
+              className="h-full"
+              rows={data}
+              columns={dynamicColumns}
+              getRowId={(row, index) => resolveRowId(row, index, primaryKey)}
+              loading={tableLoading}
+              loadingText={tableConfig?.loadingText}
+              emptyState={tableConfig?.emptyState ?? "Aucun resultat."}
+              state={dynamicState}
+              onStateChange={handleStateChange}
+              onOrderByChange={handleOrderByChange}
+              onRowSelectionChange={handleRowSelectionChange}
+              onPaginationChange={handlePaginationChange}
+              sortMode="server"
+              paginationMode="server"
+              features={features}
+              layout={{
+                containerClassName:
+                  "group/frame relative flex h-full flex-col overflow-hidden rounded-[1.25rem] border border-border/40 bg-card/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-xl transition-all duration-500 hover:shadow-[0_8px_40px_rgb(0,0,0,0.08)] hover:border-border/60",
+                actions: {
+                  headerLabel: tableConfig?.actionsLabel ?? "Actions",
+                  sticky: true,
+                  size: 140,
+                  renderCell: ({ row }) => (
+                    <RowActions
+                      row={row}
+                      data={data}
+                      refetch={refetch}
+                      permissions={
+                        row.rowPermissions as RowMutationPermissions | undefined
+                      }
+                      columnActions={columnActions}
+                    />
+                  ),
+                },
+              }}
+              totalRows={pagination.totalKnown ? pagination.total : undefined}
+              pageCount={pagination.totalKnown ? pagination.numPages : undefined}
+              hasNextPage={pagination.hasNextPage}
+              hasPreviousPage={pagination.hasPreviousPage}
+              onLoadMore={() => {
+                if (!isInfiniteMode || tableLoading || !pagination.hasNextPage) {
+                  return;
+                }
+                setPage(pagination.page + 1);
+              }}
+            />
+          </div>
         </div>
+
+        {!isInfiniteMode && (
+          <TablePagination
+            labels={tableConfig?.paginationLabels}
+            enableSelection={resolvedEnableSelection}
+          />
+        )}
+
+        {dataError && <DataErrorDisplay error={dataError} />}
+        {sectionController.metadata && sectionVisibility.dialogs && (
+          <DialogsSlot controller={sectionController} />
+        )}
       </div>
-
-      {!isInfiniteMode && (
-        <TablePagination
-          labels={tableConfig?.paginationLabels}
-          enableSelection={resolvedEnableSelection}
-        />
-      )}
-
-      {dataError && <DataErrorDisplay error={dataError} />}
-    </div>
+    </TooltipProvider>
   );
 }
 
@@ -938,9 +1047,13 @@ export function DynamicModelTable({
         >
           <DynamicBaseTableContent
             persistenceKey={baseTable?.persistenceKey}
+            filterPanel={filterPanel}
             tableConfig={baseTable?.tableConfig}
             view={baseTable?.view}
             performance={baseTable?.performance}
+            quickSearch={baseTable?.quickSearch ?? true}
+            topActions={baseTable?.topActions}
+            content={baseTable?.content}
             hideTableOnMobile={baseTable?.hideTableOnMobile ?? true}
             fields={baseTable?.fields}
             relations={baseTable?.relations}
@@ -951,16 +1064,7 @@ export function DynamicModelTable({
             disableSorting={baseTable?.disableSorting}
             enableSelection={baseTable?.enableSelection}
             columnActions={baseTable?.columnActions}
-          >
-            <ModelTableV2Content
-              filterPanel={filterPanel}
-              tableConfig={baseTable?.tableConfig}
-              quickSearch={baseTable?.quickSearch ?? true}
-              fields={baseTable?.fields}
-              topActions={baseTable?.topActions}
-              content={baseTable?.content}
-            />
-          </DynamicBaseTableContent>
+          />
         </TableProvider>
       </MetadataProvider>
     </div>
