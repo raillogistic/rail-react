@@ -20,6 +20,7 @@ export * from "./components/BaseTableContent";
 export * from "./components/BaseModelTable";
 export * from "./components/ModelTableV2Content";
 export * from "./components/ModelTableV2";
+export * from "./components/DynamicModelTable";
 
 export * from "./builders";
 export * from "./utils";

@@ -201,6 +201,7 @@ function buildLeafColumnDef<TRow extends Record<string, unknown>>(
     maxSize: column.maxSize,
     meta: {
       ...column.meta,
+      headerMode: column.headerMode,
       title: typeof column.title === "string" ? column.title : undefined,
       className: column.className,
       headerClassName: column.headerClassName,

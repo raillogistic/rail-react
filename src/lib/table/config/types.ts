@@ -146,3 +146,8 @@ export interface ModelTableV2Props {
   filterPanel?: ModelTableFilterPanelProps;
   baseTable?: Omit<BaseModelTableProps, "app" | "model" | "children">;
 }
+
+/**
+ * Public props contract for the DynamicTable-backed model table implementation.
+ */
+export interface DynamicModelTableProps extends ModelTableV2Props {}

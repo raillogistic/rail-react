@@ -98,6 +98,8 @@ export interface DynamicTableCellClassContext<
 export interface DynamicTableColumnSpec<TRow extends Record<string, unknown>> {
   /** Stable column id. */
   id: string;
+  /** Controls whether this column uses built-in or fully custom header rendering. */
+  headerMode?: "menu" | "custom";
   /** Optional static title used for default header rendering. */
   title?: React.ReactNode;
   /** Optional accessor key for simple field columns. */
@@ -339,4 +341,3 @@ export interface DynamicTableResolvedLayout<
   /** Actions layout is optional in resolved layout as well. */
   actions?: DynamicTableActionsLayout<TRow>;
 }
-

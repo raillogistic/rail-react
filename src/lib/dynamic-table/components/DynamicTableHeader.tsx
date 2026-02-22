@@ -82,6 +82,20 @@ function resolveHeaderLabel<TRow extends Record<string, unknown>>(
 }
 
 /**
+ * Resolves the configured leaf-header rendering mode for a column.
+ */
+function resolveHeaderMode<TRow extends Record<string, unknown>>(
+  header: Header<TRow, unknown>,
+): "menu" | "custom" {
+  const meta = header.column.columnDef.meta as
+    | {
+        headerMode?: "menu" | "custom";
+      }
+    | undefined;
+  return meta?.headerMode === "custom" ? "custom" : "menu";
+}
+
+/**
  * Resolves header-cell style based on the current computed column width.
  */
 function resolveHeaderStyle<TRow extends Record<string, unknown>>(
@@ -396,6 +410,11 @@ export function DynamicTableHeader<TRow extends Record<string, unknown>>({
               );
             }
 
+            const headerClassName = (
+              header.column.columnDef.meta as { headerClassName?: string } | undefined
+            )?.headerClassName;
+            const isCustomHeader = resolveHeaderMode(header) === "custom";
+
             return (
               <DraggableHeaderCell
                 key={header.id}
@@ -404,34 +423,40 @@ export function DynamicTableHeader<TRow extends Record<string, unknown>>({
                 resizable={resizable}
                 stickyClassName={stickyClassName}
               >
-                <div
-                  className={cn(
-                    "flex h-full items-center",
-                    (header.column.columnDef.meta as { headerClassName?: string } | undefined)?.headerClassName,
-                  )}
-                >
-                  <div className="min-w-0 flex-1">
-                    <ColumnMenu
-                      header={header}
-                      table={table}
-                      features={features}
-                      state={state}
-                      onResetLayout={onResetLayout}
-                    />
+                {isCustomHeader ? (
+                  <div className={cn("flex h-full items-center", headerClassName)}>
+                    <div className="min-w-0 flex-1">
+                      {flexRender(
+                        header.column.columnDef.header,
+                        header.getContext(),
+                      )}
+                    </div>
                   </div>
-                  <button
-                    type="button"
-                    aria-label={`Toggle sorting for ${resolveHeaderLabel(header)}`}
-                    className="mr-1 rounded px-1 py-0.5 text-[10px] font-bold text-muted-foreground hover:bg-muted/30 hover:text-primary"
-                    onClick={() => handleHeaderSort(header)}
-                  >
-                    {header.column.getIsSorted() === "asc"
-                      ? "↑"
-                      : header.column.getIsSorted() === "desc"
-                        ? "↓"
-                        : "↕"}
-                  </button>
-                </div>
+                ) : (
+                  <div className={cn("flex h-full items-center", headerClassName)}>
+                    <div className="min-w-0 flex-1">
+                      <ColumnMenu
+                        header={header}
+                        table={table}
+                        features={features}
+                        state={state}
+                        onResetLayout={onResetLayout}
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      aria-label={`Toggle sorting for ${resolveHeaderLabel(header)}`}
+                      className="mr-1 rounded px-1 py-0.5 text-[10px] font-bold text-muted-foreground hover:bg-muted/30 hover:text-primary"
+                      onClick={() => handleHeaderSort(header)}
+                    >
+                      {header.column.getIsSorted() === "asc"
+                        ? "^"
+                        : header.column.getIsSorted() === "desc"
+                          ? "v"
+                          : "<>"}
+                    </button>
+                  </div>
+                )}
               </DraggableHeaderCell>
             );
           })}
