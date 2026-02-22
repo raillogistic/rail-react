@@ -1,0 +1,101 @@
+{
+  "topFolders": {
+    "app": "app",
+    "processes": "processes",
+    "pages": "pages",
+    "widgets": "widgets",
+    "features": "features",
+    "entities": "entities",
+    "shared": "shared",
+    "auth": "features",
+    "lib": "pages",
+    "graphql": "shared",
+    "hooks": "shared",
+    "utils": "shared",
+    "projects": "app",
+    "apps": "app",
+    "styles": "shared"
+  },
+  "pathOverrides": [
+    {
+      "prefix": "auth/pages",
+      "layer": "pages"
+    },
+    {
+      "prefix": "auth/components",
+      "layer": "widgets"
+    },
+    {
+      "prefix": "auth/index.ts",
+      "layer": "pages"
+    },
+    {
+      "prefix": "auth/LoginPage.tsx",
+      "layer": "pages"
+    },
+    {
+      "prefix": "auth/ForgotPasswordPage.tsx",
+      "layer": "pages"
+    },
+    {
+      "prefix": "auth/ResetPasswordPage.tsx",
+      "layer": "pages"
+    },
+    {
+      "prefix": "features/import",
+      "layer": "pages"
+    },
+    {
+      "prefix": "shared/api/apollo",
+      "layer": "features"
+    },
+    {
+      "prefix": "lib/theme",
+      "layer": "widgets"
+    },
+    {
+      "prefix": "lib/table",
+      "layer": "pages"
+    },
+    {
+      "prefix": "lib/security",
+      "layer": "pages"
+    },
+    {
+      "prefix": "lib/import",
+      "layer": "pages"
+    },
+    {
+      "prefix": "lib/reporting",
+      "layer": "pages"
+    },
+    {
+      "prefix": "lib/modelMetadata",
+      "layer": "pages"
+    },
+    {
+      "prefix": "lib/components",
+      "layer": "widgets"
+    },
+    {
+      "prefix": "lib/utils",
+      "layer": "shared"
+    },
+    {
+      "prefix": "lib/graphql",
+      "layer": "shared"
+    },
+    {
+      "prefix": "lib/form/types",
+      "layer": "shared"
+    },
+    {
+      "prefix": "lib/filters/queries",
+      "layer": "shared"
+    },
+    {
+      "prefix": "lib/table/queries",
+      "layer": "shared"
+    }
+  ]
+}

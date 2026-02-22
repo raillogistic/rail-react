@@ -15,9 +15,9 @@ import { ProtectedRoute } from "./ProtectedRoute";
 import { PublicRoute } from "./PublicRoute";
 
 // Import page components
-import { LoginPage, ForgotPasswordPage, ResetPasswordPage } from "@/auth/pages";
+import { LoginPage, ForgotPasswordPage, ResetPasswordPage } from "@/pages/auth";
 import { MainApp } from "@/app/shell/MainApp";
-import { ModelImportPage } from "@/features/import/pages";
+import { ModelImportPage } from "@/lib/import/pages/ModelImportPage";
 
 // Import view components
 

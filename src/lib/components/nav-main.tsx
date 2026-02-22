@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { ChevronRight } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
-import { NAVIGATION_LINKS } from "@/app/router/navigation";
+import type { NavigationSection } from "@/shared/routing/navigation";
 import { useTheme } from "@/lib/theme";
 import {
   Collapsible,
@@ -28,7 +28,11 @@ import { cn } from "@/lib/utils";
  * The component renders sections with collapsible items and highlights the
  * active branch based on the current pathname.
  */
-export function NavMain() {
+export type NavMainProps = {
+  navigationLinks: NavigationSection[];
+};
+
+export function NavMain({ navigationLinks }: NavMainProps) {
   const location = useLocation();
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
@@ -36,7 +40,7 @@ export function NavMain() {
   const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>(
     () => {
       const initial: Record<string, boolean> = {};
-      for (const section of NAVIGATION_LINKS) {
+      for (const section of navigationLinks) {
         if (section.id === "referentials") {
           for (const item of section.items) {
             if (item.children?.length) {
@@ -49,14 +53,13 @@ export function NavMain() {
     }
   );
 
-  const isExactPath = (targetPath: string): boolean =>
-    location.pathname === targetPath;
-
   useEffect(() => {
     setExpandedItems((prev) => {
       let next = prev;
+      const isExactPath = (targetPath: string): boolean =>
+        location.pathname === targetPath;
 
-      for (const section of NAVIGATION_LINKS) {
+      for (const section of navigationLinks) {
         for (const item of section.items) {
           if (!item.children?.length) {
             continue;
@@ -75,13 +78,13 @@ export function NavMain() {
 
       return next;
     });
-  }, [location.pathname]);
+  }, [location.pathname, navigationLinks]);
 
   const { layout } = useTheme();
 
   const visibleSections =
     layout === "mixed"
-      ? NAVIGATION_LINKS.filter((section) =>
+      ? navigationLinks.filter((section) =>
           section.items.some(
             (item) =>
               location.pathname.startsWith(item.path) ||
@@ -90,7 +93,7 @@ export function NavMain() {
               )
           )
         )
-      : NAVIGATION_LINKS;
+      : navigationLinks;
 
   return (
     <SidebarGroup className="py-0">
@@ -110,7 +113,11 @@ export function NavMain() {
                     (child) => !child.hidden
                   );
                   const hasChildren = Boolean(visibleChildren?.length);
-                  const isItemActive = isExactPath(item.path) || visibleChildren?.some(c => isExactPath(c.path));
+                  const isItemActive =
+                    location.pathname === item.path ||
+                    visibleChildren?.some((child) =>
+                      location.pathname === child.path
+                    );
                   const isOpen = hasChildren && Boolean(expandedItems[item.id]);
 
                   if (!hasChildren) {
@@ -214,7 +221,8 @@ export function NavMain() {
                         <CollapsibleContent className="overflow-hidden transition-all data-[state=closed]:animate-collapse-up data-[state=open]:animate-collapse-down">
                           <SidebarMenuSub className="mt-1 ml-4 gap-1 border-l border-primary/10 pl-2">
                             {visibleChildren?.map((child) => {
-                              const isChildActive = isExactPath(child.path);
+                              const isChildActive =
+                                location.pathname === child.path;
                               return (
                                 <SidebarMenuSubItem
                                   key={child.path}

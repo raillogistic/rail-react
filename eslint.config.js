@@ -22,6 +22,8 @@ export default defineConfig([
     "build",
     "coverage",
     "*.min.js",
+    "src/schema.ts",
+    "src/models.ts",
   ]),
   {
     files: ['**/*.{ts,tsx}'],
@@ -36,6 +38,7 @@ export default defineConfig([
       globals: globals.browser,
     },
     rules: {
+      "react-refresh/only-export-components": "off",
       "no-restricted-imports": [
         "error",
         {

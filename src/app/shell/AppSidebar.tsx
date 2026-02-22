@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import { NavMain } from "@/lib/components/nav-main";
 import { NavUser } from "@/lib/components/nav-user";
-import { CommandMenu } from "@/lib/components/command-menu";
+import { NAVIGATION_LINKS } from "@/app/router/navigation";
 import {
   Sidebar,
   SidebarContent,
@@ -13,16 +13,16 @@ import {
 import {
   Tooltip,
   TooltipContent,
-  TooltipTrigger,
   TooltipProvider,
+  TooltipTrigger,
 } from "@/lib/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/lib/theme";
+import { BRANDING, SYSTEM_STATUS } from "@/shared/config/branding";
 import LogoMark from "@/assets/logos/logo.png";
 import { Badge } from "@/lib/components/ui/badge";
-import { Sparkles, Zap, ShieldCheck, ArrowRight } from "lucide-react";
-import { Card, CardContent } from "@/lib/components/ui/card";
-import { Button } from "@/lib/components/ui/button";
+import { Zap } from "lucide-react";
+import { useAuthContext } from "@/auth/context";
 
 interface MousePosition {
   x: number;
@@ -30,27 +30,27 @@ interface MousePosition {
 }
 
 /**
- * High-fidelity App Sidebar with interactive effects and modern layout.
- * Anchors main navigation and system status.
+ * Authenticated app sidebar.
+ * Hosts brand identity, navigation tree, and account footer.
  */
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { layout } = useTheme();
   const { state } = useSidebar();
-  const collapsibleMode: React.ComponentProps<typeof Sidebar>["collapsible"] =
-    "offcanvas";
+  const { user, logout } = useAuthContext();
   const isCollapsed = state === "collapsed";
   const sidebarRef = useRef<HTMLDivElement>(null);
   const [mousePos, setMousePos] = useState<MousePosition>({ x: 0, y: 0 });
 
   useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (sidebarRef.current) {
-        const rect = sidebarRef.current.getBoundingClientRect();
-        setMousePos({
-          x: e.clientX - rect.left,
-          y: e.clientY - rect.top,
-        });
+    const handleMouseMove = (event: MouseEvent) => {
+      if (!sidebarRef.current) {
+        return;
       }
+      const rect = sidebarRef.current.getBoundingClientRect();
+      setMousePos({
+        x: event.clientX - rect.left,
+        y: event.clientY - rect.top,
+      });
     };
 
     window.addEventListener("mousemove", handleMouseMove);
@@ -61,19 +61,20 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     <Sidebar
       ref={sidebarRef}
       variant="sidebar"
-      collapsible={collapsibleMode}
+      collapsible="offcanvas"
       {...props}
       className={cn(
         "overflow-hidden border-r border-sidebar-border/40 bg-sidebar text-sidebar-foreground transition-all duration-500",
         layout === "mixed" && "top-14 h-[calc(100svh-3.5rem)]",
       )}
-      style={{
-        ...props.style,
-        "--foreground": "var(--sidebar-foreground)",
-        "--muted-foreground": "var(--sidebar-foreground)",
-      } as React.CSSProperties}
+      style={
+        {
+          ...props.style,
+          "--foreground": "var(--sidebar-foreground)",
+          "--muted-foreground": "var(--sidebar-foreground)",
+        } as React.CSSProperties
+      }
     >
-      {/* Premium Glass & Mesh Background */}
       <div className="absolute inset-0 z-0 bg-background/10 backdrop-blur-xl" />
       <div
         className="absolute inset-0 z-0 opacity-[0.03] pointer-events-none"
@@ -83,8 +84,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           backgroundSize: "20px 24px",
         }}
       />
-
-      {/* Interactive spotlight following the mouse */}
       <div
         className="pointer-events-none absolute inset-0 z-0 opacity-0 transition-opacity duration-700 group-hover:opacity-100"
         style={{
@@ -104,7 +103,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <div className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 p-2 shadow-2xl ring-1 ring-primary/10 transition-all duration-500 group-hover:scale-110 group-hover:shadow-primary/20 group-hover:ring-primary/30 group-active:scale-95">
               <img
                 src={LogoMark}
-                alt="RAIL"
+                alt={BRANDING.logoAlt}
                 className="h-full w-full object-contain transition-transform duration-700 group-hover:rotate-[15deg]"
               />
               <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
@@ -114,14 +113,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               <div className="flex flex-col transition-all duration-500 group-hover:translate-x-1">
                 <div className="flex items-center gap-1.5">
                   <span className="text-sm font-black tracking-tighter text-foreground leading-none">
-                    RAIL LOGISTIC
+                    {BRANDING.productName}
                   </span>
                   <Badge className="h-3.5 px-1 py-0 text-[8px] font-black uppercase bg-primary/10 text-primary border-none">
-                    PRO
+                    {BRANDING.editionLabel}
                   </Badge>
                 </div>
                 <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/60 mt-0.5">
-                  System Hub
+                  {BRANDING.hubLabel}
                 </span>
               </div>
             )}
@@ -149,10 +148,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
                       </div>
                       <div className="flex flex-col">
                         <p className="text-xs font-black uppercase tracking-widest text-emerald-600">
-                          Système Connecté
+                          {SYSTEM_STATUS.connectedLabel}
                         </p>
                         <p className="text-[10px] font-bold text-muted-foreground">
-                          Latence: 24ms • Région: EU-WEST
+                          {SYSTEM_STATUS.latencyRegionLabel}
                         </p>
                       </div>
                     </div>
@@ -165,7 +164,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
 
       <SidebarContent className="relative z-10 custom-scrollbar px-3 py-2 space-y-6">
-        <NavMain />
+        <NavMain navigationLinks={NAVIGATION_LINKS} />
       </SidebarContent>
 
       <SidebarFooter className="relative z-10 p-4">
@@ -177,7 +176,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               : "p-1 bg-muted/30 border border-border/20 backdrop-blur-md shadow-lg hover:shadow-xl hover:bg-muted/40 hover:border-primary/10",
           )}
         >
-          <NavUser />
+          <NavUser user={user} onLogout={logout} />
         </div>
       </SidebarFooter>
     </Sidebar>

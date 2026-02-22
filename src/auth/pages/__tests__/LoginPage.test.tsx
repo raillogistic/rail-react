@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { LoginPage } from '../LoginPage';
+import { LoginPage } from '@/pages/auth/LoginPage';
 import * as AuthContext from '@/auth/context';
 import { BrowserRouter } from 'react-router-dom';
 import React from 'react';
@@ -34,8 +34,13 @@ vi.mock('lucide-react', () => ({
 }));
 
 // Mock MFAChallenge component to test integration without testing the component itself
+type MockMFAChallengeProps = {
+  onVerify: (code: string) => void;
+  onCancel: () => void;
+};
+
 vi.mock('@/auth/components', () => ({
-  MFAChallenge: ({ onVerify, onCancel }: any) => (
+  MFAChallenge: ({ onVerify, onCancel }: MockMFAChallengeProps) => (
     <div data-testid="mfa-challenge">
       <button onClick={() => onVerify('123456')}>Verify</button>
       <button onClick={onCancel}>Cancel</button>
@@ -70,7 +75,9 @@ describe('LoginPage', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.spyOn(AuthContext, 'useAuthContext').mockReturnValue(defaultAuthContext as any);
+    vi.spyOn(AuthContext, 'useAuthContext').mockReturnValue(
+      defaultAuthContext as ReturnType<typeof AuthContext.useAuthContext>,
+    );
   });
 
   it('renders login form by default', async () => {
@@ -93,7 +100,7 @@ describe('LoginPage', () => {
     vi.spyOn(AuthContext, 'useAuthContext').mockReturnValue({
       ...defaultAuthContext,
       status: 'mfa_required',
-    } as any);
+    } as ReturnType<typeof AuthContext.useAuthContext>);
 
     render(
       <BrowserRouter>
@@ -114,7 +121,7 @@ describe('LoginPage', () => {
     vi.spyOn(AuthContext, 'useAuthContext').mockReturnValue({
       ...defaultAuthContext,
       status: 'mfa_required',
-    } as any);
+    } as ReturnType<typeof AuthContext.useAuthContext>);
 
     render(
       <BrowserRouter>
@@ -133,7 +140,7 @@ describe('LoginPage', () => {
     vi.spyOn(AuthContext, 'useAuthContext').mockReturnValue({
       ...defaultAuthContext,
       status: 'mfa_required',
-    } as any);
+    } as ReturnType<typeof AuthContext.useAuthContext>);
 
     render(
       <BrowserRouter>

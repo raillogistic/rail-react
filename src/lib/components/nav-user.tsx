@@ -1,14 +1,15 @@
 import { Link } from "react-router-dom";
 import {
-  IconLogout,
-  IconUserCircle,
-  IconSettings,
-  IconChevronRight,
-  IconShieldLock,
   IconBell,
-  IconHelpCircle
+  IconChevronRight,
+  IconHelpCircle,
+  IconLogout,
+  IconSettings,
+  IconShieldLock,
+  IconUserCircle,
 } from "@tabler/icons-react";
-import { useAuthContext } from "@/auth/context";
+import { ROUTES } from "@/shared/routing/paths";
+import { getUserIdentity, type UserLike } from "@/shared/auth/userIdentity";
 import {
   Avatar,
   AvatarFallback,
@@ -21,8 +22,8 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuShortcut,
   DropdownMenuTrigger,
-  DropdownMenuShortcut
 } from "@/lib/components/ui/dropdown-menu";
 import {
   SidebarMenu,
@@ -35,31 +36,25 @@ import { Badge } from "@/lib/components/ui/badge";
 
 /**
  * Sidebar footer block that exposes the account avatar and actions.
- * Highly polished with animations and rich context menu.
+ * Anchors account navigation for the authenticated shell.
  */
-export function NavUser() {
+export type NavUserProps = {
+  user?: UserLike | null;
+  onLogout?: () => void | Promise<void>;
+};
+
+export function NavUser({ user, onLogout }: NavUserProps = {}) {
   const { isMobile, state } = useSidebar();
   const isCollapsed = state === "collapsed";
-  const { user, logout } = useAuthContext();
-  
-  const userAvatar = user?.avatar || user?.avatarUrl;
-  const displayName =
-    user?.first_name ||
-    user?.last_name ||
-    user?.firstName ||
-    user?.lastName
-      ? `${user?.first_name || user?.firstName || ""} ${user?.last_name || user?.lastName || ""}`.trim()
-      : user?.displayName || user?.username || "Utilisateur";
-  
-  const primaryIdentity = displayName || user?.username || user?.email || "Utilisateur";
-  const secondaryIdentity = user?.email || user?.username || "Compte";
-  
-  const avatarFallback = primaryIdentity
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((segment) => segment[0]?.toUpperCase() ?? "")
-    .join("") || "U";
+  const { userAvatar, primaryIdentity, secondaryIdentity, avatarFallback } =
+    getUserIdentity(user);
+
+  const handleLogout = () => {
+    if (!onLogout) {
+      return;
+    }
+    void onLogout();
+  };
 
   return (
     <SidebarMenu>
@@ -72,30 +67,40 @@ export function NavUser() {
                 "h-14 w-full transition-all duration-300 rounded-2xl group",
                 "data-[state=open]:bg-sidebar-accent/80 data-[state=open]:text-sidebar-accent-foreground data-[state=open]:shadow-inner",
                 "hover:bg-sidebar-accent/50",
-                isCollapsed ? "justify-center p-0" : "px-3"
+                isCollapsed ? "justify-center p-0" : "px-3",
               )}
             >
               <div className="relative shrink-0 flex items-center justify-center">
-                <Avatar className={cn(
-                  "border-2 border-sidebar-border/30 transition-all duration-300 group-hover:border-primary/30 group-hover:shadow-md group-active:scale-95",
-                  isCollapsed ? "h-9 w-9" : "h-10 w-10"
-                )}>
-                  <AvatarImage src={userAvatar} alt={user?.username} className="object-cover" />
-                  <AvatarFallback className="bg-primary/10 text-primary font-bold">{avatarFallback}</AvatarFallback>
+                <Avatar
+                  className={cn(
+                    "border-2 border-sidebar-border/30 transition-all duration-300 group-hover:border-primary/30 group-hover:shadow-md group-active:scale-95",
+                    isCollapsed ? "h-9 w-9" : "h-10 w-10",
+                  )}
+                >
+                  <AvatarImage
+                    src={userAvatar}
+                    alt={user?.username ?? undefined}
+                    className="object-cover"
+                  />
+                  <AvatarFallback className="bg-primary/10 text-primary font-bold">
+                    {avatarFallback}
+                  </AvatarFallback>
                 </Avatar>
                 <div className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-sidebar bg-emerald-500 shadow-sm ring-1 ring-emerald-500/20" />
               </div>
-              
+
               {!isCollapsed && (
                 <>
                   <div className="grid flex-1 text-left text-sm leading-tight ml-3">
-                    <span className="truncate font-bold text-foreground/90 tracking-tight">{primaryIdentity}</span>
+                    <span className="truncate font-bold text-foreground/90 tracking-tight">
+                      {primaryIdentity}
+                    </span>
                     <span className="text-muted-foreground/60 truncate text-[11px] font-medium tracking-wide">
                       {secondaryIdentity}
                     </span>
                   </div>
                   <div className="ml-auto flex items-center">
-                     <IconChevronRight className="size-4 text-muted-foreground/30 transition-all duration-300 group-hover:text-muted-foreground group-data-[state=open]:rotate-90 group-data-[state=open]:translate-x-1" />
+                    <IconChevronRight className="size-4 text-muted-foreground/30 transition-all duration-300 group-hover:text-muted-foreground group-data-[state=open]:rotate-90 group-data-[state=open]:translate-x-1" />
                   </div>
                 </>
               )}
@@ -111,15 +116,24 @@ export function NavUser() {
               <div className="flex items-center gap-4 px-3.5 py-4 text-left bg-primary/5 rounded-2xl mb-2">
                 <div className="relative">
                   <Avatar className="h-12 w-12 border-2 border-white shadow-sm">
-                    <AvatarImage src={userAvatar} alt={user?.username} />
-                    <AvatarFallback className="bg-primary text-primary-foreground font-bold">{avatarFallback}</AvatarFallback>
+                    <AvatarImage src={userAvatar} alt={user?.username ?? undefined} />
+                    <AvatarFallback className="bg-primary text-primary-foreground font-bold">
+                      {avatarFallback}
+                    </AvatarFallback>
                   </Avatar>
                   <div className="absolute -bottom-1 -right-1 h-4 w-4 rounded-full border-2 border-white bg-emerald-500 shadow-sm" />
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-extrabold text-foreground text-base tracking-tight">{primaryIdentity}</span>
+                  <span className="truncate font-extrabold text-foreground text-base tracking-tight">
+                    {primaryIdentity}
+                  </span>
                   <div className="flex items-center gap-1.5 mt-0.5">
-                    <Badge variant="secondary" className="text-[9px] h-4 px-1 py-0 font-bold uppercase tracking-tighter bg-primary/10 text-primary border-none">Pro Plan</Badge>
+                    <Badge
+                      variant="secondary"
+                      className="text-[9px] h-4 px-1 py-0 font-bold uppercase tracking-tighter bg-primary/10 text-primary border-none"
+                    >
+                      Pro Plan
+                    </Badge>
                     <span className="text-muted-foreground/50 truncate text-[10px] font-medium">
                       {user?.username || "active"}
                     </span>
@@ -127,53 +141,69 @@ export function NavUser() {
                 </div>
               </div>
             </DropdownMenuLabel>
-            
+
             <DropdownMenuGroup className="space-y-1 py-1 px-1">
-              <div className="px-3 py-1 text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-1">Navigation</div>
+              <div className="px-3 py-1 text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-1">
+                Navigation
+              </div>
               <DropdownMenuItem className="rounded-xl px-3 py-2.5 focus:bg-primary focus:text-primary-foreground group transition-all cursor-pointer">
                 <IconUserCircle className="size-5 mr-3 opacity-60 group-focus:opacity-100" />
-                <Link to="/settings/account" className="flex-1 font-semibold tracking-tight">
+                <Link
+                  to={ROUTES.SETTINGS_ACCOUNT}
+                  className="flex-1 font-semibold tracking-tight"
+                >
                   Mon Profil
                 </Link>
-                <DropdownMenuShortcut className="group-focus:text-primary-foreground opacity-50">⇧⌘P</DropdownMenuShortcut>
+                <DropdownMenuShortcut className="group-focus:text-primary-foreground opacity-50">
+                  Shift+Cmd+P
+                </DropdownMenuShortcut>
               </DropdownMenuItem>
-              <DropdownMenuItem asChild className="rounded-xl px-3 py-2.5 focus:bg-primary focus:text-primary-foreground group transition-all cursor-pointer">
-                <Link to="/settings/appearance" className="w-full flex items-center">
+              <DropdownMenuItem
+                asChild
+                className="rounded-xl px-3 py-2.5 focus:bg-primary focus:text-primary-foreground group transition-all cursor-pointer"
+              >
+                <Link to={ROUTES.SETTINGS_APPEARANCE} className="w-full flex items-center">
                   <IconSettings className="size-5 mr-3 opacity-60 group-focus:opacity-100" />
-                  <span className="flex-1 font-semibold tracking-tight">Préférences</span>
-                  <DropdownMenuShortcut className="group-focus:text-primary-foreground opacity-50">⌘S</DropdownMenuShortcut>
+                  <span className="flex-1 font-semibold tracking-tight">Preferences</span>
+                  <DropdownMenuShortcut className="group-focus:text-primary-foreground opacity-50">
+                    Cmd+S
+                  </DropdownMenuShortcut>
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem className="rounded-xl px-3 py-2.5 focus:bg-primary focus:text-primary-foreground group transition-all cursor-pointer">
                 <IconShieldLock className="size-5 mr-3 opacity-60 group-focus:opacity-100" />
-                <span className="flex-1 font-semibold tracking-tight">Sécurité</span>
+                <span className="flex-1 font-semibold tracking-tight">Securite</span>
               </DropdownMenuItem>
             </DropdownMenuGroup>
-            
+
             <DropdownMenuSeparator className="bg-sidebar-border/30 my-2 mx-1" />
-            
+
             <DropdownMenuGroup className="space-y-1 py-1 px-1">
-               <DropdownMenuItem className="rounded-xl px-3 py-2.5 focus:bg-accent group transition-all cursor-pointer">
+              <DropdownMenuItem className="rounded-xl px-3 py-2.5 focus:bg-accent group transition-all cursor-pointer">
                 <IconBell className="size-5 mr-3 opacity-60 group-hover:text-primary" />
                 <span className="flex-1 font-medium text-sm">Notifications</span>
-                <Badge className="ml-auto h-5 px-1.5 min-w-5 justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-bold">12</Badge>
+                <Badge className="ml-auto h-5 px-1.5 min-w-5 justify-center rounded-full bg-primary text-primary-foreground text-[10px] font-bold">
+                  12
+                </Badge>
               </DropdownMenuItem>
               <DropdownMenuItem className="rounded-xl px-3 py-2.5 focus:bg-accent group transition-all cursor-pointer">
                 <IconHelpCircle className="size-5 mr-3 opacity-60" />
                 <span className="flex-1 font-medium text-sm">Centre d'aide</span>
               </DropdownMenuItem>
             </DropdownMenuGroup>
-            
+
             <DropdownMenuSeparator className="bg-sidebar-border/30 my-2 mx-1" />
-            
+
             <div className="px-1">
-              <DropdownMenuItem 
-                onClick={() => logout()}
+              <DropdownMenuItem
+                onClick={handleLogout}
                 className="rounded-xl px-3 py-3 focus:bg-destructive focus:text-destructive-foreground text-destructive font-bold transition-all cursor-pointer shadow-sm hover:shadow-md"
               >
                 <IconLogout className="size-5 mr-3" />
-                <span className="flex-1">Se déconnecter</span>
-                <DropdownMenuShortcut className="opacity-70 group-focus:text-destructive-foreground">⌥⌘Q</DropdownMenuShortcut>
+                <span className="flex-1">Se deconnecter</span>
+                <DropdownMenuShortcut className="opacity-70 group-focus:text-destructive-foreground">
+                  Option+Cmd+Q
+                </DropdownMenuShortcut>
               </DropdownMenuItem>
             </div>
           </DropdownMenuContent>

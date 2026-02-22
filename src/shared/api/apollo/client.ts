@@ -6,15 +6,15 @@ import { createUploadLink } from 'apollo-upload-client';
 import { tokenStorage, getSecureHeaders } from '@/auth/utils/token-storage';
 import { ensureCsrfCookie } from '@/auth/utils/csrf';
 import { AuthError, AuthErrorType, handleAuthError } from '@/auth/utils/error-handler';
+import { ROUTES } from "@/shared/routing/paths";
 import { hasExplicitAuthorizationHeader } from './authHeaders';
 
 // Prefer environment configuration; fall back to local dev.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const apiGraphqlUri: string =
-  ((import.meta as any).env?.VITE_API_ENDPOINT as string | undefined) ??
+  import.meta.env.VITE_API_ENDPOINT ??
   'http://localhost:8000/graphql/';
 const authGraphqlUri: string =
-  ((import.meta as any).env?.VITE_AUTH_ENDPOINT as string | undefined) ??
+  import.meta.env.VITE_AUTH_ENDPOINT ??
   apiGraphqlUri;
 
 const apiUploadLink = createUploadLink({
@@ -36,6 +36,16 @@ const authUploadLink = createUploadLink({
 let refreshInFlight: Promise<boolean> | null = null;
 const authStoragePrefix = 'auth_';
 const rememberMeKey = `${authStoragePrefix}remember_me`;
+
+type RefreshTokenMutationPayload = {
+  data?: {
+    refresh_token?: {
+      ok?: boolean;
+      token?: string;
+      refresh_token?: string;
+    };
+  };
+};
 
 const readStorageValue = (
   storage: Storage | null,
@@ -142,8 +152,7 @@ const refreshAccessToken = async (): Promise<boolean> => {
         return false;
       }
 
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const payload: any = await response.json();
+      const payload = (await response.json()) as RefreshTokenMutationPayload;
       const token: string | undefined = payload?.data?.refresh_token?.token;
       const ok: boolean | undefined = payload?.data?.refresh_token?.ok;
       const refreshToken: string | undefined = payload?.data?.refresh_token?.refresh_token;
@@ -359,7 +368,9 @@ const createErrorLink = () => {
         ) {
           // Only redirect to login for definitive authentication errors
           // Check if this is during app initialization to avoid aggressive redirects
-          const isInitializing = !tokenStorage.getAccessToken() || window.location.pathname === '/login';
+          const isInitializing =
+            !tokenStorage.getAccessToken() ||
+            window.location.pathname === ROUTES.LOGIN;
 
           if (!isInitializing) {
             operation.setContext({ ...context, skipAuthRefresh: true });

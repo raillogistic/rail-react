@@ -2,7 +2,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { MockedProvider } from '@apollo/client/testing';
 import { InMemoryCache } from '@apollo/client';
-import { MFASetupPage } from '../MFASetupPage';
+import { MFASetupPage } from '@/pages/auth/MFASetupPage';
 import { SETUP_MFA_MUTATION, VERIFY_MFA_SETUP_MUTATION } from '@/graphql/mutations';
 import { GET_MFA_STATUS } from '@/graphql/queries';
 import * as useAuthHook from '../../hooks/useAuth';
@@ -106,10 +106,20 @@ describe('MFASetupPage', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     navigateMock.mockReset();
-    (navigator.clipboard.writeText as any).mockResolvedValue(undefined);
-    (useAuthHook.useAuth as any).mockReturnValue({
+    (
+      navigator.clipboard.writeText as unknown as {
+        mockResolvedValue: (value?: unknown) => void;
+      }
+    ).mockResolvedValue(undefined);
+    (
+      useAuthHook.useAuth as unknown as {
+        mockReturnValue: (
+          value: ReturnType<typeof useAuthHook.useAuth>,
+        ) => void;
+      }
+    ).mockReturnValue({
       user: mockUser,
-    });
+    } as ReturnType<typeof useAuthHook.useAuth>);
   });
 
   it('renders intro step initially', async () => {

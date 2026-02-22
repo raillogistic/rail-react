@@ -10,8 +10,7 @@
 
 import { isTokenValid, getUserFromToken, hasPermission } from './token';
 import { tokenStorage } from './token-storage';
-import { DEFAULT_APP_ROUTE } from "@/app/router/navigation";
-import { isProtectedRoute } from "@/app/router/manifestRegistry";
+import { PUBLIC_ROUTE_PATHS, ROUTES } from "@/shared/routing/paths";
 
 export class AuthenticationError extends Error {
   constructor(message: string, public code: string = 'AUTH_ERROR') {
@@ -24,7 +23,7 @@ export interface AuthGuardResult {
   isAuthenticated: boolean;
   shouldRedirect: boolean;
   redirectTo?: string;
-  user?: any;
+  user?: unknown;
   error?: string;
 }
 
@@ -48,24 +47,29 @@ export const getCurrentUser = () => {
 export const checkAuthStatus = (currentPath: string): AuthGuardResult => {
   const token = tokenStorage.getAccessToken();
   const isValidToken = isTokenValid(token);
-  const requiresAuth = isProtectedRoute(currentPath);
+  const pathname = currentPath.split("?")[0] ?? currentPath;
+  const normalizedPath =
+    pathname.length > 1 && pathname.endsWith("/")
+      ? pathname.slice(0, -1)
+      : pathname;
+  const requiresAuth = !PUBLIC_ROUTE_PATHS.includes(normalizedPath);
 
   // If route requires auth but user is not authenticated
   if (requiresAuth && !isValidToken) {
     return {
       isAuthenticated: false,
       shouldRedirect: true,
-      redirectTo: '/login',
+      redirectTo: ROUTES.LOGIN,
       error: 'Authentication required',
     };
   }
 
   // If user is authenticated but trying to access login page
-  if (isValidToken && currentPath === '/login') {
+  if (isValidToken && currentPath === ROUTES.LOGIN) {
     return {
       isAuthenticated: true,
       shouldRedirect: true,
-      redirectTo: DEFAULT_APP_ROUTE,
+      redirectTo: ROUTES.DASHBOARD,
       user: getUserFromToken(token),
     };
   }

@@ -7,8 +7,6 @@ import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import {
-  Eye,
-  EyeOff,
   Mail,
   Lock,
   AlertCircle,
@@ -25,6 +23,7 @@ import {
   onOfflineStatusChange,
   testServerConnectivity,
 } from "@/utils/offline-detector";
+import { BRANDING } from "@/shared/config/branding";
 import Logo from "@/assets/logos/logo.png";
 import Cover960 from "@/assets/images/cover-960.jpg";
 import Cover1600 from "@/assets/images/cover-1600.jpg";
@@ -133,6 +132,16 @@ export const LoginPage: React.FC = () => {
   } = useAuthContext();
   const [showPassword, setShowPassword] = useState(false);
   const [isServerOnline, setIsServerOnline] = useState(true);
+  const getAuthErrorMessage = (authError: typeof error): string => {
+    if (!authError) {
+      return "";
+    }
+    const details = authError.details as { userMessage?: unknown } | undefined;
+    if (typeof details?.userMessage === "string" && details.userMessage.trim()) {
+      return details.userMessage;
+    }
+    return authError.message;
+  };
 
   const {
     register,
@@ -228,7 +237,7 @@ export const LoginPage: React.FC = () => {
             />
           </div>
           <span className="text-sm font-black uppercase tracking-[0.4em] text-white/90">
-            Rail Logistics
+            {BRANDING.productNameLong}
           </span>
         </div>
 
@@ -246,14 +255,14 @@ export const LoginPage: React.FC = () => {
           </div>
           <p className="text-lg text-white/50 leading-relaxed font-medium">
             Propulser la maintenance ferroviaire vers de nouveaux standards de
-            précision, de sécurité et d'efficacité opérationnelle.
+            precision, de securite et d'efficacite operationnelle.
           </p>
 
           <div className="pt-8 flex items-center gap-12">
             <div className="space-y-1">
               <p className="text-2xl font-black text-white">99.9%</p>
               <p className="text-[10px] font-bold text-white/40 uppercase tracking-widest">
-                Disponibilité
+                Disponibilite
               </p>
             </div>
             <div className="h-8 w-px bg-white/10" />
@@ -267,13 +276,13 @@ export const LoginPage: React.FC = () => {
         </div>
 
         <div className="relative z-10 flex items-center justify-between text-[10px] font-bold text-white/30 uppercase tracking-[0.2em]">
-          <span>© {new Date().getFullYear()} Rail Logistics</span>
+          <span>&copy; {new Date().getFullYear()} {BRANDING.productNameLong}</span>
           <div className="flex gap-6">
             <span className="hover:text-white/60 cursor-pointer transition-colors">
               Support
             </span>
             <span className="hover:text-white/60 cursor-pointer transition-colors">
-              Confidentialité
+              Confidentialite
             </span>
           </div>
         </div>
@@ -285,7 +294,7 @@ export const LoginPage: React.FC = () => {
           <div className="w-full max-w-sm mx-auto space-y-12 animate-in fade-in slide-in-from-right-12 duration-1000">
             <div className="space-y-2">
               <h2 className="text-4xl font-black tracking-tighter text-foreground">
-                {status === "mfa_required" ? "Sécurité" : "Connexion"}
+                {status === "mfa_required" ? "Securite" : "Connexion"}
               </h2>
               <div className="h-1 w-12 bg-primary rounded-full shadow-[0_0_15px_rgba(var(--primary),0.4)]" />
             </div>
@@ -295,7 +304,7 @@ export const LoginPage: React.FC = () => {
               <div className="p-4 rounded-2xl bg-orange-500/5 border border-orange-500/20 flex items-center gap-3 text-orange-600 animate-pulse">
                 <WifiOff className="h-5 w-5 shrink-0" />
                 <p className="text-xs font-bold uppercase tracking-wider">
-                  Serveur déconnecté
+                  Serveur deconnecte
                 </p>
               </div>
             )}
@@ -305,10 +314,10 @@ export const LoginPage: React.FC = () => {
                 <AlertCircle className="h-5 w-5 shrink-0 mt-0.5" />
                 <div className="space-y-1">
                   <p className="text-xs font-black uppercase tracking-wider">
-                    Erreur système
+                    Erreur systeme
                   </p>
                   <p className="text-xs font-medium opacity-80">
-                    {error.userMessage || error.message}
+                    {getAuthErrorMessage(error)}
                   </p>
                 </div>
               </div>
@@ -333,7 +342,7 @@ export const LoginPage: React.FC = () => {
                 ) : (
                   <MFAChallenge
                     method="totp"
-                    error={error?.userMessage || error?.message}
+                    error={getAuthErrorMessage(error)}
                     isLoading={isLoading}
                     onVerify={handleMFAVerify}
                     onCancel={handleCancelMFA}
@@ -392,7 +401,7 @@ export const LoginPage: React.FC = () => {
                       htmlFor="rememberMe"
                       className="text-xs font-bold text-muted-foreground/80 cursor-pointer select-none"
                     >
-                      Rester identifié
+                      Rester identifie
                     </label>
                   </div>
 
@@ -401,7 +410,7 @@ export const LoginPage: React.FC = () => {
                     onClick={handleForgotPassword}
                     className="text-xs font-bold text-primary hover:text-primary/80 transition-colors"
                   >
-                    Oublié ?
+                    Oublie ?
                   </button>
                 </div>
 
@@ -409,7 +418,7 @@ export const LoginPage: React.FC = () => {
                   isLoading={isSubmitting || isLoading}
                   disabled={!isServerOnline}
                 >
-                  Accéder au terminal{" "}
+                  Acceder au terminal{" "}
                   <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
                 </CustomButton>
               </form>
@@ -418,7 +427,7 @@ export const LoginPage: React.FC = () => {
             <div className="pt-8 flex flex-col items-center space-y-6">
               <div className="flex items-center gap-2 text-[10px] font-bold text-muted-foreground/40 uppercase tracking-[0.3em]">
                 <ShieldCheck className="h-3 w-3" />
-                Accès hautement sécurisé
+                Acces hautement securise
               </div>
 
               <div className="lg:hidden flex items-center gap-3">
@@ -430,7 +439,7 @@ export const LoginPage: React.FC = () => {
                   />
                 </div>
                 <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/30">
-                  Rail Logistics
+                  {BRANDING.productNameLong}
                 </span>
               </div>
             </div>

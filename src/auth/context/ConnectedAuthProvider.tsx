@@ -19,8 +19,41 @@ import {
   selectSessionIdFromTokenPayload,
 } from "./sessionIds";
 
+type RawAuthRole = {
+  name?: unknown;
+  permissions?: unknown;
+};
+
+type RawAuthUser = {
+  id?: unknown;
+  user_id?: unknown;
+  userId?: unknown;
+  sub?: unknown;
+  email?: unknown;
+  username?: unknown;
+  first_name?: unknown;
+  firstName?: unknown;
+  last_name?: unknown;
+  lastName?: unknown;
+  is_staff?: unknown;
+  isStaff?: unknown;
+  is_superuser?: unknown;
+  isSuperuser?: unknown;
+  roles?: unknown;
+  permissions?: unknown;
+  settings?: unknown;
+};
+
+const toStringValue = (value: unknown): string => {
+  return typeof value === "string" ? value : "";
+};
+
+const toBooleanValue = (value: unknown): boolean => {
+  return value === true;
+};
+
 const normalizeAuthUser = (
-  rawUser: Record<string, any> | null | undefined,
+  rawUser: RawAuthUser | null | undefined,
   fallbackPermissions?: string[] | null,
 ): AuthUser => {
   const normalizePermissionValue = (value: unknown): string | null => {
@@ -64,8 +97,11 @@ const normalizeAuthUser = (
       if (typeof role === "string") {
         return role;
       }
-      if (role && typeof role.name === "string") {
-        return role.name;
+      if (role && typeof role === "object") {
+        const roleObject = role as RawAuthRole;
+        if (typeof roleObject.name === "string") {
+          return roleObject.name;
+        }
       }
       return null;
     })
@@ -80,7 +116,7 @@ const normalizeAuthUser = (
     if (!role || typeof role === "string") {
       return [];
     }
-    const maybePermissions = (role as { permissions?: unknown }).permissions;
+    const maybePermissions = (role as RawAuthRole).permissions;
     return Array.isArray(maybePermissions) ? maybePermissions : [];
   });
   const permissions = Array.from(
@@ -96,13 +132,16 @@ const normalizeAuthUser = (
 
   return {
     id: String(resolvedId),
-    email: rawUser?.email || "",
-    username: rawUser?.username || "",
-    first_name: rawUser?.first_name ?? rawUser?.firstName ?? "",
-    last_name: rawUser?.last_name ?? rawUser?.lastName ?? "",
-    is_staff: rawUser?.is_staff ?? rawUser?.isStaff ?? false,
-    is_superuser: rawUser?.is_superuser ?? rawUser?.isSuperuser ?? false,
-    settings: rawUser?.settings,
+    email: toStringValue(rawUser?.email),
+    username: toStringValue(rawUser?.username),
+    first_name: toStringValue(rawUser?.first_name ?? rawUser?.firstName),
+    last_name: toStringValue(rawUser?.last_name ?? rawUser?.lastName),
+    is_staff: toBooleanValue(rawUser?.is_staff ?? rawUser?.isStaff),
+    is_superuser: toBooleanValue(rawUser?.is_superuser ?? rawUser?.isSuperuser),
+    settings:
+      rawUser?.settings && typeof rawUser.settings === "object"
+        ? (rawUser.settings as AuthUser["settings"])
+        : undefined,
     roles: roleNames,
     permissions,
   };

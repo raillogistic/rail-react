@@ -1,13 +1,14 @@
 import { Link } from "react-router-dom";
 import {
+  IconCreditCard,
+  IconLifebuoy,
   IconLogout,
-  IconUserCircle,
   IconSettings,
   IconShieldLock,
-  IconCreditCard,
-  IconLifebuoy
+  IconUserCircle,
 } from "@tabler/icons-react";
-import { useAuthContext } from "@/auth/context";
+import { ROUTES } from "@/shared/routing/paths";
+import { getUserIdentity, type UserLike } from "@/shared/auth/userIdentity";
 import {
   Avatar,
   AvatarFallback,
@@ -20,44 +21,43 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
+  DropdownMenuShortcut,
   DropdownMenuTrigger,
-  DropdownMenuShortcut
 } from "@/lib/components/ui/dropdown-menu";
 import { Button } from "@/lib/components/ui/button";
 
 /**
- * Enhanced User Navigation dropdown menu.
+ * Enhanced user navigation dropdown menu.
  * Used primarily in headers or standalone navigation bars.
  */
-export function UserNav() {
-  const { user, logout } = useAuthContext();
-  
-  const userAvatar = user?.avatar || user?.avatarUrl;
-  const displayName =
-    user?.first_name ||
-    user?.last_name ||
-    user?.firstName ||
-    user?.lastName
-      ? `${user?.first_name || user?.firstName || ""} ${user?.last_name || user?.lastName || ""}`.trim()
-      : user?.displayName || user?.username || "Utilisateur";
-      
-  const primaryIdentity = displayName || user?.username || user?.email || "Utilisateur";
-  const secondaryIdentity = user?.email || user?.username || "Compte";
-  
-  const avatarFallback = primaryIdentity
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((segment) => segment[0]?.toUpperCase() ?? "")
-    .join("") || "U";
+export type UserNavProps = {
+  user?: UserLike | null;
+  onLogout?: () => void | Promise<void>;
+};
+
+export function UserNav({ user, onLogout }: UserNavProps = {}) {
+  const { userAvatar, primaryIdentity, secondaryIdentity, avatarFallback } =
+    getUserIdentity(user);
+
+  const handleLogout = () => {
+    if (!onLogout) {
+      return;
+    }
+    void onLogout();
+  };
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-9 w-9 rounded-full p-0 border border-transparent hover:border-border transition-all ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 overflow-hidden">
+        <Button
+          variant="ghost"
+          className="relative h-9 w-9 rounded-full p-0 border border-transparent hover:border-border transition-all ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 overflow-hidden"
+        >
           <Avatar className="h-full w-full">
-            <AvatarImage src={userAvatar} alt={user?.username} />
-            <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">{avatarFallback}</AvatarFallback>
+            <AvatarImage src={userAvatar} alt={user?.username ?? undefined} />
+            <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
+              {avatarFallback}
+            </AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
@@ -66,8 +66,13 @@ export function UserNav() {
           <div className="flex items-center gap-3 p-3">
             <div className="relative">
               <Avatar className="h-10 w-10 border border-primary/10">
-                <AvatarImage src={userAvatar} alt={user?.username} />
-                <AvatarFallback className="bg-primary/5 text-primary text-sm font-bold">{avatarFallback}</AvatarFallback>
+                <AvatarImage
+                  src={userAvatar}
+                  alt={user?.username ?? undefined}
+                />
+                <AvatarFallback className="bg-primary/5 text-primary text-sm font-bold">
+                  {avatarFallback}
+                </AvatarFallback>
               </Avatar>
               <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-background bg-emerald-500" />
             </div>
@@ -85,23 +90,32 @@ export function UserNav() {
         <div className="p-1">
           <DropdownMenuGroup>
             <DropdownMenuItem asChild>
-              <Link to="/settings/account" className="flex items-center cursor-pointer w-full">
+              <Link
+                to={ROUTES.SETTINGS_ACCOUNT}
+                className="flex items-center cursor-pointer w-full"
+              >
                 <IconUserCircle className="mr-2 h-4 w-4 opacity-70" />
                 <span className="flex-1">Mon Profil</span>
-                <DropdownMenuShortcut>⇧⌘P</DropdownMenuShortcut>
+                <DropdownMenuShortcut>Shift+Cmd+P</DropdownMenuShortcut>
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link to="/settings/appearance" className="flex items-center cursor-pointer w-full">
+              <Link
+                to={ROUTES.SETTINGS_APPEARANCE}
+                className="flex items-center cursor-pointer w-full"
+              >
                 <IconSettings className="mr-2 h-4 w-4 opacity-70" />
-                <span className="flex-1">Paramètres</span>
-                <DropdownMenuShortcut>⌘S</DropdownMenuShortcut>
+                <span className="flex-1">Parametres</span>
+                <DropdownMenuShortcut>Cmd+S</DropdownMenuShortcut>
               </Link>
             </DropdownMenuItem>
             <DropdownMenuItem asChild>
-              <Link to="/settings/security" className="flex items-center cursor-pointer w-full">
+              <Link
+                to={ROUTES.SETTINGS_MFA}
+                className="flex items-center cursor-pointer w-full"
+              >
                 <IconShieldLock className="mr-2 h-4 w-4 opacity-70" />
-                <span className="flex-1">Sécurité</span>
+                <span className="flex-1">Securite</span>
               </Link>
             </DropdownMenuItem>
           </DropdownMenuGroup>
@@ -118,13 +132,15 @@ export function UserNav() {
           </DropdownMenuGroup>
         </div>
         <DropdownMenuSeparator />
-        <DropdownMenuItem 
-          onClick={() => logout()}
+        <DropdownMenuItem
+          onClick={handleLogout}
           className="text-destructive focus:bg-destructive focus:text-destructive-foreground cursor-pointer m-1 rounded-md"
         >
           <IconLogout className="mr-2 h-4 w-4" />
-          <span className="font-semibold">Se déconnecter</span>
-          <DropdownMenuShortcut className="text-destructive-foreground opacity-70">⌥⌘Q</DropdownMenuShortcut>
+          <span className="font-semibold">Se deconnecter</span>
+          <DropdownMenuShortcut className="text-destructive-foreground opacity-70">
+            Option+Cmd+Q
+          </DropdownMenuShortcut>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

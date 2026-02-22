@@ -23,7 +23,7 @@ const withRouteSuspense = (component: ReactNode) => (
 );
 
 const ModelImportPage = lazy(() =>
-  import("@/features/import/pages").then((module) => ({
+  import("@/lib/import/pages/ModelImportPage").then((module) => ({
     default: module.ModelImportPage,
   })),
 );

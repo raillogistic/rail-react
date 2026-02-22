@@ -29,6 +29,7 @@ import { UserNav } from "./user-nav";
  */
 export interface SiteHeaderProps {
   title: string;
+  description?: string;
   sectionLabel?: string;
 }
 

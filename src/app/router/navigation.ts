@@ -1,38 +1,20 @@
-import type { ComponentType, ReactNode } from "react";
 import {
   getAllRoutes,
   getDefaultRoute,
   getNavigationGroups,
 } from "./manifestRegistry";
 import { normalizePath, type NavigationGroup } from "./contracts";
+import type {
+  NavigationItem,
+  NavigationPage,
+  NavigationSection,
+} from "@/shared/routing/navigation";
 
-export interface NavigationPage {
-  title: string;
-  path: string;
-  component?: ReactNode;
-  icon?: ComponentType<{ className?: string }>;
-  requiresAuth: boolean;
-  description?: string;
-  hidden?: boolean;
-}
-
-export interface NavigationItem {
-  id: string;
-  title: string;
-  path: string;
-  icon?: ComponentType<{ className?: string }>;
-  requiresAuth: boolean;
-  component?: ReactNode;
-  description?: string;
-  hidden?: boolean;
-  children?: NavigationPage[];
-}
-
-export interface NavigationSection {
-  id: string;
-  label: string;
-  items: NavigationItem[];
-}
+export type {
+  NavigationItem,
+  NavigationPage,
+  NavigationSection,
+} from "@/shared/routing/navigation";
 
 const toNavigationSections = (
   groups: NavigationGroup[],

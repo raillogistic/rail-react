@@ -2,7 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { MockedProvider } from '@apollo/client/testing';
 import { InMemoryCache } from '@apollo/client';
-import { SessionsPage } from '../SessionsPage';
+import { SessionsPage } from '@/pages/auth/SessionsPage';
 import { GET_ACTIVE_SESSIONS } from '@/graphql/queries';
 import { REVOKE_SESSION_MUTATION, REVOKE_ALL_SESSIONS_MUTATION } from '@/graphql/mutations';
 import * as useAuthHook from '../../hooks/useAuth';
@@ -99,9 +99,15 @@ describe('SessionsPage', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    (useAuthHook.useAuth as any).mockReturnValue({
+    (
+      useAuthHook.useAuth as unknown as {
+        mockReturnValue: (
+          value: ReturnType<typeof useAuthHook.useAuth>,
+        ) => void;
+      }
+    ).mockReturnValue({
       user: mockUser,
-    });
+    } as ReturnType<typeof useAuthHook.useAuth>);
   });
 
   it('renders loading state initially', async () => {
@@ -121,7 +127,13 @@ describe('SessionsPage', () => {
   });
 
   it('redirects/shows message if not logged in', () => {
-    (useAuthHook.useAuth as any).mockReturnValue({ user: null });
+    (
+      useAuthHook.useAuth as unknown as {
+        mockReturnValue: (
+          value: ReturnType<typeof useAuthHook.useAuth>,
+        ) => void;
+      }
+    ).mockReturnValue({ user: null } as ReturnType<typeof useAuthHook.useAuth>);
 
     render(
       <MockedProvider mocks={mocks} cache={cache}>

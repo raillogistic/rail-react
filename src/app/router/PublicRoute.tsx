@@ -19,6 +19,10 @@ interface PublicRouteProps {
   allowAuthenticated?: boolean;
 }
 
+interface PublicRouteState {
+  from?: string;
+}
+
 export const PublicRoute: React.FC<PublicRouteProps> = ({
   children,
   redirectTo = DEFAULT_APP_ROUTE,
@@ -42,7 +46,7 @@ export const PublicRoute: React.FC<PublicRouteProps> = ({
   // If user is authenticated and this route doesn't allow authenticated users
   if (isAuthenticated && !allowAuthenticated) {
     // Check if there's a 'from' state to redirect back to
-    const from = (location.state as any)?.from || redirectTo;
+    const from = (location.state as PublicRouteState | null)?.from ?? redirectTo;
     return <Navigate to={from} replace />;
   }
 
