@@ -9,8 +9,8 @@ export default function DashboardPage() {
     <div className="flex h-full w-full min-h-0 flex-col gap-4 p-4">
       <div className="min-h-0 flex-1">
         <DynamicModelTable
-          app="billing"
-          model="Invoice"
+          app="store"
+          model="Product"
           baseTable={{
             quickSearch: true,
             enableSelection: true,

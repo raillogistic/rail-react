@@ -34,15 +34,9 @@ const ModelImportPage = lazy(() =>
   })),
 );
 
-const ModelTableV2 = lazy(() =>
-  import("@/lib/table/components/ModelTableV2").then((module) => ({
-    default: module.ModelTableV2,
-  })),
-);
-
-const BaseModelTable = lazy(() =>
-  import("@/lib/table/components/BaseModelTable").then((module) => ({
-    default: module.BaseModelTable,
+const DynamicModelTable = lazy(() =>
+  import("@/lib/table/components/DynamicModelTable").then((module) => ({
+    default: module.DynamicModelTable,
   })),
 );
 
@@ -194,13 +188,12 @@ const CORE_NAVIGATION_LINKS: NavigationSection[] = [
         path: "/orders-table-v2",
         icon: LayoutDashboard,
         requiresAuth: true,
-        description: "Progress view for ModelTableV2 (store.Order)",
+        description: "Progress view for DynamicModelTable (store.Order)",
         component: withRouteSuspense(
-          <ModelTableV2
+          <DynamicModelTable
             app="billing"
             model="Invoice"
             baseTable={{
-              topActions: () => [<></>],
               tableConfig: { title: "Liste des factures" },
               fields: ["id", "createdAt", "updatedAt", "status"],
             }}
@@ -213,12 +206,12 @@ const CORE_NAVIGATION_LINKS: NavigationSection[] = [
         path: "/orders-table-",
         icon: LayoutDashboard,
         requiresAuth: true,
-        description: "Progress view for ModelTableV2 (store.Order)",
+        description: "Progress view for DynamicModelTable (store.Order)",
         component: withRouteSuspense(
-          <BaseModelTable
+          <DynamicModelTable
             app="store"
             model="Product"
-            tableConfig={{ title: "Liste des produits" }}
+            baseTable={{ tableConfig: { title: "Liste des produits" } }}
           />,
         ),
       },

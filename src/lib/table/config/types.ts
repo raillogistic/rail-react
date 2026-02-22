@@ -8,6 +8,7 @@ import type {
   ModelSchema,
   TableDensity,
 } from "../types";
+import type { ModelTableContentConfig } from "../components/content/types";
 
 export type FilterPanelMode = "drawer" | "modal";
 
@@ -138,6 +139,7 @@ export interface BaseModelTableProps {
   disableSorting?: boolean;
   enableSelection?: boolean;
   columnActions?: BaseModelTableColumnActionsInput;
+  content?: ModelTableContentConfig;
 }
 
 export interface ModelTableV2Props {

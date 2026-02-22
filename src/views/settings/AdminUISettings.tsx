@@ -8,7 +8,7 @@ import {
 } from "@/lib/components/ui/card";
 import { Button } from "@/lib/components/ui/button";
 import { Plus } from "lucide-react";
-import { ModelTableV2 } from "@/lib/table";
+import { DynamicModelTable } from "@/lib/table";
 import {
   Drawer,
   DrawerContent,
@@ -44,7 +44,7 @@ export function AdminUISettings() {
           </Button>
         </CardHeader>
         <CardContent>
-          <ModelTableV2
+          <DynamicModelTable
             app="core"
             model="UIComponentConfig"
             baseTable={{

@@ -23,7 +23,7 @@ import type {
 import { normalizeGeneratedErrorsForForm } from "@/lib/form/utils/errors";
 import { serializeRuntimeOverridesForQuery } from "@/lib/form/utils/jsonCoercion";
 import { buildNestedMutationPayload } from "@/lib/form/utils/nestedMutationPayload";
-import { ModelTableV2 } from "@/lib/table";
+import { DynamicModelTable } from "@/lib/table";
 import type { FormSchema } from "@/lib/form";
 import { Button } from "@/lib/components/ui/button";
 
@@ -1586,13 +1586,13 @@ export function StoreModelTableExamples() {
     <section className="space-y-8">
       <div>
         <h2 className="mb-2 text-lg font-semibold">Table des produits Store</h2>
-        <ModelTableV2 app="store" model="Product" />
+        <DynamicModelTable app="store" model="Product" />
       </div>
       <div>
         <h2 className="mb-2 text-lg font-semibold">
           Table des commandes Store
         </h2>
-        <ModelTableV2 app="store" model="Order" />
+        <DynamicModelTable app="store" model="Order" />
       </div>
     </section>
   );

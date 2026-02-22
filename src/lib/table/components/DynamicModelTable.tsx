@@ -958,6 +958,7 @@ export function DynamicModelTable({
               quickSearch={baseTable?.quickSearch ?? true}
               fields={baseTable?.fields}
               topActions={baseTable?.topActions}
+              content={baseTable?.content}
             />
           </DynamicBaseTableContent>
         </TableProvider>

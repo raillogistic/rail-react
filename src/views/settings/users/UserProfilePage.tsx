@@ -1,5 +1,5 @@
-import { ModelTableV2 } from "@/lib/table";
+import { DynamicModelTable } from "@/lib/table";
 
 export function UserProfilePage() {
-  return <ModelTableV2 app="users" model="UserProfile" />;
+  return <DynamicModelTable app="users" model="UserProfile" />;
 }
