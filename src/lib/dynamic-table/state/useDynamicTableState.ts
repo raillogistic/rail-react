@@ -27,6 +27,8 @@ export interface UseDynamicTableStateOptions {
   onOrderByChange?: (orderBy: DynamicTableOrderByEntry[]) => void;
   /** Optional callback fired when row selection changes. */
   onRowSelectionChange?: (selection: RowSelectionState) => void;
+  /** Optional callback fired when expanded state changes. */
+  onExpandedChange?: (expanded: ExpandedState) => void;
   /** Optional callback fired when pagination changes. */
   onPaginationChange?: (pagination: PaginationState) => void;
 }
@@ -80,6 +82,42 @@ const DEFAULT_STATE: DynamicTableStateSnapshot = {
 };
 
 /**
+ * Compares two boolean maps for exact key/value equality.
+ */
+function areBooleanMapsEqual(
+  left: Record<string, boolean>,
+  right: Record<string, boolean>,
+): boolean {
+  const leftKeys = Object.keys(left);
+  const rightKeys = Object.keys(right);
+  if (leftKeys.length !== rightKeys.length) {
+    return false;
+  }
+  for (const key of leftKeys) {
+    if (left[key] !== right[key]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/**
+ * Compares TanStack expanded-state snapshots.
+ */
+function isExpandedStateEqual(
+  left: ExpandedState,
+  right: ExpandedState,
+): boolean {
+  if (left === right) {
+    return true;
+  }
+  if (typeof left === "boolean" || typeof right === "boolean") {
+    return left === right;
+  }
+  return areBooleanMapsEqual(left, right);
+}
+
+/**
  * Resolves TanStack updater values into concrete next state.
  */
 function resolveUpdater<TValue>(
@@ -117,7 +155,15 @@ function composeSnapshot(
 export function useDynamicTableState(
   options: UseDynamicTableStateOptions,
 ): UseDynamicTableStateResult {
-  const { state, defaultState, onStateChange, onOrderByChange, onRowSelectionChange, onPaginationChange } = options;
+  const {
+    state,
+    defaultState,
+    onStateChange,
+    onOrderByChange,
+    onRowSelectionChange,
+    onExpandedChange,
+    onPaginationChange,
+  } = options;
 
   const initialState = useMemo<DynamicTableStateSnapshot>(
     () => ({
@@ -283,12 +329,16 @@ export function useDynamicTableState(
   const setExpanded = useCallback(
     (updater: Updater<ExpandedState>) => {
       const nextValue = resolveUpdater(updater, snapshot.expanded);
+      if (isExpandedStateEqual(nextValue, snapshot.expanded)) {
+        return;
+      }
       if (!state || state.expanded === undefined) {
         setUncontrolledExpanded(nextValue);
       }
+      onExpandedChange?.(nextValue);
       emitState({ expanded: nextValue });
     },
-    [emitState, snapshot.expanded, state],
+    [emitState, onExpandedChange, snapshot.expanded, state],
   );
 
   /**
@@ -363,4 +413,3 @@ export function useDynamicTableState(
     setWrapCells,
   };
 }
-

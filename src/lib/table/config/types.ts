@@ -1,8 +1,11 @@
 import type React from "react";
+import type { DynamicTableExpandConfig } from "@/lib/dynamic-table";
 import type {
   BaseModelTableColumnActionsInput,
   BaseModelTableColumnOrderingConfig,
   BaseModelTableFieldsInput,
+  BaseModelTableRefetch,
+  PaginationState,
   BaseModelTableRelationConfig,
   BaseModelTableRelationStatsConfig,
   ModelSchema,
@@ -118,6 +121,12 @@ export type ModelTableV2ViewOptions = {
   maxBodyHeightClassName?: string;
 };
 
+/**
+ * Expansion config forwarded to DynamicTable from DynamicModelTable.
+ */
+export type ModelTableV2ExpandConfig =
+  DynamicTableExpandConfig<Record<string, unknown>>;
+
 export interface BaseModelTableProps {
   app: string;
   model: string;
@@ -138,6 +147,7 @@ export interface BaseModelTableProps {
   skipCount?: boolean;
   disableSorting?: boolean;
   enableSelection?: boolean;
+  expand?: ModelTableV2ExpandConfig;
   columnActions?: BaseModelTableColumnActionsInput;
   content?: ModelTableContentConfig;
 }
@@ -150,6 +160,98 @@ export interface ModelTableV2Props {
 }
 
 /**
+ * Runtime snapshot exposed by DynamicModelTable imperative refs.
+ */
+export interface DynamicModelTableSnapshot {
+  /**
+   * Current rendered rows for the active page/query.
+   */
+  data: Record<string, unknown>[];
+  /**
+   * Rows currently selected from `data`.
+   */
+  selectedRows: Record<string, unknown>[];
+  /**
+   * Current selection state keyed by row id.
+   */
+  rowSelection: Record<string, boolean>;
+  /**
+   * Data query loading state.
+   */
+  loading: boolean;
+  /**
+   * Metadata loading state.
+   */
+  metadataLoading: boolean;
+  /**
+   * Data query error when present.
+   */
+  dataError: Error | null;
+  /**
+   * Metadata query error when present.
+   */
+  metadataError: Error | null;
+  /**
+   * Current model metadata, if loaded.
+   */
+  metadata: ModelSchema | null;
+  /**
+   * Current pagination state, if initialized.
+   */
+  pagination: PaginationState | null;
+}
+
+/**
+ * Imperative API exposed by DynamicModelTable through React refs.
+ */
+export interface DynamicModelTableHandle {
+  /**
+   * Refetches table rows with optional variable overrides.
+   */
+  refetch: BaseModelTableRefetch;
+  /**
+   * Returns the latest table runtime snapshot.
+   */
+  getSnapshot: () => DynamicModelTableSnapshot;
+  /**
+   * Current rendered rows for the active page/query.
+   */
+  readonly data: Record<string, unknown>[];
+  /**
+   * Rows currently selected from `data`.
+   */
+  readonly selectedRows: Record<string, unknown>[];
+  /**
+   * Current selection state keyed by row id.
+   */
+  readonly rowSelection: Record<string, boolean>;
+  /**
+   * Data query loading state.
+   */
+  readonly loading: boolean;
+  /**
+   * Metadata loading state.
+   */
+  readonly metadataLoading: boolean;
+  /**
+   * Data query error when present.
+   */
+  readonly dataError: Error | null;
+  /**
+   * Metadata query error when present.
+   */
+  readonly metadataError: Error | null;
+  /**
+   * Current model metadata, if loaded.
+   */
+  readonly metadata: ModelSchema | null;
+  /**
+   * Current pagination state, if initialized.
+   */
+  readonly pagination: PaginationState | null;
+}
+
+/**
  * Public props contract for the DynamicTable-backed model table implementation.
  */
-export interface DynamicModelTableProps extends ModelTableV2Props {}
+export type DynamicModelTableProps = ModelTableV2Props;

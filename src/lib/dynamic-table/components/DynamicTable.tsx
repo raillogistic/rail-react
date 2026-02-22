@@ -9,10 +9,8 @@ import {
   type ExpandedState,
   type PaginationState,
   type RowSelectionState,
-  type SortingState,
   type Updater,
   type VisibilityState,
-  flexRender,
   getCoreRowModel,
   getExpandedRowModel,
   getGroupedRowModel,
@@ -20,12 +18,13 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { Loader2 } from "lucide-react";
+import { ChevronRight, Loader2 } from "lucide-react";
 import { Checkbox } from "@/lib/components/ui/checkbox";
 import { Table } from "@/lib/components/ui/table";
 import { cn } from "@/lib/utils";
 import type {
   DynamicTableColumnInput,
+  DynamicTableExpandColumnConfig,
   DynamicTableColumnSpec,
   DynamicTableProps,
   DynamicTableResolvedFeatures,
@@ -45,6 +44,11 @@ import { DynamicTablePagination } from "./DynamicTablePagination";
  * Utility id for the built-in selection column.
  */
 export const DYNAMIC_TABLE_SELECTION_COLUMN_ID = "__dynamic_table_selection";
+
+/**
+ * Utility id for the built-in expand column.
+ */
+export const DYNAMIC_TABLE_EXPAND_COLUMN_ID = "__dynamic_table_expand";
 
 /**
  * Utility id for the built-in actions column.
@@ -94,6 +98,78 @@ function collectSortDescriptors<TRow extends Record<string, unknown>>(
   });
 
   return descriptors;
+}
+
+/**
+ * Collects leaf column ids from nested column specifications in render order.
+ */
+function collectLeafColumnIds<TRow extends Record<string, unknown>>(
+  columns: DynamicTableColumnInput<TRow>[],
+): string[] {
+  const ids: string[] = [];
+  columns.forEach((column) => {
+    if (isGroupSpec(column)) {
+      ids.push(...collectLeafColumnIds(column.columns));
+      return;
+    }
+    ids.push(column.id);
+  });
+  return ids;
+}
+
+/**
+ * Forces utility columns into stable positions for controlled column-order state.
+ */
+function normalizeColumnOrderWithUtilityColumns(
+  columnOrder: string[],
+  leafColumnIds: string[],
+  options: {
+    includeExpand: boolean;
+    includeSelection: boolean;
+    includeActions: boolean;
+  },
+): string[] {
+  if (columnOrder.length === 0) {
+    return columnOrder;
+  }
+
+  const leafIdSet = new Set(leafColumnIds);
+  const userOrderedIds: string[] = [];
+  const seenUserIds = new Set<string>();
+
+  columnOrder.forEach((id) => {
+    if (
+      id === DYNAMIC_TABLE_EXPAND_COLUMN_ID ||
+      id === DYNAMIC_TABLE_SELECTION_COLUMN_ID ||
+      id === DYNAMIC_TABLE_ACTIONS_COLUMN_ID
+    ) {
+      return;
+    }
+    if (!leafIdSet.has(id) || seenUserIds.has(id)) {
+      return;
+    }
+    seenUserIds.add(id);
+    userOrderedIds.push(id);
+  });
+
+  leafColumnIds.forEach((id) => {
+    if (!seenUserIds.has(id)) {
+      seenUserIds.add(id);
+      userOrderedIds.push(id);
+    }
+  });
+
+  const normalizedOrder = [...userOrderedIds];
+  if (options.includeSelection) {
+    normalizedOrder.unshift(DYNAMIC_TABLE_SELECTION_COLUMN_ID);
+  }
+  if (options.includeExpand) {
+    normalizedOrder.unshift(DYNAMIC_TABLE_EXPAND_COLUMN_ID);
+  }
+  if (options.includeActions) {
+    normalizedOrder.push(DYNAMIC_TABLE_ACTIONS_COLUMN_ID);
+  }
+  return normalizedOrder;
 }
 
 /**
@@ -161,6 +237,28 @@ function resolveLayout<TRow extends Record<string, unknown>>(
     cellClassName: input?.cellClassName,
     stickySelectionColumn: input?.stickySelectionColumn ?? true,
     actions: input?.actions,
+  };
+}
+
+/**
+ * Resolved expand-column config with defaults.
+ */
+type DynamicTableResolvedExpandColumnConfig<
+  TRow extends Record<string, unknown>,
+> = Required<Pick<DynamicTableExpandColumnConfig<TRow>, "size" | "sticky">> &
+  Pick<DynamicTableExpandColumnConfig<TRow>, "headerLabel" | "ariaLabel">;
+
+/**
+ * Resolves fully-defaulted expand-column options.
+ */
+function resolveExpandColumnConfig<TRow extends Record<string, unknown>>(
+  input?: DynamicTableExpandColumnConfig<TRow>,
+): DynamicTableResolvedExpandColumnConfig<TRow> {
+  return {
+    size: input?.size ?? 44,
+    sticky: input?.sticky ?? true,
+    headerLabel: input?.headerLabel,
+    ariaLabel: input?.ariaLabel,
   };
 }
 
@@ -256,6 +354,87 @@ function buildSelectionColumnDef<TRow extends Record<string, unknown>>(): Column
 }
 
 /**
+ * Resolves fallback aria-label text for expand/collapse toggles.
+ */
+function resolveExpandToggleAriaLabel<TRow extends Record<string, unknown>>(
+  context: {
+    row: TRow;
+    rowId: string;
+    rowIndex: number;
+    expanded: boolean;
+  },
+  config: DynamicTableResolvedExpandColumnConfig<TRow>,
+): string {
+  if (config.ariaLabel) {
+    return config.ariaLabel(
+      context.row,
+      context.rowIndex,
+      context.expanded,
+    );
+  }
+  const actionLabel = context.expanded ? "Collapse" : "Expand";
+  return `${actionLabel} row ${context.rowId}`;
+}
+
+/**
+ * Creates the optional built-in expand column definition.
+ */
+function buildExpandColumnDef<TRow extends Record<string, unknown>>(
+  config: DynamicTableResolvedExpandColumnConfig<TRow>,
+): ColumnDef<TRow, unknown> {
+  return {
+    id: DYNAMIC_TABLE_EXPAND_COLUMN_ID,
+    header: () => null,
+    cell: (context) => {
+      const expanded = context.row.getIsExpanded();
+      const rowId = String(context.row.id);
+      const rowIndex = context.row.index;
+      const ariaLabel = resolveExpandToggleAriaLabel(
+        {
+          row: context.row.original,
+          rowId,
+          rowIndex,
+          expanded,
+        },
+        config,
+      );
+
+      return (
+        <div className="grid place-items-center">
+          <button
+            type="button"
+            className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-border/60 text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground"
+            onClick={context.row.getToggleExpandedHandler()}
+            aria-label={ariaLabel}
+            aria-expanded={expanded}
+          >
+            <ChevronRight
+              className={cn(
+                "h-4 w-4 transition-transform",
+                expanded && "rotate-90",
+              )}
+            />
+          </button>
+        </div>
+      );
+    },
+    size: config.size,
+    minSize: config.size,
+    maxSize: config.size,
+    enableHiding: false,
+    enableSorting: false,
+    enableGrouping: false,
+    enableResizing: false,
+    meta: {
+      title:
+        typeof config.headerLabel === "string"
+          ? config.headerLabel
+          : undefined,
+    },
+  };
+}
+
+/**
  * Creates the optional built-in actions column definition.
  */
 function buildActionsColumnDef<TRow extends Record<string, unknown>>(
@@ -311,6 +490,7 @@ export function DynamicTable<TRow extends Record<string, unknown>>({
   onOrderByChange,
   onRowSelectionChange,
   onPaginationChange,
+  expand,
   sortMode = "server",
   paginationMode = "server",
   features: featuresInput,
@@ -326,6 +506,13 @@ export function DynamicTable<TRow extends Record<string, unknown>>({
     [featuresInput],
   );
   const layout = useMemo(() => resolveLayout(layoutInput), [layoutInput]);
+  const expandRequested = expand?.enabled;
+  const expandRenderer = expand?.renderRow;
+  const expandOnChange = expand?.onExpandedChange;
+  const expandColumnConfig = useMemo(
+    () => resolveExpandColumnConfig(expand?.column),
+    [expand?.column],
+  );
 
   const dynamicState = useDynamicTableState({
     state,
@@ -337,16 +524,48 @@ export function DynamicTable<TRow extends Record<string, unknown>>({
     onStateChange,
     onOrderByChange,
     onRowSelectionChange,
+    onExpandedChange: expandOnChange,
     onPaginationChange,
   });
+
+  const rowDetailRequested = expandRequested ?? Boolean(expandRenderer);
+  const groupingActive =
+    features.enableGrouping && dynamicState.grouping.length > 0;
+  const rowDetailEnabled = rowDetailRequested && Boolean(expandRenderer);
+  const showExpandColumn = rowDetailEnabled && !groupingActive;
+  const selectionColumnLeftOffsetPx =
+    showExpandColumn && expandColumnConfig.sticky ? expandColumnConfig.size : 0;
 
   const sortDescriptors = useMemo(
     () => collectSortDescriptors(columns),
     [columns],
   );
+  const leafColumnIds = useMemo(
+    () => collectLeafColumnIds(columns),
+    [columns],
+  );
   const sortingState = useMemo(
     () => orderByToSortingState(dynamicState.orderBy, sortDescriptors),
     [dynamicState.orderBy, sortDescriptors],
+  );
+  const controlledColumnOrder = useMemo(
+    () =>
+      normalizeColumnOrderWithUtilityColumns(
+        dynamicState.columnOrder,
+        leafColumnIds,
+        {
+          includeExpand: showExpandColumn,
+          includeSelection: features.enableSelection,
+          includeActions: Boolean(layout.actions),
+        },
+      ),
+    [
+      dynamicState.columnOrder,
+      features.enableSelection,
+      leafColumnIds,
+      layout.actions,
+      showExpandColumn,
+    ],
   );
 
   const baseColumnDefs = useMemo(
@@ -359,11 +578,20 @@ export function DynamicTable<TRow extends Record<string, unknown>>({
     if (features.enableSelection) {
       resolved.unshift(buildSelectionColumnDef<TRow>());
     }
+    if (showExpandColumn) {
+      resolved.unshift(buildExpandColumnDef<TRow>(expandColumnConfig));
+    }
     if (layout.actions) {
       resolved.push(buildActionsColumnDef(layout));
     }
     return resolved;
-  }, [baseColumnDefs, features.enableSelection, layout]);
+  }, [
+    baseColumnDefs,
+    expandColumnConfig,
+    features.enableSelection,
+    layout,
+    showExpandColumn,
+  ]);
 
   const table = useReactTable({
     data: rows,
@@ -371,7 +599,7 @@ export function DynamicTable<TRow extends Record<string, unknown>>({
     state: {
       sorting: sortingState,
       rowSelection: dynamicState.rowSelection,
-      columnOrder: dynamicState.columnOrder,
+      columnOrder: controlledColumnOrder,
       columnVisibility: dynamicState.columnVisibility,
       columnSizing: dynamicState.columnSizing,
       grouping: dynamicState.grouping,
@@ -381,11 +609,18 @@ export function DynamicTable<TRow extends Record<string, unknown>>({
     getRowId: (row, index) =>
       getRowId?.(row, index) ?? resolveDefaultRowId(row, index),
     getSubRows,
+    getRowCanExpand: (row) => {
+      if (showExpandColumn) {
+        return true;
+      }
+      return row.subRows.length > 0;
+    },
     enableRowSelection: features.enableSelection,
     enableMultiSort: true,
     columnResizeMode: "onChange",
     manualSorting: sortMode === "server",
     manualPagination: paginationMode === "server",
+    autoResetExpanded: false,
     pageCount: paginationMode === "server" ? pageCount : undefined,
     onSortingChange: (updater) => {
       const nextSorting = resolveUpdater(updater, sortingState);
@@ -408,7 +643,10 @@ export function DynamicTable<TRow extends Record<string, unknown>>({
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: sortMode === "client" ? getSortedRowModel() : undefined,
     getGroupedRowModel: features.enableGrouping ? getGroupedRowModel() : undefined,
-    getExpandedRowModel: features.enableGrouping ? getExpandedRowModel() : undefined,
+    getExpandedRowModel:
+      features.enableGrouping || showExpandColumn
+        ? getExpandedRowModel()
+        : undefined,
     getPaginationRowModel:
       features.enablePagination &&
       features.dataMode !== "infinite" &&
@@ -423,6 +661,7 @@ export function DynamicTable<TRow extends Record<string, unknown>>({
     () =>
       new Set<string>([
         ...features.lockedColumnIds,
+        DYNAMIC_TABLE_EXPAND_COLUMN_ID,
         DYNAMIC_TABLE_SELECTION_COLUMN_ID,
         DYNAMIC_TABLE_ACTIONS_COLUMN_ID,
       ]),
@@ -561,8 +800,12 @@ export function DynamicTable<TRow extends Record<string, unknown>>({
                   state={dynamicState}
                   features={features}
                   layout={layout}
+                  expandColumnId={DYNAMIC_TABLE_EXPAND_COLUMN_ID}
                   selectionColumnId={DYNAMIC_TABLE_SELECTION_COLUMN_ID}
                   actionsColumnId={DYNAMIC_TABLE_ACTIONS_COLUMN_ID}
+                  expandColumnHeader={expandColumnConfig.headerLabel}
+                  expandColumnSticky={showExpandColumn && expandColumnConfig.sticky}
+                  selectionColumnLeftOffsetPx={selectionColumnLeftOffsetPx}
                   onResetLayout={handleResetLayout}
                 />
                 <DynamicTableRows
@@ -577,8 +820,18 @@ export function DynamicTable<TRow extends Record<string, unknown>>({
                     wrapCells: dynamicState.wrapCells,
                   }}
                   scrollContainerRef={scrollContainerRef}
+                  disableVirtualization={showExpandColumn}
+                  expansionEnabled={showExpandColumn}
+                  renderExpandedRow={
+                    showExpandColumn
+                      ? (context) => expandRenderer?.(context)
+                      : undefined
+                  }
+                  expandColumnId={DYNAMIC_TABLE_EXPAND_COLUMN_ID}
                   selectionColumnId={DYNAMIC_TABLE_SELECTION_COLUMN_ID}
                   actionsColumnId={DYNAMIC_TABLE_ACTIONS_COLUMN_ID}
+                  expandColumnSticky={showExpandColumn && expandColumnConfig.sticky}
+                  selectionColumnLeftOffsetPx={selectionColumnLeftOffsetPx}
                 />
               </Table>
             </SortableContext>

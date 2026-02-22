@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import type { RefObject } from "react";
+import type { CSSProperties, RefObject } from "react";
 import type { Row, Table } from "@tanstack/react-table";
 import { flexRender } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { TableBody, TableCell, TableRow } from "@/lib/components/ui/table";
 import type {
   DynamicTableDensity,
+  DynamicTableExpandedRowRenderContext,
   DynamicTableResolvedFeatures,
   DynamicTableResolvedLayout,
 } from "../types";
@@ -32,10 +33,24 @@ export interface DynamicTableRowsProps<
   layout: DynamicTableResolvedLayout<TRow>;
   /** Scroll container reference used by virtualization. */
   scrollContainerRef: RefObject<HTMLDivElement | null>;
+  /** Disables virtualization for content with variable row heights. */
+  disableVirtualization?: boolean;
+  /** Enables rendering row-detail panels below expanded rows. */
+  expansionEnabled?: boolean;
+  /** Optional row-detail panel renderer. */
+  renderExpandedRow?: (
+    context: DynamicTableExpandedRowRenderContext<TRow>,
+  ) => React.ReactNode;
+  /** Expand utility column id. */
+  expandColumnId: string;
   /** Selection utility column id. */
   selectionColumnId: string;
   /** Actions utility column id. */
   actionsColumnId: string;
+  /** Whether the expand utility column is sticky. */
+  expandColumnSticky?: boolean;
+  /** Left sticky offset in px applied to the selection utility column. */
+  selectionColumnLeftOffsetPx?: number;
 }
 
 /**
@@ -118,8 +133,14 @@ export function DynamicTableRows<TRow extends Record<string, unknown>>({
   features,
   layout,
   scrollContainerRef,
+  disableVirtualization,
+  expansionEnabled,
+  renderExpandedRow,
+  expandColumnId,
   selectionColumnId,
   actionsColumnId,
+  expandColumnSticky,
+  selectionColumnLeftOffsetPx,
 }: DynamicTableRowsProps<TRow>) {
   const rows = table.getRowModel().rows;
   const visibleColumnCount = table.getVisibleLeafColumns().length;
@@ -130,6 +151,7 @@ export function DynamicTableRows<TRow extends Record<string, unknown>>({
 
   const shouldVirtualize =
     features.enableVirtualization &&
+    !disableVirtualization &&
     !layout.wrapCells &&
     rows.length >= features.virtualizeThreshold;
 
@@ -143,18 +165,67 @@ export function DynamicTableRows<TRow extends Record<string, unknown>>({
   /**
    * Resolves sticky positioning class for utility columns.
    */
-  const resolveStickyCellClass = (columnId: string): string | undefined => {
+  const resolveStickyCellStyle = (
+    columnId: string,
+  ): { className?: string; style?: CSSProperties } => {
+    if (columnId === expandColumnId && expandColumnSticky) {
+      return {
+        className: "sticky z-20 bg-background",
+        style: { left: 0 },
+      };
+    }
     if (columnId === selectionColumnId && layout.stickySelectionColumn !== false) {
-      return "sticky left-0 z-20 bg-background";
+      const leftOffset = selectionColumnLeftOffsetPx ?? 0;
+      return {
+        className: leftOffset > 0
+          ? "sticky z-20 bg-background"
+          : "sticky left-0 z-20 bg-background",
+        style: leftOffset > 0 ? { left: leftOffset } : undefined,
+      };
     }
     if (columnId === actionsColumnId && layout.actions?.sticky !== false) {
-      return "sticky right-0 z-20 bg-background";
+      return {
+        className: "sticky right-0 z-20 bg-background",
+      };
     }
-    return undefined;
+    return {};
   };
 
   /**
-   * Renders a single body row.
+   * Renders the optional expanded detail row below a base row.
+   */
+  const renderExpandedPanelRow = (
+    row: Row<TRow>,
+    rowIndex: number,
+  ): React.ReactNode => {
+    if (!expansionEnabled || !renderExpandedRow || !row.getIsExpanded()) {
+      return null;
+    }
+
+    const content = renderExpandedRow({
+      row: row.original,
+      rowIndex,
+      table,
+    });
+
+    if (content === null || content === undefined) {
+      return null;
+    }
+
+    return (
+      <TableRow key={`${row.id}::expanded`} className="hover:bg-transparent">
+        <TableCell
+          colSpan={visibleColumnCount}
+          className="border-b border-border/40 bg-muted/20 px-4 py-3"
+        >
+          {content}
+        </TableCell>
+      </TableRow>
+    );
+  };
+
+  /**
+   * Renders one base row and its optional detail row.
    */
   const renderRow = (row: Row<TRow>, rowIndex: number) => {
     const rowClassName = layout.rowClassName?.({
@@ -162,7 +233,7 @@ export function DynamicTableRows<TRow extends Record<string, unknown>>({
       rowIndex,
     });
 
-    return (
+    const baseRow = (
       <TableRow
         key={row.id}
         data-state={row.getIsSelected() ? "selected" : undefined}
@@ -171,7 +242,7 @@ export function DynamicTableRows<TRow extends Record<string, unknown>>({
         {row.getVisibleCells().map((cell) => {
           const rendered = flexRender(cell.column.columnDef.cell, cell.getContext());
           const fallbackRendered = rendered ?? formatFallbackValue(cell.getValue());
-          const stickyClass = resolveStickyCellClass(cell.column.id);
+          const sticky = resolveStickyCellStyle(cell.column.id);
           const metaClass = (cell.column.columnDef.meta as { className?: string } | undefined)?.className;
           const userCellClass = layout.cellClassName?.({
             row: row.original,
@@ -196,11 +267,12 @@ export function DynamicTableRows<TRow extends Record<string, unknown>>({
                 width: cell.column.getSize(),
                 minWidth: cell.column.getSize(),
                 maxWidth: cell.column.getSize(),
+                ...(sticky.style ?? {}),
               }}
               className={cn(
                 "border-b border-border/40 align-middle",
                 cellTextClasses,
-                stickyClass,
+                sticky.className,
                 metaClass,
                 userCellClass,
               )}
@@ -211,6 +283,12 @@ export function DynamicTableRows<TRow extends Record<string, unknown>>({
         })}
       </TableRow>
     );
+
+    const expandedRow = renderExpandedPanelRow(row, rowIndex);
+    if (!expandedRow) {
+      return baseRow;
+    }
+    return [baseRow, expandedRow];
   };
 
   if (loading && rows.length === 0) {
@@ -277,4 +355,3 @@ export function DynamicTableRows<TRow extends Record<string, unknown>>({
     </TableBody>
   );
 }
-

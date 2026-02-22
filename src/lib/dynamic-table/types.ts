@@ -93,6 +93,20 @@ export interface DynamicTableCellClassContext<
 }
 
 /**
+ * Context passed to `renderExpandedRow` for row-detail panel rendering.
+ */
+export interface DynamicTableExpandedRowRenderContext<
+  TRow extends Record<string, unknown>,
+> {
+  /** Original row data object. */
+  row: TRow;
+  /** Zero-based row index in current row model. */
+  rowIndex: number;
+  /** The current table instance. */
+  table: Table<TRow>;
+}
+
+/**
  * Leaf column specification used to generate a TanStack column definition.
  */
 export interface DynamicTableColumnSpec<TRow extends Record<string, unknown>> {
@@ -182,6 +196,44 @@ export interface DynamicTableActionsLayout<
     /** Zero-based row index in the current row model. */
     rowIndex: number;
   }) => React.ReactNode;
+}
+
+/**
+ * Optional configuration for the built-in row-expand utility column.
+ */
+export interface DynamicTableExpandColumnConfig<
+  TRow extends Record<string, unknown>,
+> {
+  /** Fixed size in px for the expand column. */
+  size?: number;
+  /** Whether the expand column is sticky on the left edge. */
+  sticky?: boolean;
+  /** Optional header label for the expand column. */
+  headerLabel?: React.ReactNode;
+  /** Optional aria-label resolver for the expand toggle button. */
+  ariaLabel?: (
+    row: TRow,
+    rowIndex: number,
+    expanded: boolean,
+  ) => string;
+}
+
+/**
+ * Row-detail expansion configuration.
+ */
+export interface DynamicTableExpandConfig<
+  TRow extends Record<string, unknown>,
+> {
+  /** Enables row-detail expansion mode. Defaults to `Boolean(renderRow)`. */
+  enabled?: boolean;
+  /** Emits expanded state after row expansion transitions. */
+  onExpandedChange?: (expanded: ExpandedState) => void;
+  /** Optional configuration for the built-in expand utility column. */
+  column?: DynamicTableExpandColumnConfig<TRow>;
+  /** Optional row-detail panel renderer shown below expanded rows. */
+  renderRow?: (
+    context: DynamicTableExpandedRowRenderContext<TRow>,
+  ) => React.ReactNode;
 }
 
 /**
@@ -306,6 +358,8 @@ export interface DynamicTableProps<TRow extends Record<string, unknown>> {
   onRowSelectionChange?: (selection: RowSelectionState) => void;
   /** Emits pagination state after page/page-size transitions. */
   onPaginationChange?: (pagination: PaginationState) => void;
+  /** Row-detail expansion behavior and rendering. */
+  expand?: DynamicTableExpandConfig<TRow>;
   /** Sort execution ownership mode. */
   sortMode?: DynamicTableSortMode;
   /** Pagination execution ownership mode. */
@@ -329,8 +383,8 @@ export interface DynamicTableProps<TRow extends Record<string, unknown>> {
 /**
  * Resolved feature flags with defaults applied.
  */
-export interface DynamicTableResolvedFeatures
-  extends Required<DynamicTableFeatureFlags> {}
+export type DynamicTableResolvedFeatures =
+  Required<DynamicTableFeatureFlags>;
 
 /**
  * Resolved layout options with defaults applied.

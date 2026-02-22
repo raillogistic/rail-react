@@ -43,10 +43,18 @@ export interface DynamicTableHeaderProps<
   features: DynamicTableResolvedFeatures;
   /** Resolved layout configuration. */
   layout: DynamicTableResolvedLayout<TRow>;
+  /** Expand utility column id. */
+  expandColumnId: string;
   /** Selection utility column id. */
   selectionColumnId: string;
   /** Actions utility column id. */
   actionsColumnId: string;
+  /** Optional header content for the expand utility column. */
+  expandColumnHeader?: ReactNode;
+  /** Whether the expand utility column is sticky. */
+  expandColumnSticky: boolean;
+  /** Left sticky offset in px applied to the selection utility column. */
+  selectionColumnLeftOffsetPx: number;
   /** Callback used by column menu reset action. */
   onResetLayout: () => void;
 }
@@ -56,11 +64,14 @@ export interface DynamicTableHeaderProps<
  */
 function isUtilityHeader<TRow extends Record<string, unknown>>(
   header: Header<TRow, unknown>,
+  expandColumnId: string,
   selectionColumnId: string,
   actionsColumnId: string,
 ): boolean {
   return (
-    header.column.id === selectionColumnId || header.column.id === actionsColumnId
+    header.column.id === expandColumnId ||
+    header.column.id === selectionColumnId ||
+    header.column.id === actionsColumnId
   );
 }
 
@@ -222,6 +233,7 @@ function DraggableHeaderCell<TRow extends Record<string, unknown>>({
   draggable,
   resizable,
   stickyClassName,
+  stickyStyle,
 }: {
   /** Current TanStack header instance. */
   header: Header<TRow, unknown>;
@@ -233,6 +245,8 @@ function DraggableHeaderCell<TRow extends Record<string, unknown>>({
   resizable: boolean;
   /** Optional sticky positioning className. */
   stickyClassName?: string;
+  /** Optional sticky positioning style. */
+  stickyStyle?: CSSProperties;
 }) {
   const { attributes, listeners, isDragging, setNodeRef, transform, transition } = useSortable({
     id: header.column.id,
@@ -243,6 +257,7 @@ function DraggableHeaderCell<TRow extends Record<string, unknown>>({
     transform: CSS.Translate.toString(transform),
     transition,
     ...resolveHeaderStyle(header),
+    ...stickyStyle,
   };
 
   return (
@@ -294,8 +309,12 @@ export function DynamicTableHeader<TRow extends Record<string, unknown>>({
   state,
   features,
   layout,
+  expandColumnId,
   selectionColumnId,
   actionsColumnId,
+  expandColumnHeader,
+  expandColumnSticky,
+  selectionColumnLeftOffsetPx,
   onResetLayout,
 }: DynamicTableHeaderProps<TRow>) {
   const allPageRowsSelected = table.getIsAllPageRowsSelected();
@@ -328,9 +347,11 @@ export function DynamicTableHeader<TRow extends Record<string, unknown>>({
             const isLeafHeader = header.subHeaders.length === 0;
             const utilityHeader = isUtilityHeader(
               header,
+              expandColumnId,
               selectionColumnId,
               actionsColumnId,
             );
+            const isExpand = header.column.id === expandColumnId;
             const isSelection = header.column.id === selectionColumnId;
             const isActions = header.column.id === actionsColumnId;
 
@@ -347,10 +368,19 @@ export function DynamicTableHeader<TRow extends Record<string, unknown>>({
               state.dragModeEnabled &&
               header.column.getCanResize();
 
-            const stickyClassName = isSelection && layout.stickySelectionColumn !== false
-              ? "sticky left-0 z-30"
+            const stickyClassName = isExpand && expandColumnSticky
+              ? "sticky z-30"
+              : isSelection && layout.stickySelectionColumn !== false
+                ? "sticky z-30"
               : isActions && layout.actions?.sticky !== false
                 ? "sticky right-0 z-30"
+                : undefined;
+            const stickyStyle = isExpand && expandColumnSticky
+              ? { left: 0 }
+              : isSelection &&
+                  layout.stickySelectionColumn !== false &&
+                  selectionColumnLeftOffsetPx > 0
+                ? { left: selectionColumnLeftOffsetPx }
                 : undefined;
 
             if (!isLeafHeader) {
@@ -369,6 +399,23 @@ export function DynamicTableHeader<TRow extends Record<string, unknown>>({
               );
             }
 
+            if (isExpand) {
+              return (
+                <DraggableHeaderCell
+                  key={header.id}
+                  header={header}
+                  draggable={false}
+                  resizable={false}
+                  stickyClassName={stickyClassName}
+                  stickyStyle={stickyStyle}
+                >
+                  <div className="grid h-full place-items-center text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
+                    {expandColumnHeader ?? null}
+                  </div>
+                </DraggableHeaderCell>
+              );
+            }
+
             if (isSelection) {
               return (
                 <DraggableHeaderCell
@@ -377,6 +424,7 @@ export function DynamicTableHeader<TRow extends Record<string, unknown>>({
                   draggable={false}
                   resizable={false}
                   stickyClassName={stickyClassName}
+                  stickyStyle={stickyStyle}
                 >
                   <div className="grid h-full place-items-center">
                     <Checkbox
@@ -402,6 +450,7 @@ export function DynamicTableHeader<TRow extends Record<string, unknown>>({
                   draggable={false}
                   resizable={false}
                   stickyClassName={stickyClassName}
+                  stickyStyle={stickyStyle}
                 >
                   <div className="flex h-full items-center justify-end px-3 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground">
                     {layout.actions?.headerLabel ?? "Actions"}
@@ -422,6 +471,7 @@ export function DynamicTableHeader<TRow extends Record<string, unknown>>({
                 draggable={draggable}
                 resizable={resizable}
                 stickyClassName={stickyClassName}
+                stickyStyle={stickyStyle}
               >
                 {isCustomHeader ? (
                   <div className={cn("flex h-full items-center", headerClassName)}>

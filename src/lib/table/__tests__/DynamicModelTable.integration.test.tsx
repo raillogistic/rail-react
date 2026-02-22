@@ -1,4 +1,5 @@
 import { render, screen, waitFor } from "@testing-library/react";
+import userEvent from "@testing-library/user-event";
 import { MockedProvider } from "@apollo/client/testing";
 import { gql } from "@apollo/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -365,6 +366,55 @@ describe("DynamicModelTable integration", () => {
       expect(screen.getAllByText("Username").length).toBeGreaterThan(0);
     });
 
-    expect(screen.getByRole("checkbox", { name: /select all rows/i })).toBeInTheDocument();
+    const selectAllHeaderCell = screen
+      .getByRole("checkbox", { name: /select all rows/i })
+      .closest("th");
+    const usernameHeaderCell = screen.getByRole("columnheader", {
+      name: /username/i,
+    });
+
+    expect(selectAllHeaderCell).toBeInTheDocument();
+    expect(usernameHeaderCell).toBeInTheDocument();
+    expect((selectAllHeaderCell as HTMLTableCellElement).cellIndex).toBe(0);
+    expect(
+      (selectAllHeaderCell as HTMLTableCellElement).cellIndex,
+    ).toBeLessThan((usernameHeaderCell as HTMLTableCellElement).cellIndex);
+  });
+
+  it("renders detail expansion when baseTable.expand is configured", async () => {
+    const user = userEvent.setup();
+    const onExpandedChange = vi.fn();
+
+    render(
+      <MockedProvider mocks={[buildMetadataMock(), DATA_MOCK]}>
+        <MemoryRouter>
+          <DynamicModelTable
+            app="auth"
+            model="User"
+            baseTable={{
+              expand: {
+                onExpandedChange,
+                renderRow: ({ row }) => (
+                  <div>
+                    Detail: {String(row["username"])}
+                  </div>
+                ),
+              },
+            }}
+          />
+        </MemoryRouter>
+      </MockedProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getAllByText("Username").length).toBeGreaterThan(0);
+    });
+
+    const expandButton = screen.getByRole("button", { name: /expand row 1/i });
+    await user.click(expandButton);
+
+    await waitFor(() => {
+      expect(onExpandedChange).toHaveBeenCalled();
+    });
   });
 });

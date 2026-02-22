@@ -1,6 +1,8 @@
 import React, {
+  forwardRef,
   useCallback,
   useEffect,
+  useImperativeHandle,
   useMemo,
   useRef,
   useState,
@@ -12,10 +14,10 @@ import type {
   RowSelectionState,
   VisibilityState,
 } from "@tanstack/react-table";
-import { Loader2 } from "lucide-react";
 import { useAuthContext } from "@/auth/context";
 import {
   DynamicTable,
+  DYNAMIC_TABLE_SELECTION_COLUMN_ID,
   type DynamicTableColumnInput,
 } from "@/lib/dynamic-table";
 import type { DynamicTableFeatureFlags } from "@/lib/dynamic-table";
@@ -35,8 +37,11 @@ import type {
   RowMutationPermissions,
 } from "../types";
 import type {
+  DynamicModelTableHandle,
   DynamicModelTableProps,
+  DynamicModelTableSnapshot,
   ModelTableFilterPanelProps,
+  ModelTableV2ExpandConfig,
   ModelTableV2TopActionsInput,
   ModelTableV2PerformanceOptions,
   ModelTableV2TableConfig,
@@ -108,7 +113,16 @@ type DynamicBaseTableContentProps = {
   skipCount?: boolean;
   disableSorting?: boolean;
   enableSelection?: boolean;
+  expand?: ModelTableV2ExpandConfig;
   columnActions?: BaseModelTableColumnActionsInput;
+  /**
+   * Emits the current query refetch function to the parent wrapper.
+   */
+  onRefetchResolved?: (refetch?: BaseModelTableRefetch) => void;
+  /**
+   * Emits a runtime snapshot whenever table state changes.
+   */
+  onSnapshotResolved?: (snapshot: DynamicModelTableSnapshot) => void;
 };
 
 /**
@@ -139,9 +153,9 @@ function resolveSectionVisibility(
 /**
  * Empty top-actions renderer used when topActions are intentionally hidden.
  */
-function HiddenTopActions({}: ModelTableTopActionsSlotProps) {
-  return null;
-}
+const HiddenTopActions: (
+  props: ModelTableTopActionsSlotProps,
+) => React.ReactNode = () => null;
 
 /**
  * Returns true when the input is a plain object record.
@@ -312,7 +326,10 @@ function DynamicBaseTableContent({
   skipCount,
   disableSorting,
   enableSelection,
+  expand,
   columnActions,
+  onRefetchResolved,
+  onSnapshotResolved,
 }: DynamicBaseTableContentProps) {
   const { user } = useAuthContext();
   const {
@@ -336,7 +353,6 @@ function DynamicBaseTableContent({
     setColumnWidths,
     setColumnOrder,
     setRowSelection,
-    setGroupingField,
     setPage,
     setPerPage,
     setDragModeEnabled,
@@ -411,6 +427,12 @@ function DynamicBaseTableContent({
   });
 
   const { refetch } = useTableData(queryConfig);
+  useEffect(() => {
+    onRefetchResolved?.(refetch as BaseModelTableRefetch | undefined);
+    return () => {
+      onRefetchResolved?.(undefined);
+    };
+  }, [onRefetchResolved, refetch]);
 
   const { allowColumnDrag, lockedColumns } = useTableLayout({
     columnDefs,
@@ -425,11 +447,55 @@ function DynamicBaseTableContent({
     }
     return (metadata?.templates ?? []).length > 0;
   }, [enableSelection, metadata?.templates]);
+  const rowDetailExpandEnabled = useMemo(() => {
+    const requested = expand?.enabled ?? Boolean(expand?.renderRow);
+    return requested && Boolean(expand?.renderRow);
+  }, [expand]);
 
   const primaryKey = metadata?.primaryKey || "id";
+  const selectedRows = useMemo(() => {
+    const selectedRowIds = new Set(
+      Object.entries(rowSelection)
+        .filter(([, isSelected]) => isSelected)
+        .map(([rowId]) => rowId),
+    );
+    if (selectedRowIds.size === 0) {
+      return [];
+    }
+    return data.filter((row, index) =>
+      selectedRowIds.has(resolveRowId(row, index, primaryKey)),
+    );
+  }, [data, primaryKey, rowSelection]);
   const whereType =
     metadata?.filterConfig?.inputTypeName ||
     `${metadata?.model || "Model"}WhereInput`;
+  useEffect(() => {
+    if (!onSnapshotResolved) {
+      return;
+    }
+    onSnapshotResolved({
+      data,
+      selectedRows,
+      rowSelection,
+      loading: tableLoading,
+      metadataLoading,
+      dataError: dataError ?? null,
+      metadataError: metadataError ?? null,
+      metadata: metadata ?? null,
+      pagination,
+    });
+  }, [
+    data,
+    dataError,
+    metadata,
+    metadataError,
+    metadataLoading,
+    onSnapshotResolved,
+    pagination,
+    rowSelection,
+    selectedRows,
+    tableLoading,
+  ]);
 
   const orderBy = useMemo(() => {
     const variableOrderBy = isRecord(filterVariables)
@@ -828,7 +894,15 @@ function DynamicBaseTableContent({
   const dynamicState = useMemo(
     () => ({
       orderBy,
-      columnOrder,
+      columnOrder:
+        resolvedEnableSelection
+          ? [
+              DYNAMIC_TABLE_SELECTION_COLUMN_ID,
+              ...columnOrder.filter(
+                (columnId) => columnId !== DYNAMIC_TABLE_SELECTION_COLUMN_ID,
+              ),
+            ]
+          : columnOrder,
       columnVisibility,
       columnSizing: columnWidths,
       rowSelection,
@@ -848,6 +922,7 @@ function DynamicBaseTableContent({
       dynamicExpanded,
       groupingField,
       orderBy,
+      resolvedEnableSelection,
       rowSelection,
       selectedPaginationState,
       wrapCells,
@@ -856,7 +931,9 @@ function DynamicBaseTableContent({
 
   useEffect(() => {
     if (!groupingField) {
-      setDynamicExpanded({});
+      if (!rowDetailExpandEnabled) {
+        setDynamicExpanded({});
+      }
       return;
     }
 
@@ -873,7 +950,7 @@ function DynamicBaseTableContent({
     if (collapsedValues.every((value) => value === false)) {
       setDynamicExpanded(true);
     }
-  }, [groupCollapsed, groupingField]);
+  }, [groupCollapsed, groupingField, rowDetailExpandEnabled]);
 
   const sectionControllerInput: UseModelTableContentControllerInput = {
     filterPanel,
@@ -966,6 +1043,7 @@ function DynamicBaseTableContent({
               onOrderByChange={handleOrderByChange}
               onRowSelectionChange={handleRowSelectionChange}
               onPaginationChange={handlePaginationChange}
+              expand={expand}
               sortMode="server"
               paginationMode="server"
               features={features}
@@ -1022,13 +1100,86 @@ function DynamicBaseTableContent({
 /**
  * Dynamic-model table built on the same metadata/filter contract as ModelTableV2.
  */
-export function DynamicModelTable({
-  app,
-  model,
-  filterPanel,
-  baseTable,
-}: DynamicModelTableProps) {
+export const DynamicModelTable = forwardRef<
+  DynamicModelTableHandle,
+  DynamicModelTableProps
+>(function DynamicModelTable(
+  { app, model, filterPanel, baseTable }: DynamicModelTableProps,
+  ref,
+) {
   const tableInstanceKey = `${app}:${model}`;
+  const refetchRef = useRef<BaseModelTableRefetch | undefined>(undefined);
+  const snapshotRef = useRef<DynamicModelTableSnapshot>({
+    data: [],
+    selectedRows: [],
+    rowSelection: {},
+    loading: false,
+    metadataLoading: false,
+    dataError: null,
+    metadataError: null,
+    metadata: null,
+    pagination: null,
+  });
+
+  /**
+   * Stores the latest refetch function provided by the table content.
+   */
+  const handleRefetchResolved = useCallback(
+    (nextRefetch?: BaseModelTableRefetch) => {
+      refetchRef.current = nextRefetch;
+    },
+    [],
+  );
+  /**
+   * Stores the latest runtime snapshot provided by the table content.
+   */
+  const handleSnapshotResolved = useCallback(
+    (nextSnapshot: DynamicModelTableSnapshot) => {
+      snapshotRef.current = nextSnapshot;
+    },
+    [],
+  );
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      refetch: (variables?: Record<string, unknown>) => {
+        if (!refetchRef.current) {
+          return Promise.resolve(undefined);
+        }
+        return refetchRef.current(variables);
+      },
+      getSnapshot: () => snapshotRef.current,
+      get data() {
+        return snapshotRef.current.data;
+      },
+      get selectedRows() {
+        return snapshotRef.current.selectedRows;
+      },
+      get rowSelection() {
+        return snapshotRef.current.rowSelection;
+      },
+      get loading() {
+        return snapshotRef.current.loading;
+      },
+      get metadataLoading() {
+        return snapshotRef.current.metadataLoading;
+      },
+      get dataError() {
+        return snapshotRef.current.dataError;
+      },
+      get metadataError() {
+        return snapshotRef.current.metadataError;
+      },
+      get metadata() {
+        return snapshotRef.current.metadata;
+      },
+      get pagination() {
+        return snapshotRef.current.pagination;
+      },
+    }),
+    [],
+  );
 
   return (
     <div
@@ -1063,13 +1214,18 @@ export function DynamicModelTable({
             skipCount={baseTable?.skipCount ?? false}
             disableSorting={baseTable?.disableSorting}
             enableSelection={baseTable?.enableSelection}
+            expand={baseTable?.expand}
             columnActions={baseTable?.columnActions}
+            onRefetchResolved={handleRefetchResolved}
+            onSnapshotResolved={handleSnapshotResolved}
           />
         </TableProvider>
       </MetadataProvider>
     </div>
   );
-}
+});
+
+DynamicModelTable.displayName = "DynamicModelTable";
 
 /**
  * Skeleton displayed while metadata is loading.
