@@ -25,7 +25,7 @@ import {
 } from "@/lib/components/ui/command";
 import { Button } from "@/lib/components/ui/button";
 import { cn } from "@/lib/utils";
-import { NAVIGATION_LINKS } from "@/routes/links";
+import { NAVIGATION_LINKS } from "@/app/router/navigation";
 import { Badge } from "@/lib/components/ui/badge";
 
 /**

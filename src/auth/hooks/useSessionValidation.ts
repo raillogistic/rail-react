@@ -15,7 +15,7 @@ import {
   GET_CURRENT_USER_RESOLVED,
   type CurrentUserResponse,
 } from "@/graphql/queries";
-import client from "@/graphql/apollo-client";
+import client from "@/shared/api/apollo/client";
 
 interface UseSessionValidationReturn {
   wasAborted: boolean;
@@ -138,3 +138,4 @@ export const useSessionValidation = (): UseSessionValidationReturn => {
     wasAborted,
   };
 };
+

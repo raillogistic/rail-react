@@ -10,14 +10,14 @@
 
 import React from "react";
 import { Routes, Route } from "react-router-dom";
-import { ROUTES } from "@/routes/links";
+import { ROUTES } from "@/shared/routing/paths";
 import { ProtectedRoute } from "./ProtectedRoute";
 import { PublicRoute } from "./PublicRoute";
 
 // Import page components
 import { LoginPage, ForgotPasswordPage, ResetPasswordPage } from "@/auth/pages";
-import { MainApp } from "@/layout/MainApp";
-import { ModelImportPage } from "@/lib/import/pages";
+import { MainApp } from "@/app/shell/MainApp";
+import { ModelImportPage } from "@/features/import/pages";
 
 // Import view components
 
@@ -88,3 +88,4 @@ export const ProtectedRoutes: React.FC = () => {
     </Routes>
   );
 };
+

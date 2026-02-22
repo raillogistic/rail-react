@@ -1,4 +1,4 @@
-﻿import * as React from "react";
+import * as React from "react";
 import { gql, type ApolloClient } from "@apollo/client";
 import {
   Layers,
@@ -10,7 +10,7 @@ import {
   CircleAlert,
 } from "lucide-react";
 import { toast } from "sonner";
-import defaultApolloClient from "@/graphql/apollo-client";
+import defaultApolloClient from "@/shared/api/apollo/client";
 import {
   MODEL_FORM_CONTRACT_QUERY,
   MODEL_FORM_INITIAL_DATA_QUERY,
@@ -1256,4 +1256,5 @@ export function createModelSection(
 }
 
 export default createModelSection;
+
 

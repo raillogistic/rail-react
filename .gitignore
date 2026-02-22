@@ -37,7 +37,6 @@ src/schema.ts
 # App/domain-specific pages (local-only)
 src/apps/**
 !src/apps/README.md
-!src/apps/routes.ts
 
 # Logs
 npm-debug.log*

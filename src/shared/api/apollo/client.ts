@@ -3,9 +3,9 @@ import { setContext } from '@apollo/client/link/context';
 import { onError } from '@apollo/client/link/error';
 import { fromPromise } from '@apollo/client/link/utils';
 import { createUploadLink } from 'apollo-upload-client';
-import { tokenStorage, getSecureHeaders } from '../auth/utils/token-storage';
-import { ensureCsrfCookie } from '../auth/utils/csrf';
-import { AuthError, AuthErrorType, handleAuthError } from '../auth/utils/error-handler';
+import { tokenStorage, getSecureHeaders } from '@/auth/utils/token-storage';
+import { ensureCsrfCookie } from '@/auth/utils/csrf';
+import { AuthError, AuthErrorType, handleAuthError } from '@/auth/utils/error-handler';
 import { hasExplicitAuthorizationHeader } from './authHeaders';
 
 // Prefer environment configuration; fall back to local dev.
@@ -466,3 +466,4 @@ const client = new ApolloClient({
 });
 
 export default client;
+

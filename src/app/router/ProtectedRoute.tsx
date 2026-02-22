@@ -11,7 +11,7 @@
 import React from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/auth/hooks/useAuth";
-import { ROUTES } from "@/routes/links";
+import { ROUTES } from "@/shared/routing/paths";
 import OfflineNotification from "@/lib/components/OfflineNotification";
 import { userHasPermission } from "@/auth/utils/permission-matching";
 
@@ -127,3 +127,4 @@ export const withProtectedRoute = <P extends object>(
 
   return ProtectedComponent;
 };
+

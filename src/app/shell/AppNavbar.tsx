@@ -1,7 +1,7 @@
 import React from "react";
 import { Link, useLocation, type Location } from "react-router-dom";
 import { IconMenu2, IconChevronRight, IconArrowRight, IconSparkles } from "@tabler/icons-react";
-import { NAVIGATION_LINKS, type NavigationSection } from "@/routes/links";
+import { NAVIGATION_LINKS, type NavigationSection } from "@/app/router/navigation";
 import { UserNav } from "@/lib/components/user-nav";
 import Logo from "@/assets/logos/logo.png";
 import { useTheme } from "@/lib/theme";

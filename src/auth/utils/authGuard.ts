@@ -10,7 +10,8 @@
 
 import { isTokenValid, getUserFromToken, hasPermission } from './token';
 import { tokenStorage } from './token-storage';
-import { DEFAULT_APP_ROUTE, isProtectedRoute } from "@/routes/links";
+import { DEFAULT_APP_ROUTE } from "@/app/router/navigation";
+import { isProtectedRoute } from "@/app/router/manifestRegistry";
 
 export class AuthenticationError extends Error {
   constructor(message: string, public code: string = 'AUTH_ERROR') {

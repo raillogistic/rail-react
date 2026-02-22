@@ -6,8 +6,9 @@ import {
   LOGOUT_MUTATION,
   REFRESH_TOKEN_MUTATION,
   VERIFY_MFA_LOGIN_MUTATION,
-} from "@/graphql/mutations";
-import { GET_ACTIVE_SESSIONS, GET_CURRENT_USER } from "@/graphql/queries";
+  GET_ACTIVE_SESSIONS,
+  GET_CURRENT_USER,
+} from "@/features/auth/api";
 import { AuthUser, LoginCredentials, TokenPair } from "../types";
 import { tokenStorage } from "../utils/token-storage";
 import { decodeToken } from "../utils/token";

@@ -17,7 +17,7 @@ import {
   type RefreshTokenResponse,
   type RefreshTokenVariables
 } from '@/graphql/mutations';
-import client from '@/graphql/apollo-client';
+import client from '@/shared/api/apollo/client';
 
 interface UseTokenRefreshReturn {
   isRefreshing: boolean;
@@ -200,3 +200,4 @@ export const useTokenRefresh = (
     clearRefreshTimer,
   };
 };
+

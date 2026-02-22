@@ -3,7 +3,7 @@ import {
   DEFAULT_APP_ROUTE,
   findNavigationByPath,
   flattenNavigationPages,
-} from "@/routes/links";
+} from "@/app/router/navigation";
 import { SiteHeader } from "@/lib/components/site-header";
 import { SidebarInset } from "@/lib/components/ui/sidebar";
 

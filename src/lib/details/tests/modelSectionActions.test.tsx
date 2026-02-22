@@ -59,7 +59,10 @@ describe("ModelSection actions and access", () => {
       onUpdate,
     });
 
-    const runtime = createRuntime();
+    const runtime = createRuntime([
+      "store.archive_product",
+      "store.generate_invoice",
+    ]);
     const state: SectionState<ModelSectionData> = {
       status: "success",
       data: createModelData(),
@@ -94,7 +97,10 @@ describe("ModelSection actions and access", () => {
       onUpdate: vi.fn(),
     });
 
-    const runtime = createRuntime();
+    const runtime = createRuntime([
+      "store.archive_product",
+      "store.generate_invoice",
+    ]);
     const state: SectionState<ModelSectionData> = {
       status: "success",
       data: createModelData({

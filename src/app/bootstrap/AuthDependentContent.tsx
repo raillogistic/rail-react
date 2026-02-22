@@ -1,7 +1,7 @@
 ﻿import React from "react";
 import { ThemeProvider } from "@/lib/theme/ThemeProvider";
 import { useAuthContext } from "@/auth/context";
-import { RouteBuilder } from "@/views/routes/RouteBuilder";
+import { RouteBuilder } from "@/app/router/RouteBuilder";
 import { Toaster } from "@/lib/components/ui/sonner";
 import { ActivityTimeoutModal } from "@/auth/components/ActivityTimeoutModal";
 import { useMetadataWarmup } from "@/lib/graphql/metadata/useMetadataWarmup";

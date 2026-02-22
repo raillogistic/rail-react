@@ -13,12 +13,6 @@
     "paths": {
       "@/*": [
         "./src/*"
-      ],
-      "@views/*": [
-        "./src/views/*"
-      ],
-      "@apps/*": [
-        "./src/apps/*"
       ]
     }
   }

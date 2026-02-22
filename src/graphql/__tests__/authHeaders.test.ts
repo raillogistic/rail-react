@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { hasExplicitAuthorizationHeader } from "../authHeaders";
+import { hasExplicitAuthorizationHeader } from "@/shared/api/apollo/authHeaders";
 
 describe("hasExplicitAuthorizationHeader", () => {
   it("detects lowercase authorization header", () => {

@@ -1,5 +1,5 @@
 import type { ApolloClient } from "@apollo/client";
-import apolloClient from "@/graphql/apollo-client";
+import apolloClient from "@/shared/api/apollo/client";
 import {
   CREATE_MODEL_IMPORT_BATCH_MUTATION,
   DELETE_MODEL_IMPORT_BATCH_MUTATION,
@@ -212,3 +212,4 @@ export async function fetchModelImportErrorReport(
     downloadUrl: resolveModelImportDownloadUrl(report.downloadUrl),
   };
 }
+

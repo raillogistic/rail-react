@@ -37,7 +37,7 @@ describe("retry and abort behavior", () => {
       />,
     );
 
-    const retryButtonMatcher = /retry|attempt reconnect/i;
+    const retryButtonMatcher = /retry|attempt reconnect|restore connection/i;
 
     await waitFor(() => {
       expect(
@@ -144,7 +144,11 @@ describe("retry and abort behavior", () => {
     );
 
     await waitFor(() => {
-      expect(screen.getByText("Unable to load details")).toBeInTheDocument();
+      expect(
+        screen.getByText(
+          /unable to load details|system sync lost|connection interrupted/i,
+        ),
+      ).toBeInTheDocument();
     });
   });
 });

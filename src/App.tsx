@@ -12,8 +12,8 @@ import React from "react";
 import { BrowserRouter } from "react-router-dom";
 import { ApolloProvider } from "@apollo/client/react";
 import { ConnectedAuthProvider } from "@/auth/context/ConnectedAuthProvider";
-import { AuthDependentContent } from "./views/AuthDependentContent";
-import client from "@/graphql/apollo-client";
+import { AuthDependentContent } from "@/app/bootstrap/AuthDependentContent";
+import client from "@/shared/api/apollo/client";
 
 import "./App.css";
 

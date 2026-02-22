@@ -1,4 +1,4 @@
-import client from '@/graphql/apollo-client';
+import client from '@/shared/api/apollo/client';
 
 /**
  * Comprehensive Apollo cache cleanup utility
@@ -194,3 +194,4 @@ export async function performLogoutCleanupWithRetry(maxRetries: number = 3): Pro
 
   return false;
 }
+

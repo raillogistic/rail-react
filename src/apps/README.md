@@ -2,18 +2,25 @@
 
 This folder is for app/domain-specific pages and business logic (ex: products, clients, etc).
 
-The reusable UI lives under `src/views`, `src/layout`, and `src/lib`.
+Reusable shared UI and infrastructure live under `src/lib` and `src/shared`.
 
 ## Local routes (ignored by git)
 
-Create `src/apps/routes.local.ts` (gitignored) to register your app pages into the sidebar/router:
+Create `src/apps/routes.local.ts` (gitignored) to register local-only routes
+or manifest extensions for your environment:
 
 ```ts
-import type { NavigationSection } from "@/routes/links";
+import type { AppManifest } from "@/app/router/contracts";
+import type { NavigationSection } from "@/app/router/navigation";
 
-export const APP_DEFAULT_ROUTE = "/products";
+export const APP_MANIFEST: AppManifest = {
+  projectId: "local",
+  defaultRoute: "/products",
+  routes: [],
+  navigation: [],
+};
 
-export const APP_NAVIGATION_LINKS: NavigationSection[] = [
-  // add your sections/items here
-];
+// Legacy local shape is still accepted by localManifestExtension:
+// export const APP_DEFAULT_ROUTE = "/products";
+// export const APP_NAVIGATION_LINKS: NavigationSection[] = [];
 ```

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { ChevronRight } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
-import { NAVIGATION_LINKS } from "@/routes/links";
+import { NAVIGATION_LINKS } from "@/app/router/navigation";
 import { useTheme } from "@/lib/theme";
 import {
   Collapsible,
