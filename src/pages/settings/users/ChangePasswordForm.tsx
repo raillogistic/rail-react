@@ -1,10 +1,10 @@
-﻿import { zodResolver } from "@hookform/resolvers/zod";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { gql, useMutation } from "@apollo/client";
 import { toast } from "sonner";
 
-import { Button } from "@/lib/components/ui/button";
+import { Button } from "@/shared/ui/kit/button";
 import {
   Form,
   FormControl,
@@ -12,15 +12,15 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/lib/components/ui/form";
-import { Input } from "@/lib/components/ui/input";
+} from "@/shared/ui/kit/form";
+import { Input } from "@/shared/ui/kit/input";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/lib/components/ui/card";
+} from "@/shared/ui/kit/card";
 
 const CHANGE_PASSWORD_MUTATION = gql`
   mutation ChangePassword($oldPassword: String!, $newPassword: String!) {

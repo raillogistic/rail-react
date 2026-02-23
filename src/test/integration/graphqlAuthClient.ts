@@ -2,7 +2,7 @@ import {
   GraphQLResponse,
   INTEGRATION_LOGIN_MUTATION,
   IntegrationLoginPayload,
-} from "@/graphql/integrationAuth";
+} from "@/shared/api/graphql/legacy/integrationAuth";
 
 import {
   clearWorkerSession,

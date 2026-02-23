@@ -6,8 +6,8 @@ DynamicForm is a schema-driven form engine built on [TanStack React Form](https:
 ## Quick Start
 
 ```tsx
-import DynamicForm from "@/lib/form/inputs/form";
-import type { FormSchema } from "@/lib/form";
+import DynamicForm from "@/widgets/model-form/inputs/form";
+import type { FormSchema } from "@/widgets/model-form";
 
 const schema: FormSchema = {
   fields: [
@@ -509,7 +509,7 @@ Renders a collapsible debug panel showing current form values, change log, and s
 ## Architecture
 
 ```
-src/lib/form/
+src/widgets/model-form/
   types/              # All type definitions
     schema.ts         # Field configs, sections, schema
     behavior.ts       # Conditions, computed, dependencies
@@ -552,7 +552,7 @@ src/lib/form/
 
 Run the form test suite:
 ```bash
-npx vitest run src/lib/form
+npx vitest run src/widgets/model-form
 ```
 
 Test files:

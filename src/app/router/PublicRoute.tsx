@@ -10,7 +10,7 @@
 
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
-import { useAuthContext } from '@/auth/context';
+import { useAuthContext } from '@/features/auth/context';
 import { DEFAULT_APP_ROUTE } from "@/app/router/navigation";
 
 interface PublicRouteProps {

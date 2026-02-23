@@ -4,8 +4,8 @@ import {
   findNavigationByPath,
   flattenNavigationPages,
 } from "@/app/router/navigation";
-import { SiteHeader } from "@/lib/components/site-header";
-import { SidebarInset } from "@/lib/components/ui/sidebar";
+import { SiteHeader } from "@/widgets/components/site-header";
+import { SidebarInset } from "@/shared/ui/kit/sidebar";
 
 /**
  * Maps navigation definitions into <Route /> elements.

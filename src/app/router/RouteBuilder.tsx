@@ -17,7 +17,7 @@ import { PublicRoute } from "./PublicRoute";
 // Import page components
 import { LoginPage, ForgotPasswordPage, ResetPasswordPage } from "@/pages/auth";
 import { MainApp } from "@/app/shell/MainApp";
-import { ModelImportPage } from "@/lib/import/pages/ModelImportPage";
+import { ModelImportPage } from "@/features/model-import/pages/ModelImportPage";
 
 // Import view components
 

@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { Button } from "@/lib/components/ui/button";
+import { Button } from "@/shared/ui/kit/button";
 import {
   Form,
   FormControl,
@@ -10,8 +10,8 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "@/lib/components/ui/form";
-import { Input } from "@/lib/components/ui/input";
+} from "@/shared/ui/kit/form";
+import { Input } from "@/shared/ui/kit/input";
 import { toast } from "sonner";
 import { gql, useMutation } from "@apollo/client";
 import { Link, useNavigate, useLocation } from "react-router-dom";

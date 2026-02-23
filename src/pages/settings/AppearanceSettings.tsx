@@ -6,24 +6,24 @@ import {
   type FontFamily,
   type LineHeight,
   type LetterSpacing,
-} from "@/lib/theme";
+} from "@/shared/ui/theme";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/lib/components/ui/card";
-import { Label } from "@/lib/components/ui/label";
+} from "@/shared/ui/kit/card";
+import { Label } from "@/shared/ui/kit/label";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/lib/components/ui/select";
-import { ToggleGroup, ToggleGroupItem } from "@/lib/components/ui/toggle-group";
-import { Button } from "@/lib/components/ui/button";
+} from "@/shared/ui/kit/select";
+import { ToggleGroup, ToggleGroupItem } from "@/shared/ui/kit/toggle-group";
+import { Button } from "@/shared/ui/kit/button";
 import {
   IconSun,
   IconMoon,

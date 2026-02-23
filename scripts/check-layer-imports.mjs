@@ -3,6 +3,7 @@ import path from "node:path";
 
 const repoRoot = process.cwd();
 const srcRoot = path.join(repoRoot, "src");
+const migrationMapPath = path.join(repoRoot, "scripts", "layer-migration-map.json");
 const layerOrder = [
   "shared",
   "entities",
@@ -17,10 +18,44 @@ const layerWeight = Object.fromEntries(
   layerOrder.map((layer, index) => [layer, index]),
 );
 
+const migrationMapConfig = JSON.parse(fs.readFileSync(migrationMapPath, "utf8"));
+const topFolderMap =
+  migrationMapConfig.topFolders && typeof migrationMapConfig.topFolders === "object"
+    ? migrationMapConfig.topFolders
+    : migrationMapConfig;
+const pathOverrides = Array.isArray(migrationMapConfig.pathOverrides)
+  ? migrationMapConfig.pathOverrides
+      .map((entry) => {
+        if (!entry || typeof entry !== "object") {
+          return null;
+        }
+        const prefix =
+          typeof entry.prefix === "string"
+            ? entry.prefix.replace(/^\/+|\/+$/g, "")
+            : "";
+        const layer = typeof entry.layer === "string" ? entry.layer : "";
+        if (!prefix || !layerOrder.includes(layer)) {
+          return null;
+        }
+        return { prefix, layer };
+      })
+      .filter(Boolean)
+      .sort((a, b) => b.prefix.length - a.prefix.length)
+  : [];
+
 const getLayerFromAbsolutePath = (absolutePath) => {
   const relative = path.relative(srcRoot, absolutePath).replace(/\\/g, "/");
-  const [layer] = relative.split("/");
-  return layerOrder.includes(layer) ? layer : null;
+  const overrideMatch = pathOverrides.find(
+    (override) =>
+      relative === override.prefix || relative.startsWith(`${override.prefix}/`),
+  );
+  if (overrideMatch) {
+    return overrideMatch.layer;
+  }
+
+  const [topFolder] = relative.split("/");
+  const mappedLayer = topFolderMap[topFolder];
+  return layerOrder.includes(mappedLayer) ? mappedLayer : null;
 };
 
 const getImportSpecifiers = (source) => {
@@ -141,4 +176,3 @@ if (violations.length > 0) {
 console.log(
   `Layer import check passed (${allFiles.length} files scanned, no violations).`,
 );
-

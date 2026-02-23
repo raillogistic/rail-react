@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { mapV2MetadataToTableMetadata } from "@/lib/table/compat/hooks";
-import { buildModelQueryField } from "@/lib/table/utils/queryNaming";
+import { mapV2MetadataToTableMetadata } from "@/widgets/model-table/compat/hooks";
+import { buildModelQueryField } from "@/widgets/model-table/utils/queryNaming";
 
 import { loadIntegrationAuthConfig } from "./authConfig";
 import { createGraphQLAuthClient } from "./graphqlAuthClient";

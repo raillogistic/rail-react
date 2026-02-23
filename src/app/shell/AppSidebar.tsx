@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
-import { NavMain } from "@/lib/components/nav-main";
-import { NavUser } from "@/lib/components/nav-user";
+import { NavMain } from "@/widgets/navigation/nav-main";
+import { NavUser } from "@/widgets/navigation/nav-user";
 import { NAVIGATION_LINKS } from "@/app/router/navigation";
 import {
   Sidebar,
@@ -9,20 +9,20 @@ import {
   SidebarFooter,
   SidebarHeader,
   useSidebar,
-} from "@/lib/components/ui/sidebar";
+} from "@/shared/ui/kit/sidebar";
 import {
   Tooltip,
   TooltipContent,
   TooltipProvider,
   TooltipTrigger,
-} from "@/lib/components/ui/tooltip";
-import { cn } from "@/lib/utils";
-import { useTheme } from "@/lib/theme";
+} from "@/shared/ui/kit/tooltip";
+import { cn } from "@/shared/utils";
+import { useTheme } from "@/shared/ui/theme";
 import { BRANDING, SYSTEM_STATUS } from "@/shared/config/branding";
-import LogoMark from "@/assets/logos/logo.png";
-import { Badge } from "@/lib/components/ui/badge";
+import LogoMark from "@/shared/assets/legacy-assets/logos/logo.png";
+import { Badge } from "@/shared/ui/kit/badge";
 import { Zap } from "lucide-react";
-import { useAuthContext } from "@/auth/context";
+import { useAuthContext } from "@/features/auth/context";
 
 interface MousePosition {
   x: number;

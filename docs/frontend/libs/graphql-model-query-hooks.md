@@ -1,7 +1,7 @@
 # GraphQL model query hooks
 
 This guide explains how to use the generated query hooks in
-`src/lib/graphql`. These hooks build GraphQL model queries from metadata or
+`src/shared/api/graphql/graphql`. These hooks build GraphQL model queries from metadata or
 from predefined fields, and execute them with Apollo `useQuery`.
 
 ## Overview
@@ -15,7 +15,7 @@ import {
   useModelPageQuery,
   useModelListQuery,
   useModelSingleQuery,
-} from "@/lib/graphql";
+} from "@/shared/api/graphql/graphql";
 ```
 
 ## Choose a hook
@@ -44,7 +44,7 @@ through the metadata gateway and builds selection and argument types
 automatically.
 
 ```tsx
-import { useModelPageQuery } from "@/lib/graphql";
+import { useModelPageQuery } from "@/shared/api/graphql/graphql";
 
 type UserRow = {
   id: string;
@@ -88,7 +88,7 @@ In predefined mode, pass `fields` (or `selection`) and set `skipMetadata: true`
 to avoid metadata requests.
 
 ```tsx
-import { useModelListQuery } from "@/lib/graphql";
+import { useModelListQuery } from "@/shared/api/graphql/graphql";
 
 export function UserListWidget() {
   const { data, queryName } = useModelListQuery({
@@ -130,7 +130,7 @@ Use these options to align with backend generator output:
 Example for a strict single-object backend signature:
 
 ```tsx
-import { useModelSingleQuery } from "@/lib/graphql";
+import { useModelSingleQuery } from "@/shared/api/graphql/graphql";
 
 const { data } = useModelSingleQuery({
   app: "auth",
@@ -165,7 +165,7 @@ console.log(result.queryName, result.variables);
 From `rail-react`, run:
 
 ```bash
-npm run test -- src/lib/graphql/__tests__ --run
+npm run test -- src/shared/api/graphql/graphql/__tests__ --run
 ```
 
 ## Next steps

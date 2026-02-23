@@ -5,18 +5,18 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/lib/components/ui/card";
-import { Button } from "@/lib/components/ui/button";
+} from "@/shared/ui/kit/card";
+import { Button } from "@/shared/ui/kit/button";
 import { Plus } from "lucide-react";
-import { DynamicModelTable } from "@/lib/table";
+import { DynamicModelTable } from "@/widgets/model-table";
 import {
   Drawer,
   DrawerContent,
   DrawerHeader,
   DrawerTitle,
   DrawerDescription,
-} from "@/lib/components/ui/drawer";
-import { UIConfigForm } from "@/lib/configuration/UIConfigForm";
+} from "@/shared/ui/kit/drawer";
+import { UIConfigForm } from "@/features/settings/configuration/UIConfigForm";
 
 export function AdminUISettings() {
   const [editingConfig, setEditingConfig] = useState<Record<string, unknown> | null>(null);

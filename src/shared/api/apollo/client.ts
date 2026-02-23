@@ -3,9 +3,9 @@ import { setContext } from '@apollo/client/link/context';
 import { onError } from '@apollo/client/link/error';
 import { fromPromise } from '@apollo/client/link/utils';
 import { createUploadLink } from 'apollo-upload-client';
-import { tokenStorage, getSecureHeaders } from '@/auth/utils/token-storage';
-import { ensureCsrfCookie } from '@/auth/utils/csrf';
-import { AuthError, AuthErrorType, handleAuthError } from '@/auth/utils/error-handler';
+import { tokenStorage, getSecureHeaders } from '@/features/auth/utils/token-storage';
+import { ensureCsrfCookie } from '@/features/auth/utils/csrf';
+import { AuthError, AuthErrorType, handleAuthError } from '@/features/auth/utils/error-handler';
 import { ROUTES } from "@/shared/routing/paths";
 import { hasExplicitAuthorizationHeader } from './authHeaders';
 

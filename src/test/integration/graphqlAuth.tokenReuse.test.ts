@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { INTEGRATION_VIEWER_QUERY } from "@/graphql/integrationAuth";
+import { INTEGRATION_VIEWER_QUERY } from "@/shared/api/graphql/legacy/integrationAuth";
 
 import { clearWorkerSession, getWorkerTokenReuseRate } from "./authSession";
 import { loadIntegrationAuthConfig } from "./authConfig";

@@ -28,37 +28,37 @@ export default defineConfig({
 
           if (!normalizedId.includes("node_modules")) {
             if (
-              normalizedId.includes("/src/lib/table/components/filtering/") ||
-              normalizedId.includes("/src/lib/filters/")
+              normalizedId.includes("/src/widgets/model-table/components/filtering/") ||
+              normalizedId.includes("/src/features/model-table/filtering/")
             ) {
               return "table-filtering";
             }
-            if (normalizedId.includes("/src/lib/table/compat/")) {
+            if (normalizedId.includes("/src/widgets/model-table/compat/")) {
               return "table-compat";
             }
-            if (normalizedId.includes("/src/lib/table/components/row/")) {
+            if (normalizedId.includes("/src/widgets/model-table/components/row/")) {
               return "table-row-actions";
             }
             if (
-              normalizedId.includes("/src/lib/table/components/toolbar/") ||
-              normalizedId.includes("/src/lib/table/components/TableToolbar.tsx")
+              normalizedId.includes("/src/widgets/model-table/components/toolbar/") ||
+              normalizedId.includes("/src/widgets/model-table/components/TableToolbar.tsx")
             ) {
               return "table-toolbar";
             }
             if (
               normalizedId.includes(
-                "/src/lib/table/components/ModelTableOverlays.tsx",
+                "/src/widgets/model-table/components/ModelTableOverlays.tsx",
               )
             ) {
               return "table-overlays";
             }
-            if (normalizedId.includes("/src/lib/table/hooks/")) {
+            if (normalizedId.includes("/src/widgets/model-table/hooks/")) {
               return "table-hooks";
             }
-            if (normalizedId.includes("/src/lib/table/context/")) {
+            if (normalizedId.includes("/src/widgets/model-table/context/")) {
               return "table-context";
             }
-            if (normalizedId.includes("/src/lib/reporting/")) {
+            if (normalizedId.includes("/src/widgets/reporting/")) {
               return "reporting";
             }
             return;
@@ -105,7 +105,7 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: [
       "./src/test/setup.ts",
-      "./src/lib/filters/__tests__/setup/setup.ts",
+      "./src/features/model-table/filtering/__tests__/setup/setup.ts",
     ],
     css: true,
   },

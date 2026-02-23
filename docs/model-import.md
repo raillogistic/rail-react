@@ -5,7 +5,7 @@
 Model import is launched from `ModelTableV2` top actions:
 
 - Route: `/model-import?app=<app>&model=<model>`
-- Page component: `src/lib/import/pages/ModelImportPage.tsx`
+- Page component: `src/features/model-import/pages/ModelImportPage.tsx`
 
 ## UI Modules
 
@@ -24,7 +24,7 @@ Model import is launched from `ModelTableV2` top actions:
 
 ## GraphQL Operations
 
-Defined in `src/graphql/importing.ts`:
+Defined in `src/shared/api/graphql/legacy/importing.ts`:
 
 - `modelImportTemplate`
 - `createModelImportBatch`
@@ -38,6 +38,5 @@ Defined in `src/graphql/importing.ts`:
 
 ```bash
 cd rail-react
-npx vitest run src/lib/import --passWithNoTests
+npx vitest run src/features/model-import --passWithNoTests
 ```
-

@@ -245,7 +245,7 @@ const {
 Use `mapTableMetadataToFilterSchema` to bridge table metadata to filter schema:
 
 ```typescript
-import { mapTableMetadataToFilterSchema } from "@/lib/tables/hooks";
+import { mapTableMetadataToFilterSchema } from "@/widgets/model-tables/hooks";
 
 const filterSchema = mapTableMetadataToFilterSchema(metadata);
 ```

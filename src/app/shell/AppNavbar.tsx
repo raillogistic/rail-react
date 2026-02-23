@@ -12,9 +12,9 @@ import {
   type NavigationSection,
 } from "@/app/router/navigation";
 import { BRANDING } from "@/shared/config/branding";
-import { UserNav } from "@/lib/components/user-nav";
-import Logo from "@/assets/logos/logo.png";
-import { useTheme } from "@/lib/theme";
+import { UserNav } from "@/widgets/navigation/nav-user-menu";
+import Logo from "@/shared/assets/legacy-assets/logos/logo.png";
+import { useTheme } from "@/shared/ui/theme";
 import {
   NavigationMenu,
   NavigationMenuContent,
@@ -23,20 +23,20 @@ import {
   NavigationMenuList,
   NavigationMenuTrigger,
   navigationMenuTriggerStyle,
-} from "@/lib/components/ui/navigation-menu";
+} from "@/shared/ui/kit/navigation-menu";
 import {
   Sheet,
   SheetContent,
   SheetHeader,
   SheetTitle,
   SheetTrigger,
-} from "@/lib/components/ui/sheet";
-import { cn } from "@/lib/utils";
-import { CommandMenu } from "@/lib/components/command-menu";
-import { Badge } from "@/lib/components/ui/badge";
-import { Separator } from "@/lib/components/ui/separator";
-import { ScrollArea } from "@/lib/components/ui/scroll-area";
-import { useAuthContext } from "@/auth/context";
+} from "@/shared/ui/kit/sheet";
+import { cn } from "@/shared/utils";
+import { CommandMenu } from "@/widgets/navigation/command-menu";
+import { Badge } from "@/shared/ui/kit/badge";
+import { Separator } from "@/shared/ui/kit/separator";
+import { ScrollArea } from "@/shared/ui/kit/scroll-area";
+import { useAuthContext } from "@/features/auth/context";
 
 const RouterLink = React.forwardRef<
   HTMLAnchorElement,

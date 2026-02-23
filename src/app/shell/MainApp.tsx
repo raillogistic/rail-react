@@ -1,9 +1,9 @@
 import React, { useEffect } from "react";
-import { OfflineAlert, useOfflineAlert } from "@/lib/components/OfflineAlert";
-import { SidebarProvider } from "@/lib/components/ui/sidebar";
+import { OfflineAlert, useOfflineAlert } from "@/widgets/components/OfflineAlert";
+import { SidebarProvider } from "@/shared/ui/kit/sidebar";
 import { AppSidebar } from "./AppSidebar";
 import AppContent, { AppRoutes } from "./AppContent";
-import { useTheme } from "@/lib/theme";
+import { useTheme } from "@/shared/ui/theme";
 import { AppNavbar } from "./AppNavbar";
 
 /**

@@ -1,101 +1,63 @@
 {
   "topFolders": {
     "app": "app",
-    "processes": "processes",
+    "apps": "app",
+    "projects": "app",
     "pages": "pages",
-    "widgets": "widgets",
     "features": "features",
+    "widgets": "widgets",
     "entities": "entities",
     "shared": "shared",
+    "processes": "processes",
+    "test": "shared",
     "auth": "features",
-    "lib": "pages",
-    "graphql": "shared",
+    "lib": "widgets",
+    "graphql": "widgets",
     "hooks": "shared",
     "utils": "shared",
-    "projects": "app",
-    "apps": "app",
+    "assets": "shared",
     "styles": "shared"
   },
   "pathOverrides": [
-    {
-      "prefix": "auth/pages",
-      "layer": "pages"
-    },
-    {
-      "prefix": "auth/components",
-      "layer": "widgets"
-    },
-    {
-      "prefix": "auth/index.ts",
-      "layer": "pages"
-    },
-    {
-      "prefix": "auth/LoginPage.tsx",
-      "layer": "pages"
-    },
-    {
-      "prefix": "auth/ForgotPasswordPage.tsx",
-      "layer": "pages"
-    },
-    {
-      "prefix": "auth/ResetPasswordPage.tsx",
-      "layer": "pages"
-    },
-    {
-      "prefix": "features/import",
-      "layer": "pages"
-    },
     {
       "prefix": "shared/api/apollo",
       "layer": "features"
     },
     {
-      "prefix": "lib/theme",
+      "prefix": "shared/api/graphql/graphql",
       "layer": "widgets"
     },
     {
-      "prefix": "lib/table",
-      "layer": "pages"
+      "prefix": "shared/api/graphql/legacy",
+      "layer": "shared"
     },
     {
-      "prefix": "lib/security",
-      "layer": "pages"
+      "prefix": "shared/ui/theme",
+      "layer": "features"
     },
     {
-      "prefix": "lib/import",
-      "layer": "pages"
+      "prefix": "shared/ui/kit",
+      "layer": "features"
     },
     {
-      "prefix": "lib/reporting",
-      "layer": "pages"
-    },
-    {
-      "prefix": "lib/modelMetadata",
-      "layer": "pages"
-    },
-    {
-      "prefix": "lib/components",
+      "prefix": "shared/telemetry",
       "layer": "widgets"
     },
     {
-      "prefix": "lib/utils",
-      "layer": "shared"
+      "prefix": "entities/model-metadata",
+      "layer": "widgets"
     },
     {
-      "prefix": "lib/graphql",
-      "layer": "shared"
+      "prefix": "features/settings/configuration",
+      "layer": "widgets"
     },
     {
-      "prefix": "lib/form/types",
-      "layer": "shared"
+      "prefix": "features/model-table/filtering",
+      "layer": "widgets"
     },
     {
-      "prefix": "lib/filters/queries",
-      "layer": "shared"
-    },
-    {
-      "prefix": "lib/table/queries",
-      "layer": "shared"
+      "prefix": "features/auth/security",
+      "layer": "widgets"
     }
   ]
 }

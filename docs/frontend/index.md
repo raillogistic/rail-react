@@ -14,7 +14,7 @@ development commands.
 ## Frontend libraries
 
 Use these references when you work in reusable UI and data modules under
-`src/lib/*`.
+`src/widgets/*`, `src/features/*`, and `src/shared/api/*`.
 
 - [Dynamic form](./libs/dynamic-form.md)
 - [Filter panel](./libs/filter-panel.md)

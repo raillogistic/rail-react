@@ -1,9 +1,9 @@
 import React from 'react';
 import { useQuery, useMutation } from '@apollo/client';
-import { SessionManager, Session } from '@/auth/components/SessionManager';
-import { GET_ACTIVE_SESSIONS } from '@/graphql/queries';
-import { REVOKE_SESSION_MUTATION, REVOKE_ALL_SESSIONS_MUTATION } from '@/graphql/mutations';
-import { useAuth } from '@/auth/hooks/useAuth';
+import { SessionManager, Session } from '@/features/auth/components/SessionManager';
+import { GET_ACTIVE_SESSIONS } from '@/shared/api/graphql/legacy/queries';
+import { REVOKE_SESSION_MUTATION, REVOKE_ALL_SESSIONS_MUTATION } from '@/shared/api/graphql/legacy/mutations';
+import { useAuth } from '@/features/auth/hooks/useAuth';
 
 export function SessionsPage() {
   const { user } = useAuth();

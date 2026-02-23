@@ -1,11 +1,11 @@
-﻿import { gql, useQuery } from "@apollo/client";
+import { gql, useQuery } from "@apollo/client";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/lib/components/ui/card";
+} from "@/shared/ui/kit/card";
 
 const USERS_DASHBOARD_QUERY = gql`
   query UsersDashboardStats {

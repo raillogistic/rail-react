@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery } from "@apollo/client";
-import { useAuth } from "@/auth/hooks/useAuth";
-import { Button } from "@/lib/components/ui/button";
+import { useAuth } from "@/features/auth/hooks/useAuth";
+import { Button } from "@/shared/ui/kit/button";
 import {
   Card,
   CardContent,
@@ -10,18 +10,18 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/lib/components/ui/card";
-import { Input } from "@/lib/components/ui/input";
-import { Label } from "@/lib/components/ui/label";
-import { Alert, AlertDescription } from "@/lib/components/ui/alert";
+} from "@/shared/ui/kit/card";
+import { Input } from "@/shared/ui/kit/input";
+import { Label } from "@/shared/ui/kit/label";
+import { Alert, AlertDescription } from "@/shared/ui/kit/alert";
 import {
   SETUP_MFA_MUTATION,
   VERIFY_MFA_SETUP_MUTATION,
-} from "@/graphql/mutations";
-import { GET_MFA_STATUS } from "@/graphql/queries";
+} from "@/shared/api/graphql/legacy/mutations";
+import { GET_MFA_STATUS } from "@/shared/api/graphql/legacy/queries";
 import { ROUTES } from "@/shared/routing/paths";
-import { MFAManagement } from "@/auth/components/MFAManagement";
-import { MFAErrorHandler } from "@/auth/utils/mfa-errors";
+import { MFAManagement } from "@/features/auth/components/MFAManagement";
+import { MFAErrorHandler } from "@/features/auth/utils/mfa-errors";
 
 interface MFASetupPageProps {
   embedded?: boolean;

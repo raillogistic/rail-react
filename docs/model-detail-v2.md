@@ -27,7 +27,7 @@ import SectionHost, {
   createGeneralSection,
   createHeaderSection,
   type DetailsPageSchema,
-} from "@/lib/details";
+} from "@/widgets/model-details";
 
 const schema: DetailsPageSchema = {
   header: [createHeaderSection({ id: "header-main" })],
@@ -53,7 +53,7 @@ For full schema and built-in section coverage, read the
 Use `UnitFieldRenderer` for strict single-value rendering in section content.
 
 ```tsx
-import { UnitFieldRenderer } from "@/lib/details";
+import { UnitFieldRenderer } from "@/widgets/model-details";
 
 <UnitFieldRenderer
   mode="valueOnly"
@@ -74,7 +74,7 @@ For complete field-kind and format details, read the
 Run these commands from `rail-react`:
 
 ```bash
-npm run test -- src/lib/details/tests --run
+npm run test -- src/widgets/model-details/tests --run
 npx tsc -p tsconfig.app.json --noEmit
 ```
 

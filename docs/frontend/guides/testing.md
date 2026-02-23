@@ -30,13 +30,13 @@ feedback time before running the broader matrix.
 
 ```bash
 # Run Unit Field formatter tests only
-npx vitest run src/lib/details/units/unitFieldFormatters.test.ts
+npx vitest run src/widgets/model-details/units/unitFieldFormatters.test.ts
 
 # Run section-system tests only
-npm run test -- src/lib/details/tests --run
+npm run test -- src/widgets/model-details/tests --run
 
 # Run graphql model-query hook tests only
-npm run test -- src/lib/graphql/__tests__ --run
+npm run test -- src/shared/api/graphql/graphql/__tests__ --run
 ```
 
 ## Writing tests
@@ -82,10 +82,10 @@ Run these commands from `rail-react`:
 
 ```bash
 # Section system behavior (schema, permissions, lazy load, retry, abort)
-npm run test -- src/lib/details/tests --run
+npm run test -- src/widgets/model-details/tests --run
 
 # Unit-field formatter coverage
-npx vitest run src/lib/details/units/unitFieldFormatters.test.ts
+npx vitest run src/widgets/model-details/units/unitFieldFormatters.test.ts
 
 # Type safety gate for frontend code
 npx tsc -p tsconfig.app.json --noEmit

@@ -1,5 +1,5 @@
 import React, { useRef } from "react";
-import { DynamicModelTable, DynamicModelTableHandle } from "@/lib/table";
+import { DynamicModelTable, DynamicModelTableHandle } from "@/widgets/model-table";
 
 /**
  * Dashboard page showing a DynamicModelTable example for billing invoices.

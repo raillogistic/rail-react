@@ -1,8 +1,8 @@
 import React, { Suspense, lazy, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ROUTES } from "@/shared/routing/paths";
-import { useAuthContext } from "@/auth/context";
-import { MFAChallenge } from "@/auth/components";
+import { useAuthContext } from "@/features/auth/context";
+import { MFAChallenge } from "@/features/auth/components";
 import { useForm, Controller } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -16,17 +16,17 @@ import {
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
-import { Checkbox } from "@/lib/components/ui/checkbox";
-import { cn } from "@/lib/utils";
+import { Checkbox } from "@/shared/ui/kit/checkbox";
+import { cn } from "@/shared/utils";
 import {
   isServerOfflineError,
   onOfflineStatusChange,
   testServerConnectivity,
-} from "@/utils/offline-detector";
+} from "@/shared/utils/legacy-utils/offline-detector";
 import { BRANDING } from "@/shared/config/branding";
-import Logo from "@/assets/logos/logo.png";
-import Cover960 from "@/assets/images/cover-960.jpg";
-import Cover1600 from "@/assets/images/cover-1600.jpg";
+import Logo from "@/shared/assets/legacy-assets/logos/logo.png";
+import Cover960 from "@/shared/assets/legacy-assets/images/cover-960.jpg";
+import Cover1600 from "@/shared/assets/legacy-assets/images/cover-1600.jpg";
 
 const loginSchema = z.object({
   username: z.string().min(1, "Le nom d'utilisateur est requis"),

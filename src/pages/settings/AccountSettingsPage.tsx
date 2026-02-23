@@ -1,4 +1,4 @@
-import { useAuth } from "@/auth/hooks/useAuth";
+import { useAuth } from "@/features/auth/hooks/useAuth";
 import { gql, useQuery } from "@apollo/client";
 import { SettingsLayout } from "./SettingsLayout";
 import { AccountSettingsForm } from "./users/AccountSettingsForm";

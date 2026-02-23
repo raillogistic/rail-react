@@ -89,15 +89,17 @@ The app uses manifest-driven routing with explicit architectural boundaries.
 Place new code in the canonical folders below.
 
 - `src/app/`: bootstrap, router, and authenticated shell composition.
-- `src/projects/`: project manifests that declare routes and navigation.
-- `src/pages/`: route-level page entry points, including `src/pages/auth/*`.
+- `src/processes/`: cross-feature workflow orchestration.
+- `src/pages/`: route-level page entry points.
+- `src/widgets/`: reusable UI modules and page-composable UI systems.
 - `src/features/`: domain logic and feature API surfaces.
-- `src/shared/`: cross-feature infrastructure and shared contracts.
-- `src/lib/`: reusable UI and page-capable library modules.
+- `src/entities/`: entity-level contracts and reusable domain types.
+- `src/shared/`: cross-feature infrastructure, shared contracts, and core UI
+  kit exports.
+- `src/projects/`: project manifests that declare routes and navigation.
 - `src/apps/`: local-only manifest extension entry points.
 
-Use `src/auth/*` as the auth runtime domain (providers, hooks, services), not
-as a place for new route wrapper exports.
+The auth runtime now lives under `src/features/auth/*`.
 
 ## Runtime boot flow
 
@@ -199,15 +201,16 @@ export default PROJECT_MANIFEST;
 
 Use this workflow when you add a screen to `core` or another existing project.
 
-1. Create the route entry component in `src/pages/*` or `src/lib/*/pages/*`.
+1. Create the route entry component in `src/pages/*`, `src/widgets/*`, or
+   `src/features/*`.
 2. Import it in the owning manifest, usually with `lazy()` and `Suspense`.
 3. Add a route entry with a unique `id` and `path`.
 4. Add a navigation entry that references the route with `routeId`.
 5. Run validation (`check:architecture`, `lint`, and tests).
 
 Import canonical modules directly. For example, use
-`@/lib/import/pages/ModelImportPage` instead of creating compatibility wrapper
-re-exports under legacy paths such as `src/auth/*` and `src/features/import/*`.
+`@/features/model-import/pages/ModelImportPage` instead of creating compatibility wrapper
+re-exports under deprecated roots.
 
 ## API boundary usage
 
@@ -215,11 +218,12 @@ Keep new API integration code inside the shared and feature API boundaries.
 
 - Use `src/shared/api/apollo/client.ts` for the runtime Apollo client.
 - Use `src/shared/api/graphql/index.ts` for shared GraphQL exports.
+- Use `src/shared/api/graphql/legacy/*` for legacy query documents still used by
+  auth and integration flows.
+- Use `src/shared/api/graphql/graphql/*` for metadata-driven model query and
+  mutation builders.
 - Use `src/features/auth/api/index.ts` for auth operations consumed by auth
   services and providers.
-
-Legacy GraphQL modules still exist under `src/graphql/*`. Prefer
-`src/shared/api/*` and feature-local API surfaces for new code.
 
 ## Integration test configuration
 

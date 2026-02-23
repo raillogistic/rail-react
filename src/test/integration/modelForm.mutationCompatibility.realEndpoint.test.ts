@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import type { ModelFormContractRelation } from "@/lib/form/types/generatedContract";
-import { buildNestedMutationPayload } from "@/lib/form/utils/nestedMutationPayload";
+import type { ModelFormContractRelation } from "@/widgets/model-form/types/generatedContract";
+import { buildNestedMutationPayload } from "@/widgets/model-form/utils/nestedMutationPayload";
 
 import { loadIntegrationAuthConfig } from "./authConfig";
 import { createGraphQLAuthClient } from "./graphqlAuthClient";

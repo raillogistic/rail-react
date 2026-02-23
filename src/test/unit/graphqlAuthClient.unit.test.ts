@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import { INTEGRATION_VIEWER_QUERY } from "@/graphql/integrationAuth";
+import { INTEGRATION_VIEWER_QUERY } from "@/shared/api/graphql/legacy/integrationAuth";
 
 import {
   clearWorkerSession,

@@ -1,11 +1,11 @@
-﻿import React from "react";
-import { ThemeProvider } from "@/lib/theme/ThemeProvider";
-import { useAuthContext } from "@/auth/context";
+import React from "react";
+import { ThemeProvider } from "@/shared/ui/theme/ThemeProvider";
+import { useAuthContext } from "@/features/auth/context";
 import { RouteBuilder } from "@/app/router/RouteBuilder";
-import { Toaster } from "@/lib/components/ui/sonner";
-import { ActivityTimeoutModal } from "@/auth/components/ActivityTimeoutModal";
-import { useMetadataWarmup } from "@/lib/graphql/metadata/useMetadataWarmup";
-import { MetadataWarmupIndicator } from "@/lib/graphql/metadata/MetadataWarmupIndicator";
+import { Toaster } from "@/shared/ui/kit/sonner";
+import { ActivityTimeoutModal } from "@/features/auth/components/ActivityTimeoutModal";
+import { useMetadataWarmup } from "@/shared/api/graphql/graphql/metadata/useMetadataWarmup";
+import { MetadataWarmupIndicator } from "@/shared/api/graphql/graphql/metadata/MetadataWarmupIndicator";
 import {
   ThemeKey,
   ThemeMode,
@@ -13,7 +13,7 @@ import {
   SidebarCollapseMode,
   FontSize,
   FontFamily
-} from "@/lib/theme";
+} from "@/shared/ui/theme";
 
 export const AuthDependentContent: React.FC = () => {
   const { user, isAuthenticated } = useAuthContext();

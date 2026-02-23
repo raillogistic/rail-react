@@ -7,7 +7,7 @@ Filter Panel V2 provides the new inline, popover, panel, and toolbar filter expe
 
 ### Basic (panel)
 ```tsx
-import { FilterPanel } from "@/lib/filters";
+import { FilterPanel } from "@/features/model-table/filtering";
 
 <FilterPanel
   app="sales"
@@ -125,8 +125,8 @@ import { FilterPanel } from "@/lib/filters";
 Filter metadata is cached and persisted in `localStorage` per user. On app start you can warm the metadata cache, then the FilterPanel reads from cache-first storage and refreshes in the background.
 
 ```tsx
-import { MetadataWarmupIndicator } from "@/lib/metadata/MetadataWarmupIndicator";
-import { useMetadataWarmup } from "@/lib/metadata/useMetadataWarmup";
+import { MetadataWarmupIndicator } from "@/shared/api/graphql/graphql/metadata/MetadataWarmupIndicator";
+import { useMetadataWarmup } from "@/shared/api/graphql/graphql/metadata/useMetadataWarmup";
 
 const { warming } = useMetadataWarmup({
   enabled: !!user?.token,

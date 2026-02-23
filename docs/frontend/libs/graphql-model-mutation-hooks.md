@@ -1,7 +1,7 @@
 # GraphQL model mutation hooks
 
 This guide explains how to use generated mutation hooks from
-`src/lib/graphql/mutations`. These hooks build mutation documents from the same
+`src/shared/api/graphql/graphql/mutations`. These hooks build mutation documents from the same
 naming contract used by query hooks, expose ModelForm-ready metadata, and run
 mutations with execute-time variables.
 
@@ -24,7 +24,7 @@ import {
   useModelBulkUpdateMutation,
   useModelBulkDeleteMutation,
   useModelMethodMutation,
-} from "@/lib/graphql";
+} from "@/shared/api/graphql/graphql";
 ```
 
 ## Hook return shape
@@ -73,7 +73,7 @@ Use create and update hooks to build form screens where metadata and execution
 are managed together.
 
 ```tsx
-import { useModelCreateMutation, useModelUpdateMutation } from "@/lib/graphql";
+import { useModelCreateMutation, useModelUpdateMutation } from "@/shared/api/graphql/graphql";
 
 export function ProductFormActions() {
   const createMutation = useModelCreateMutation({
@@ -133,7 +133,7 @@ Use delete and bulk hooks for entity removal and batched writes.
 import {
   useModelDeleteMutation,
   useModelBulkDeleteMutation,
-} from "@/lib/graphql";
+} from "@/shared/api/graphql/graphql";
 
 export function DeleteActions() {
   const deleteOne = useModelDeleteMutation({
@@ -168,7 +168,7 @@ export function DeleteActions() {
 Use `useModelMethodMutation` for generated method mutations.
 
 ```tsx
-import { useModelMethodMutation } from "@/lib/graphql";
+import { useModelMethodMutation } from "@/shared/api/graphql/graphql";
 
 export function DatasetPreviewButton() {
   const mutation = useModelMethodMutation({
@@ -196,7 +196,7 @@ export function DatasetPreviewButton() {
 Use grouped options to keep larger hook configuration readable.
 
 ```tsx
-import { useModelUpdateMutation } from "@/lib/graphql";
+import { useModelUpdateMutation } from "@/shared/api/graphql/graphql";
 
 const mutation = useModelUpdateMutation({
   identity: {
@@ -225,7 +225,7 @@ Flat options remain supported for backward compatibility.
 ## Variable normalizers
 
 You can normalize payloads directly with helpers from
-`src/lib/graphql/mutations/variables.ts`:
+`src/shared/api/graphql/graphql/mutations/variables.ts`:
 
 - `buildModelCreateMutationVariables`
 - `buildModelUpdateMutationVariables`
@@ -243,7 +243,7 @@ map it to `identifierVariableName` when configured.
 From `rail-react`, run:
 
 ```bash
-npm run test -- src/lib/graphql/mutations --run
+npm run test -- src/shared/api/graphql/graphql/mutations --run
 ```
 
 ## Next steps

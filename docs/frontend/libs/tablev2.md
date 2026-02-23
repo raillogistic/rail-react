@@ -21,7 +21,7 @@ A metadata-driven, headless-capable data table for Rail React, built on top of S
 ### Basic
 
 ```tsx
-import { ModelTableV2 } from "@/lib/table";
+import { ModelTableV2 } from "@/widgets/model-table";
 
 export function UserTable() {
   return (
@@ -170,8 +170,8 @@ The table is composed of several contexts and components:
 ModelTableV2 uses metadata caching under the hood. You can warm metadata at app startup to make filters/snappy loads instant.
 
 ```tsx
-import { MetadataWarmupIndicator } from "@/lib/metadata/MetadataWarmupIndicator";
-import { useMetadataWarmup } from "@/lib/metadata/useMetadataWarmup";
+import { MetadataWarmupIndicator } from "@/shared/api/graphql/graphql/metadata/MetadataWarmupIndicator";
+import { useMetadataWarmup } from "@/shared/api/graphql/graphql/metadata/useMetadataWarmup";
 
 const { warming } = useMetadataWarmup({
   enabled: !!user?.token,
@@ -184,7 +184,7 @@ return <MetadataWarmupIndicator active={warming} />;
 ## Requirements
 
 - Apollo Client provider wrapping the app.
-- Shadcn UI components installed in `@/lib/components/ui`.
+- Shadcn UI components installed in `@/widgets/components/ui`.
 - `lucide-react` for icons.
 
 ## Migration

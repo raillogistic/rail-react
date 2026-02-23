@@ -10,7 +10,7 @@ runtime.
 ## What the system includes
 
 The section runtime ships as composable primitives and helpers in
-`@/lib/details`.
+`@/widgets/model-details`.
 
 - `SectionHost` as the runtime orchestrator.
 - `TabHost` as the tab layer with lazy activation tracking.
@@ -34,7 +34,7 @@ The section runtime ships as composable primitives and helpers in
 ## Core contracts
 
 The system is defined by strict types in
-`src/lib/details/sectionTypes.ts`.
+`src/widgets/model-details/sectionTypes.ts`.
 
 ```ts
 type SectionKind =
@@ -79,7 +79,7 @@ references.
 ## Loading and caching behavior
 
 The section loader runtime is implemented in
-`src/lib/details/sectionState.ts` and `src/lib/details/SectionHost.tsx`.
+`src/widgets/model-details/sectionState.ts` and `src/widgets/model-details/SectionHost.tsx`.
 
 The runtime guarantees:
 
@@ -125,7 +125,7 @@ import SectionHost, {
   createTableSection,
   createTimelineSection,
   type DetailsPageSchema,
-} from "@/lib/details";
+} from "@/widgets/model-details";
 
 const schema: DetailsPageSchema = {
   header: [
@@ -189,14 +189,14 @@ Then render:
 ```
 
 For a complete runnable example, see
-`src/lib/details/example/ExampleDetailsPage.tsx`.
+`src/widgets/model-details/example/ExampleDetailsPage.tsx`.
 
 ## Testing the section system
 
 Run the focused section-system test suite from `rail-react`:
 
 ```bash
-npm run test -- src/lib/details/tests --run
+npm run test -- src/widgets/model-details/tests --run
 ```
 
 The current tests cover:
@@ -209,14 +209,14 @@ The current tests cover:
 
 ## Extensibility and non-breaking rules
 
-Use the governance exports from `@/lib/details` to keep changes additive:
+Use the governance exports from `@/widgets/model-details` to keep changes additive:
 
 - `SECTION_EXTENSIBILITY_GUIDE`
 - `SECTION_NON_BREAKING_RULES`
 - `SECTION_ACCEPTANCE_CHECKLIST`
 
 These constants are defined in
-`src/lib/details/sectionGovernance.ts`.
+`src/widgets/model-details/sectionGovernance.ts`.
 
 ## Next steps
 

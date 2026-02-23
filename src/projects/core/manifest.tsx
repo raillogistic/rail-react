@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import type { AppManifest } from "@/app/router/contracts";
 import { ROUTES } from "@/shared/routing/paths";
-import ExampleDetailsPage from "@/lib/details/example/ExampleDetailsPage";
+import ExampleDetailsPage from "@/widgets/model-details/example/ExampleDetailsPage";
 import DashboardPage from "@/pages/dashboard/DashboardPage";
 
 const routeFallback = (
@@ -23,19 +23,19 @@ const withRouteSuspense = (component: ReactNode) => (
 );
 
 const ModelImportPage = lazy(() =>
-  import("@/lib/import/pages/ModelImportPage").then((module) => ({
+  import("@/features/model-import/pages/ModelImportPage").then((module) => ({
     default: module.ModelImportPage,
   })),
 );
 
 const DynamicModelTable = lazy(() =>
-  import("@/lib/table/components/DynamicModelTable").then((module) => ({
+  import("@/widgets/model-table/components/DynamicModelTable").then((module) => ({
     default: module.DynamicModelTable,
   })),
 );
 
 const StoreOrderUpdateModelFormExample = lazy(() =>
-  import("@/lib/form/examples").then((module) => ({
+  import("@/widgets/model-form/examples").then((module) => ({
     default: module.StoreOrderUpdateModelFormExample,
   })),
 );

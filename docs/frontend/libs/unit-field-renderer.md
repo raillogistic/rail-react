@@ -35,7 +35,7 @@ normalizes defaults internally, including `emptyText`, tone, size, align, and
 copy behavior.
 
 ```tsx
-import { UnitFieldRenderer, type UnitFieldInput } from "@/lib/details";
+import { UnitFieldRenderer, type UnitFieldInput } from "@/widgets/model-details";
 
 const field: UnitFieldInput = {
   id: "mrr",
@@ -117,7 +117,7 @@ Keep additions additive to preserve compatibility across consumers.
 4. Keep `formatFieldValue` return shape stable.
 5. Avoid renaming or removing existing `UnitFieldKind` values.
 
-You can also import governance constants from `@/lib/details`:
+You can also import governance constants from `@/widgets/model-details`:
 
 - `UNIT_FIELD_EXTENSIBILITY_GUIDE`
 - `UNIT_FIELD_NON_BREAKING_RULES`
@@ -129,7 +129,7 @@ Use the provided example data and component to validate behavior quickly during
 feature work.
 
 ```tsx
-import { UnitFieldExamples, unitFieldExamples } from "@/lib/details";
+import { UnitFieldExamples, unitFieldExamples } from "@/widgets/model-details";
 ```
 
 `unitFieldExamples` includes datetime with timezone, relative time, duration,
@@ -141,7 +141,7 @@ values, token preview, entity reference links, and contact field kinds.
 Run unit formatter tests from `rail-react`:
 
 ```bash
-npx vitest run src/lib/details/units/unitFieldFormatters.test.ts
+npx vitest run src/widgets/model-details/units/unitFieldFormatters.test.ts
 ```
 
 ## Next steps

@@ -10,10 +10,10 @@
 
 import React from "react";
 import { Navigate, useLocation } from "react-router-dom";
-import { useAuth } from "@/auth/hooks/useAuth";
+import { useAuth } from "@/features/auth/hooks/useAuth";
 import { ROUTES } from "@/shared/routing/paths";
-import OfflineNotification from "@/lib/components/OfflineNotification";
-import { userHasPermission } from "@/auth/utils/permission-matching";
+import OfflineNotification from "@/widgets/components/OfflineNotification";
+import { userHasPermission } from "@/features/auth/utils/permission-matching";
 
 interface ProtectedRouteProps {
   children: React.ReactNode;

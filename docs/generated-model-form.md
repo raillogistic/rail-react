@@ -11,7 +11,8 @@ DynamicForm schema with deterministic mutation bindings and normalized errors.
 - `modelFormContractPages`
 - `modelFormInitialData`
 
-GraphQL documents live in `src/graphql/modelFormContract.ts`.
+GraphQL documents live in
+`src/shared/api/graphql/legacy/modelFormContract.ts`.
 
 ## Frontend adapter flow
 
@@ -32,7 +33,7 @@ GraphQL documents live in `src/graphql/modelFormContract.ts`.
 - Keep legacy schema queries active (`formConfig`) during rollout.
 - If generated query returns opt-in disabled errors, use legacy schema without
   blocking the user flow.
-- `resolveModelFormSchema` in `src/lib/form/index.tsx` centralizes the generated
+- `resolveModelFormSchema` in `src/widgets/model-form/index.tsx` centralizes the generated
   vs legacy decision.
 
 ## Runtime overrides
@@ -133,7 +134,7 @@ Use `nested.<relationPath>` to override default generated behavior per relation:
 `ModelForm` wraps contract loading + initial data + DynamicForm rendering in one component.
 
 ```tsx
-import { ModelForm } from "@/lib/form";
+import { ModelForm } from "@/widgets/model-form";
 
 export function ProductCreateForm() {
   return (

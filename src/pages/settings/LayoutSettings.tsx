@@ -1,13 +1,13 @@
-import { useTheme } from "@/lib/theme";
+import { useTheme } from "@/shared/ui/theme";
 import {
   Card,
   CardContent,
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/lib/components/ui/card";
-import { Label } from "@/lib/components/ui/label";
-import { ToggleGroup, ToggleGroupItem } from "@/lib/components/ui/toggle-group";
+} from "@/shared/ui/kit/card";
+import { Label } from "@/shared/ui/kit/label";
+import { ToggleGroup, ToggleGroupItem } from "@/shared/ui/kit/toggle-group";
 import {
   IconLayoutSidebar,
   IconLayoutNavbar,
