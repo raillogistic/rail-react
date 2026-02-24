@@ -1,3 +1,4 @@
+import { useModelSingleQuery } from "@/shared/api/graphql/graphql";
 import type { ComponentType, ReactNode } from "react";
 
 export type RouteGuard = "public" | "protected";
@@ -42,4 +43,3 @@ export interface AppManifest {
 
 export const normalizePath = (path: string): string =>
   path.endsWith("/") ? path.slice(0, -1) || "/" : path;
-

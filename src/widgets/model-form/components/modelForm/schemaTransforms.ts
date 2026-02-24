@@ -584,7 +584,8 @@ function moveListFieldsToSectionEnd(
     return fields;
   }
 
-  const nonListFields: FormFieldConfig[] = [];
+  const regularFields: FormFieldConfig[] = [];
+  const trailingTextFields: FormFieldConfig[] = [];
   const listFields: FormFieldConfig[] = [];
 
   for (const field of fields) {
@@ -592,16 +593,48 @@ function moveListFieldsToSectionEnd(
       listFields.push(field);
       continue;
     }
-    nonListFields.push(field);
+    if (field.type === "json" || field.type === "textarea") {
+      trailingTextFields.push(field);
+      continue;
+    }
+    regularFields.push(field);
   }
 
-  if (listFields.length === 0 || nonListFields.length === 0) {
+  if (trailingTextFields.length === 0 && listFields.length === 0) {
     return fields;
   }
 
-  const ordered = [...nonListFields, ...listFields];
+  const ordered = [...regularFields, ...trailingTextFields, ...listFields];
   const unchanged = ordered.every((field, index) => field === fields[index]);
   return unchanged ? fields : ordered;
+}
+
+/**
+ * Applies trailing-complex-field ordering at section level:
+ * regular fields first, then textarea/json, then non-relation lists.
+ */
+export function enforceTrailingComplexFieldOrder<
+  TValues extends Record<string, unknown>,
+>(schema: FormSchema<TValues>): FormSchema<TValues> {
+  const sections = schema.sections ?? [];
+  if (sections.length === 0) return schema;
+
+  let changed = false;
+  const nextSections = sections.map((section) => {
+    const orderedFields = moveListFieldsToSectionEnd(section.fields);
+    if (orderedFields === section.fields) return section;
+    changed = true;
+    return {
+      ...section,
+      fields: orderedFields,
+    };
+  });
+
+  if (!changed) return schema;
+  return {
+    ...schema,
+    sections: nextSections,
+  };
 }
 
 export function hasUserOrderOverrides(

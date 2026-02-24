@@ -1,6 +1,6 @@
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import SectionHost from "../SectionHost";
+import DynamicDetail from "../DynamicDetail";
 import type { DetailsPageSchema } from "../sectionTypes";
 import { waitFor } from "@testing-library/react";
 
@@ -38,7 +38,7 @@ describe("section visibility and permissions", () => {
     };
 
     render(
-      <SectionHost
+      <DynamicDetail
         schema={schema}
         runtime={{
           entityId: "1",
@@ -76,7 +76,7 @@ describe("section visibility and permissions", () => {
     };
 
     render(
-      <SectionHost
+      <DynamicDetail
         schema={schema}
         runtime={{
           entityId: "2",
@@ -117,7 +117,7 @@ describe("section visibility and permissions", () => {
     };
 
     render(
-      <SectionHost
+      <DynamicDetail
         schema={schema}
         runtime={{
           entityId: "3",
@@ -132,3 +132,4 @@ describe("section visibility and permissions", () => {
     expect(screen.getByText("Tab content")).toBeInTheDocument();
   });
 });
+

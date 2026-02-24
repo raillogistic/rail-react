@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import SectionHost from "../SectionHost";
+import DynamicDetail from "../DynamicDetail";
 import type { DetailsPageSchema } from "../sectionTypes";
 
 describe("retry and abort behavior", () => {
@@ -28,7 +28,7 @@ describe("retry and abort behavior", () => {
     };
 
     render(
-      <SectionHost
+      <DynamicDetail
         schema={schema}
         runtime={{
           entityId: "1",
@@ -72,7 +72,7 @@ describe("retry and abort behavior", () => {
     };
 
     render(
-      <SectionHost
+      <DynamicDetail
         schema={schema}
         runtime={{
           entityId: "1",
@@ -112,7 +112,7 @@ describe("retry and abort behavior", () => {
     };
 
     const { unmount } = render(
-      <SectionHost
+      <DynamicDetail
         schema={schema}
         runtime={{
           entityId: "2",
@@ -134,7 +134,7 @@ describe("retry and abort behavior", () => {
     };
 
     render(
-      <SectionHost
+      <DynamicDetail
         schema={schema}
         runtime={{ entityId: "3" }}
         entityLoader={async () => {
@@ -152,3 +152,4 @@ describe("retry and abort behavior", () => {
     });
   });
 });
+

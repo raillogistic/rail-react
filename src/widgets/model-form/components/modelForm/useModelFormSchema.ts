@@ -9,6 +9,7 @@ import {
 import {
   applySchemaControls,
   enforceContractSectionFieldOrder,
+  enforceTrailingComplexFieldOrder,
   hasUserOrderOverrides,
   materializeNestedRelationFields,
 } from "./schemaTransforms";
@@ -117,7 +118,7 @@ export function useModelFormSchema<TFormValues extends Record<string, unknown>>(
       fieldOverrides,
       sectionOverrides,
       nestedControls: nestedControls ?? null,
-      enforceListFieldsAtEnd: !(generatedEnabled && contract),
+      enforceListFieldsAtEnd: true,
     });
 
     const shouldEnforceContractOrder =
@@ -128,7 +129,9 @@ export function useModelFormSchema<TFormValues extends Record<string, unknown>>(
       return controlled;
     }
 
-    return enforceContractSectionFieldOrder(controlled, contract);
+    return enforceTrailingComplexFieldOrder(
+      enforceContractSectionFieldOrder(controlled, contract),
+    );
   }, [
     schemaWithNestedRelations,
     resolvedOnlyFields,

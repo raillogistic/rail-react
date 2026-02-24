@@ -1,6 +1,6 @@
 import * as React from "react";
 import type { ColumnDef } from "@tanstack/react-table";
-import SectionHost from "../SectionHost";
+import DynamicDetail from "../DynamicDetail";
 import type { DetailsPageSchema } from "../sectionTypes";
 import {
   createAttachmentsSection,
@@ -323,7 +323,7 @@ export default function ExampleDetailsPage() {
   const schema = React.useMemo(() => buildExampleSchema(), []);
 
   return (
-    <SectionHost
+    <DynamicDetail
       schema={schema}
       runtime={
         {
@@ -336,3 +336,4 @@ export default function ExampleDetailsPage() {
     />
   );
 }
+

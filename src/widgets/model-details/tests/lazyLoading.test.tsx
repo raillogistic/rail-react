@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import SectionHost from "../SectionHost";
+import DynamicDetail from "../DynamicDetail";
 import type { DetailsPageSchema } from "../sectionTypes";
 import userEvent from "@testing-library/user-event";
 
@@ -52,7 +52,7 @@ describe("lazy loading and cache behavior", () => {
     };
 
     render(
-      <SectionHost
+      <DynamicDetail
         schema={schema}
         runtime={{
           entityId: "42",
@@ -80,3 +80,4 @@ describe("lazy loading and cache behavior", () => {
     });
   });
 });
+

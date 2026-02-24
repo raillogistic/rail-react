@@ -36,24 +36,24 @@ type EntityLoaderCtx<TEntity = unknown> = {
   abortSignal: AbortSignal;
 };
 
-export type SectionHostContextValue<TEntity = unknown> = {
+export type DynamicDetailContextValue<TEntity = unknown> = {
   runtime: SectionRuntimeCtx<TEntity>;
   schema: DetailsPageSchema;
   sectionStates: Record<string, SectionState<unknown>>;
   reloadSection: (section: SectionDefinition, tabId?: string) => Promise<void>;
 };
 
-const SectionHostContext = React.createContext<SectionHostContextValue | null>(null);
+const DynamicDetailContext = React.createContext<DynamicDetailContextValue | null>(null);
 
-export function useSectionHostContext<TEntity = unknown>(): SectionHostContextValue<TEntity> {
-  const ctx = React.useContext(SectionHostContext);
+export function useDynamicDetailContext<TEntity = unknown>(): DynamicDetailContextValue<TEntity> {
+  const ctx = React.useContext(DynamicDetailContext);
   if (!ctx) {
-    throw new Error("useSectionHostContext must be used inside SectionHost.");
+    throw new Error("useDynamicDetailContext must be used inside DynamicDetail.");
   }
-  return ctx as SectionHostContextValue<TEntity>;
+  return ctx as DynamicDetailContextValue<TEntity>;
 }
 
-export type SectionHostProps<TEntity = Record<string, unknown>> = {
+export type DynamicDetailProps<TEntity = Record<string, unknown>> = {
   schema: DetailsPageSchema;
   runtime: Omit<SectionRuntimeCtx<TEntity>, "entity"> & { entity?: TEntity };
   entityLoader?: (ctx: EntityLoaderCtx<TEntity>) => Promise<TEntity>;
@@ -226,7 +226,7 @@ function ManagedSection({
   );
 }
 
-export default function SectionHost<TEntity = Record<string, unknown>>({
+export default function DynamicDetail<TEntity = Record<string, unknown>>({
   schema,
   runtime,
   entityLoader,
@@ -244,7 +244,7 @@ export default function SectionHost<TEntity = Record<string, unknown>>({
   sectionsContainerClassName,
   sectionColumns = 1,
   resolveSectionContainer,
-}: SectionHostProps<TEntity>) {
+}: DynamicDetailProps<TEntity>) {
   const [entity, setEntity] = React.useState<TEntity | undefined>(runtime.entity);
   const [sectionStates, setSectionStates] = React.useState<
     Record<string, SectionState<unknown>>
@@ -468,7 +468,7 @@ export default function SectionHost<TEntity = Record<string, unknown>>({
     }
   }, [entityStatus, loadSection, visibleBodySections, visibleHeaderSections]);
 
-  const contextValue = React.useMemo<SectionHostContextValue<TEntity>>(
+  const contextValue = React.useMemo<DynamicDetailContextValue<TEntity>>(
     () => ({
       runtime: runtimeCtx,
       schema,
@@ -528,7 +528,7 @@ export default function SectionHost<TEntity = Record<string, unknown>>({
   );
 
   return (
-    <SectionHostContext.Provider value={contextValue}>
+    <DynamicDetailContext.Provider value={contextValue}>
       <div className={cn("space-y-12 animate-in fade-in slide-in-from-top-4 duration-1000", className)}>
         {visibleHeaderSections.length > 0 && (
           <div className="space-y-10">
@@ -588,7 +588,7 @@ export default function SectionHost<TEntity = Record<string, unknown>>({
           </div>
         ) : null}
       </div>
-    </SectionHostContext.Provider>
+    </DynamicDetailContext.Provider>
   );
 }
 
@@ -603,3 +603,5 @@ export function sectionRuntimeFromEntity(
     entity: toRecord(entity),
   };
 }
+
+
