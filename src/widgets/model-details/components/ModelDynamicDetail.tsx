@@ -1269,6 +1269,11 @@ export const ModelDynamicDetail = React.forwardRef<
       });
   }, [actionContext, actionsConfig.permissions, actionsConfig.showCustomMutations, config.runtime?.can, config.runtime?.locale, config.runtime?.permissions, config.runtime?.timezone, config.runtime?.user, idAsString, metadataState.metadata?.mutations, record]);
 
+  const updateFormProps = React.useMemo(
+    () => actionsConfig.updateForm?.modelFormProps ?? {},
+    [actionsConfig.updateForm?.modelFormProps],
+  );
+
   const runTemplate = React.useCallback(
     async (template: TemplateInfo, clientData: Record<string, unknown> = {}) => {
       await executeTemplateForRows(template as any, [idAsString], clientData);
@@ -1762,9 +1767,39 @@ export const ModelDynamicDetail = React.forwardRef<
           <ModelForm
             app={app}
             model={model}
-            mode="UPDATE"
-            objectId={idAsString}
-            {...(actionsConfig.updateForm?.modelFormProps ?? {})}
+            mode={updateFormProps.mode ?? "UPDATE"}
+            objectId={updateFormProps.objectId ?? idAsString}
+            includeNested={updateFormProps.includeNested}
+            nested={updateFormProps.nested}
+            generatedEnabled={updateFormProps.generatedEnabled}
+            runtimeOverrides={updateFormProps.runtimeOverrides}
+            onlyFields={updateFormProps.onlyFields}
+            excludeFields={updateFormProps.excludeFields}
+            onlyRequired={updateFormProps.onlyRequired}
+            onlyRelationships={updateFormProps.onlyRelationships}
+            excludeRelationships={updateFormProps.excludeRelationships}
+            fieldOverrides={updateFormProps.fieldOverrides}
+            sectionOverrides={updateFormProps.sectionOverrides}
+            validatorExtensions={updateFormProps.validatorExtensions}
+            legacySchema={updateFormProps.legacySchema}
+            formProps={updateFormProps.formProps}
+            state={updateFormProps.state}
+            behavior={updateFormProps.behavior}
+            layout={updateFormProps.layout}
+            actions={updateFormProps.actions}
+            devtools={updateFormProps.devtools}
+            title={updateFormProps.title}
+            description={updateFormProps.description}
+            showHeading={updateFormProps.showHeading}
+            containerClassName={updateFormProps.containerClassName}
+            contentClassName={updateFormProps.contentClassName}
+            loadingFallback={updateFormProps.loadingFallback}
+            emptySchemaFallback={updateFormProps.emptySchemaFallback}
+            errorFallback={updateFormProps.errorFallback}
+            requireObjectIdForUpdate={updateFormProps.requireObjectIdForUpdate}
+            onContractLoaded={updateFormProps.onContractLoaded}
+            onInitialDataLoaded={updateFormProps.onInitialDataLoaded}
+            onLoadError={updateFormProps.onLoadError}
           />
         </DialogContent>
       </Dialog>

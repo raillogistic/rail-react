@@ -127,11 +127,22 @@ export default function DashboardPage() {
       },
       nestedFields,
       actions: {
-        showUpdate: true,
-        showDelete: true,
-        showTemplates: true,
-        showCustomMutations: true,
+        updateForm: {
+          modelFormProps: {
+            onlyRequired: true,
+            excludeFields: ["price"],
+            layout: {
+              columns: 3,
+            },
+          },
+        },
       },
+      // actions: {
+      //   showUpdate: true,
+      //   showDelete: true,
+      //   showTemplates: true,
+      //   showCustomMutations: true,
+      // },
       queryOptions: {
         fetchPolicy: "cache-and-network",
       },

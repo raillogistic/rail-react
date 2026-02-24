@@ -100,8 +100,20 @@ export function useModelFormLogic<TFormValues extends Record<string, unknown>>(
     }
 
     const validate = (values: TFormValues) => {
-      const generatedErrors = generatedValidate
-        ? (generatedValidate(values as Record<string, unknown>) as Record<string, string> | undefined)
+      const sanitizedValues = sanitizeValuesForControlledSchema(
+        values as Record<string, unknown>,
+      );
+      const generatedErrorsRaw = generatedValidate
+        ? (generatedValidate(sanitizedValues) as
+            | Record<string, string>
+            | undefined)
+        : undefined;
+      const generatedErrors = generatedErrorsRaw
+        ? Object.fromEntries(
+            Object.entries(generatedErrorsRaw).filter(([fieldPath]) =>
+              editableFieldPaths.includes(fieldPath),
+            ),
+          )
         : undefined;
       const customErrors = userValidate ? userValidate(values) : undefined;
       return mergeValidationErrors(generatedErrors, customErrors);
