@@ -74,6 +74,33 @@ export type DynamicDetailProps<TEntity = Record<string, unknown>> = {
   className?: string;
   noAccessBehavior?: NoAccessBehavior;
   retryOptions?: RetryOptions;
+  /**
+   * Optional grouped view configuration. Top-level props still work and
+   * take precedence when both are provided.
+   */
+  view?: DynamicDetailViewConfig;
+  initialTabId?: string;
+  activeTabId?: string;
+  onActiveTabChange?: (tabId: string) => void;
+  renderTabList?: (
+    ctx: TabHostTabListRenderContext,
+  ) => React.ReactNode | undefined;
+  tabListClassName?: string;
+  tabTriggerClassName?: string;
+  activeTabTriggerClassName?: string;
+  inactiveTabTriggerClassName?: string;
+  sectionsContainerClassName?: string;
+  sectionColumns?: number;
+  resolveSectionContainer?: (
+    section: SectionDefinition,
+    tabId?: string,
+  ) => { className?: string; style?: React.CSSProperties } | undefined;
+};
+
+/**
+ * Grouped display controls for tabs and section container layout.
+ */
+export type DynamicDetailViewConfig = {
   initialTabId?: string;
   activeTabId?: string;
   onActiveTabChange?: (tabId: string) => void;
@@ -271,6 +298,7 @@ export default function DynamicDetail<TEntity = Record<string, unknown>>({
   className,
   noAccessBehavior = "hide",
   retryOptions,
+  view,
   initialTabId,
   activeTabId,
   onActiveTabChange,
@@ -280,7 +308,7 @@ export default function DynamicDetail<TEntity = Record<string, unknown>>({
   activeTabTriggerClassName,
   inactiveTabTriggerClassName,
   sectionsContainerClassName,
-  sectionColumns = 1,
+  sectionColumns,
   resolveSectionContainer,
 }: DynamicDetailProps<TEntity>) {
   const [entity, setEntity] = React.useState<TEntity | undefined>(
@@ -301,6 +329,23 @@ export default function DynamicDetail<TEntity = Record<string, unknown>>({
   const [entityStatus, setEntityStatus] = React.useState<
     "idle" | "loading" | "ready" | "error"
   >(entityLoader ? "loading" : "ready");
+  const resolvedInitialTabId = initialTabId ?? view?.initialTabId;
+  const resolvedActiveTabId = activeTabId ?? view?.activeTabId;
+  const resolvedOnActiveTabChange =
+    onActiveTabChange ?? view?.onActiveTabChange;
+  const resolvedRenderTabList = renderTabList ?? view?.renderTabList;
+  const resolvedTabListClassName = tabListClassName ?? view?.tabListClassName;
+  const resolvedTabTriggerClassName =
+    tabTriggerClassName ?? view?.tabTriggerClassName;
+  const resolvedActiveTabTriggerClassName =
+    activeTabTriggerClassName ?? view?.activeTabTriggerClassName;
+  const resolvedInactiveTabTriggerClassName =
+    inactiveTabTriggerClassName ?? view?.inactiveTabTriggerClassName;
+  const resolvedSectionsContainerClassName =
+    sectionsContainerClassName ?? view?.sectionsContainerClassName;
+  const resolvedSectionColumns = sectionColumns ?? view?.sectionColumns ?? 1;
+  const resolvedResolveSectionContainer =
+    resolveSectionContainer ?? view?.resolveSectionContainer;
 
   React.useEffect(() => {
     sectionStatesRef.current = sectionStates;
@@ -500,9 +545,9 @@ export default function DynamicDetail<TEntity = Record<string, unknown>>({
   );
 
   const [internalActiveTab, setInternalActiveTab] = React.useState<string>(
-    initialTabId ?? tabHostTabs[0]?.id ?? "",
+    resolvedInitialTabId ?? tabHostTabs[0]?.id ?? "",
   );
-  const resolvedActiveTab = activeTabId ?? internalActiveTab;
+  const resolvedActiveTab = resolvedActiveTabId ?? internalActiveTab;
 
   React.useEffect(() => {
     if (!resolvedActiveTab) return;
@@ -560,14 +605,16 @@ export default function DynamicDetail<TEntity = Record<string, unknown>>({
   const renderSectionList = (sections: SectionDefinition[], tabId?: string) => (
     <div
       className={cn(
-        sectionColumns > 1 ? resolveGridClasses(sectionColumns) : "space-y-6",
-        sectionsContainerClassName,
+        resolvedSectionColumns > 1
+          ? resolveGridClasses(resolvedSectionColumns)
+          : "space-y-6",
+        resolvedSectionsContainerClassName,
       )}
     >
       {sections.map((section) => {
         const sectionKey = getSectionInstanceKey(section, runtimeCtx, tabId);
         const sectionState = sectionStates[sectionKey] ?? { status: "idle" };
-        const container = resolveSectionContainer?.(section, tabId);
+        const container = resolvedResolveSectionContainer?.(section, tabId);
         return (
           <ManagedSection
             key={sectionKey}
@@ -575,7 +622,7 @@ export default function DynamicDetail<TEntity = Record<string, unknown>>({
             runtime={runtimeCtx}
             tabId={tabId}
             noAccessBehavior={noAccessBehavior}
-            sectionsContainerClassName={sectionsContainerClassName}
+            sectionsContainerClassName={resolvedSectionsContainerClassName}
             sectionContainerClassName={container?.className}
             sectionContainerStyle={container?.style}
             sectionState={sectionState}
@@ -608,10 +655,10 @@ export default function DynamicDetail<TEntity = Record<string, unknown>>({
             <TabHost
               tabs={tabHostTabs}
               activeTab={resolvedActiveTab}
-              defaultActiveTab={initialTabId ?? tabHostTabs[0]?.id}
+              defaultActiveTab={resolvedInitialTabId ?? tabHostTabs[0]?.id}
               onActiveTabChange={(tabId) => {
                 setInternalActiveTab(tabId);
-                onActiveTabChange?.(tabId);
+                resolvedOnActiveTabChange?.(tabId);
               }}
               onTabActivated={(tabId) => {
                 const tab = visibleTabs.find((entry) => entry.id === tabId);
@@ -646,11 +693,11 @@ export default function DynamicDetail<TEntity = Record<string, unknown>>({
                   </div>
                 );
               }}
-              renderTabList={renderTabList}
-              tabListClassName={tabListClassName}
-              tabTriggerClassName={tabTriggerClassName}
-              activeTabTriggerClassName={activeTabTriggerClassName}
-              inactiveTabTriggerClassName={inactiveTabTriggerClassName}
+              renderTabList={resolvedRenderTabList}
+              tabListClassName={resolvedTabListClassName}
+              tabTriggerClassName={resolvedTabTriggerClassName}
+              activeTabTriggerClassName={resolvedActiveTabTriggerClassName}
+              inactiveTabTriggerClassName={resolvedInactiveTabTriggerClassName}
             />
           </div>
         ) : null}

@@ -7,6 +7,7 @@
 import * as React from "react";
 import { gql, useApolloClient } from "@apollo/client";
 import {
+  AlertTriangle,
   ChevronDown,
   Loader2,
   Pencil,
@@ -75,7 +76,11 @@ import {
 } from "@/shared/ui/kit/dropdown-menu";
 import DynamicDetail from "../DynamicDetail";
 import { createCustomSection } from "../builtInSections";
-import type { DetailsPageSchema, SectionRuntimeCtx } from "../sectionTypes";
+import type {
+  DetailsPageSchema,
+  SectionDefinition,
+  SectionRuntimeCtx,
+} from "../sectionTypes";
 import type { SectionAction } from "../sectionTypes";
 import { hasRequiredPermissions } from "../sectionTypes";
 import type { UnitFieldInput } from "../units/unitFieldTypes";
@@ -96,7 +101,9 @@ import type {
   ModelDynamicDetailNestedConfig,
   ModelDynamicDetailProps,
   ModelDynamicDetailSnapshot,
+  ModelDynamicDetailTabConfig,
 } from "../config/types";
+import { IconInfoCircle } from "@tabler/icons-react";
 
 type SelectionTreeNode = Record<string, true | SelectionTreeNode>;
 
@@ -125,6 +132,7 @@ type ResolvedFieldConfig = ModelDynamicDetailFieldConfig & {
 
 type ResolvedLayoutSection = {
   id: string;
+  tabId?: string;
   title?: React.ReactNode;
   description?: React.ReactNode;
   order?: number;
@@ -137,14 +145,17 @@ type ResolvedLayoutSection = {
 
 type ResolvedNestedField = ResolvedFieldConfig & {
   absolutePath: string;
+  sectionId: string;
 };
 
 type ResolvedNestedSection = {
+  sectionId: string;
+  tabId?: string;
   path: string;
   relation: RelationshipMetadata;
   config: ModelDynamicDetailNestedConfig;
   mode: "table" | "object";
-  order: number;
+  sortOrder: number;
   fields: ResolvedNestedField[];
   relatedMetadata: ModelMetadata | null;
 };
@@ -152,6 +163,15 @@ type ResolvedNestedSection = {
 type MutationResponsePayload = {
   ok?: boolean;
   errors?: Array<{ message?: string }>;
+};
+
+type ResolvedLayoutTab = {
+  id: string;
+  title: string;
+  icon?: React.ReactNode;
+  order: number;
+  loadingStrategy?: ModelDynamicDetailTabConfig["loadingStrategy"];
+  permissions?: string[];
 };
 
 type ResolvedHeaderActionEntry = {
@@ -172,9 +192,88 @@ function normalizeColumns(value: number | undefined, fallback: number): number {
   return Math.max(1, Math.min(Math.floor(candidate), 6));
 }
 
+function normalizeOrder(value: number | undefined, fallback: number): number {
+  if (Number.isFinite(value)) return Number(value);
+  return fallback;
+}
+
+/**
+ * Normalizes a tab identifier and returns an empty string when invalid.
+ */
+function normalizeTabId(value: unknown): string {
+  if (typeof value !== "string") return "";
+  return value.trim();
+}
+
+/**
+ * Emits development-only warnings for non-fatal configuration issues.
+ */
+function warnDev(message: string): void {
+  if (
+    typeof process !== "undefined" &&
+    process.env.NODE_ENV &&
+    process.env.NODE_ENV !== "production"
+  ) {
+    console.warn(message);
+  }
+}
+
+/**
+ * Resolves tab definitions from layout config and current render context.
+ */
+function resolveLayoutTabs(options: {
+  tabs: ModelDynamicDetailTabConfig[] | undefined;
+  app: string;
+  model: string;
+  id: string;
+  data: Record<string, unknown> | null;
+  metadata: ModelMetadata | null;
+}): ResolvedLayoutTab[] {
+  const { tabs, app, model, id, data, metadata } = options;
+  if (!Array.isArray(tabs) || tabs.length === 0) return [];
+
+  const renderCtx = { app, model, id, data, metadata };
+  const seen = new Set<string>();
+
+  return tabs
+    .map((tab, index) => {
+      const tabId = normalizeTabId(tab.id);
+      if (!tabId) {
+        warnDev("[ModelDynamicDetail] Ignoring tab with empty id.");
+        return null;
+      }
+      if (seen.has(tabId)) {
+        warnDev(`[ModelDynamicDetail] Duplicate tab id \"${tabId}\" ignored.`);
+        return null;
+      }
+      if (tab.visible && !tab.visible(renderCtx)) {
+        return null;
+      }
+      seen.add(tabId);
+      return {
+        id: tabId,
+        title: tab.title,
+        icon: tab.icon,
+        order: normalizeOrder(tab.order, index),
+        loadingStrategy: tab.loadingStrategy,
+        permissions: tab.permissions,
+      } satisfies ResolvedLayoutTab;
+    })
+    .filter(Boolean)
+    .map((entry) => entry as ResolvedLayoutTab)
+    .sort((left, right) => left.order - right.order);
+}
+
+function resolveNestedSectionId(value: unknown, fallback: string): string {
+  if (typeof value === "string" && value.trim()) {
+    return value.trim();
+  }
+  return fallback;
+}
+
 function resolveGridClasses(columns: number): string {
   const normalized = normalizeColumns(columns, 2);
-  const classes = ["grid grid-cols-1 gap-4"];
+  const classes = ["grid grid-cols-1 gap-x-8 gap-y-5"];
   if (normalized >= 2) classes.push("sm:grid-cols-2");
   if (normalized >= 3) classes.push("md:grid-cols-3");
   if (normalized >= 4) classes.push("lg:grid-cols-4");
@@ -748,31 +847,40 @@ function resolveRelativePathFromAbsolute(path: string, root: string): string {
 }
 
 function resolveNestedFieldConfigs(options: {
+  sectionId: string;
   relationPath: string;
   config: ModelDynamicDetailNestedConfig;
   relatedMetadata: ModelMetadata | null;
   data: Record<string, unknown> | null;
 }): ResolvedNestedField[] {
-  const { relationPath, config, relatedMetadata, data } = options;
+  const { sectionId, relationPath, config, relatedMetadata, data } = options;
   const relationValue = getValueByPath<unknown>(data ?? {}, relationPath);
 
   const fromConfig = config.fields ?? [];
   if (fromConfig.length > 0) {
-    return fromConfig.map((entry) => {
-      const normalized = normalizeFieldConfig(entry, { keepRelative: true });
-      const relative = resolveRelativePathFromAbsolute(
-        normalized.path,
-        relationPath,
+    return fromConfig
+      .map((entry, index) => {
+        const normalized = normalizeFieldConfig(entry, { keepRelative: true });
+        const relative = resolveRelativePathFromAbsolute(
+          normalized.path,
+          relationPath,
+        );
+        const absolutePath = relative
+          ? `${relationPath}.${relative}`
+          : relationPath;
+        return {
+          ...normalized,
+          sectionId: resolveNestedSectionId(normalized.sectionId, sectionId),
+          path: relative || "id",
+          absolutePath,
+          order: normalizeOrder(normalized.order, index),
+        };
+      })
+      .sort(
+        (left, right) =>
+          normalizeOrder(left.order, Number.MAX_SAFE_INTEGER) -
+          normalizeOrder(right.order, Number.MAX_SAFE_INTEGER),
       );
-      const absolutePath = relative
-        ? `${relationPath}.${relative}`
-        : relationPath;
-      return {
-        ...normalized,
-        path: relative || "id",
-        absolutePath,
-      };
-    });
   }
 
   const defaultFieldsFromMetadata = (relatedMetadata?.fields ?? [])
@@ -786,6 +894,7 @@ function resolveNestedFieldConfigs(options: {
     return defaultFieldsFromMetadata.map((path) => ({
       path,
       absolutePath: `${relationPath}.${path}`,
+      sectionId,
     }));
   }
 
@@ -802,12 +911,13 @@ function resolveNestedFieldConfigs(options: {
       .map((path) => ({
         path,
         absolutePath: `${relationPath}.${path}`,
+        sectionId,
       }));
   }
 
   return [
-    { path: "id", absolutePath: `${relationPath}.id` },
-    { path: "desc", absolutePath: `${relationPath}.desc` },
+    { path: "id", absolutePath: `${relationPath}.id`, sectionId },
+    { path: "desc", absolutePath: `${relationPath}.desc`, sectionId },
   ];
 }
 
@@ -993,6 +1103,7 @@ function buildLayoutSections(options: {
 
       return {
         id: section.id || `section:${sectionIndex}`,
+        tabId: normalizeTabId(section.tabId),
         title: section.title,
         description: section.description,
         order: section.order,
@@ -1126,10 +1237,14 @@ export const ModelDynamicDetail = React.forwardRef<
 
   const resolvedNestedSections = React.useMemo<ResolvedNestedSection[]>(() => {
     return Object.entries(nestedConfig)
-      .map(([rawPath, nested]) => {
+      .map(([rawPath, nested], index) => {
         const path = toGraphqlPath(rawPath);
         const relation = relationLookup.get(path);
         if (!relation) return null;
+        const sectionId = resolveNestedSectionId(
+          nested.sectionId,
+          `nested:${path}`,
+        );
 
         const mode =
           nested.mode && nested.mode !== "auto"
@@ -1139,6 +1254,7 @@ export const ModelDynamicDetail = React.forwardRef<
               : "object";
 
         const fields = resolveNestedFieldConfigs({
+          sectionId,
           relationPath: path,
           config: nested,
           relatedMetadata: nestedMetadataByRelation[path] ?? null,
@@ -1146,17 +1262,19 @@ export const ModelDynamicDetail = React.forwardRef<
         });
 
         return {
+          sectionId,
+          tabId: normalizeTabId(nested.tabId),
           path,
           relation,
           config: nested,
           mode,
-          order: nested.order ?? 500,
+          sortOrder: normalizeOrder(nested.order, index),
           fields,
           relatedMetadata: nestedMetadataByRelation[path] ?? null,
         } satisfies ResolvedNestedSection;
       })
       .filter((entry): entry is ResolvedNestedSection => Boolean(entry))
-      .sort((left, right) => left.order - right.order);
+      .sort((left, right) => left.sortOrder - right.sortOrder);
   }, [nestedConfig, relationLookup, nestedMetadataByRelation]);
 
   React.useEffect(() => {
@@ -1703,10 +1821,14 @@ export const ModelDynamicDetail = React.forwardRef<
 
   const resolvedNestedWithData = React.useMemo<ResolvedNestedSection[]>(() => {
     return Object.entries(nestedConfig)
-      .map(([rawPath, nested]) => {
+      .map(([rawPath, nested], index) => {
         const path = toGraphqlPath(rawPath);
         const relation = relationLookup.get(path);
         if (!relation) return null;
+        const sectionId = resolveNestedSectionId(
+          nested.sectionId,
+          `nested:${path}`,
+        );
 
         const mode =
           nested.mode && nested.mode !== "auto"
@@ -1716,6 +1838,7 @@ export const ModelDynamicDetail = React.forwardRef<
               : "object";
 
         const fields = resolveNestedFieldConfigs({
+          sectionId,
           relationPath: path,
           config: nested,
           relatedMetadata: nestedMetadataByRelation[path] ?? null,
@@ -1723,17 +1846,19 @@ export const ModelDynamicDetail = React.forwardRef<
         });
 
         return {
+          sectionId,
+          tabId: normalizeTabId(nested.tabId),
           path,
           relation,
           config: nested,
           mode,
-          order: nested.order ?? 500,
+          sortOrder: normalizeOrder(nested.order, index),
           fields,
           relatedMetadata: nestedMetadataByRelation[path] ?? null,
         } satisfies ResolvedNestedSection;
       })
       .filter((entry): entry is ResolvedNestedSection => Boolean(entry))
-      .sort((left, right) => left.order - right.order);
+      .sort((left, right) => left.sortOrder - right.sortOrder);
   }, [nestedConfig, nestedMetadataByRelation, record, relationLookup]);
 
   const detailsSchema = React.useMemo<DetailsPageSchema>(() => {
@@ -1793,7 +1918,7 @@ export const ModelDynamicDetail = React.forwardRef<
         ? [
             {
               id: "header-update",
-              label: "Update",
+              label: "",
               icon: <Pencil className="size-4" />,
               onClick: () => {
                 void handleUpdate();
@@ -1805,7 +1930,7 @@ export const ModelDynamicDetail = React.forwardRef<
         ? [
             {
               id: "header-delete",
-              label: "Delete",
+              label: "",
               tone: "danger" as const,
               icon: deleting ? (
                 <Loader2 className="size-4 animate-spin" />
@@ -1833,7 +1958,7 @@ export const ModelDynamicDetail = React.forwardRef<
                       className="h-8 rounded-lg text-xs font-medium gap-1.5"
                     >
                       <Printer className="size-3.5" />
-                      Templates
+
                       <ChevronDown className="size-3 opacity-60" />
                     </Button>
                   </DropdownMenuTrigger>
@@ -1841,9 +1966,7 @@ export const ModelDynamicDetail = React.forwardRef<
                     align="end"
                     className="w-52 p-1.5 rounded-xl shadow-xl border-border/50"
                   >
-                    <DropdownMenuLabel className="text-xs font-medium text-muted-foreground/60 px-2">
-                      Templates
-                    </DropdownMenuLabel>
+                    <DropdownMenuLabel className="text-xs font-medium text-muted-foreground/60 px-2"></DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     {templateEntries.map((template) => (
                       <DropdownMenuItem
@@ -1875,7 +1998,7 @@ export const ModelDynamicDetail = React.forwardRef<
                       className="h-8 rounded-lg text-xs font-medium gap-1.5"
                     >
                       <Zap className="size-3.5" />
-                      Actions
+
                       <ChevronDown className="size-3 opacity-60" />
                     </Button>
                   </DropdownMenuTrigger>
@@ -1917,7 +2040,7 @@ export const ModelDynamicDetail = React.forwardRef<
               id: "header:main",
               title: frameTitle,
               description: resolvedHeaderDescription,
-              icon: headerFrame?.icon,
+              icon: headerFrame?.icon || <IconInfoCircle />,
               order: headerFrame?.order ?? -200,
               dataSource: headerFrame?.dataSource,
               loadingStrategy: headerFrame?.loadingStrategy,
@@ -1941,130 +2064,149 @@ export const ModelDynamicDetail = React.forwardRef<
           ]
         : [];
 
-    const bodySections = [
-      ...layoutSectionsWithData.map((section) =>
-        createCustomSection({
-          id: `layout:${section.id}`,
-          kind: "custom",
-          order: section.order,
-          select: () => ({ ready: true }),
-          title: typeof section.title === "string" ? section.title : undefined,
-          description:
-            typeof section.description === "string"
-              ? section.description
-              : undefined,
-          render: () => (
-            <div className="space-y-6">
-              {section.rows.map((row) => (
-                <div key={row.id} className={resolveGridClasses(row.columns)}>
-                  {row.fields.map((field) => (
-                    <div
-                      key={`${section.id}:${row.id}:${field.path}`}
-                      style={{
-                        gridColumn: field.colSpan
-                          ? `span ${field.colSpan} / span ${field.colSpan}`
-                          : undefined,
-                        gridRow: field.rowSpan
-                          ? `span ${field.rowSpan} / span ${field.rowSpan}`
-                          : undefined,
-                      }}
-                    >
-                      {record
-                        ? renderFieldValue({
-                            field,
-                            record,
-                            sectionId: section.id,
-                            metadata: metadataState.metadata,
-                            nestedMetadataByRelation,
-                          })
-                        : null}
-                    </div>
-                  ))}
-                </div>
-              ))}
-            </div>
-          ),
-        }),
-      ),
-      ...resolvedNestedWithData.map((nested) =>
-        createCustomSection({
-          id: `nested:${nested.path}`,
-          kind: "custom",
-          order: nested.order,
-          select: () => ({ ready: true }),
-          title:
-            typeof nested.config.title === "string"
-              ? nested.config.title
-              : nested.relation.verboseName,
-          description:
-            typeof nested.config.description === "string"
-              ? nested.config.description
-              : nested.relation.helpText,
-          render: () => {
-            const nestedValue = getValueByPath(record ?? {}, nested.path);
-
-            if (nested.mode === "table") {
-              const rows = Array.isArray(nestedValue)
-                ? nestedValue.filter(
-                    (entry): entry is Record<string, unknown> =>
-                      isRecord(entry),
-                  )
-                : [];
-
-              const tableRows = rows.map((row) => {
-                const output: Record<string, unknown> = {};
-                nested.fields.forEach((field) => {
-                  output[field.path] = getValueByPath(row, field.path);
-                });
-                return output;
-              });
-
-              return (
-                <TableDetail
-                  columns={nested.fields.map((field) => ({
-                    id: field.path,
-                    header: String(
-                      field.label ??
-                        humanizeLabel(
-                          field.path.split(".").slice(-1)[0] ?? field.path,
-                        ),
-                    ),
-                  }))}
-                  rows={tableRows}
-                  enable_quick_search={
-                    nested.config.table?.enableQuickSearch ?? true
-                  }
-                  enable_sorting={nested.config.table?.enableSorting ?? true}
-                  initial_page_size={nested.config.table?.initialPageSize ?? 10}
-                />
-              );
-            }
-
-            if (!isRecord(nestedValue)) {
-              return <SectionEmptyState title="No nested object" />;
-            }
-
-            const columns = normalizeColumns(nested.config.columns, 2);
-            return (
-              <div className={resolveGridClasses(columns)}>
-                {nested.fields.map((field) => (
-                  <div key={`${nested.path}:${field.path}`}>
-                    {renderFieldValue({
-                      field,
-                      record: nestedValue,
-                      sectionId: nested.path,
-                      metadata: nested.relatedMetadata,
-                      nestedMetadataByRelation: {},
-                    })}
+    const layoutSectionEntries = layoutSectionsWithData.map((section) => ({
+      tabId: section.tabId,
+      section: createCustomSection({
+        id: `layout:${section.id}`,
+        kind: "custom",
+        order: section.order,
+        select: () => ({ ready: true }),
+        title: typeof section.title === "string" ? section.title : undefined,
+        description:
+          typeof section.description === "string"
+            ? section.description
+            : undefined,
+        render: () => (
+          <div className="space-y-5">
+            {section.rows.map((row) => (
+              <div
+                key={row.id}
+                className={cn(resolveGridClasses(row.columns), "py-1")}
+              >
+                {row.fields.map((field) => (
+                  <div
+                    key={`${section.id}:${row.id}:${field.path}`}
+                    className="min-w-0"
+                    style={{
+                      gridColumn: field.colSpan
+                        ? `span ${field.colSpan} / span ${field.colSpan}`
+                        : undefined,
+                      gridRow: field.rowSpan
+                        ? `span ${field.rowSpan} / span ${field.rowSpan}`
+                        : undefined,
+                    }}
+                  >
+                    {record
+                      ? renderFieldValue({
+                          field,
+                          record,
+                          sectionId: section.id,
+                          metadata: metadataState.metadata,
+                          nestedMetadataByRelation,
+                        })
+                      : null}
                   </div>
                 ))}
               </div>
+            ))}
+          </div>
+        ),
+      }),
+    }));
+
+    const nestedSectionEntries = resolvedNestedWithData.map((nested) => ({
+      tabId: nested.tabId,
+      section: createCustomSection({
+        id: nested.sectionId,
+        kind: "custom",
+        order: undefined,
+        select: () => ({ ready: true }),
+        title:
+          typeof nested.config.title === "string"
+            ? nested.config.title
+            : nested.relation.verboseName,
+        description:
+          typeof nested.config.description === "string"
+            ? nested.config.description
+            : nested.relation.helpText,
+        render: () => {
+          const nestedValue = getValueByPath(record ?? {}, nested.path);
+
+          if (nested.mode === "table") {
+            const rows = Array.isArray(nestedValue)
+              ? nestedValue.filter((entry): entry is Record<string, unknown> =>
+                  isRecord(entry),
+                )
+              : [];
+
+            const tableRows = rows.map((row) => {
+              const output: Record<string, unknown> = {};
+              nested.fields.forEach((field) => {
+                output[field.path] = getValueByPath(row, field.path);
+              });
+              return output;
+            });
+
+            return (
+              <TableDetail
+                columns={nested.fields.map((field) => ({
+                  id: field.path,
+                  header: String(
+                    field.label ??
+                      humanizeLabel(
+                        field.path.split(".").slice(-1)[0] ?? field.path,
+                      ),
+                  ),
+                }))}
+                rows={tableRows}
+                enable_quick_search={
+                  nested.config.table?.enableQuickSearch ?? true
+                }
+                enable_sorting={nested.config.table?.enableSorting ?? true}
+                initial_page_size={nested.config.table?.initialPageSize ?? 10}
+              />
             );
-          },
-        }),
-      ),
-      ...(config.layout?.customSections ?? []).map((section) =>
-        createCustomSection({
+          }
+
+          if (!isRecord(nestedValue)) {
+            return <SectionEmptyState title="No nested object" />;
+          }
+
+          const columns = normalizeColumns(nested.config.columns, 2);
+          return (
+            <div className={cn(resolveGridClasses(columns), "py-1")}>
+              {nested.fields.map((field) => (
+                <div
+                  key={`${nested.path}:${field.path}`}
+                  className="min-w-0"
+                  style={{
+                    gridColumn: field.colSpan
+                      ? `span ${field.colSpan} / span ${field.colSpan}`
+                      : undefined,
+                    gridRow: field.rowSpan
+                      ? `span ${field.rowSpan} / span ${field.rowSpan}`
+                      : undefined,
+                  }}
+                >
+                  {renderFieldValue({
+                    field,
+                    record: nestedValue,
+                    sectionId: field.sectionId,
+                    metadata: nested.relatedMetadata,
+                    nestedMetadataByRelation: {},
+                  })}
+                </div>
+              ))}
+            </div>
+          );
+        },
+      }),
+    }));
+
+    const customSectionEntries = (config.layout?.customSections ?? []).map(
+      (section) => ({
+        tabId: normalizeTabId(section.tabId),
+        section: createCustomSection({
           id: `custom:${section.id}`,
           kind: "custom",
           order: section.order,
@@ -2093,12 +2235,68 @@ export const ModelDynamicDetail = React.forwardRef<
               metadata: metadataState.metadata,
             }),
         }),
-      ),
-    ];
+      }),
+    );
+
+    const layoutTabs = resolveLayoutTabs({
+      tabs: config.layout?.tabs,
+      app,
+      model,
+      id: idAsString,
+      data: record,
+      metadata: metadataState.metadata,
+    });
+    const tabLookup = new Set(layoutTabs.map((tab) => tab.id));
+    const sectionsByTab = new Map<string, SectionDefinition[]>();
+    layoutTabs.forEach((tab) => {
+      sectionsByTab.set(tab.id, []);
+    });
+    const bodySections: SectionDefinition[] = [];
+
+    const routeSection = (
+      section: SectionDefinition,
+      targetTabId: string | undefined,
+    ) => {
+      const tabId = normalizeTabId(targetTabId);
+      if (tabId && tabLookup.has(tabId)) {
+        const sections = sectionsByTab.get(tabId);
+        if (sections) {
+          sections.push(section);
+          return;
+        }
+      }
+      if (tabId && !tabLookup.has(tabId)) {
+        warnDev(
+          `[ModelDynamicDetail] Unknown tabId \"${tabId}\". Section \"${section.id}\" was routed to body.`,
+        );
+      }
+      bodySections.push(section);
+    };
+
+    [
+      ...layoutSectionEntries,
+      ...nestedSectionEntries,
+      ...customSectionEntries,
+    ].forEach((entry) => {
+      routeSection(entry.section, entry.tabId);
+    });
+
+    const tabs = layoutTabs
+      .map((tab) => ({
+        id: tab.id,
+        title: tab.title,
+        icon: tab.icon,
+        order: tab.order,
+        loadingStrategy: tab.loadingStrategy,
+        permissions: tab.permissions,
+        sections: sectionsByTab.get(tab.id) ?? [],
+      }))
+      .filter((tab) => tab.sections.length > 0);
 
     return {
       header: headerSections,
       body: bodySections,
+      ...(tabs.length > 0 ? { tabs } : {}),
     };
   }, [
     actionsConfig.showTemplates,
@@ -2107,6 +2305,7 @@ export const ModelDynamicDetail = React.forwardRef<
     canUpdate,
     config.header?.frame,
     config.layout?.customSections,
+    config.layout?.tabs,
     customHeaderActionProps,
     customHeaderActions,
     customMutationEntries,
@@ -2126,31 +2325,61 @@ export const ModelDynamicDetail = React.forwardRef<
 
   if (deleted) {
     return (
-      <SectionEmptyState
-        title="Record deleted"
-        description="The detail view is no longer available for this record."
-      />
+      <div
+        className={cn(
+          "min-h-[200px] flex items-center justify-center",
+          config.className,
+        )}
+      >
+        <SectionEmptyState
+          title="Record deleted"
+          description="The detail view is no longer available for this record."
+        />
+      </div>
     );
   }
 
   if (metadataState.loading || queryState.loading) {
-    return <SectionSkeleton lines={6} />;
+    return (
+      <div className={cn("space-y-6", config.className)}>
+        <SectionSkeleton lines={8} />
+      </div>
+    );
   }
 
   if (metadataState.error || queryState.error) {
     return (
-      <SectionErrorState
-        title="Detail loading failed"
-        description={getErrorMessage(
-          metadataState.error ?? queryState.error,
-          "Unable to load detail.",
+      <div
+        className={cn(
+          "min-h-[200px] flex items-center justify-center",
+          config.className,
         )}
-        onRetry={refetch}
-      />
+      >
+        <SectionErrorState
+          title="Detail loading failed"
+          description={getErrorMessage(
+            metadataState.error ?? queryState.error,
+            "Unable to load detail.",
+          )}
+          onRetry={refetch}
+        />
+      </div>
     );
   }
   if (!record) {
-    return <SectionEmptyState title="Record not found" />;
+    return (
+      <div
+        className={cn(
+          "min-h-[200px] flex items-center justify-center",
+          config.className,
+        )}
+      >
+        <SectionEmptyState
+          title="Record not found"
+          description="The requested record does not exist or is not accessible."
+        />
+      </div>
+    );
   }
 
   const runtime: SectionRuntimeCtx = {
@@ -2169,6 +2398,7 @@ export const ModelDynamicDetail = React.forwardRef<
         schema={detailsSchema}
         runtime={runtime}
         className="space-y-6"
+        view={config.view}
       />
 
       <Dialog open={updateDialogOpen} onOpenChange={setUpdateDialogOpen}>
@@ -2183,11 +2413,16 @@ export const ModelDynamicDetail = React.forwardRef<
             height: actionsConfig.updateForm?.height,
           }}
         >
-          <DialogHeader className="pb-4 border-b border-border/10">
-            <DialogTitle className="text-base font-semibold tracking-tight">
-              {actionsConfig.updateForm?.modalTitle ??
-                `Update ${metadataState.metadata?.verboseName ?? model}`}
-            </DialogTitle>
+          <DialogHeader className="pb-4 border-b border-border/20">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-lg bg-primary/8 text-primary">
+                <Pencil className="size-4" />
+              </div>
+              <DialogTitle className="text-base font-semibold tracking-tight">
+                {actionsConfig.updateForm?.modalTitle ??
+                  `Update ${metadataState.metadata?.verboseName ?? model}`}
+              </DialogTitle>
+            </div>
           </DialogHeader>
           <ModelForm
             app={app}
@@ -2230,23 +2465,29 @@ export const ModelDynamicDetail = React.forwardRef<
       </Dialog>
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader className="pb-4">
-            <AlertDialogTitle className="text-base font-semibold">
+        <AlertDialogContent className="rounded-xl border-border/30 shadow-xl">
+          <AlertDialogHeader>
+            <div className="mx-auto size-10 rounded-full bg-rose-500/10 flex items-center justify-center mb-3">
+              <AlertTriangle className="size-5 text-rose-500" />
+            </div>
+            <AlertDialogTitle className="text-base font-semibold text-center">
               Delete record?
             </AlertDialogTitle>
-            <AlertDialogDescription className="text-sm text-muted-foreground/70">
+            <AlertDialogDescription className="text-center text-sm text-muted-foreground/70">
               {rowPermissions.deleteReason ||
-                `This action will permanently delete this ${metadataState.metadata?.verboseName ?? model}.`}
+                `This action will permanently delete this ${metadataState.metadata?.verboseName ?? model}. This cannot be undone.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogFooter className="sm:justify-center gap-2 mt-3">
+            <AlertDialogCancel className="rounded-lg font-medium text-xs h-9 px-5">
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => void handleDelete()}
               disabled={deleting}
+              className="rounded-lg bg-rose-500 hover:bg-rose-600 font-medium text-xs h-9 px-5 shadow-md shadow-rose-500/15"
             >
-              {deleting ? "Deleting..." : "Delete"}
+              {deleting ? "Deleting…" : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

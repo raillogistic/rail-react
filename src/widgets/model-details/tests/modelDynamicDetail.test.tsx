@@ -366,6 +366,581 @@ describe("ModelDynamicDetail", () => {
     });
   });
 
+  it("sorts nested object fields by field.order and forwards nested section host id", async () => {
+    const metadataWithProfileRelation = {
+      ...baseMetadata,
+      relationships: [
+        {
+          name: "profile",
+          fieldName: "profile",
+          verboseName: "Profile",
+          helpText: "",
+          relatedApp: "store",
+          relatedModel: "Profile",
+          relatedModelVerbose: "Profile",
+          relationType: "one_to_one",
+          isReverse: false,
+          isToOne: true,
+          isToMany: false,
+          required: false,
+          nullable: true,
+          editable: false,
+          lookupField: "id",
+          readable: true,
+          writable: false,
+          canCreateInline: false,
+        },
+      ],
+    } as any;
+
+    setupDefaultMocks({
+      metadata: metadataWithProfileRelation,
+      queryData: {
+        id: "1",
+        name: "Product Alpha",
+        profile: {
+          firstName: "Ada",
+          lastName: "Lovelace",
+        },
+        rowPermissions: {
+          canUpdate: true,
+          canDelete: true,
+          updateReason: null,
+          deleteReason: null,
+        },
+      },
+    });
+
+    fetchMetadataSnapshotMock.mockResolvedValue({
+      ...baseMetadata,
+      model: "Profile",
+      fields: [
+        {
+          ...baseMetadata.fields[0],
+          name: "id",
+          fieldName: "id",
+          verboseName: "ID",
+        },
+        {
+          ...baseMetadata.fields[1],
+          name: "firstName",
+          fieldName: "firstName",
+          verboseName: "First Name",
+        },
+        {
+          ...baseMetadata.fields[1],
+          name: "lastName",
+          fieldName: "lastName",
+          verboseName: "Last Name",
+        },
+      ],
+    });
+
+    render(
+      <ModelDynamicDetail
+        app="store"
+        model="Product"
+        id="1"
+        baseDetail={{
+          nestedFields: {
+            profile: {
+              mode: "object",
+              fields: [
+                {
+                  path: "lastName",
+                  order: 2,
+                  render: (ctx) => (
+                    <span>{`nested:${String(ctx.value)}:${ctx.sectionId}:${ctx.field.sectionId ?? ""}`}</span>
+                  ),
+                },
+                {
+                  path: "firstName",
+                  order: 1,
+                  render: (ctx) => (
+                    <span>{`nested:${String(ctx.value)}:${ctx.sectionId}:${ctx.field.sectionId ?? ""}`}</span>
+                  ),
+                },
+              ],
+            },
+          },
+        }}
+      />,
+    );
+
+    const firstNameField = await screen.findByText(
+      "nested:Ada:nested:profile:nested:profile",
+    );
+    const lastNameField = await screen.findByText(
+      "nested:Lovelace:nested:profile:nested:profile",
+    );
+
+    expect(
+      firstNameField.compareDocumentPosition(lastNameField) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+  });
+
+  it("supports nested sectionId override with per-field sectionId override", async () => {
+    const metadataWithProfileRelation = {
+      ...baseMetadata,
+      relationships: [
+        {
+          name: "profile",
+          fieldName: "profile",
+          verboseName: "Profile",
+          helpText: "",
+          relatedApp: "store",
+          relatedModel: "Profile",
+          relatedModelVerbose: "Profile",
+          relationType: "one_to_one",
+          isReverse: false,
+          isToOne: true,
+          isToMany: false,
+          required: false,
+          nullable: true,
+          editable: false,
+          lookupField: "id",
+          readable: true,
+          writable: false,
+          canCreateInline: false,
+        },
+      ],
+    } as any;
+
+    setupDefaultMocks({
+      metadata: metadataWithProfileRelation,
+      queryData: {
+        id: "1",
+        name: "Product Alpha",
+        profile: {
+          firstName: "Ada",
+          lastName: "Lovelace",
+        },
+        rowPermissions: {
+          canUpdate: true,
+          canDelete: true,
+          updateReason: null,
+          deleteReason: null,
+        },
+      },
+    });
+
+    fetchMetadataSnapshotMock.mockResolvedValue({
+      ...baseMetadata,
+      model: "Profile",
+      fields: [
+        {
+          ...baseMetadata.fields[0],
+          name: "id",
+          fieldName: "id",
+          verboseName: "ID",
+        },
+        {
+          ...baseMetadata.fields[1],
+          name: "firstName",
+          fieldName: "firstName",
+          verboseName: "First Name",
+        },
+        {
+          ...baseMetadata.fields[1],
+          name: "lastName",
+          fieldName: "lastName",
+          verboseName: "Last Name",
+        },
+      ],
+    });
+
+    render(
+      <ModelDynamicDetail
+        app="store"
+        model="Product"
+        id="1"
+        baseDetail={{
+          nestedFields: {
+            profile: {
+              sectionId: "host:profile",
+              mode: "object",
+              fields: [
+                {
+                  path: "firstName",
+                  render: (ctx) => <span>{`ctx:${ctx.sectionId}`}</span>,
+                },
+                {
+                  path: "lastName",
+                  sectionId: "host:profile:last-name",
+                  render: (ctx) => <span>{`ctx:${ctx.sectionId}`}</span>,
+                },
+              ],
+            },
+          },
+        }}
+      />,
+    );
+
+    expect(await screen.findByText("ctx:host:profile")).toBeInTheDocument();
+    expect(
+      await screen.findByText("ctx:host:profile:last-name"),
+    ).toBeInTheDocument();
+  });
+
+  it("renders nested sections after the main details section", async () => {
+    const metadataWithProfileRelation = {
+      ...baseMetadata,
+      relationships: [
+        {
+          name: "profile",
+          fieldName: "profile",
+          verboseName: "Profile",
+          helpText: "",
+          relatedApp: "store",
+          relatedModel: "Profile",
+          relatedModelVerbose: "Profile",
+          relationType: "one_to_one",
+          isReverse: false,
+          isToOne: true,
+          isToMany: false,
+          required: false,
+          nullable: true,
+          editable: false,
+          lookupField: "id",
+          readable: true,
+          writable: false,
+          canCreateInline: false,
+        },
+      ],
+    } as any;
+
+    setupDefaultMocks({
+      metadata: metadataWithProfileRelation,
+      queryData: {
+        id: "1",
+        name: "Primary-Detail-Value",
+        profile: {
+          firstName: "Nested-After-Main",
+        },
+        rowPermissions: {
+          canUpdate: false,
+          canDelete: false,
+          updateReason: null,
+          deleteReason: null,
+        },
+      },
+    });
+
+    fetchMetadataSnapshotMock.mockResolvedValue({
+      ...baseMetadata,
+      model: "Profile",
+      fields: [
+        {
+          ...baseMetadata.fields[0],
+          name: "id",
+          fieldName: "id",
+          verboseName: "ID",
+        },
+        {
+          ...baseMetadata.fields[1],
+          name: "firstName",
+          fieldName: "firstName",
+          verboseName: "First Name",
+        },
+      ],
+    });
+
+    render(
+      <ModelDynamicDetail
+        app="store"
+        model="Product"
+        id="1"
+        baseDetail={{
+          header: {
+            title: () => "",
+          },
+          actions: {
+            showUpdate: false,
+            showDelete: false,
+            showTemplates: false,
+            showCustomMutations: false,
+          },
+          layout: {
+            includeFields: ["name"],
+          },
+          nestedFields: {
+            profile: {
+              order: -100,
+              mode: "object",
+              fields: ["firstName"],
+            },
+          },
+        }}
+      />,
+    );
+
+    const mainField = await screen.findByText("Primary-Detail-Value");
+    const nestedField = await screen.findByText("Nested-After-Main");
+    const pageText = document.body.textContent ?? "";
+
+    expect(mainField).toBeInTheDocument();
+    expect(nestedField).toBeInTheDocument();
+    expect(pageText.indexOf("Primary-Detail-Value")).toBeLessThan(
+      pageText.indexOf("Nested-After-Main"),
+    );
+  });
+
+  it("routes layout and custom sections into tabs with body fallback for unknown tabId", async () => {
+    const user = userEvent.setup();
+    setupDefaultMocks({
+      queryData: {
+        id: "1",
+        name: "Product Alpha",
+        rowPermissions: {
+          canUpdate: false,
+          canDelete: false,
+          updateReason: null,
+          deleteReason: null,
+        },
+      },
+    });
+
+    render(
+      <ModelDynamicDetail
+        app="store"
+        model="Product"
+        id="1"
+        baseDetail={{
+          header: {
+            title: () => "",
+          },
+          actions: {
+            showUpdate: false,
+            showDelete: false,
+            showTemplates: false,
+            showCustomMutations: false,
+          },
+          layout: {
+            tabs: [
+              { id: "overview", title: "Overview" },
+              { id: "extra", title: "Extra" },
+            ],
+            includeUnassignedFields: false,
+            sections: [
+              {
+                id: "main-grid",
+                tabId: "overview",
+                columns: 2,
+                rows: [{ fields: ["name"] }],
+              },
+            ],
+            customSections: [
+              {
+                id: "extra-custom",
+                tabId: "extra",
+                render: () => <div>Custom Extra Content</div>,
+              },
+              {
+                id: "fallback-custom",
+                tabId: "missing-tab",
+                render: () => <div>Fallback Body Content</div>,
+              },
+            ],
+          },
+        }}
+      />,
+    );
+
+    expect(screen.queryByText("Custom Extra Content")).toBeNull();
+    expect(await screen.findByText("Fallback Body Content")).toBeVisible();
+    expect(await screen.findByText("Product Alpha")).toBeVisible();
+
+    await user.click(screen.getByRole("tab", { name: "Extra" }));
+    const extraContent = await screen.findByText("Custom Extra Content");
+    await waitFor(() => {
+      expect(extraContent).toBeVisible();
+    });
+  });
+
+  it("routes nested sections into configured tab", async () => {
+    const user = userEvent.setup();
+    const metadataWithProfileRelation = {
+      ...baseMetadata,
+      relationships: [
+        {
+          name: "profile",
+          fieldName: "profile",
+          verboseName: "Profile",
+          helpText: "",
+          relatedApp: "store",
+          relatedModel: "Profile",
+          relatedModelVerbose: "Profile",
+          relationType: "one_to_one",
+          isReverse: false,
+          isToOne: true,
+          isToMany: false,
+          required: false,
+          nullable: true,
+          editable: false,
+          lookupField: "id",
+          readable: true,
+          writable: false,
+          canCreateInline: false,
+        },
+      ],
+    } as any;
+
+    setupDefaultMocks({
+      metadata: metadataWithProfileRelation,
+      queryData: {
+        id: "1",
+        name: "Product Alpha",
+        profile: {
+          firstName: "NestedTabValue",
+        },
+        rowPermissions: {
+          canUpdate: false,
+          canDelete: false,
+          updateReason: null,
+          deleteReason: null,
+        },
+      },
+    });
+
+    fetchMetadataSnapshotMock.mockResolvedValue({
+      ...baseMetadata,
+      model: "Profile",
+      fields: [
+        {
+          ...baseMetadata.fields[0],
+          name: "id",
+          fieldName: "id",
+          verboseName: "ID",
+        },
+        {
+          ...baseMetadata.fields[1],
+          name: "firstName",
+          fieldName: "firstName",
+          verboseName: "First Name",
+        },
+      ],
+    });
+
+    render(
+      <ModelDynamicDetail
+        app="store"
+        model="Product"
+        id="1"
+        baseDetail={{
+          header: {
+            title: () => "",
+          },
+          actions: {
+            showUpdate: false,
+            showDelete: false,
+            showTemplates: false,
+            showCustomMutations: false,
+          },
+          layout: {
+            tabs: [
+              { id: "overview", title: "Overview" },
+              { id: "relations", title: "Relations" },
+            ],
+            includeUnassignedFields: false,
+            sections: [
+              {
+                id: "main-grid",
+                tabId: "overview",
+                rows: [{ fields: ["name"] }],
+              },
+            ],
+          },
+          nestedFields: {
+            profile: {
+              tabId: "relations",
+              mode: "object",
+              fields: ["firstName"],
+            },
+          },
+        }}
+      />,
+    );
+
+    expect(screen.queryByText("NestedTabValue")).toBeNull();
+
+    await user.click(screen.getByRole("tab", { name: "Relations" }));
+    const nestedValue = await screen.findByText("NestedTabValue");
+    await waitFor(() => {
+      expect(nestedValue).toBeVisible();
+    });
+  });
+
+  it("forwards tab view controls to DynamicDetail", async () => {
+    const user = userEvent.setup();
+    const onActiveTabChange = vi.fn();
+    setupDefaultMocks({
+      queryData: {
+        id: "1",
+        name: "Product Alpha",
+        rowPermissions: {
+          canUpdate: false,
+          canDelete: false,
+          updateReason: null,
+          deleteReason: null,
+        },
+      },
+    });
+
+    render(
+      <ModelDynamicDetail
+        app="store"
+        model="Product"
+        id="1"
+        baseDetail={{
+          header: {
+            title: () => "",
+          },
+          actions: {
+            showUpdate: false,
+            showDelete: false,
+            showTemplates: false,
+            showCustomMutations: false,
+          },
+          view: {
+            initialTabId: "extra",
+            onActiveTabChange,
+          },
+          layout: {
+            tabs: [
+              { id: "overview", title: "Overview" },
+              { id: "extra", title: "Extra" },
+            ],
+            includeUnassignedFields: false,
+            customSections: [
+              {
+                id: "overview-content",
+                tabId: "overview",
+                render: () => <div>Overview Tab Content</div>,
+              },
+              {
+                id: "extra-content",
+                tabId: "extra",
+                render: () => <div>Extra Tab Content</div>,
+              },
+            ],
+          },
+        }}
+      />,
+    );
+
+    const extraContent = await screen.findByText("Extra Tab Content");
+    expect(extraContent).toBeVisible();
+    expect(screen.queryByText("Overview Tab Content")).toBeNull();
+
+    await user.click(screen.getByRole("tab", { name: "Overview" }));
+    const overviewContent = await screen.findByText("Overview Tab Content");
+    await waitFor(() => {
+      expect(overviewContent).toBeVisible();
+      expect(onActiveTabChange).toHaveBeenCalledWith("overview");
+    });
+  });
+
   it("executes delete mutation after confirmation", async () => {
     const user = userEvent.setup();
     const { deleteExecute } = setupDefaultMocks();

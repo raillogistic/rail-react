@@ -11,6 +11,7 @@ import type { UnitFieldInput } from "../units/unitFieldTypes";
 import type {
   NoAccessBehavior,
   PermissionBag,
+  SectionLoadingStrategy,
   SectionDefinition,
   SectionPermissionChecker,
   SectionRuntimeCtx,
@@ -111,6 +112,19 @@ export type ModelDynamicDetailConfig = {
     permissions?: PermissionBag;
     can?: SectionPermissionChecker;
   };
+  /**
+   * Optional pass-through controls for the underlying DynamicDetail view.
+   */
+  view?: {
+    initialTabId?: string;
+    activeTabId?: string;
+    onActiveTabChange?: (tabId: string) => void;
+    sectionColumns?: number;
+    resolveSectionContainer?: (
+      section: SectionDefinition,
+      tabId?: string,
+    ) => { className?: string; style?: React.CSSProperties } | undefined;
+  };
   layout?: ModelDynamicDetailLayoutConfig;
   nestedFields?: Record<string, ModelDynamicDetailNestedConfig>;
   actions?: ModelDynamicDetailActionsConfig;
@@ -138,6 +152,10 @@ export type ModelDynamicDetailFieldRenderContext = {
 
 export type ModelDynamicDetailFieldConfig = {
   path: string;
+  /** Sort order inside the current section. Lower values render first. */
+  order?: number;
+  /** Parent section identifier resolved at runtime. */
+  sectionId?: string;
   label?: React.ReactNode;
   description?: React.ReactNode;
   kind?: UnitFieldInput["kind"];
@@ -159,6 +177,8 @@ export type ModelDynamicDetailRowConfig = {
 
 export type ModelDynamicDetailSectionConfig = {
   id: string;
+  /** Optional tab target. If absent, section is rendered in body. */
+  tabId?: string;
   title?: React.ReactNode;
   description?: React.ReactNode;
   order?: number;
@@ -170,6 +190,8 @@ export type ModelDynamicDetailSectionConfig = {
 
 export type ModelDynamicDetailCustomSectionConfig = {
   id: string;
+  /** Optional tab target. If absent, section is rendered in body. */
+  tabId?: string;
   title?: React.ReactNode;
   description?: React.ReactNode;
   order?: number;
@@ -177,7 +199,21 @@ export type ModelDynamicDetailCustomSectionConfig = {
   render: (ctx: ModelDynamicDetailRenderContext) => React.ReactNode;
 };
 
+/**
+ * Tab descriptor used to route sections into DynamicDetail tabs.
+ */
+export type ModelDynamicDetailTabConfig = {
+  id: string;
+  title: string;
+  icon?: React.ReactNode;
+  order?: number;
+  loadingStrategy?: SectionLoadingStrategy;
+  permissions?: string[];
+  visible?: (ctx: ModelDynamicDetailRenderContext) => boolean;
+};
+
 export type ModelDynamicDetailLayoutConfig = {
+  tabs?: ModelDynamicDetailTabConfig[];
   includeFields?: string[];
   excludeFields?: string[];
   fieldOverrides?: Record<string, Omit<ModelDynamicDetailFieldConfig, "path">>;
@@ -188,6 +224,10 @@ export type ModelDynamicDetailLayoutConfig = {
 };
 
 export type ModelDynamicDetailNestedConfig = {
+  /** Optional host section id override used for nested section context. */
+  sectionId?: string;
+  /** Optional tab target. If absent, nested section is rendered in body. */
+  tabId?: string;
   title?: React.ReactNode;
   description?: React.ReactNode;
   order?: number;
