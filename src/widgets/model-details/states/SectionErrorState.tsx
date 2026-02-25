@@ -1,6 +1,12 @@
+/**
+ * @module SectionErrorState
+ * @description Composant d'état d'erreur pour les sections.
+ * Affiché lors d'un échec de chargement avec option de réessai,
+ * incluant une icône d'erreur et des messages descriptifs.
+ */
 import * as React from "react";
 import { Button } from "@/shared/ui/kit/button";
-import { Unplug, RefreshCw, ServerCrash, ShieldX } from "lucide-react";
+import { RefreshCw, AlertCircle } from "lucide-react";
 import { cn } from "@/shared/utils";
 
 export type SectionErrorStateProps = {
@@ -11,10 +17,14 @@ export type SectionErrorStateProps = {
   className?: string;
 };
 
+/**
+ * Affiche un état d'erreur avec option de tentative de rechargement.
+ * Design sobre mais visible avec ton destructif.
+ */
 export default function SectionErrorState({
   title = "Connection Interrupted",
   description = "A communication error occurred between the server and this section. Your data is safe, but we couldn't load it right now.",
-  retryLabel = "Restore Connection",
+  retryLabel = "Retry",
   onRetry,
   className,
 }: SectionErrorStateProps) {
@@ -31,30 +41,26 @@ export default function SectionErrorState({
   };
 
   return (
-    <div 
+    <div
       className={cn(
-        "flex flex-col items-center justify-center p-16 text-center rounded-[2rem] border border-destructive/10 bg-destructive/5 transition-all duration-500 backdrop-blur-xl",
-        "animate-in fade-in slide-in-from-top-4 duration-700",
-        className
-      )} 
+        "flex flex-col items-center justify-center py-14 px-8 text-center rounded-xl border border-destructive/15 bg-destructive/[0.03] transition-all duration-300",
+        "animate-in fade-in duration-500",
+        className,
+      )}
       aria-live="polite"
     >
-      <div className="relative mb-10 group">
-        <div className="absolute inset-0 rounded-full bg-destructive/10 blur-3xl group-hover:bg-destructive/20 transition-colors duration-500 animate-pulse" />
-        <div className="relative size-24 rounded-[2rem] bg-background border border-destructive/20 flex items-center justify-center shadow-2xl shadow-destructive/10 transition-transform duration-500 group-hover:scale-110 group-hover:rotate-6">
-          <ServerCrash className="size-10 text-destructive/60" />
-        </div>
-        <div className="absolute -top-3 -right-3 size-12 rounded-2xl bg-destructive shadow-xl shadow-destructive/20 flex items-center justify-center border-4 border-background transition-transform duration-500 hover:-translate-y-1">
-          <Unplug className="size-5 text-white" />
+      <div className="relative mb-6">
+        <div className="size-16 rounded-2xl bg-destructive/10 flex items-center justify-center">
+          <AlertCircle className="size-7 text-destructive/60" />
         </div>
       </div>
 
-      <div className="max-w-[360px] space-y-5 mb-10">
-        <div className="space-y-2">
-          <h4 className="text-base font-black tracking-widest text-destructive uppercase leading-none">
+      <div className="max-w-sm space-y-3 mb-6">
+        <div className="space-y-1.5">
+          <h4 className="text-sm font-semibold tracking-tight text-destructive">
             {title}
           </h4>
-          <p className="text-[11px] font-bold text-muted-foreground/60 leading-relaxed px-6 tracking-tight">
+          <p className="text-xs text-muted-foreground/60 leading-relaxed max-w-xs mx-auto">
             {description}
           </p>
         </div>
@@ -67,15 +73,17 @@ export default function SectionErrorState({
             void handleRetry();
           }}
           disabled={isRetrying}
-          className="h-12 px-10 rounded-2xl bg-destructive text-white font-black uppercase tracking-[0.15em] text-[10px] hover:bg-destructive/90 transition-all shadow-2xl shadow-destructive/20 active:scale-95 gap-3"
+          variant="outline"
+          size="sm"
+          className="h-9 px-5 rounded-lg text-xs font-medium gap-2 border-destructive/20 text-destructive hover:bg-destructive/5 transition-all active:scale-[0.97]"
         >
-          <RefreshCw className={cn("size-4", isRetrying && "animate-spin")} />
-          {isRetrying ? "Restoring..." : retryLabel}
+          <RefreshCw className={cn("size-3.5", isRetrying && "animate-spin")} />
+          {isRetrying ? "Retrying..." : retryLabel}
         </Button>
       ) : (
-        <div className="flex items-center gap-2 px-4 py-2 rounded-xl bg-destructive/10 text-destructive border border-destructive/10">
-           <ShieldX className="size-3.5" />
-           <span className="text-[9px] font-black uppercase tracking-widest">Protocol error reported</span>
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-destructive/5 text-destructive/70 border border-destructive/10 text-xs font-medium">
+          <AlertCircle className="size-3.5" />
+          <span>Error reported</span>
         </div>
       )}
     </div>

@@ -1,4 +1,10 @@
-import { ShieldAlert, Fingerprint, LockKeyhole, Info } from "lucide-react";
+/**
+ * @module SectionNoAccessState
+ * @description Composant d'état d'accès refusé pour les sections.
+ * Affiché lorsque l'utilisateur n'a pas les permissions requises,
+ * avec une icône de verrouillage et un message d'avertissement.
+ */
+import { ShieldAlert, Lock } from "lucide-react";
 import { cn } from "@/shared/utils";
 import {
   Tooltip,
@@ -13,54 +19,53 @@ export type SectionNoAccessStateProps = {
   className?: string;
 };
 
+/**
+ * Affiche un état d'accès refusé avec icône de verrouillage.
+ * Informe l'utilisateur que ses permissions actuelles sont insuffisantes.
+ */
 export default function SectionNoAccessState({
-  title = "Authentication Required",
-  description = "This data is encrypted and restricted to specific security roles. Your current identity does not possess the required clearance level.",
+  title = "Access Restricted",
+  description = "This section requires elevated permissions. Contact your administrator if you believe you should have access.",
   className,
 }: SectionNoAccessStateProps) {
   return (
-    <TooltipProvider delayDuration={400}>
-      <div 
+    <TooltipProvider delayDuration={300}>
+      <div
         className={cn(
-          "flex flex-col items-center justify-center p-16 text-center rounded-[2rem] border border-amber-500/10 bg-amber-500/[0.03] transition-all duration-500 backdrop-blur-sm shadow-inner",
-          "animate-in fade-in zoom-in-[0.98] duration-1000",
-          className
-        )} 
+          "flex flex-col items-center justify-center py-14 px-8 text-center rounded-xl border border-amber-500/10 bg-amber-500/[0.02] transition-all duration-300",
+          "animate-in fade-in duration-500",
+          className,
+        )}
         aria-live="polite"
       >
-        <div className="relative mb-10 group">
-          <div className="absolute inset-0 rounded-full bg-amber-500/10 blur-3xl group-hover:bg-amber-500/20 transition-colors duration-700" />
-          <div className="relative size-24 rounded-[2rem] bg-background border border-amber-500/20 flex items-center justify-center shadow-2xl shadow-amber-500/10 transition-all duration-700 group-hover:scale-110 group-hover:shadow-amber-500/20">
-            <LockKeyhole className="size-10 text-amber-600/60" />
-          </div>
-          <div className="absolute -bottom-2 -right-2 size-12 rounded-2xl bg-amber-500 shadow-xl shadow-amber-500/30 flex items-center justify-center border-4 border-background transition-transform duration-500 hover:rotate-12">
-            <Fingerprint className="size-6 text-white" />
+        <div className="relative mb-6">
+          <div className="size-16 rounded-2xl bg-amber-500/10 flex items-center justify-center">
+            <Lock className="size-7 text-amber-600/50" />
           </div>
         </div>
 
-        <div className="max-w-[340px] space-y-5">
-          <div className="space-y-2">
-            <div className="flex items-center justify-center gap-2 mb-1">
-               <ShieldAlert className="size-4 text-amber-600 animate-pulse" />
-               <h4 className="text-base font-black tracking-[0.1em] text-amber-700 uppercase leading-none">
+        <div className="max-w-sm space-y-3">
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-center gap-1.5">
+              <h4 className="text-sm font-semibold tracking-tight text-amber-700 dark:text-amber-500">
                 {title}
               </h4>
             </div>
-            <p className="text-[11px] font-bold text-muted-foreground/60 leading-relaxed px-4 tracking-tight">
+            <p className="text-xs text-muted-foreground/60 leading-relaxed max-w-xs mx-auto">
               {description}
             </p>
           </div>
 
-          <div className="pt-2 flex justify-center">
+          <div className="pt-1 flex justify-center">
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-amber-500/10 border border-amber-500/10 text-amber-700 cursor-help transition-all hover:bg-amber-500/20">
-                  <Info className="size-3.5" />
-                  <span className="text-[9px] font-black uppercase tracking-[0.15em]">Security Protocol 403-R</span>
+                <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-500/5 border border-amber-500/10 text-amber-700 dark:text-amber-400 cursor-help text-xs font-medium transition-colors hover:bg-amber-500/10">
+                  <ShieldAlert className="size-3.5" />
+                  <span>Insufficient permissions</span>
                 </div>
               </TooltipTrigger>
-              <TooltipContent className="bg-amber-700 text-white font-bold text-[9px] uppercase tracking-widest border-none shadow-xl">
-                Insufficient permission level
+              <TooltipContent className="text-xs font-medium">
+                Your current role does not have access to this resource
               </TooltipContent>
             </Tooltip>
           </div>

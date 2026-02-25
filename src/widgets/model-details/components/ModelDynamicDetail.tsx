@@ -1,3 +1,9 @@
+/**
+ * @module ModelDynamicDetail
+ * @description Composant de détail dynamique pour les modèles.
+ * Gère la récupération des métadonnées, la construction du schéma,
+ * les actions CRUD, les mutations personnalisées et les templates.
+ */
 import * as React from "react";
 import { gql, useApolloClient } from "@apollo/client";
 import {
@@ -1821,19 +1827,29 @@ export const ModelDynamicDetail = React.forwardRef<
               render: () => (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button size="sm" variant="outline">
-                      <Printer className="mr-2 size-4" />
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 rounded-lg text-xs font-medium gap-1.5"
+                    >
+                      <Printer className="size-3.5" />
                       Templates
-                      <ChevronDown className="ml-2 size-3.5" />
+                      <ChevronDown className="size-3 opacity-60" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>Templates</DropdownMenuLabel>
+                  <DropdownMenuContent
+                    align="end"
+                    className="w-52 p-1.5 rounded-xl shadow-xl border-border/50"
+                  >
+                    <DropdownMenuLabel className="text-xs font-medium text-muted-foreground/60 px-2">
+                      Templates
+                    </DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     {templateEntries.map((template) => (
                       <DropdownMenuItem
                         key={template.key}
                         onClick={() => handleTemplateClick(template)}
+                        className="rounded-md text-[13px] font-medium px-2.5 py-2 focus:bg-accent"
                       >
                         {template.title || template.key}
                       </DropdownMenuItem>
@@ -1853,14 +1869,23 @@ export const ModelDynamicDetail = React.forwardRef<
               render: () => (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button size="sm" variant="outline">
-                      <Zap className="mr-2 size-4" />
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-8 rounded-lg text-xs font-medium gap-1.5"
+                    >
+                      <Zap className="size-3.5" />
                       Actions
-                      <ChevronDown className="ml-2 size-3.5" />
+                      <ChevronDown className="size-3 opacity-60" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>Custom Mutations</DropdownMenuLabel>
+                  <DropdownMenuContent
+                    align="end"
+                    className="w-56 p-1.5 rounded-xl shadow-xl border-border/50"
+                  >
+                    <DropdownMenuLabel className="text-xs font-medium text-muted-foreground/60 px-2">
+                      Custom Mutations
+                    </DropdownMenuLabel>
                     <DropdownMenuSeparator />
                     {customMutationEntries.map((entry) => (
                       <DropdownMenuItem
@@ -1871,6 +1896,7 @@ export const ModelDynamicDetail = React.forwardRef<
                           setActiveMutationAction(entry);
                           setMutationDialogOpen(true);
                         }}
+                        className="rounded-md text-[13px] font-medium px-2.5 py-2 focus:bg-accent"
                       >
                         {entry.label}
                       </DropdownMenuItem>
@@ -2157,8 +2183,8 @@ export const ModelDynamicDetail = React.forwardRef<
             height: actionsConfig.updateForm?.height,
           }}
         >
-          <DialogHeader>
-            <DialogTitle>
+          <DialogHeader className="pb-4 border-b border-border/10">
+            <DialogTitle className="text-base font-semibold tracking-tight">
               {actionsConfig.updateForm?.modalTitle ??
                 `Update ${metadataState.metadata?.verboseName ?? model}`}
             </DialogTitle>
@@ -2205,9 +2231,11 @@ export const ModelDynamicDetail = React.forwardRef<
 
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete record?</AlertDialogTitle>
-            <AlertDialogDescription>
+          <AlertDialogHeader className="pb-4">
+            <AlertDialogTitle className="text-base font-semibold">
+              Delete record?
+            </AlertDialogTitle>
+            <AlertDialogDescription className="text-sm text-muted-foreground/70">
               {rowPermissions.deleteReason ||
                 `This action will permanently delete this ${metadataState.metadata?.verboseName ?? model}.`}
             </AlertDialogDescription>

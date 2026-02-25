@@ -1,9 +1,11 @@
+/**
+ * @module GeneralSection
+ * @description Section générale pour afficher des champs sous forme de grille.
+ * Utilise UnitFieldRenderer pour le rendu de chaque champ.
+ */
 import type React from "react";
 import UnitFieldRenderer from "../units/UnitFieldRenderer";
-import type {
-  SectionDefinition,
-  SectionRuntimeCtx,
-} from "../sectionTypes";
+import type { SectionDefinition, SectionRuntimeCtx } from "../sectionTypes";
 import type {
   UnitFieldDensity,
   UnitFieldInput,
@@ -41,22 +43,28 @@ export type GeneralSectionConfig = {
   testId?: string;
 };
 
-function resolveGeneralFields(data: GeneralSectionData | undefined): UnitFieldInput[] {
+/** Extrait les champs depuis les données de la section. */
+function resolveGeneralFields(
+  data: GeneralSectionData | undefined,
+): UnitFieldInput[] {
   if (!data) return [];
   if (Array.isArray(data)) return data;
   return Array.isArray(data.fields) ? data.fields : [];
 }
 
+/** Génère les classes CSS de grille pour le nombre de colonnes. */
 function resolveGridClasses(columns: number): string {
   const normalized = Math.max(1, Math.min(columns, 4));
-  const classes = ["grid grid-cols-1 gap-x-12 gap-y-8"];
+  const classes = ["grid grid-cols-1 gap-x-8 gap-y-5"];
   if (normalized >= 2) classes.push("md:grid-cols-2");
   if (normalized >= 3) classes.push("xl:grid-cols-3");
   if (normalized >= 4) classes.push("2xl:grid-cols-4");
   return classes.join(" ");
 }
 
-export function createGeneralSection(config: GeneralSectionConfig): SectionDefinition<GeneralSectionData> {
+export function createGeneralSection(
+  config: GeneralSectionConfig,
+): SectionDefinition<GeneralSectionData> {
   const columns = Math.max(1, Math.min(config.columns ?? 2, 4));
   return {
     ...config,
@@ -66,12 +74,9 @@ export function createGeneralSection(config: GeneralSectionConfig): SectionDefin
     render: ({ data, runtime }) => {
       const fields = resolveGeneralFields(data);
       return (
-        <div className={cn(resolveGridClasses(columns), "py-2")}>
+        <div className={cn(resolveGridClasses(columns), "py-1")}>
           {fields.map((field, index) => (
-            <div 
-              key={field.id ?? `general-field-${index}`} 
-              className="min-w-0 transition-all duration-200 hover:translate-x-1"
-            >
+            <div key={field.id ?? `general-field-${index}`} className="min-w-0">
               <UnitFieldRenderer
                 field={field}
                 mode={config.mode ?? "labelValue"}

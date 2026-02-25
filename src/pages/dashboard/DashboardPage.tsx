@@ -12,8 +12,8 @@ import {
 } from "@/widgets/model-details";
 import SectionErrorState from "@/widgets/model-details/states/SectionErrorState";
 import SectionSkeleton from "@/widgets/model-details/states/SectionSkeleton";
-import ExampleDetailsPage from "@/widgets/model-details/example/ExampleDetailsPage";
 import { Button } from "@/shared/ui/kit/button";
+import ExampleDetailsPage from "@/widgets/model-details/example/ExampleDetailsPage";
 
 const PRODUCT_ID = "9";
 
@@ -174,17 +174,18 @@ export default function DashboardPage() {
 
   return (
     <div className="flex h-full w-full min-h-0 flex-col gap-4 p-4">
+      <ExampleDetailsPage />
       {/* <ExampleDetailsPage /> */}
       <div className="min-h-0 flex-1 overflow-auto">
         <ModelDynamicDetail
           app="store"
           model="Product"
           id={PRODUCT_ID}
-          // baseDetail={{
-          //   layout: {
-          //     defaultColumns: 5,
-          //   },
-          // }}
+          baseDetail={{
+            layout: {
+              // defaultColumns:
+            },
+          }}
 
           // baseDetail={baseDetail}
         />

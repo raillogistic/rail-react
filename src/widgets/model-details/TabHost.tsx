@@ -1,3 +1,9 @@
+/**
+ * @module TabHost
+ * @description Composant d'onglets pour les pages de détail.
+ * Gère la navigation par onglets avec suivi de visite,
+ * stratégies de chargement et animations de transition.
+ */
 import * as React from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/kit/tabs";
 import { cn } from "@/shared/utils";
@@ -26,13 +32,20 @@ export type TabHostProps = {
   onActiveTabChange?: (tabId: string) => void;
   onTabActivated?: (tabId: string) => void;
   renderContent: (tab: TabHostTab, isVisited: boolean) => React.ReactNode;
-  renderTabList?: (ctx: TabHostTabListRenderContext) => React.ReactNode | undefined;
+  renderTabList?: (
+    ctx: TabHostTabListRenderContext,
+  ) => React.ReactNode | undefined;
   tabListClassName?: string;
   tabTriggerClassName?: string;
   activeTabTriggerClassName?: string;
   inactiveTabTriggerClassName?: string;
 };
 
+/**
+ * Composant hôte d'onglets.
+ * Gère l'état actif, le chargement paresseux des onglets,
+ * et fournit des animations de transition fluides.
+ */
 export default function TabHost({
   tabs,
   className,
@@ -52,15 +65,19 @@ export default function TabHost({
   const [internalActive, setInternalActive] = React.useState<string>(
     defaultActiveTab ?? firstTabId,
   );
-  const [visitedTabs, setVisitedTabs] = React.useState<Record<string, boolean>>(() => {
-    const initial: Record<string, boolean> = {};
-    if (defaultActiveTab) initial[defaultActiveTab] = true;
-    if (firstTabId) initial[firstTabId] = true;
-    return initial;
-  });
+  const [visitedTabs, setVisitedTabs] = React.useState<Record<string, boolean>>(
+    () => {
+      const initial: Record<string, boolean> = {};
+      if (defaultActiveTab) initial[defaultActiveTab] = true;
+      if (firstTabId) initial[firstTabId] = true;
+      return initial;
+    },
+  );
 
   const requested = isControlled ? (activeTab ?? firstTabId) : internalActive;
-  const resolvedActive = tabs.some((tab) => tab.id === requested) ? requested : firstTabId;
+  const resolvedActive = tabs.some((tab) => tab.id === requested)
+    ? requested
+    : firstTabId;
 
   React.useEffect(() => {
     if (!resolvedActive) return;
@@ -82,11 +99,11 @@ export default function TabHost({
   const defaultTabList = React.useCallback(() => {
     if (tabs.length <= 1) return null;
     return (
-      <div className="flex justify-start mb-10 overflow-x-auto pb-4 no-scrollbar">
-        <TabsList 
+      <div className="flex justify-start mb-6 overflow-x-auto pb-1 no-scrollbar">
+        <TabsList
           className={cn(
-            "inline-flex h-12 items-center justify-start rounded-[1.25rem] bg-muted/40 p-1.5 text-muted-foreground border border-border/20 backdrop-blur-xl shadow-xl shadow-primary/[0.02]", 
-            tabListClassName
+            "inline-flex h-10 items-center justify-start rounded-lg bg-muted/50 p-1 text-muted-foreground border border-border/15",
+            tabListClassName,
           )}
         >
           {tabs.map((tab) => (
@@ -95,17 +112,21 @@ export default function TabHost({
               value={tab.id}
               data-testid={tab.testId}
               className={cn(
-                "inline-flex items-center justify-center whitespace-nowrap rounded-[0.9rem] px-6 py-2 text-[11px] font-black uppercase tracking-[0.1em] transition-all duration-300",
+                "inline-flex items-center justify-center whitespace-nowrap rounded-md px-4 py-1.5 text-[13px] font-medium transition-all duration-200",
                 "ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50",
-                "data-[state=active]:bg-background data-[state=active]:text-primary data-[state=active]:shadow-lg data-[state=active]:scale-[1.02]",
-                "hover:text-foreground/80 hover:bg-muted/50",
+                "data-[state=active]:bg-background data-[state=active]:text-foreground data-[state=active]:shadow-sm",
+                "hover:text-foreground/80",
                 tabTriggerClassName,
                 resolvedActive === tab.id
                   ? activeTabTriggerClassName
                   : inactiveTabTriggerClassName,
               )}
             >
-              {tab.icon && <span className="mr-2.5 size-3.5 opacity-80 shrink-0">{tab.icon}</span>}
+              {tab.icon && (
+                <span className="mr-2 size-3.5 opacity-70 shrink-0">
+                  {tab.icon}
+                </span>
+              )}
               {tab.title}
             </TabsTrigger>
           ))}
@@ -131,7 +152,11 @@ export default function TabHost({
   if (tabs.length === 0) return null;
 
   return (
-    <Tabs value={resolvedActive} onValueChange={setActiveTab} className={cn("w-full", className)}>
+    <Tabs
+      value={resolvedActive}
+      onValueChange={setActiveTab}
+      className={cn("w-full", className)}
+    >
       {renderedTabList !== undefined ? renderedTabList : defaultTabList()}
       {tabs.map((tab) => {
         const isVisited =
@@ -140,13 +165,13 @@ export default function TabHost({
           resolvedActive === tab.id;
 
         return (
-          <TabsContent 
-            key={tab.id} 
+          <TabsContent
+            key={tab.id}
             value={tab.id}
             className="mt-0 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
           >
-            <div className="animate-in fade-in slide-in-from-bottom-4 duration-700 ease-out-expo fill-mode-forwards">
-               {renderContent(tab, isVisited)}
+            <div className="animate-in fade-in slide-in-from-bottom-3 duration-400 ease-out">
+              {renderContent(tab, isVisited)}
             </div>
           </TabsContent>
         );

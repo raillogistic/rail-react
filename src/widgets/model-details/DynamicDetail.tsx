@@ -1,7 +1,16 @@
+/**
+ * @module DynamicDetail
+ * @description Composant principal de détail dynamique.
+ * Orchestre le rendu des sections d'en-tête, de corps et d'onglets
+ * en fonction d'un schéma de page déclaratif.
+ */
 import * as React from "react";
 import { cn } from "@/shared/utils";
 import SectionFrame, { type SectionFrameAction } from "./SectionFrame";
-import TabHost, { type TabHostTab, type TabHostTabListRenderContext } from "./TabHost";
+import TabHost, {
+  type TabHostTab,
+  type TabHostTabListRenderContext,
+} from "./TabHost";
 import SectionEmptyState from "./states/SectionEmptyState";
 import SectionErrorState from "./states/SectionErrorState";
 import SectionNoAccessState from "./states/SectionNoAccessState";
@@ -43,12 +52,17 @@ export type DynamicDetailContextValue<TEntity = unknown> = {
   reloadSection: (section: SectionDefinition, tabId?: string) => Promise<void>;
 };
 
-const DynamicDetailContext = React.createContext<DynamicDetailContextValue | null>(null);
+const DynamicDetailContext =
+  React.createContext<DynamicDetailContextValue | null>(null);
 
-export function useDynamicDetailContext<TEntity = unknown>(): DynamicDetailContextValue<TEntity> {
+export function useDynamicDetailContext<
+  TEntity = unknown,
+>(): DynamicDetailContextValue<TEntity> {
   const ctx = React.useContext(DynamicDetailContext);
   if (!ctx) {
-    throw new Error("useDynamicDetailContext must be used inside DynamicDetail.");
+    throw new Error(
+      "useDynamicDetailContext must be used inside DynamicDetail.",
+    );
   }
   return ctx as DynamicDetailContextValue<TEntity>;
 }
@@ -63,7 +77,9 @@ export type DynamicDetailProps<TEntity = Record<string, unknown>> = {
   initialTabId?: string;
   activeTabId?: string;
   onActiveTabChange?: (tabId: string) => void;
-  renderTabList?: (ctx: TabHostTabListRenderContext) => React.ReactNode | undefined;
+  renderTabList?: (
+    ctx: TabHostTabListRenderContext,
+  ) => React.ReactNode | undefined;
   tabListClassName?: string;
   tabTriggerClassName?: string;
   activeTabTriggerClassName?: string;
@@ -104,7 +120,11 @@ function ManagedSection({
   sectionContainerClassName?: string;
   sectionContainerStyle?: React.CSSProperties;
   sectionState: SectionState<unknown>;
-  loadSection: (section: SectionDefinition, tabId?: string, force?: boolean) => Promise<void>;
+  loadSection: (
+    section: SectionDefinition,
+    tabId?: string,
+    force?: boolean,
+  ) => Promise<void>;
 }) {
   const visibility = React.useMemo(
     () => evaluateSectionVisibility(section, runtime, noAccessBehavior),
@@ -142,14 +162,17 @@ function ManagedSection({
     icon: action.icon,
     tone: action.tone,
     ariaLabel: action.ariaLabel,
-    render: action.render ? action.render({
-      section,
-      runtime,
-      state: sectionState,
-      reload,
-    }) : undefined,
+    render: action.render
+      ? action.render({
+          section,
+          runtime,
+          state: sectionState,
+          reload,
+        })
+      : undefined,
     disabled:
-      action.disabled || (visibility.disabledState?.disabled && action.disabled !== false),
+      action.disabled ||
+      (visibility.disabledState?.disabled && action.disabled !== false),
     disabledReason: action.disabledReason ?? visibility.disabledState?.reason,
     onClick: () =>
       action.onClick({
@@ -203,14 +226,18 @@ function ManagedSection({
   } else {
     content = section.skeleton ? section.skeleton() : <SectionSkeleton />;
   }
-  const hasContent = !(content === null || content === undefined || content === false);
+  const hasContent = !(
+    content === null ||
+    content === undefined ||
+    content === false
+  );
 
   return (
     <div
       key={instanceKey}
       className={cn(
-        "min-w-0 transition-all duration-700 ease-in-out",
-        sectionContainerClassName
+        "min-w-0 transition-all duration-300 ease-out",
+        sectionContainerClassName,
       )}
       style={sectionContainerStyle}
       data-testid={section.testId ?? `section-${section.id}`}
@@ -223,12 +250,14 @@ function ManagedSection({
         disabled={visibility.disabledState?.disabled}
         disabledReason={visibility.disabledState?.reason}
         testId={section.testId ?? `section-frame-${section.id}`}
-        headerClassName={section.kind === "header" ? "bg-primary/5 border-primary/10 py-10" : undefined}
+        headerClassName={
+          section.kind === "header"
+            ? "bg-primary/[0.03] border-primary/10"
+            : undefined
+        }
       >
         {hasContent ? (
-          <div className="animate-in fade-in zoom-in-95 duration-500 fill-mode-forwards">
-            {content}
-          </div>
+          <div className="animate-in fade-in duration-400">{content}</div>
         ) : null}
       </SectionFrame>
     </div>
@@ -254,18 +283,24 @@ export default function DynamicDetail<TEntity = Record<string, unknown>>({
   sectionColumns = 1,
   resolveSectionContainer,
 }: DynamicDetailProps<TEntity>) {
-  const [entity, setEntity] = React.useState<TEntity | undefined>(runtime.entity);
+  const [entity, setEntity] = React.useState<TEntity | undefined>(
+    runtime.entity,
+  );
   const [sectionStates, setSectionStates] = React.useState<
     Record<string, SectionState<unknown>>
   >({});
   const sectionStatesRef = React.useRef(sectionStates);
   const sectionCacheRef = React.useRef<Map<string, unknown>>(new Map());
   const sectionMetaRef = React.useRef<Map<string, SectionMeta>>(new Map());
-  const inFlightControllersRef = React.useRef<Map<string, AbortController>>(new Map());
-  const inFlightPromisesRef = React.useRef<Map<string, Promise<void>>>(new Map());
-  const [entityStatus, setEntityStatus] = React.useState<"idle" | "loading" | "ready" | "error">(
-    entityLoader ? "loading" : "ready",
+  const inFlightControllersRef = React.useRef<Map<string, AbortController>>(
+    new Map(),
   );
+  const inFlightPromisesRef = React.useRef<Map<string, Promise<void>>>(
+    new Map(),
+  );
+  const [entityStatus, setEntityStatus] = React.useState<
+    "idle" | "loading" | "ready" | "error"
+  >(entityLoader ? "loading" : "ready");
 
   React.useEffect(() => {
     sectionStatesRef.current = sectionStates;
@@ -311,8 +346,16 @@ export default function DynamicDetail<TEntity = Record<string, unknown>>({
   }, [entityLoader, runtime.entity, runtime.entityId]);
 
   const loadSection = React.useCallback(
-    async (section: SectionDefinition, tabId?: string, force = false): Promise<void> => {
-      const visibility = evaluateSectionVisibility(section, runtimeCtx, noAccessBehavior);
+    async (
+      section: SectionDefinition,
+      tabId?: string,
+      force = false,
+    ): Promise<void> => {
+      const visibility = evaluateSectionVisibility(
+        section,
+        runtimeCtx,
+        noAccessBehavior,
+      );
       if (!visibility.visible || !visibility.hasAccess) return;
 
       const instanceKey = getSectionInstanceKey(section, runtimeCtx, tabId);
@@ -331,7 +374,8 @@ export default function DynamicDetail<TEntity = Record<string, unknown>>({
         return;
       }
 
-      const previousController = inFlightControllersRef.current.get(instanceKey);
+      const previousController =
+        inFlightControllersRef.current.get(instanceKey);
       if (previousController) previousController.abort();
 
       const controller = new AbortController();
@@ -390,7 +434,8 @@ export default function DynamicDetail<TEntity = Record<string, unknown>>({
           }));
         } finally {
           inFlightPromisesRef.current.delete(instanceKey);
-          const currentController = inFlightControllersRef.current.get(instanceKey);
+          const currentController =
+            inFlightControllersRef.current.get(instanceKey);
           if (currentController === controller) {
             inFlightControllersRef.current.delete(instanceKey);
           }
@@ -415,13 +460,17 @@ export default function DynamicDetail<TEntity = Record<string, unknown>>({
 
   const visibleHeaderSections = React.useMemo(() => {
     return sortByOrder(schema.header ?? []).filter(
-      (section) => evaluateSectionVisibility(section, runtimeCtx, noAccessBehavior).visible,
+      (section) =>
+        evaluateSectionVisibility(section, runtimeCtx, noAccessBehavior)
+          .visible,
     );
   }, [noAccessBehavior, runtimeCtx, schema.header]);
 
   const visibleBodySections = React.useMemo(() => {
     return sortByOrder(schema.body ?? []).filter(
-      (section) => evaluateSectionVisibility(section, runtimeCtx, noAccessBehavior).visible,
+      (section) =>
+        evaluateSectionVisibility(section, runtimeCtx, noAccessBehavior)
+          .visible,
     );
   }, [noAccessBehavior, runtimeCtx, schema.body]);
 
@@ -432,7 +481,8 @@ export default function DynamicDetail<TEntity = Record<string, unknown>>({
         ...tab,
         sections: sortByOrder(tab.sections).filter(
           (section) =>
-            evaluateSectionVisibility(section, runtimeCtx, noAccessBehavior).visible,
+            evaluateSectionVisibility(section, runtimeCtx, noAccessBehavior)
+              .visible,
         ),
       }))
       .filter((tab) => tab.sections.length > 0);
@@ -489,10 +539,10 @@ export default function DynamicDetail<TEntity = Record<string, unknown>>({
 
   if (entityStatus === "error") {
     return (
-      <div className={cn("space-y-4 max-w-5xl mx-auto py-12 px-6", className)}>
+      <div className={cn("max-w-5xl mx-auto py-10 px-6", className)}>
         <SectionErrorState
-          title="System Sync Lost"
-          description="We were unable to establish a secure connection with the record server. This might be due to a session timeout or a temporary network disruption."
+          title="Unable to Load Record"
+          description="We couldn't establish a connection with the server. This may be due to a session timeout or a temporary network issue."
         />
       </div>
     );
@@ -500,7 +550,7 @@ export default function DynamicDetail<TEntity = Record<string, unknown>>({
 
   const resolveGridClasses = (columns: number) => {
     const normalized = Math.max(1, Math.min(columns, 4));
-    const classes = ["grid grid-cols-1 gap-10"];
+    const classes = ["grid grid-cols-1 gap-6"];
     if (normalized >= 2) classes.push("md:grid-cols-2");
     if (normalized >= 3) classes.push("xl:grid-cols-3");
     if (normalized >= 4) classes.push("2xl:grid-cols-4");
@@ -510,7 +560,7 @@ export default function DynamicDetail<TEntity = Record<string, unknown>>({
   const renderSectionList = (sections: SectionDefinition[], tabId?: string) => (
     <div
       className={cn(
-        sectionColumns > 1 ? resolveGridClasses(sectionColumns) : "space-y-10",
+        sectionColumns > 1 ? resolveGridClasses(sectionColumns) : "space-y-6",
         sectionsContainerClassName,
       )}
     >
@@ -538,21 +588,23 @@ export default function DynamicDetail<TEntity = Record<string, unknown>>({
 
   return (
     <DynamicDetailContext.Provider value={contextValue}>
-      <div className={cn("space-y-12 animate-in fade-in slide-in-from-top-4 duration-1000", className)}>
+      <div
+        className={cn("space-y-8 animate-in fade-in duration-500", className)}
+      >
         {visibleHeaderSections.length > 0 && (
-          <div className="space-y-10">
+          <div className="space-y-6">
             {renderSectionList(visibleHeaderSections)}
           </div>
         )}
-        
+
         {visibleBodySections.length > 0 ? (
-          <div className="space-y-10">
+          <div className="space-y-6">
             {renderSectionList(visibleBodySections)}
           </div>
         ) : null}
-        
+
         {visibleTabs.length > 0 ? (
-          <div className="pt-4">
+          <div className="pt-2">
             <TabHost
               tabs={tabHostTabs}
               activeTab={resolvedActiveTab}
@@ -566,7 +618,8 @@ export default function DynamicDetail<TEntity = Record<string, unknown>>({
                 if (!tab) return;
                 const tabStrategy = resolveTabLoadingStrategy(tab);
                 for (const section of tab.sections) {
-                  const sectionStrategy = resolveSectionLoadingStrategy(section);
+                  const sectionStrategy =
+                    resolveSectionLoadingStrategy(section);
                   if (tabStrategy === "eager" || sectionStrategy === "eager") {
                     void loadSection(section, tab.id);
                   }
@@ -575,16 +628,21 @@ export default function DynamicDetail<TEntity = Record<string, unknown>>({
               renderContent={(tab, isVisited) => {
                 if (!isVisited) {
                   return (
-                    <div className="py-12">
+                    <div className="py-8">
                       <SectionSkeleton lines={3} />
                     </div>
                   );
                 }
-                const tabDefinition = visibleTabs.find((entry) => entry.id === tab.id);
+                const tabDefinition = visibleTabs.find(
+                  (entry) => entry.id === tab.id,
+                );
                 if (!tabDefinition) return null;
                 return (
-                  <div className="animate-in fade-in slide-in-from-bottom-6 duration-500">
-                    {renderSectionList(tabDefinition.sections, tabDefinition.id)}
+                  <div className="animate-in fade-in slide-in-from-bottom-3 duration-400">
+                    {renderSectionList(
+                      tabDefinition.sections,
+                      tabDefinition.id,
+                    )}
                   </div>
                 );
               }}
@@ -612,5 +670,3 @@ export function sectionRuntimeFromEntity(
     entity: toRecord(entity),
   };
 }
-
-
