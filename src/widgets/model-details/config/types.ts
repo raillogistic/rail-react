@@ -9,8 +9,11 @@ import type {
 import type { ModelFormProps } from "@/widgets/model-form/types.model";
 import type { UnitFieldInput } from "../units/unitFieldTypes";
 import type {
+  NoAccessBehavior,
   PermissionBag,
+  SectionDefinition,
   SectionPermissionChecker,
+  SectionRuntimeCtx,
 } from "../sectionTypes";
 
 export type ModelDynamicDetailProps = {
@@ -33,8 +36,74 @@ export type ModelDynamicDetailSnapshot = {
   deleted: boolean;
 };
 
+export type ModelDynamicDetailHeaderTitleResolver = (
+  data: Record<string, unknown> | null,
+) => React.ReactElement | string;
+export type ModelDynamicDetailHeaderDescriptionResolver = (
+  data: Record<string, unknown> | null,
+) => React.ReactElement | string;
+
+/** Props provided to each custom header action renderer. */
+export type ModelDynamicDetailHeaderActionRenderProps = {
+  app: string;
+  model: string;
+  id: string;
+  data: Record<string, unknown> | null;
+  metadata: ModelMetadata | null;
+  refetch: () => Promise<unknown>;
+};
+
+/** A single custom header action descriptor. */
+export type ModelDynamicDetailHeaderActionConfig = {
+  position?: number;
+  render: (
+    props: ModelDynamicDetailHeaderActionRenderProps,
+  ) => React.ReactElement;
+};
+
+/** Resolves custom header actions for the current detail state. */
+export type ModelDynamicDetailHeaderActionResolver = (
+  ctx: ModelDynamicDetailHeaderActionRenderProps,
+) => ModelDynamicDetailHeaderActionConfig[];
+
 export type ModelDynamicDetailConfig = {
   className?: string;
+  header?: {
+    /**
+     * Resolve the rendered header title content shown inside the detail header block.
+     */
+    title?: ModelDynamicDetailHeaderTitleResolver;
+    /**
+     * Resolve custom rendered toolbar actions shown in the detail header block.
+     */
+    actions?: ModelDynamicDetailHeaderActionResolver;
+    /**
+     * Optional pass-through for DynamicDetail header section props.
+     * This enables visibility, permissions, loading, and frame-level behavior control.
+     */
+    frame?: {
+      title?: SectionDefinition["title"];
+      description?:
+        | string
+        | ModelDynamicDetailHeaderDescriptionResolver;
+      icon?: SectionDefinition["icon"];
+      order?: SectionDefinition["order"];
+      dataSource?: SectionDefinition["dataSource"];
+      loadingStrategy?: SectionDefinition["loadingStrategy"];
+      cacheKey?: SectionDefinition["cacheKey"];
+      permissions?: SectionDefinition["permissions"];
+      visibleIf?: (ctx: SectionRuntimeCtx) => boolean;
+      disabledIf?: SectionDefinition["disabledIf"];
+      noAccessBehavior?: NoAccessBehavior;
+      load?: SectionDefinition<{ ready: true }>["load"];
+      select?: (ctx: SectionRuntimeCtx) => { ready: true } | undefined;
+      skeleton?: SectionDefinition["skeleton"];
+      empty?: SectionDefinition<{ ready: true }>["empty"];
+      error?: SectionDefinition["error"];
+      actions?: SectionDefinition<{ ready: true }>["actions"];
+      testId?: SectionDefinition["testId"];
+    };
+  };
   runtime?: {
     locale?: string;
     timezone?: string;

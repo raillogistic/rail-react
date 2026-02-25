@@ -142,6 +142,12 @@ function ManagedSection({
     icon: action.icon,
     tone: action.tone,
     ariaLabel: action.ariaLabel,
+    render: action.render ? action.render({
+      section,
+      runtime,
+      state: sectionState,
+      reload,
+    }) : undefined,
     disabled:
       action.disabled || (visibility.disabledState?.disabled && action.disabled !== false),
     disabledReason: action.disabledReason ?? visibility.disabledState?.reason,
@@ -197,6 +203,7 @@ function ManagedSection({
   } else {
     content = section.skeleton ? section.skeleton() : <SectionSkeleton />;
   }
+  const hasContent = !(content === null || content === undefined || content === false);
 
   return (
     <div
@@ -218,9 +225,11 @@ function ManagedSection({
         testId={section.testId ?? `section-frame-${section.id}`}
         headerClassName={section.kind === "header" ? "bg-primary/5 border-primary/10 py-10" : undefined}
       >
-        <div className="animate-in fade-in zoom-in-95 duration-500 fill-mode-forwards">
-          {content}
-        </div>
+        {hasContent ? (
+          <div className="animate-in fade-in zoom-in-95 duration-500 fill-mode-forwards">
+            {content}
+          </div>
+        ) : null}
       </SectionFrame>
     </div>
   );

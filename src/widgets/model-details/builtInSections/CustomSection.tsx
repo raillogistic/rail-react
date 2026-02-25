@@ -2,14 +2,17 @@ import type { SectionDefinition, SectionRuntimeCtx } from "../sectionTypes";
 
 export type CustomSectionConfig<TData = unknown> = {
   id: string;
-  title?: string;
-  description?: string;
+  title?: SectionDefinition<TData>["title"];
+  description?: SectionDefinition<TData>["description"];
+  icon?: SectionDefinition<TData>["icon"];
   order?: number;
   dataSource?: SectionDefinition<TData>["dataSource"];
   loadingStrategy?: "eager" | "lazy";
+  cacheKey?: SectionDefinition<TData>["cacheKey"];
   permissions?: string[];
   visibleIf?: (ctx: SectionRuntimeCtx) => boolean;
   disabledIf?: SectionDefinition<TData>["disabledIf"];
+  noAccessBehavior?: SectionDefinition<TData>["noAccessBehavior"];
   select?: (ctx: SectionRuntimeCtx) => TData | undefined;
   load?: SectionDefinition<TData>["load"];
   render: SectionDefinition<TData>["render"];

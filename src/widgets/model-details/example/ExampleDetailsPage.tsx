@@ -123,19 +123,28 @@ function wait(ms: number): Promise<void> {
 function buildExampleSchema(): DetailsPageSchema {
   return {
     header: [
-      // createHeaderSection({
-      //   id: "header-main",
-      //   title: "Overview",
-      //   select: (ctx) => {
-      //     const entity = ctx.entity as ExampleEntity | undefined;
-      //     if (!entity) return undefined;
-      //     return {
-      //       title: entity.name,
-      //       subtitle: `Owner: ${entity.owner}`,
-      //       badges: [{ id: "status", label: entity.status.toUpperCase() }],
-      //     };
-      //   },
-      // }),
+      createHeaderSection({
+        id: "header-main",
+        title: "Overview",
+        actions: () => [
+          {
+            label: "dsds",
+            onClick: () => {
+              alert("dsds");
+            },
+            id: "dsd",
+          },
+        ],
+        select: (ctx) => {
+          const entity = ctx.entity as ExampleEntity | undefined;
+          if (!entity) return undefined;
+          return {
+            title: entity.name,
+            subtitle: `Owner: ${entity.owner}`,
+            badges: [{ id: "status", label: entity.status.toUpperCase() }],
+          };
+        },
+      }),
     ],
     body: [
       createModelSection({
@@ -144,15 +153,6 @@ function buildExampleSchema(): DetailsPageSchema {
         title: "Invoice",
         objectId: "1",
         modelName: "Invoice",
-        manifest: {
-          sections: [
-            {
-              fields: ["createdAt"],
-              columns: 2,
-            },
-          ],
-          // includeUnassignedFields: true,
-        },
       }),
       //   createGeneralSection({
       //     id: "general-main",
@@ -325,15 +325,12 @@ export default function ExampleDetailsPage() {
   return (
     <DynamicDetail
       schema={schema}
-      runtime={
-        {
-          // entityId: fakeEntity.id,
-          // entity: fakeEntity,
-          // permissions: ["billing.view_invoice"],
-        }
-      }
+      runtime={{
+        entityId: fakeEntity.id,
+        entity: fakeEntity,
+        permissions: ["billing.view_invoice"],
+      }}
       className="space-y-4"
     />
   );
 }
-

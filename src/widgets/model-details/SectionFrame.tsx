@@ -1,9 +1,20 @@
 import * as React from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/shared/ui/kit/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/shared/ui/kit/card";
 import { Button } from "@/shared/ui/kit/button";
 import { cn } from "@/shared/utils";
 import type { SectionActionTone } from "./sectionTypes";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/shared/ui/kit/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/shared/ui/kit/tooltip";
 import { Info, MoreHorizontal } from "lucide-react";
 import {
   DropdownMenu,
@@ -14,18 +25,19 @@ import {
 
 export type SectionFrameAction = {
   id: string;
-  label: string;
+  label?: string;
   icon?: React.ReactNode;
   tone?: SectionActionTone;
   ariaLabel?: string;
   disabled?: boolean;
   disabledReason?: string;
-  onClick: () => void | Promise<void>;
+  onClick?: () => void | Promise<void>;
+  render?: React.ReactNode;
 };
 
 export type SectionFrameProps = {
-  title?: string;
-  description?: string;
+  title?: React.ReactNode;
+  description?: React.ReactNode;
   icon?: React.ReactNode;
   actions?: SectionFrameAction[];
   disabled?: boolean;
@@ -49,7 +61,9 @@ function toneToVariant(
   return "outline";
 }
 
-function toneToClassName(tone: SectionActionTone | undefined): string | undefined {
+function toneToClassName(
+  tone: SectionActionTone | undefined,
+): string | undefined {
   if (tone === "success") {
     return "border-emerald-500/30 text-emerald-700 bg-emerald-500/5 hover:bg-emerald-500/10 dark:text-emerald-400";
   }
@@ -76,11 +90,14 @@ export default function SectionFrame({
   testId,
   children,
 }: SectionFrameProps) {
+  const hasContent = React.Children.count(children) > 0;
   const HeadingTag = `h${headingLevel}` as keyof JSX.IntrinsicElements;
-  
+
   // Separate primary actions (max 2) from overflow actions
-  const primaryActions = actions.slice(0, 2);
-  const overflowActions = actions.slice(2);
+  const renderedActions = actions.filter((action) => action.render);
+  const buttonActions = actions.filter((action) => !action.render);
+  const primaryActions = buttonActions.slice(0, 2);
+  const overflowActions = buttonActions.slice(2);
 
   return (
     <TooltipProvider delayDuration={400}>
@@ -91,14 +108,14 @@ export default function SectionFrame({
           "border-border/40 bg-card/60 backdrop-blur-md shadow-sm",
           "hover:border-border/80 hover:shadow-xl hover:shadow-primary/5 hover:-translate-y-0.5",
           disabled ? "opacity-75 grayscale-[0.3]" : "",
-          className
+          className,
         )}
       >
         {(title || description || actions.length > 0) && (
-          <CardHeader 
+          <CardHeader
             className={cn(
               "px-8 py-6 border-b border-border/10 bg-gradient-to-r from-muted/30 to-transparent",
-              headerClassName
+              headerClassName,
             )}
           >
             <div className="flex flex-wrap items-center justify-between gap-6">
@@ -121,7 +138,10 @@ export default function SectionFrame({
                               <Info className="size-4" />
                             </div>
                           </TooltipTrigger>
-                          <TooltipContent side="right" className="bg-amber-600 text-white font-bold text-[10px] uppercase tracking-widest border-none shadow-xl">
+                          <TooltipContent
+                            side="right"
+                            className="bg-amber-600 text-white font-bold text-[10px] uppercase tracking-widest border-none shadow-xl"
+                          >
                             <p>{disabledReason || "Restricted Section"}</p>
                           </TooltipContent>
                         </Tooltip>
@@ -135,9 +155,19 @@ export default function SectionFrame({
                   ) : null}
                 </div>
               </div>
-              
+
               {actions.length > 0 ? (
                 <div className="flex items-center gap-2.5">
+                  {renderedActions.map((action) => (
+                    <div
+                      key={action.id}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                      }}
+                    >
+                      {action.render}
+                    </div>
+                  ))}
                   <div className="hidden sm:flex items-center gap-2">
                     {primaryActions.map((action) => (
                       <Button
@@ -147,54 +177,80 @@ export default function SectionFrame({
                         variant={toneToVariant(action.tone)}
                         aria-label={action.ariaLabel ?? action.label}
                         disabled={Boolean(action.disabled)}
-                        onClick={() => {
-                          void action.onClick();
+                        onClick={(event) => {
+                          event.preventDefault();
+                          event.stopPropagation();
+                          void action.onClick?.();
                         }}
                         className={cn(
                           "h-9 px-4 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm transition-all active:scale-95 hover:shadow-md",
                           toneToClassName(action.tone),
                         )}
                       >
-                        {action.icon && <span className="mr-2 size-3.5 shrink-0 opacity-80">{action.icon}</span>}
+                        {action.icon && (
+                          <span className="mr-2 size-3.5 shrink-0 opacity-80">
+                            {action.icon}
+                          </span>
+                        )}
                         {action.label}
                       </Button>
                     ))}
                   </div>
 
-                  {overflowActions.length > 0 || primaryActions.length < actions.length ? (
+                  {overflowActions.length > 0 ||
+                  primaryActions.length < buttonActions.length ? (
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           className="size-9 rounded-xl border border-border/20 bg-muted/20 hover:bg-muted/40 transition-all"
                         >
                           <MoreHorizontal className="size-4" />
                         </Button>
                       </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end" className="w-56 p-2 rounded-2xl shadow-2xl border-border/40 backdrop-blur-xl">
+                      <DropdownMenuContent
+                        align="end"
+                        className="w-56 p-2 rounded-2xl shadow-2xl border-border/40 backdrop-blur-xl"
+                      >
                         {/* Mobile view of primary actions */}
                         <div className="sm:hidden border-b border-border/20 mb-1 pb-1">
                           {primaryActions.map((action) => (
-                             <DropdownMenuItem
-                               key={action.id}
-                               disabled={Boolean(action.disabled)}
-                               onClick={() => void action.onClick()}
-                               className="rounded-lg font-black uppercase tracking-widest text-[9px] gap-2 p-2.5 focus:bg-primary/5"
-                             >
-                               {action.icon && <span className="size-3.5 opacity-60">{action.icon}</span>}
-                               {action.label}
-                             </DropdownMenuItem>
+                            <DropdownMenuItem
+                              key={action.id}
+                              disabled={Boolean(action.disabled)}
+                              onClick={(event) => {
+                                event.preventDefault();
+                                event.stopPropagation();
+                                void action.onClick?.();
+                              }}
+                              className="rounded-lg font-black uppercase tracking-widest text-[9px] gap-2 p-2.5 focus:bg-primary/5"
+                            >
+                              {action.icon && (
+                                <span className="size-3.5 opacity-60">
+                                  {action.icon}
+                                </span>
+                              )}
+                              {action.label}
+                            </DropdownMenuItem>
                           ))}
                         </div>
                         {overflowActions.map((action) => (
                           <DropdownMenuItem
                             key={action.id}
                             disabled={Boolean(action.disabled)}
-                            onClick={() => void action.onClick()}
+                            onClick={(event) => {
+                              event.preventDefault();
+                              event.stopPropagation();
+                              void action.onClick?.();
+                            }}
                             className="rounded-lg font-black uppercase tracking-widest text-[9px] gap-2 p-2.5 focus:bg-primary/5"
                           >
-                            {action.icon && <span className="size-3.5 opacity-60">{action.icon}</span>}
+                            {action.icon && (
+                              <span className="size-3.5 opacity-60">
+                                {action.icon}
+                              </span>
+                            )}
                             {action.label}
                           </DropdownMenuItem>
                         ))}
@@ -206,10 +262,12 @@ export default function SectionFrame({
             </div>
           </CardHeader>
         )}
-        
-        <CardContent className={cn("px-8 py-8", contentClassName)}>
-          {children}
-        </CardContent>
+
+        {hasContent ? (
+          <CardContent className={cn("px-8 py-8", contentClassName)}>
+            {children}
+          </CardContent>
+        ) : null}
 
         {disabled && (
           <div className="absolute inset-0 z-10 bg-background/5 border-2 border-dashed border-amber-500/10 pointer-events-none rounded-2xl" />

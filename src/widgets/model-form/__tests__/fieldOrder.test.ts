@@ -59,4 +59,118 @@ describe("normalizeFieldOrder", () => {
     const result = normalizeFieldOrder(fields);
     expect(result.map((f) => f.name)).toEqual(["only"]);
   });
+
+  it("applies explicit start/end rule placement", () => {
+    const fields: FormFieldConfig[] = [
+      { name: "name", type: "text", label: "Name" },
+      { name: "status", type: "text", label: "Status" },
+      { name: "notes", type: "textarea", label: "Notes" },
+      { name: "payload", type: "json", label: "Payload" },
+    ];
+
+    const result = normalizeFieldOrder(fields, {
+      ordering: {
+        rules: [
+          { field: "notes", place: "start" },
+          { field: "payload", place: "end" },
+        ],
+      },
+    });
+
+    expect(result.map((f) => f.name)).toEqual([
+      "notes",
+      "name",
+      "status",
+      "payload",
+    ]);
+  });
+
+  it("applies middle placement with before/after anchor rules", () => {
+    const fields: FormFieldConfig[] = [
+      { name: "name", type: "text", label: "Name" },
+      { name: "status", type: "text", label: "Status" },
+      { name: "category", type: "text", label: "Category" },
+      { name: "notes", type: "textarea", label: "Notes" },
+    ];
+
+    const result = normalizeFieldOrder(fields, {
+      ordering: {
+        rules: [
+          { field: "notes", place: "after", anchor: "name" },
+          { field: "category", place: "before", anchor: "status" },
+        ],
+      },
+    });
+
+    expect(result.map((f) => f.name)).toEqual([
+      "name",
+      "notes",
+      "category",
+      "status",
+    ]);
+  });
+
+  it("supports index placement and section-level rules", () => {
+    const fields: FormFieldConfig[] = [
+      { name: "a", type: "text", label: "A" },
+      { name: "b", type: "text", label: "B" },
+      { name: "c", type: "text", label: "C" },
+      { name: "d", type: "text", label: "D" },
+    ];
+
+    const result = normalizeFieldOrder(fields, {
+      sectionId: "main",
+      ordering: {
+        sectionRules: {
+          main: [{ field: "d", place: "index", index: 2 }],
+        },
+      },
+    });
+
+    expect(result.map((f) => f.name)).toEqual(["a", "b", "d", "c"]);
+  });
+
+  it("supports partial explicit ordering list at the start", () => {
+    const fields: FormFieldConfig[] = [
+      { name: "name", type: "text", label: "Name" },
+      { name: "status", type: "text", label: "Status" },
+      { name: "price", type: "number", label: "Price" },
+      { name: "sku", type: "text", label: "SKU" },
+    ];
+
+    const result = normalizeFieldOrder(fields, {
+      ordering: {
+        order: ["sku", "status"],
+      },
+    });
+
+    expect(result.map((f) => f.name)).toEqual([
+      "sku",
+      "status",
+      "name",
+      "price",
+    ]);
+  });
+
+  it("supports partial explicit tailing list from the end", () => {
+    const fields: FormFieldConfig[] = [
+      { name: "name", type: "text", label: "Name" },
+      { name: "status", type: "text", label: "Status" },
+      { name: "price", type: "number", label: "Price" },
+      { name: "sku", type: "text", label: "SKU" },
+    ];
+
+    const result = normalizeFieldOrder(fields, {
+      ordering: {
+        tailing: ["price", "name"],
+      },
+    });
+
+    expect(result.map((f) => f.name)).toEqual([
+      "status",
+      "sku",
+      "price",
+      "name",
+    ]);
+  });
 });

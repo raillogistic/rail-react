@@ -1308,8 +1308,15 @@ export function StoreOrderUpdateModelFormExample({
         description="Exemple de mise à jour auto-câblée : les valeurs initiales sont chargées depuis modelFormInitialData et Enregistrer lance updateOperation générée."
         nested={["items"]}
         onlyRequired
-        excludeFields={["price"]}
+        // excludeFields={["price"]}
         formProps={{
+          layout: {
+            ordering: {
+              enabled: true,
+              // tailing: ["notes", "metadata"],
+              order: ["name", "sku"],
+            },
+          },
           devtools: { enabled: true },
         }}
       />

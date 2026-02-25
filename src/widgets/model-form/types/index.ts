@@ -49,7 +49,13 @@ export type {
 } from "./behavior";
 
 // Layout types
-export type { FormLayoutMode, FormLayoutConfig } from "./layout";
+export type {
+  FormLayoutMode,
+  FormLayoutConfig,
+  FormFieldOrderingPlacement,
+  FormFieldOrderingRule,
+  FormFieldOrderingConfig,
+} from "./layout";
 
 // Actions types
 export type { FormActionsConfig } from "./actions";

@@ -140,6 +140,8 @@ function setupDefaultMocks(overrides?: {
   deleteExecute?: ReturnType<typeof vi.fn>;
 }) {
   const metadata = overrides?.metadata ?? baseMetadata;
+  const metadataRefetch = vi.fn().mockResolvedValue(metadata);
+  const queryRefetch = vi.fn().mockResolvedValue(null);
   const deleteExecute =
     overrides?.deleteExecute ??
     vi.fn().mockResolvedValue({
@@ -155,7 +157,7 @@ function setupDefaultMocks(overrides?: {
     metadata,
     loading: false,
     error: undefined,
-    refetch: vi.fn().mockResolvedValue(metadata),
+    refetch: metadataRefetch,
   });
 
   fetchMetadataSnapshotMock.mockResolvedValue(null);
@@ -175,7 +177,7 @@ function setupDefaultMocks(overrides?: {
       } as any),
     loading: false,
     error: undefined,
-    refetch: vi.fn().mockResolvedValue(null),
+    refetch: queryRefetch,
   });
 
   useModelDeleteMutationMock.mockReturnValue({
@@ -183,7 +185,7 @@ function setupDefaultMocks(overrides?: {
     loading: false,
   });
 
-  return { deleteExecute };
+  return { deleteExecute, metadataRefetch, queryRefetch };
 }
 
 describe("ModelDynamicDetail", () => {
@@ -223,6 +225,34 @@ describe("ModelDynamicDetail", () => {
 
     expect(screen.getByRole("button", { name: "Update" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Delete" })).toBeInTheDocument();
+    expect(useModelSingleQueryMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        app: "store",
+        model: "Product",
+        id: "1",
+        selectionOptions: expect.objectContaining({
+          includeRowPermissions: true,
+        }),
+      }),
+    );
+  });
+
+  it("keeps built-in actions hidden until backend row permissions are resolved", async () => {
+    setupDefaultMocks({
+      queryData: {
+        id: "1",
+        name: "Product Alpha",
+      },
+    });
+
+    render(<ModelDynamicDetail app="store" model="Product" id="1" />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Product Alpha")).toBeInTheDocument();
+    });
+
+    expect(screen.queryByRole("button", { name: "Update" })).toBeNull();
+    expect(screen.queryByRole("button", { name: "Delete" })).toBeNull();
   });
 
   it("supports frontend permission overrides for actions", async () => {
@@ -407,6 +437,176 @@ describe("ModelDynamicDetail", () => {
 
     await waitFor(() => {
       expect(screen.getByText("Publish Product")).toBeInTheDocument();
+    });
+  });
+
+  it("renders header title from name by default", async () => {
+    setupDefaultMocks({
+      queryData: {
+        id: "1",
+        name: "Product Alpha",
+        desc: "Default header description",
+        rowPermissions: {
+          canUpdate: true,
+          canDelete: true,
+          updateReason: null,
+          deleteReason: null,
+        },
+      },
+    });
+
+    render(<ModelDynamicDetail app="store" model="Product" id="1" />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Product Alpha")).toBeInTheDocument();
+      expect(screen.getByText("Default header description")).toBeInTheDocument();
+    });
+  });
+
+  it("renders header title from title fallback when name is missing", async () => {
+    setupDefaultMocks({
+      queryData: {
+        id: "1",
+        title: "Fallback Title",
+        description: "Fallback description",
+        rowPermissions: {
+          canUpdate: true,
+          canDelete: true,
+          updateReason: null,
+          deleteReason: null,
+        },
+      },
+    });
+
+    render(<ModelDynamicDetail app="store" model="Product" id="1" />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Fallback Title")).toBeInTheDocument();
+      expect(screen.getByText("Fallback description")).toBeInTheDocument();
+    });
+  });
+
+  it("renders custom header actions sorted by position and receives refetch", async () => {
+    const user = userEvent.setup();
+    const { metadataRefetch, queryRefetch } = setupDefaultMocks({
+      queryData: {
+        id: "1",
+        name: "Product Alpha",
+        desc: "Header",
+        rowPermissions: {
+          canUpdate: false,
+          canDelete: false,
+          updateReason: null,
+          deleteReason: null,
+        },
+      },
+    });
+
+    render(
+      <ModelDynamicDetail
+        app="store"
+        model="Product"
+        id="1"
+        baseDetail={{
+          actions: {
+            showUpdate: false,
+            showDelete: false,
+            showTemplates: false,
+            showCustomMutations: false,
+          },
+          header: {
+            actions: () => [
+              {
+                position: 2,
+                render: (props) => (
+                  <button type="button" onClick={() => void props.refetch()}>
+                    B Action
+                  </button>
+                ),
+              },
+              {
+                position: 0,
+                render: () => <button type="button">A Action</button>,
+              },
+            ],
+          },
+        }}
+      />,
+    );
+
+    const customButtons = await screen.findAllByRole("button");
+    const buttonNames = customButtons.map((button) => button.textContent ?? "");
+    expect(buttonNames.indexOf("A Action")).toBeLessThan(
+      buttonNames.indexOf("B Action"),
+    );
+
+    await user.click(screen.getByRole("button", { name: "B Action" }));
+    await waitFor(() => {
+      expect(metadataRefetch).toHaveBeenCalled();
+      expect(queryRefetch).toHaveBeenCalled();
+    });
+  });
+
+  it("forwards DynamicDetail header frame props", async () => {
+    setupDefaultMocks();
+
+    render(
+      <ModelDynamicDetail
+        app="store"
+        model="Product"
+        id="1"
+        baseDetail={{
+          header: {
+            frame: {
+              title: "Header Frame",
+              description: "Frame description",
+              testId: "custom-header-frame",
+            },
+          },
+        }}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getAllByTestId("custom-header-frame").length).toBeGreaterThan(0);
+    });
+
+    expect(screen.getByText("Header Frame")).toBeInTheDocument();
+    expect(screen.getByText("Frame description")).toBeInTheDocument();
+  });
+
+  it("supports header.frame.description resolver returning React element", async () => {
+    setupDefaultMocks({
+      queryData: {
+        id: "1",
+        name: "Product Alpha",
+        desc: "ignored",
+        rowPermissions: {
+          canUpdate: true,
+          canDelete: true,
+          updateReason: null,
+          deleteReason: null,
+        },
+      },
+    });
+
+    render(
+      <ModelDynamicDetail
+        app="store"
+        model="Product"
+        id="1"
+        baseDetail={{
+          header: {
+            frame: {
+              description: (data) => <span>{String(data?.name ?? "")} description</span>,
+            },
+          },
+        }}
+      />,
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText("Product Alpha description")).toBeInTheDocument();
     });
   });
 });

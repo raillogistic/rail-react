@@ -65,6 +65,7 @@ import {
 import DynamicDetail from "../DynamicDetail";
 import { createCustomSection } from "../builtInSections";
 import type { DetailsPageSchema, SectionRuntimeCtx } from "../sectionTypes";
+import type { SectionAction } from "../sectionTypes";
 import { hasRequiredPermissions } from "../sectionTypes";
 import type { UnitFieldInput } from "../units/unitFieldTypes";
 import UnitFieldRenderer from "../units/UnitFieldRenderer";
@@ -75,6 +76,8 @@ import TableDetail from "./TableDetail";
 import type {
   ModelDynamicDetailActionContext,
   ModelDynamicDetailActionsConfig,
+  ModelDynamicDetailHeaderActionConfig,
+  ModelDynamicDetailHeaderActionRenderProps,
   ModelDynamicDetailConfig,
   ModelDynamicDetailFieldConfig,
   ModelDynamicDetailFieldRenderContext,
@@ -138,6 +141,11 @@ type ResolvedNestedSection = {
 type MutationResponsePayload = {
   ok?: boolean;
   errors?: Array<{ message?: string }>;
+};
+
+type ResolvedHeaderActionEntry = {
+  position: number;
+  render: ModelDynamicDetailHeaderActionConfig["render"];
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -1147,6 +1155,12 @@ export const ModelDynamicDetail = React.forwardRef<
   );
 
   const rowPermissions = React.useMemo(() => resolveRowPermissions(record), [record]);
+  const hasResolvedRowPermissions = React.useMemo(
+    () =>
+      typeof rowPermissions.canUpdate === "boolean" ||
+      typeof rowPermissions.canDelete === "boolean",
+    [rowPermissions.canDelete, rowPermissions.canUpdate],
+  );
 
   const actionContext = React.useMemo<ModelDynamicDetailActionContext>(
     () => ({
@@ -1198,27 +1212,43 @@ export const ModelDynamicDetail = React.forwardRef<
     const backendAllowed =
       actionsConfig.showUpdate !== false &&
       Boolean(metadataState.metadata?.permissions?.canUpdate) &&
-      (rowPermissions.canUpdate ?? true);
+      hasResolvedRowPermissions &&
+      rowPermissions.canUpdate === true;
 
     return evaluateOverrideBoolean(
       actionsConfig.permissions?.canUpdate,
       backendAllowed,
       actionContext,
     );
-  }, [actionContext, actionsConfig.permissions, actionsConfig.showUpdate, metadataState.metadata?.permissions?.canUpdate, rowPermissions.canUpdate]);
+  }, [
+    actionContext,
+    actionsConfig.permissions,
+    actionsConfig.showUpdate,
+    hasResolvedRowPermissions,
+    metadataState.metadata?.permissions?.canUpdate,
+    rowPermissions.canUpdate,
+  ]);
 
   const canDelete = React.useMemo(() => {
     const backendAllowed =
       actionsConfig.showDelete !== false &&
       Boolean(metadataState.metadata?.permissions?.canDelete) &&
-      (rowPermissions.canDelete ?? true);
+      hasResolvedRowPermissions &&
+      rowPermissions.canDelete === true;
 
     return evaluateOverrideBoolean(
       actionsConfig.permissions?.canDelete,
       backendAllowed,
       actionContext,
     );
-  }, [actionContext, actionsConfig.permissions, actionsConfig.showDelete, metadataState.metadata?.permissions?.canDelete, rowPermissions.canDelete]);
+  }, [
+    actionContext,
+    actionsConfig.permissions,
+    actionsConfig.showDelete,
+    hasResolvedRowPermissions,
+    metadataState.metadata?.permissions?.canDelete,
+    rowPermissions.canDelete,
+  ]);
 
   const templateEntries = React.useMemo(
     () => (metadataState.metadata?.templates ?? []).filter((entry) => isRecord(entry)),
@@ -1427,6 +1457,58 @@ export const ModelDynamicDetail = React.forwardRef<
     }
   }, [actionContext, actionsConfig]);
 
+  const customHeaderActionProps = React.useMemo<ModelDynamicDetailHeaderActionRenderProps>(
+    () => ({
+      app,
+      model,
+      id: idAsString,
+      data: record,
+      metadata: metadataState.metadata,
+      refetch,
+    }),
+    [app, idAsString, metadataState.metadata, model, record, refetch],
+  );
+
+  const customHeaderActions = React.useMemo<ResolvedHeaderActionEntry[]>(() => {
+    const resolveActions = config.header?.actions;
+    if (!resolveActions) return [];
+
+    const actionList = resolveActions(customHeaderActionProps);
+    if (!Array.isArray(actionList) || actionList.length === 0) return [];
+
+    return actionList
+      .filter((action): action is ModelDynamicDetailHeaderActionConfig => Boolean(action?.render))
+      .map((action, index) => ({
+        position: Number.isFinite(action.position) ? Number(action.position) : index,
+        render: action.render,
+      }))
+      .sort((left, right) => left.position - right.position);
+  }, [config.header?.actions, customHeaderActionProps]);
+
+  const resolvedHeaderTitle = React.useMemo<React.ReactElement | string | null>(() => {
+    if (config.header?.title) {
+      const title = config.header.title(record);
+      if (typeof title === "string") {
+        const trimmed = title.trim();
+        return trimmed || null;
+      }
+      return title ?? null;
+    }
+
+    const fallbackName = record?.["name"];
+    if (typeof fallbackName === "string") {
+      const trimmed = fallbackName.trim();
+      return trimmed || null;
+    }
+
+    const fallbackTitle = record?.["title"];
+    if (typeof fallbackTitle === "string") {
+      const trimmed = fallbackTitle.trim();
+      return trimmed || null;
+    }
+    return null;
+  }, [config.header?.title, record]);
+
   const layoutSectionsWithData = React.useMemo(
     () =>
       buildLayoutSections({
@@ -1476,6 +1558,172 @@ export const ModelDynamicDetail = React.forwardRef<
   }, [nestedConfig, nestedMetadataByRelation, record, relationLookup]);
 
   const detailsSchema = React.useMemo<DetailsPageSchema>(() => {
+    const headerFrame = config.header?.frame;
+    const resolvedHeaderDescription = (() => {
+      const source = headerFrame?.description;
+      if (typeof source === "function") {
+        const value = source(record);
+        if (typeof value === "string") {
+          const trimmed = value.trim();
+          return trimmed || undefined;
+        }
+        return value ?? undefined;
+      }
+      if (typeof source === "string") {
+        const trimmed = source.trim();
+        return trimmed || undefined;
+      }
+
+      const fallbackDesc = record?.["desc"];
+      if (typeof fallbackDesc === "string") {
+        const trimmed = fallbackDesc.trim();
+        if (trimmed) return trimmed;
+      }
+
+      const fallbackDescription = record?.["description"];
+      if (typeof fallbackDescription === "string") {
+        const trimmed = fallbackDescription.trim();
+        if (trimmed) return trimmed;
+      }
+
+      return undefined;
+    })();
+    const hasHeaderActions =
+      canUpdate ||
+      canDelete ||
+      (actionsConfig.showTemplates !== false && templateEntries.length > 0) ||
+      customMutationEntries.length > 0 ||
+      customHeaderActions.length > 0 ||
+      Boolean(headerFrame?.actions);
+    const frameTitle = headerFrame?.title ??
+      (typeof resolvedHeaderTitle === "string" ? resolvedHeaderTitle : undefined);
+    const headerSectionActions: SectionAction<{ ready: true }>[] = [
+      ...customHeaderActions.map((entry, index) => ({
+        id: `header-custom:${entry.position}:${index}`,
+        label: `header-custom:${index}`,
+        render: () => entry.render(customHeaderActionProps),
+        onClick: () => undefined,
+      })),
+      ...(canUpdate
+        ? [{
+            id: "header-update",
+            label: "Update",
+            icon: <Pencil className="size-4" />,
+            onClick: () => {
+              void handleUpdate();
+            },
+          }]
+        : []),
+      ...(canDelete
+        ? [{
+            id: "header-delete",
+            label: "Delete",
+            tone: "danger" as const,
+            icon: deleting ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />,
+            disabled: deleting,
+            onClick: () => {
+              setDeleteDialogOpen(true);
+            },
+          }]
+        : []),
+      ...(actionsConfig.showTemplates !== false && templateEntries.length > 0
+        ? [{
+            id: "header-templates",
+            label: "Templates",
+            render: () => (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm" variant="outline">
+                    <Printer className="mr-2 size-4" />
+                    Templates
+                    <ChevronDown className="ml-2 size-3.5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>Templates</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {templateEntries.map((template) => (
+                    <DropdownMenuItem
+                      key={template.key}
+                      onClick={() => handleTemplateClick(template)}
+                    >
+                      {template.title || template.key}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ),
+            onClick: () => undefined,
+          }]
+        : []),
+      ...(customMutationEntries.length > 0
+        ? [{
+            id: "header-custom-mutations",
+            label: "Actions",
+            render: () => (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button size="sm" variant="outline">
+                    <Zap className="mr-2 size-4" />
+                    Actions
+                    <ChevronDown className="ml-2 size-3.5" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>Custom Mutations</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {customMutationEntries.map((entry) => (
+                    <DropdownMenuItem
+                      key={entry.mutation.name}
+                      disabled={entry.disabled}
+                      title={entry.disabledReason}
+                      onClick={() => {
+                        setActiveMutationAction(entry);
+                        setMutationDialogOpen(true);
+                      }}
+                    >
+                      {entry.label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ),
+            onClick: () => undefined,
+          }]
+        : []),
+    ];
+
+    const headerSections =
+      frameTitle || hasHeaderActions
+        ? [
+            createCustomSection({
+              id: "header:main",
+              title: frameTitle,
+              description: resolvedHeaderDescription,
+              icon: headerFrame?.icon,
+              order: headerFrame?.order ?? -200,
+              dataSource: headerFrame?.dataSource,
+              loadingStrategy: headerFrame?.loadingStrategy,
+              cacheKey: headerFrame?.cacheKey,
+              permissions: headerFrame?.permissions,
+              visibleIf: headerFrame?.visibleIf,
+              disabledIf: headerFrame?.disabledIf,
+              noAccessBehavior: headerFrame?.noAccessBehavior,
+              load: headerFrame?.load,
+              select: headerFrame?.select ?? (() => ({ ready: true })),
+              skeleton: headerFrame?.skeleton,
+              empty: headerFrame?.empty,
+              error: headerFrame?.error,
+              actions: (runtime, state) => [
+                ...(headerFrame?.actions?.(runtime, state) ?? []),
+                ...headerSectionActions,
+              ],
+              testId: headerFrame?.testId,
+              render: () => null,
+            }),
+          ]
+        : [];
+
     const bodySections = [
       ...layoutSectionsWithData.map((section) =>
         createCustomSection({
@@ -1617,19 +1865,31 @@ export const ModelDynamicDetail = React.forwardRef<
     ];
 
     return {
-      header: [],
+      header: headerSections,
       body: bodySections,
     };
   }, [
+    actionsConfig.showTemplates,
     app,
+    canDelete,
+    canUpdate,
+    config.header?.frame,
     config.layout?.customSections,
+    customHeaderActionProps,
+    customHeaderActions,
+    customMutationEntries,
+    deleting,
+    handleTemplateClick,
+    handleUpdate,
     idAsString,
     layoutSectionsWithData,
     metadataState.metadata,
     model,
     nestedMetadataByRelation,
     record,
+    resolvedHeaderTitle,
     resolvedNestedWithData,
+    templateEntries,
   ]);
 
   if (deleted) {
@@ -1666,80 +1926,6 @@ export const ModelDynamicDetail = React.forwardRef<
 
   return (
     <div className={cn("space-y-6", config.className)}>
-      <div className="flex flex-wrap items-center justify-end gap-2">
-        {canUpdate ? (
-          <Button size="sm" variant="outline" onClick={() => void handleUpdate()}>
-            <Pencil className="mr-2 size-4" />
-            Update
-          </Button>
-        ) : null}
-
-        {canDelete ? (
-          <Button
-            size="sm"
-            variant="destructive"
-            onClick={() => setDeleteDialogOpen(true)}
-            disabled={deleting}
-          >
-            {deleting ? <Loader2 className="mr-2 size-4 animate-spin" /> : <Trash2 className="mr-2 size-4" />}
-            Delete
-          </Button>
-        ) : null}
-
-        {actionsConfig.showTemplates !== false && templateEntries.length > 0 ? (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button size="sm" variant="outline">
-                <Printer className="mr-2 size-4" />
-                Templates
-                <ChevronDown className="ml-2 size-3.5" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Templates</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {templateEntries.map((template) => (
-                <DropdownMenuItem
-                  key={template.key}
-                  onClick={() => handleTemplateClick(template)}
-                >
-                  {template.title || template.key}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        ) : null}
-
-        {customMutationEntries.length > 0 ? (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button size="sm" variant="outline">
-                <Zap className="mr-2 size-4" />
-                Actions
-                <ChevronDown className="ml-2 size-3.5" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Custom Mutations</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {customMutationEntries.map((entry) => (
-                <DropdownMenuItem
-                  key={entry.mutation.name}
-                  disabled={entry.disabled}
-                  title={entry.disabledReason}
-                  onClick={() => {
-                    setActiveMutationAction(entry);
-                    setMutationDialogOpen(true);
-                  }}
-                >
-                  {entry.label}
-                </DropdownMenuItem>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
-        ) : null}
-      </div>
-
       <DynamicDetail
         schema={detailsSchema}
         runtime={runtime}

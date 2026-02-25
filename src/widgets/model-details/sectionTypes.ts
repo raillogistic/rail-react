@@ -105,6 +105,7 @@ export type SectionAction<TData = unknown> = {
   tone?: SectionActionTone;
   icon?: React.ReactNode;
   ariaLabel?: string;
+  render?: (ctx: SectionActionCtx<TData>) => React.ReactNode;
   permissions?: string[];
   /** Controls action visibility after runtime/action-context evaluation. */
   visible?: boolean | ((ctx: SectionActionCtx<TData>) => boolean);
@@ -144,8 +145,8 @@ export type SectionErrorArgs = {
 
 export type SectionDefinition<TData = unknown> = {
   id: string;
-  title?: string;
-  description?: string;
+  title?: React.ReactNode;
+  description?: React.ReactNode;
   icon?: React.ReactNode;
   kind: SectionKind;
   order?: number;

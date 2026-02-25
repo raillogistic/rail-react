@@ -375,9 +375,12 @@ const DynamicForm = <TValues extends Record<string, any> = Record<string, any>>(
         : [];
     return resolvedSections.map((section) => ({
       ...section,
-      fields: normalizeFieldOrder(section.fields),
+      fields: normalizeFieldOrder(section.fields, {
+        ordering: layoutConfig?.ordering,
+        sectionId: section.id,
+      }),
     }));
-  }, [schema.fields, schema.sections]);
+  }, [layoutConfig?.ordering, schema.fields, schema.sections]);
 
   // ─── Conditional visibility ──────────────────────────────────────────
 

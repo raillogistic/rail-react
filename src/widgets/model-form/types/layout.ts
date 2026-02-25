@@ -1,15 +1,13 @@
 /**
  * Layout configuration for DynamicForm.
  *
- * Controls columns, variant, section headers, and rendering mode
- * (standard, wizard, accordion, master-detail, review).
+ * Controls columns, variant, section headers, field ordering, and rendering
+ * mode (standard, wizard, accordion, master-detail, review).
  *
  * @module form/types/layout
  */
 import type React from "react";
 import type { UseFormReturn } from "@tanstack/react-form";
-
-// ─── Layout Mode ─────────────────────────────────────────────────────────────
 
 export type FormLayoutMode<TValues = Record<string, any>> =
   | { type: "standard" }
@@ -40,10 +38,45 @@ export type FormLayoutMode<TValues = Record<string, any>> =
       lockOnSubmit?: boolean;
     };
 
-// ─── Layout Config ───────────────────────────────────────────────────────────
+export type FormFieldOrderingPlacement =
+  | "start"
+  | "end"
+  | "before"
+  | "after"
+  | "index";
+
+export interface FormFieldOrderingRule {
+  /** Target field name (within a section) to reposition. */
+  field: string;
+  /** Placement strategy for the target field. */
+  place: FormFieldOrderingPlacement;
+  /** Anchor field name used by `before`/`after`. */
+  anchor?: string;
+  /** Zero-based index used by `index`. */
+  index?: number;
+}
+
+export interface FormFieldOrderingConfig {
+  /** Enable or disable runtime ordering overrides. Defaults to true. */
+  enabled?: boolean;
+  /**
+   * Explicit field-name sequence to apply in a section. Can be partial.
+   * Unknown names are ignored.
+   */
+  order?: string[];
+  /**
+   * Explicit field-name sequence to place at the end of a section
+   * (tail ordering). Can be partial.
+   */
+  tailing?: string[];
+  /** Global rules applied to every section. */
+  rules?: FormFieldOrderingRule[];
+  /** Per-section rules keyed by section id. */
+  sectionRules?: Record<string, FormFieldOrderingRule[]>;
+}
 
 export interface FormLayoutConfig<TValues = Record<string, any>> {
-  /** Default column count for sections (1–6) */
+  /** Default column count for sections (1-6) */
   columns?: number;
   /** Vertical gap between rows */
   gap?: number | string;
@@ -55,6 +88,8 @@ export interface FormLayoutConfig<TValues = Record<string, any>> {
   className?: string;
   /** CSS class for the form body (scrollable area) */
   bodyClassName?: string;
+  /** Field ordering overrides after schema/order-hint normalization. */
+  ordering?: FormFieldOrderingConfig;
   /** Rendering mode */
   mode?: FormLayoutMode<TValues>;
 }
