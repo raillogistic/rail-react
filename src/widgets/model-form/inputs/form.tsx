@@ -438,7 +438,7 @@ const DynamicForm = <TValues extends Record<string, any> = Record<string, any>>(
   const formWrapperClass = cn(
     "relative flex flex-col w-full transition-all duration-300",
     isPopup
-      ? "gap-3 bg-transparent"
+      ? "gap-3 border-0 bg-transparent p-0 shadow-none backdrop-blur-0"
       : "h-full rounded-2xl bg-card/10 p-6 border border-border/40 shadow-sm",
     layoutClassName,
   );

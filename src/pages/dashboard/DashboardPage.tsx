@@ -310,8 +310,9 @@ export default function DashboardPage() {
       actions: {
         updateForm: {
           modelFormProps: {
-            onlyRequired: true,
-            excludeFields: ["price"],
+            // onlyRequired: true,
+            // onlyFields: ["name", "description"],
+
             layout: {
               columns: 3,
             },

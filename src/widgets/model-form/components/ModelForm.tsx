@@ -209,6 +209,14 @@ export function ModelForm<TFormValues extends Record<string, unknown> = Record<s
     const merged = { ...(formProps?.layout ?? {}), ...(layout ?? {}) };
     return Object.keys(merged).length > 0 ? merged : undefined;
   }, [formProps?.layout, layout]);
+  const isPopupLayoutVariant = React.useMemo(() => {
+    const variant = String(
+      (resolvedLayout as Record<string, unknown> | undefined)?.variant ?? "",
+    )
+      .trim()
+      .toLowerCase();
+    return variant === "popup" || variant === "compact";
+  }, [resolvedLayout]);
 
   const { mergedBehavior, mergedState, mergedActions, resolvedDevtools } = useModelFormLogic({
     generatedEnabled, contract, generated, formValidator, editableFieldPaths, sanitizeValuesForControlledSchema,
@@ -263,9 +271,18 @@ export function ModelForm<TFormValues extends Record<string, unknown> = Record<s
           {description && <p className="max-w-3xl text-sm font-medium leading-relaxed text-muted-foreground/80 sm:text-base">{description}</p>}
         </header>
       ) : null}
-      <div className={cn("relative overflow-hidden rounded-3xl border border-border/40 bg-card/30 backdrop-blur-sm transition-all duration-300 hover:border-border/60 hover:shadow-2xl hover:shadow-black/5", contentClassName)}>
-        <div className="absolute inset-0 -z-10 bg-linear-to-br from-primary/5 via-transparent to-transparent opacity-50" />
-        <div className="p-1">
+      <div
+        className={cn(
+          isPopupLayoutVariant
+            ? "relative overflow-hidden rounded-3xl bg-transparent backdrop-blur-0 transition-all duration-300 hover:shadow-none"
+            : "relative overflow-hidden rounded-3xl bg-card/30 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-black/5",
+          contentClassName,
+        )}
+      >
+        {!isPopupLayoutVariant ? (
+          <div className="absolute inset-0 -z-10 bg-linear-to-br from-primary/5 via-transparent to-transparent opacity-50" />
+        ) : null}
+        <div className={cn(isPopupLayoutVariant ? "p-0" : "p-1")}>
           <DynamicForm<TFormValues>
             schema={finalSchema}
             state={finalState}

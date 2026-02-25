@@ -337,6 +337,13 @@ describe("DynamicForm", () => {
     );
     const form = container.querySelector("form");
     expect(form?.className).toContain("gap-3");
+    expect(form?.className).toContain("bg-transparent");
+    expect(form?.className).not.toContain("bg-card/10");
+
+    const saveButton = screen.getByText("Enregistrer");
+    const actionsBar = saveButton.closest("div.z-50");
+    expect(actionsBar?.className).toContain("bg-transparent");
+    expect(actionsBar?.className).not.toContain("bg-muted/30");
   });
 
   it("applies custom className to form wrapper", () => {

@@ -179,6 +179,36 @@ type ResolvedHeaderActionEntry = {
   render: ModelDynamicDetailHeaderActionConfig["render"];
 };
 
+/**
+ * Merges model-form layout sources while ignoring undefined override values.
+ * This keeps `formProps.layout` values (for example `variant: "popup"`)
+ * when top-level `layout` is present but only partially defined.
+ */
+function mergeModelFormLayoutConfig(
+  formPropsLayout: unknown,
+  directLayout: unknown,
+): Record<string, unknown> | undefined {
+  const merged: Record<string, unknown> = {};
+
+  if (isRecord(formPropsLayout)) {
+    Object.entries(formPropsLayout).forEach(([key, value]) => {
+      if (value !== undefined) {
+        merged[key] = value;
+      }
+    });
+  }
+
+  if (isRecord(directLayout)) {
+    Object.entries(directLayout).forEach(([key, value]) => {
+      if (value !== undefined) {
+        merged[key] = value;
+      }
+    });
+  }
+
+  return Object.keys(merged).length > 0 ? merged : undefined;
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value && typeof value === "object" && !Array.isArray(value));
 }
@@ -1577,6 +1607,18 @@ export const ModelDynamicDetail = React.forwardRef<
     () => actionsConfig.updateForm?.modelFormProps ?? {},
     [actionsConfig.updateForm?.modelFormProps],
   );
+  const resolvedUpdateFormLayout = React.useMemo(
+    () => {
+      const merged = mergeModelFormLayoutConfig(
+        updateFormProps.formProps?.layout,
+        updateFormProps.layout,
+      );
+      const variant = String(merged?.variant ?? "").trim().toLowerCase();
+      if (variant) return merged;
+      return { ...(merged ?? {}), variant: "popup" };
+    },
+    [updateFormProps.formProps?.layout, updateFormProps.layout],
+  );
 
   const runTemplate = React.useCallback(
     async (
@@ -2445,7 +2487,7 @@ export const ModelDynamicDetail = React.forwardRef<
             formProps={updateFormProps.formProps}
             state={updateFormProps.state}
             behavior={updateFormProps.behavior}
-            layout={updateFormProps.layout}
+            layout={resolvedUpdateFormLayout as typeof updateFormProps.layout}
             actions={updateFormProps.actions}
             devtools={updateFormProps.devtools}
             title={updateFormProps.title}
@@ -2517,14 +2559,13 @@ export const ModelDynamicDetail = React.forwardRef<
           if (!activeMutationAction) return;
           setExecutingMutationAction(true);
           void executeMetadataMutation(activeMutationAction, payload ?? {})
-            .then(async () => {
+            .then(() => {
               toast.success(
                 activeMutationAction.mutation.successMessage ||
                   "Action executed successfully.",
               );
               setMutationDialogOpen(false);
               setActiveMutationAction(null);
-              await refetch();
             })
             .catch((error: unknown) => {
               toast.error(getErrorMessage(error, "Action execution failed."));

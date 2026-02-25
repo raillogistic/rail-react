@@ -1311,13 +1311,14 @@ export function StoreOrderUpdateModelFormExample({
         // excludeFields={["price"]}
         formProps={{
           layout: {
+            variant: "popup",
             ordering: {
               enabled: true,
               // tailing: ["notes", "metadata"],
               order: ["name", "sku"],
             },
           },
-          devtools: { enabled: true },
+          // devtools: { enabled: true },
         }}
       />
     </section>

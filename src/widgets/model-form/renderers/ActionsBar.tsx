@@ -67,7 +67,7 @@ export const ActionsBar = <TValues extends Record<string, any>>({
     "z-50 flex flex-wrap items-center justify-between gap-4 p-4",
     "transition-all duration-300 ease-in-out",
     isPopup
-      ? "mt-4 border-t bg-muted/30"
+      ? "mt-4 border-t border-border/20 bg-transparent shadow-none backdrop-blur-0"
       : "sticky bottom-0 mt-6 -mx-4 border-t bg-background/80 backdrop-blur-md shadow-[0_-4px_12px_rgba(0,0,0,0.03)]"
   );
 

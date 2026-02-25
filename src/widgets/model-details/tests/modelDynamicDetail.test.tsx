@@ -14,6 +14,7 @@ const useMetadataMock = vi.fn();
 const fetchMetadataSnapshotMock = vi.fn();
 const useModelSingleQueryMock = vi.fn();
 const useModelDeleteMutationMock = vi.fn();
+let latestModelFormProps: Record<string, unknown> | null = null;
 
 vi.mock("@apollo/client", async () => {
   const actual = await vi.importActual<typeof import("@apollo/client")>(
@@ -41,7 +42,10 @@ vi.mock("@/shared/api/graphql/graphql/mutations/hooks/useModelDeleteMutation", (
 }));
 
 vi.mock("@/widgets/model-form", () => ({
-  ModelForm: () => <div data-testid="model-form-mock" />,
+  ModelForm: (props: Record<string, unknown>) => {
+    latestModelFormProps = props;
+    return <div data-testid="model-form-mock" />;
+  },
 }));
 
 const baseMetadata = {
@@ -191,6 +195,7 @@ function setupDefaultMocks(overrides?: {
 describe("ModelDynamicDetail", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    latestModelFormProps = null;
     apolloClientMock.mutate.mockResolvedValue({
       data: {
         response: {
@@ -941,6 +946,95 @@ describe("ModelDynamicDetail", () => {
     });
   });
 
+  it("defaults update dialog form layout variant to popup", async () => {
+    const user = userEvent.setup();
+    setupDefaultMocks();
+
+    render(<ModelDynamicDetail app="store" model="Product" id="1" />);
+
+    const updateButton = document
+      .querySelector("button .lucide-pencil")
+      ?.closest("button");
+    expect(updateButton).toBeTruthy();
+    await user.click(updateButton as HTMLButtonElement);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("model-form-mock")).toBeInTheDocument();
+    });
+
+    const layout = latestModelFormProps?.layout as
+      | { variant?: string }
+      | undefined;
+    expect(layout?.variant).toBe("popup");
+  });
+
+  it("preserves popup variant from update formProps layout when direct layout omits variant", async () => {
+    const user = userEvent.setup();
+    setupDefaultMocks();
+
+    render(
+      <ModelDynamicDetail
+        app="store"
+        model="Product"
+        id="1"
+        baseDetail={{
+          actions: {
+            updateForm: {
+              modelFormProps: {
+                formProps: {
+                  layout: {
+                    variant: "popup",
+                    columns: 1,
+                  },
+                },
+                layout: {
+                  columns: 2,
+                  variant: undefined as unknown as "default",
+                },
+              },
+            },
+          },
+        }}
+      />,
+    );
+
+    const updateButton = document
+      .querySelector("button .lucide-pencil")
+      ?.closest("button");
+    expect(updateButton).toBeTruthy();
+    await user.click(updateButton as HTMLButtonElement);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("model-form-mock")).toBeInTheDocument();
+    });
+
+    const layout = latestModelFormProps?.layout as
+      | { variant?: string; columns?: number }
+      | undefined;
+    expect(layout?.variant).toBe("popup");
+    expect(layout?.columns).toBe(2);
+  });
+
+  it("does not refetch detail data when opening the update action", async () => {
+    const user = userEvent.setup();
+    const { metadataRefetch, queryRefetch } = setupDefaultMocks();
+
+    render(<ModelDynamicDetail app="store" model="Product" id="1" />);
+
+    const updateButton = document
+      .querySelector("button .lucide-pencil")
+      ?.closest("button");
+    expect(updateButton).toBeTruthy();
+    await user.click(updateButton as HTMLButtonElement);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("model-form-mock")).toBeInTheDocument();
+    });
+
+    expect(metadataRefetch).not.toHaveBeenCalled();
+    expect(queryRefetch).not.toHaveBeenCalled();
+  });
+
   it("executes delete mutation after confirmation", async () => {
     const user = userEvent.setup();
     const { deleteExecute } = setupDefaultMocks();
@@ -1007,8 +1101,11 @@ describe("ModelDynamicDetail", () => {
       />,
     );
 
-    const actionsButton = await screen.findByRole("button", { name: /actions/i });
-    await user.click(actionsButton);
+    const actionsButton = document
+      .querySelector("button .lucide-zap")
+      ?.closest("button");
+    expect(actionsButton).toBeTruthy();
+    await user.click(actionsButton as HTMLButtonElement);
 
     await waitFor(() => {
       expect(screen.getByText("Publish Product")).toBeInTheDocument();
@@ -1075,13 +1172,63 @@ describe("ModelDynamicDetail", () => {
       />,
     );
 
-    const actionsButton = await screen.findByRole("button", { name: /actions/i });
-    await user.click(actionsButton);
+    const actionsButton = document
+      .querySelector("button .lucide-zap")
+      ?.closest("button");
+    expect(actionsButton).toBeTruthy();
+    await user.click(actionsButton as HTMLButtonElement);
 
     const publishItem = await screen.findByRole("menuitem", {
       name: "Publish Product",
     });
     expect(publishItem).toBeEnabled();
+  });
+
+  it("does not refetch detail data after custom action mutation success", async () => {
+    const user = userEvent.setup();
+    const { metadataRefetch, queryRefetch } = setupDefaultMocks({
+      metadata: {
+        ...baseMetadata,
+        mutations: [
+          {
+            name: "publishProduct",
+            operation: "custom",
+            mutationType: "custom",
+            methodName: "publish_product",
+            description: "Publish product",
+            inputFields: [],
+            allowed: true,
+            requiredPermissions: ["store.publish_product"],
+            action: JSON.stringify({ button_title: "Publish Product" }),
+          },
+        ],
+      },
+    });
+
+    render(<ModelDynamicDetail app="store" model="Product" id="1" />);
+
+    const actionsButton = document
+      .querySelector("button .lucide-zap")
+      ?.closest("button");
+    expect(actionsButton).toBeTruthy();
+    await user.click(actionsButton as HTMLButtonElement);
+
+    const publishItem = await screen.findByRole("menuitem", {
+      name: "Publish Product",
+    });
+    await user.click(publishItem);
+
+    const confirmButton = await screen.findByRole("button", {
+      name: /confirm/i,
+    });
+    await user.click(confirmButton);
+
+    await waitFor(() => {
+      expect(apolloClientMock.mutate).toHaveBeenCalled();
+    });
+
+    expect(metadataRefetch).not.toHaveBeenCalled();
+    expect(queryRefetch).not.toHaveBeenCalled();
   });
 
   it("renders header title from name by default", async () => {
