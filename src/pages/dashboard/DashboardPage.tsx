@@ -41,6 +41,7 @@ function buildOverviewFields(metadata: ModelMetadata | null): string[] {
     "name",
     "sku",
     "status",
+    "is_active",
     "price",
     "stock",
     "createdAt",
@@ -256,7 +257,7 @@ export default function DashboardPage() {
             order: 2,
           },
         ],
-        includeFields: overviewFields,
+        // includeFields: overviewFields,
         sections: buildTabbedSections(overviewFields),
         customSections: [
           {
@@ -303,7 +304,7 @@ export default function DashboardPage() {
             ),
           },
         ],
-        includeUnassignedFields: false,
+        includeUnassignedFields: true,
         defaultColumns: 3,
       },
       nestedFields,
@@ -326,25 +327,25 @@ export default function DashboardPage() {
     [nestedFields, overviewFields],
   );
 
-  if (metadataState.loading && !metadataState.metadata) {
-    return (
-      <div className="flex h-full w-full min-h-0 flex-col gap-4 p-4">
-        <SectionSkeleton lines={7} />
-      </div>
-    );
-  }
+  // if (metadataState.loading && !metadataState.metadata) {
+  //   return (
+  //     <div className="flex h-full w-full min-h-0 flex-col gap-4 p-4">
+  //       <SectionSkeleton lines={7} />
+  //     </div>
+  //   );
+  // }
 
-  if (metadataState.error && !metadataState.metadata) {
-    return (
-      <div className="flex h-full w-full min-h-0 flex-col gap-4 p-4">
-        <SectionErrorState
-          title="store.Product metadata unavailable"
-          description={metadataState.error.message}
-          onRetry={() => metadataState.refetch().then(() => undefined)}
-        />
-      </div>
-    );
-  }
+  // if (metadataState.error && !metadataState.metadata) {
+  //   return (
+  //     <div className="flex h-full w-full min-h-0 flex-col gap-4 p-4">
+  //       <SectionErrorState
+  //         title="store.Product metadata unavailable"
+  //         description={metadataState.error.message}
+  //         onRetry={() => metadataState.refetch().then(() => undefined)}
+  //       />
+  //     </div>
+  //   );
+  // }
 
   return (
     <div className="container mx-auto flex h-full w-full min-h-0 flex-col gap-4 p-16">

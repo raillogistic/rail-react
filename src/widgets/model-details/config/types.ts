@@ -277,6 +277,11 @@ export type ModelDynamicDetailActionsConfig = {
     modalTitle?: string;
     width?: string;
     height?: string;
+    /**
+     * Refetches detail + metadata after a successful update form submit.
+     * Defaults to `true`.
+     */
+    refetchOnSubmitSuccess?: boolean;
     modelFormProps?: Partial<
       Omit<ModelFormProps<Record<string, unknown>>, "app" | "model">
     >;

@@ -81,7 +81,12 @@ export const ActionsBar = <TValues extends Record<string, any>>({
 
   const renderedExtra =
     typeof extra === "function"
-      ? extra({ form, isSubmitting, canSubmit })
+      ? extra({
+          form,
+          isSubmitting,
+          canSubmit,
+          submitOutcome: submitOutcome ?? undefined,
+        })
       : extra;
 
   const showUndoRedo = undoRedo?.enabled && undoRedo?.showInActionBar !== false && history;

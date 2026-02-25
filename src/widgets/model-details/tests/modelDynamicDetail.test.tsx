@@ -1,3 +1,4 @@
+import * as React from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
@@ -44,7 +45,55 @@ vi.mock("@/shared/api/graphql/graphql/mutations/hooks/useModelDeleteMutation", (
 vi.mock("@/widgets/model-form", () => ({
   ModelForm: (props: Record<string, unknown>) => {
     latestModelFormProps = props;
-    return <div data-testid="model-form-mock" />;
+    const [isSubmitting, setIsSubmitting] = React.useState(false);
+    const [submitOutcome, setSubmitOutcome] = React.useState<
+      { ok: boolean; conflict: boolean; errorCount: number } | null
+    >(null);
+    const actions = props.actions as
+      | {
+          extra?:
+            | React.ReactNode
+            | ((ctx: {
+                form: unknown;
+                isSubmitting: boolean;
+                canSubmit: boolean;
+                submitOutcome?: {
+                  ok: boolean;
+                  conflict: boolean;
+                  errorCount: number;
+                } | null;
+              }) => React.ReactNode);
+        }
+      | undefined;
+    const renderedExtra =
+      typeof actions?.extra === "function"
+        ? actions.extra({
+            form: {},
+            isSubmitting,
+            canSubmit: true,
+            submitOutcome,
+          })
+        : actions?.extra;
+
+    return (
+      <div data-testid="model-form-mock">
+        <button
+          type="button"
+          data-testid="model-form-submit-success-mock"
+          onClick={() => {
+            setIsSubmitting(true);
+            setSubmitOutcome(null);
+            setTimeout(() => {
+              setIsSubmitting(false);
+              setSubmitOutcome({ ok: true, conflict: false, errorCount: 0 });
+            }, 0);
+          }}
+        >
+          Submit success mock
+        </button>
+        {renderedExtra}
+      </div>
+    );
   },
 }));
 
@@ -1033,6 +1082,67 @@ describe("ModelDynamicDetail", () => {
 
     expect(metadataRefetch).not.toHaveBeenCalled();
     expect(queryRefetch).not.toHaveBeenCalled();
+  });
+
+  it("refetches detail data after successful update submit by default", async () => {
+    const user = userEvent.setup();
+    const { metadataRefetch, queryRefetch } = setupDefaultMocks();
+
+    render(<ModelDynamicDetail app="store" model="Product" id="1" />);
+
+    const updateButton = document
+      .querySelector("button .lucide-pencil")
+      ?.closest("button");
+    expect(updateButton).toBeTruthy();
+    await user.click(updateButton as HTMLButtonElement);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("model-form-mock")).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByTestId("model-form-submit-success-mock"));
+
+    await waitFor(() => {
+      expect(metadataRefetch).toHaveBeenCalled();
+      expect(queryRefetch).toHaveBeenCalled();
+    });
+  });
+
+  it("supports disabling refetch after successful update submit", async () => {
+    const user = userEvent.setup();
+    const { metadataRefetch, queryRefetch } = setupDefaultMocks();
+
+    render(
+      <ModelDynamicDetail
+        app="store"
+        model="Product"
+        id="1"
+        baseDetail={{
+          actions: {
+            updateForm: {
+              refetchOnSubmitSuccess: false,
+            },
+          },
+        }}
+      />,
+    );
+
+    const updateButton = document
+      .querySelector("button .lucide-pencil")
+      ?.closest("button");
+    expect(updateButton).toBeTruthy();
+    await user.click(updateButton as HTMLButtonElement);
+
+    await waitFor(() => {
+      expect(screen.getByTestId("model-form-mock")).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByTestId("model-form-submit-success-mock"));
+
+    await waitFor(() => {
+      expect(metadataRefetch).not.toHaveBeenCalled();
+      expect(queryRefetch).not.toHaveBeenCalled();
+    });
   });
 
   it("executes delete mutation after confirmation", async () => {

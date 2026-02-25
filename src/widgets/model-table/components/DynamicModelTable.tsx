@@ -20,6 +20,7 @@ import {
   DYNAMIC_TABLE_SELECTION_COLUMN_ID,
   type DynamicTableColumnInput,
 } from "@/widgets/dynamic-table";
+import { createInitialFilterState } from "@/widgets/filters/state";
 import type { DynamicTableFeatureFlags } from "@/widgets/dynamic-table";
 import { TooltipProvider } from "@/shared/ui/kit/tooltip";
 import { cn } from "@/shared/utils";
@@ -38,6 +39,7 @@ import type {
 } from "../types";
 import type {
   DynamicModelTableHandle,
+  DynamicModelTableInitVariables,
   DynamicModelTableProps,
   DynamicModelTableSnapshot,
   ModelTableFilterPanelProps,
@@ -189,12 +191,110 @@ function localizeTableErrorMessage(error: Error): string {
  */
 function toOrderByEntries(value: unknown): string[] {
   if (!Array.isArray(value)) {
+    if (typeof value === "string") {
+      const trimmed = value.trim();
+      return trimmed ? [trimmed] : [];
+    }
     return [];
   }
   return value
     .filter((entry): entry is string => typeof entry === "string")
     .map((entry) => entry.trim())
     .filter(Boolean);
+}
+
+/**
+ * Normalizes unknown input to a trimmed string-array payload.
+ */
+function toStringEntries(value: unknown): string[] {
+  if (typeof value === "string") {
+    const trimmed = value.trim();
+    return trimmed ? [trimmed] : [];
+  }
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value
+    .filter((entry): entry is string => typeof entry === "string")
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+}
+
+/**
+ * Normalizes unknown numeric input to a positive integer.
+ */
+function toPositiveInteger(value: unknown): number | null {
+  if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) {
+    return null;
+  }
+  return Math.floor(value);
+}
+
+type ResolvedInitialTableState = {
+  page: number;
+  perPage: number;
+  filterVariables: Record<string, unknown>;
+  advancedFilters: ReturnType<typeof createInitialFilterState>;
+};
+
+/**
+ * Normalizes DynamicModelTable initVariables into table-provider initial state.
+ */
+function resolveInitialTableState(
+  initVariables?: DynamicModelTableInitVariables,
+): ResolvedInitialTableState {
+  const filterVariables = isRecord(initVariables) ? { ...initVariables } : {};
+
+  const page = toPositiveInteger(filterVariables.page) ?? 1;
+  const perPage = toPositiveInteger(
+    filterVariables.perPage ?? filterVariables.per_page,
+  ) ?? 20;
+  delete filterVariables.page;
+  delete filterVariables.perPage;
+  delete filterVariables.per_page;
+
+  const normalizedPresets = (() => {
+    const explicitPresets = toStringEntries(filterVariables.presets);
+    if (explicitPresets.length > 0) {
+      return explicitPresets;
+    }
+    return toStringEntries(filterVariables.preset);
+  })();
+  if (normalizedPresets.length > 0) {
+    filterVariables.presets = normalizedPresets;
+  } else {
+    delete filterVariables.presets;
+  }
+  delete filterVariables.preset;
+
+  const normalizedDistinctOn = toStringEntries(filterVariables.distinctOn);
+  if (normalizedDistinctOn.length > 0) {
+    filterVariables.distinctOn = normalizedDistinctOn;
+  } else {
+    delete filterVariables.distinctOn;
+  }
+
+  const normalizedOrderBy = toOrderByEntries(
+    filterVariables.orderBy ?? filterVariables.order_by,
+  );
+  if (normalizedOrderBy.length > 0) {
+    filterVariables.orderBy = normalizedOrderBy;
+  } else {
+    delete filterVariables.orderBy;
+  }
+  delete filterVariables.order_by;
+
+  const advancedFilters = createInitialFilterState();
+  advancedFilters.selectedPresets = normalizedPresets;
+  advancedFilters.distinctOn = normalizedDistinctOn;
+  advancedFilters.orderBy = normalizedOrderBy;
+
+  return {
+    page,
+    perPage,
+    filterVariables,
+    advancedFilters,
+  };
 }
 
 /**
@@ -1104,10 +1204,14 @@ export const DynamicModelTable = forwardRef<
   DynamicModelTableHandle,
   DynamicModelTableProps
 >(function DynamicModelTable(
-  { app, model, filterPanel, baseTable }: DynamicModelTableProps,
+  { app, model, filterPanel, baseTable, initVariables }: DynamicModelTableProps,
   ref,
 ) {
   const tableInstanceKey = `${app}:${model}`;
+  const initialTableState = useMemo(
+    () => resolveInitialTableState(initVariables),
+    [initVariables],
+  );
   const refetchRef = useRef<BaseModelTableRefetch | undefined>(undefined);
   const snapshotRef = useRef<DynamicModelTableSnapshot>({
     data: [],
@@ -1194,6 +1298,17 @@ export const DynamicModelTable = forwardRef<
           initialState={{
             density: baseTable?.view?.defaultDensity ?? "compact",
             wrapCells: baseTable?.view?.defaultWrapCells ?? false,
+            pagination: {
+              page: initialTableState.page,
+              perPage: initialTableState.perPage,
+              total: 0,
+              numPages: 0,
+              totalKnown: true,
+              hasNextPage: false,
+              hasPreviousPage: false,
+            },
+            advancedFilters: initialTableState.advancedFilters,
+            filterVariables: initialTableState.filterVariables,
           }}
         >
           <DynamicBaseTableContent

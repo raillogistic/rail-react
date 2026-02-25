@@ -289,6 +289,25 @@ const DATA_MOCK = {
   },
 };
 
+const DATA_MOCK_WITH_INIT_VARIABLES = {
+  request: {
+    query: DATA_QUERY,
+    variables: {
+      page: 2,
+      perPage: 10,
+      orderBy: ["-username"],
+      quick: undefined,
+      where: { status: "PAID" },
+      presets: ["yesterday"],
+      distinctOn: undefined,
+      skipCount: false,
+    },
+  },
+  result: {
+    data: DATA_MOCK.result.data,
+  },
+};
+
 function buildMetadataMock(templates: unknown[] = []) {
   return {
     request: {
@@ -415,6 +434,36 @@ describe("DynamicModelTable integration", () => {
 
     await waitFor(() => {
       expect(onExpandedChange).toHaveBeenCalled();
+    });
+  });
+
+  it("applies initVariables to the initial query request", async () => {
+    render(
+      <MockedProvider
+        mocks={[buildMetadataMock(), DATA_MOCK_WITH_INIT_VARIABLES]}
+      >
+        <MemoryRouter>
+          <DynamicModelTable
+            app="auth"
+            model="User"
+            initVariables={{
+              preset: "yesterday",
+              where: { status: "PAID" },
+              page: 2,
+              perPage: 10,
+              orderBy: "-username",
+            }}
+          />
+        </MemoryRouter>
+      </MockedProvider>,
+    );
+
+    await waitFor(() => {
+      expect(screen.getAllByText("Username").length).toBeGreaterThan(0);
+    });
+
+    await waitFor(() => {
+      expect(screen.getAllByText("alice").length).toBeGreaterThan(0);
     });
   });
 });

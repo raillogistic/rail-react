@@ -127,6 +127,49 @@ export type ModelTableV2ViewOptions = {
 export type ModelTableV2ExpandConfig =
   DynamicTableExpandConfig<Record<string, unknown>>;
 
+/**
+ * Initial query variables supported by DynamicModelTable.
+ * Unknown keys are preserved and forwarded through `filterVariables`.
+ */
+export type DynamicModelTableInitVariables = {
+  /**
+   * Initial where clause payload.
+   */
+  where?: unknown;
+  /**
+   * Single preset alias converted to `presets`.
+   */
+  preset?: string;
+  /**
+   * Initial presets payload.
+   */
+  presets?: string[] | string;
+  /**
+   * Initial distinct-on fields payload.
+   */
+  distinctOn?: string[] | string;
+  /**
+   * Initial order-by payload.
+   */
+  orderBy?: string[] | string;
+  /**
+   * Legacy snake_case order-by alias.
+   */
+  order_by?: string[] | string;
+  /**
+   * Initial 1-based page number.
+   */
+  page?: number;
+  /**
+   * Initial page size.
+   */
+  perPage?: number;
+  /**
+   * Legacy snake_case page-size alias.
+   */
+  per_page?: number;
+} & Record<string, unknown>;
+
 export interface BaseModelTableProps {
   app: string;
   model: string;
@@ -157,6 +200,10 @@ export interface ModelTableV2Props {
   model: string;
   filterPanel?: ModelTableFilterPanelProps;
   baseTable?: Omit<BaseModelTableProps, "app" | "model" | "children">;
+  /**
+   * Initial query variables used for the first table request.
+   */
+  initVariables?: DynamicModelTableInitVariables;
 }
 
 /**

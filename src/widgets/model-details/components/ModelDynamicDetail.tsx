@@ -38,7 +38,10 @@ import {
   getValueByPath,
   normalizeObjectPath,
 } from "@/widgets/model-form/utils/objectPath";
-import type { FormSchema } from "@/widgets/model-form/inputs/types";
+import type {
+  FormActionsConfig,
+  FormSchema,
+} from "@/widgets/model-form/inputs/types";
 import {
   ActionDialog,
   PrintDialog,
@@ -178,6 +181,44 @@ type ResolvedHeaderActionEntry = {
   position: number;
   render: ModelDynamicDetailHeaderActionConfig["render"];
 };
+
+type FormSubmitOutcome = NonNullable<
+  FormActionsConfig<Record<string, unknown>>["submitOutcome"]
+>;
+type FormActionsExtraRenderer = Extract<
+  NonNullable<FormActionsConfig<Record<string, unknown>>["extra"]>,
+  (...args: any[]) => React.ReactNode
+>;
+type FormActionsExtraContext = Parameters<FormActionsExtraRenderer>[0];
+
+type UpdateSubmitRefetchProbeProps = {
+  enabled: boolean;
+  isSubmitting: boolean;
+  submitOutcome?: FormSubmitOutcome | null;
+  onRefresh: () => Promise<unknown>;
+};
+
+/**
+ * Triggers one detail refresh after each successful update submit cycle.
+ */
+function UpdateSubmitRefetchProbe({
+  enabled,
+  isSubmitting,
+  submitOutcome,
+  onRefresh,
+}: UpdateSubmitRefetchProbeProps): null {
+  const wasSubmittingRef = React.useRef(false);
+
+  React.useEffect(() => {
+    const didFinishSubmitting = wasSubmittingRef.current && !isSubmitting;
+    if (enabled && didFinishSubmitting && submitOutcome?.ok) {
+      void onRefresh();
+    }
+    wasSubmittingRef.current = isSubmitting;
+  }, [enabled, isSubmitting, onRefresh, submitOutcome?.ok]);
+
+  return null;
+}
 
 /**
  * Merges model-form layout sources while ignoring undefined override values.
@@ -1607,6 +1648,35 @@ export const ModelDynamicDetail = React.forwardRef<
     () => actionsConfig.updateForm?.modelFormProps ?? {},
     [actionsConfig.updateForm?.modelFormProps],
   );
+  const resolvedUpdateFormActions = React.useMemo(() => {
+    const sourceActions = updateFormProps.actions;
+    const refetchOnSubmitSuccess =
+      actionsConfig.updateForm?.refetchOnSubmitSuccess !== false;
+
+    if (!refetchOnSubmitSuccess) {
+      return sourceActions;
+    }
+
+    const sourceExtra = sourceActions?.extra;
+    return {
+      ...(sourceActions ?? {}),
+      extra: (ctx: FormActionsExtraContext) => (
+        <>
+          {typeof sourceExtra === "function" ? sourceExtra(ctx) : sourceExtra}
+          <UpdateSubmitRefetchProbe
+            enabled
+            isSubmitting={ctx.isSubmitting}
+            submitOutcome={ctx.submitOutcome}
+            onRefresh={refetch}
+          />
+        </>
+      ),
+    } as typeof updateFormProps.actions;
+  }, [
+    actionsConfig.updateForm?.refetchOnSubmitSuccess,
+    refetch,
+    updateFormProps.actions,
+  ]);
   const resolvedUpdateFormLayout = React.useMemo(
     () => {
       const merged = mergeModelFormLayoutConfig(
@@ -2488,7 +2558,7 @@ export const ModelDynamicDetail = React.forwardRef<
             state={updateFormProps.state}
             behavior={updateFormProps.behavior}
             layout={resolvedUpdateFormLayout as typeof updateFormProps.layout}
-            actions={updateFormProps.actions}
+            actions={resolvedUpdateFormActions}
             devtools={updateFormProps.devtools}
             title={updateFormProps.title}
             description={updateFormProps.description}

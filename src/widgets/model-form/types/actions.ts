@@ -25,6 +25,11 @@ export interface FormActionsConfig<TValues = Record<string, any>> {
         form: UseFormReturn<TValues>;
         isSubmitting: boolean;
         canSubmit: boolean;
+        submitOutcome?: {
+          ok: boolean;
+          conflict: boolean;
+          errorCount: number;
+        } | null;
       }) => React.ReactNode);
   /** Confirmation dialog before submit */
   confirmSubmit?: {
