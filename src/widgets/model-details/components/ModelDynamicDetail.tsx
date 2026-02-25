@@ -53,7 +53,12 @@ import {
   AlertDialogTitle,
 } from "@/shared/ui/kit/alert-dialog";
 import { Button } from "@/shared/ui/kit/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/shared/ui/kit/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/shared/ui/kit/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -180,7 +185,10 @@ function toGraphqlPath(path: string): string {
     .join(".");
 }
 
-function ensureSelectionNode(tree: SelectionTreeNode, key: string): SelectionTreeNode {
+function ensureSelectionNode(
+  tree: SelectionTreeNode,
+  key: string,
+): SelectionTreeNode {
   if (!tree[key] || tree[key] === true) {
     tree[key] = {};
   }
@@ -230,7 +238,10 @@ function serializeSelectionTree(tree: SelectionTreeNode, indent = 0): string {
       if (child === true) {
         return `${prefix}${key}`;
       }
-      const nested = serializeSelectionTree(child as SelectionTreeNode, indent + 2);
+      const nested = serializeSelectionTree(
+        child as SelectionTreeNode,
+        indent + 2,
+      );
       return `${prefix}${key} {\n${nested}\n${prefix}}`;
     })
     .join("\n");
@@ -261,9 +272,9 @@ function parseDefaultValue(value: unknown): unknown {
     trimmed === "false" ||
     trimmed === "null" ||
     /^-?\d+(?:\.\d+)?$/.test(trimmed) ||
-    ((trimmed.startsWith("{") && trimmed.endsWith("}")) ||
-      (trimmed.startsWith("[") && trimmed.endsWith("]")) ||
-      (trimmed.startsWith('"') && trimmed.endsWith('"')))
+    (trimmed.startsWith("{") && trimmed.endsWith("}")) ||
+    (trimmed.startsWith("[") && trimmed.endsWith("]")) ||
+    (trimmed.startsWith('"') && trimmed.endsWith('"'))
   ) {
     try {
       return JSON.parse(trimmed);
@@ -285,8 +296,12 @@ function humanizeLabel(value: string): string {
   return withSpaces.charAt(0).toUpperCase() + withSpaces.slice(1);
 }
 
-function resolveFormFieldType(field: MutationInputField): FormSchema["fields"][number]["type"] {
-  const normalized = String(field.graphqlType || field.fieldType || "").toLowerCase();
+function resolveFormFieldType(
+  field: MutationInputField,
+): FormSchema["fields"][number]["type"] {
+  const normalized = String(
+    field.graphqlType || field.fieldType || "",
+  ).toLowerCase();
   if (field.choices && field.choices.length > 0) return "select";
   if (normalized.includes("bool")) return "checkbox";
   if (
@@ -304,8 +319,12 @@ function resolveFormFieldType(field: MutationInputField): FormSchema["fields"][n
   return "text";
 }
 
-function normalizeMutationInputFields(mutation: MutationMetadata): MutationInputField[] {
-  const source = Array.isArray(mutation.inputFields) ? mutation.inputFields : [];
+function normalizeMutationInputFields(
+  mutation: MutationMetadata,
+): MutationInputField[] {
+  const source = Array.isArray(mutation.inputFields)
+    ? mutation.inputFields
+    : [];
 
   return source
     .filter((field): field is MutationInputField => isRecord(field))
@@ -328,7 +347,9 @@ function normalizeMutationInputFields(mutation: MutationMetadata): MutationInput
             label: String(choice.label ?? choice.value),
           };
         })
-        .filter((choice): choice is { value: string; label: string } => Boolean(choice));
+        .filter((choice): choice is { value: string; label: string } =>
+          Boolean(choice),
+        );
 
       return {
         ...field,
@@ -358,7 +379,9 @@ function buildMutationSchema(fields: MutationInputField[]): FormSchema | null {
   };
 }
 
-function buildMutationDefaults(fields: MutationInputField[]): Record<string, unknown> {
+function buildMutationDefaults(
+  fields: MutationInputField[],
+): Record<string, unknown> {
   return fields.reduce<Record<string, unknown>>((acc, field) => {
     const key = field.name || field.fieldName;
     if (!key) return acc;
@@ -390,7 +413,9 @@ function buildMutationOperationNames(
     candidates.add(String(mutation.name));
   }
 
-  const methodToken = mutation.methodName ? toGraphqlFieldName(mutation.methodName) : "";
+  const methodToken = mutation.methodName
+    ? toGraphqlFieldName(mutation.methodName)
+    : "";
   if (methodToken) {
     candidates.add(`${methodToken}${mutation.modelName || modelName}`);
   }
@@ -414,8 +439,13 @@ function buildMutationLabel(mutation: MutationMetadata): string {
   return humanizeLabel(mutation.methodName || mutation.name || "Action");
 }
 
-function normalizeGraphqlType(rawType: string | undefined, required: boolean): string {
-  const base = String(rawType || "String").replace(/\s+/g, "").replace(/!$/, "");
+function normalizeGraphqlType(
+  rawType: string | undefined,
+  required: boolean,
+): string {
+  const base = String(rawType || "String")
+    .replace(/\s+/g, "")
+    .replace(/!$/, "");
   if (!base) {
     return required ? "String!" : "String";
   }
@@ -431,7 +461,11 @@ function buildMutationDocument(options: {
   const variableDefinitions: string[] = ["$id: ID!"];
   const argumentMappings: string[] = ["id: $id"];
 
-  if (options.inputFields.length > 0 && options.useInputObject && options.inputType) {
+  if (
+    options.inputFields.length > 0 &&
+    options.useInputObject &&
+    options.inputType
+  ) {
     const inputTypeName = normalizeGraphqlType(options.inputType, true);
     variableDefinitions.push(`$input: ${inputTypeName}`);
     argumentMappings.push("input: $input");
@@ -471,7 +505,9 @@ function extractGraphqlErrors(payload: unknown): Array<{ message?: string }> {
   if (!Array.isArray(payload)) return [];
   return payload
     .filter((entry): entry is { message?: string } => isRecord(entry))
-    .map((entry) => ({ message: typeof entry.message === "string" ? entry.message : undefined }));
+    .map((entry) => ({
+      message: typeof entry.message === "string" ? entry.message : undefined,
+    }));
 }
 
 function pickResponsePayload(rawData: unknown): MutationResponsePayload | null {
@@ -492,13 +528,17 @@ function pickResponsePayload(rawData: unknown): MutationResponsePayload | null {
   return null;
 }
 
-function resolveFieldLookup(metadata: ModelMetadata | null | undefined): Map<string, FieldMetadata> {
+function resolveFieldLookup(
+  metadata: ModelMetadata | null | undefined,
+): Map<string, FieldMetadata> {
   const lookup = new Map<string, FieldMetadata>();
   if (!metadata?.fields) return lookup;
 
   metadata.fields.forEach((field) => {
     const baseName = toGraphqlFieldName(field.name || field.fieldName || "");
-    const fieldName = field.fieldName ? toGraphqlFieldName(field.fieldName) : "";
+    const fieldName = field.fieldName
+      ? toGraphqlFieldName(field.fieldName)
+      : "";
 
     [field.name, field.fieldName, baseName, fieldName]
       .map((entry) => String(entry || "").trim())
@@ -518,8 +558,12 @@ function resolveRelationshipLookup(
   if (!metadata?.relationships) return lookup;
 
   metadata.relationships.forEach((relation) => {
-    const baseName = toGraphqlFieldName(relation.name || relation.fieldName || "");
-    const fieldName = relation.fieldName ? toGraphqlFieldName(relation.fieldName) : "";
+    const baseName = toGraphqlFieldName(
+      relation.name || relation.fieldName || "",
+    );
+    const fieldName = relation.fieldName
+      ? toGraphqlFieldName(relation.fieldName)
+      : "";
 
     [relation.name, relation.fieldName, baseName, fieldName]
       .map((entry) => String(entry || "").trim())
@@ -532,7 +576,9 @@ function resolveRelationshipLookup(
   return lookup;
 }
 
-function resolveDefaultRelationSelection(relation: RelationshipMetadata): string[] {
+function resolveDefaultRelationSelection(
+  relation: RelationshipMetadata,
+): string[] {
   const defaults = new Set<string>(["id", "desc"]);
   const rawLookup = String(relation.lookupField || "").trim();
   const loweredLookup = rawLookup.toLowerCase();
@@ -548,7 +594,12 @@ function resolveDefaultRelationSelection(relation: RelationshipMetadata): string
   if (!shouldIgnoreLookup) {
     const lookup = toGraphqlFieldName(rawLookup);
     const isSafeToken = Boolean(lookup) && !lookup.startsWith("_");
-    if (isSafeToken && lookup !== "id" && lookup !== "desc" && lookup !== "str") {
+    if (
+      isSafeToken &&
+      lookup !== "id" &&
+      lookup !== "desc" &&
+      lookup !== "str"
+    ) {
       defaults.add(lookup);
     }
   }
@@ -562,11 +613,20 @@ function toPermissionList(value: unknown): string[] {
     .filter((entry) => entry.length > 0);
 }
 
+/**
+ * Returns true when runtime exposes a local permission source.
+ */
+function hasRuntimePermissionSource(runtime: SectionRuntimeCtx): boolean {
+  if (typeof runtime.can === "function") return true;
+  return runtime.permissions !== undefined;
+}
+
 function resolveRuntimeCan(
   permissionKeys: string[],
   runtime: SectionRuntimeCtx,
 ): boolean {
   if (!permissionKeys.length) return true;
+  if (!hasRuntimePermissionSource(runtime)) return true;
   return hasRequiredPermissions(permissionKeys, runtime);
 }
 function inferFieldKind(
@@ -598,7 +658,10 @@ function normalizeFieldConfig(
   entry: string | ModelDynamicDetailFieldConfig,
   options?: {
     pathPrefix?: string;
-    fieldOverrides?: Record<string, Omit<ModelDynamicDetailFieldConfig, "path">>;
+    fieldOverrides?: Record<
+      string,
+      Omit<ModelDynamicDetailFieldConfig, "path">
+    >;
     keepRelative?: boolean;
   },
 ): ResolvedFieldConfig {
@@ -606,7 +669,9 @@ function normalizeFieldConfig(
   const normalized = normalizePath(rawPath);
   const normalizedGraphql =
     options?.keepRelative === true ? normalized : toGraphqlPath(normalized);
-  const pathPrefix = options?.pathPrefix ? normalizePath(options.pathPrefix) : "";
+  const pathPrefix = options?.pathPrefix
+    ? normalizePath(options.pathPrefix)
+    : "";
 
   const path =
     pathPrefix && !normalizedGraphql.startsWith(`${pathPrefix}.`)
@@ -633,14 +698,20 @@ function resolveBaseFieldPaths(
   layout: ModelDynamicDetailConfig["layout"],
   nestedFields: Record<string, ModelDynamicDetailNestedConfig>,
 ): string[] {
-  const excluded = new Set((layout?.excludeFields ?? []).map((entry) => toGraphqlPath(entry)));
+  const excluded = new Set(
+    (layout?.excludeFields ?? []).map((entry) => toGraphqlPath(entry)),
+  );
 
   const relationLookup = resolveRelationshipLookup(metadata);
   const nestedRoots = new Set(
-    Object.keys(nestedFields).map((entry) => toGraphqlPath(entry).split(".")[0]),
+    Object.keys(nestedFields).map(
+      (entry) => toGraphqlPath(entry).split(".")[0],
+    ),
   );
 
-  const requested = (layout?.includeFields ?? []).map((entry) => toGraphqlPath(entry));
+  const requested = (layout?.includeFields ?? []).map((entry) =>
+    toGraphqlPath(entry),
+  );
   if (requested.length > 0) {
     return requested.filter((entry) => Boolean(entry) && !excluded.has(entry));
   }
@@ -683,8 +754,13 @@ function resolveNestedFieldConfigs(options: {
   if (fromConfig.length > 0) {
     return fromConfig.map((entry) => {
       const normalized = normalizeFieldConfig(entry, { keepRelative: true });
-      const relative = resolveRelativePathFromAbsolute(normalized.path, relationPath);
-      const absolutePath = relative ? `${relationPath}.${relative}` : relationPath;
+      const relative = resolveRelativePathFromAbsolute(
+        normalized.path,
+        relationPath,
+      );
+      const absolutePath = relative
+        ? `${relationPath}.${relative}`
+        : relationPath;
       return {
         ...normalized,
         path: relative || "id",
@@ -694,7 +770,9 @@ function resolveNestedFieldConfigs(options: {
   }
 
   const defaultFieldsFromMetadata = (relatedMetadata?.fields ?? [])
-    .filter((field) => field.readable !== false && field.visibility !== "hidden")
+    .filter(
+      (field) => field.readable !== false && field.visibility !== "hidden",
+    )
     .map((field) => toGraphqlPath(field.name || field.fieldName || ""))
     .filter(Boolean);
 
@@ -727,7 +805,9 @@ function resolveNestedFieldConfigs(options: {
   ];
 }
 
-function resolveRowPermissions(data: Record<string, unknown> | null): RowPermissionSnapshot {
+function resolveRowPermissions(
+  data: Record<string, unknown> | null,
+): RowPermissionSnapshot {
   const value = data?.rowPermissions;
   if (!isRecord(value)) {
     return {};
@@ -735,9 +815,13 @@ function resolveRowPermissions(data: Record<string, unknown> | null): RowPermiss
 
   return {
     canUpdate:
-      typeof value.canUpdate === "boolean" ? value.canUpdate : (value.canUpdate as boolean | null | undefined),
+      typeof value.canUpdate === "boolean"
+        ? value.canUpdate
+        : (value.canUpdate as boolean | null | undefined),
     canDelete:
-      typeof value.canDelete === "boolean" ? value.canDelete : (value.canDelete as boolean | null | undefined),
+      typeof value.canDelete === "boolean"
+        ? value.canDelete
+        : (value.canDelete as boolean | null | undefined),
     updateReason:
       typeof value.updateReason === "string" ? value.updateReason : null,
     deleteReason:
@@ -746,7 +830,10 @@ function resolveRowPermissions(data: Record<string, unknown> | null): RowPermiss
 }
 
 function evaluateOverrideBoolean(
-  source: boolean | ((ctx: ModelDynamicDetailActionContext) => boolean) | undefined,
+  source:
+    | boolean
+    | ((ctx: ModelDynamicDetailActionContext) => boolean)
+    | undefined,
   fallback: boolean,
   ctx: ModelDynamicDetailActionContext,
 ): boolean {
@@ -799,7 +886,10 @@ function buildSelectionInput(options: {
     const relationRoot = section.path.split(".")[0];
     ensureRelationDefaults(relationRoot);
 
-    if (section.config.selection && typeof section.config.selection === "string") {
+    if (
+      section.config.selection &&
+      typeof section.config.selection === "string"
+    ) {
       const blockBody = section.config.selection.trim();
       if (blockBody) {
         manualBlocks.push(`${section.path} {\n${blockBody}\n}`);
@@ -848,8 +938,14 @@ function buildLayoutSections(options: {
   const fieldOverrides = layout?.fieldOverrides ?? {};
   const defaultColumns = normalizeColumns(layout?.defaultColumns, 2);
 
-  const basePaths = resolveBaseFieldPaths(options.metadata, layout, options.config.nestedFields ?? {});
-  const baseFields = basePaths.map((path) => normalizeFieldConfig(path, { fieldOverrides }));
+  const basePaths = resolveBaseFieldPaths(
+    options.metadata,
+    layout,
+    options.config.nestedFields ?? {},
+  );
+  const baseFields = basePaths.map((path) =>
+    normalizeFieldConfig(path, { fieldOverrides }),
+  );
 
   const renderCtx = {
     app: options.app,
@@ -866,7 +962,10 @@ function buildLayoutSections(options: {
     .map<ResolvedLayoutSection>((section, sectionIndex) => {
       const rows = (section.rows ?? []).map((row, rowIndex) => ({
         id: row.id ?? `${section.id}:row:${rowIndex}`,
-        columns: normalizeColumns(row.columns ?? section.columns, defaultColumns),
+        columns: normalizeColumns(
+          row.columns ?? section.columns,
+          defaultColumns,
+        ),
         fields: row.fields
           .map((entry) => normalizeFieldConfig(entry, { fieldOverrides }))
           .filter((entry) => !entry.hidden),
@@ -917,7 +1016,9 @@ function buildLayoutSections(options: {
     }
   }
 
-  return normalizedSections.sort((left, right) => (left.order ?? 0) - (right.order ?? 0));
+  return normalizedSections.sort(
+    (left, right) => (left.order ?? 0) - (right.order ?? 0),
+  );
 }
 function renderFieldValue(options: {
   field: ResolvedFieldConfig;
@@ -926,7 +1027,8 @@ function renderFieldValue(options: {
   metadata: ModelMetadata | null;
   nestedMetadataByRelation: Record<string, ModelMetadata | null>;
 }): React.ReactNode {
-  const { field, record, sectionId, metadata, nestedMetadataByRelation } = options;
+  const { field, record, sectionId, metadata, nestedMetadataByRelation } =
+    options;
   const path = normalizePath(field.path);
   const value = getValueByPath(record, path);
 
@@ -985,18 +1087,20 @@ export const ModelDynamicDetail = React.forwardRef<
   const [updateDialogOpen, setUpdateDialogOpen] = React.useState(false);
   const [deleted, setDeleted] = React.useState(false);
 
-  const [printTemplate, setPrintTemplate] = React.useState<TemplateInfo | null>(null);
+  const [printTemplate, setPrintTemplate] = React.useState<TemplateInfo | null>(
+    null,
+  );
   const [printTemplateSchema, setPrintTemplateSchema] =
     React.useState<FormSchema | null>(null);
 
   const [activeMutationAction, setActiveMutationAction] =
     React.useState<MutationActionEntry | null>(null);
   const [mutationDialogOpen, setMutationDialogOpen] = React.useState(false);
-  const [executingMutationAction, setExecutingMutationAction] = React.useState(false);
+  const [executingMutationAction, setExecutingMutationAction] =
+    React.useState(false);
 
-  const [nestedMetadataByRelation, setNestedMetadataByRelation] = React.useState<
-    Record<string, ModelMetadata | null>
-  >({});
+  const [nestedMetadataByRelation, setNestedMetadataByRelation] =
+    React.useState<Record<string, ModelMetadata | null>>({});
 
   const metadataState = useMetadata({
     app,
@@ -1051,6 +1155,12 @@ export const ModelDynamicDetail = React.forwardRef<
 
   React.useEffect(() => {
     if (!metadataState.metadata) return;
+    if (Object.keys(nestedConfig).length === 0) {
+      setNestedMetadataByRelation((previous) =>
+        Object.keys(previous).length === 0 ? previous : {},
+      );
+      return;
+    }
 
     let active = true;
 
@@ -1077,11 +1187,17 @@ export const ModelDynamicDetail = React.forwardRef<
     ).then((entries) => {
       if (!active) return;
       setNestedMetadataByRelation((previous) => {
+        if (entries.length === 0) return previous;
+
+        let changed = false;
         const next = { ...previous };
         entries.forEach(([path, value]) => {
-          next[path] = value;
+          if (next[path] !== value) {
+            next[path] = value;
+            changed = true;
+          }
         });
-        return next;
+        return changed ? next : previous;
       });
     });
 
@@ -1114,7 +1230,11 @@ export const ModelDynamicDetail = React.forwardRef<
       });
     });
 
-    resolveBaseFieldPaths(metadataState.metadata, config.layout, nestedConfig).forEach((path) => {
+    resolveBaseFieldPaths(
+      metadataState.metadata,
+      config.layout,
+      nestedConfig,
+    ).forEach((path) => {
       paths.add(toGraphqlPath(path));
     });
 
@@ -1150,11 +1270,17 @@ export const ModelDynamicDetail = React.forwardRef<
   });
 
   const record = React.useMemo(
-    () => (isRecord(queryState.data) ? (queryState.data as Record<string, unknown>) : null),
+    () =>
+      isRecord(queryState.data)
+        ? (queryState.data as Record<string, unknown>)
+        : null,
     [queryState.data],
   );
 
-  const rowPermissions = React.useMemo(() => resolveRowPermissions(record), [record]);
+  const rowPermissions = React.useMemo(
+    () => resolveRowPermissions(record),
+    [record],
+  );
   const hasResolvedRowPermissions = React.useMemo(
     () =>
       typeof rowPermissions.canUpdate === "boolean" ||
@@ -1197,7 +1323,15 @@ export const ModelDynamicDetail = React.forwardRef<
       error: (queryState.error ?? metadataState.error ?? null) as Error | null,
       deleted,
     }),
-    [deleted, metadataState.error, metadataState.loading, metadataState.metadata, queryState.error, queryState.loading, record],
+    [
+      deleted,
+      metadataState.error,
+      metadataState.loading,
+      metadataState.metadata,
+      queryState.error,
+      queryState.loading,
+      record,
+    ],
   );
 
   React.useImperativeHandle(
@@ -1251,7 +1385,10 @@ export const ModelDynamicDetail = React.forwardRef<
   ]);
 
   const templateEntries = React.useMemo(
-    () => (metadataState.metadata?.templates ?? []).filter((entry) => isRecord(entry)),
+    () =>
+      (metadataState.metadata?.templates ?? []).filter((entry) =>
+        isRecord(entry),
+      ),
     [metadataState.metadata?.templates],
   ) as TemplateInfo[];
 
@@ -1285,7 +1422,8 @@ export const ModelDynamicDetail = React.forwardRef<
         const disabledReason =
           permissionAllowed && overrideAllowed
             ? undefined
-            : mutation.reason || "You do not have permission to execute this action.";
+            : mutation.reason ||
+              "You do not have permission to execute this action.";
 
         return {
           mutation,
@@ -1297,7 +1435,19 @@ export const ModelDynamicDetail = React.forwardRef<
           defaults,
         };
       });
-  }, [actionContext, actionsConfig.permissions, actionsConfig.showCustomMutations, config.runtime?.can, config.runtime?.locale, config.runtime?.permissions, config.runtime?.timezone, config.runtime?.user, idAsString, metadataState.metadata?.mutations, record]);
+  }, [
+    actionContext,
+    actionsConfig.permissions,
+    actionsConfig.showCustomMutations,
+    config.runtime?.can,
+    config.runtime?.locale,
+    config.runtime?.permissions,
+    config.runtime?.timezone,
+    config.runtime?.user,
+    idAsString,
+    metadataState.metadata?.mutations,
+    record,
+  ]);
 
   const updateFormProps = React.useMemo(
     () => actionsConfig.updateForm?.modelFormProps ?? {},
@@ -1305,9 +1455,14 @@ export const ModelDynamicDetail = React.forwardRef<
   );
 
   const runTemplate = React.useCallback(
-    async (template: TemplateInfo, clientData: Record<string, unknown> = {}) => {
+    async (
+      template: TemplateInfo,
+      clientData: Record<string, unknown> = {},
+    ) => {
       await executeTemplateForRows(template as any, [idAsString], clientData);
-      toast.success(`Template \"${template.title || template.key}\" generated.`);
+      toast.success(
+        `Template \"${template.title || template.key}\" generated.`,
+      );
     },
     [idAsString],
   );
@@ -1320,7 +1475,9 @@ export const ModelDynamicDetail = React.forwardRef<
       const allowed = template.allowed !== false && overrideAllowed;
 
       if (!allowed) {
-        toast.error(template.denialReason || "Access denied for this template.");
+        toast.error(
+          template.denialReason || "Access denied for this template.",
+        );
         return;
       }
 
@@ -1352,7 +1509,8 @@ export const ModelDynamicDetail = React.forwardRef<
       const errors: string[] = [];
 
       for (const operationName of operationNames) {
-        const plans = hasInputPayload && entry.mutation.inputType ? [true, false] : [false];
+        const plans =
+          hasInputPayload && entry.mutation.inputType ? [true, false] : [false];
 
         for (const useInputObject of plans) {
           const document = buildMutationDocument({
@@ -1382,7 +1540,8 @@ export const ModelDynamicDetail = React.forwardRef<
             }
 
             const responseError = (response?.errors ?? []).find(
-              (item) => typeof item?.message === "string" && Boolean(item.message),
+              (item) =>
+                typeof item?.message === "string" && Boolean(item.message),
             );
             if (responseError?.message) {
               throw new Error(responseError.message);
@@ -1420,15 +1579,16 @@ export const ModelDynamicDetail = React.forwardRef<
           payload?.errors
             ?.map((error) => error?.message)
             .filter((message): message is string => Boolean(message))
-            .join(", ") ||
-          "Delete action failed.";
+            .join(", ") || "Delete action failed.";
         toast.error(message);
         return;
       }
 
       setDeleteDialogOpen(false);
       setDeleted(true);
-      toast.success(`${metadataState.metadata?.verboseName ?? "Record"} deleted.`);
+      toast.success(
+        `${metadataState.metadata?.verboseName ?? "Record"} deleted.`,
+      );
 
       const callbackResult = await actionsConfig.onDeleted?.(actionContext);
       if (callbackResult === false) return;
@@ -1444,7 +1604,13 @@ export const ModelDynamicDetail = React.forwardRef<
     } catch (error) {
       toast.error(getErrorMessage(error, "Delete action failed."));
     }
-  }, [actionContext, actionsConfig, executeDelete, idAsString, metadataState.metadata?.verboseName]);
+  }, [
+    actionContext,
+    actionsConfig,
+    executeDelete,
+    idAsString,
+    metadataState.metadata?.verboseName,
+  ]);
 
   const handleUpdate = React.useCallback(async () => {
     if (actionsConfig.onUpdate) {
@@ -1457,17 +1623,18 @@ export const ModelDynamicDetail = React.forwardRef<
     }
   }, [actionContext, actionsConfig]);
 
-  const customHeaderActionProps = React.useMemo<ModelDynamicDetailHeaderActionRenderProps>(
-    () => ({
-      app,
-      model,
-      id: idAsString,
-      data: record,
-      metadata: metadataState.metadata,
-      refetch,
-    }),
-    [app, idAsString, metadataState.metadata, model, record, refetch],
-  );
+  const customHeaderActionProps =
+    React.useMemo<ModelDynamicDetailHeaderActionRenderProps>(
+      () => ({
+        app,
+        model,
+        id: idAsString,
+        data: record,
+        metadata: metadataState.metadata,
+        refetch,
+      }),
+      [app, idAsString, metadataState.metadata, model, record, refetch],
+    );
 
   const customHeaderActions = React.useMemo<ResolvedHeaderActionEntry[]>(() => {
     const resolveActions = config.header?.actions;
@@ -1477,15 +1644,21 @@ export const ModelDynamicDetail = React.forwardRef<
     if (!Array.isArray(actionList) || actionList.length === 0) return [];
 
     return actionList
-      .filter((action): action is ModelDynamicDetailHeaderActionConfig => Boolean(action?.render))
+      .filter((action): action is ModelDynamicDetailHeaderActionConfig =>
+        Boolean(action?.render),
+      )
       .map((action, index) => ({
-        position: Number.isFinite(action.position) ? Number(action.position) : index,
+        position: Number.isFinite(action.position)
+          ? Number(action.position)
+          : index,
         render: action.render,
       }))
       .sort((left, right) => left.position - right.position);
   }, [config.header?.actions, customHeaderActionProps]);
 
-  const resolvedHeaderTitle = React.useMemo<React.ReactElement | string | null>(() => {
+  const resolvedHeaderTitle = React.useMemo<
+    React.ReactElement | string | null
+  >(() => {
     if (config.header?.title) {
       const title = config.header.title(record);
       if (typeof title === "string") {
@@ -1588,15 +1761,21 @@ export const ModelDynamicDetail = React.forwardRef<
 
       return undefined;
     })();
+    const hasEnabledCustomMutationEntries = customMutationEntries.some(
+      (entry) => !entry.disabled,
+    );
     const hasHeaderActions =
       canUpdate ||
       canDelete ||
       (actionsConfig.showTemplates !== false && templateEntries.length > 0) ||
-      customMutationEntries.length > 0 ||
+      hasEnabledCustomMutationEntries ||
       customHeaderActions.length > 0 ||
       Boolean(headerFrame?.actions);
-    const frameTitle = headerFrame?.title ??
-      (typeof resolvedHeaderTitle === "string" ? resolvedHeaderTitle : undefined);
+    const frameTitle =
+      headerFrame?.title ??
+      (typeof resolvedHeaderTitle === "string"
+        ? resolvedHeaderTitle
+        : undefined);
     const headerSectionActions: SectionAction<{ ready: true }>[] = [
       ...customHeaderActions.map((entry, index) => ({
         id: `header-custom:${entry.position}:${index}`,
@@ -1605,91 +1784,103 @@ export const ModelDynamicDetail = React.forwardRef<
         onClick: () => undefined,
       })),
       ...(canUpdate
-        ? [{
-            id: "header-update",
-            label: "Update",
-            icon: <Pencil className="size-4" />,
-            onClick: () => {
-              void handleUpdate();
+        ? [
+            {
+              id: "header-update",
+              label: "Update",
+              icon: <Pencil className="size-4" />,
+              onClick: () => {
+                void handleUpdate();
+              },
             },
-          }]
+          ]
         : []),
       ...(canDelete
-        ? [{
-            id: "header-delete",
-            label: "Delete",
-            tone: "danger" as const,
-            icon: deleting ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />,
-            disabled: deleting,
-            onClick: () => {
-              setDeleteDialogOpen(true);
+        ? [
+            {
+              id: "header-delete",
+              label: "Delete",
+              tone: "danger" as const,
+              icon: deleting ? (
+                <Loader2 className="size-4 animate-spin" />
+              ) : (
+                <Trash2 className="size-4" />
+              ),
+              disabled: deleting,
+              onClick: () => {
+                setDeleteDialogOpen(true);
+              },
             },
-          }]
+          ]
         : []),
       ...(actionsConfig.showTemplates !== false && templateEntries.length > 0
-        ? [{
-            id: "header-templates",
-            label: "Templates",
-            render: () => (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button size="sm" variant="outline">
-                    <Printer className="mr-2 size-4" />
-                    Templates
-                    <ChevronDown className="ml-2 size-3.5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>Templates</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  {templateEntries.map((template) => (
-                    <DropdownMenuItem
-                      key={template.key}
-                      onClick={() => handleTemplateClick(template)}
-                    >
-                      {template.title || template.key}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ),
-            onClick: () => undefined,
-          }]
+        ? [
+            {
+              id: "header-templates",
+              label: "Templates",
+              render: () => (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button size="sm" variant="outline">
+                      <Printer className="mr-2 size-4" />
+                      Templates
+                      <ChevronDown className="ml-2 size-3.5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Templates</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    {templateEntries.map((template) => (
+                      <DropdownMenuItem
+                        key={template.key}
+                        onClick={() => handleTemplateClick(template)}
+                      >
+                        {template.title || template.key}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ),
+              onClick: () => undefined,
+            },
+          ]
         : []),
-      ...(customMutationEntries.length > 0
-        ? [{
-            id: "header-custom-mutations",
-            label: "Actions",
-            render: () => (
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button size="sm" variant="outline">
-                    <Zap className="mr-2 size-4" />
-                    Actions
-                    <ChevronDown className="ml-2 size-3.5" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuLabel>Custom Mutations</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  {customMutationEntries.map((entry) => (
-                    <DropdownMenuItem
-                      key={entry.mutation.name}
-                      disabled={entry.disabled}
-                      title={entry.disabledReason}
-                      onClick={() => {
-                        setActiveMutationAction(entry);
-                        setMutationDialogOpen(true);
-                      }}
-                    >
-                      {entry.label}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              </DropdownMenu>
-            ),
-            onClick: () => undefined,
-          }]
+      ...(hasEnabledCustomMutationEntries
+        ? [
+            {
+              id: "header-custom-mutations",
+              label: "Actions",
+              render: () => (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button size="sm" variant="outline">
+                      <Zap className="mr-2 size-4" />
+                      Actions
+                      <ChevronDown className="ml-2 size-3.5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Custom Mutations</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    {customMutationEntries.map((entry) => (
+                      <DropdownMenuItem
+                        key={entry.mutation.name}
+                        disabled={entry.disabled}
+                        title={entry.disabledReason}
+                        onClick={() => {
+                          setActiveMutationAction(entry);
+                          setMutationDialogOpen(true);
+                        }}
+                      >
+                        {entry.label}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ),
+              onClick: () => undefined,
+            },
+          ]
         : []),
     ];
 
@@ -1733,7 +1924,9 @@ export const ModelDynamicDetail = React.forwardRef<
           select: () => ({ ready: true }),
           title: typeof section.title === "string" ? section.title : undefined,
           description:
-            typeof section.description === "string" ? section.description : undefined,
+            typeof section.description === "string"
+              ? section.description
+              : undefined,
           render: () => (
             <div className="space-y-6">
               {section.rows.map((row) => (
@@ -1742,8 +1935,12 @@ export const ModelDynamicDetail = React.forwardRef<
                     <div
                       key={`${section.id}:${row.id}:${field.path}`}
                       style={{
-                        gridColumn: field.colSpan ? `span ${field.colSpan} / span ${field.colSpan}` : undefined,
-                        gridRow: field.rowSpan ? `span ${field.rowSpan} / span ${field.rowSpan}` : undefined,
+                        gridColumn: field.colSpan
+                          ? `span ${field.colSpan} / span ${field.colSpan}`
+                          : undefined,
+                        gridRow: field.rowSpan
+                          ? `span ${field.rowSpan} / span ${field.rowSpan}`
+                          : undefined,
                       }}
                     >
                       {record
@@ -1782,7 +1979,10 @@ export const ModelDynamicDetail = React.forwardRef<
 
             if (nested.mode === "table") {
               const rows = Array.isArray(nestedValue)
-                ? nestedValue.filter((entry): entry is Record<string, unknown> => isRecord(entry))
+                ? nestedValue.filter(
+                    (entry): entry is Record<string, unknown> =>
+                      isRecord(entry),
+                  )
                 : [];
 
               const tableRows = rows.map((row) => {
@@ -1799,11 +1999,15 @@ export const ModelDynamicDetail = React.forwardRef<
                     id: field.path,
                     header: String(
                       field.label ??
-                        humanizeLabel(field.path.split(".").slice(-1)[0] ?? field.path),
+                        humanizeLabel(
+                          field.path.split(".").slice(-1)[0] ?? field.path,
+                        ),
                     ),
                   }))}
                   rows={tableRows}
-                  enable_quick_search={nested.config.table?.enableQuickSearch ?? true}
+                  enable_quick_search={
+                    nested.config.table?.enableQuickSearch ?? true
+                  }
                   enable_sorting={nested.config.table?.enableSorting ?? true}
                   initial_page_size={nested.config.table?.initialPageSize ?? 10}
                 />
@@ -1841,7 +2045,9 @@ export const ModelDynamicDetail = React.forwardRef<
           select: () => ({ ready: true }),
           title: typeof section.title === "string" ? section.title : undefined,
           description:
-            typeof section.description === "string" ? section.description : undefined,
+            typeof section.description === "string"
+              ? section.description
+              : undefined,
           visibleIf: section.visible
             ? () =>
                 section.visible({
@@ -1893,7 +2099,12 @@ export const ModelDynamicDetail = React.forwardRef<
   ]);
 
   if (deleted) {
-    return <SectionEmptyState title="Record deleted" description="The detail view is no longer available for this record." />;
+    return (
+      <SectionEmptyState
+        title="Record deleted"
+        description="The detail view is no longer available for this record."
+      />
+    );
   }
 
   if (metadataState.loading || queryState.loading) {
@@ -1904,12 +2115,14 @@ export const ModelDynamicDetail = React.forwardRef<
     return (
       <SectionErrorState
         title="Detail loading failed"
-        description={getErrorMessage(metadataState.error ?? queryState.error, "Unable to load detail.")}
+        description={getErrorMessage(
+          metadataState.error ?? queryState.error,
+          "Unable to load detail.",
+        )}
         onRetry={refetch}
       />
     );
   }
-
   if (!record) {
     return <SectionEmptyState title="Record not found" />;
   }
@@ -2001,7 +2214,10 @@ export const ModelDynamicDetail = React.forwardRef<
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={() => void handleDelete()} disabled={deleting}>
+            <AlertDialogAction
+              onClick={() => void handleDelete()}
+              disabled={deleting}
+            >
               {deleting ? "Deleting..." : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>

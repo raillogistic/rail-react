@@ -29,9 +29,11 @@ const ModelImportPage = lazy(() =>
 );
 
 const DynamicModelTable = lazy(() =>
-  import("@/widgets/model-table/components/DynamicModelTable").then((module) => ({
-    default: module.DynamicModelTable,
-  })),
+  import("@/widgets/model-table/components/DynamicModelTable").then(
+    (module) => ({
+      default: module.DynamicModelTable,
+    }),
+  ),
 );
 
 const StoreOrderUpdateModelFormExample = lazy(() =>
@@ -143,14 +145,7 @@ export const CORE_MANIFEST: AppManifest = {
       description: "Progress view for DynamicModelTable (store.Order)",
       icon: LayoutDashboard,
       element: withRouteSuspense(
-        <DynamicModelTable
-          app="billing"
-          model="Invoice"
-          baseTable={{
-            tableConfig: { title: "Liste des factures" },
-            fields: ["id", "createdAt", "updatedAt", "status"],
-          }}
-        />,
+        <DynamicModelTable app="store" model="Product" baseTable={{}} />,
       ),
     },
     {
@@ -388,4 +383,3 @@ export const CORE_MANIFEST: AppManifest = {
 };
 
 export default CORE_MANIFEST;
-

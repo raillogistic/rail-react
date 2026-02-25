@@ -180,11 +180,11 @@ export default function DashboardPage() {
           app="store"
           model="Product"
           id={PRODUCT_ID}
-          baseDetail={{
-            layout: {
-              defaultColumns: 5,
-            },
-          }}
+          // baseDetail={{
+          //   layout: {
+          //     defaultColumns: 5,
+          //   },
+          // }}
 
           // baseDetail={baseDetail}
         />

@@ -440,6 +440,75 @@ describe("ModelDynamicDetail", () => {
     });
   });
 
+  it("hides Actions dropdown when no custom mutation is enabled", async () => {
+    setupDefaultMocks({
+      metadata: {
+        ...baseMetadata,
+        mutations: [
+          {
+            name: "publishProduct",
+            operation: "custom",
+            mutationType: "custom",
+            methodName: "publish_product",
+            description: "Publish product",
+            inputFields: [],
+            allowed: false,
+            requiredPermissions: ["store.publish_product"],
+            reason: "Disabled by backend",
+            action: JSON.stringify({ button_title: "Publish Product" }),
+          },
+        ],
+      },
+    });
+
+    render(<ModelDynamicDetail app="store" model="Product" id="1" />);
+
+    await waitFor(() => {
+      expect(screen.getByText("Product Alpha")).toBeInTheDocument();
+    });
+
+    expect(screen.queryByRole("button", { name: /actions/i })).toBeNull();
+  });
+
+  it("keeps custom mutation enabled when backend allows it and runtime permission source is absent", async () => {
+    const user = userEvent.setup();
+
+    setupDefaultMocks({
+      metadata: {
+        ...baseMetadata,
+        mutations: [
+          {
+            name: "publishProduct",
+            operation: "custom",
+            mutationType: "custom",
+            methodName: "publish_product",
+            description: "Publish product",
+            inputFields: [],
+            allowed: true,
+            requiredPermissions: ["store.publish_product"],
+            action: JSON.stringify({ button_title: "Publish Product" }),
+          },
+        ],
+      },
+    });
+
+    render(
+      <ModelDynamicDetail
+        app="store"
+        model="Product"
+        id="1"
+      />,
+    );
+
+    const actionsButton = await screen.findByRole("button", { name: /actions/i });
+    await user.click(actionsButton);
+
+    const publishItem = await screen.findByRole("menuitem", {
+      name: "Publish Product",
+    });
+    expect(publishItem).toBeEnabled();
+  });
+
   it("renders header title from name by default", async () => {
     setupDefaultMocks({
       queryData: {
