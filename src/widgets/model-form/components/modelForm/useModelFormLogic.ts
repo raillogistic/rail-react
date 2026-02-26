@@ -1,15 +1,19 @@
 import React from "react";
 import { selectGeneratedSubmitOperation } from "../../mutations";
 import type { FormBehaviorConfig, FormSchema } from "../../types";
-import type { ModelFormContract, ModelFormContractRelation } from "../../types/generatedContract";
-import type { ModelFormProps, ModelFormSubmitOutcome } from "../../types.model";
+import type {
+  ModelFormContract,
+  ModelFormContractRelation,
+  ModelFormMutationOutcome,
+} from "../../types/generatedContract";
+import type { ModelFormProps } from "../../types.model";
 import { buildSubmitPayload } from "../../utils/buildSubmitPayload";
 import { applyErrorsToFormFields, normalizeGeneratedErrorsForForm } from "../../utils/errors";
 import { isRecord, mergeValidationErrors, toActionSubmitOutcome, toError } from "./modelFormUtils";
 import { resolveSubmitIdentifier } from "../../utils/resolveSubmitIdentifier";
 
 export type UseModelFormLogicOptions<TFormValues extends Record<string, unknown>> = Pick<ModelFormProps<TFormValues>,
-  "generatedEnabled" | "mode" | "objectId" | "formProps" | "state" | "behavior" | "actions" | "devtools"
+  "generatedEnabled" | "mode" | "objectId" | "formProps" | "state" | "behavior" | "actions" | "devtools" | "onSubmitResult"
 > & {
   contract: ModelFormContract | null;
   generated: any;
@@ -64,6 +68,7 @@ export function useModelFormLogic<TFormValues extends Record<string, unknown>>(
     behavior,
     actions,
     devtools,
+    onSubmitResult,
   } = options;
 
   const resolvedStateInput = React.useMemo(() => {
@@ -132,6 +137,7 @@ export function useModelFormLogic<TFormValues extends Record<string, unknown>>(
               ctx.form as any
             );
           }
+          onSubmitResult?.(outcome as ModelFormMutationOutcome);
         }
       : userSubmit;
 
@@ -150,6 +156,7 @@ export function useModelFormLogic<TFormValues extends Record<string, unknown>>(
     resolvedMode,
     sanitizeValuesForControlledSchema,
     editableFieldPaths,
+    onSubmitResult,
   ]);
 
   const mergedState = React.useMemo(() => {

@@ -1,5 +1,12 @@
-import React, { Suspense, lazy, useMemo, useState } from "react";
+import React, {
+  Suspense,
+  lazy,
+  useCallback,
+  useMemo,
+  useState,
+} from "react";
 import { gql, useApolloClient, useMutation } from "@apollo/client";
+import { useNavigate } from "react-router-dom";
 import {
   FileSpreadsheet,
   FileText,
@@ -41,9 +48,17 @@ import {
 } from "@/shared/ui/kit/tooltip";
 import { Badge } from "@/shared/ui/kit/badge";
 import { cn } from "@/shared/utils";
+import { ModelForm } from "@/widgets/model-form";
+import type { ModelFormProps } from "@/widgets/model-form/types.model";
+import type { ModelFormMutationOutcome } from "@/widgets/model-form/types/generatedContract";
 import type { FormSchema } from "@/widgets/model-form/inputs/types";
 import { useMetadata } from "../../context/MetadataContext";
 import { useTable } from "../../context/TableContext";
+import type {
+  ModelTableUpdateConfig,
+  ModelTableUpdateContext,
+  ModelTableUpdateFormOverrides,
+} from "../../config/types";
 import {
   findMutation,
   normalizeMutationType,
@@ -64,6 +79,7 @@ import type {
   RowMutationPermissions,
   TemplateInfo,
 } from "../../types";
+import { FormOverlay } from "../ModelTableOverlays";
 
 type MutationActionMode = "confirm" | "form";
 
@@ -88,6 +104,24 @@ type MutationActionEntry = {
   disabledReason: string | null;
   schema: FormSchema | null;
   defaults: Record<string, unknown>;
+};
+
+type UpdateFormValues = Record<string, unknown>;
+
+/**
+ * Normalized edit-action configuration resolved per row instance.
+ */
+type ResolvedUpdateConfig = {
+  type: "drawer" | "modal" | "link";
+  title: React.ReactNode;
+  width?: string;
+  height?: string;
+  drawerDirection: "left" | "right" | "top" | "bottom";
+  objectIdValue: string;
+  hrefTemplate?: string;
+  closeOnSuccess: boolean;
+  refetchOnSuccess: boolean;
+  formOverrides: ModelTableUpdateFormOverrides;
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -351,12 +385,83 @@ function extractGraphqlErrors(payload: unknown): Array<{ message?: string }> {
     }));
 }
 
+/**
+ * Merges two optional ModelForm override records.
+ */
+function mergeModelFormOverrides(
+  base: ModelTableUpdateFormOverrides | undefined,
+  extra: ModelTableUpdateFormOverrides | undefined,
+): ModelTableUpdateFormOverrides {
+  const left = base ?? {};
+  const right = extra ?? {};
+  const leftFormProps = left.formProps ?? {};
+  const rightFormProps = right.formProps ?? {};
+
+  return {
+    ...left,
+    ...right,
+    state: { ...(left.state ?? {}), ...(right.state ?? {}) },
+    behavior: { ...(left.behavior ?? {}), ...(right.behavior ?? {}) },
+    layout: { ...(left.layout ?? {}), ...(right.layout ?? {}) },
+    actions: { ...(left.actions ?? {}), ...(right.actions ?? {}) },
+    devtools: { ...(left.devtools ?? {}), ...(right.devtools ?? {}) },
+    formProps: {
+      ...leftFormProps,
+      ...rightFormProps,
+      state: { ...(leftFormProps.state ?? {}), ...(rightFormProps.state ?? {}) },
+      behavior: {
+        ...(leftFormProps.behavior ?? {}),
+        ...(rightFormProps.behavior ?? {}),
+      },
+      layout: {
+        ...(leftFormProps.layout ?? {}),
+        ...(rightFormProps.layout ?? {}),
+      },
+      actions: {
+        ...(leftFormProps.actions ?? {}),
+        ...(rightFormProps.actions ?? {}),
+      },
+      devtools: {
+        ...(leftFormProps.devtools ?? {}),
+        ...(rightFormProps.devtools ?? {}),
+      },
+    },
+  };
+}
+
+/**
+ * Resolves update overlay title from static text/callback with a safe fallback.
+ */
+function resolveUpdateTitle(
+  title: ModelTableUpdateConfig["title"],
+  context: ModelTableUpdateContext,
+): React.ReactNode {
+  if (typeof title === "function") {
+    return title(context);
+  }
+  if (title !== undefined && title !== null) {
+    return title;
+  }
+  return `Modifier ${context.metadata?.verboseName ?? context.model}`;
+}
+
+/**
+ * Replaces `:id` placeholders in link templates with encoded row identifiers.
+ */
+function buildUpdateHrefFromTemplate(
+  template: string,
+  rowId: string,
+): string {
+  return template.replace(/:id\b/g, encodeURIComponent(rowId));
+}
+
 type RowActionsProps = {
   row: Record<string, unknown>;
   data: Record<string, unknown>[];
   refetch?: BaseModelTableRefetch;
   permissions?: RowMutationPermissions | null;
   columnActions?: BaseModelTableColumnActionsInput;
+  update?: ModelTableUpdateConfig;
 };
 
 export function RowActions({
@@ -365,9 +470,11 @@ export function RowActions({
   refetch,
   permissions,
   columnActions,
+  update,
 }: RowActionsProps) {
-  const { model, metadata } = useMetadata();
+  const { app, model, metadata } = useMetadata();
   const { refresh } = useTable();
+  const navigate = useNavigate();
   const apolloClient = useApolloClient();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [printTemplate, setPrintTemplate] = useState<TemplateInfo | null>(null);
@@ -377,6 +484,7 @@ export function RowActions({
     useState<MutationActionEntry | null>(null);
   const [mutationDialogOpen, setMutationDialogOpen] = useState(false);
   const [executingMutationAction, setExecutingMutationAction] = useState(false);
+  const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
 
   const rowIdValue = row.id;
   const rowId =
@@ -415,6 +523,62 @@ export function RowActions({
     (permissions?.canDelete ?? true);
   const canEdit =
     !!baseUpdateMutation?.allowed && (permissions?.canUpdate ?? true);
+
+  const updateContext = useMemo<ModelTableUpdateContext>(
+    () => ({
+      app,
+      model,
+      row,
+      rowId,
+      metadata: metadata ?? undefined,
+    }),
+    [app, metadata, model, row, rowId],
+  );
+
+  const resolvedUpdateConfig = useMemo<ResolvedUpdateConfig>(() => {
+    const resolvedObjectId =
+      update?.resolveObjectId?.(updateContext) ?? update?.objectId ?? rowId;
+    const objectIdValue =
+      resolvedObjectId === undefined || resolvedObjectId === null
+        ? ""
+        : String(resolvedObjectId);
+    const globalOverrides = update?.form;
+    const perRowOverrides = update?.resolveFormProps?.(updateContext);
+    const mergedOverrides = mergeModelFormOverrides(globalOverrides, perRowOverrides);
+    return {
+      type: update?.type ?? "drawer",
+      title: resolveUpdateTitle(update?.title, updateContext),
+      width: update?.width,
+      height: update?.height,
+      drawerDirection: update?.drawerDirection ?? "right",
+      objectIdValue,
+      hrefTemplate: update?.hrefTemplate,
+      closeOnSuccess: update?.closeOnSuccess ?? true,
+      refetchOnSuccess: update?.refetchOnSuccess ?? true,
+      formOverrides: mergedOverrides,
+    };
+  }, [update, updateContext]);
+
+  const editDisabledReason = useMemo(() => {
+    if (!canEdit) {
+      return "Permission de mise a jour indisponible.";
+    }
+    if (!resolvedUpdateConfig.objectIdValue) {
+      return "Cette ligne ne possede pas d'identifiant valide.";
+    }
+    if (
+      resolvedUpdateConfig.type === "link" &&
+      !resolvedUpdateConfig.hrefTemplate
+    ) {
+      return "Configuration update.link manquante (hrefTemplate).";
+    }
+    return null;
+  }, [
+    canEdit,
+    resolvedUpdateConfig.hrefTemplate,
+    resolvedUpdateConfig.objectIdValue,
+    resolvedUpdateConfig.type,
+  ]);
 
   const actionContext = useMemo<BaseModelTableColumnActionContext>(
     () => ({
@@ -537,9 +701,72 @@ export function RowActions({
     }
   };
 
-  const handleEdit = () => {
-    console.info("Edit row action triggered", row);
-  };
+  /**
+   * Executes update action according to configured presentation mode.
+   */
+  const handleEdit = useCallback(() => {
+    if (editDisabledReason) {
+      toast.error(editDisabledReason);
+      return;
+    }
+
+    if (resolvedUpdateConfig.type === "link") {
+      const template = resolvedUpdateConfig.hrefTemplate ?? "";
+      const href = buildUpdateHrefFromTemplate(
+        template,
+        resolvedUpdateConfig.objectIdValue,
+      );
+      navigate(href);
+      return;
+    }
+
+    setUpdateDialogOpen(true);
+  }, [
+    editDisabledReason,
+    navigate,
+    resolvedUpdateConfig.hrefTemplate,
+    resolvedUpdateConfig.type,
+    resolvedUpdateConfig.objectIdValue,
+    ]);
+
+  /**
+   * Handles post-submit update outcome to close popup and refresh table data.
+   */
+  const handleUpdateSubmitResult = useCallback(
+    async (outcome: ModelFormMutationOutcome) => {
+      if (!outcome.ok) {
+        return;
+      }
+
+      if (resolvedUpdateConfig.closeOnSuccess) {
+        setUpdateDialogOpen(false);
+      }
+
+      if (!resolvedUpdateConfig.refetchOnSuccess) {
+        return;
+      }
+
+      try {
+        if (refetch) {
+          await refetch();
+        } else {
+          refresh();
+        }
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Impossible de recharger la table apres mise a jour.";
+        toast.error(message);
+      }
+    },
+    [
+      refetch,
+      refresh,
+      resolvedUpdateConfig.closeOnSuccess,
+      resolvedUpdateConfig.refetchOnSuccess,
+    ],
+  );
 
   const closePrintDialog = () => {
     setPrintTemplate(null);
@@ -729,6 +956,41 @@ export function RowActions({
     setMutationDialogOpen(true);
   };
 
+  const updateFormProps = useMemo<ModelFormProps<UpdateFormValues>>(() => {
+    const overrides = resolvedUpdateConfig.formOverrides;
+    const formPropsLayout =
+      (overrides.formProps?.layout as
+        | Record<string, unknown>
+        | undefined) ?? {};
+
+    return {
+      app,
+      model,
+      mode: "update",
+      objectId: resolvedUpdateConfig.objectIdValue,
+      showHeading: false,
+      ...overrides,
+      layout: {
+        variant: "popup",
+        ...(overrides.layout as Record<string, unknown> | undefined),
+      },
+      formProps: {
+        ...(overrides.formProps ?? {}),
+        layout: {
+          variant: "popup",
+          ...formPropsLayout,
+        },
+      },
+      onSubmitResult: handleUpdateSubmitResult,
+    };
+  }, [
+    app,
+    handleUpdateSubmitResult,
+    model,
+    resolvedUpdateConfig.formOverrides,
+    resolvedUpdateConfig.objectIdValue,
+  ]);
+
   if (!hasAnyActions) {
     return null;
   }
@@ -789,14 +1051,16 @@ export function RowActions({
               <Button
                 size="icon"
                 variant="ghost"
+                aria-label="Modifier"
                 className="size-7 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 transition-all hover:bg-blue-500 hover:text-white active:scale-95"
                 onClick={handleEdit}
+                disabled={Boolean(editDisabledReason)}
               >
                 <Pencil className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
             <TooltipContent className="rounded-lg bg-blue-600 text-white font-bold uppercase text-[9px] tracking-widest">
-              Modifier
+              {editDisabledReason ?? "Modifier"}
             </TooltipContent>
           </Tooltip>
         ) : null}
@@ -1035,6 +1299,19 @@ export function RowActions({
           </div>
         </AlertDialogContent>
       </AlertDialog>
+      {resolvedUpdateConfig.type !== "link" ? (
+        <FormOverlay
+          mode={resolvedUpdateConfig.type === "modal" ? "modal" : "drawer"}
+          open={updateDialogOpen}
+          onOpenChange={setUpdateDialogOpen}
+          title={resolvedUpdateConfig.title}
+          width={resolvedUpdateConfig.width}
+          height={resolvedUpdateConfig.height}
+          drawerDirection={resolvedUpdateConfig.drawerDirection}
+        >
+          <ModelForm<UpdateFormValues> {...updateFormProps} />
+        </FormOverlay>
+      ) : null}
       <Suspense fallback={null}>
         <ActionDialog
           open={mutationDialogOpen && Boolean(activeMutationAction)}

@@ -1,5 +1,6 @@
 import type React from "react";
 import type { DynamicTableExpandConfig } from "@/widgets/dynamic-table";
+import type { ModelFormProps } from "@/widgets/model-form/types.model";
 import type {
   BaseModelTableColumnActionsInput,
   BaseModelTableColumnOrderingConfig,
@@ -25,6 +26,102 @@ export interface FilterPanelOptions {
 
 export type ModelTableFilterPanelProps = FilterPanelOptions &
   Partial<import("@/features/model-table/filtering/FilterPanel").FilterPanelProps>;
+
+/**
+ * Supported update-action presentation modes.
+ */
+export type ModelTableUpdatePresentation = "drawer" | "modal" | "link";
+
+/**
+ * Drawer direction options for update overlays.
+ */
+export type ModelTableUpdateDrawerDirection =
+  | "left"
+  | "right"
+  | "top"
+  | "bottom";
+
+/**
+ * Runtime context supplied to update configuration callbacks.
+ */
+export type ModelTableUpdateContext = {
+  app: string;
+  model: string;
+  row: Record<string, unknown>;
+  rowId: string;
+  metadata?: ModelSchema;
+};
+
+/**
+ * ModelForm override surface accepted by table row update popups.
+ */
+export type ModelTableUpdateFormOverrides = Omit<
+  ModelFormProps<Record<string, unknown>>,
+  "app" | "model" | "mode" | "objectId"
+>;
+
+/**
+ * Update-action configuration used by DynamicModelTable row edit behavior.
+ */
+export type ModelTableUpdateConfig = {
+  /**
+   * Overlay type for update action.
+   * - "drawer" (default)
+   * - "modal"
+   * - "link"
+   */
+  type?: ModelTableUpdatePresentation;
+  /**
+   * Popup title or title resolver.
+   */
+  title?: React.ReactNode | ((ctx: ModelTableUpdateContext) => React.ReactNode);
+  /**
+   * Overlay width CSS value (e.g. "50vw", "900px", "min(90vw, 960px)").
+   */
+  width?: string;
+  /**
+   * Overlay height CSS value.
+   */
+  height?: string;
+  /**
+   * Drawer direction when `type` is "drawer".
+   */
+  drawerDirection?: ModelTableUpdateDrawerDirection;
+  /**
+   * Link template for `type: "link"` (e.g. "/orders/:id/edit").
+   */
+  hrefTemplate?: string;
+  /**
+   * Static object id override passed to ModelForm update mode.
+   */
+  objectId?: string | number | null;
+  /**
+   * Row-aware object id resolver passed to ModelForm update mode.
+   */
+  resolveObjectId?: (
+    ctx: ModelTableUpdateContext,
+  ) => string | number | null | undefined;
+  /**
+   * Global ModelForm overrides for popup update mode.
+   */
+  form?: ModelTableUpdateFormOverrides;
+  /**
+   * Row-specific ModelForm override resolver.
+   */
+  resolveFormProps?: (
+    ctx: ModelTableUpdateContext,
+  ) => ModelTableUpdateFormOverrides | undefined;
+  /**
+   * Close popup automatically after successful update submit.
+   * Defaults to true.
+   */
+  closeOnSuccess?: boolean;
+  /**
+   * Refetch table data automatically after successful update submit.
+   * Defaults to true.
+   */
+  refetchOnSuccess?: boolean;
+};
 
 export type ModelTableV2TopAction = {
   key: string;
@@ -199,6 +296,7 @@ export interface ModelTableV2Props {
   app: string;
   model: string;
   filterPanel?: ModelTableFilterPanelProps;
+  update?: ModelTableUpdateConfig;
   baseTable?: Omit<BaseModelTableProps, "app" | "model" | "children">;
   /**
    * Initial query variables used for the first table request.

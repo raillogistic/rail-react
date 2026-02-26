@@ -114,7 +114,7 @@ export function ModelForm<TFormValues extends Record<string, unknown> = Record<s
     fieldOverrides, sectionOverrides, validatorExtensions, legacySchema, formProps,
     state, behavior, layout, actions, devtools, title, description, showHeading = true,
     containerClassName, contentClassName, loadingFallback, emptySchemaFallback, errorFallback,
-    requireObjectIdForUpdate = true, onContractLoaded, onInitialDataLoaded, onLoadError,
+    requireObjectIdForUpdate = true, onContractLoaded, onInitialDataLoaded, onSubmitResult, onLoadError,
   } = props;
 
   const resolvedApp = app ?? "";
@@ -221,7 +221,7 @@ export function ModelForm<TFormValues extends Record<string, unknown> = Record<s
   const { mergedBehavior, mergedState, mergedActions, resolvedDevtools } = useModelFormLogic({
     generatedEnabled, contract, generated, formValidator, editableFieldPaths, sanitizeValuesForControlledSchema,
     relationOperationOverrides, submitRelations, modePermissionDenied, resolvedMode, resolvedObjectIdValue,
-    formProps, state, behavior, actions, devtools,
+    formProps, state, behavior, actions, devtools, onSubmitResult,
   });
 
   const hydratedDefaultValues = React.useMemo<Partial<TFormValues> | undefined>(() => {

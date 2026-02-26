@@ -43,6 +43,7 @@ import type {
   DynamicModelTableProps,
   DynamicModelTableSnapshot,
   ModelTableFilterPanelProps,
+  ModelTableUpdateConfig,
   ModelTableV2ExpandConfig,
   ModelTableV2TopActionsInput,
   ModelTableV2PerformanceOptions,
@@ -100,6 +101,7 @@ import {
 type DynamicBaseTableContentProps = {
   persistenceKey?: string;
   filterPanel?: ModelTableFilterPanelProps;
+  update?: ModelTableUpdateConfig;
   tableConfig?: ModelTableV2TableConfig;
   view?: ModelTableV2ViewOptions;
   performance?: ModelTableV2PerformanceOptions;
@@ -412,6 +414,7 @@ function resolveRowId(
 function DynamicBaseTableContent({
   persistenceKey,
   filterPanel,
+  update,
   tableConfig,
   quickSearch,
   topActions,
@@ -1120,6 +1123,7 @@ function DynamicBaseTableContent({
               emptyState={tableConfig?.emptyState}
               refetch={refetch}
               columnActions={columnActions}
+              update={update}
             />
           </div>
         )}
@@ -1164,6 +1168,7 @@ function DynamicBaseTableContent({
                         row.rowPermissions as RowMutationPermissions | undefined
                       }
                       columnActions={columnActions}
+                      update={update}
                     />
                   ),
                 },
@@ -1211,7 +1216,7 @@ export const DynamicModelTable = forwardRef<
   DynamicModelTableHandle,
   DynamicModelTableProps
 >(function DynamicModelTable(
-  { app, model, filterPanel, baseTable, initVariables }: DynamicModelTableProps,
+  { app, model, filterPanel, update, baseTable, initVariables }: DynamicModelTableProps,
   ref,
 ) {
   const tableInstanceKey = `${app}:${model}`;
@@ -1325,6 +1330,7 @@ export const DynamicModelTable = forwardRef<
           <DynamicBaseTableContent
             persistenceKey={baseTable?.persistenceKey}
             filterPanel={resolvedFilterPanel}
+            update={update}
             tableConfig={baseTable?.tableConfig}
             view={baseTable?.view}
             performance={baseTable?.performance}

@@ -195,6 +195,10 @@ export interface ModelFormProps<
 
   onContractLoaded?: (contract: ModelFormContract) => void;
   onInitialDataLoaded?: (initialData: ModelFormInitialData) => void;
+  /**
+   * Invoked after each generated submit attempt with normalized mutation outcome.
+   */
+  onSubmitResult?: (result: ModelFormMutationOutcome) => void;
   onLoadError?: (error: Error, stage: "contract" | "initialData") => void;
 }
 

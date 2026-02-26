@@ -26,20 +26,28 @@ import type {
   BaseModelTableRefetch,
   RowMutationPermissions,
 } from "../types";
+import type { ModelTableUpdateConfig } from "../config/types";
 import { cn } from "@/shared/utils";
 import { RowActions } from "./row/RowActions";
 
 const MOBILE_BATCH_SIZE = 24;
 
+/**
+ * Props for mobile-card rendering of table rows.
+ */
+type TableMobileCardProps = {
+  emptyState?: string;
+  refetch?: BaseModelTableRefetch;
+  columnActions?: BaseModelTableColumnActionsInput;
+  update?: ModelTableUpdateConfig;
+};
+
 export function TableMobileCard({
   emptyState,
   refetch,
   columnActions,
-}: {
-  emptyState?: string;
-  refetch?: BaseModelTableRefetch;
-  columnActions?: BaseModelTableColumnActionsInput;
-}) {
+  update,
+}: TableMobileCardProps) {
   const { metadata } = useMetadata();
   const {
     data,
@@ -258,6 +266,7 @@ export function TableMobileCard({
                 refetch={refetch}
                 permissions={rowPermissions}
                 columnActions={columnActions}
+                update={update}
               />
             </div>
           </div>
