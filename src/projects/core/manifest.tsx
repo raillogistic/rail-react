@@ -9,6 +9,7 @@ import {
   User,
 } from "lucide-react";
 import type { AppManifest } from "@/app/router/contracts";
+import { defineProjectManifest, navGroup } from "@/app/router/manifestFactory";
 import { ROUTES } from "@/shared/routing/paths";
 import ExampleDetailsPage from "@/widgets/model-details/example/ExampleDetailsPage";
 import DashboardPage from "@/pages/dashboard/DashboardPage";
@@ -97,7 +98,7 @@ const MFASetupPage = lazy(() =>
   })),
 );
 
-export const CORE_MANIFEST: AppManifest = {
+export const CORE_MANIFEST: AppManifest = defineProjectManifest({
   projectId: "core",
   defaultRoute: "/dashboard",
   routes: [
@@ -274,10 +275,9 @@ export const CORE_MANIFEST: AppManifest = {
     },
   ],
   navigation: [
-    {
+    navGroup("core", {
       id: "home",
       label: "Table",
-      projectId: "core",
       entries: [
         {
           id: "core:dashboard",
@@ -331,11 +331,10 @@ export const CORE_MANIFEST: AppManifest = {
           description: "old form",
         },
       ],
-    },
-    {
+    }),
+    navGroup("core", {
       id: "parametre",
       label: "parametre",
-      projectId: "core",
       entries: [
         {
           id: "core:settings",
@@ -402,8 +401,8 @@ export const CORE_MANIFEST: AppManifest = {
           ],
         },
       ],
-    },
+    }),
   ],
-};
+});
 
 export default CORE_MANIFEST;

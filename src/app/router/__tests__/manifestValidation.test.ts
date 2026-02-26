@@ -77,6 +77,71 @@ describe("manifestValidation", () => {
     );
   });
 
+  it("detects navigation entries without matching protected routes", () => {
+    const manifest = createManifest({
+      navigation: [
+        {
+          id: "main",
+          label: "Main",
+          projectId: "core",
+          entries: [
+            {
+              id: "missing",
+              title: "Missing",
+              path: "/missing",
+              guard: "protected",
+            },
+          ],
+        },
+      ],
+    });
+
+    const issues = validateManifest(manifest);
+    expect(
+      issues.some((issue) => issue.code === "navigation-route-mismatch"),
+    ).toBe(true);
+  });
+
+  it("accepts a valid multi-project manifest set", () => {
+    const first = createManifest();
+    const second = createManifest({
+      projectId: "starter",
+      defaultRoute: "/starter/overview",
+      routes: [
+        {
+          id: "starter:overview",
+          path: "/starter/overview",
+          guard: "protected",
+          projectId: "starter",
+        },
+        {
+          id: "starter:login",
+          path: "/starter/login",
+          guard: "public",
+          projectId: "starter",
+        },
+      ],
+      navigation: [
+        {
+          id: "starter",
+          label: "Starter",
+          projectId: "starter",
+          entries: [
+            {
+              id: "starter:overview",
+              title: "Overview",
+              path: "/starter/overview",
+              guard: "protected",
+              routeId: "starter:overview",
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(() => assertValidManifestSet([first, second])).not.toThrow();
+  });
+
   it("throws when two manifests declare the same path", () => {
     const first = createManifest({
       projectId: "core",
@@ -109,4 +174,3 @@ describe("manifestValidation", () => {
     );
   });
 });
-

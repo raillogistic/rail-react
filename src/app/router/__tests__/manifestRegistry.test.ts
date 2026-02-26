@@ -40,6 +40,25 @@ describe("manifestRegistry", () => {
     expect(getNavigationGroups().length).toBeGreaterThan(0);
   });
 
+  it("loads multiple project manifests and keeps the core default route", () => {
+    const routes = getAllRoutes();
+    const projectIds = new Set(routes.map((route) => route.projectId));
+
+    expect(projectIds.has("core")).toBe(true);
+    expect(projectIds.has("starter")).toBe(true);
+    expect(getDefaultRoute()).toBe("/dashboard");
+    expect(
+      routes.some(
+        (route) =>
+          normalizePath(route.path) === "/starter/overview" &&
+          route.guard === "protected",
+      ),
+    ).toBe(true);
+    expect(
+      getNavigationGroups().some((group) => group.projectId === "starter"),
+    ).toBe(true);
+  });
+
   it("maps navigation links to protected pages", () => {
     const protectedPaths = new Set(
       getAllRoutes()
