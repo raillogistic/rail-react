@@ -175,6 +175,18 @@ export type ModelDynamicDetailRowConfig = {
   fields: Array<string | ModelDynamicDetailFieldConfig>;
 };
 
+/**
+ * Responsive section container span values for the surrounding section grid.
+ */
+export type ModelDynamicDetailSectionContainerSpan = {
+  base?: 1 | 2 | 3 | 4 | 5 | 6;
+  sm?: 1 | 2 | 3 | 4 | 5 | 6;
+  md?: 1 | 2 | 3 | 4 | 5 | 6;
+  lg?: 1 | 2 | 3 | 4 | 5 | 6;
+  xl?: 1 | 2 | 3 | 4 | 5 | 6;
+  xxl?: 1 | 2 | 3 | 4 | 5 | 6;
+};
+
 export type ModelDynamicDetailSectionConfig = {
   id: string;
   /** Optional tab target. If absent, section is rendered in body. */
@@ -182,6 +194,8 @@ export type ModelDynamicDetailSectionConfig = {
   title?: React.ReactNode;
   description?: React.ReactNode;
   order?: number;
+  /** Responsive span for the section container in the outer section grid. */
+  containerSpan?: ModelDynamicDetailSectionContainerSpan;
   columns?: number;
   rows?: ModelDynamicDetailRowConfig[];
   fields?: Array<string | ModelDynamicDetailFieldConfig>;

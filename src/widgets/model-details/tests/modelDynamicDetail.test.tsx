@@ -995,6 +995,67 @@ describe("ModelDynamicDetail", () => {
     });
   });
 
+  it("applies section container spans declared in layout sections", async () => {
+    setupDefaultMocks({
+      queryData: {
+        id: "1",
+        name: "Product Alpha",
+        rowPermissions: {
+          canUpdate: false,
+          canDelete: false,
+          updateReason: null,
+          deleteReason: null,
+        },
+      },
+    });
+
+    render(
+      <ModelDynamicDetail
+        app="store"
+        model="Product"
+        id="1"
+        baseDetail={{
+          header: {
+            title: () => "",
+          },
+          actions: {
+            showUpdate: false,
+            showDelete: false,
+            showTemplates: false,
+            showCustomMutations: false,
+          },
+          view: {
+            sectionColumns: 6,
+          },
+          layout: {
+            includeUnassignedFields: false,
+            sections: [
+              {
+                id: "summary",
+                containerSpan: { base: 1, xxl: 4 },
+                rows: [{ fields: ["name"] }],
+              },
+              {
+                id: "audit",
+                containerSpan: { base: 1, xxl: 2 },
+                rows: [{ fields: ["id"] }],
+              },
+            ],
+          },
+        }}
+      />,
+    );
+
+    await screen.findByText("Product Alpha");
+    const summarySection = screen.getByTestId("section-layout:summary");
+    const auditSection = screen.getByTestId("section-layout:audit");
+
+    expect(summarySection.className).toContain("col-span-1");
+    expect(summarySection.className).toContain("2xl:col-span-4");
+    expect(auditSection.className).toContain("col-span-1");
+    expect(auditSection.className).toContain("2xl:col-span-2");
+  });
+
   it("defaults update dialog form layout variant to popup", async () => {
     const user = userEvent.setup();
     setupDefaultMocks();

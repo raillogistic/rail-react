@@ -103,6 +103,7 @@ import type {
   ModelDynamicDetailHandle,
   ModelDynamicDetailNestedConfig,
   ModelDynamicDetailProps,
+  ModelDynamicDetailSectionContainerSpan,
   ModelDynamicDetailSnapshot,
   ModelDynamicDetailTabConfig,
 } from "../config/types";
@@ -139,6 +140,7 @@ type ResolvedLayoutSection = {
   title?: React.ReactNode;
   description?: React.ReactNode;
   order?: number;
+  containerSpan?: ModelDynamicDetailSectionContainerSpan;
   rows: Array<{
     id: string;
     columns: number;
@@ -350,6 +352,81 @@ function resolveGridClasses(columns: number): string {
   if (normalized >= 4) classes.push("lg:grid-cols-4");
   if (normalized >= 5) classes.push("xl:grid-cols-5");
   if (normalized >= 6) classes.push("2xl:grid-cols-6");
+  return classes.join(" ");
+}
+
+const BASE_COL_SPAN_CLASS: Record<1 | 2 | 3 | 4 | 5 | 6, string> = {
+  1: "col-span-1",
+  2: "col-span-2",
+  3: "col-span-3",
+  4: "col-span-4",
+  5: "col-span-5",
+  6: "col-span-6",
+};
+
+const SM_COL_SPAN_CLASS: Record<1 | 2 | 3 | 4 | 5 | 6, string> = {
+  1: "sm:col-span-1",
+  2: "sm:col-span-2",
+  3: "sm:col-span-3",
+  4: "sm:col-span-4",
+  5: "sm:col-span-5",
+  6: "sm:col-span-6",
+};
+
+const MD_COL_SPAN_CLASS: Record<1 | 2 | 3 | 4 | 5 | 6, string> = {
+  1: "md:col-span-1",
+  2: "md:col-span-2",
+  3: "md:col-span-3",
+  4: "md:col-span-4",
+  5: "md:col-span-5",
+  6: "md:col-span-6",
+};
+
+const LG_COL_SPAN_CLASS: Record<1 | 2 | 3 | 4 | 5 | 6, string> = {
+  1: "lg:col-span-1",
+  2: "lg:col-span-2",
+  3: "lg:col-span-3",
+  4: "lg:col-span-4",
+  5: "lg:col-span-5",
+  6: "lg:col-span-6",
+};
+
+const XL_COL_SPAN_CLASS: Record<1 | 2 | 3 | 4 | 5 | 6, string> = {
+  1: "xl:col-span-1",
+  2: "xl:col-span-2",
+  3: "xl:col-span-3",
+  4: "xl:col-span-4",
+  5: "xl:col-span-5",
+  6: "xl:col-span-6",
+};
+
+const XXL_COL_SPAN_CLASS: Record<1 | 2 | 3 | 4 | 5 | 6, string> = {
+  1: "2xl:col-span-1",
+  2: "2xl:col-span-2",
+  3: "2xl:col-span-3",
+  4: "2xl:col-span-4",
+  5: "2xl:col-span-5",
+  6: "2xl:col-span-6",
+};
+
+/**
+ * Builds Tailwind `col-span` classes from responsive container span settings.
+ */
+function resolveSectionContainerSpanClassName(
+  span: ModelDynamicDetailSectionContainerSpan | undefined,
+): string | undefined {
+  if (!span) return undefined;
+
+  const classes = [
+    span.base ? BASE_COL_SPAN_CLASS[span.base] : undefined,
+    span.sm ? SM_COL_SPAN_CLASS[span.sm] : undefined,
+    span.md ? MD_COL_SPAN_CLASS[span.md] : undefined,
+    span.lg ? LG_COL_SPAN_CLASS[span.lg] : undefined,
+    span.xl ? XL_COL_SPAN_CLASS[span.xl] : undefined,
+    span.xxl ? XXL_COL_SPAN_CLASS[span.xxl] : undefined,
+  ].filter((entry): entry is string => Boolean(entry));
+
+  if (classes.length === 0) return undefined;
   return classes.join(" ");
 }
 
@@ -1178,6 +1255,7 @@ function buildLayoutSections(options: {
         title: section.title,
         description: section.description,
         order: section.order,
+        containerSpan: section.containerSpan,
         rows,
       };
     })
@@ -1931,6 +2009,47 @@ export const ModelDynamicDetail = React.forwardRef<
     [app, config, idAsString, metadataState.metadata, model, record],
   );
 
+  const layoutSectionSpanClassById = React.useMemo(() => {
+    const entries = layoutSectionsWithData
+      .map((section) => {
+        const className = resolveSectionContainerSpanClassName(
+          section.containerSpan,
+        );
+        if (!className) return null;
+        return [`layout:${section.id}`, className] as const;
+      })
+      .filter(
+        (entry): entry is readonly [string, string] => Boolean(entry),
+      );
+
+    return new Map<string, string>(entries);
+  }, [layoutSectionsWithData]);
+
+  const resolvedView = React.useMemo(() => {
+    if (!config.view) return undefined;
+
+    const baseResolveSectionContainer = config.view.resolveSectionContainer;
+    if (!baseResolveSectionContainer && layoutSectionSpanClassById.size === 0) {
+      return config.view;
+    }
+
+    return {
+      ...config.view,
+      resolveSectionContainer: (section: SectionDefinition, tabId?: string) => {
+        const baseContainer = baseResolveSectionContainer?.(section, tabId);
+        const spanClassName = layoutSectionSpanClassById.get(section.id);
+        if (!spanClassName) {
+          return baseContainer;
+        }
+
+        return {
+          className: cn(baseContainer?.className, spanClassName),
+          style: baseContainer?.style,
+        };
+      },
+    };
+  }, [config.view, layoutSectionSpanClassById]);
+
   const resolvedNestedWithData = React.useMemo<ResolvedNestedSection[]>(() => {
     return Object.entries(nestedConfig)
       .map(([rawPath, nested], index) => {
@@ -2510,7 +2629,7 @@ export const ModelDynamicDetail = React.forwardRef<
         schema={detailsSchema}
         runtime={runtime}
         className="space-y-6"
-        view={config.view}
+        view={resolvedView}
       />
 
       <Dialog open={updateDialogOpen} onOpenChange={setUpdateDialogOpen}>

@@ -120,6 +120,10 @@ function buildTabbedSections(
       title: "Summary",
       description: "Core business fields grouped as a dense grid.",
       order: 10,
+      containerSpan: {
+        base: 1,
+        xxl: 4,
+      },
       columns: 3,
       rows: rowsFromFields(mainFields, "general-summary", 3),
     },
@@ -129,6 +133,10 @@ function buildTabbedSections(
       title: "Audit",
       description: "Record lineage and synchronization metadata.",
       order: 20,
+      containerSpan: {
+        base: 1,
+        xxl: 2,
+      },
       columns: 3,
       rows:
         auditFields.length > 0
@@ -141,6 +149,10 @@ function buildTabbedSections(
       title: "Operations Context",
       description: "Field-level renderer demonstrates section host context.",
       order: 10,
+      containerSpan: {
+        base: 1,
+        xxl: 6,
+      },
       columns: 3,
       rows: [
         {
@@ -236,15 +248,9 @@ export default function DashboardPage() {
       view: {
         initialTabId: "general",
         sectionColumns: 6,
-        resolveSectionContainer: (section, tabId) => {
-          if (tabId === "general" && section.id === "general-summary") {
-            return { style: { gridColumn: "span 4 / span 4" } };
-          }
-          if (tabId === "general" && section.id === "general-audit") {
-            return { style: { gridColumn: "span 2 / span 2" } };
-          }
-          return { style: { gridColumn: "span 6 / span 6" } };
-        },
+        resolveSectionContainer: () => ({
+          className: "col-span-1 2xl:col-span-6",
+        }),
       },
       layout: {
         tabs: [
