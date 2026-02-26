@@ -1,4 +1,5 @@
 import { lazy, Suspense, type ReactNode } from "react";
+import { Navigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Lock,
@@ -25,6 +26,24 @@ const withRouteSuspense = (component: ReactNode) => (
 const ModelImportPage = lazy(() =>
   import("@/features/model-import/pages/ModelImportPage").then((module) => ({
     default: module.ModelImportPage,
+  })),
+);
+
+const LoginPage = lazy(() =>
+  import("@/pages/auth/LoginPage").then((module) => ({
+    default: module.LoginPage,
+  })),
+);
+
+const ForgotPasswordPage = lazy(() =>
+  import("@/pages/auth/ForgotPasswordPage").then((module) => ({
+    default: module.ForgotPasswordPage,
+  })),
+);
+
+const ResetPasswordPage = lazy(() =>
+  import("@/pages/auth/ResetPasswordPage").then((module) => ({
+    default: module.ResetPasswordPage,
   })),
 );
 
@@ -88,6 +107,7 @@ export const CORE_MANIFEST: AppManifest = {
       guard: "public",
       projectId: "core",
       title: "Login",
+      element: withRouteSuspense(<LoginPage />),
     },
     {
       id: "core:forgot-password",
@@ -95,6 +115,7 @@ export const CORE_MANIFEST: AppManifest = {
       guard: "public",
       projectId: "core",
       title: "Forgot password",
+      element: withRouteSuspense(<ForgotPasswordPage />),
     },
     {
       id: "core:reset-password",
@@ -102,6 +123,7 @@ export const CORE_MANIFEST: AppManifest = {
       guard: "public",
       projectId: "core",
       title: "Reset password",
+      element: withRouteSuspense(<ResetPasswordPage />),
     },
     {
       id: "core:not-found",
@@ -109,6 +131,7 @@ export const CORE_MANIFEST: AppManifest = {
       guard: "public",
       projectId: "core",
       title: "Not found",
+      element: <Navigate to={ROUTES.LOGIN} replace />,
     },
     {
       id: "core:root",
@@ -116,6 +139,7 @@ export const CORE_MANIFEST: AppManifest = {
       guard: "public",
       projectId: "core",
       title: "Root",
+      element: <Navigate to={ROUTES.LOGIN} replace />,
     },
     {
       id: "core:dashboard",

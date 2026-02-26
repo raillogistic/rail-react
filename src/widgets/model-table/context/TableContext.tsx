@@ -6,8 +6,8 @@ import {
   TableDensity,
   QueryPageData,
 } from "../types";
-import { FilterFormState } from "../../filters/types";
-import { normalizeFilterFormState } from "../../filters/engine";
+import { FilterFormState } from "@/features/model-table/filtering/types";
+import { normalizeFilterFormState } from "@/features/model-table/filtering/engine";
 
 // ============================================================================
 // Actions & Reducer

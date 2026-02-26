@@ -24,7 +24,7 @@ export interface FilterPanelOptions {
 }
 
 export type ModelTableFilterPanelProps = FilterPanelOptions &
-  Partial<import("../../filters/FilterPanel").FilterPanelProps>;
+  Partial<import("@/features/model-table/filtering/FilterPanel").FilterPanelProps>;
 
 export type ModelTableV2TopAction = {
   key: string;

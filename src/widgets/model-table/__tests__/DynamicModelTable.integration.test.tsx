@@ -9,7 +9,7 @@ import { GET_MODEL_SCHEMA } from "../queries";
 
 vi.stubEnv("VITE_METADATA_GATEWAY_TABLE", "0");
 
-vi.mock("../../filters/FilterPanel", () => ({
+vi.mock("@/features/model-table/filtering/FilterPanel", () => ({
   FilterPanel: () => <div data-testid="dynamic-filter-form-mock">Filter Form</div>,
 }));
 

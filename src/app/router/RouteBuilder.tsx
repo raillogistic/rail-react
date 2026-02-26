@@ -1,59 +1,27 @@
-/**
- * Route Builder Component
- *
- * Purpose: Centralized route configuration and router setup
- * Args: None (configuration component)
- * Returns: Router configuration with Routes component
- * Raises: Error when route configuration is invalid
- * Example: <RouteBuilder />
- */
-
 import React from "react";
 import { Routes, Route } from "react-router-dom";
-import { ROUTES } from "@/shared/routing/paths";
 import { ProtectedRoute } from "./ProtectedRoute";
 import { PublicRoute } from "./PublicRoute";
-
-// Import page components
-import { LoginPage, ForgotPasswordPage, ResetPasswordPage } from "@/pages/auth";
 import { MainApp } from "@/app/shell/MainApp";
-import { ModelImportPage } from "@/features/model-import/pages/ModelImportPage";
-
-// Import view components
+import { getAllRoutes } from "./manifestRegistry";
 
 /**
- * Main Route Builder Component
+ * Builds public routes from manifests and mounts protected shell for all other routes.
  */
 export const RouteBuilder: React.FC = () => {
+  const publicRoutes = getAllRoutes().filter(
+    (route) => route.guard === "public" && route.element,
+  );
+
   return (
     <Routes>
-      {/* Public routes */}
-      <Route
-        path={ROUTES.LOGIN}
-        element={
-          <PublicRoute>
-            <LoginPage />
-          </PublicRoute>
-        }
-      />
-      <Route
-        path={ROUTES.FORGOT_PASSWORD}
-        element={
-          <PublicRoute>
-            <ForgotPasswordPage />
-          </PublicRoute>
-        }
-      />
-      <Route
-        path={ROUTES.RESET_PASSWORD}
-        element={
-          <PublicRoute>
-            <ResetPasswordPage />
-          </PublicRoute>
-        }
-      />
-
-      {/* Protected routes with main layout */}
+      {publicRoutes.map((route) => (
+        <Route
+          key={route.id}
+          path={route.path}
+          element={<PublicRoute>{route.element}</PublicRoute>}
+        />
+      ))}
       <Route
         path="/*"
         element={
@@ -62,29 +30,6 @@ export const RouteBuilder: React.FC = () => {
           </ProtectedRoute>
         }
       />
-    </Routes>
-  );
-};
-
-/**
- * Protected Routes Component (used within MainApp layout)
- */
-export const ProtectedRoutes: React.FC = () => {
-  return (
-    <Routes>
-      {/* Default redirect to dashboard */}
-      <Route path={ROUTES.MODEL_IMPORT} element={<ModelImportPage />} />
-
-      {/* Dashboard */}
-
-      {/* Users */}
-      {/* <Route path={ROUTES.USERS} element={<UsersPage />} /> */}
-
-      {/* Reports */}
-
-      {/* Settings */}
-
-      {/* 404 fallback */}
     </Routes>
   );
 };

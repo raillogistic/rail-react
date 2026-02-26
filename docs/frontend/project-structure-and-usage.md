@@ -110,8 +110,8 @@ The boot process is stable and follows a fixed provider and composition order.
    `ConnectedAuthProvider`, and `AuthDependentContent`.
 3. `src/app/bootstrap/AuthDependentContent.tsx` applies theme settings and
    mounts `RouteBuilder`.
-4. `src/app/router/RouteBuilder.tsx` renders public auth routes and then the
-   protected shell route.
+4. `src/app/router/RouteBuilder.tsx` reads manifest routes, mounts every public
+   route through `PublicRoute`, and mounts the protected shell route.
 5. `src/app/shell/MainApp.tsx` renders the sidebar, navbar, and page content.
 6. `src/app/shell/AppContent.tsx` resolves page components from
    `src/app/router/navigation.ts`.
@@ -145,8 +145,9 @@ You can add local routes without committing them by creating
 
 The adapter in `src/app/router/localManifestExtension.ts` accepts:
 
-- `APP_MANIFEST` or `APP_MANIFEST_EXTENSION`
-- legacy-style `APP_NAVIGATION_LINKS` and `APP_DEFAULT_ROUTE`
+- `APP_MANIFEST`
+
+Legacy local extension contracts are no longer supported.
 
 ## Add a new project manifest
 

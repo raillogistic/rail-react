@@ -37,21 +37,7 @@ export function NavMain({ navigationLinks }: NavMainProps) {
   const { state } = useSidebar();
   const isCollapsed = state === "collapsed";
   
-  const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>(
-    () => {
-      const initial: Record<string, boolean> = {};
-      for (const section of navigationLinks) {
-        if (section.id === "referentials") {
-          for (const item of section.items) {
-            if (item.children?.length) {
-              initial[item.id] = true;
-            }
-          }
-        }
-      }
-      return initial;
-    }
-  );
+  const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     setExpandedItems((prev) => {

@@ -20,7 +20,7 @@ import {
   DYNAMIC_TABLE_SELECTION_COLUMN_ID,
   type DynamicTableColumnInput,
 } from "@/widgets/dynamic-table";
-import { createInitialFilterState } from "@/widgets/filters/state";
+import { createInitialFilterState } from "@/features/model-table/filtering/state";
 import type { DynamicTableFeatureFlags } from "@/widgets/dynamic-table";
 import { TooltipProvider } from "@/shared/ui/kit/tooltip";
 import { cn } from "@/shared/utils";

@@ -191,10 +191,7 @@ function buildNestedFields(
         description: "Nested object relation rendered with contextual fields.",
         mode: "object",
         columns: 2,
-        fields: [
-          { path: "desc", order: 0 },
-          { path: "id", order: 1 },
-        ],
+        fields: ["desc", { path: "id", order: 1 }],
       };
     }
   }

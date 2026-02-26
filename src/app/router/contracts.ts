@@ -1,4 +1,3 @@
-import { useModelSingleQuery } from "@/shared/api/graphql/graphql";
 import type { ComponentType, ReactNode } from "react";
 
 export type RouteGuard = "public" | "protected";

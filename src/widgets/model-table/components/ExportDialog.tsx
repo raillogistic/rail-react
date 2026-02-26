@@ -31,7 +31,7 @@ import {
 import { cn } from "@/shared/utils";
 import { useMetadata } from "../context/MetadataContext";
 import { useTable } from "../context/TableContext";
-import type { FilterGroup, FilterQueryVariables } from "../../filters/types";
+import type { FilterGroup, FilterQueryVariables } from "@/features/model-table/filtering/types";
 import type { ModelSchema } from "../types";
 import {
   ExportFieldTree,

@@ -35,8 +35,8 @@ import {
 import {
   removeRelationFunctionsByRelation,
   upsertRelationFunction,
-} from "../../../filters/engine";
-import type { RelationFunctionFilter } from "../../../filters/types";
+} from "@/features/model-table/filtering/engine";
+import type { RelationFunctionFilter } from "@/features/model-table/filtering/types";
 import type {
   AggFunction,
   RelationFieldOption,

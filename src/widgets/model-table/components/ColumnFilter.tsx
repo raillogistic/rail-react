@@ -18,12 +18,12 @@ import { useMetadata } from "../context/MetadataContext";
 import { useTableFilters } from "../hooks/useTableFilters";
 import { useTable } from "../context/TableContext";
 import { FieldSchema } from "../types";
-import { ScalarFilterInput } from "../../filters/components/ScalarFilterInput";
+import { ScalarFilterInput } from "@/features/model-table/filtering/components/ScalarFilterInput";
 import type {
   FilterableField,
   FilterOperator,
   FilterBaseType,
-} from "../../filters/types";
+} from "@/features/model-table/filtering/types";
 import { cn } from "@/shared/utils";
 import { translateLookupLabelFr } from "./filtering/operatorLabels";
 

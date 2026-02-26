@@ -45,8 +45,8 @@ import { cn } from "@/shared/utils";
 import { useTable } from "../context/TableContext";
 import { useMetadata } from "../context/MetadataContext";
 import { useTableFilters } from "../hooks/useTableFilters";
-import { FilterPanel } from "../../filters/FilterPanel";
-import { FilterFormState, FilterQueryVariables } from "../../filters/types";
+import { FilterPanel } from "@/features/model-table/filtering/FilterPanel";
+import { FilterFormState, FilterQueryVariables } from "@/features/model-table/filtering/types";
 import type {
   ModelTableFilterPanelProps,
   ModelTableV2TableConfig,
