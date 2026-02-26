@@ -1219,6 +1219,10 @@ export const DynamicModelTable = forwardRef<
     () => resolveInitialTableState(initVariables),
     [initVariables],
   );
+  const resolvedFilterPanel: ModelTableFilterPanelProps = {
+    ...(filterPanel ?? {}),
+    widthClassName: "!w-full lg:!w-1/2 sm:!max-w-none",
+  };
   const refetchRef = useRef<BaseModelTableRefetch | undefined>(undefined);
   const snapshotRef = useRef<DynamicModelTableSnapshot>({
     data: [],
@@ -1320,7 +1324,7 @@ export const DynamicModelTable = forwardRef<
         >
           <DynamicBaseTableContent
             persistenceKey={baseTable?.persistenceKey}
-            filterPanel={filterPanel}
+            filterPanel={resolvedFilterPanel}
             tableConfig={baseTable?.tableConfig}
             view={baseTable?.view}
             performance={baseTable?.performance}
