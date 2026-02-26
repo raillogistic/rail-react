@@ -55,7 +55,10 @@ export function FormOverlay({
     return (
       <Dialog open={open} onOpenChange={onOpenChange}>
         <DialogContent
-          className={cn("max-w-3xl", width ? "max-w-none" : undefined)}
+          className={cn(
+            "max-w-3xl rounded-2xl border-border/30 shadow-2xl backdrop-blur-xl bg-background/95",
+            width ? "max-w-none" : undefined,
+          )}
           style={{
             width,
             maxWidth: width,
@@ -63,7 +66,7 @@ export function FormOverlay({
           }}
         >
           <DialogHeader>
-            <DialogTitle>{title}</DialogTitle>
+            <DialogTitle className="font-bold text-lg">{title}</DialogTitle>
           </DialogHeader>
           <div className="max-h-[70vh] overflow-y-auto">{children}</div>
         </DialogContent>
@@ -72,23 +75,22 @@ export function FormOverlay({
   }
 
   return (
-    <Drawer
-      open={open}
-      onOpenChange={onOpenChange}
-      direction={drawerDirection}
-    >
+    <Drawer open={open} onOpenChange={onOpenChange} direction={drawerDirection}>
       <DrawerContent
-        className={cn("p-0", width ? "max-w-none" : undefined)}
+        className={cn(
+          "p-0 rounded-t-2xl border-border/30 shadow-2xl backdrop-blur-xl bg-background/95",
+          width ? "max-w-none" : undefined,
+        )}
         style={{
           width: width || "50vw",
           maxWidth: width || "50vw",
           height,
         }}
       >
-        <DrawerHeader className="px-4 pt-4">
-          <DrawerTitle>{title}</DrawerTitle>
+        <DrawerHeader className="px-5 pt-5 pb-3 border-b border-border/15">
+          <DrawerTitle className="font-bold text-lg">{title}</DrawerTitle>
         </DrawerHeader>
-        <div className="overflow-y-auto px-4 pb-6">{children}</div>
+        <div className="overflow-y-auto px-5 pb-6">{children}</div>
       </DrawerContent>
     </Drawer>
   );
@@ -120,23 +122,35 @@ export function DeleteConfirmationDialog({
 }: DeleteDialogProps) {
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onCancel()}>
-      <DialogContent className="max-w-md">
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-        </DialogHeader>
-        <p className="text-sm text-muted-foreground">{message}</p>
-        <div className="mt-6 flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={onCancel} disabled={loading}>
-            {cancelLabel}
-          </Button>
-          <Button
-            type="button"
-            variant="destructive"
-            onClick={onConfirm}
-            disabled={loading}
-          >
-            {loading ? "Suppression..." : confirmLabel}
-          </Button>
+      <DialogContent className="max-w-md rounded-2xl border-border/30 shadow-2xl backdrop-blur-xl bg-background/95 p-0 overflow-hidden">
+        <div className="h-1 w-full bg-gradient-to-r from-rose-400 via-rose-500 to-rose-600" />
+        <div className="p-6">
+          <DialogHeader className="mb-3">
+            <DialogTitle className="font-bold text-lg">{title}</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground leading-relaxed">
+            {message}
+          </p>
+          <div className="mt-6 flex justify-end gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onCancel}
+              disabled={loading}
+              className="rounded-xl border-border/30 h-9 text-xs font-semibold"
+            >
+              {cancelLabel}
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={onConfirm}
+              disabled={loading}
+              className="rounded-xl h-9 text-xs font-semibold shadow-lg shadow-rose-500/20"
+            >
+              {loading ? "Suppression..." : confirmLabel}
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
@@ -185,7 +199,9 @@ export function ActionDialog({
       ? (() => {
           try {
             const parsed = JSON.parse(actionMeta.action);
-            return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+            return parsed &&
+              typeof parsed === "object" &&
+              !Array.isArray(parsed)
               ? (parsed as Record<string, unknown>)
               : {};
           } catch {
@@ -206,9 +222,9 @@ export function ActionDialog({
 
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onCancel()}>
-      <DialogContent className="max-w-xl">
+      <DialogContent className="max-w-xl rounded-2xl border-border/30 shadow-2xl backdrop-blur-xl bg-background/95">
         <DialogHeader className={mode === "confirm" ? undefined : "sr-only"}>
-          <DialogTitle>
+          <DialogTitle className="font-bold text-lg">
             {(actionPayload.title as string | undefined) ??
               actionMeta.description ??
               actionMeta.name}
@@ -216,16 +232,26 @@ export function ActionDialog({
         </DialogHeader>
         {mode === "confirm" ? (
           <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-muted-foreground leading-relaxed">
               {(actionPayload.message as string | undefined) ??
                 (actionMeta.description as string | undefined) ??
                 "Voulez-vous exécuter cette action ?"}
             </p>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={onCancel} disabled={submitting}>
+            <div className="flex justify-end gap-3">
+              <Button
+                variant="outline"
+                onClick={onCancel}
+                disabled={submitting}
+                className="rounded-xl h-9 text-xs font-semibold border-border/30"
+              >
                 {cancelLabel}
               </Button>
-              <Button variant={severity} onClick={() => onExecute()} disabled={submitting}>
+              <Button
+                variant={severity}
+                onClick={() => onExecute()}
+                disabled={submitting}
+                className="rounded-xl h-9 text-xs font-semibold"
+              >
                 {confirmLabel}
               </Button>
             </div>
@@ -287,9 +313,9 @@ export function PrintDialog({
   if (!open) return null;
   return (
     <Dialog open onOpenChange={(next) => !next && onCancel()}>
-      <DialogContent className="max-w-xl">
+      <DialogContent className="max-w-xl rounded-2xl border-border/30 shadow-2xl backdrop-blur-xl bg-background/95">
         <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
+          <DialogTitle className="font-bold text-lg">{title}</DialogTitle>
         </DialogHeader>
         <DynamicForm
           schema={schema}

@@ -246,9 +246,9 @@ function resolveInitialTableState(
   const filterVariables = isRecord(initVariables) ? { ...initVariables } : {};
 
   const page = toPositiveInteger(filterVariables.page) ?? 1;
-  const perPage = toPositiveInteger(
-    filterVariables.perPage ?? filterVariables.per_page,
-  ) ?? 20;
+  const perPage =
+    toPositiveInteger(filterVariables.perPage ?? filterVariables.per_page) ??
+    20;
   delete filterVariables.page;
   delete filterVariables.perPage;
   delete filterVariables.per_page;
@@ -994,15 +994,14 @@ function DynamicBaseTableContent({
   const dynamicState = useMemo(
     () => ({
       orderBy,
-      columnOrder:
-        resolvedEnableSelection
-          ? [
-              DYNAMIC_TABLE_SELECTION_COLUMN_ID,
-              ...columnOrder.filter(
-                (columnId) => columnId !== DYNAMIC_TABLE_SELECTION_COLUMN_ID,
-              ),
-            ]
-          : columnOrder,
+      columnOrder: resolvedEnableSelection
+        ? [
+            DYNAMIC_TABLE_SELECTION_COLUMN_ID,
+            ...columnOrder.filter(
+              (columnId) => columnId !== DYNAMIC_TABLE_SELECTION_COLUMN_ID,
+            ),
+          ]
+        : columnOrder,
       columnVisibility,
       columnSizing: columnWidths,
       rowSelection,
@@ -1059,7 +1058,9 @@ function DynamicBaseTableContent({
     fields,
     topActions,
   };
-  const sectionController = useModelTableContentController(sectionControllerInput);
+  const sectionController = useModelTableContentController(
+    sectionControllerInput,
+  );
   const sectionVisibility = resolveSectionVisibility(content?.show);
   const HeaderSlot = content?.slots?.Header ?? ModelTableHeader;
   const TopActionsSlot = content?.slots?.TopActions ?? ModelTableTopActions;
@@ -1083,7 +1084,7 @@ function DynamicBaseTableContent({
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div className="flex h-full w-full max-w-full min-w-0 flex-col overflow-hidden animate-in fade-in duration-700 p-1 sm:p-2">
+      <div className="flex h-full w-full max-w-full min-w-0 flex-col overflow-hidden animate-in fade-in duration-500 p-1 sm:p-2">
         {sectionController.metadata && (
           <div className="flex-none">
             <div className="flex flex-col gap-6 w-full animate-in fade-in duration-700">
@@ -1125,7 +1126,7 @@ function DynamicBaseTableContent({
 
         <div
           className={cn(
-            "flex-1 min-h-0 min-w-0 transition-all duration-300 my-2",
+            "flex-1 min-h-0 min-w-0 transition-all duration-200 my-2",
             hideTableOnMobile ? "hidden md:block" : "block",
           )}
         >
@@ -1168,11 +1169,17 @@ function DynamicBaseTableContent({
                 },
               }}
               totalRows={pagination.totalKnown ? pagination.total : undefined}
-              pageCount={pagination.totalKnown ? pagination.numPages : undefined}
+              pageCount={
+                pagination.totalKnown ? pagination.numPages : undefined
+              }
               hasNextPage={pagination.hasNextPage}
               hasPreviousPage={pagination.hasPreviousPage}
               onLoadMore={() => {
-                if (!isInfiniteMode || tableLoading || !pagination.hasNextPage) {
+                if (
+                  !isInfiniteMode ||
+                  tableLoading ||
+                  !pagination.hasNextPage
+                ) {
                   return;
                 }
                 setPage(pagination.page + 1);
@@ -1344,27 +1351,45 @@ DynamicModelTable.displayName = "DynamicModelTable";
 
 /**
  * Skeleton displayed while metadata is loading.
+ * Premium shimmer effect with staggered row animation.
  */
 function LoadingSkeleton() {
   return (
     <div
-      className="flex h-[400px] w-full flex-col gap-4 p-4 animate-in fade-in duration-500"
+      className="flex h-[420px] w-full flex-col gap-5 p-4 animate-in fade-in duration-500"
       role="status"
     >
+      {/* Header skeleton */}
       <div className="flex items-center justify-between">
-        <div className="h-10 w-64 animate-pulse rounded-lg bg-muted/40" />
+        <div className="flex items-center gap-4">
+          <div className="size-12 animate-pulse rounded-2xl bg-muted/40" />
+          <div className="flex flex-col gap-2">
+            <div className="h-3 w-20 animate-pulse rounded-full bg-muted/30" />
+            <div className="h-6 w-48 animate-pulse rounded-lg bg-muted/40" />
+          </div>
+        </div>
         <div className="flex gap-2">
-          <div className="h-10 w-24 animate-pulse rounded-lg bg-muted/40" />
-          <div className="h-10 w-24 animate-pulse rounded-lg bg-muted/40" />
+          <div className="h-9 w-24 animate-pulse rounded-2xl bg-muted/30" />
+          <div className="h-9 w-20 animate-pulse rounded-2xl bg-muted/30" />
         </div>
       </div>
-      <div className="flex-1 rounded-xl border border-border/40 bg-card/30 backdrop-blur-sm p-1">
-        <div className="h-12 w-full animate-pulse rounded-t-lg bg-muted/60" />
-        {[...Array(6)].map((_, index) => (
-          <div key={index} className="flex gap-4 p-4 border-b border-border/10">
-            <div className="h-4 w-4 animate-pulse rounded bg-muted/40" />
-            <div className="h-4 flex-1 animate-pulse rounded bg-muted/30" />
-            <div className="h-4 w-24 animate-pulse rounded bg-muted/30" />
+
+      {/* Toolbar skeleton */}
+      <div className="h-12 w-full animate-pulse rounded-2xl bg-muted/20 border border-border/20" />
+
+      {/* Table skeleton */}
+      <div className="flex-1 overflow-hidden rounded-2xl border border-border/20 bg-card/30 backdrop-blur-sm">
+        <div className="h-10 w-full bg-muted/30" />
+        {Array.from({ length: 7 }).map((_, index) => (
+          <div
+            key={index}
+            className="flex items-center gap-4 border-b border-border/10 px-4 py-3"
+            style={{ animationDelay: `${index * 60}ms` }}
+          >
+            <div className="size-4 animate-pulse rounded bg-muted/30" />
+            <div className="h-3.5 flex-[2] animate-pulse rounded-md bg-muted/25" />
+            <div className="h-3.5 flex-1 animate-pulse rounded-md bg-muted/20" />
+            <div className="h-3.5 w-20 animate-pulse rounded-md bg-muted/20" />
           </div>
         ))}
       </div>
@@ -1374,23 +1399,46 @@ function LoadingSkeleton() {
 
 /**
  * Error state displayed when metadata loading fails.
+ * Premium card with gradient accent strip and centered icon.
  */
 function ErrorState({ error }: { error: Error }) {
   return (
     <div className="flex h-[400px] items-center justify-center p-8">
-      <div className="max-w-md w-full rounded-2xl border border-red-200 bg-red-50/30 p-8 text-center backdrop-blur-sm animate-in zoom-in-95 duration-300">
-        <h3 className="mb-2 text-lg font-bold text-red-900">
-          Erreur de metadonnees
-        </h3>
-        <p className="text-sm text-red-700/80 mb-6">
-          {localizeTableErrorMessage(error)}
-        </p>
-        <button
-          onClick={() => window.location.reload()}
-          className="rounded-full bg-red-600 px-6 py-2 text-sm font-semibold text-white shadow-lg"
-        >
-          Reessayer
-        </button>
+      <div className="max-w-md w-full overflow-hidden rounded-3xl border border-rose-200/60 dark:border-rose-800/30 bg-background/95 shadow-xl backdrop-blur-xl animate-in zoom-in-95 duration-300">
+        {/* Accent strip */}
+        <div className="h-1.5 w-full bg-gradient-to-r from-rose-400 via-rose-500 to-rose-600" />
+        <div className="flex flex-col items-center gap-4 p-8 text-center">
+          <div className="flex size-14 items-center justify-center rounded-2xl bg-rose-500/10">
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="size-7 text-rose-500"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
+              />
+            </svg>
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-foreground">
+              Erreur de métadonnées
+            </h3>
+            <p className="mt-1 text-sm text-muted-foreground leading-relaxed">
+              {localizeTableErrorMessage(error)}
+            </p>
+          </div>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-2 rounded-xl bg-rose-500 px-6 py-2.5 text-xs font-bold uppercase tracking-widest text-white shadow-lg shadow-rose-500/20 transition-all hover:bg-rose-600 hover:scale-[1.02] active:scale-95"
+          >
+            Réessayer
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -1398,11 +1446,28 @@ function ErrorState({ error }: { error: Error }) {
 
 /**
  * Data-level error display shown below the table.
+ * Premium inline alert with icon and subtle background.
  */
 function DataErrorDisplay({ error }: { error: Error }) {
   return (
-    <div className="flex-none flex items-center gap-2 rounded-lg bg-red-50/50 border border-red-100 px-4 py-2 text-xs font-semibold text-red-600 mt-2">
-      Erreur de donnees : {localizeTableErrorMessage(error)}
+    <div className="flex-none flex items-center gap-3 rounded-xl bg-rose-50/50 dark:bg-rose-950/20 border border-rose-200/50 dark:border-rose-800/30 px-4 py-3 text-xs font-semibold text-rose-600 dark:text-rose-400 mt-3 animate-in slide-in-from-top-1 duration-300">
+      <div className="flex size-6 shrink-0 items-center justify-center rounded-lg bg-rose-500/10">
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          className="size-3.5 text-rose-500"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z"
+          />
+        </svg>
+      </div>
+      <span>Erreur de données : {localizeTableErrorMessage(error)}</span>
     </div>
   );
 }

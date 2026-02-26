@@ -19,7 +19,11 @@ import { useTableFilters } from "../hooks/useTableFilters";
 import { useTable } from "../context/TableContext";
 import { FieldSchema } from "../types";
 import { ScalarFilterInput } from "../../filters/components/ScalarFilterInput";
-import type { FilterableField, FilterOperator, FilterBaseType } from "../../filters/types";
+import type {
+  FilterableField,
+  FilterOperator,
+  FilterBaseType,
+} from "../../filters/types";
 import { cn } from "@/shared/utils";
 import { translateLookupLabelFr } from "./filtering/operatorLabels";
 
@@ -49,11 +53,16 @@ function resolveLookupOperator(option: {
   return rawName || "exact";
 }
 
-export function ColumnFilter({ columnId, field, hideTrigger = false }: ColumnFilterProps) {
+export function ColumnFilter({
+  columnId,
+  field,
+  hideTrigger = false,
+}: ColumnFilterProps) {
   const { metadata } = useMetadata();
   const metadataFilters = metadata?.filters ?? [];
   const { activeColumnFilter, setActiveColumnFilter } = useTable();
-  const { addFilterCondition, advancedFilters, removeFilterCondition } = useTableFilters();
+  const { addFilterCondition, advancedFilters, removeFilterCondition } =
+    useTableFilters();
   const [open, setOpen] = useState(false);
   const openedAtRef = useRef(0);
   const openedFromMenuRef = useRef(false);
@@ -111,7 +120,15 @@ export function ColumnFilter({ columnId, field, hideTrigger = false }: ColumnFil
           relation.name === candidate || relation.fieldName === candidate,
       ),
     );
-  }, [metadata, resolvedField?.isRelation, resolvedField?.name, resolvedField?.fieldName, filterMeta?.name, filterMeta?.fieldName, columnId]);
+  }, [
+    metadata,
+    resolvedField?.isRelation,
+    resolvedField?.name,
+    resolvedField?.fieldName,
+    filterMeta?.name,
+    filterMeta?.fieldName,
+    columnId,
+  ]);
 
   // 2. Map to FilterableField for ScalarFilterInput
   const filterableField = useMemo<FilterableField | null>(() => {
@@ -128,7 +145,9 @@ export function ColumnFilter({ columnId, field, hideTrigger = false }: ColumnFil
 
     // Map operators
     const operators: FilterOperator[] = filterMeta.options.map((opt) => {
-      const lookup = resolveLookupOperator(opt as { name?: string; lookup?: string; lookup_expr?: string });
+      const lookup = resolveLookupOperator(
+        opt as { name?: string; lookup?: string; lookup_expr?: string },
+      );
       return {
         name: lookup,
         label: translateLookupLabelFr(lookup, opt.label),
@@ -158,7 +177,8 @@ export function ColumnFilter({ columnId, field, hideTrigger = false }: ColumnFil
       isRelation: resolvedField.isRelation,
       relationConfig: (() => {
         if (!resolvedField.isRelation) return undefined;
-        const relatedModelRaw = relationSchema?.relatedModel ?? filterMeta?.relatedModel ?? "";
+        const relatedModelRaw =
+          relationSchema?.relatedModel ?? filterMeta?.relatedModel ?? "";
         const [modelApp, modelName] = relatedModelRaw.includes(".")
           ? relatedModelRaw.split(".", 2)
           : ["", relatedModelRaw];
@@ -167,16 +187,19 @@ export function ColumnFilter({ columnId, field, hideTrigger = false }: ColumnFil
           relatedApp: relationSchema?.relatedApp || modelApp || "",
           relatedModel,
           lookupField:
-            relationSchema?.lookupField || resolvedField.relationLookupField || "id",
+            relationSchema?.lookupField ||
+            resolvedField.relationLookupField ||
+            "id",
           searchFields:
-            relationSchema?.searchFields && relationSchema.searchFields.length > 0
+            relationSchema?.searchFields &&
+            relationSchema.searchFields.length > 0
               ? relationSchema.searchFields
               : ["name"],
         };
       })(),
       uiHints: {
         widget: "text", // Default, ScalarFilterInput auto-detects better
-      }
+      },
     };
   }, [resolvedField, filterMeta, relationSchema]);
 
@@ -190,7 +213,10 @@ export function ColumnFilter({ columnId, field, hideTrigger = false }: ColumnFil
           const conditionPath = Array.isArray(cond.fieldPath)
             ? cond.fieldPath.join(".")
             : "";
-          if (conditionPath === targetPath || cond.fieldName === filterFieldName) {
+          if (
+            conditionPath === targetPath ||
+            cond.fieldName === filterFieldName
+          ) {
             return cond;
           }
         }
@@ -204,7 +230,9 @@ export function ColumnFilter({ columnId, field, hideTrigger = false }: ColumnFil
     return findCondition(advancedFilters.root);
   }, [advancedFilters.root, filterFieldName, filterFieldPath]);
 
-  const [operator, setOperator] = useState<string>(activeCondition?.operator || filterableField?.defaultOperator || "exact");
+  const [operator, setOperator] = useState<string>(
+    activeCondition?.operator || filterableField?.defaultOperator || "exact",
+  );
   const [value, setValue] = useState<any>(activeCondition?.value);
 
   // Sync state when opening
@@ -213,8 +241,8 @@ export function ColumnFilter({ columnId, field, hideTrigger = false }: ColumnFil
       setOperator(activeCondition.operator);
       setValue(activeCondition.value);
     } else if (open && !activeCondition && filterableField) {
-       setOperator(filterableField.defaultOperator);
-       setValue(undefined);
+      setOperator(filterableField.defaultOperator);
+      setValue(undefined);
     }
   }, [open, activeCondition, filterableField]);
 
@@ -231,7 +259,9 @@ export function ColumnFilter({ columnId, field, hideTrigger = false }: ColumnFil
 
   if (!resolvedField || !filterMeta || !filterableField) return null;
 
-  const currentOperator = filterableField.operators.find(op => op.name === operator) || filterableField.operators[0];
+  const currentOperator =
+    filterableField.operators.find((op) => op.name === operator) ||
+    filterableField.operators[0];
 
   const handleApply = () => {
     addFilterCondition({
@@ -247,10 +277,10 @@ export function ColumnFilter({ columnId, field, hideTrigger = false }: ColumnFil
 
   const handleClear = () => {
     if (activeCondition) {
-        // We need the ID to remove it cleanly, or we remove by field name?
-        // useTableFilters might not expose remove by field.
-        // Let's assume we can remove by ID if we have it.
-        removeFilterCondition(activeCondition.id);
+      // We need the ID to remove it cleanly, or we remove by field name?
+      // useTableFilters might not expose remove by field.
+      // Let's assume we can remove by ID if we have it.
+      removeFilterCondition(activeCondition.id);
     }
     setValue(undefined);
     openedFromMenuRef.current = false;
@@ -295,23 +325,34 @@ export function ColumnFilter({ columnId, field, hideTrigger = false }: ColumnFil
           <Filter className={cn("h-3.5 w-3.5", isActive && "fill-current")} />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80 p-3" align="start" side="bottom">
+      <PopoverContent
+        className="w-80 rounded-xl border-border/30 p-3 shadow-xl backdrop-blur-xl bg-background/95"
+        align="start"
+        side="bottom"
+      >
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h4 className="font-medium text-sm text-foreground">
+            <h4 className="font-semibold text-xs text-foreground">
               Filtrer: {resolvedField.verboseName}
             </h4>
             {isActive && (
-                <Button variant="ghost" size="sm" className="h-6 px-2 text-xs text-destructive hover:bg-destructive/10" onClick={handleClear}>
-                    Effacer
-                </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 px-2 text-[10px] font-bold uppercase tracking-wider text-destructive hover:bg-destructive/10 rounded-lg"
+                onClick={handleClear}
+              >
+                Effacer
+              </Button>
             )}
           </div>
-          
+
           <div className="space-y-2">
-            <label className="text-xs text-muted-foreground font-medium">Opérateur</label>
+            <label className="text-[10px] text-muted-foreground/60 font-bold uppercase tracking-wider">
+              Opérateur
+            </label>
             <Select value={operator} onValueChange={setOperator}>
-              <SelectTrigger className="h-8 text-xs">
+              <SelectTrigger className="h-8 text-xs rounded-lg border-border/30">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -325,20 +366,22 @@ export function ColumnFilter({ columnId, field, hideTrigger = false }: ColumnFil
           </div>
 
           <div className="space-y-2">
-             <label className="text-xs text-muted-foreground font-medium">Valeur</label>
-             <div className="min-h-[32px]">
-                <ScalarFilterInput
-                    field={filterableField}
-                    operator={currentOperator}
-                    value={value}
-                    onChange={setValue}
-                    autoFocus
-                />
-             </div>
+            <label className="text-[10px] text-muted-foreground/60 font-bold uppercase tracking-wider">
+              Valeur
+            </label>
+            <div className="min-h-[32px]">
+              <ScalarFilterInput
+                field={filterableField}
+                operator={currentOperator}
+                value={value}
+                onChange={setValue}
+                autoFocus
+              />
+            </div>
           </div>
 
-          <Separator />
-          
+          <Separator className="bg-border/20" />
+
           <div className="flex justify-end gap-2 pt-1">
             <Button
               size="sm"
@@ -347,12 +390,16 @@ export function ColumnFilter({ columnId, field, hideTrigger = false }: ColumnFil
                 openedFromMenuRef.current = false;
                 setOpen(false);
               }}
-              className="h-7 text-xs"
+              className="h-7 text-xs rounded-lg"
             >
-                Annuler
+              Annuler
             </Button>
-            <Button size="sm" onClick={handleApply} className="h-7 text-xs">
-                Appliquer
+            <Button
+              size="sm"
+              onClick={handleApply}
+              className="h-7 text-xs rounded-lg"
+            >
+              Appliquer
             </Button>
           </div>
         </div>

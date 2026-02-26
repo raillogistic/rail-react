@@ -3,7 +3,7 @@ import type { CSSProperties, RefObject } from "react";
 import type { Row, Table } from "@tanstack/react-table";
 import { flexRender } from "@tanstack/react-table";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import { ChevronRight, Loader2 } from "lucide-react";
+import { ChevronRight, Inbox, Loader2 } from "lucide-react";
 import { cn } from "@/shared/utils";
 import { TableBody, TableCell, TableRow } from "@/shared/ui/kit/table";
 import type {
@@ -16,9 +16,7 @@ import type {
 /**
  * Props for `DynamicTableRows`.
  */
-export interface DynamicTableRowsProps<
-  TRow extends Record<string, unknown>,
-> {
+export interface DynamicTableRowsProps<TRow extends Record<string, unknown>> {
   /** TanStack table instance. */
   table: Table<TRow>;
   /** Loading flag for body rendering. */
@@ -81,22 +79,27 @@ function formatFallbackValue(value: unknown): string {
 
 /**
  * Computes text and spacing classes derived from density and wrapping modes.
+ * Premium density treatment with refined typography and spacing.
  */
 function resolveCellTextClasses(
   density: DynamicTableDensity,
   wrapCells: boolean,
 ): string {
-  const densityClass = density === "compact"
-    ? "text-[11px] px-2 py-1.5"
-    : density === "spacious"
-      ? "text-sm px-4 py-3"
-      : "text-[13px] px-3 py-2";
-  const wrappingClass = wrapCells ? "whitespace-normal break-words" : "truncate";
+  const densityClass =
+    density === "compact"
+      ? "text-[11px] px-2.5 py-1.5"
+      : density === "spacious"
+        ? "text-sm px-4 py-3.5"
+        : "text-[13px] px-3 py-2.5";
+  const wrappingClass = wrapCells
+    ? "whitespace-normal break-words"
+    : "truncate";
   return `${densityClass} ${wrappingClass}`;
 }
 
 /**
  * Renders grouped-row value cell using TanStack grouping metadata.
+ * Premium styled group header with chevron animation and count badge.
  */
 function renderGroupedCell<TRow extends Record<string, unknown>>(
   row: Row<TRow>,
@@ -105,18 +108,20 @@ function renderGroupedCell<TRow extends Record<string, unknown>>(
   return (
     <button
       type="button"
-      className="inline-flex items-center gap-2 text-left font-semibold text-foreground"
+      className="inline-flex items-center gap-2.5 text-left font-semibold text-foreground transition-colors hover:text-primary"
       onClick={row.getToggleExpandedHandler()}
     >
-      <ChevronRight
-        className={cn(
-          "h-4 w-4 transition-transform",
-          row.getIsExpanded() && "rotate-90",
-        )}
-      />
-      <span>{value}</span>
-      <span className="text-xs text-muted-foreground">
-        ({row.subRows.length})
+      <div className="flex size-5 items-center justify-center rounded-md bg-primary/10 text-primary transition-colors">
+        <ChevronRight
+          className={cn(
+            "size-3.5 transition-transform duration-200",
+            row.getIsExpanded() && "rotate-90",
+          )}
+        />
+      </div>
+      <span className="font-semibold">{value}</span>
+      <span className="inline-flex items-center justify-center rounded-full bg-muted/60 px-2 py-0.5 text-[10px] font-bold tabular-nums text-muted-foreground">
+        {row.subRows.length}
       </span>
     </button>
   );
@@ -124,6 +129,8 @@ function renderGroupedCell<TRow extends Record<string, unknown>>(
 
 /**
  * Renders all table body rows with optional virtualization.
+ * Premium row styling with refined hover states, selection highlights,
+ * and polished loading/empty placeholder states.
  */
 export function DynamicTableRows<TRow extends Record<string, unknown>>({
   table,
@@ -170,22 +177,26 @@ export function DynamicTableRows<TRow extends Record<string, unknown>>({
   ): { className?: string; style?: CSSProperties } => {
     if (columnId === expandColumnId && expandColumnSticky) {
       return {
-        className: "sticky z-20 bg-background",
+        className: "sticky z-20 bg-inherit",
         style: { left: 0 },
       };
     }
-    if (columnId === selectionColumnId && layout.stickySelectionColumn !== false) {
+    if (
+      columnId === selectionColumnId &&
+      layout.stickySelectionColumn !== false
+    ) {
       const leftOffset = selectionColumnLeftOffsetPx ?? 0;
       return {
-        className: leftOffset > 0
-          ? "sticky z-20 bg-background"
-          : "sticky left-0 z-20 bg-background",
+        className:
+          leftOffset > 0
+            ? "sticky z-20 bg-inherit"
+            : "sticky left-0 z-20 bg-inherit",
         style: leftOffset > 0 ? { left: leftOffset } : undefined,
       };
     }
     if (columnId === actionsColumnId && layout.actions?.sticky !== false) {
       return {
-        className: "sticky right-0 z-20 bg-background",
+        className: "sticky right-0 z-20 bg-inherit",
       };
     }
     return {};
@@ -216,7 +227,7 @@ export function DynamicTableRows<TRow extends Record<string, unknown>>({
       <TableRow key={`${row.id}::expanded`} className="hover:bg-transparent">
         <TableCell
           colSpan={visibleColumnCount}
-          className="border-b border-border/40 bg-muted/20 px-4 py-3"
+          className="border-b border-border/30 bg-muted/15 px-5 py-4"
         >
           {content}
         </TableCell>
@@ -226,6 +237,7 @@ export function DynamicTableRows<TRow extends Record<string, unknown>>({
 
   /**
    * Renders one base row and its optional detail row.
+   * Includes subtle even/odd banding and smooth hover transitions.
    */
   const renderRow = (row: Row<TRow>, rowIndex: number) => {
     const rowClassName = layout.rowClassName?.({
@@ -237,13 +249,25 @@ export function DynamicTableRows<TRow extends Record<string, unknown>>({
       <TableRow
         key={row.id}
         data-state={row.getIsSelected() ? "selected" : undefined}
-        className={cn(rowClassName)}
+        className={cn(
+          "transition-colors duration-150",
+          "hover:bg-muted/30",
+          row.getIsSelected() && "bg-primary/5 hover:bg-primary/8",
+          rowIndex % 2 === 1 && !row.getIsSelected() && "bg-muted/8",
+          rowClassName,
+        )}
       >
         {row.getVisibleCells().map((cell) => {
-          const rendered = flexRender(cell.column.columnDef.cell, cell.getContext());
-          const fallbackRendered = rendered ?? formatFallbackValue(cell.getValue());
+          const rendered = flexRender(
+            cell.column.columnDef.cell,
+            cell.getContext(),
+          );
+          const fallbackRendered =
+            rendered ?? formatFallbackValue(cell.getValue());
           const sticky = resolveStickyCellStyle(cell.column.id);
-          const metaClass = (cell.column.columnDef.meta as { className?: string } | undefined)?.className;
+          const metaClass = (
+            cell.column.columnDef.meta as { className?: string } | undefined
+          )?.className;
           const userCellClass = layout.cellClassName?.({
             row: row.original,
             rowIndex,
@@ -270,7 +294,7 @@ export function DynamicTableRows<TRow extends Record<string, unknown>>({
                 ...(sticky.style ?? {}),
               }}
               className={cn(
-                "border-b border-border/40 align-middle",
+                "border-b border-border/20 align-middle text-foreground/80",
                 cellTextClasses,
                 sticky.className,
                 metaClass,
@@ -291,14 +315,20 @@ export function DynamicTableRows<TRow extends Record<string, unknown>>({
     return [baseRow, expandedRow];
   };
 
+  /* Loading state — premium spinner with shimmer skeleton rows */
   if (loading && rows.length === 0) {
     return (
       <TableBody>
         <TableRow>
-          <TableCell colSpan={visibleColumnCount} className="h-40">
-            <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              <span>{loadingText ?? "Loading..."}</span>
+          <TableCell colSpan={visibleColumnCount} className="h-52 border-0">
+            <div className="flex flex-col items-center justify-center gap-3 py-8">
+              <div className="relative flex size-10 items-center justify-center">
+                <div className="absolute inset-0 animate-ping rounded-full bg-primary/10" />
+                <Loader2 className="size-5 animate-spin text-primary" />
+              </div>
+              <span className="text-xs font-medium text-muted-foreground">
+                {loadingText ?? "Chargement des données…"}
+              </span>
             </div>
           </TableCell>
         </TableRow>
@@ -306,12 +336,26 @@ export function DynamicTableRows<TRow extends Record<string, unknown>>({
     );
   }
 
+  /* Empty state — premium illustrated placeholder */
   if (!loading && rows.length === 0) {
     return (
       <TableBody>
         <TableRow>
-          <TableCell colSpan={visibleColumnCount} className="h-40 text-center text-sm text-muted-foreground">
-            {emptyState ?? "No data available."}
+          <TableCell colSpan={visibleColumnCount} className="h-52 border-0">
+            <div className="flex flex-col items-center justify-center gap-3 py-8">
+              <div className="flex size-12 items-center justify-center rounded-2xl bg-muted/40 text-muted-foreground/40">
+                <Inbox className="size-6" />
+              </div>
+              <div className="text-center">
+                <p className="text-sm font-semibold text-muted-foreground/70">
+                  {emptyState ?? "Aucune donnée disponible"}
+                </p>
+                <p className="mt-0.5 text-[11px] text-muted-foreground/40">
+                  Essayez d'ajuster vos filtres ou d'ajouter de nouvelles
+                  entrées.
+                </p>
+              </div>
+            </div>
           </TableCell>
         </TableRow>
       </TableBody>

@@ -2,7 +2,11 @@ import { useCallback, useEffect, useMemo, useRef } from "react";
 import type { CSSProperties } from "react";
 import { DndContext, closestCenter } from "@dnd-kit/core";
 import type { DragEndEvent } from "@dnd-kit/core";
-import { SortableContext, arrayMove, horizontalListSortingStrategy } from "@dnd-kit/sortable";
+import {
+  SortableContext,
+  arrayMove,
+  horizontalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import {
   type ColumnDef,
   type ColumnSizingState,
@@ -193,7 +197,10 @@ function resolveDefaultRowId<TRow extends Record<string, unknown>>(
   index: number,
 ): string {
   const rowIdCandidate = row.id;
-  if (typeof rowIdCandidate === "string" || typeof rowIdCandidate === "number") {
+  if (
+    typeof rowIdCandidate === "string" ||
+    typeof rowIdCandidate === "number"
+  ) {
     return String(rowIdCandidate);
   }
   return String(index);
@@ -330,7 +337,9 @@ function buildColumnDefsFromSpec<TRow extends Record<string, unknown>>(
 /**
  * Creates the built-in selection column definition.
  */
-function buildSelectionColumnDef<TRow extends Record<string, unknown>>(): ColumnDef<TRow, unknown> {
+function buildSelectionColumnDef<
+  TRow extends Record<string, unknown>,
+>(): ColumnDef<TRow, unknown> {
   return {
     id: DYNAMIC_TABLE_SELECTION_COLUMN_ID,
     header: () => null,
@@ -338,7 +347,9 @@ function buildSelectionColumnDef<TRow extends Record<string, unknown>>(): Column
       <div className="grid place-items-center">
         <Checkbox
           checked={context.row.getIsSelected()}
-          onCheckedChange={(checked) => context.row.toggleSelected(Boolean(checked))}
+          onCheckedChange={(checked) =>
+            context.row.toggleSelected(Boolean(checked))
+          }
           aria-label={`Select row ${context.row.id}`}
         />
       </div>
@@ -366,11 +377,7 @@ function resolveExpandToggleAriaLabel<TRow extends Record<string, unknown>>(
   config: DynamicTableResolvedExpandColumnConfig<TRow>,
 ): string {
   if (config.ariaLabel) {
-    return config.ariaLabel(
-      context.row,
-      context.rowIndex,
-      context.expanded,
-    );
+    return config.ariaLabel(context.row, context.rowIndex, context.expanded);
   }
   const actionLabel = context.expanded ? "Collapse" : "Expand";
   return `${actionLabel} row ${context.rowId}`;
@@ -427,9 +434,7 @@ function buildExpandColumnDef<TRow extends Record<string, unknown>>(
     enableResizing: false,
     meta: {
       title:
-        typeof config.headerLabel === "string"
-          ? config.headerLabel
-          : undefined,
+        typeof config.headerLabel === "string" ? config.headerLabel : undefined,
     },
   };
 }
@@ -502,7 +507,10 @@ export function DynamicTable<TRow extends Record<string, unknown>>({
   onLoadMore,
 }: DynamicTableProps<TRow>) {
   const features = useMemo(
-    () => resolveFeatures(featuresInput as DynamicTableProps<Record<string, unknown>>["features"]),
+    () =>
+      resolveFeatures(
+        featuresInput as DynamicTableProps<Record<string, unknown>>["features"],
+      ),
     [featuresInput],
   );
   const layout = useMemo(() => resolveLayout(layoutInput), [layoutInput]);
@@ -540,10 +548,7 @@ export function DynamicTable<TRow extends Record<string, unknown>>({
     () => collectSortDescriptors(columns),
     [columns],
   );
-  const leafColumnIds = useMemo(
-    () => collectLeafColumnIds(columns),
-    [columns],
-  );
+  const leafColumnIds = useMemo(() => collectLeafColumnIds(columns), [columns]);
   const sortingState = useMemo(
     () => orderByToSortingState(dynamicState.orderBy, sortDescriptors),
     [dynamicState.orderBy, sortDescriptors],
@@ -624,7 +629,9 @@ export function DynamicTable<TRow extends Record<string, unknown>>({
     pageCount: paginationMode === "server" ? pageCount : undefined,
     onSortingChange: (updater) => {
       const nextSorting = resolveUpdater(updater, sortingState);
-      dynamicState.setOrderBy(sortingStateToOrderBy(nextSorting, sortDescriptors));
+      dynamicState.setOrderBy(
+        sortingStateToOrderBy(nextSorting, sortDescriptors),
+      );
     },
     onRowSelectionChange: (updater) =>
       dynamicState.setRowSelection(updater as Updater<RowSelectionState>),
@@ -642,7 +649,9 @@ export function DynamicTable<TRow extends Record<string, unknown>>({
       dynamicState.setPagination(updater as Updater<PaginationState>),
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: sortMode === "client" ? getSortedRowModel() : undefined,
-    getGroupedRowModel: features.enableGrouping ? getGroupedRowModel() : undefined,
+    getGroupedRowModel: features.enableGrouping
+      ? getGroupedRowModel()
+      : undefined,
     getExpandedRowModel:
       features.enableGrouping || showExpandColumn
         ? getExpandedRowModel()
@@ -713,12 +722,7 @@ export function DynamicTable<TRow extends Record<string, unknown>>({
 
       dynamicState.setColumnOrder(arrayMove(baseOrder, oldIndex, nextIndex));
     },
-    [
-      dynamicState,
-      features.enableColumnOrdering,
-      lockedColumns,
-      table,
-    ],
+    [dynamicState, features.enableColumnOrdering, lockedColumns, table],
   );
 
   /**
@@ -781,20 +785,26 @@ export function DynamicTable<TRow extends Record<string, unknown>>({
     >
       <div
         className={cn(
-          "relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border border-border/50 bg-card/60",
+          "relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border/30 bg-card/50 shadow-sm backdrop-blur-sm transition-shadow duration-300 hover:shadow-md",
           layout.containerClassName,
         )}
       >
         <div
           ref={scrollContainerRef}
-          className="min-h-0 flex-1 overflow-auto scroll-smooth"
+          className="min-h-0 flex-1 overflow-auto scroll-smooth custom-scrollbar"
         >
-          <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+          <DndContext
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
             <SortableContext
               items={sortableColumnIds}
               strategy={horizontalListSortingStrategy}
             >
-              <Table style={tableStyle} className={cn("w-full", layout.tableClassName)}>
+              <Table
+                style={tableStyle}
+                className={cn("w-full", layout.tableClassName)}
+              >
                 <DynamicTableHeader
                   table={table}
                   state={dynamicState}
@@ -804,7 +814,9 @@ export function DynamicTable<TRow extends Record<string, unknown>>({
                   selectionColumnId={DYNAMIC_TABLE_SELECTION_COLUMN_ID}
                   actionsColumnId={DYNAMIC_TABLE_ACTIONS_COLUMN_ID}
                   expandColumnHeader={expandColumnConfig.headerLabel}
-                  expandColumnSticky={showExpandColumn && expandColumnConfig.sticky}
+                  expandColumnSticky={
+                    showExpandColumn && expandColumnConfig.sticky
+                  }
                   selectionColumnLeftOffsetPx={selectionColumnLeftOffsetPx}
                   onResetLayout={handleResetLayout}
                 />
@@ -830,7 +842,9 @@ export function DynamicTable<TRow extends Record<string, unknown>>({
                   expandColumnId={DYNAMIC_TABLE_EXPAND_COLUMN_ID}
                   selectionColumnId={DYNAMIC_TABLE_SELECTION_COLUMN_ID}
                   actionsColumnId={DYNAMIC_TABLE_ACTIONS_COLUMN_ID}
-                  expandColumnSticky={showExpandColumn && expandColumnConfig.sticky}
+                  expandColumnSticky={
+                    showExpandColumn && expandColumnConfig.sticky
+                  }
                   selectionColumnLeftOffsetPx={selectionColumnLeftOffsetPx}
                 />
               </Table>
@@ -839,19 +853,19 @@ export function DynamicTable<TRow extends Record<string, unknown>>({
         </div>
 
         {features.dataMode === "infinite" ? (
-          <div className="flex items-center justify-between border-t border-border/40 px-4 py-2 text-xs text-muted-foreground">
-            <span>
-              {rows.length} loaded
-            </span>
+          <div className="flex items-center justify-between border-t border-border/20 bg-muted/20 px-4 py-2.5 text-[11px] font-medium text-muted-foreground backdrop-blur-sm">
+            <span className="tabular-nums">{rows.length} éléments chargés</span>
             {loading ? (
-              <span className="inline-flex items-center gap-1.5">
-                <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                Loading...
+              <span className="inline-flex items-center gap-2 text-primary">
+                <Loader2 className="size-3.5 animate-spin" />
+                Chargement…
               </span>
             ) : hasNextPage ? (
-              <span>Scroll to load more</span>
+              <span className="text-muted-foreground/60">
+                Faites défiler pour charger plus
+              </span>
             ) : (
-              <span>End of list</span>
+              <span className="text-muted-foreground/40">Fin de la liste</span>
             )}
           </div>
         ) : null}

@@ -5,8 +5,6 @@ import {
   ChevronsLeft,
   ChevronsRight,
   RefreshCw,
-  Hash,
-  Layers,
   ArrowRight,
 } from "lucide-react";
 import { Button } from "@/shared/ui/kit/button";
@@ -27,7 +25,6 @@ import {
 import { cn } from "@/shared/utils";
 import { useTable } from "../context/TableContext";
 import { Badge } from "@/shared/ui/kit/badge";
-import { Separator } from "@/shared/ui/kit/separator";
 
 /**
  * Modern, beautiful and feature-rich Table Pagination.
@@ -110,14 +107,14 @@ export function TablePagination({
 
   return (
     <TooltipProvider delayDuration={300}>
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 bg-background/60 backdrop-blur-xl border border-border/40 rounded-2xl shadow-[0_-8px_30px_rgba(0,0,0,0.02)] mt-2 animate-in slide-in-from-bottom-2 duration-500">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-5 py-3.5 bg-background/60 backdrop-blur-xl border border-border/30 rounded-2xl shadow-sm mt-3 animate-in slide-in-from-bottom-1 duration-300">
         {/* Left Section: Selection & Summary */}
         <div className="flex items-center gap-4 w-full sm:w-auto">
           {enableSelection && selectedCount > 0 ? (
             <div className="flex items-center gap-2 animate-in zoom-in-95 duration-300">
               <Badge
                 variant="default"
-                className="h-7 px-3 bg-primary font-bold shadow-lg shadow-primary/20 transition-all hover:scale-105 active:scale-95 border-none"
+                className="h-6 px-2.5 bg-primary text-[11px] font-bold shadow-md shadow-primary/15 transition-all hover:scale-105 active:scale-95 border-none"
               >
                 {selectedCount} sélectionné{selectedCount > 1 ? "s" : ""}
               </Badge>
@@ -199,7 +196,7 @@ export function TablePagination({
             >
               <SelectTrigger
                 className={cn(
-                  "h-9 w-[85px] border-border/20 bg-muted/30 text-xs font-bold rounded-xl transition-all hover:bg-muted/50 hover:border-border/40 focus:ring-4 focus:ring-primary/5",
+                  "h-8 w-[85px] border-border/30 bg-muted/30 text-xs font-bold rounded-xl transition-all hover:bg-muted/50 hover:border-border/40",
                 )}
               >
                 <SelectValue placeholder={perPage} />
@@ -207,7 +204,7 @@ export function TablePagination({
               <SelectContent
                 side="top"
                 align="end"
-                className="rounded-2xl border-border/40 shadow-2xl backdrop-blur-xl bg-background/95"
+                className="rounded-xl border-border/30 shadow-xl backdrop-blur-xl bg-background/95"
               >
                 {pageSizeOptions.map((pageSize) => (
                   <SelectItem
@@ -225,14 +222,14 @@ export function TablePagination({
           <div className="h-8 w-px bg-border/20 hidden md:block" />
 
           {/* Pagination Cluster */}
-          <div className="flex items-center gap-2 p-1.5 bg-muted/30 rounded-2xl border border-border/20 shadow-inner">
+          <div className="flex items-center gap-1 p-1 bg-muted/30 rounded-xl border border-border/20">
             {/* First Page */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="hidden h-9 w-9 rounded-xl lg:flex hover:bg-background hover:text-primary hover:shadow-md disabled:opacity-20 transition-all active:scale-90"
+                  className="hidden h-8 w-8 rounded-lg lg:flex hover:bg-background hover:text-primary disabled:opacity-20 transition-all active:scale-90"
                   onClick={() => setPage(1)}
                   disabled={!canGoFirst || loading}
                 >
@@ -253,7 +250,7 @@ export function TablePagination({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-9 w-9 rounded-xl hover:bg-background hover:text-primary hover:shadow-md disabled:opacity-20 transition-all active:scale-90"
+                  className="h-8 w-8 rounded-lg hover:bg-background hover:text-primary disabled:opacity-20 transition-all active:scale-90"
                   onClick={() => setPage(page - 1)}
                   disabled={!canGoPrevious || loading}
                 >
@@ -328,7 +325,7 @@ export function TablePagination({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-9 w-9 rounded-xl hover:bg-background hover:text-primary hover:shadow-md disabled:opacity-20 transition-all active:scale-90"
+                  className="h-8 w-8 rounded-lg hover:bg-background hover:text-primary disabled:opacity-20 transition-all active:scale-90"
                   onClick={() => setPage(page + 1)}
                   disabled={!canGoNext || loading}
                 >
@@ -349,7 +346,7 @@ export function TablePagination({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="hidden h-9 w-9 rounded-xl lg:flex hover:bg-background hover:text-primary hover:shadow-md disabled:opacity-20 transition-all active:scale-90"
+                  className="hidden h-8 w-8 rounded-lg lg:flex hover:bg-background hover:text-primary disabled:opacity-20 transition-all active:scale-90"
                   onClick={() => setPage(numPages || 1)}
                   disabled={!canGoLast || loading}
                 >

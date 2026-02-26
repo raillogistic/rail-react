@@ -6,11 +6,7 @@ import {
   FileText,
   Settings2,
   Database,
-  Filter,
-  ArrowUpDown,
   X,
-  CheckCircle2,
-  Info,
   Search,
   ListTree,
 } from "lucide-react";
@@ -26,16 +22,7 @@ import {
 } from "@/shared/ui/kit/dialog";
 import { Input } from "@/shared/ui/kit/input";
 import { Label } from "@/shared/ui/kit/label";
-import { ScrollArea } from "@/shared/ui/kit/scroll-area";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/shared/ui/kit/select";
 import { toast } from "@/shared/ui/kit/sonner";
-import { Badge } from "@/shared/ui/kit/badge";
 import { Separator } from "@/shared/ui/kit/separator";
 import {
   getAuthorizationHeader,
@@ -388,26 +375,25 @@ export function ModelTableExportDialog({
           <Button
             variant="outline"
             size="icon"
-            className="h-8 w-8 rounded-lg border-border/40 hover:bg-primary/5 hover:text-primary transition-all active:scale-90"
+            className="size-8 rounded-xl border-border/30 hover:bg-primary/5 hover:text-primary transition-all active:scale-95"
             aria-label={labels?.buttonAria ?? "Exporter les données"}
           >
-            <Download className="h-4 w-4" />
+            <Download className="size-3.5" />
           </Button>
         )}
       </DialogTrigger>
-      <DialogContent className="max-w-5xl h-[90vh] max-h-[900px] gap-0 p-0 overflow-hidden border-none shadow-2xl backdrop-blur-2xl bg-background/95 rounded-[2rem] flex flex-col animate-in zoom-in-95 duration-300">
-        <DialogHeader className="flex-none px-8 py-6 bg-muted/10 border-b border-border/20">
-          <div className="flex items-center gap-4">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary shadow-lg shadow-primary/20">
-              <Database className="h-6 w-6 text-primary-foreground" />
+      <DialogContent className="max-w-5xl h-[90vh] max-h-[900px] gap-0 p-0 overflow-hidden border-border/30 shadow-2xl backdrop-blur-xl bg-background/95 rounded-2xl flex flex-col">
+        <DialogHeader className="flex-none px-6 py-5 border-b border-border/15">
+          <div className="flex items-center gap-3">
+            <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10">
+              <Database className="size-5 text-primary" />
             </div>
             <div className="space-y-0.5">
-              <DialogTitle className="text-2xl font-black uppercase tracking-tighter">
+              <DialogTitle className="text-lg font-bold">
                 {labels?.title ??
                   `Export ${metadata.verboseNamePlural || metadata.model}`}
               </DialogTitle>
-              <DialogDescription className="text-xs font-bold uppercase tracking-widest text-muted-foreground/60 flex items-center gap-2">
-                <Info className="h-3 w-3" />
+              <DialogDescription className="text-[11px] text-muted-foreground/60">
                 {labels?.description ??
                   "Configuration de l'extraction des données"}
               </DialogDescription>
@@ -417,17 +403,17 @@ export function ModelTableExportDialog({
 
         <div className="flex-1 min-h-0 grid gap-0 md:grid-cols-[2.5fr,1fr] overflow-hidden">
           {/* Structure Section */}
-          <div className="flex flex-col border-r border-border/20 bg-background/50 overflow-hidden">
-            <div className="flex-none space-y-4 px-8 py-4 bg-muted/5 border-b border-border/10 z-10 backdrop-blur-sm">
+          <div className="flex flex-col border-r border-border/15 bg-background/50 overflow-hidden">
+            <div className="flex-none space-y-3 px-6 py-4 border-b border-border/10">
               <div className="flex items-center justify-between">
-                <div className="flex flex-col">
+                <div className="flex flex-col gap-0.5">
                   <div className="flex items-center gap-2">
-                    <ListTree className="h-4 w-4 text-primary/60" />
-                    <span className="text-sm font-black uppercase tracking-widest text-foreground/80">
+                    <ListTree className="size-3.5 text-primary/50" />
+                    <span className="text-xs font-bold text-foreground/80">
                       {labels?.fieldsTitle ?? "Structure de l'export"}
                     </span>
                   </div>
-                  <span className="text-[10px] font-bold text-primary animate-in fade-in slide-in-from-left-2 duration-500">
+                  <span className="text-[10px] font-medium text-primary/70 tabular-nums">
                     {selectedCount} champ{selectedCount > 1 ? "s" : ""}{" "}
                     sélectionné{selectedCount > 1 ? "s" : ""}
                   </span>
@@ -437,7 +423,7 @@ export function ModelTableExportDialog({
                     variant="ghost"
                     size="sm"
                     onClick={selectAllRootFields}
-                    className="h-8 text-[10px] font-black uppercase tracking-widest hover:bg-primary/10 hover:text-primary rounded-lg transition-all"
+                    className="h-7 text-[10px] font-bold uppercase tracking-wider hover:bg-primary/10 hover:text-primary rounded-lg transition-all"
                   >
                     {labels?.selectAll ?? "Tout"}
                   </Button>
@@ -445,7 +431,7 @@ export function ModelTableExportDialog({
                     variant="ghost"
                     size="sm"
                     onClick={clearFields}
-                    className="h-8 text-[10px] font-black uppercase tracking-widest hover:bg-red-50 hover:text-red-500 rounded-lg transition-all"
+                    className="h-7 text-[10px] font-bold uppercase tracking-wider hover:bg-destructive/10 hover:text-destructive rounded-lg transition-all"
                   >
                     {labels?.clear ?? "Effacer"}
                   </Button>
@@ -455,26 +441,26 @@ export function ModelTableExportDialog({
               {/* Search Bar - Fixed here */}
               <div className="relative group">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted-foreground/40 group-focus-within:text-primary transition-colors">
-                  <Search className="h-4 w-4" />
+                  <Search className="size-3.5" />
                 </div>
                 <Input
                   placeholder="Rechercher un champ..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 h-10 bg-background border-border/40 rounded-xl focus:ring-4 focus:ring-primary/5 transition-all font-medium"
+                  className="pl-9 h-9 bg-background/50 border-border/20 rounded-lg text-xs font-medium transition-all"
                 />
                 {searchQuery && (
                   <button
                     onClick={() => setSearchQuery("")}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 hover:bg-muted rounded-lg transition-all"
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1 hover:bg-muted rounded-md transition-all"
                   >
-                    <X className="h-3.5 w-3.5 text-muted-foreground/60" />
+                    <X className="size-3 text-muted-foreground/50" />
                   </button>
                 )}
               </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto custom-scrollbar p-6">
+            <div className="flex-1 overflow-y-auto custom-scrollbar px-6 py-4">
               <ExportFieldTree
                 metadata={metadata}
                 selected={selectedFields}
@@ -489,12 +475,12 @@ export function ModelTableExportDialog({
 
           {/* Configuration Section */}
           <div className="flex flex-col bg-muted/5 overflow-hidden">
-            <div className="flex-1 p-6 space-y-6 overflow-y-auto custom-scrollbar">
+            <div className="flex-1 p-5 space-y-5 overflow-y-auto custom-scrollbar">
               {/* Configuration Group */}
-              <div className="space-y-5">
+              <div className="space-y-4">
                 <div className="flex items-center gap-2">
-                  <Settings2 className="h-3.5 w-3.5 text-primary/60" />
-                  <span className="text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/80">
+                  <Settings2 className="size-3.5 text-muted-foreground/40" />
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50">
                     Configuration
                   </span>
                 </div>
@@ -503,7 +489,7 @@ export function ModelTableExportDialog({
                   <div className="space-y-1.5">
                     <Label
                       htmlFor="export-filename"
-                      className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/50 ml-1"
+                      className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/50 ml-0.5"
                     >
                       {labels?.filenameLabel ?? "Nom du fichier"}
                     </Label>
@@ -517,7 +503,7 @@ export function ModelTableExportDialog({
                         placeholder={
                           labels?.filenamePlaceholder ?? "export_donnees"
                         }
-                        className="h-9 bg-background/50 border-border/30 focus:ring-4 focus:ring-primary/5 rounded-lg text-xs font-bold transition-all"
+                        className="h-8 bg-background/50 border-border/20 rounded-lg text-xs font-medium transition-all"
                       />
                       <div className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] font-bold text-muted-foreground/30 uppercase tracking-widest pointer-events-none">
                         .{fileExtension}
@@ -526,7 +512,7 @@ export function ModelTableExportDialog({
                   </div>
 
                   <div className="space-y-1.5">
-                    <Label className="text-[9px] font-black uppercase tracking-widest text-muted-foreground/50 ml-1">
+                    <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/50 ml-0.5">
                       {labels?.formatLabel ?? "Format"}
                     </Label>
                     <div className="grid grid-cols-2 gap-2">
@@ -534,14 +520,14 @@ export function ModelTableExportDialog({
                         type="button"
                         onClick={() => setFileExtension("xlsx")}
                         className={cn(
-                          "flex items-center justify-center gap-2 py-2 px-3 rounded-xl border transition-all duration-300",
+                          "flex items-center justify-center gap-2 py-2 px-3 rounded-lg border transition-all",
                           fileExtension === "xlsx"
-                            ? "bg-primary border-primary shadow-md shadow-primary/10 text-primary-foreground"
-                            : "bg-background/50 border-border/30 text-muted-foreground hover:border-primary/30 hover:text-primary",
+                            ? "bg-primary border-primary text-primary-foreground shadow-sm shadow-primary/20"
+                            : "bg-background/50 border-border/20 text-muted-foreground hover:border-primary/30 hover:text-primary",
                         )}
                       >
-                        <FileSpreadsheet className="h-3.5 w-3.5" />
-                        <span className="text-[9px] font-black uppercase tracking-widest">
+                        <FileSpreadsheet className="size-3.5" />
+                        <span className="text-[10px] font-bold uppercase tracking-wider">
                           Excel
                         </span>
                       </button>
@@ -550,15 +536,15 @@ export function ModelTableExportDialog({
                         onClick={() => setFileExtension("csv")}
                         disabled={hasGrouping}
                         className={cn(
-                          "flex items-center justify-center gap-2 py-2 px-3 rounded-xl border transition-all duration-300",
+                          "flex items-center justify-center gap-2 py-2 px-3 rounded-lg border transition-all",
                           hasGrouping && "cursor-not-allowed opacity-50",
                           fileExtension === "csv"
-                            ? "bg-primary border-primary shadow-md shadow-primary/10 text-primary-foreground"
-                            : "bg-background/50 border-border/30 text-muted-foreground hover:border-primary/30 hover:text-primary",
+                            ? "bg-primary border-primary text-primary-foreground shadow-sm shadow-primary/20"
+                            : "bg-background/50 border-border/20 text-muted-foreground hover:border-primary/30 hover:text-primary",
                         )}
                       >
-                        <FileText className="h-3.5 w-3.5" />
-                        <span className="text-[9px] font-black uppercase tracking-widest">
+                        <FileText className="size-3.5" />
+                        <span className="text-[10px] font-bold uppercase tracking-wider">
                           CSV
                         </span>
                       </button>
@@ -572,11 +558,11 @@ export function ModelTableExportDialog({
                 </div>
               </div>
 
-              <Separator className="bg-border/5" />
+              <Separator className="bg-border/15" />
 
               {/* Status Group */}
               {exportError ? (
-                <div className="rounded-xl border border-red-100 bg-red-50/50 p-3 text-[10px] font-bold text-red-500 animate-in shake duration-300">
+                <div className="rounded-lg border border-destructive/20 bg-destructive/5 p-3 text-[11px] font-medium text-destructive">
                   <div className="flex gap-2">
                     <X className="h-3.5 w-3.5 shrink-0" />
                     <span>{exportError}</span>
@@ -587,29 +573,29 @@ export function ModelTableExportDialog({
           </div>
         </div>
 
-        <DialogFooter className="px-8 py-6 bg-muted/5 border-t border-border/20 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between flex-none">
-          <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.1em] text-muted-foreground/60">
-            <span className="h-1.5 w-1.5 rounded-full bg-primary/40 animate-pulse" />
+        <DialogFooter className="px-6 py-4 border-t border-border/15 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between flex-none">
+          <div className="flex items-center gap-2 text-[11px] font-medium text-muted-foreground/50 tabular-nums">
+            <span className="size-1.5 rounded-full bg-primary/40" />
             {labels?.footerSelectedCount?.(selectedCount) ??
               `${selectedCount} champ${selectedCount <= 1 ? "" : "s"} prêt${selectedCount <= 1 ? "" : "s"} pour l'export`}
           </div>
-          <div className="flex w-full justify-end gap-3 sm:w-auto">
+          <div className="flex w-full justify-end gap-2 sm:w-auto">
             <Button
               variant="ghost"
               onClick={() => setOpen(false)}
-              className="h-11 px-6 rounded-xl font-bold uppercase text-xs tracking-widest hover:bg-background transition-all"
+              className="h-9 px-5 rounded-xl text-xs font-semibold transition-all"
             >
               {labels?.cancel ?? "Annuler"}
             </Button>
             <Button
               onClick={handleExport}
               disabled={exporting || selectedCount === 0}
-              className="h-11 px-8 rounded-xl font-black uppercase text-xs tracking-[0.2em] shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-95 disabled:grayscale"
+              className="h-9 px-6 rounded-xl text-xs font-bold shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-95 disabled:grayscale"
             >
               {exporting ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <Loader2 className="mr-2 size-3.5 animate-spin" />
               ) : (
-                <Download className="mr-2 h-4 w-4" />
+                <Download className="mr-2 size-3.5" />
               )}
               {labels?.download ?? "Générer"}
             </Button>

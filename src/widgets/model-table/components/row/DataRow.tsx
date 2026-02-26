@@ -70,7 +70,9 @@ export function DataRow({
 }: DataRowProps) {
   const rowId = String(row.id);
   const isSelected = enableSelection && rowSelection[rowId];
-  const rowPermissions = row.rowPermissions as RowMutationPermissions | undefined;
+  const rowPermissions = row.rowPermissions as
+    | RowMutationPermissions
+    | undefined;
   const isEven = rowIndex % 2 === 0;
 
   return (
@@ -78,12 +80,15 @@ export function DataRow({
       key={rowId}
       data-state={isSelected ? "selected" : undefined}
       className={cn(
-        "group/row relative border-b border-border/20 transition-all duration-300 ease-out",
-        isSelected && "bg-primary/10 hover:bg-primary/[0.15] z-[5] shadow-[0_0_20px_rgba(var(--primary),0.05)]",
-        !isSelected && "hover:bg-muted/40 hover:translate-x-0.5",
-        !isSelected && isEven && "bg-background",
-        !isSelected && !isEven && "bg-muted/10",
-        density === "compact" ? "h-9" : density === "spacious" ? "h-14" : "h-11",
+        "group/row relative border-b border-border/15 transition-colors duration-200",
+        isSelected && "bg-primary/8 hover:bg-primary/12",
+        !isSelected && "hover:bg-muted/30",
+        !isSelected && !isEven && "bg-muted/5",
+        density === "compact"
+          ? "h-9"
+          : density === "spacious"
+            ? "h-14"
+            : "h-11",
       )}
     >
       {enableSelection ? (
@@ -103,9 +108,8 @@ export function DataRow({
               }
               aria-label="Selectionner la ligne"
               className={cn(
-                "h-4.5 w-4.5 rounded-md border-muted-foreground/30 data-[state=checked]:border-primary",
-                "transition-all duration-300 hover:scale-110 active:scale-95",
-                "data-[state=checked]:shadow-md data-[state=checked]:shadow-primary/20",
+                "size-4 rounded border-muted-foreground/25 data-[state=checked]:border-primary",
+                "transition-all data-[state=checked]:shadow-sm data-[state=checked]:shadow-primary/20",
               )}
             />
           </div>
@@ -114,7 +118,7 @@ export function DataRow({
 
       {visibleColumns.map((field, colIndex) => {
         const isFirstDataCell = !enableSelection && colIndex === 0;
-        
+
         if ("accessor" in field) {
           const value = resolveValue(row, field.accessor);
           const isSimpleAccessor = !field.accessor.includes(".");
@@ -144,13 +148,15 @@ export function DataRow({
               className={cn(
                 cellPadding,
                 cellTextSize,
-                "text-foreground/70 border-r border-border/10 last:border-0",
-                "group-hover/row:text-foreground transition-all duration-300",
-                isFirstDataCell && "font-semibold text-foreground/90",
+                "text-foreground/70 border-r border-border/8 last:border-0",
+                "group-hover/row:text-foreground transition-colors duration-200",
+                isFirstDataCell && "font-medium text-foreground/85",
                 isSelected && "text-foreground",
               )}
             >
-              <div className={cn(cellTextClass, "flex items-center h-full gap-2")}>
+              <div
+                className={cn(cellTextClass, "flex items-center h-full gap-2")}
+              >
                 {statsRelation ? (
                   <RelationStatsHover
                     row={row}
@@ -173,11 +179,20 @@ export function DataRow({
           );
         }
 
-        const statsRelation = resolveStatsRelation(field.name || field.fieldName, field);
+        const statsRelation = resolveStatsRelation(
+          field.name || field.fieldName,
+          field,
+        );
         const statsOverride = statsRelation
-          ? resolveStatsOverride(field.name || field.fieldName, statsRelation.relationName)
+          ? resolveStatsOverride(
+              field.name || field.fieldName,
+              statsRelation.relationName,
+            )
           : undefined;
-        const renderedValue = formatCellValue(resolveFieldValue(row, field), field);
+        const renderedValue = formatCellValue(
+          resolveFieldValue(row, field),
+          field,
+        );
 
         return (
           <TableCell
@@ -192,7 +207,9 @@ export function DataRow({
               isSelected && "text-foreground",
             )}
           >
-            <div className={cn(cellTextClass, "flex items-center h-full gap-2")}>
+            <div
+              className={cn(cellTextClass, "flex items-center h-full gap-2")}
+            >
               {statsRelation ? (
                 <RelationStatsHover
                   row={row}
@@ -221,9 +238,8 @@ export function DataRow({
           "w-[140px] shrink-0 px-3 text-right",
           "sticky right-0 z-10",
           "table-last-column table-sticky-cell",
-          "bg-background/90 backdrop-blur-md border-l border-border/20",
-          "shadow-[-12px_0_15px_-10px_rgba(0,0,0,0.05)]",
-          "group-hover/row:bg-muted/60 transition-colors",
+          "bg-background/90 backdrop-blur-md border-l border-border/15",
+          "group-hover/row:bg-muted/40 transition-colors",
         )}
       >
         <RowActions

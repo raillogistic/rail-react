@@ -235,6 +235,16 @@ export default function DashboardPage() {
       runtime: {},
       view: {
         initialTabId: "general",
+        sectionColumns: 6,
+        resolveSectionContainer: (section, tabId) => {
+          if (tabId === "general" && section.id === "general-summary") {
+            return { style: { gridColumn: "span 4 / span 4" } };
+          }
+          if (tabId === "general" && section.id === "general-audit") {
+            return { style: { gridColumn: "span 2 / span 2" } };
+          }
+          return { style: { gridColumn: "span 6 / span 6" } };
+        },
       },
       layout: {
         tabs: [

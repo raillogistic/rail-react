@@ -26,6 +26,7 @@ import type {
   BaseModelTableRefetch,
   RowMutationPermissions,
 } from "../types";
+import { cn } from "@/shared/utils";
 import { RowActions } from "./row/RowActions";
 
 const MOBILE_BATCH_SIZE = 24;
@@ -65,7 +66,9 @@ export function TableMobileCard({
   );
   const byFieldName = useMemo(
     () =>
-      new Map(metadata.fields.map((field) => [field.name || field.fieldName, field])),
+      new Map(
+        metadata.fields.map((field) => [field.name || field.fieldName, field]),
+      ),
     [metadata.fields],
   );
 
@@ -217,20 +220,35 @@ export function TableMobileCard({
     keyPrefix?: string,
   ) => {
     const rowId = String(row.id);
-    const rowPermissions = row.rowPermissions as RowMutationPermissions | undefined;
+    const rowPermissions = row.rowPermissions as
+      | RowMutationPermissions
+      | undefined;
 
     return (
-      <Card key={`${keyPrefix ?? "row"}:${rowId || index}`} className="overflow-hidden border">
-        <CardHeader className="pb-2">
+      <Card
+        key={`${keyPrefix ?? "row"}:${rowId || index}`}
+        className="overflow-hidden rounded-xl border-border/20 shadow-sm hover:shadow-md transition-shadow"
+      >
+        <CardHeader className="pb-2 px-4 pt-4">
           <div className="flex items-start justify-between gap-2">
             <div className="min-w-0">
-              <CardTitle className={wrapCells ? "text-base" : "truncate text-base"}>
+              <CardTitle
+                className={cn(
+                  "text-sm font-semibold",
+                  wrapCells ? "" : "truncate",
+                )}
+              >
                 {titleField
-                  ? formatCellValue(resolveFieldValue(row, titleField), titleField)
+                  ? formatCellValue(
+                      resolveFieldValue(row, titleField),
+                      titleField,
+                    )
                   : metadata?.verboseName || "Element"}
               </CardTitle>
               {showIdDescription ? (
-                <CardDescription className="text-xs font-mono">ID: {rowId}</CardDescription>
+                <CardDescription className="text-[10px] font-mono text-muted-foreground/50 mt-0.5">
+                  ID: {rowId}
+                </CardDescription>
               ) : null}
             </div>
             <div className="shrink-0">
@@ -244,16 +262,16 @@ export function TableMobileCard({
             </div>
           </div>
         </CardHeader>
-        <CardContent className={`grid text-sm ${rowSpacingClass}`}>
+        <CardContent className={`grid text-xs px-4 pb-4 ${rowSpacingClass}`}>
           {otherFields.map((field) => (
             <div
               key={field.name}
-              className="flex items-start justify-between gap-3 border-b pb-1 last:border-0"
+              className="flex items-start justify-between gap-3 border-b border-border/10 pb-1.5 last:border-0 last:pb-0"
             >
-              <span className="font-medium text-muted-foreground">
-                {field.verboseName}:
+              <span className="font-medium text-muted-foreground/70 text-[11px]">
+                {field.verboseName}
               </span>
-              <span className={valueClass}>
+              <span className={cn(valueClass, "text-foreground/80")}>
                 {formatCellValue(resolveFieldValue(row, field), field)}
               </span>
             </div>
@@ -265,17 +283,17 @@ export function TableMobileCard({
 
   if (loading && data.length === 0) {
     return (
-      <div className="space-y-3 md:hidden">
+      <div className="space-y-2.5 md:hidden">
         {[1, 2, 3].map((i) => (
-          <Card key={i}>
-            <CardHeader>
-              <Skeleton className="h-5 w-[180px]" />
-              <Skeleton className="h-3 w-[120px]" />
+          <Card key={i} className="rounded-xl border-border/20">
+            <CardHeader className="px-4 pt-4 pb-2">
+              <Skeleton className="h-4 w-[160px] rounded-lg" />
+              <Skeleton className="h-3 w-[100px] rounded-lg mt-1" />
             </CardHeader>
-            <CardContent className="space-y-2">
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-full" />
+            <CardContent className="space-y-2 px-4 pb-4">
+              <Skeleton className="h-3.5 w-full rounded-lg" />
+              <Skeleton className="h-3.5 w-full rounded-lg" />
+              <Skeleton className="h-3.5 w-3/4 rounded-lg" />
             </CardContent>
           </Card>
         ))}
@@ -285,8 +303,10 @@ export function TableMobileCard({
 
   if (data.length === 0) {
     return (
-      <div className="rounded-lg border p-4 text-center text-muted-foreground md:hidden">
-        {emptyState ?? "Aucun resultat."}
+      <div className="rounded-xl border border-border/20 bg-muted/20 p-8 text-center md:hidden">
+        <p className="text-sm font-medium text-muted-foreground/60">
+          {emptyState ?? "Aucun r\u00e9sultat trouv\u00e9"}
+        </p>
       </div>
     );
   }
@@ -318,7 +338,9 @@ export function TableMobileCard({
                   </span>
                 </button>
                 {!collapsed
-                  ? group.rows.map((row, index) => renderCardRow(row, index, group.key))
+                  ? group.rows.map((row, index) =>
+                      renderCardRow(row, index, group.key),
+                    )
                   : null}
               </div>
             );
@@ -328,7 +350,7 @@ export function TableMobileCard({
       {hasMore ? (
         <Button
           variant="outline"
-          className="w-full"
+          className="w-full rounded-xl border-border/20 text-xs font-semibold h-9"
           onClick={() =>
             setVisibleCount((current) =>
               Math.min(current + MOBILE_BATCH_SIZE, data.length),

@@ -217,7 +217,7 @@ export function TableColumnMenu({
               size="sm"
               className={cn(
                 "h-full w-full min-h-0 m-0 self-stretch rounded-none justify-between px-0 py-0 data-[state=open]:bg-white/10 data-[state=open]:text-white",
-                "font-medium transition-colors duration-200",
+                "font-medium transition-colors",
                 variant === "primary"
                   ? currentSort
                     ? "text-white font-black"
@@ -227,7 +227,9 @@ export function TableColumnMenu({
                     : "text-foreground hover:text-foreground",
               )}
             >
-              <span className="truncate text-left px-2">{triggerTitle}</span>
+              <span className="truncate text-left px-2 text-[11px]">
+                {triggerTitle}
+              </span>
               {currentSort && (
                 <span
                   className="px-2 text-[10px] font-black"
@@ -262,10 +264,10 @@ export function TableColumnMenu({
         </DropdownMenuTrigger>
         <DropdownMenuContent
           align="start"
-          className="w-64 rounded-2xl border-none p-2 shadow-2xl backdrop-blur-2xl bg-background/95"
+          className="w-60 rounded-xl border-border/30 p-1.5 shadow-xl backdrop-blur-xl bg-background/95"
         >
-          <div className="px-3 py-2 text-[10px] font-black uppercase tracking-widest text-muted-foreground/60 border-b border-border/40 mb-1 flex items-center gap-2">
-            <ClipboardList className="h-3.5 w-3.5" />
+          <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50 border-b border-border/20 mb-1 flex items-center gap-2">
+            <ClipboardList className="size-3 text-muted-foreground/40" />
             {triggerTitle}
           </div>
 

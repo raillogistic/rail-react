@@ -25,7 +25,10 @@ import type {
 import { DataRow, GroupedRow } from "./row";
 import { normalizeRelationKey, toLabel } from "./row/utils/statsHelpers";
 import type { StatsRelationMeta } from "./row/RelationStatsHover";
-import { buildAccessorPath, resolveValueOptimized } from "../utils/valueResolution";
+import {
+  buildAccessorPath,
+  resolveValueOptimized,
+} from "../utils/valueResolution";
 import { flattenGroupedData, type FlattenedRow } from "../utils/flattenData";
 import { getColumnWidthStyle } from "../utils/columnSizing";
 
@@ -109,10 +112,13 @@ export function TableRows({
     return paths;
   }, [columns]);
 
-  const resolveValue = useCallback((row: Record<string, unknown>, accessor: string) => {
-    const path = accessorPaths.get(accessor) ?? buildAccessorPath(accessor);
-    return resolveValueOptimized(row, path);
-  }, [accessorPaths]);
+  const resolveValue = useCallback(
+    (row: Record<string, unknown>, accessor: string) => {
+      const path = accessorPaths.get(accessor) ?? buildAccessorPath(accessor);
+      return resolveValueOptimized(row, path);
+    },
+    [accessorPaths],
+  );
 
   const resolveColumnStyle = useCallback(
     (columnId: string) => getColumnWidthStyle(columnWidths, columnId),
@@ -123,7 +129,8 @@ export function TableRows({
   const visibleColumns = useMemo(() => {
     if (columns && columns.length > 0) {
       const byId = new Map(columns.map((column) => [column.id, column]));
-      const orderedIds = columnOrder.length > 0 ? columnOrder : columns.map((c) => c.id);
+      const orderedIds =
+        columnOrder.length > 0 ? columnOrder : columns.map((c) => c.id);
       return orderedIds
         .map((id) => byId.get(id))
         .filter((column): column is BaseModelTableColumnDef => !!column)
@@ -147,8 +154,11 @@ export function TableRows({
 
   const groupedData = useMemo(() => {
     if (!groupingField) return null;
-    const groups = new Map<string, { key: string; label: string; rows: any[] }>();
-    
+    const groups = new Map<
+      string,
+      { key: string; label: string; rows: any[] }
+    >();
+
     data.forEach((row) => {
       const key = resolveGroupingKey(row, groupingField);
       const existing = groups.get(key);
@@ -173,12 +183,16 @@ export function TableRows({
     if (groupedData) {
       return flattenGroupedData(groupedData, groupCollapsed);
     }
-    return data.map((row, idx) => ({ type: "data" as const, row, rowIndex: idx }));
+    return data.map((row, idx) => ({
+      type: "data" as const,
+      row,
+      rowIndex: idx,
+    }));
   }, [data, groupedData, groupCollapsed]);
 
-  const enableVirtualization = 
-    (performance?.enableVirtualization ?? true) && 
-    !wrapCells && 
+  const enableVirtualization =
+    (performance?.enableVirtualization ?? true) &&
+    !wrapCells &&
     flattenedRows.length >= (performance?.virtualizeThreshold ?? 50);
 
   const rowVirtualizer = useVirtualizer({
@@ -345,7 +359,8 @@ export function TableRows({
   if (enableVirtualization) {
     const virtualRows = rowVirtualizer.getVirtualItems();
     const totalSize = rowVirtualizer.getTotalSize();
-    const paddingTop = virtualRows.length > 0 ? virtualRows?.[0]?.start || 0 : 0;
+    const paddingTop =
+      virtualRows.length > 0 ? virtualRows?.[0]?.start || 0 : 0;
     const paddingBottom =
       virtualRows.length > 0
         ? totalSize - (virtualRows?.[virtualRows.length - 1]?.end || 0)
@@ -355,7 +370,10 @@ export function TableRows({
       <>
         {paddingTop > 0 && (
           <ShadcnTableRow style={{ height: `${paddingTop}px`, border: 0 }}>
-            <TableCell colSpan={visibleColumns.length + fixedColumnCount} className="p-0 border-0" />
+            <TableCell
+              colSpan={visibleColumns.length + fixedColumnCount}
+              className="p-0 border-0"
+            />
           </ShadcnTableRow>
         )}
         {virtualRows.map((virtualRow) => (
@@ -365,7 +383,10 @@ export function TableRows({
         ))}
         {paddingBottom > 0 && (
           <ShadcnTableRow style={{ height: `${paddingBottom}px`, border: 0 }}>
-            <TableCell colSpan={visibleColumns.length + fixedColumnCount} className="p-0 border-0" />
+            <TableCell
+              colSpan={visibleColumns.length + fixedColumnCount}
+              className="p-0 border-0"
+            />
           </ShadcnTableRow>
         )}
       </>
@@ -375,32 +396,50 @@ export function TableRows({
   return (
     <>
       {flattenedRows.map((item) => renderFlattenedRow(item))}
-      {infiniteMode && loading && <InfiniteLoadingRow colSpan={visibleColumns.length + fixedColumnCount} />}
+      {infiniteMode && loading && (
+        <InfiniteLoadingRow
+          colSpan={visibleColumns.length + fixedColumnCount}
+        />
+      )}
     </>
   );
 }
 
 // Sub-components
-function LoadingRow({ colSpan, text }: { colSpan: number, text?: string }) {
+function LoadingRow({ colSpan, text }: { colSpan: number; text?: string }) {
   return (
     <ShadcnTableRow>
       <TableCell colSpan={colSpan} className="h-48 text-center">
-        <div className="flex flex-col items-center justify-center gap-3 py-12 text-muted-foreground">
-          <Loader2 className="h-6 w-6 animate-spin text-primary/60" />
-          <span className="text-sm font-medium">{text ?? "Chargement..."}</span>
+        <div className="flex flex-col items-center justify-center gap-4 py-12">
+          <div className="relative flex size-10 items-center justify-center">
+            <div className="absolute inset-0 animate-ping rounded-full bg-primary/10" />
+            <Loader2 className="size-5 animate-spin text-primary/60" />
+          </div>
+          <span className="text-xs font-semibold text-muted-foreground/60">
+            {text ?? "Chargement des données..."}
+          </span>
         </div>
       </TableCell>
     </ShadcnTableRow>
   );
 }
 
-function EmptyRow({ colSpan, text }: { colSpan: number, text?: string }) {
+function EmptyRow({ colSpan, text }: { colSpan: number; text?: string }) {
   return (
     <ShadcnTableRow>
       <TableCell colSpan={colSpan} className="h-48 text-center">
-        <div className="flex flex-col items-center justify-center gap-2 py-16 text-muted-foreground">
-          <Database className="h-12 w-12 text-muted-foreground/40 mb-2" />
-          <span className="text-sm font-medium">{text ?? "Aucun résultat."}</span>
+        <div className="flex flex-col items-center justify-center gap-3 py-16">
+          <div className="flex size-14 items-center justify-center rounded-2xl bg-muted/40">
+            <Database className="size-6 text-muted-foreground/30" />
+          </div>
+          <div className="flex flex-col items-center gap-1">
+            <span className="text-sm font-semibold text-muted-foreground/60">
+              {text ?? "Aucun résultat trouvé"}
+            </span>
+            <span className="text-[11px] text-muted-foreground/40">
+              Essayez de modifier vos filtres
+            </span>
+          </div>
         </div>
       </TableCell>
     </ShadcnTableRow>
@@ -410,9 +449,10 @@ function EmptyRow({ colSpan, text }: { colSpan: number, text?: string }) {
 function InfiniteLoadingRow({ colSpan }: { colSpan: number }) {
   return (
     <ShadcnTableRow>
-      <TableCell colSpan={colSpan} className="py-4 text-center">
-        <span className="inline-flex items-center gap-2 text-xs text-muted-foreground">
-          <Loader2 className="h-3.5 w-3.5 animate-spin" />Chargement...
+      <TableCell colSpan={colSpan} className="py-3 text-center border-0">
+        <span className="inline-flex items-center gap-2 text-[11px] font-medium text-muted-foreground/50">
+          <Loader2 className="size-3 animate-spin" />
+          Chargement...
         </span>
       </TableCell>
     </ShadcnTableRow>

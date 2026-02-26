@@ -94,7 +94,8 @@ export function RelationFilterDialog({
   });
 
   const [relationDialogOpen, setRelationDialogOpen] = useState(false);
-  const [relationMode, setRelationMode] = useState<RelationFunctionMode>("count");
+  const [relationMode, setRelationMode] =
+    useState<RelationFunctionMode>("count");
   const [relationFieldName, setRelationFieldName] = useState("");
   const [relationOperator, setRelationOperator] = useState("eq");
   const [relationValue, setRelationValue] = useState("");
@@ -113,7 +114,9 @@ export function RelationFilterDialog({
           selectedRelationField?.graphqlType || "StringFilterInput",
         );
 
-  const relationValueType = (selectedRelationField?.graphqlType || "").toLowerCase();
+  const relationValueType = (
+    selectedRelationField?.graphqlType || ""
+  ).toLowerCase();
   const relationValueIsBoolean = relationValueType.includes("boolean");
   const relationValueIsNumeric =
     relationValueType.includes("int") ||
@@ -211,7 +214,12 @@ export function RelationFilterDialog({
       id: `${relationBaseName}:${relationMode}`,
       relationName: relationBaseName,
       relationPath: [relationBaseName],
-      mode: relationMode === "none" ? "none" : relationMode === "every" ? "every" : "some",
+      mode:
+        relationMode === "none"
+          ? "none"
+          : relationMode === "every"
+            ? "every"
+            : "some",
       fieldName: relationFieldName,
       operator: relationOperator,
       value: parsedValue,
@@ -304,11 +312,14 @@ export function RelationFilterDialog({
       </DropdownMenuSub>
 
       <Dialog open={relationDialogOpen} onOpenChange={setRelationDialogOpen}>
-        <DialogContent className="sm:max-w-[480px]">
+        <DialogContent className="sm:max-w-[480px] rounded-2xl border-border/30 shadow-2xl backdrop-blur-xl bg-background/95">
           <DialogHeader>
-            <DialogTitle>Filtre de relation : {relationMode.toUpperCase()}</DialogTitle>
-            <DialogDescription>
-              Appliquer un filtre via {relationBaseName ?? columnId} avec les fonctions rail-django.
+            <DialogTitle className="font-bold text-lg">
+              Filtre de relation : {relationMode.toUpperCase()}
+            </DialogTitle>
+            <DialogDescription className="text-[11px] text-muted-foreground/60">
+              Appliquer un filtre via {relationBaseName ?? columnId} avec les
+              fonctions rail-django.
             </DialogDescription>
           </DialogHeader>
 
@@ -316,14 +327,19 @@ export function RelationFilterDialog({
             {relationMode === "agg" ? (
               <>
                 <div className="space-y-1">
-                  <Label>Champ</Label>
+                  <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/50">
+                    Champ
+                  </Label>
                   <Select value={aggField} onValueChange={setAggField}>
                     <SelectTrigger>
                       <SelectValue placeholder="Sélectionner un champ" />
                     </SelectTrigger>
                     <SelectContent>
                       {relationFieldOptions.map((option) => (
-                        <SelectItem key={`agg-field-${option.name}`} value={option.name}>
+                        <SelectItem
+                          key={`agg-field-${option.name}`}
+                          value={option.name}
+                        >
                           {option.label}
                         </SelectItem>
                       ))}
@@ -331,10 +347,14 @@ export function RelationFilterDialog({
                   </Select>
                 </div>
                 <div className="space-y-1">
-                  <Label>Fonction</Label>
+                  <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/50">
+                    Fonction
+                  </Label>
                   <Select
                     value={aggFunction}
-                    onValueChange={(value) => setAggFunction(value as AggFunction)}
+                    onValueChange={(value) =>
+                      setAggFunction(value as AggFunction)
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -345,13 +365,17 @@ export function RelationFilterDialog({
                       <SelectItem value="min">minimum (min)</SelectItem>
                       <SelectItem value="max">maximum (max)</SelectItem>
                       <SelectItem value="count">compte (count)</SelectItem>
-                      <SelectItem value="countDistinct">compte distinct (countDistinct)</SelectItem>
+                      <SelectItem value="countDistinct">
+                        compte distinct (countDistinct)
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
                   <div className="space-y-1">
-                    <Label>Opérateur</Label>
+                    <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/50">
+                      Opérateur
+                    </Label>
                     <Select value={aggOperator} onValueChange={setAggOperator}>
                       <SelectTrigger>
                         <SelectValue />
@@ -360,14 +384,20 @@ export function RelationFilterDialog({
                         <SelectItem value="eq">égal à (eq)</SelectItem>
                         <SelectItem value="neq">différent de (neq)</SelectItem>
                         <SelectItem value="gt">supérieur à (gt)</SelectItem>
-                        <SelectItem value="gte">supérieur ou égal à (gte)</SelectItem>
+                        <SelectItem value="gte">
+                          supérieur ou égal à (gte)
+                        </SelectItem>
                         <SelectItem value="lt">inférieur à (lt)</SelectItem>
-                        <SelectItem value="lte">inférieur ou égal à (lte)</SelectItem>
+                        <SelectItem value="lte">
+                          inférieur ou égal à (lte)
+                        </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-1">
-                    <Label>Valeur</Label>
+                    <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/50">
+                      Valeur
+                    </Label>
                     <Input
                       type="number"
                       value={aggValue}
@@ -379,14 +409,22 @@ export function RelationFilterDialog({
             ) : relationMode === "count" ? (
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
-                  <Label>Opérateur</Label>
-                  <Select value={relationOperator} onValueChange={setRelationOperator}>
+                  <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/50">
+                    Opérateur
+                  </Label>
+                  <Select
+                    value={relationOperator}
+                    onValueChange={setRelationOperator}
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       {relationCountOperators.map((operator) => (
-                        <SelectItem key={`count-op-${operator}`} value={operator}>
+                        <SelectItem
+                          key={`count-op-${operator}`}
+                          value={operator}
+                        >
                           {formatLookupLabelFr(operator)}
                         </SelectItem>
                       ))}
@@ -394,7 +432,9 @@ export function RelationFilterDialog({
                   </Select>
                 </div>
                 <div className="space-y-1">
-                  <Label>Valeur</Label>
+                  <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/50">
+                    Valeur
+                  </Label>
                   <Input
                     type="number"
                     value={relationValue}
@@ -405,12 +445,16 @@ export function RelationFilterDialog({
             ) : (
               <>
                 <div className="space-y-1">
-                  <Label>Champ</Label>
+                  <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/50">
+                    Champ
+                  </Label>
                   <Select
                     value={relationFieldName}
                     onValueChange={(value) => {
                       setRelationFieldName(value);
-                      const targetField = relationFieldOptions.find((entry) => entry.name === value);
+                      const targetField = relationFieldOptions.find(
+                        (entry) => entry.name === value,
+                      );
                       const firstOperator = operatorOptionsForGraphqlType(
                         targetField?.graphqlType || "StringFilterInput",
                       )[0];
@@ -425,7 +469,10 @@ export function RelationFilterDialog({
                     </SelectTrigger>
                     <SelectContent>
                       {relationFieldOptions.map((option) => (
-                        <SelectItem key={`rel-field-${option.name}`} value={option.name}>
+                        <SelectItem
+                          key={`rel-field-${option.name}`}
+                          value={option.name}
+                        >
                           {option.label}
                         </SelectItem>
                       ))}
@@ -435,14 +482,22 @@ export function RelationFilterDialog({
 
                 <div className="grid grid-cols-2 gap-2">
                   <div className="space-y-1">
-                    <Label>Opérateur</Label>
-                    <Select value={relationOperator} onValueChange={setRelationOperator}>
+                    <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/50">
+                      Opérateur
+                    </Label>
+                    <Select
+                      value={relationOperator}
+                      onValueChange={setRelationOperator}
+                    >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
                         {relationOperatorOptions.map((operator) => (
-                          <SelectItem key={`rel-op-${operator}`} value={operator}>
+                          <SelectItem
+                            key={`rel-op-${operator}`}
+                            value={operator}
+                          >
                             {formatLookupLabelFr(operator)}
                           </SelectItem>
                         ))}
@@ -450,9 +505,14 @@ export function RelationFilterDialog({
                     </Select>
                   </div>
                   <div className="space-y-1">
-                    <Label>Valeur</Label>
+                    <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/50">
+                      Valeur
+                    </Label>
                     {relationOperator === "isNull" || relationValueIsBoolean ? (
-                      <Select value={relationValue || "true"} onValueChange={setRelationValue}>
+                      <Select
+                        value={relationValue || "true"}
+                        onValueChange={setRelationValue}
+                      >
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
@@ -465,7 +525,9 @@ export function RelationFilterDialog({
                       <Input
                         type={relationValueIsNumeric ? "number" : "text"}
                         value={relationValue}
-                        onChange={(event) => setRelationValue(event.target.value)}
+                        onChange={(event) =>
+                          setRelationValue(event.target.value)
+                        }
                       />
                     )}
                   </div>
@@ -474,11 +536,19 @@ export function RelationFilterDialog({
             )}
           </div>
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setRelationDialogOpen(false)}>
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setRelationDialogOpen(false)}
+              className="rounded-xl h-9 text-xs font-semibold border-border/30"
+            >
               Annuler
             </Button>
-            <Button onClick={applyRelationDialog} disabled={!canApplyRelationDialog}>
+            <Button
+              onClick={applyRelationDialog}
+              disabled={!canApplyRelationDialog}
+              className="rounded-xl h-9 text-xs font-bold"
+            >
               Appliquer
             </Button>
           </DialogFooter>

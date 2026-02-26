@@ -15,12 +15,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/shared/ui/kit/collapsible";
-import { 
-  Loader2, 
-  ChevronRight, 
-  GripVertical, 
-  Layers
-} from "lucide-react";
+import { Loader2, ChevronRight, GripVertical, Layers } from "lucide-react";
 import { cn } from "@/shared/utils";
 import {
   persistTableMetadata,
@@ -28,11 +23,7 @@ import {
 } from "@/shared/api/graphql/graphql/metadata/persisted-cache";
 import { GET_MODEL_SCHEMA } from "../queries";
 import { mergeModelSchemaWithRelationships } from "../utils";
-import type {
-  FieldSchema,
-  ModelSchema,
-  RelationshipSchema,
-} from "../types";
+import type { FieldSchema, ModelSchema, RelationshipSchema } from "../types";
 
 export type ExportFieldSelection = Record<string, string>;
 
@@ -99,12 +90,12 @@ function SortHandleButton({
     <button
       type="button"
       ref={setActivatorNodeRef}
-      className="rounded-lg p-1.5 text-muted-foreground/30 transition-all hover:text-primary hover:bg-primary/10 cursor-grab active:cursor-grabbing focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
+      className="rounded-md p-1 text-muted-foreground/20 transition-all hover:text-primary hover:bg-primary/5 cursor-grab active:cursor-grabbing focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/20"
       aria-label="Reordonner le champ"
       {...attributes}
       {...listeners}
     >
-      <GripVertical className="h-4 w-4" />
+      <GripVertical className="size-3.5" />
     </button>
   );
 }
@@ -136,8 +127,9 @@ function SortableFieldItem({
       ref={setNodeRef}
       style={style}
       className={cn(
-        "relative transition-all duration-200",
-        isDragging && "opacity-40 scale-[0.98] z-50 ring-2 ring-primary/20 bg-muted/50 rounded-xl"
+        "relative transition-all duration-150",
+        isDragging &&
+          "opacity-40 scale-[0.98] z-50 ring-1 ring-primary/15 bg-muted/30 rounded-lg",
       )}
     >
       {children({ attributes, listeners, setActivatorNodeRef })}
@@ -161,24 +153,32 @@ function FieldLeafRow({
   sortHandle?: ReactNode;
 }) {
   return (
-    <div className={cn(
-      "group/leaf relative flex items-center gap-3 rounded-xl border border-transparent px-3 py-2 transition-all duration-300",
-      selected ? "bg-primary/[0.04] border-primary/10" : "hover:bg-muted/40",
-    )}>
+    <div
+      className={cn(
+        "group/leaf relative flex items-center gap-2.5 rounded-lg border border-transparent px-2.5 py-1.5 transition-all",
+        selected ? "bg-primary/[0.03] border-primary/10" : "hover:bg-muted/30",
+      )}
+    >
       {sortHandle}
-      <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-3">
+      <label className="flex min-w-0 flex-1 cursor-pointer items-center gap-2.5">
         <Checkbox
           checked={selected}
           onCheckedChange={() => onToggle(accessor, label)}
-          className="h-5 w-5 rounded-md border-muted-foreground/30 transition-all data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+          className="size-4 rounded border-muted-foreground/25 transition-all data-[state=checked]:bg-primary data-[state=checked]:border-primary"
         />
         <div className="flex min-w-0 flex-col">
-          <span className={cn(
-            "truncate text-sm font-semibold transition-colors duration-300",
-            selected ? "text-primary" : "text-foreground/80 group-hover/leaf:text-foreground"
-          )}>{label}</span>
+          <span
+            className={cn(
+              "truncate text-xs font-medium transition-colors",
+              selected
+                ? "text-primary"
+                : "text-foreground/70 group-hover/leaf:text-foreground",
+            )}
+          >
+            {label}
+          </span>
           {description ? (
-            <span className="truncate text-[10px] font-bold uppercase tracking-widest text-muted-foreground/40 group-hover/leaf:text-muted-foreground/60">
+            <span className="truncate text-[9px] font-medium text-muted-foreground/35 group-hover/leaf:text-muted-foreground/50">
               {description}
             </span>
           ) : null}
@@ -214,9 +214,16 @@ function RelationFieldRow({
   searchFilter?: string;
 }) {
   const isSearching = !!(searchFilter && searchFilter.length > 1);
-  const relationKey = relation ? `${relation.relatedApp}.${relation.relatedModel}` : "";
+  const relationKey = relation
+    ? `${relation.relatedApp}.${relation.relatedModel}`
+    : "";
   const isCycle = !!relationKey && ancestry.includes(relationKey);
-  const canExpand = !!relation && depth < maxDepth && !isCycle && !!relation.relatedApp && !!relation.relatedModel;
+  const canExpand =
+    !!relation &&
+    depth < maxDepth &&
+    !isCycle &&
+    !!relation.relatedApp &&
+    !!relation.relatedModel;
 
   const { metadata, loading, error } = useRelatedModelMetadata(
     relation?.relatedApp ?? "",
@@ -225,58 +232,79 @@ function RelationFieldRow({
   );
   const showError = !metadata && !!error;
 
-  const relationLabel = labelPath.join(" / ") || field.verboseName || field.name;
+  const relationLabel =
+    labelPath.join(" / ") || field.verboseName || field.name;
   const relationMeta = relation?.relatedModelVerbose ?? relation?.relatedModel;
 
   return (
-    <Collapsible defaultOpen={isSearching} className="group/relation w-full overflow-hidden">
-      <div className={cn(
-        "flex items-center gap-3 rounded-xl border border-transparent px-3 py-2 transition-all duration-300",
-        selected ? "bg-primary/[0.04] border-primary/10" : "hover:bg-muted/40 hover:translate-x-0.5",
-      )}>
+    <Collapsible
+      defaultOpen={isSearching}
+      className="group/relation w-full overflow-hidden"
+    >
+      <div
+        className={cn(
+          "flex items-center gap-2.5 rounded-lg border border-transparent px-2.5 py-1.5 transition-all",
+          selected
+            ? "bg-primary/[0.03] border-primary/10"
+            : "hover:bg-muted/30",
+        )}
+      >
         {sortHandle}
         <Checkbox
           checked={selected}
           onCheckedChange={() => onToggle(accessor, relationLabel)}
-          className="h-5 w-5 rounded-md border-muted-foreground/30 transition-all data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+          className="size-4 rounded border-muted-foreground/25 transition-all data-[state=checked]:bg-primary data-[state=checked]:border-primary"
         />
         <CollapsibleTrigger asChild>
           <button
             type="button"
             className={cn(
-              "rounded-lg p-1 text-muted-foreground/40 transition-all hover:bg-primary/10 hover:text-primary",
+              "rounded-md p-0.5 text-muted-foreground/30 transition-all hover:bg-primary/5 hover:text-primary",
               !canExpand && "pointer-events-none opacity-20",
             )}
           >
             <ChevronRight
-              className={cn("h-4 w-4 transition-transform duration-500 ease-out group-data-[state=open]/relation:rotate-90")}
+              className={cn(
+                "size-3.5 transition-transform duration-300 group-data-[state=open]/relation:rotate-90",
+              )}
             />
           </button>
         </CollapsibleTrigger>
         <div className="flex min-w-0 flex-1 flex-col">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className={cn(
-              "truncate text-sm font-black transition-colors duration-300",
-              selected ? "text-primary" : "text-foreground/80 group-hover/relation:text-foreground"
-            )}>{relationLabel}</span>
-            <Badge variant="outline" className={cn(
-              "h-5 px-1.5 text-[9px] font-black uppercase tracking-tighter",
-              relation?.isToMany ? "border-primary/20 bg-primary/5 text-primary" : "border-border bg-muted/30 text-muted-foreground"
-            )}>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span
+              className={cn(
+                "truncate text-xs font-semibold transition-colors",
+                selected
+                  ? "text-primary"
+                  : "text-foreground/70 group-hover/relation:text-foreground",
+              )}
+            >
+              {relationLabel}
+            </span>
+            <Badge
+              variant="outline"
+              className={cn(
+                "h-4 px-1.5 text-[8px] font-bold uppercase tracking-tight rounded",
+                relation?.isToMany
+                  ? "border-primary/15 bg-primary/5 text-primary/70"
+                  : "border-border/30 bg-muted/20 text-muted-foreground/60",
+              )}
+            >
               {relation?.isToMany ? "1:N" : "1:1"}
             </Badge>
           </div>
           {relationMeta ? (
-            <span className="truncate text-[10px] font-bold uppercase tracking-widest text-muted-foreground/40 group-hover/relation:text-muted-foreground/60">
+            <span className="truncate text-[9px] font-medium text-muted-foreground/35 group-hover/relation:text-muted-foreground/50">
               {relationMeta}
             </span>
           ) : null}
         </div>
       </div>
       {canExpand ? (
-        <CollapsibleContent className="ml-8 mt-1 space-y-1 relative overflow-hidden animate-in slide-in-from-top-2 duration-300">
-          <div className="absolute left-0 top-0 bottom-4 w-px bg-gradient-to-b from-primary/30 via-primary/10 to-transparent" />
-          <div className="pl-4 pb-2">
+        <CollapsibleContent className="ml-7 mt-0.5 space-y-0.5 relative overflow-hidden">
+          <div className="absolute left-0 top-0 bottom-3 w-px bg-gradient-to-b from-primary/20 via-primary/5 to-transparent" />
+          <div className="pl-3.5 pb-1.5">
             {metadata ? (
               <ExportFieldTree
                 metadata={metadata}
@@ -290,12 +318,12 @@ function RelationFieldRow({
                 searchFilter={searchFilter}
               />
             ) : loading ? (
-              <div className="flex items-center gap-2.5 py-4 text-[11px] font-bold uppercase tracking-widest text-muted-foreground/40">
-                <Loader2 className="h-3.5 w-3.5 animate-spin text-primary/60" />
+              <div className="flex items-center gap-2 py-3 text-[10px] font-medium text-muted-foreground/40">
+                <Loader2 className="size-3 animate-spin text-primary/50" />
                 Chargement...
               </div>
             ) : showError ? (
-              <div className="rounded-lg bg-red-50/50 px-3 py-2 text-[11px] font-bold text-red-500/80">
+              <div className="rounded-md bg-destructive/5 px-2.5 py-1.5 text-[10px] font-medium text-destructive/70">
                 Erreur de chargement.
               </div>
             ) : null}
@@ -303,8 +331,8 @@ function RelationFieldRow({
         </CollapsibleContent>
       ) : null}
       {isCycle ? (
-        <div className="ml-8 mt-1 border-l border-dashed border-orange-200 pl-4 py-2 text-[10px] font-bold uppercase tracking-widest text-orange-400/60">
-          Cycle dÃ©tectÃ© (rÃ©cursion bloquÃ©e)
+        <div className="ml-7 mt-0.5 border-l border-dashed border-amber-300/40 pl-3.5 py-1.5 text-[9px] font-medium text-amber-500/50">
+          Cycle détecté (récursion bloquée)
         </div>
       ) : null}
     </Collapsible>
@@ -336,15 +364,15 @@ export function ExportFieldTree({
   }, [metadata.relationships]);
 
   const allowSorting = isRoot && !!onFieldOrderChange && !searchFilter;
-  
+
   const filteredFields = useMemo(() => {
     const readableFields = metadata.fields.filter(isReadableField);
-    
+
     let sorted: FieldSchema[];
     if (allowSorting) {
       const fieldMap = new Map<string, FieldSchema>();
       readableFields.forEach((f) => fieldMap.set(f.name, f));
-      
+
       sorted = [];
       (fieldOrder ?? []).forEach((name) => {
         const field = fieldMap.get(name);
@@ -353,24 +381,29 @@ export function ExportFieldTree({
           fieldMap.delete(name);
         }
       });
-      
+
       if (fieldMap.size > 0) {
-        sorted.push(...Array.from(fieldMap.values()).sort((a, b) => 
-          a.verboseName.localeCompare(b.verboseName)
-        ));
+        sorted.push(
+          ...Array.from(fieldMap.values()).sort((a, b) =>
+            a.verboseName.localeCompare(b.verboseName),
+          ),
+        );
       }
     } else {
-      sorted = readableFields.sort((a, b) => a.verboseName.localeCompare(b.verboseName));
+      sorted = readableFields.sort((a, b) =>
+        a.verboseName.localeCompare(b.verboseName),
+      );
     }
 
     if (!searchFilter || searchFilter.length < 2) return sorted;
 
     const query = searchFilter.toLowerCase();
-    return sorted.filter(f => 
-      f.verboseName.toLowerCase().includes(query) || 
-      f.name.toLowerCase().includes(query) ||
-      (f.fieldName && f.fieldName.toLowerCase().includes(query)) ||
-      f.isRelation
+    return sorted.filter(
+      (f) =>
+        f.verboseName.toLowerCase().includes(query) ||
+        f.name.toLowerCase().includes(query) ||
+        (f.fieldName && f.fieldName.toLowerCase().includes(query)) ||
+        f.isRelation,
     );
   }, [metadata.fields, allowSorting, fieldOrder, searchFilter]);
 
@@ -379,29 +412,40 @@ export function ExportFieldTree({
   const ancestryChain = ancestry?.length ? ancestry : [modelKey];
   const fieldIds = filteredFields.map((field) => field.name);
 
-  const handleDragEnd = useCallback((event: DragEndEvent) => {
-    if (!allowSorting || !onFieldOrderChange) return;
-    const { active, over } = event;
-    if (!over || active.id === over.id) return;
-    const oldIndex = fieldIds.indexOf(String(active.id));
-    const newIndex = fieldIds.indexOf(String(over.id));
-    if (oldIndex === -1 || newIndex === -1) return;
-    onFieldOrderChange(arrayMove(fieldIds, oldIndex, newIndex));
-  }, [allowSorting, onFieldOrderChange, fieldIds]);
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      if (!allowSorting || !onFieldOrderChange) return;
+      const { active, over } = event;
+      if (!over || active.id === over.id) return;
+      const oldIndex = fieldIds.indexOf(String(active.id));
+      const newIndex = fieldIds.indexOf(String(over.id));
+      if (oldIndex === -1 || newIndex === -1) return;
+      onFieldOrderChange(arrayMove(fieldIds, oldIndex, newIndex));
+    },
+    [allowSorting, onFieldOrderChange, fieldIds],
+  );
 
   return (
     <div className="w-full">
       {filteredFields.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-12 text-center animate-in fade-in zoom-in-95 duration-500">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-muted/30 mb-4">
-            <Layers className="h-6 w-6 text-muted-foreground/40" />
+        <div className="flex flex-col items-center justify-center py-10 text-center">
+          <div className="flex size-10 items-center justify-center rounded-xl bg-muted/25 mb-3">
+            <Layers className="size-5 text-muted-foreground/30" />
           </div>
-          <p className="text-xs font-black uppercase tracking-widest text-muted-foreground/40">Aucun champ trouvÃ©</p>
+          <p className="text-[11px] font-medium text-muted-foreground/40">
+            Aucun champ trouvé
+          </p>
         </div>
       ) : (
-        <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-          <SortableContext items={fieldIds} strategy={verticalListSortingStrategy}>
-            <div className="space-y-1">
+        <DndContext
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext
+            items={fieldIds}
+            strategy={verticalListSortingStrategy}
+          >
+            <div className="space-y-0.5">
               {filteredFields.map((field) => {
                 const accessorSegment = field.name || field.fieldName;
                 const accessor = accessorPrefix
@@ -409,13 +453,19 @@ export function ExportFieldTree({
                   : accessorSegment;
                 const nextLabelPath = [...resolvedLabelPath, field.verboseName];
                 const label = nextLabelPath.join(" / ");
-                const description = accessorPrefix && resolvedLabelPath.length
-                  ? resolvedLabelPath.join(" / ")
-                  : field.fieldName !== field.name ? field.fieldName : undefined;
+                const description =
+                  accessorPrefix && resolvedLabelPath.length
+                    ? resolvedLabelPath.join(" / ")
+                    : field.fieldName !== field.name
+                      ? field.fieldName
+                      : undefined;
 
                 const renderContent = (sortHandle?: ReactNode) => {
                   if (field.isRelation) {
-                    const relation = relationLookup.get(field.fieldName) ?? relationLookup.get(field.name) ?? null;
+                    const relation =
+                      relationLookup.get(field.fieldName) ??
+                      relationLookup.get(field.name) ??
+                      null;
                     return (
                       <RelationFieldRow
                         key={accessor}
@@ -451,7 +501,9 @@ export function ExportFieldTree({
 
                 return (
                   <SortableFieldItem key={accessor} id={field.name}>
-                    {(handleProps) => renderContent(<SortHandleButton {...handleProps} />)}
+                    {(handleProps) =>
+                      renderContent(<SortHandleButton {...handleProps} />)
+                    }
                   </SortableFieldItem>
                 );
               })}
@@ -462,4 +514,3 @@ export function ExportFieldTree({
     </div>
   );
 }
-

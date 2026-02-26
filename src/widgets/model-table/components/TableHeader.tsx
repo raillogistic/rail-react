@@ -68,21 +68,19 @@ function DraggableHead({
       style={style}
       className={cn(
         "group/col font-semibold sticky top-0 z-20 whitespace-nowrap overflow-visible",
-        "border-b border-border shadow-sm",
-        "bg-background/80 backdrop-blur-md text-left",
+        "border-b border-border/30",
+        "bg-muted/30 backdrop-blur-md text-left",
         "transition-all duration-200",
-        // Focus/Hover accent on the left
-        "before:absolute before:left-0 before:top-2 before:bottom-2 before:w-[2px] before:bg-transparent hover:before:bg-primary/40 before:transition-all before:rounded-full",
         density === "compact"
           ? "h-9 p-0 text-[10px] uppercase tracking-wider"
           : density === "spacious"
-            ? "h-14 p-0 text-[14px]"
-            : "h-11 p-0 text-[12px] uppercase tracking-wide",
+            ? "h-14 p-0 text-[13px]"
+            : "h-11 p-0 text-[11px] uppercase tracking-wide",
         isDragging &&
-          "opacity-50 scale-[0.98] shadow-2xl z-30 ring-1 ring-primary/20 bg-muted/90",
-        "hover:bg-muted/40 text-muted-foreground hover:text-foreground",
+          "opacity-75 z-30 ring-1 ring-primary/30 shadow-lg bg-muted/70",
+        "text-muted-foreground hover:text-foreground",
         isActions &&
-          "bg-muted/30 font-semibold text-[10px] uppercase tracking-widest text-muted-foreground/80",
+          "bg-muted/20 font-semibold text-[10px] uppercase tracking-widest text-muted-foreground/60",
         className,
       )}
       aria-sort={ariaSort}
@@ -93,16 +91,16 @@ function DraggableHead({
             type="button"
             aria-label="Reordonner la colonne"
             className={cn(
-              "h-full px-2 border-r border-border/50",
+              "h-full px-2 border-r border-border/20",
               "text-muted-foreground/30 hover:text-primary hover:bg-primary/5",
               "cursor-grab active:cursor-grabbing transition-all",
-              "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/50",
+              "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/30",
             )}
             {...attributes}
             {...listeners}
             onClick={(event) => event.stopPropagation()}
           >
-            <GripVertical className="h-3.5 w-3.5" />
+            <GripVertical className="size-3" />
           </button>
         ) : null}
         <div className="flex items-stretch gap-0 flex-1 min-w-0 h-full group/title">
@@ -115,10 +113,11 @@ function DraggableHead({
           aria-orientation="vertical"
           aria-label="Redimensionner la colonne"
           className={cn(
-            "absolute right-0 top-1/4 z-40 h-1/2 w-1 translate-x-0.5",
-            "cursor-col-resize touch-none select-none",
-            "opacity-0 transition-opacity group-hover/col:opacity-100",
-            "bg-border/60 rounded-full hover:bg-primary hover:w-1.5 transition-all",
+            "absolute right-0 top-[20%] z-40 h-[60%] w-[3px]",
+            "cursor-col-resize touch-none select-none rounded-full",
+            "bg-primary/0 opacity-0 transition-all",
+            "group-hover/col:bg-primary/30 group-hover/col:opacity-100",
+            "hover:!bg-primary/60 active:!bg-primary",
           )}
           onPointerDown={onResizePointerDown}
           onClick={(event) => event.stopPropagation()}
@@ -280,12 +279,12 @@ export function TableHeader({
 
   return (
     <ShadcnTableHeader className="bg-transparent group/header">
-      <TableRow className="border-b-0 hover:bg-transparent transition-none">
+      <TableRow className="border-0 hover:bg-transparent transition-none">
         {enableSelection ? (
           <TableHead
             className={cn(
               "w-[50px] table-first-column sticky top-0 z-20 overflow-visible",
-              "border-b border-border bg-background/80 backdrop-blur-md shadow-sm",
+              "border-b border-border/30 bg-muted/30 backdrop-blur-md",
               "transition-colors duration-200",
               density === "compact"
                 ? "py-0 px-2 h-9"
@@ -301,7 +300,7 @@ export function TableHeader({
                 }
                 onCheckedChange={toggleSelectAll}
                 aria-label="Tout sélectionner"
-                className="h-4 w-4 rounded transition-all duration-300 data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground border-muted-foreground/30"
+                className="size-4 rounded transition-all data-[state=checked]:bg-primary data-[state=checked]:border-primary border-muted-foreground/30"
               />
             </div>
           </TableHead>
@@ -375,19 +374,18 @@ export function TableHeader({
           );
         })}
 
-        {/* Actions Column Header - Modern & Balanced */}
+        {/* Actions Column Header */}
         <DraggableHead
           id="actions"
           draggable={false}
-          className="w-[140px] text-right sticky right-0 z-30 table-last-column border-l border-border/50 shadow-[-10px_0_15px_-10px_rgba(0,0,0,0.1)] bg-background/80 backdrop-blur-md"
+          className="w-[140px] text-right sticky right-0 z-30 table-last-column border-l border-border/20 bg-muted/30 backdrop-blur-md"
           density={density}
           isActions
         >
-          <div className="flex w-full items-center justify-end pr-5 gap-2 group/action-header">
-            <span className="block text-[9px] font-bold uppercase tracking-[0.2em] text-muted-foreground group-hover/action-header:text-foreground transition-colors">
+          <div className="flex w-full items-center justify-end pr-4 gap-1.5">
+            <span className="block text-[9px] font-semibold uppercase tracking-widest text-muted-foreground/50">
               {actionsLabel ?? "Actions"}
             </span>
-            <div className="h-1 w-1 rounded-full bg-border group-hover/action-header:bg-primary transition-all group-hover/action-header:scale-150" />
           </div>
         </DraggableHead>
       </TableRow>

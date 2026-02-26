@@ -103,7 +103,7 @@ describe("DynamicDetail view config", () => {
     const sectionsContainer = alphaSection.parentElement;
     expect(alphaSection.className).toContain("view-alpha-container");
     expect(sectionsContainer?.className ?? "").toContain("view-grid-container");
-    expect(sectionsContainer?.className ?? "").toContain("md:grid-cols-2");
+    expect(sectionsContainer?.className ?? "").toContain("sm:grid-cols-2");
   });
 
   it("keeps top-level props precedence over view config", async () => {
@@ -153,4 +153,3 @@ describe("DynamicDetail view config", () => {
     expect(screen.queryByText("Related Tab Content")).toBeNull();
   });
 });
-

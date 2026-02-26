@@ -44,7 +44,11 @@ import { cn } from "@/shared/utils";
 import type { FormSchema } from "@/widgets/model-form/inputs/types";
 import { useMetadata } from "../../context/MetadataContext";
 import { useTable } from "../../context/TableContext";
-import { findMutation, normalizeMutationType, toGraphqlFieldName } from "../../utils";
+import {
+  findMutation,
+  normalizeMutationType,
+  toGraphqlFieldName,
+} from "../../utils";
 import {
   buildTemplateClientSchema,
   executeTemplateForRows,
@@ -113,9 +117,9 @@ function parseDefaultValue(value: unknown): unknown {
     trimmed === "false" ||
     trimmed === "null" ||
     /^-?\d+(?:\.\d+)?$/.test(trimmed) ||
-    ((trimmed.startsWith("{") && trimmed.endsWith("}")) ||
-      (trimmed.startsWith("[") && trimmed.endsWith("]")) ||
-      (trimmed.startsWith('"') && trimmed.endsWith('"')))
+    (trimmed.startsWith("{") && trimmed.endsWith("}")) ||
+    (trimmed.startsWith("[") && trimmed.endsWith("]")) ||
+    (trimmed.startsWith('"') && trimmed.endsWith('"'))
   ) {
     try {
       return JSON.parse(trimmed);
@@ -135,8 +139,12 @@ function humanizeLabel(value: string): string {
   return withSpaces.charAt(0).toUpperCase() + withSpaces.slice(1);
 }
 
-function resolveFormFieldType(field: MutationInputFieldSchema): FormSchema["fields"][number]["type"] {
-  const normalized = String(field.graphqlType || field.fieldType || "").toLowerCase();
+function resolveFormFieldType(
+  field: MutationInputFieldSchema,
+): FormSchema["fields"][number]["type"] {
+  const normalized = String(
+    field.graphqlType || field.fieldType || "",
+  ).toLowerCase();
   if (field.choices && field.choices.length > 0) {
     return "select";
   }
@@ -156,8 +164,12 @@ function resolveFormFieldType(field: MutationInputFieldSchema): FormSchema["fiel
   return "text";
 }
 
-function normalizeMutationInputFields(mutation: MutationSchema): MutationInputFieldSchema[] {
-  const source = Array.isArray(mutation.inputFields) ? mutation.inputFields : [];
+function normalizeMutationInputFields(
+  mutation: MutationSchema,
+): MutationInputFieldSchema[] {
+  const source = Array.isArray(mutation.inputFields)
+    ? mutation.inputFields
+    : [];
   return source
     .filter((field): field is MutationInputFieldSchema => isRecord(field))
     .map((field, index) => {
@@ -180,7 +192,9 @@ function normalizeMutationInputFields(mutation: MutationSchema): MutationInputFi
             label: String(label),
           };
         })
-        .filter((choice): choice is { value: string; label: string } => !!choice);
+        .filter(
+          (choice): choice is { value: string; label: string } => !!choice,
+        );
       return {
         ...field,
         name: fieldName,
@@ -191,7 +205,9 @@ function normalizeMutationInputFields(mutation: MutationSchema): MutationInputFi
     });
 }
 
-function buildMutationSchema(fields: MutationInputFieldSchema[]): FormSchema | null {
+function buildMutationSchema(
+  fields: MutationInputFieldSchema[],
+): FormSchema | null {
   if (!fields.length) return null;
   return {
     fields: fields.map((field) => ({
@@ -208,7 +224,9 @@ function buildMutationSchema(fields: MutationInputFieldSchema[]): FormSchema | n
   };
 }
 
-function buildMutationDefaults(fields: MutationInputFieldSchema[]): Record<string, unknown> {
+function buildMutationDefaults(
+  fields: MutationInputFieldSchema[],
+): Record<string, unknown> {
   return fields.reduce<Record<string, unknown>>((acc, field) => {
     const name = field.name || field.fieldName;
     if (!name) return acc;
@@ -250,7 +268,10 @@ function buildMutationOperationNames(
   return [...candidates].filter(Boolean);
 }
 
-function buildMutationLabel(mutation: MutationSchema, actionUi: Record<string, unknown>): string {
+function buildMutationLabel(
+  mutation: MutationSchema,
+  actionUi: Record<string, unknown>,
+): string {
   const uiButtonTitle = actionUi.button_title ?? actionUi.buttonTitle;
   if (typeof uiButtonTitle === "string" && uiButtonTitle.trim()) {
     return uiButtonTitle.trim();
@@ -260,8 +281,13 @@ function buildMutationLabel(mutation: MutationSchema, actionUi: Record<string, u
   return humanizeLabel(mutation.methodName || mutation.name || "Action");
 }
 
-function normalizeGraphqlType(rawType: string | undefined, required: boolean): string {
-  const base = String(rawType || "String").replace(/\s+/g, "").replace(/!$/, "");
+function normalizeGraphqlType(
+  rawType: string | undefined,
+  required: boolean,
+): string {
+  const base = String(rawType || "String")
+    .replace(/\s+/g, "")
+    .replace(/!$/, "");
   if (!base) {
     return required ? "String!" : "String";
   }
@@ -277,7 +303,11 @@ function buildMutationDocument(options: {
   const variableDefinitions: string[] = ["$id: ID!"];
   const argumentMappings: string[] = ["id: $id"];
 
-  if (options.inputFields.length > 0 && options.useInputObject && options.inputType) {
+  if (
+    options.inputFields.length > 0 &&
+    options.useInputObject &&
+    options.inputType
+  ) {
     const inputTypeName = normalizeGraphqlType(options.inputType, true);
     variableDefinitions.push(`$input: ${inputTypeName}`);
     argumentMappings.push("input: $input");
@@ -316,7 +346,9 @@ function extractGraphqlErrors(payload: unknown): Array<{ message?: string }> {
   if (!Array.isArray(payload)) return [];
   return payload
     .filter((entry): entry is { message?: string } => isRecord(entry))
-    .map((entry) => ({ message: typeof entry.message === "string" ? entry.message : undefined }));
+    .map((entry) => ({
+      message: typeof entry.message === "string" ? entry.message : undefined,
+    }));
 }
 
 type RowActionsProps = {
@@ -423,7 +455,8 @@ export function RowActions({
           : null);
       const disabledReason =
         mutation.allowed === false
-          ? permissionReason || "Vous n'avez pas la permission d'exécuter cette action."
+          ? permissionReason ||
+            "Vous n'avez pas la permission d'exécuter cette action."
           : !rowId
             ? "Cette ligne ne possède pas d'identifiant valide."
             : null;
@@ -597,9 +630,7 @@ export function RowActions({
 
     for (const operationName of operationNames) {
       const plans =
-        hasInputPayload && mutation.inputType
-          ? [true, false]
-          : [false];
+        hasInputPayload && mutation.inputType ? [true, false] : [false];
 
       for (const useInputObject of plans) {
         const mutationDocument = buildMutationDocument({
@@ -622,8 +653,11 @@ export function RowActions({
             errorPolicy: "all",
           });
 
-          const response = (result.data as { response?: { ok?: boolean; errors?: Array<{ message?: string }> } } | null)
-            ?.response;
+          const response = (
+            result.data as {
+              response?: { ok?: boolean; errors?: Array<{ message?: string }> };
+            } | null
+          )?.response;
 
           if (response?.ok) {
             return;
@@ -748,20 +782,20 @@ export function RowActions({
 
   return (
     <TooltipProvider delayDuration={300}>
-      <div className="group/actions flex items-center justify-end gap-1.5 opacity-60 transition-all duration-300 hover:opacity-100">
+      <div className="group/actions flex items-center justify-end gap-1 opacity-50 transition-opacity duration-200 group-hover/row:opacity-100">
         {canEdit ? (
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
                 size="icon"
                 variant="ghost"
-                className="h-8 w-8 rounded-xl bg-blue-500/10 text-blue-600 dark:text-blue-400 shadow-sm transition-all hover:scale-110 hover:bg-blue-500 hover:text-white active:scale-95"
+                className="size-7 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 transition-all hover:bg-blue-500 hover:text-white active:scale-95"
                 onClick={handleEdit}
               >
                 <Pencil className="h-4 w-4" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent className="rounded-lg border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950 text-blue-700 dark:text-blue-300 font-bold uppercase text-[9px] tracking-widest">
+            <TooltipContent className="rounded-lg bg-blue-600 text-white font-bold uppercase text-[9px] tracking-widest">
               Modifier
             </TooltipContent>
           </Tooltip>
@@ -773,7 +807,7 @@ export function RowActions({
               <Button
                 size="icon"
                 variant="ghost"
-                className="h-8 w-8 rounded-xl bg-rose-500/10 text-rose-600 dark:text-rose-400 shadow-sm transition-all hover:scale-110 hover:bg-rose-500 hover:text-white active:scale-95 disabled:grayscale"
+                className="size-7 rounded-lg bg-rose-500/10 text-rose-600 dark:text-rose-400 transition-all hover:bg-rose-500 hover:text-white active:scale-95 disabled:grayscale"
                 onClick={() => setConfirmOpen(true)}
                 disabled={deleting}
               >
@@ -784,7 +818,7 @@ export function RowActions({
                 )}
               </Button>
             </TooltipTrigger>
-            <TooltipContent className="rounded-lg border-rose-200 dark:border-rose-800 bg-rose-50 dark:bg-rose-950 text-rose-700 dark:text-rose-300 font-bold uppercase text-[9px] tracking-widest">
+            <TooltipContent className="rounded-lg bg-rose-600 text-white font-bold uppercase text-[9px] tracking-widest">
               Supprimer
             </TooltipContent>
           </Tooltip>
@@ -798,21 +832,21 @@ export function RowActions({
                   <Button
                     size="icon"
                     variant="ghost"
-                    className="h-8 w-8 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 shadow-sm transition-all hover:scale-110 hover:bg-emerald-500 hover:text-white active:scale-95"
+                    className="size-7 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 transition-all hover:bg-emerald-500 hover:text-white active:scale-95"
                   >
                     <Printer className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
               </TooltipTrigger>
-              <TooltipContent className="rounded-lg border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950 text-emerald-700 dark:text-emerald-300 font-bold uppercase text-[9px] tracking-widest">
+              <TooltipContent className="rounded-lg bg-emerald-600 text-white font-bold uppercase text-[9px] tracking-widest">
                 Templates
               </TooltipContent>
             </Tooltip>
             <DropdownMenuContent
               align="end"
-              className="w-72 rounded-2xl border-none p-2 shadow-2xl backdrop-blur-2xl bg-background/95"
+              className="w-64 rounded-xl border-border/30 p-1.5 shadow-xl backdrop-blur-xl bg-background/95"
             >
-              <DropdownMenuLabel className="flex items-center gap-2 px-3 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">
+              <DropdownMenuLabel className="flex items-center gap-2 px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50">
                 <Sparkles className="h-3.5 w-3.5 text-emerald-500" />
                 Extractions
               </DropdownMenuLabel>
@@ -840,16 +874,16 @@ export function RowActions({
               <Button
                 size="icon"
                 variant="ghost"
-                className="h-8 w-8 rounded-xl bg-muted/40 text-muted-foreground dark:text-muted-foreground/80 transition-all hover:scale-110 hover:bg-primary hover:text-white active:scale-95"
+                className="size-7 rounded-lg bg-muted/30 text-muted-foreground transition-all hover:bg-primary hover:text-white active:scale-95"
               >
                 <MoreHorizontal className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
               align="end"
-              className="w-56 rounded-2xl border-none p-2 shadow-2xl backdrop-blur-2xl bg-background/95"
+              className="w-56 rounded-xl border-border/30 p-1.5 shadow-xl backdrop-blur-xl bg-background/95"
             >
-              <DropdownMenuLabel className="flex items-center gap-2 px-3 py-2 text-[10px] font-black uppercase tracking-[0.2em] text-muted-foreground/60">
+              <DropdownMenuLabel className="flex items-center gap-2 px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50">
                 <Zap className="h-3.5 w-3.5" />
                 Actions
               </DropdownMenuLabel>
@@ -904,7 +938,8 @@ export function RowActions({
                   );
                 })}
 
-                {metadataMutationActions.length > 0 && customActions.length > 0 ? (
+                {metadataMutationActions.length > 0 &&
+                customActions.length > 0 ? (
                   <DropdownMenuSeparator className="my-1 bg-border/40" />
                 ) : null}
 
@@ -962,39 +997,36 @@ export function RowActions({
       </div>
 
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <AlertDialogContent className="max-w-[400px] rounded-[2rem] border-none shadow-3xl overflow-hidden p-0 bg-background/95 backdrop-blur-xl">
-          <div className="relative h-24 w-full bg-rose-500 flex items-center justify-center overflow-hidden">
-            <div className="absolute inset-0 opacity-20">
-              <div className="absolute top-0 left-0 h-full w-full bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-white to-transparent" />
+        <AlertDialogContent className="max-w-[400px] rounded-2xl border-border/30 shadow-2xl overflow-hidden p-0 bg-background/95 backdrop-blur-xl">
+          {/* Accent strip */}
+          <div className="h-1.5 w-full bg-gradient-to-r from-rose-400 via-rose-500 to-rose-600" />
+          <div className="flex flex-col items-center gap-4 p-8 text-center">
+            <div className="flex size-14 items-center justify-center rounded-2xl bg-rose-500/10">
+              <Trash2 className="size-7 text-rose-500" />
             </div>
-            <div className="relative flex h-16 w-16 items-center justify-center rounded-3xl bg-white dark:bg-slate-900 shadow-xl">
-              <Trash2 className="h-8 w-8 text-rose-500" />
-            </div>
-          </div>
-          <div className="p-8">
-            <AlertDialogHeader className="space-y-3 text-center">
-              <AlertDialogTitle className="text-2xl font-black uppercase tracking-tighter">
-                Supprimer ?
+            <AlertDialogHeader className="space-y-2">
+              <AlertDialogTitle className="text-xl font-bold">
+                Confirmer la suppression
               </AlertDialogTitle>
               <AlertDialogDescription className="text-sm font-medium leading-relaxed text-muted-foreground">
                 Êtes-vous sûr de vouloir supprimer cet enregistrement{" "}
-                <span className="font-black text-foreground">
+                <span className="font-bold text-foreground">
                   "{metadata?.verboseName}"
                 </span>{" "}
                 ? Cette action est irréversible.
               </AlertDialogDescription>
             </AlertDialogHeader>
-            <AlertDialogFooter className="mt-8 flex-col-reverse gap-3 sm:flex-row sm:justify-center">
-              <AlertDialogCancel className="h-12 flex-1 rounded-2xl border-none bg-muted/50 font-bold uppercase text-[10px] tracking-widest transition-all hover:bg-muted dark:hover:bg-muted/80">
+            <AlertDialogFooter className="mt-4 flex-col sm:flex-row gap-3 justify-center w-full">
+              <AlertDialogCancel className="h-10 flex-1 rounded-xl border-border/30 bg-muted/30 font-bold text-xs uppercase tracking-wider transition-all hover:bg-muted/50 active:scale-95">
                 Annuler
               </AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleDelete}
                 disabled={deleting}
-                className="h-12 flex-1 rounded-2xl bg-rose-500 font-black uppercase text-[10px] tracking-widest text-white shadow-lg shadow-rose-200 dark:shadow-rose-900/40 transition-all hover:bg-rose-600 hover:scale-[1.02] active:scale-95 disabled:grayscale"
+                className="h-10 flex-1 rounded-xl bg-rose-500 font-bold text-xs uppercase tracking-wider text-white shadow-lg shadow-rose-500/20 transition-all hover:bg-rose-600 hover:scale-[1.02] active:scale-95 disabled:grayscale"
               >
                 {deleting ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <Loader2 className="mr-2 size-4 animate-spin" />
                 ) : (
                   "Supprimer"
                 )}
@@ -1011,7 +1043,8 @@ export function RowActions({
             activeMutationAction
               ? {
                   name: activeMutationAction.mutation.name,
-                  description: activeMutationAction.mutation.description ?? null,
+                  description:
+                    activeMutationAction.mutation.description ?? null,
                   action: activeMutationAction.ui,
                 }
               : null
@@ -1051,4 +1084,3 @@ export function RowActions({
     </TooltipProvider>
   );
 }
-

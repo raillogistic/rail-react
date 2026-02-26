@@ -7,12 +7,8 @@ import {
   RefreshCw,
   X,
   Settings2,
-  ChevronRight,
-  MoreHorizontal,
   Layers,
   LayoutGrid,
-  Zap,
-  Trash2,
   SlidersHorizontal,
 } from "lucide-react";
 import { Button } from "@/shared/ui/kit/button";
@@ -28,7 +24,6 @@ import {
   Sheet,
   SheetContent,
   SheetHeader,
-  SheetTitle,
   SheetTrigger,
 } from "@/shared/ui/kit/sheet";
 import {
@@ -155,7 +150,10 @@ export function TableToolbar({
   const orderedColumns = useMemo<ColumnsMenuOption[]>(() => {
     if (!metadata) return [];
     const normalizedFieldsConfig = normalizeBaseModelTableFieldsInput(fields);
-    const definitions = buildColumnDefinitions(metadata, normalizedFieldsConfig);
+    const definitions = buildColumnDefinitions(
+      metadata,
+      normalizedFieldsConfig,
+    );
     const baseColumns = definitions.map((column) => {
       const rootKey = column.id.split(".")[0];
       return {
@@ -255,12 +253,12 @@ export function TableToolbar({
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div className="relative z-20 mb-6 flex flex-col gap-4">
+      <div className="relative z-20 mb-4 flex flex-col gap-3">
         {/* Main Toolbar Container */}
         <div
           className={cn(
-            "group flex flex-col gap-3 rounded-[2rem] border border-border/40 bg-background/50 p-2 shadow-sm backdrop-blur-2xl transition-all duration-500 hover:border-primary/20 hover:bg-background/60",
-            hasActiveFilters && "ring-1 ring-primary/20 border-primary/30",
+            "group flex flex-col gap-3 rounded-2xl border border-border/30 bg-background/50 p-2 shadow-sm backdrop-blur-xl transition-all duration-300 hover:border-border/50",
+            hasActiveFilters && "ring-1 ring-primary/15 border-primary/20",
           )}
         >
           <div className="flex flex-col items-center justify-between gap-3 px-1 sm:flex-row">
@@ -284,7 +282,7 @@ export function TableToolbar({
                   {activeAdvancedFilterCount > 0 && (
                     <Badge
                       variant="secondary"
-                      className="h-9 gap-2 rounded-full border-none bg-primary/10 px-4 font-semibold text-primary shadow-sm transition-all hover:bg-primary/20"
+                      className="h-7 gap-1.5 rounded-full border-none bg-primary/10 px-3 text-xs font-semibold text-primary transition-all hover:bg-primary/15"
                     >
                       <Filter className="h-3.5 w-3.5 fill-primary/20" />
                       <span>{activeAdvancedFilterCount} filtres</span>
@@ -302,7 +300,7 @@ export function TableToolbar({
                   {hasGroupedRows && (
                     <Badge
                       variant="outline"
-                      className="h-9 gap-2 rounded-full border-primary/20 bg-background px-4 font-semibold text-foreground/70 transition-all hover:border-primary/40"
+                      className="h-7 gap-1.5 rounded-full border-primary/15 bg-background px-3 text-xs font-semibold text-foreground/70 transition-all hover:border-primary/30"
                     >
                       <div className="relative flex h-2 w-2">
                         <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75"></span>
@@ -327,13 +325,13 @@ export function TableToolbar({
             <div className="flex w-full items-center justify-end gap-1.5 sm:w-auto">
               {/* Extra Actions Integration */}
               {extraActions && (
-                <div className="flex items-center gap-1.5 rounded-2xl bg-muted/30 p-1">
+                <div className="flex items-center gap-1 rounded-xl bg-muted/20 p-1">
                   {extraActions}
                 </div>
               )}
 
               {/* Tools Cluster */}
-              <div className="flex items-center gap-1 rounded-2xl bg-muted/30 p-1 transition-all">
+              <div className="flex items-center gap-0.5 rounded-xl bg-muted/20 p-1 transition-all">
                 {!isMobile ? (
                   <>
                     <ViewOptionsMenu
@@ -390,9 +388,7 @@ export function TableToolbar({
                           const rootKey = c.id.split(".")[0];
                           const vis =
                             !defaults.has(rootKey) &&
-                            !c.visibilityKeys.some((key) =>
-                              defaults.has(key),
-                            );
+                            !c.visibilityKeys.some((key) => defaults.has(key));
                           c.visibilityKeys.forEach((key) => {
                             next[key] = vis;
                           });
@@ -487,10 +483,10 @@ export function TableToolbar({
                         variant={hasActiveFilters ? "default" : "secondary"}
                         size="sm"
                         className={cn(
-                          "h-10 gap-2.5 rounded-2xl px-4 font-bold transition-all hover:scale-[1.02] active:scale-[0.98]",
+                          "h-9 gap-2 rounded-xl px-3.5 font-bold text-[10px] transition-all hover:scale-[1.02] active:scale-[0.98]",
                           hasActiveFilters
-                            ? "bg-primary shadow-lg shadow-primary/30 ring-2 ring-primary/20"
-                            : "bg-muted/40 hover:bg-muted/60",
+                            ? "bg-primary shadow-md shadow-primary/20 ring-1 ring-primary/20"
+                            : "bg-muted/30 hover:bg-muted/50",
                         )}
                       >
                         <ListFilter
@@ -499,7 +495,7 @@ export function TableToolbar({
                             hasActiveFilters && "animate-pulse",
                           )}
                         />
-                        <span className="hidden sm:inline-block text-[10px] uppercase tracking-[0.2em]">
+                        <span className="hidden sm:inline-block text-[10px] uppercase tracking-wider">
                           Filtres
                         </span>
                         {activeAdvancedFilterCount > 0 && (
@@ -540,10 +536,10 @@ export function TableToolbar({
                         variant={hasActiveFilters ? "default" : "secondary"}
                         size="sm"
                         className={cn(
-                          "h-10 gap-2.5 rounded-2xl px-4 font-bold transition-all hover:scale-[1.02] active:scale-[0.98]",
+                          "h-9 gap-2 rounded-xl px-3.5 font-bold text-[10px] transition-all hover:scale-[1.02] active:scale-[0.98]",
                           hasActiveFilters
-                            ? "bg-primary shadow-lg shadow-primary/30 ring-2 ring-primary/20"
-                            : "bg-muted/40 hover:bg-muted/60 dark:bg-muted/20 dark:hover:bg-muted/30",
+                            ? "bg-primary shadow-md shadow-primary/20 ring-1 ring-primary/20"
+                            : "bg-muted/30 hover:bg-muted/50 dark:bg-muted/15 dark:hover:bg-muted/25",
                         )}
                       >
                         <ListFilter
@@ -552,7 +548,7 @@ export function TableToolbar({
                             hasActiveFilters && "animate-pulse",
                           )}
                         />
-                        <span className="hidden sm:inline-block text-[10px] uppercase tracking-[0.2em]">
+                        <span className="hidden sm:inline-block text-[10px] uppercase tracking-wider">
                           Filtres
                         </span>
                         {activeAdvancedFilterCount > 0 && (
@@ -586,7 +582,7 @@ export function TableToolbar({
                   </Sheet>
                 )}
 
-                <div className="flex items-center gap-1 rounded-2xl bg-muted/30 p-1">
+                <div className="flex items-center gap-0.5 rounded-xl bg-muted/20 p-1">
                   <ModelTableExportDialog
                     labels={tableConfig?.exportLabels}
                     trigger={
