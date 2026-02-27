@@ -31,23 +31,41 @@ const loadProjectManifests = (): AppManifest[] =>
     .map(normalizeManifestModule)
     .filter((manifest): manifest is AppManifest => !!manifest);
 
+const normalizeOrder = (order: number | undefined): number =>
+  Number.isFinite(order) ? Number(order) : Number.MAX_SAFE_INTEGER;
+
+const compareProjectOrder = (a: AppManifest, b: AppManifest): number =>
+  normalizeOrder(a.order) - normalizeOrder(b.order) ||
+  a.projectId.localeCompare(b.projectId);
+
 const mergeManifests = (manifests: AppManifest[]): RegistrySnapshot => {
-  const sortedManifests = [...manifests].sort((a, b) =>
-    a.projectId.localeCompare(b.projectId),
+  const sortedManifests = [...manifests].sort(compareProjectOrder);
+  const projectOrderById = new Map(
+    sortedManifests.map((manifest) => [
+      manifest.projectId,
+      normalizeOrder(manifest.order),
+    ]),
   );
 
   const routes = sortedManifests
     .flatMap((manifest) => manifest.routes)
     .sort(
       (a, b) =>
-        a.projectId.localeCompare(b.projectId) || a.id.localeCompare(b.id),
+        (projectOrderById.get(a.projectId) ?? Number.MAX_SAFE_INTEGER) -
+          (projectOrderById.get(b.projectId) ?? Number.MAX_SAFE_INTEGER) ||
+        a.projectId.localeCompare(b.projectId) ||
+        a.id.localeCompare(b.id),
     );
 
   const navigation = sortedManifests
     .flatMap((manifest) => manifest.navigation)
     .sort(
       (a, b) =>
-        a.projectId.localeCompare(b.projectId) || a.id.localeCompare(b.id),
+        (projectOrderById.get(a.projectId) ?? Number.MAX_SAFE_INTEGER) -
+          (projectOrderById.get(b.projectId) ?? Number.MAX_SAFE_INTEGER) ||
+        normalizeOrder(a.order) - normalizeOrder(b.order) ||
+        a.projectId.localeCompare(b.projectId) ||
+        a.id.localeCompare(b.id),
     );
 
   const defaultRouteByProject = Object.fromEntries(

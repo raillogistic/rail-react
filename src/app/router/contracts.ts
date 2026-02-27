@@ -30,11 +30,13 @@ export interface NavigationGroup {
   id: string;
   label: string;
   projectId: string;
+  order?: number;
   entries: NavigationEntry[];
 }
 
 export interface AppManifest {
   projectId: string;
+  order?: number;
   defaultRoute: string;
   routes: AppRouteConfig[];
   navigation: NavigationGroup[];

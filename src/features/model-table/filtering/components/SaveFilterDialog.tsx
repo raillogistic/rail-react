@@ -1,6 +1,6 @@
 /**
  * SaveFilterDialog - Create/Edit Saved Filter
- * 
+ *
  * Features:
  * - Create new saved filters
  * - Edit existing saved filters
@@ -13,14 +13,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { useMutation, gql } from "@apollo/client";
-import {
-  Save,
-  Loader2,
-  Share2,
-  Lock,
-  Eye,
-  AlertCircle,
-} from "lucide-react";
+import { Save, Loader2, Share2, Lock, Eye, AlertCircle } from "lucide-react";
 
 import { Button } from "@/shared/ui/kit/button";
 import { Input } from "@/shared/ui/kit/input";
@@ -122,8 +115,10 @@ export const SaveFilterDialog: React.FC<SaveFilterDialogProps> = ({
   const [error, setError] = useState<string | null>(null);
 
   // Mutations
-  const [createFilter, { loading: creating }] = useMutation(CREATE_SAVED_FILTER);
-  const [updateFilter, { loading: updating }] = useMutation(UPDATE_SAVED_FILTER);
+  const [createFilter, { loading: creating }] =
+    useMutation(CREATE_SAVED_FILTER);
+  const [updateFilter, { loading: updating }] =
+    useMutation(UPDATE_SAVED_FILTER);
 
   const loading = creating || updating;
   const isEditing = !!existingFilter;
@@ -158,13 +153,14 @@ export const SaveFilterDialog: React.FC<SaveFilterDialogProps> = ({
 
   const conditionCount = countConditions(filterState);
   const normalizedName = name.trim().toLowerCase();
-  const duplicateName = normalizedName.length > 0
-    ? existingNames.some((existing) => {
-        if (!existing) return false;
-        if (existingFilter && existing === existingFilter.name) return false;
-        return existing.trim().toLowerCase() == normalizedName;
-      })
-    : false;
+  const duplicateName =
+    normalizedName.length > 0
+      ? existingNames.some((existing) => {
+          if (!existing) return false;
+          if (existingFilter && existing === existingFilter.name) return false;
+          return existing.trim().toLowerCase() == normalizedName;
+        })
+      : false;
 
   const formatMutationErrors = useCallback(
     (errors: Array<{ field?: string | null; message?: string | null }>) => {
@@ -198,7 +194,9 @@ export const SaveFilterDialog: React.FC<SaveFilterDialogProps> = ({
     }
 
     if (conditionCount === 0) {
-      errors.push("Le filtre doit avoir au moins une condition avec une valeur");
+      errors.push(
+        "Le filtre doit avoir au moins une condition avec une valeur",
+      );
     }
 
     return {
@@ -253,7 +251,10 @@ export const SaveFilterDialog: React.FC<SaveFilterDialogProps> = ({
       onSaved();
       onOpenChange(false);
     } catch (err: any) {
-      setError(err.message ?? "Echec de l'enregistrement du filtre. Veuillez reessayer.");
+      setError(
+        err.message ??
+          "Echec de l'enregistrement du filtre. Veuillez reessayer.",
+      );
     }
   }, [
     validation.isValid,
@@ -277,7 +278,9 @@ export const SaveFilterDialog: React.FC<SaveFilterDialogProps> = ({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Save className="h-5 w-5" />
-            {isEditing ? "Mettre à jour le filtre enregistré" : "Enregistrer le filtre"}
+            {isEditing
+              ? "Mettre à jour le filtre enregistré"
+              : "Enregistrer le filtre"}
           </DialogTitle>
           <DialogDescription>
             {isEditing
@@ -369,7 +372,8 @@ export const SaveFilterDialog: React.FC<SaveFilterDialogProps> = ({
                     <Eye className="h-4 w-4" />
                     <span>Aperçu du filtre</span>
                     <Badge variant="secondary" className="h-5">
-                      {conditionCount} condition{conditionCount !== 1 ? "s" : ""}
+                      {conditionCount} condition
+                      {conditionCount !== 1 ? "s" : ""}
                     </Badge>
                   </div>
                   <span className="text-xs text-muted-foreground">
@@ -393,7 +397,10 @@ export const SaveFilterDialog: React.FC<SaveFilterDialogProps> = ({
           {!validation.isValid && validation.errors.length > 0 && (
             <div className="space-y-1">
               {validation.errors.map((err, idx) => (
-                <p key={idx} className="text-xs text-destructive flex items-center gap-1">
+                <p
+                  key={idx}
+                  className="text-xs text-destructive flex items-center gap-1"
+                >
                   <AlertCircle className="h-3 w-3" />
                   {err}
                 </p>
@@ -422,7 +429,9 @@ export const SaveFilterDialog: React.FC<SaveFilterDialogProps> = ({
             ) : (
               <>
                 <Save className="mr-2 h-4 w-4" />
-                {isEditing ? "Mettre à jour le filtre" : "Enregistrer le filtre"}
+                {isEditing
+                  ? "Mettre à jour le filtre"
+                  : "Enregistrer le filtre"}
               </>
             )}
           </Button>
@@ -433,4 +442,3 @@ export const SaveFilterDialog: React.FC<SaveFilterDialogProps> = ({
 };
 
 export default SaveFilterDialog;
-

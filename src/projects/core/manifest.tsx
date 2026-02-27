@@ -100,6 +100,7 @@ const MFASetupPage = lazy(() =>
 
 export const CORE_MANIFEST: AppManifest = defineProjectManifest({
   projectId: "core",
+  order: 0,
   defaultRoute: "/dashboard",
   routes: [
     {
@@ -284,6 +285,7 @@ export const CORE_MANIFEST: AppManifest = defineProjectManifest({
     navGroup("core", {
       id: "home",
       label: "Table",
+      order: 0,
       entries: [
         {
           id: "core:dashboard",
@@ -341,6 +343,7 @@ export const CORE_MANIFEST: AppManifest = defineProjectManifest({
     navGroup("core", {
       id: "parametre",
       label: "parametre",
+      order: 10,
       entries: [
         {
           id: "core:settings",

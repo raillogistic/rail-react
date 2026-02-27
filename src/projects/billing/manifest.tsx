@@ -32,6 +32,7 @@ const BillingReportsPage = lazy(() =>
 
 export const BILLING_MANIFEST: AppManifest = defineProjectManifest({
   projectId: "billing",
+  order: 100,
   defaultRoute: ROUTES.OVERVIEW,
   routes: [
     protectedRoute("billing", {
@@ -55,6 +56,7 @@ export const BILLING_MANIFEST: AppManifest = defineProjectManifest({
     navGroup("billing", {
       id: "billing",
       label: "Billing",
+      order: 0,
       entries: [
         {
           id: "billing:overview",

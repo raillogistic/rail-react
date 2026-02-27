@@ -55,6 +55,31 @@ describe("manifestRegistry", () => {
     }
   });
 
+  it("orders projects and navigation groups using manifest order", () => {
+    const routes = getAllRoutes();
+    const navigationGroups = getNavigationGroups();
+
+    const firstCoreRouteIndex = routes.findIndex(
+      (route) => route.projectId === "core",
+    );
+    const firstBillingRouteIndex = routes.findIndex(
+      (route) => route.projectId === "billing",
+    );
+    expect(firstCoreRouteIndex).toBeGreaterThanOrEqual(0);
+    expect(firstBillingRouteIndex).toBeGreaterThanOrEqual(0);
+    expect(firstCoreRouteIndex).toBeLessThan(firstBillingRouteIndex);
+
+    const firstCoreGroupIndex = navigationGroups.findIndex(
+      (group) => group.projectId === "core",
+    );
+    const firstBillingGroupIndex = navigationGroups.findIndex(
+      (group) => group.projectId === "billing",
+    );
+    expect(firstCoreGroupIndex).toBeGreaterThanOrEqual(0);
+    expect(firstBillingGroupIndex).toBeGreaterThanOrEqual(0);
+    expect(firstCoreGroupIndex).toBeLessThan(firstBillingGroupIndex);
+  });
+
   it("maps navigation links to protected pages", () => {
     const protectedPaths = new Set(
       getAllRoutes()

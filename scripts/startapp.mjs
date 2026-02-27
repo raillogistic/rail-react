@@ -148,6 +148,7 @@ const ${componentPrefix}ReportsPage = lazy(() =>
 
 export const ${componentPrefix.toUpperCase()}_MANIFEST: AppManifest = defineProjectManifest({
   projectId: "${projectId}",
+  order: 100,
   defaultRoute: ROUTES.OVERVIEW,
   routes: [
     protectedRoute("${projectId}", {
@@ -171,6 +172,7 @@ export const ${componentPrefix.toUpperCase()}_MANIFEST: AppManifest = defineProj
     navGroup("${projectId}", {
       id: "${projectId}",
       label: "${componentPrefix}",
+      order: 0,
       entries: [
         {
           id: "${projectId}:overview",
