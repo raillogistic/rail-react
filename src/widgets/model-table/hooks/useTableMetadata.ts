@@ -119,10 +119,13 @@ export function useTableMetadata(
 
   const [loadCapabilities, capabilitiesState] =
     useLazyQuery<ModelSchemaQueryData>(TABLE_CAPABILITIES_METADATA_QUERY, {
-      fetchPolicy: "cache-first",
-      nextFetchPolicy: "cache-first",
-      returnPartialData: true,
-      notifyOnNetworkStatusChange: true,
+      // Capabilities payload is intentionally partial. Keep it out of Apollo
+      // cache so it cannot overwrite bootstrap modelSchema slices (fields /
+      // relationships), which would retrigger bootstrap + table-data queries.
+      fetchPolicy: "no-cache",
+      nextFetchPolicy: "no-cache",
+      returnPartialData: false,
+      notifyOnNetworkStatusChange: false,
     });
 
   const persistedMetadata = useMemo(

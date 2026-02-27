@@ -5,7 +5,10 @@ import { gql } from "@apollo/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 import { DynamicModelTable } from "../components/DynamicModelTable";
-import { TABLE_BOOTSTRAP_METADATA_QUERY as GET_MODEL_SCHEMA } from "@/shared/api/graphql/graphql/metadata/queries";
+import {
+  TABLE_BOOTSTRAP_METADATA_QUERY as GET_MODEL_SCHEMA,
+  TABLE_CAPABILITIES_METADATA_QUERY,
+} from "@/shared/api/graphql/graphql/metadata/queries";
 
 vi.stubEnv("VITE_METADATA_GATEWAY_TABLE", "0");
 
@@ -326,6 +329,31 @@ function buildMetadataMock(templates: unknown[] = []) {
   };
 }
 
+function buildCapabilitiesMock(templates: unknown[] = []) {
+  return {
+    request: {
+      query: TABLE_CAPABILITIES_METADATA_QUERY,
+      variables: { app: "auth", model: "User" },
+    },
+    result: {
+      data: {
+        modelSchema: {
+          __typename: "ModelSchema",
+          app: "auth",
+          model: "User",
+          filterConfig: METADATA_BASE.filterConfig,
+          filters: METADATA_BASE.filters,
+          relationFilters: [],
+          mutations: [],
+          permissions: METADATA_BASE.permissions,
+          fieldGroups: [],
+          templates,
+        },
+      },
+    },
+  };
+}
+
 describe("DynamicModelTable integration", () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -334,7 +362,9 @@ describe("DynamicModelTable integration", () => {
 
   it("renders headers and rows from metadata-driven query", async () => {
     render(
-      <MockedProvider mocks={[buildMetadataMock(), DATA_MOCK]}>
+      <MockedProvider
+        mocks={[buildMetadataMock(), DATA_MOCK, buildCapabilitiesMock()]}
+      >
         <MemoryRouter>
           <DynamicModelTable app="auth" model="User" />
         </MemoryRouter>
@@ -369,6 +399,17 @@ describe("DynamicModelTable integration", () => {
             },
           ]),
           DATA_MOCK,
+          buildCapabilitiesMock([
+            {
+              __typename: "TemplateInfo",
+              key: "auth/user/export_excel",
+              templateType: "excel",
+              title: "User export",
+              endpoint: "/api/excel/auth/user/export_excel/",
+              allowed: true,
+              clientDataFields: [],
+            },
+          ]),
         ]}
       >
         <MemoryRouter>
@@ -409,7 +450,9 @@ describe("DynamicModelTable integration", () => {
     const onExpandedChange = vi.fn();
 
     render(
-      <MockedProvider mocks={[buildMetadataMock(), DATA_MOCK]}>
+      <MockedProvider
+        mocks={[buildMetadataMock(), DATA_MOCK, buildCapabilitiesMock()]}
+      >
         <MemoryRouter>
           <DynamicModelTable
             app="auth"
@@ -444,7 +487,11 @@ describe("DynamicModelTable integration", () => {
   it("applies initVariables to the initial query request", async () => {
     render(
       <MockedProvider
-        mocks={[buildMetadataMock(), DATA_MOCK_WITH_INIT_VARIABLES]}
+        mocks={[
+          buildMetadataMock(),
+          DATA_MOCK_WITH_INIT_VARIABLES,
+          buildCapabilitiesMock(),
+        ]}
       >
         <MemoryRouter>
           <DynamicModelTable

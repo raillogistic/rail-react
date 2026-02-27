@@ -52,8 +52,8 @@ import type {
   ModelTableV2ViewOptions,
 } from "../config/types";
 import {
-  decodeTableConfigs,
   loadPersistedTableState,
+  type PersistedTableState,
   useTablePersistence,
 } from "../hooks/useTablePersistence";
 import { useTableColumns } from "../hooks/useTableColumns";
@@ -370,6 +370,42 @@ function areNumberMapsEqual(
 }
 
 /**
+ * Serializes unknown values into a deterministic string key.
+ */
+function stableSerializeUnknown(value: unknown): string {
+  try {
+    return JSON.stringify(value ?? null);
+  } catch {
+    return String(value);
+  }
+}
+
+/**
+ * Compares persisted table snapshots for structural equality.
+ */
+function isPersistedTableStateEqual(
+  left: PersistedTableState | null,
+  right: PersistedTableState | null,
+): boolean {
+  if (left === right) {
+    return true;
+  }
+  if (!left || !right) {
+    return left === right;
+  }
+
+  return (
+    areStringArraysEqual(left.columnOrder, right.columnOrder) &&
+    areBooleanMapsEqual(left.columnVisibility, right.columnVisibility) &&
+    areNumberMapsEqual(left.columnWidths ?? {}, right.columnWidths ?? {}) &&
+    left.perPage === right.perPage &&
+    left.density === right.density &&
+    left.wrapCells === right.wrapCells &&
+    (left.visibilityVersion ?? 0) === (right.visibilityVersion ?? 0)
+  );
+}
+
+/**
  * Compares TanStack pagination objects.
  */
 function isPaginationStateEqual(
@@ -457,6 +493,9 @@ function DynamicBaseTableContent({
     error: metadataError,
     app,
     model,
+    capabilitiesLoading,
+    capabilitiesLoaded,
+    ensureCapabilitiesLoaded,
   } = useMetadata();
   const {
     columnVisibility,
@@ -479,6 +518,7 @@ function DynamicBaseTableContent({
     setWrapCells,
     loading: tableLoading,
     data,
+    queryPage,
     pagination,
     error: dataError,
   } = useTable();
@@ -494,22 +534,37 @@ function DynamicBaseTableContent({
   const effectiveKey = persistenceKey || `${app}-${model}-${locationPath}`;
   const { hydrated: persistenceHydrated } = useTablePersistence(effectiveKey);
 
-  const userTableConfigs = useMemo(() => {
+  const rawUserTableConfigs = useMemo(() => {
     const settings = user?.settings as
       | { table_configs?: unknown; tableConfigs?: unknown }
       | undefined;
-    return decodeTableConfigs(
-      settings?.table_configs ?? settings?.tableConfigs ?? null,
-    );
+    return settings?.table_configs ?? settings?.tableConfigs ?? null;
   }, [user?.settings]);
 
-  const persistedState = useMemo(
+  const userTableConfigsSignature = useMemo(
+    () => stableSerializeUnknown(rawUserTableConfigs),
+    [rawUserTableConfigs],
+  );
+  const stableRawUserTableConfigs = useMemo(
+    () => rawUserTableConfigs,
+    [userTableConfigsSignature],
+  );
+
+  const rawPersistedState = useMemo(
     () =>
-      loadPersistedTableState(effectiveKey, userTableConfigs, {
+      loadPersistedTableState(effectiveKey, stableRawUserTableConfigs, {
         allowLocalFallback: true,
       }),
-    [effectiveKey, userTableConfigs],
+    [effectiveKey, stableRawUserTableConfigs],
   );
+  const persistedStateRef = useRef<PersistedTableState | null>(null);
+  const persistedState = useMemo(() => {
+    if (isPersistedTableStateEqual(rawPersistedState, persistedStateRef.current)) {
+      return persistedStateRef.current;
+    }
+    persistedStateRef.current = rawPersistedState;
+    return rawPersistedState;
+  }, [rawPersistedState]);
 
   const { columnDefs, normalizedFieldsConfig, excludedAccessors } =
     useTableColumns({
@@ -559,6 +614,38 @@ function DynamicBaseTableContent({
       onRefetchResolved?.(undefined);
     };
   }, [onRefetchResolved, refetch]);
+
+  const hasRequestedPostBootstrapCapabilitiesRef = useRef(false);
+  useEffect(() => {
+    if (hasRequestedPostBootstrapCapabilitiesRef.current) {
+      return;
+    }
+    if (!persistenceHydrated || metadataLoading || !metadata) {
+      return;
+    }
+    if (capabilitiesLoaded || capabilitiesLoading) {
+      hasRequestedPostBootstrapCapabilitiesRef.current = true;
+      return;
+    }
+
+    const dataBootstrapSettled = Boolean(queryPage) || Boolean(dataError);
+    if (!dataBootstrapSettled || tableLoading) {
+      return;
+    }
+
+    hasRequestedPostBootstrapCapabilitiesRef.current = true;
+    void ensureCapabilitiesLoaded();
+  }, [
+    capabilitiesLoaded,
+    capabilitiesLoading,
+    dataError,
+    ensureCapabilitiesLoaded,
+    metadata,
+    metadataLoading,
+    persistenceHydrated,
+    queryPage,
+    tableLoading,
+  ]);
 
   const { allowColumnDrag, lockedColumns } = useTableLayout({
     columnDefs,
