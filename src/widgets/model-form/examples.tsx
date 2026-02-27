@@ -1301,8 +1301,8 @@ export function StoreOrderUpdateModelFormExample({
       </h2>
       <ModelForm
         app="store"
-        model="Order"
-        mode="UPDATE"
+        model="Product"
+        mode="CREATE"
         objectId={objectId}
         runtimeOverrides={ORDER_RUNTIME_OVERRIDES}
         description="Exemple de mise à jour auto-câblée : les valeurs initiales sont chargées depuis modelFormInitialData et Enregistrer lance updateOperation générée."

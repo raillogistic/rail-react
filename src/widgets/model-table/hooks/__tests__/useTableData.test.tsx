@@ -102,6 +102,7 @@ describe("useTableData", () => {
         variables: expect.objectContaining({
           page: 1,
           perPage: 20,
+          orderBy: ["-id"],
           skipCount: false,
         }),
       }),

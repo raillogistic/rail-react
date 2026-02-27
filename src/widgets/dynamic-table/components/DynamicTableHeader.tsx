@@ -166,7 +166,7 @@ function ColumnMenu<TRow extends Record<string, unknown>>({
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger asChild>
+      <DropdownMenuTrigger className="p-0 m-0" asChild>
         <Button
           type="button"
           variant="ghost"
@@ -524,7 +524,7 @@ export function DynamicTableHeader<TRow extends Record<string, unknown>>({
                   stickyClassName={stickyClassName}
                   stickyStyle={stickyStyle}
                 >
-                  <div className="flex h-full items-center justify-end px-3 text-[9px] font-semibold uppercase tracking-widest text-muted-foreground/50">
+                  <div className="flex h-full items-center justify-end  text-[9px] font-semibold uppercase tracking-widest text-muted-foreground/50">
                     {layout.actions?.headerLabel ?? ""}
                   </div>
                 </DraggableHeaderCell>

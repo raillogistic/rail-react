@@ -239,7 +239,7 @@ const DATA_MOCK = {
     variables: {
       page: 1,
       perPage: 20,
-      orderBy: undefined,
+      orderBy: ["-id"],
       quick: undefined,
       where: undefined,
       presets: undefined,
@@ -386,7 +386,9 @@ describe("DynamicModelTable integration", () => {
     });
 
     const selectAllHeaderCell = screen
-      .getByRole("checkbox", { name: /select all rows/i })
+      .getByRole("checkbox", {
+        name: /(select all rows|tout s(?:e|\u00e9)lectionner)/i,
+      })
       .closest("th");
     const usernameHeaderCell = screen.getByRole("columnheader", {
       name: /username/i,

@@ -145,6 +145,12 @@ const DEFAULT_SECTION_VISIBILITY: Required<ModelTableContentSectionVisibility> =
   };
 
 /**
+ * Default backend sort when no explicit user order is provided.
+ * Keeps newest records first.
+ */
+const DEFAULT_BACKEND_ORDER_BY = ["-id"] as const;
+
+/**
  * Resolves effective section visibility from defaults and optional overrides.
  */
 function resolveSectionVisibility(
@@ -205,6 +211,17 @@ function toOrderByEntries(value: unknown): string[] {
     .filter((entry): entry is string => typeof entry === "string")
     .map((entry) => entry.trim())
     .filter(Boolean);
+}
+
+/**
+ * Resolves order-by input and falls back to default descending id ordering.
+ */
+function resolveOrderByWithFallback(value: unknown): string[] {
+  const normalized = toOrderByEntries(value);
+  if (normalized.length > 0) {
+    return normalized;
+  }
+  return [...DEFAULT_BACKEND_ORDER_BY];
 }
 
 /**
@@ -278,14 +295,10 @@ function resolveInitialTableState(
     delete filterVariables.distinctOn;
   }
 
-  const normalizedOrderBy = toOrderByEntries(
+  const normalizedOrderBy = resolveOrderByWithFallback(
     filterVariables.orderBy ?? filterVariables.order_by,
   );
-  if (normalizedOrderBy.length > 0) {
-    filterVariables.orderBy = normalizedOrderBy;
-  } else {
-    delete filterVariables.orderBy;
-  }
+  filterVariables.orderBy = normalizedOrderBy;
   delete filterVariables.order_by;
 
   const advancedFilters = createInitialFilterState();
@@ -610,7 +623,7 @@ function DynamicBaseTableContent({
     if (variableOrderBy.length > 0) {
       return variableOrderBy;
     }
-    return advancedFilters.orderBy;
+    return resolveOrderByWithFallback(advancedFilters.orderBy);
   }, [advancedFilters.orderBy, filterVariables]);
 
   const fieldLookup = useMemo(() => {
@@ -875,19 +888,16 @@ function DynamicBaseTableContent({
 
   const handleOrderByChange = useCallback(
     (nextOrderBy: string[]) => {
+      const normalizedNextOrderBy = resolveOrderByWithFallback(nextOrderBy);
       const nextVariables = isRecord(filterVariables)
         ? { ...filterVariables }
         : {};
-      if (nextOrderBy.length > 0) {
-        nextVariables.orderBy = nextOrderBy;
-      } else {
-        delete nextVariables.orderBy;
-      }
+      nextVariables.orderBy = normalizedNextOrderBy;
 
       setAdvancedFilters(
         {
           ...advancedFilters,
-          orderBy: nextOrderBy,
+          orderBy: normalizedNextOrderBy,
         },
         nextVariables,
       );

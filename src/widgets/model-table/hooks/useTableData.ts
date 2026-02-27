@@ -31,6 +31,12 @@ type FilterVariablesInput = {
 } | null | undefined;
 
 /**
+ * Default backend ordering when no explicit order is provided.
+ * Keeps newest records first.
+ */
+const DEFAULT_BACKEND_ORDER_BY = ["-id"] as const;
+
+/**
  * Normalize unknown values to a non-empty string array.
  */
 function toStringArray(value: unknown): string[] | undefined {
@@ -40,6 +46,13 @@ function toStringArray(value: unknown): string[] | undefined {
     .map((entry) => entry.trim())
     .filter(Boolean);
   return entries.length > 0 ? entries : undefined;
+}
+
+/**
+ * Resolve orderBy query input with a deterministic descending-id fallback.
+ */
+function resolveOrderBy(value: unknown): string[] {
+  return toStringArray(value) ?? [...DEFAULT_BACKEND_ORDER_BY];
 }
 
 /**
@@ -99,7 +112,7 @@ export function useTableData(config?: TableDataConfig) {
       where: filters?.where,
       presets: toStringArray(filters?.presets),
       distinctOn: toStringArray(filters?.distinctOn),
-      orderBy: toStringArray(filters?.orderBy),
+      orderBy: resolveOrderBy(filters?.orderBy),
       skipCount: config?.skipCount ?? false,
     };
   }, [

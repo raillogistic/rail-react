@@ -325,6 +325,7 @@ export function TableHeader({
                 }
                 widthStyle={getColumnWidthStyle(columnWidths, columnId)}
                 density={density}
+                className="p-0 m-0"
               >
                 <div className="flex h-full w-full items-stretch self-stretch">
                   <div className="min-w-0 flex-1 h-full">
