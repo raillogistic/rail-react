@@ -1,4 +1,3 @@
-import { useCallback } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import type { Header, Table } from "@tanstack/react-table";
 import { useSortable } from "@dnd-kit/sortable";
@@ -23,7 +22,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/shared/ui/kit/dropdown-menu";
-import { Button } from "@/shared/ui/kit/button";
 import {
   TableHead,
   TableRow,
@@ -137,6 +135,8 @@ function ColumnMenu<TRow extends Record<string, unknown>>({
   features,
   state,
   onResetLayout,
+  children,
+  className,
 }: {
   /** Current TanStack header. */
   header: Header<TRow, unknown>;
@@ -148,6 +148,10 @@ function ColumnMenu<TRow extends Record<string, unknown>>({
   state: UseDynamicTableStateResult;
   /** Callback used by reset action. */
   onResetLayout: () => void;
+  /** Content to display within the trigger. */
+  children: ReactNode;
+  /** Optional extra classes for the trigger. */
+  className?: string;
 }) {
   const canSort = header.column.getCanSort();
   const canHide = features.enableColumnHiding && header.column.getCanHide();
@@ -166,79 +170,75 @@ function ColumnMenu<TRow extends Record<string, unknown>>({
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className="p-0 m-0" asChild>
-        <Button
+      <DropdownMenuTrigger asChild>
+        <button
           type="button"
-          variant="ghost"
-          size="sm"
           className={cn(
-            "h-full w-full justify-between rounded-none px-3 py-0 text-[11px] font-semibold tracking-wide transition-colors",
+            "flex h-full w-full items-center justify-between gap-2 px-3 py-0 outline-none",
+            "text-[10px] font-bold uppercase tracking-widest transition-all duration-300",
+            "hover:bg-primary/5 hover:text-primary active:bg-primary/8 group/trigger",
             sortedState
-              ? "text-primary"
-              : "text-muted-foreground hover:text-foreground",
+              ? "bg-primary/[0.03] text-primary"
+              : "text-muted-foreground/70 hover:text-foreground",
+            className,
           )}
           aria-label={`Open column menu for ${title}`}
         >
-          <span className="truncate text-left">{title}</span>
-          <span className="ml-2 shrink-0" aria-hidden>
-            {sortedState === "asc" ? (
-              <ArrowUp className="size-3.5 text-primary" />
-            ) : sortedState === "desc" ? (
-              <ArrowDown className="size-3.5 text-primary" />
-            ) : (
-              <ArrowUpDown className="size-3 opacity-30 transition-opacity group-hover/header:opacity-60" />
-            )}
-          </span>
-        </Button>
+          {children}
+        </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="start"
-        className="w-52 rounded-xl border-border/30 p-1.5 shadow-xl backdrop-blur-xl"
+        className="w-56 overflow-hidden rounded-2xl border-border/20 bg-background/80 p-1.5 shadow-2xl backdrop-blur-2xl animate-in fade-in zoom-in-95 duration-200"
       >
+        <div className="px-2 py-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/50">
+          Options de colonne
+        </div>
+        <DropdownMenuSeparator className="mx-1 bg-border/40" />
         {canSort ? (
           <>
             <DropdownMenuItem
               onClick={() => header.column.toggleSorting(false)}
-              className="rounded-lg gap-2.5 text-xs font-medium"
+              className="rounded-xl gap-3 px-3 py-2 text-xs font-semibold focus:bg-primary/5 focus:text-primary transition-colors"
             >
-              <ArrowUp className="size-3.5 text-muted-foreground" />
-              <span>Sort ascending</span>
+              <ArrowUp className="size-3.5 text-muted-foreground/60" />
+              <span>Trier croissant</span>
               {sortedState === "asc" ? (
-                <Check className="ml-auto size-3.5 text-primary" />
+                <Check className="ml-auto size-3.5 text-primary animate-in fade-in zoom-in duration-300" />
               ) : null}
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => header.column.toggleSorting(true)}
-              className="rounded-lg gap-2.5 text-xs font-medium"
+              className="rounded-xl gap-3 px-3 py-2 text-xs font-semibold focus:bg-primary/5 focus:text-primary transition-colors"
             >
-              <ArrowDown className="size-3.5 text-muted-foreground" />
-              <span>Sort descending</span>
+              <ArrowDown className="size-3.5 text-muted-foreground/60" />
+              <span>Trier décroissant</span>
               {sortedState === "desc" ? (
-                <Check className="ml-auto size-3.5 text-primary" />
+                <Check className="ml-auto size-3.5 text-primary animate-in fade-in zoom-in duration-300" />
               ) : null}
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={clearSort}
               disabled={!sortedState}
-              className="rounded-lg gap-2.5 text-xs font-medium"
+              className="rounded-xl gap-3 px-3 py-2 text-xs font-semibold focus:bg-muted/50 transition-colors"
             >
-              <RotateCcw className="size-3.5 text-muted-foreground" />
-              <span>Clear sort</span>
+              <RotateCcw className="size-3.5 text-muted-foreground/60" />
+              <span>Effacer le tri</span>
             </DropdownMenuItem>
-            <DropdownMenuSeparator className="my-1" />
+            <DropdownMenuSeparator className="mx-1 my-1 bg-border/40" />
           </>
         ) : null}
 
         {canGroup ? (
           <DropdownMenuItem
             onClick={() => header.column.toggleGrouping()}
-            className="rounded-lg gap-2.5 text-xs font-medium"
+            className="rounded-xl gap-3 px-3 py-2 text-xs font-semibold focus:bg-primary/5 focus:text-primary transition-colors"
           >
-            <Rows3 className="size-3.5 text-muted-foreground" />
+            <Rows3 className="size-3.5 text-muted-foreground/60" />
             <span>
               {header.column.getIsGrouped()
-                ? "Ungroup column"
-                : "Group by column"}
+                ? "Dégrouper cette colonne"
+                : "Grouper par cette colonne"}
             </span>
           </DropdownMenuItem>
         ) : null}
@@ -246,10 +246,10 @@ function ColumnMenu<TRow extends Record<string, unknown>>({
         {canHide ? (
           <DropdownMenuItem
             onClick={() => header.column.toggleVisibility(false)}
-            className="rounded-lg gap-2.5 text-xs font-medium"
+            className="rounded-xl gap-3 px-3 py-2 text-xs font-semibold focus:bg-destructive/5 focus:text-destructive transition-colors"
           >
-            <EyeOff className="size-3.5 text-muted-foreground" />
-            <span>Hide column</span>
+            <EyeOff className="size-3.5 text-muted-foreground/60" />
+            <span>Masquer la colonne</span>
           </DropdownMenuItem>
         ) : null}
 
@@ -257,24 +257,24 @@ function ColumnMenu<TRow extends Record<string, unknown>>({
           onClick={() =>
             state.setDragModeEnabled((previousValue) => !previousValue)
           }
-          className="rounded-lg gap-2.5 text-xs font-medium"
+          className="rounded-xl gap-3 px-3 py-2 text-xs font-semibold focus:bg-primary/5 focus:text-primary transition-colors"
         >
-          <MoveHorizontal className="size-3.5 text-muted-foreground" />
+          <MoveHorizontal className="size-3.5 text-muted-foreground/60" />
           <span>
             {state.dragModeEnabled
-              ? "Disable drag/resize"
-              : "Enable drag/resize"}
+              ? "Désactiver glissement/redimension"
+              : "Activer glissement/redimension"}
           </span>
         </DropdownMenuItem>
 
-        <DropdownMenuSeparator className="my-1" />
+        <DropdownMenuSeparator className="mx-1 my-1 bg-border/40" />
 
         <DropdownMenuItem
           onClick={onResetLayout}
-          className="rounded-lg gap-2.5 text-xs font-medium text-muted-foreground"
+          className="rounded-xl gap-3 px-3 py-2 text-xs font-semibold text-muted-foreground/70 hover:text-foreground focus:bg-muted/50 transition-colors"
         >
           <RotateCcw className="size-3.5" />
-          <span>Reset column layout</span>
+          <span>Réinitialiser la disposition</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
@@ -341,7 +341,7 @@ function DraggableHeaderCell<TRow extends Record<string, unknown>>({
           <button
             type="button"
             aria-label="Reorder column"
-            className="grid w-7 shrink-0 place-items-center border-r border-border/20 text-muted-foreground/40 transition-colors hover:bg-primary/5 hover:text-primary"
+            className="grid w-8 shrink-0 place-items-center border-r border-border/10 text-muted-foreground/30 transition-all hover:bg-primary/5 hover:text-primary active:scale-95"
             {...attributes}
             {...listeners}
             onClick={(event) => event.stopPropagation()}
@@ -384,16 +384,6 @@ export function DynamicTableHeader<TRow extends Record<string, unknown>>({
 }: DynamicTableHeaderProps<TRow>) {
   const allPageRowsSelected = table.getIsAllPageRowsSelected();
   const somePageRowsSelected = table.getIsSomePageRowsSelected();
-
-  /**
-   * Handles click-to-sort on non-utility leaf headers.
-   */
-  const handleHeaderSort = useCallback((header: Header<TRow, unknown>) => {
-    if (!header.column.getCanSort()) {
-      return;
-    }
-    header.column.toggleSorting(undefined, true);
-  }, []);
 
   return (
     <UITableHeader className={layout.headerClassName}>
@@ -531,12 +521,13 @@ export function DynamicTableHeader<TRow extends Record<string, unknown>>({
               );
             }
 
+            const isCustomHeader = resolveHeaderMode(header) === "custom";
+            const sortedState = header.column.getIsSorted();
             const headerClassName = (
               header.column.columnDef.meta as
                 | { headerClassName?: string }
                 | undefined
             )?.headerClassName;
-            const isCustomHeader = resolveHeaderMode(header) === "custom";
 
             return (
               <DraggableHeaderCell
@@ -551,7 +542,7 @@ export function DynamicTableHeader<TRow extends Record<string, unknown>>({
                   <div
                     className={cn("flex h-full items-center", headerClassName)}
                   >
-                    <div className="min-w-0 flex-1">
+                    <div className="min-w-0 flex-1 flex items-center h-full">
                       {flexRender(
                         header.column.columnDef.header,
                         header.getContext(),
@@ -559,33 +550,34 @@ export function DynamicTableHeader<TRow extends Record<string, unknown>>({
                     </div>
                   </div>
                 ) : (
-                  <div
-                    className={cn("flex h-full items-center", headerClassName)}
+                  <ColumnMenu
+                    header={header}
+                    table={table}
+                    features={features}
+                    state={state}
+                    onResetLayout={onResetLayout}
+                    className={headerClassName}
                   >
-                    <div className="min-w-0 flex-1">
-                      <ColumnMenu
-                        header={header}
-                        table={table}
-                        features={features}
-                        state={state}
-                        onResetLayout={onResetLayout}
-                      />
+                    <div className="min-w-0 flex-1 flex items-center gap-2">
+                      <span className="truncate">
+                        {resolveHeaderLabel(header)}
+                      </span>
+                      {/* Sort Indicator */}
+                      <div
+                        className="flex shrink-0 items-center gap-1"
+                        aria-hidden
+                      >
+                        {sortedState === "asc" ? (
+                          <ArrowUp className="size-3 animate-in fade-in zoom-in-75 text-primary duration-300" />
+                        ) : sortedState === "desc" ? (
+                          <ArrowDown className="size-3 animate-in fade-in zoom-in-75 text-primary duration-300" />
+                        ) : null}
+                      </div>
                     </div>
-                    <button
-                      type="button"
-                      aria-label={`Toggle sorting for ${resolveHeaderLabel(header)}`}
-                      className="mr-1.5 rounded-md p-1 text-muted-foreground/40 transition-all hover:bg-primary/8 hover:text-primary"
-                      onClick={() => handleHeaderSort(header)}
-                    >
-                      {header.column.getIsSorted() === "asc" ? (
-                        <ArrowUp className="size-3 text-primary" />
-                      ) : header.column.getIsSorted() === "desc" ? (
-                        <ArrowDown className="size-3 text-primary" />
-                      ) : (
-                        <ArrowUpDown className="size-3" />
-                      )}
-                    </button>
-                  </div>
+                    {!sortedState && (
+                      <ArrowUpDown className="size-3 shrink-0 opacity-0 group-hover/trigger:opacity-40 transition-opacity" />
+                    )}
+                  </ColumnMenu>
                 )}
               </DraggableHeaderCell>
             );

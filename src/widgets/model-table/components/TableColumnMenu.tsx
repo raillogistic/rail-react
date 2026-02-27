@@ -17,6 +17,7 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuPortal,
   DropdownMenuSeparator,
   DropdownMenuSub,
   DropdownMenuSubContent,
@@ -212,33 +213,38 @@ export function TableColumnMenu({
       <DropdownMenu>
         <DropdownMenuTrigger asChild disabled={disabled}>
           {fullWidthTrigger ? (
-            <Button
-              variant="ghost"
-              size="sm"
+            <button
+              type="button"
               className={cn(
-                "h-full w-full min-h-0 m-0 self-stretch rounded-none justify-between px-0 py-0 data-[state=open]:bg-white/10 data-[state=open]:text-white",
-                "font-medium transition-colors",
+                "flex h-full w-full items-center justify-between gap-2 px-3 py-0 outline-none",
+                "text-[10px] font-bold uppercase tracking-widest transition-all duration-300",
+                "group/trigger",
                 variant === "primary"
                   ? currentSort
                     ? "text-white font-black"
-                    : "text-primary-foreground/80 hover:text-white hover:bg-white/5"
+                    : "text-primary-foreground/80 hover:text-white hover:bg-white/5 data-[state=open]:bg-white/10 data-[state=open]:text-white"
                   : currentSort
-                    ? "text-primary"
-                    : "text-foreground hover:text-foreground",
+                    ? "bg-primary/[0.03] text-primary"
+                    : "text-muted-foreground/70 hover:text-foreground hover:bg-primary/5 active:bg-primary/8 data-[state=open]:bg-primary/5 data-[state=open]:text-primary",
               )}
             >
-              <span className="truncate text-left px-2 text-[11px]">
-                {triggerTitle}
-              </span>
-              {currentSort && (
-                <span
-                  className="px-2 text-[10px] font-black"
-                  aria-hidden="true"
-                >
-                  {currentSort === "asc" ? "↑" : "↓"}
-                </span>
+              <div className="flex items-center gap-2 min-w-0 flex-1">
+                <span className="truncate text-left">{triggerTitle}</span>
+
+                {/* Sort Indicator */}
+                <div className="flex shrink-0 items-center gap-1" aria-hidden>
+                  {currentSort === "asc" ? (
+                    <ArrowUpAZ className="size-3 animate-in fade-in zoom-in-75 duration-300" />
+                  ) : currentSort === "desc" ? (
+                    <ArrowDownAZ className="size-3 animate-in fade-in zoom-in-75 duration-300" />
+                  ) : null}
+                </div>
+              </div>
+
+              {!currentSort && (
+                <MoreVertical className="size-3 shrink-0 opacity-0 group-hover/trigger:opacity-40 transition-opacity" />
               )}
-            </Button>
+            </button>
           ) : (
             <Button
               variant="ghost"
@@ -276,30 +282,32 @@ export function TableColumnMenu({
               <ArrowUpAZ className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
               <span>Trier</span>
             </DropdownMenuSubTrigger>
-            <DropdownMenuSubContent>
-              <DropdownMenuItem onClick={() => handleSort("asc")}>
-                <ArrowUpAZ className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
-                <span>Croissant (A-Z)</span>
-                {currentSort === "asc" && (
-                  <Check className="ml-auto h-3.5 w-3.5" />
-                )}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleSort("desc")}>
-                <ArrowDownAZ className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
-                <span>Décroissant (Z-A)</span>
-                {currentSort === "desc" && (
-                  <Check className="ml-auto h-3.5 w-3.5" />
-                )}
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem
-                onClick={() => handleSort(null)}
-                disabled={!currentSort}
-              >
-                <X className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
-                <span>Effacer le tri</span>
-              </DropdownMenuItem>
-            </DropdownMenuSubContent>
+            <DropdownMenuPortal>
+              <DropdownMenuSubContent>
+                <DropdownMenuItem onClick={() => handleSort("asc")}>
+                  <ArrowUpAZ className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
+                  <span>Croissant (A-Z)</span>
+                  {currentSort === "asc" && (
+                    <Check className="ml-auto h-3.5 w-3.5" />
+                  )}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleSort("desc")}>
+                  <ArrowDownAZ className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
+                  <span>Décroissant (Z-A)</span>
+                  {currentSort === "desc" && (
+                    <Check className="ml-auto h-3.5 w-3.5" />
+                  )}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  onClick={() => handleSort(null)}
+                  disabled={!currentSort}
+                >
+                  <X className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
+                  <span>Effacer le tri</span>
+                </DropdownMenuItem>
+              </DropdownMenuSubContent>
+            </DropdownMenuPortal>
           </DropdownMenuSub>
 
           {filterSchema && filterSchema.options.length > 0 && (
