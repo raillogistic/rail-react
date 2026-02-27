@@ -539,6 +539,92 @@ describe("ModelForm", () => {
     });
   });
 
+  it("keeps required relation fields in onlyRequired mode when relation fields are synthesized", async () => {
+    const contract: ModelFormContract = {
+      ...sampleModelFormContract,
+      appLabel: "store",
+      modelName: "Product",
+      mode: "CREATE",
+      fields: [
+        {
+          ...sampleModelFormContract.fields[0],
+          name: "status",
+          path: "status",
+          fieldName: "status",
+          label: "Status",
+          kind: "TEXT",
+          required: false,
+          nullable: true,
+          readOnly: false,
+          hidden: false,
+        },
+      ],
+      sections: [
+        {
+          ...sampleModelFormContract.sections[0],
+          fieldPaths: ["status", "category"],
+        },
+      ],
+      relations: [
+        {
+          name: "category",
+          path: "category",
+          label: "Category",
+          relationType: "FOREIGN_KEY",
+          toMany: false,
+          required: true,
+          nullable: false,
+          relatedAppLabel: "store",
+          relatedModelName: "Category",
+          readable: true,
+          writable: false,
+          policy: {
+            path: "category",
+            allowedActions: [],
+            blockedActions: ["CONNECT", "SET"],
+            nestedEnabled: false,
+          },
+        },
+      ],
+    };
+
+    const mocks = [
+      {
+        request: {
+          query: MODEL_FORM_CONTRACT_QUERY,
+          variables: {
+            appLabel: "store",
+            modelName: "Product",
+            mode: "CREATE",
+            includeNested: false,
+          },
+        },
+        result: {
+          data: {
+            modelFormContract: contract,
+          },
+        },
+      },
+    ];
+
+    renderWithMocks(
+      <ModelForm app="store" model="Product" mode="CREATE" onlyRequired />,
+      mocks,
+    );
+
+    const payload = await getRenderedSchema();
+    const fieldNames = payload.sections[0].fields.map(
+      (field: { name: string }) => field.name,
+    );
+    expect(fieldNames).toEqual(["category"]);
+
+    const categoryField = payload.sections[0].fields.find(
+      (field: { name: string }) => field.name === "category",
+    ) as { required?: boolean; readOnly?: boolean } | undefined;
+    expect(categoryField?.required).toBe(true);
+    expect(categoryField?.readOnly).toBe(true);
+  });
+
   it("serializes runtime override values as JSONString variables", async () => {
     const updateContract: ModelFormContract = {
       ...sampleModelFormContract,

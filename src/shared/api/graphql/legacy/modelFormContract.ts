@@ -51,6 +51,8 @@ const MODEL_FORM_CONTRACT_FIELDS_SELECTION = `
         path
         label
         toMany
+        required
+        nullable
         relatedAppLabel
         relatedModelName
         readable

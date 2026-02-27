@@ -539,7 +539,12 @@ export function buildSchemaFromContract(
       name: relationFieldName,
       type: "select-query",
       label: relation.label,
-      required: relationFieldInfo?.required ?? false,
+      required:
+        relationFieldInfo?.required ??
+        Boolean(
+          relation.required ??
+            (relation.nullable === undefined ? false : !relation.nullable),
+        ),
       readOnly: !relationWritable,
       hidden: !relationReadable,
       defaultValue:
