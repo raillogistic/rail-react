@@ -1,0 +1,421 @@
+# Architecture: DynamicModelTable — Metadata Strategy & Table Building
+
+> [!NOTE]
+> This document is a deep-dive into how `DynamicModelTable` uses backend metadata to automatically build a fully-featured data table — from GraphQL introspection to final pixel rendering.
+
+---
+
+## 1. High-Level Data Flow
+
+```mermaid
+graph TD
+    A["app + model props"] --> B["MetadataProvider"]
+    B --> C["useTableMetadata()"]
+    C --> D["Phase 1: Bootstrap Query<br/>(fields, relationships, basic filterConfig)"]
+    C --> E["Phase 2: Capabilities Query<br/>(filters, mutations, permissions, templates)"]
+    C --> F["Persisted Cache<br/>(localStorage fallback)"]
+    
+    D --> G["Merged & Normalized<br/>ModelSchema"]
+    E --> G
+    F --> G
+    
+    G --> H["TableProvider<br/>(state: filters, pagination, visibility)"]
+    H --> I["useTableColumns()<br/>(metadata → columnDefs)"]
+    H --> J["useTableQueryConfig()<br/>(visibility → field masking)"]
+    I --> J
+    J --> K["useTableData()<br/>(GraphQL data query execution)"]
+    
+    I --> L["dynamicColumns memo<br/>(columnDefs → DynamicTableColumnInput)"]
+    K --> L
+    L --> M["DynamicTable render"]
+
+    style D fill:#4ade80,color:#000
+    style E fill:#60a5fa,color:#000
+    style F fill:#fbbf24,color:#000
+    style G fill:#a78bfa,color:#000
+```
+
+---
+
+## 2. Two-Phase Metadata Loading Strategy
+
+The metadata loading in [useTableMetadata.ts](file:///e:/Projects/libraries/rail-react/src/widgets/model-table/hooks/useTableMetadata.ts) is split into **two distinct GraphQL queries** for performance optimization:
+
+### Phase 1 — Bootstrap (Immediate)
+
+Defined in [queries.ts](file:///e:/Projects/libraries/rail-react/src/shared/api/graphql/graphql/metadata/queries.ts#L98-L181) as `TABLE_BOOTSTRAP_METADATA_QUERY`.
+
+```mermaid
+graph LR
+    A["Component Mount"] -->|"useQuery (cache-first)"| B["Bootstrap Query"]
+    B --> C["Fields: name, fieldName, verboseName,<br/>fieldType, graphqlType, choices,<br/>visibility, isRelation, etc."]
+    B --> D["Relationships: name, relatedApp,<br/>relatedModel, lookupField, etc."]
+    B --> E["FilterConfig: inputTypeName,<br/>supportsQuick only"]
+    B --> F["Basic: app, model, verboseName,<br/>primaryKey, ordering"]
+```
+
+**Fetched immediately** on mount. Contains just enough to:
+- Build column headers (field names, verbose names, types)
+- Determine field type for cell rendering (isDate, isNumeric, choices, etc.)
+- Know about relationships for nested accessors
+- Enable quick search if supported
+
+### Phase 2 — Capabilities (Lazy / Idle)
+
+Defined in [queries.ts](file:///e:/Projects/libraries/rail-react/src/shared/api/graphql/graphql/metadata/queries.ts#L183-L320) as `TABLE_CAPABILITIES_METADATA_QUERY`.
+
+```mermaid
+graph LR
+    A["Browser Idle<br/>requestIdleCallback"] -->|"useLazyQuery"| B["Capabilities Query"]
+    B --> C["Full FilterConfig:<br/>style, supports*, presets,<br/>computedFilters"]
+    B --> D["Filters:<br/>per-field filter options,<br/>operators, types"]
+    B --> E["Mutations:<br/>CRUD operations,<br/>input fields, permissions"]
+    B --> F["Permissions:<br/>canList, canCreate,<br/>canUpdate, canDelete, etc."]
+    B --> G["Templates:<br/>export templates, guards"]
+    B --> H["FieldGroups:<br/>field grouping config"]
+```
+
+**Deferred** until the browser is idle via `requestIdleCallback` (fallback: `setTimeout(80ms)`). This is the "heavy" payload needed for:
+- Advanced filtering UI
+- CRUD mutation dialogs
+- Permission-gated actions
+- Template/export features
+
+### Merge Strategy
+
+```typescript
+// From useTableMetadata.ts lines 150-181
+const base = bootstrapMetadata ?? persistedMetadata;  // 1. Bootstrap or cached
+const merged = {
+  ...base,                          // 2. Spread base fields
+  ...(capabilitiesMetadata ?? {}),  // 3. Overlay capabilities
+  filterConfig: {                   // 4. Deep-merge filterConfig
+    ...(base.filterConfig ?? {}),
+    ...(capabilitiesMetadata?.filterConfig ?? {}),
+  },
+};
+const normalized = normalizeModelSchema(merged, { app, model });
+```
+
+> [!TIP]
+> **Referential Stability**: A JSON signature (`stableMetadataCacheRef`) prevents unnecessary re-renders when the merged result hasn't actually changed.
+
+### Persisted Cache (Instant Fallback)
+
+Before any network request resolves, [persisted-cache.ts](file:///e:/Projects/libraries/rail-react/src/shared/api/graphql/graphql/metadata/persisted-cache.ts) provides a **localStorage snapshot** from the last session:
+
+```mermaid
+graph TD
+    A["Component Mount"] --> B{"Bootstrap query<br/>already cached?"}
+    B -->|Yes| C["Use Apollo cache"]
+    B -->|No| D{"localStorage has<br/>persisted metadata?"}
+    D -->|Yes| E["Use persisted cache<br/>(instant render)"]
+    D -->|No| F["Show LoadingSkeleton"]
+    C --> G["Render table immediately"]
+    E --> G
+```
+
+This creates a **three-tier fallback**: Apollo cache → localStorage → loading skeleton.
+
+---
+
+## 3. MetadataProvider — Post-Processing
+
+The [MetadataProvider](file:///e:/Projects/libraries/rail-react/src/widgets/model-table/context/MetadataContext.tsx#L31-L70) sits between raw metadata and consumers:
+
+```typescript
+const mergedMetadata = useMemo(
+  () => normalizeModelSchemaAccessors(
+    mergeModelSchemaWithRelationships(metadata),
+  ),
+  [metadata],
+);
+```
+
+| Step | Function | Purpose |
+|------|----------|---------|
+| 1 | `mergeModelSchemaWithRelationships()` | Injects relationship info into field entries for unified access |
+| 2 | `normalizeModelSchemaAccessors()` | Converts field names to canonical camelCase GraphQL format |
+
+The context exposes:
+
+| Property | Type | Description |
+|----------|------|-------------|
+| [metadata](file:///e:/Projects/libraries/rail-react/src/widgets/model-table/components/DynamicModelTable.tsx#1334-1337) | `ModelSchema?` | Fully normalized schema |
+| [loading](file:///e:/Projects/libraries/rail-react/src/widgets/model-table/components/DynamicModelTable.tsx#1322-1325) | `boolean` | Bootstrap still loading |
+| `error` | `Error?` | Bootstrap failure |
+| `capabilitiesLoading` | `boolean` | Phase 2 in progress |
+| `capabilitiesLoaded` | `boolean` | Phase 2 complete |
+| `scheduleCapabilitiesPrefetch` | [() => void](file:///e:/Projects/libraries/rail-react/src/widgets/model-table/components/DynamicModelTable.tsx#1313-1316) | Trigger idle prefetch |
+| `ensureCapabilitiesLoaded` | [() => Promise](file:///e:/Projects/libraries/rail-react/src/widgets/model-table/components/DynamicModelTable.tsx#1313-1316) | Force load capabilities |
+
+---
+
+## 4. Component Hierarchy & Provider Stack
+
+```mermaid
+graph TD
+    A["DynamicModelTable<br/>(forwardRef, entry point)"] --> B["MetadataProvider<br/>key={app:model}"]
+    B --> C["TableProvider<br/>(initialState: density, pagination,<br/>filters, advancedFilters)"]
+    C --> D["DynamicBaseTableContent<br/>(main orchestrator)"]
+    D --> E["DynamicTable<br/>(TanStack-powered grid)"]
+    D --> F["TablePagination"]
+    D --> G["TableMobileCard"]
+    D --> H["Content Slots:<br/>Header, TopActions, Toolbar,<br/>BulkActionsBar, Footer, Dialogs"]
+
+    style A fill:#f472b6,color:#000
+    style B fill:#a78bfa,color:#000
+    style C fill:#60a5fa,color:#000
+    style D fill:#4ade80,color:#000
+```
+
+### `DynamicModelTable` (Outer Wrapper)
+
+- Receives `app`, `model`, `initVariables`, config props
+- Normalizes initial state via [resolveInitialTableState()](file:///e:/Projects/libraries/rail-react/src/widgets/model-table/components/DynamicModelTable.tsx#L264-L315):
+  - Extracts `page`, `perPage` from init variables
+  - Normalizes `presets`, `distinctOn`, `orderBy`
+  - Creates initial advanced filter state
+- Exposes **imperative handle** (`DynamicModelTableHandle`) with:
+  - [refetch()](file:///e:/Projects/libraries/rail-react/src/widgets/model-table/components/DynamicModelTable.tsx#1328-1334), [getSnapshot()](file:///e:/Projects/libraries/rail-react/src/widgets/model-table/components/DynamicModelTable.tsx#1312-1313), [data](file:///e:/Projects/libraries/rail-react/src/widgets/model-table/components/DynamicModelTable.tsx#1313-1316), [selectedRows](file:///e:/Projects/libraries/rail-react/src/widgets/model-table/components/DynamicModelTable.tsx#1338-1341), [loading](file:///e:/Projects/libraries/rail-react/src/widgets/model-table/components/DynamicModelTable.tsx#1322-1325), etc.
+
+### [DynamicBaseTableContent](file:///e:/Projects/libraries/rail-react/src/widgets/model-table/components/DynamicModelTable.tsx#426-1265) (Inner Orchestrator)
+
+This is the 800+ line core logic at [line 429](file:///e:/Projects/libraries/rail-react/src/widgets/model-table/components/DynamicModelTable.tsx#L429-L1264). It orchestrates everything:
+
+---
+
+## 5. Column Building Pipeline
+
+```mermaid
+flowchart LR
+    subgraph "Step 1: useTableColumns"
+        M["ModelSchema<br/>(metadata)"] --> CD["BaseModelTableColumnDef[]<br/>(accessor, title, render)"]
+    end
+    
+    subgraph "Step 2: useTableQueryConfig"
+        CD --> VA["visibleAccessors[]<br/>(field masking for query)"]
+        VA --> RA["requiredAccessors[]<br/>(always-fetch: PK, grouping)"]
+    end
+    
+    subgraph "Step 3: useTableData"
+        VA --> QV["Query Variables<br/>(page, perPage, where,<br/>orderBy, fields)"]
+        RA --> QV
+        QV --> GQL["GraphQL Data Query"]
+    end
+    
+    subgraph "Step 4: dynamicColumns"
+        CD --> DC["DynamicTableColumnInput[]"]
+        GQL --> DC
+    end
+```
+
+### Step 1: [useTableColumns()](file:///e:/Projects/libraries/rail-react/src/widgets/model-table/hooks/useTableColumns.ts#29-276) – Metadata → Column Definitions
+
+[useTableColumns.ts](file:///e:/Projects/libraries/rail-react/src/widgets/model-table/hooks/useTableColumns.ts) transforms [ModelSchema](file:///e:/Projects/libraries/rail-react/src/widgets/model-table/types.ts#258-293) into renderable column definitions:
+
+| Input | Output |
+|-------|--------|
+| `metadata.fields[]` | `BaseModelTableColumnDef[]` with [accessor](file:///e:/Projects/libraries/rail-react/src/widgets/model-table/components/DynamicModelTable.tsx#806-807), [id](file:///e:/Projects/libraries/rail-react/src/widgets/model-table/types.ts#15-20), `title` |
+| `fields` config (include/exclude/add) | Filtered & ordered column list |
+| `relations` config | Nested accessor paths (e.g., `client.name`) |
+
+Key operations:
+- **Field canonicalization**: Converts snake_case → camelCase via `toGraphqlFieldName()`
+- **Relation count resolution**: Maps synthetic `orderItemsCount` to underlying `orderItems` relation
+- **Custom render support**: User-provided render functions override defaults
+- **Exclude filtering**: Removes explicitly excluded fields
+
+### Step 2: [useTableQueryConfig()](file:///e:/Projects/libraries/rail-react/src/widgets/model-table/hooks/useTableQueryConfig.ts#30-207) – Visibility → Field Masking
+
+[useTableQueryConfig.ts](file:///e:/Projects/libraries/rail-react/src/widgets/model-table/hooks/useTableQueryConfig.ts) determines **which fields to request** in the GraphQL query:
+
+```
+All metadata fields
+  → Filter by visibility (user prefs / persisted state / defaults)
+  → Add required accessors (primaryKey, grouping field)
+  → Add synthetic relation count sources
+  → Final: visibleAccessors[] + requiredAccessors[]
+```
+
+> [!IMPORTANT]
+> This is a critical optimization — only visible columns are fetched from the backend, reducing payload and DB load.
+
+### Step 3: [useTableData()](file:///e:/Projects/libraries/rail-react/src/widgets/model-table/hooks/useTableData.ts#81-226) – Query Execution
+
+[useTableData.ts](file:///e:/Projects/libraries/rail-react/src/widgets/model-table/hooks/useTableData.ts) executes the actual data query:
+
+```typescript
+useModelPageQuery({
+  identity: { app, model, managerName },
+  metadataOptions: { metadata, metadataProfile: "table" },
+  selectionOptions: { fields: selectionFields, relations },
+  variables: { page, perPage, quick, where, presets, orderBy, ... },
+});
+```
+
+- Supports **pagination** and **infinite scroll** modes
+- Debounces quick search (300ms)
+- Handles data deduplication for infinite scroll merging
+
+### Step 4: `dynamicColumns` Memo – Final Column Assembly
+
+At [line 782](file:///e:/Projects/libraries/rail-react/src/widgets/model-table/components/DynamicModelTable.tsx#L782-L882), column definitions are transformed into `DynamicTableColumnInput[]`:
+
+```typescript
+columnDefs.map((column) => ({
+  id: column.id,
+  headerMode: "custom",
+  title: column.title,
+  accessorFn: (row) => resolveValueOptimized(row, accessorPath),
+  header: () => <TableColumnMenu ... /> + <ColumnFilter ... />,
+  cell: ({ row, value }) => {
+    // 1. Try custom render function
+    // 2. Try field-type-aware formatCellValue()
+    // 3. Fallback: formatFallbackCellValue()
+    // 4. Wrap in RelationStatsHover if applicable
+  },
+}));
+```
+
+---
+
+## 6. Lookup Maps for O(1) Metadata Access
+
+Two lookup maps are built at render time for efficient per-cell metadata access:
+
+### `fieldLookup` (Map\<string, FieldSchema\>)
+
+```typescript
+// Line 652-672: Maps ALL name variants → FieldSchema
+// Keys: field.name, field.fieldName, normalized(name), normalized(fieldName)
+```
+
+Used in the cell renderer to find the correct [FieldSchema](file:///e:/Projects/libraries/rail-react/src/widgets/model-table/types.ts#31-101) for type-aware formatting (dates, booleans, choices, numerics, etc.).
+
+### `relationLookup` (Map\<string, RelationDescriptor\>)
+
+```typescript
+// Line 674-712: Maps ALL name variants → { relatedApp, relatedModel, isToMany, ... }
+```
+
+Used for:
+- `RelationStatsHover` — showing count stats on relation cells
+- Determining if a column represents a to-many relation
+
+---
+
+## 7. Cell Rendering Strategy
+
+```mermaid
+flowchart TD
+    A["Cell Value"] --> B{"Has custom<br/>render fn?"}
+    B -->|Yes| C["column.render(value, row, ctx)"]
+    B -->|No| D{"Field metadata<br/>found?"}
+    D -->|Yes| E["formatCellValue(value, field)"]
+    D -->|No| F["formatFallbackCellValue(value)"]
+    
+    C --> G{"Is relation<br/>stats column?"}
+    E --> G
+    F --> G
+    
+    G -->|Yes| H["Wrap in RelationStatsHover"]
+    G -->|No| I["Render directly"]
+```
+
+### `formatCellValue(value, field)` handles:
+
+| Field Type | Rendering |
+|------------|-----------|
+| `isDate / isDatetime` | Localized date formatting |
+| `isBoolean` | ✓ / ✗ indicators |
+| `choices` | Resolves value → label |
+| `isNumeric` | Number formatting |
+| `isFile / isImage` | Link / thumbnail |
+| `isJson` | JSON stringify |
+| Default | String conversion |
+
+---
+
+## 8. State Management Flow
+
+```mermaid
+flowchart LR
+    subgraph "DynamicTable (TanStack)"
+        TS["Table State Changes"]
+    end
+    
+    subgraph "handleStateChange"
+        TS --> CO["columnOrder"]
+        TS --> CV["columnVisibility"]
+        TS --> CW["columnSizing"]
+        TS --> RS["rowSelection"]
+        TS --> PG["pagination"]
+        TS --> DM["dragMode"]
+        TS --> DN["density"]
+        TS --> WC["wrapCells"]
+        TS --> EX["expanded"]
+    end
+    
+    subgraph "TableProvider (Context)"
+        CO --> TP["Centralized State"]
+        CV --> TP
+        CW --> TP
+        RS --> TP
+        PG --> TP
+        DM --> TP
+        DN --> TP
+        WC --> TP
+        EX --> TP
+    end
+    
+    subgraph "Side Effects"
+        TP --> PE["useTablePersistence<br/>(save to user settings)"]
+        TP --> QR["useTableData<br/>(re-query on pagination/filter change)"]
+    end
+```
+
+> [!TIP]
+> All state changes go through **equality guards** ([areBooleanMapsEqual](file:///e:/Projects/libraries/rail-react/src/widgets/model-table/components/DynamicModelTable.tsx#332-351), [areNumberMapsEqual](file:///e:/Projects/libraries/rail-react/src/widgets/model-table/components/DynamicModelTable.tsx#352-371), [areStringArraysEqual](file:///e:/Projects/libraries/rail-react/src/widgets/model-table/components/DynamicModelTable.tsx#317-331), etc.) to prevent unnecessary state updates and re-renders.
+
+---
+
+## 9. Section Slot System
+
+The visual layout is composed of **configurable slots** with visibility toggles:
+
+```typescript
+const DEFAULT_SECTION_VISIBILITY = {
+  header: true,        // ModelTableHeader (title, description, icon)
+  topActions: true,    // Create button, custom actions
+  toolbar: true,       // Quick search, filters, display options
+  bulkActionsBar: true,// Bulk delete, export, etc.
+  footer: false,       // Optional footer
+  dialogs: true,       // Create/Update/Delete dialogs
+};
+```
+
+Each slot can be replaced via `content.slots`:
+
+```typescript
+const HeaderSlot = content?.slots?.Header ?? ModelTableHeader;
+const TopActionsSlot = content?.slots?.TopActions ?? ModelTableTopActions;
+const ToolbarSlot = content?.slots?.Toolbar ?? ModelTableToolbarSection;
+// ... etc.
+```
+
+---
+
+## 10. Summary: Key Design Decisions
+
+| Decision | Rationale |
+|----------|-----------|
+| **Two-phase metadata loading** | Fast initial render (columns visible) while heavy capabilities load in background |
+| **LocalStorage fallback** | Instant table skeleton even before first network response |
+| **Field masking** | Only query visible columns — reduces backend load |
+| **Canonical accessor normalization** | Handles snake_case ↔ camelCase mismatches seamlessly |
+| **Lookup maps** | O(1) field/relation resolution during cell rendering |
+| **Equality guards** | Prevents cascade re-renders from TanStack state changes |
+| **Imperative handle** | Parent components can [refetch()](file:///e:/Projects/libraries/rail-react/src/widgets/model-table/components/DynamicModelTable.tsx#1328-1334) or read [data](file:///e:/Projects/libraries/rail-react/src/widgets/model-table/components/DynamicModelTable.tsx#1313-1316) without prop drilling |
+| **Slot system** | Every visual section is replaceable for customization |
+| **requestIdleCallback** | Capabilities prefetch doesn't block user interaction |

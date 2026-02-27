@@ -12,6 +12,10 @@ interface MetadataContextValue {
   error?: Error;
   app: string;
   model: string;
+  capabilitiesLoading: boolean;
+  capabilitiesLoaded: boolean;
+  ensureCapabilitiesLoaded: () => Promise<void>;
+  scheduleCapabilitiesPrefetch: () => void;
 }
 
 const MetadataContext = createContext<MetadataContextValue | undefined>(
@@ -29,7 +33,15 @@ export function MetadataProvider({
   model,
   children,
 }: MetadataProviderProps) {
-  const { metadata, loading, error } = useTableMetadata(app, model);
+  const {
+    metadata,
+    loading,
+    error,
+    capabilitiesLoading,
+    capabilitiesLoaded,
+    ensureCapabilitiesLoaded,
+    scheduleCapabilitiesPrefetch,
+  } = useTableMetadata(app, model);
   const mergedMetadata = useMemo(
     () =>
       normalizeModelSchemaAccessors(
@@ -40,7 +52,17 @@ export function MetadataProvider({
 
   return (
     <MetadataContext.Provider
-      value={{ metadata: mergedMetadata, loading, error, app, model }}
+      value={{
+        metadata: mergedMetadata,
+        loading,
+        error,
+        app,
+        model,
+        capabilitiesLoading,
+        capabilitiesLoaded,
+        ensureCapabilitiesLoaded,
+        scheduleCapabilitiesPrefetch,
+      }}
     >
       {children}
     </MetadataContext.Provider>

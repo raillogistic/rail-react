@@ -102,6 +102,54 @@ function areBooleanMapsEqual(
 }
 
 /**
+ * Compares two numeric maps for exact key/value equality.
+ */
+function areNumberMapsEqual(
+  left: Record<string, number>,
+  right: Record<string, number>,
+): boolean {
+  const leftKeys = Object.keys(left);
+  const rightKeys = Object.keys(right);
+  if (leftKeys.length !== rightKeys.length) {
+    return false;
+  }
+  for (const key of leftKeys) {
+    if (left[key] !== right[key]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/**
+ * Compares string arrays for exact ordered equality.
+ */
+function areStringArraysEqual(
+  left: readonly string[],
+  right: readonly string[],
+): boolean {
+  if (left.length !== right.length) {
+    return false;
+  }
+  for (let index = 0; index < left.length; index += 1) {
+    if (left[index] !== right[index]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/**
+ * Compares pagination states by index and size.
+ */
+function isPaginationStateEqual(
+  left: PaginationState,
+  right: PaginationState,
+): boolean {
+  return left.pageIndex === right.pageIndex && left.pageSize === right.pageSize;
+}
+
+/**
  * Compares TanStack expanded-state snapshots.
  */
 function isExpandedStateEqual(
@@ -243,6 +291,9 @@ export function useDynamicTableState(
   const setOrderBy = useCallback(
     (updater: Updater<DynamicTableOrderByEntry[]>) => {
       const nextValue = resolveUpdater(updater, snapshot.orderBy);
+      if (areStringArraysEqual(nextValue, snapshot.orderBy)) {
+        return;
+      }
       if (!state || state.orderBy === undefined) {
         setUncontrolledOrderBy(nextValue);
       }
@@ -258,6 +309,9 @@ export function useDynamicTableState(
   const setColumnOrder = useCallback(
     (updater: Updater<string[]>) => {
       const nextValue = resolveUpdater(updater, snapshot.columnOrder);
+      if (areStringArraysEqual(nextValue, snapshot.columnOrder)) {
+        return;
+      }
       if (!state || state.columnOrder === undefined) {
         setUncontrolledColumnOrder(nextValue);
       }
@@ -272,6 +326,9 @@ export function useDynamicTableState(
   const setColumnVisibility = useCallback(
     (updater: Updater<VisibilityState>) => {
       const nextValue = resolveUpdater(updater, snapshot.columnVisibility);
+      if (areBooleanMapsEqual(nextValue, snapshot.columnVisibility)) {
+        return;
+      }
       if (!state || state.columnVisibility === undefined) {
         setUncontrolledColumnVisibility(nextValue);
       }
@@ -286,6 +343,9 @@ export function useDynamicTableState(
   const setColumnSizing = useCallback(
     (updater: Updater<ColumnSizingState>) => {
       const nextValue = resolveUpdater(updater, snapshot.columnSizing);
+      if (areNumberMapsEqual(nextValue, snapshot.columnSizing)) {
+        return;
+      }
       if (!state || state.columnSizing === undefined) {
         setUncontrolledColumnSizing(nextValue);
       }
@@ -300,6 +360,9 @@ export function useDynamicTableState(
   const setRowSelection = useCallback(
     (updater: Updater<RowSelectionState>) => {
       const nextValue = resolveUpdater(updater, snapshot.rowSelection);
+      if (areBooleanMapsEqual(nextValue, snapshot.rowSelection)) {
+        return;
+      }
       if (!state || state.rowSelection === undefined) {
         setUncontrolledRowSelection(nextValue);
       }
@@ -315,6 +378,9 @@ export function useDynamicTableState(
   const setGrouping = useCallback(
     (updater: Updater<string[]>) => {
       const nextValue = resolveUpdater(updater, snapshot.grouping);
+      if (areStringArraysEqual(nextValue, snapshot.grouping)) {
+        return;
+      }
       if (!state || state.grouping === undefined) {
         setUncontrolledGrouping(nextValue);
       }
@@ -347,6 +413,9 @@ export function useDynamicTableState(
   const setPagination = useCallback(
     (updater: Updater<PaginationState>) => {
       const nextValue = resolveUpdater(updater, snapshot.pagination);
+      if (isPaginationStateEqual(nextValue, snapshot.pagination)) {
+        return;
+      }
       if (!state || state.pagination === undefined) {
         setUncontrolledPagination(nextValue);
       }
@@ -362,6 +431,9 @@ export function useDynamicTableState(
   const setDragModeEnabled = useCallback(
     (updater: Updater<boolean>) => {
       const nextValue = resolveUpdater(updater, snapshot.dragModeEnabled);
+      if (nextValue === snapshot.dragModeEnabled) {
+        return;
+      }
       if (!state || state.dragModeEnabled === undefined) {
         setUncontrolledDragModeEnabled(nextValue);
       }
@@ -376,6 +448,9 @@ export function useDynamicTableState(
   const setDensity = useCallback(
     (updater: Updater<DynamicTableDensity>) => {
       const nextValue = resolveUpdater(updater, snapshot.density);
+      if (nextValue === snapshot.density) {
+        return;
+      }
       if (!state || state.density === undefined) {
         setUncontrolledDensity(nextValue);
       }
@@ -390,6 +465,9 @@ export function useDynamicTableState(
   const setWrapCells = useCallback(
     (updater: Updater<boolean>) => {
       const nextValue = resolveUpdater(updater, snapshot.wrapCells);
+      if (nextValue === snapshot.wrapCells) {
+        return;
+      }
       if (!state || state.wrapCells === undefined) {
         setUncontrolledWrapCells(nextValue);
       }

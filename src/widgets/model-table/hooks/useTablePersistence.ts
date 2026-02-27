@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from "react";
+import { useEffect, useRef, useCallback, useState } from "react";
 import { gql, useApolloClient, useMutation } from "@apollo/client";
 import { useTable } from "../context/TableContext";
 import { ColumnVisibilityState, ColumnWidthState, TableDensity } from "../types";
@@ -24,6 +24,14 @@ export interface PersistedTableState {
 
 type TableConfigs = Record<string, unknown>;
 type PersistedTableStateInput = Partial<PersistedTableState>;
+type CurrentTableStateSnapshot = {
+  columnOrder: string[];
+  columnVisibility: ColumnVisibilityState;
+  columnWidths: ColumnWidthState;
+  perPage: number;
+  density: TableDensity;
+  wrapCells: boolean;
+};
 
 const GET_USER_TABLE_CONFIGS = gql`
   query GetUserTableConfigs {
@@ -175,6 +183,40 @@ function getConfigForKey(
   return parsePersistedTableStateInput(configs[key]);
 }
 
+function areStringArraysEqual(left: string[], right: string[]): boolean {
+  if (left.length !== right.length) return false;
+  for (let index = 0; index < left.length; index += 1) {
+    if (left[index] !== right[index]) return false;
+  }
+  return true;
+}
+
+function areBooleanMapsEqual(
+  left: ColumnVisibilityState,
+  right: ColumnVisibilityState,
+): boolean {
+  const leftKeys = Object.keys(left);
+  const rightKeys = Object.keys(right);
+  if (leftKeys.length !== rightKeys.length) return false;
+  for (const key of leftKeys) {
+    if (left[key] !== right[key]) return false;
+  }
+  return true;
+}
+
+function areNumberMapsEqual(
+  left: ColumnWidthState,
+  right: ColumnWidthState,
+): boolean {
+  const leftKeys = Object.keys(left);
+  const rightKeys = Object.keys(right);
+  if (leftKeys.length !== rightKeys.length) return false;
+  for (const key of leftKeys) {
+    if (left[key] !== right[key]) return false;
+  }
+  return true;
+}
+
 /**
  * Loads persisted table state from user settings or localStorage.
  * First tries user settings from auth context, then falls back to localStorage.
@@ -229,6 +271,16 @@ export function useTablePersistence(key: string) {
   const hasAppliedPersistedStateRef = useRef(false);
   const tableConfigsRef = useRef<TableConfigs | null>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastRemoteFetchKeyRef = useRef<string | null>(null);
+  const [hydrated, setHydrated] = useState(false);
+  const currentStateRef = useRef<CurrentTableStateSnapshot>({
+    columnOrder,
+    columnVisibility,
+    columnWidths,
+    perPage,
+    density,
+    wrapCells,
+  });
 
   const [upsertUserTableConfig] = useMutation<
     UpsertUserTableConfigResponse,
@@ -236,6 +288,17 @@ export function useTablePersistence(key: string) {
   >(UPSERT_USER_TABLE_CONFIG_MUTATION_RESOLVED, {
     ignoreResults: false,
   });
+
+  useEffect(() => {
+    currentStateRef.current = {
+      columnOrder,
+      columnVisibility,
+      columnWidths,
+      perPage,
+      density,
+      wrapCells,
+    };
+  }, [columnOrder, columnVisibility, columnWidths, perPage, density, wrapCells]);
 
   const readTableConfigsFromSettings = useCallback(() => {
     const settings = user?.settings as
@@ -253,27 +316,43 @@ export function useTablePersistence(key: string) {
 
   const applyParsedState = useCallback(
     (parsed: PersistedTableStateInput) => {
+      const currentState = currentStateRef.current;
+
       if (parsed.columnOrder && Array.isArray(parsed.columnOrder)) {
-        setColumnOrder(parsed.columnOrder);
+        if (!areStringArraysEqual(parsed.columnOrder, currentState.columnOrder)) {
+          setColumnOrder(parsed.columnOrder);
+        }
       }
       if (parsed.columnVisibility) {
-        setColumnVisibility(parsed.columnVisibility);
+        if (
+          !areBooleanMapsEqual(parsed.columnVisibility, currentState.columnVisibility)
+        ) {
+          setColumnVisibility(parsed.columnVisibility);
+        }
       }
       if (parsed.columnWidths) {
-        setColumnWidths(parsed.columnWidths);
+        if (!areNumberMapsEqual(parsed.columnWidths, currentState.columnWidths)) {
+          setColumnWidths(parsed.columnWidths);
+        }
       }
       if (typeof parsed.perPage === "number") {
-        setPerPage(parsed.perPage);
+        if (parsed.perPage !== currentState.perPage) {
+          setPerPage(parsed.perPage);
+        }
       }
       if (
         parsed.density === "compact" ||
         parsed.density === "comfortable" ||
         parsed.density === "spacious"
       ) {
-        setDensity(parsed.density);
+        if (parsed.density !== currentState.density) {
+          setDensity(parsed.density);
+        }
       }
       if (typeof parsed.wrapCells === "boolean") {
-        setWrapCells(parsed.wrapCells);
+        if (parsed.wrapCells !== currentState.wrapCells) {
+          setWrapCells(parsed.wrapCells);
+        }
       }
     },
     [
@@ -291,6 +370,8 @@ export function useTablePersistence(key: string) {
       initialKeyRef.current = key;
       hasHydratedRef.current = false;
       hasAppliedPersistedStateRef.current = false;
+      lastRemoteFetchKeyRef.current = null;
+      setHydrated(false);
     }
 
     if (hasHydratedRef.current) return;
@@ -300,6 +381,7 @@ export function useTablePersistence(key: string) {
       applyParsedState(userConfig);
       hasAppliedPersistedStateRef.current = true;
       hasHydratedRef.current = true;
+      setHydrated(true);
       return;
     }
 
@@ -320,6 +402,7 @@ export function useTablePersistence(key: string) {
     }
 
     hasHydratedRef.current = true;
+    setHydrated(true);
   }, [
     key,
     storageKey,
@@ -331,6 +414,11 @@ export function useTablePersistence(key: string) {
   useEffect(() => {
     const userId = user?.id ? String(user.id) : null;
     if (!userId) return;
+    const remoteFetchKey = `${userId}|${key}`;
+    if (lastRemoteFetchKeyRef.current === remoteFetchKey) {
+      return;
+    }
+    lastRemoteFetchKeyRef.current = remoteFetchKey;
 
     const settingsConfigsRaw = readTableConfigsFromSettings();
     const settingsConfigs = decodeTableConfigs(settingsConfigsRaw);
@@ -472,5 +560,5 @@ export function useTablePersistence(key: string) {
     }
   }, [key, storageKey, readTableConfigsFromSettings, user?.id]);
 
-  return { hasPersistedState };
+  return { hasPersistedState, hydrated };
 }

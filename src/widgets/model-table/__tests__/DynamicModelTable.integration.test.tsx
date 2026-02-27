@@ -5,7 +5,7 @@ import { gql } from "@apollo/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 import { DynamicModelTable } from "../components/DynamicModelTable";
-import { TABLE_MODEL_METADATA_QUERY as GET_MODEL_SCHEMA } from "@/shared/api/graphql/graphql/metadata/queries";
+import { TABLE_BOOTSTRAP_METADATA_QUERY as GET_MODEL_SCHEMA } from "@/shared/api/graphql/graphql/metadata/queries";
 
 vi.stubEnv("VITE_METADATA_GATEWAY_TABLE", "0");
 
@@ -27,6 +27,7 @@ vi.mock("@/shared/ui/kit/dropdown-menu", () => ({
   DropdownMenu: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   DropdownMenuTrigger: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   DropdownMenuContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+  DropdownMenuPortal: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   DropdownMenuItem: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   DropdownMenuSub: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   DropdownMenuSubTrigger: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
@@ -328,6 +329,7 @@ function buildMetadataMock(templates: unknown[] = []) {
 describe("DynamicModelTable integration", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    window.localStorage.clear();
   });
 
   it("renders headers and rows from metadata-driven query", async () => {

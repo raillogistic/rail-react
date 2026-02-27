@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import { useMemo, useRef } from "react";
 import { useMetadata } from "../context/MetadataContext";
 import { useTable } from "../context/TableContext";
 import {
@@ -28,7 +28,46 @@ interface UseTableQueryConfigOptions {
 }
 
 /**
+ * Returns a referentially-stable string array.
+ *
+ * When the _contents_ of the new array are identical to the previous one
+ * (same length and same ordered entries), the **previous** reference is
+ * returned so downstream memos/effects aren't re-triggered.
+ *
+ * This is critical on the capabilities-load path: `metadata` gets a new
+ * reference (because filters/mutations/permissions were added) but the
+ * *fields* and *relationships* — which drive column accessors — haven't
+ * changed, so the computed accessor list is identical.
+ */
+function useStableStringArray(
+  next: string[] | undefined,
+): string[] | undefined {
+  const ref = useRef<string[] | undefined>(next);
+
+  if (next === undefined && ref.current === undefined) return ref.current;
+  if (next === undefined || ref.current === undefined) {
+    ref.current = next;
+    return next;
+  }
+  if (
+    next.length === ref.current.length &&
+    next.every((value, index) => value === ref.current![index])
+  ) {
+    return ref.current;
+  }
+  ref.current = next;
+  return next;
+}
+
+/**
  * Resolve query configuration from current metadata and table state.
+ *
+ * Uses `useStableStringArray` to prevent referential churn when
+ * capabilities metadata arrives (metadata reference changes but
+ * field/relationship content — which drives accessor lists — stays the
+ * same). Without this, the new array reference cascades through
+ * `queryConfig` → `selectionFields` → `useModelPageQuery` →
+ * unnecessary query rebuild.
  */
 export function useTableQueryConfig({
   fields,
@@ -44,8 +83,17 @@ export function useTableQueryConfig({
   const { metadata } = useMetadata();
   const { columnVisibility, groupingField } = useTable();
 
-  const queryVisibleAccessors = useMemo(() => {
-    if (!metadata) return undefined;
+  /**
+   * Narrow dependencies to only the metadata slices that affect column
+   * accessors, so capabilities-only changes (filters, mutations,
+   * permissions) don't trigger a recomputation.
+   */
+  const metadataFields = metadata?.fields;
+  const metadataRelationships = metadata?.relationships;
+  const metadataPrimaryKey = metadata?.primaryKey;
+
+  const rawQueryVisibleAccessors = useMemo(() => {
+    if (!metadataFields || !metadataRelationships) return undefined;
 
     const visibilitySource =
       Object.keys(columnVisibility).length > 0
@@ -54,7 +102,7 @@ export function useTableQueryConfig({
     const hasVisibilityOverrides = Object.keys(visibilitySource).length > 0;
 
     const fieldCanonicalByKey = new Map<string, string>();
-    metadata.fields.forEach((field) => {
+    metadataFields.forEach((field) => {
       const canonicalName = toGraphqlFieldName(field.name || field.fieldName);
       if (!canonicalName) return;
       fieldCanonicalByKey.set(field.name, canonicalName);
@@ -64,7 +112,7 @@ export function useTableQueryConfig({
     });
 
     const relationCanonicalByKey = new Map<string, string>();
-    metadata.relationships.forEach((relation) => {
+    metadataRelationships.forEach((relation) => {
       const canonicalName = toGraphqlFieldName(
         relation.name || relation.fieldName,
       );
@@ -90,7 +138,7 @@ export function useTableQueryConfig({
       return [normalizedRoot, ...normalizedRest.filter(Boolean)].join(".");
     };
 
-    const defaultDisplay = metadata.fields
+    const defaultDisplay = metadataFields
       .filter((field) => field.visibility !== "hidden")
       .map((field) => toGraphqlFieldName(field.name || field.fieldName))
       .filter(Boolean)
@@ -103,7 +151,9 @@ export function useTableQueryConfig({
       excludedAccessors,
     })
       .map((entry) =>
-        canonicalizeAccessor(typeof entry === "string" ? entry : entry.accessor),
+        canonicalizeAccessor(
+          typeof entry === "string" ? entry : entry.accessor,
+        ),
       )
       .filter(Boolean);
 
@@ -140,23 +190,27 @@ export function useTableQueryConfig({
     columnVisibility,
     defaultHiddenColumnIds,
     excludedAccessors,
-    metadata,
+    metadataFields,
+    metadataRelationships,
     normalizedFieldsConfig,
     persistedVisibility,
   ]);
 
-  const requiredDataAccessors = useMemo(() => {
+  /** Referentially-stable version — prevents downstream cascade. */
+  const queryVisibleAccessors = useStableStringArray(rawQueryVisibleAccessors);
+
+  const rawRequiredDataAccessors = useMemo(() => {
     const required = new Set<string>();
 
     const primaryKeyAccessor =
-      toGraphqlFieldName(metadata?.primaryKey || "id") || "id";
+      toGraphqlFieldName(metadataPrimaryKey || "id") || "id";
     required.add(primaryKeyAccessor);
 
     if (groupingField) {
       required.add(groupingField);
     }
 
-    if (!metadata || !queryVisibleAccessors?.length) {
+    if (!metadataFields || !queryVisibleAccessors?.length) {
       return Array.from(required);
     }
 
@@ -165,7 +219,7 @@ export function useTableQueryConfig({
     );
     const groupedRoot = groupingField?.split(".")[0] ?? null;
 
-    metadata.fields.forEach((field) => {
+    metadataFields.forEach((field) => {
       const source = getSyntheticRelationCountSource(field);
       if (!source) return;
 
@@ -179,7 +233,15 @@ export function useTableQueryConfig({
     });
 
     return Array.from(required);
-  }, [groupingField, metadata, queryVisibleAccessors]);
+  }, [
+    groupingField,
+    metadataFields,
+    metadataPrimaryKey,
+    queryVisibleAccessors,
+  ]);
+
+  /** Referentially-stable version — prevents downstream cascade. */
+  const requiredDataAccessors = useStableStringArray(rawRequiredDataAccessors);
 
   const queryConfig = useMemo(
     () => ({

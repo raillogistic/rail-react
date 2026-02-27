@@ -137,7 +137,7 @@ export function ModelTableExportDialog({
   };
   trigger?: React.ReactNode;
 }) {
-  const { metadata } = useMetadata();
+  const { metadata, ensureCapabilitiesLoaded } = useMetadata();
   const {
     columnOrder,
     columnVisibility,
@@ -172,6 +172,11 @@ export function ModelTableExportDialog({
     );
     setExportFilename(metadata.verboseNamePlural || metadata.model || "export");
   }, [open, metadata, columnOrder, columnVisibility]);
+
+  useEffect(() => {
+    if (!open) return;
+    void ensureCapabilitiesLoaded();
+  }, [ensureCapabilitiesLoaded, open]);
 
   useEffect(() => {
     if (!hasGrouping) return;

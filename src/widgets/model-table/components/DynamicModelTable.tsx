@@ -492,7 +492,7 @@ function DynamicBaseTableContent({
   const locationPath =
     typeof window !== "undefined" ? window.location.pathname : "";
   const effectiveKey = persistenceKey || `${app}-${model}-${locationPath}`;
-  useTablePersistence(effectiveKey);
+  const { hydrated: persistenceHydrated } = useTablePersistence(effectiveKey);
 
   const userTableConfigs = useMemo(() => {
     const settings = user?.settings as
@@ -545,7 +545,14 @@ function DynamicBaseTableContent({
     persistedVisibility: persistedState?.columnVisibility,
   });
 
-  const { refetch } = useTableData(queryConfig);
+  const dataConfig = useMemo(
+    () => ({
+      ...queryConfig,
+      enabled: persistenceHydrated,
+    }),
+    [persistenceHydrated, queryConfig],
+  );
+  const { refetch } = useTableData(dataConfig);
   useEffect(() => {
     onRefetchResolved?.(refetch as BaseModelTableRefetch | undefined);
     return () => {
@@ -588,6 +595,7 @@ function DynamicBaseTableContent({
   const whereType =
     metadata?.filterConfig?.inputTypeName ||
     `${metadata?.model || "Model"}WhereInput`;
+
   useEffect(() => {
     if (!onSnapshotResolved) {
       return;
@@ -889,6 +897,16 @@ function DynamicBaseTableContent({
   const handleOrderByChange = useCallback(
     (nextOrderBy: string[]) => {
       const normalizedNextOrderBy = resolveOrderByWithFallback(nextOrderBy);
+      const currentVariablesOrderBy = resolveOrderByWithFallback(
+        isRecord(filterVariables) ? filterVariables.orderBy : undefined,
+      );
+      if (
+        areStringArraysEqual(normalizedNextOrderBy, advancedFilters.orderBy) &&
+        areStringArraysEqual(normalizedNextOrderBy, currentVariablesOrderBy)
+      ) {
+        return;
+      }
+
       const nextVariables = isRecord(filterVariables)
         ? { ...filterVariables }
         : {};

@@ -95,6 +95,230 @@ export const FILTER_METADATA_QUERY = gql`
   }
 `;
 
+export const TABLE_BOOTSTRAP_METADATA_QUERY = gql`
+  query TableBootstrapModelMetadata(
+    $app: String!
+    $model: String!
+    $objectId: ID
+  ) {
+    modelSchema(app: $app, model: $model, objectId: $objectId) {
+      app
+      model
+      verboseName
+      verboseNamePlural
+      primaryKey
+      ordering
+      fields {
+        name
+        fieldName
+        verboseName
+        helpText
+        fieldType
+        graphqlType
+        required
+        nullable
+        blank
+        editable
+        unique
+        choices {
+          value
+          label
+          group
+          disabled
+        }
+        defaultValue
+        hasDefault
+        autoNow
+        autoNowAdd
+        readable
+        writable
+        visibility
+        isPrimaryKey
+        isIndexed
+        isRelation
+        isComputed
+        isFile
+        isImage
+        isJson
+        isDate
+        isDatetime
+        isNumeric
+        isBoolean
+        isText
+        isRichText
+        customMetadata
+      }
+      relationships {
+        name
+        fieldName
+        verboseName
+        helpText
+        relatedApp
+        relatedModel
+        relatedModelVerbose
+        relationType
+        isReverse
+        isToOne
+        isToMany
+        required
+        nullable
+        editable
+        lookupField
+        searchFields
+        readable
+        writable
+        canCreateInline
+        customMetadata
+      }
+      filterConfig {
+        inputTypeName
+        supportsQuick
+      }
+      metadataVersion
+      customMetadata
+    }
+  }
+`;
+
+export const TABLE_CAPABILITIES_METADATA_QUERY = gql`
+  query TableCapabilitiesModelMetadata(
+    $app: String!
+    $model: String!
+    $objectId: ID
+  ) {
+    modelSchema(app: $app, model: $model, objectId: $objectId) {
+      app
+      model
+      filterConfig {
+        style
+        argumentName
+        inputTypeName
+        supportsAnd
+        supportsOr
+        supportsNot
+        dualModeEnabled
+        supportsQuick
+        supportsFts
+        supportsAggregation
+        presets {
+          name
+          presetName
+          description
+          filterJson
+        }
+        computedFilters {
+          name
+          fieldName
+          filterType
+          description
+        }
+      }
+      filters {
+        name
+        fieldName
+        fieldLabel
+        baseType
+        isNested
+        relatedModel
+        options {
+          name
+          lookup
+          label
+          helpText
+          choices {
+            value
+            label
+            group
+            disabled
+          }
+          graphqlType
+          isList
+        }
+        filterInputType
+        availableOperators
+      }
+      relationFilters {
+        name
+        fieldName
+        relationType
+        supportsSome
+        supportsEvery
+        supportsNone
+        supportsCount
+        nestedFilterType
+      }
+      mutations {
+        name
+        operation
+        description
+        methodName
+        inputFields {
+          name
+          fieldName
+          fieldType
+          graphqlType
+          required
+          defaultValue
+          description
+          choices {
+            value
+            label
+          }
+          relatedModel
+        }
+        inputType
+        returnType
+        allowed
+        requiredPermissions
+        reason
+        mutationType
+        modelName
+        formConfig
+        successMessage
+        errorMessages
+        action
+        requiresAuthentication
+      }
+      permissions {
+        canList
+        canRetrieve
+        canCreate
+        canUpdate
+        canDelete
+        canBulkCreate
+        canBulkUpdate
+        canBulkDelete
+        canExport
+        denialReasons
+      }
+      fieldGroups {
+        key
+        label
+        description
+        fields
+        collapsed
+      }
+      templates {
+        key
+        templateType
+        title
+        description
+        endpoint
+        urlPath
+        guard
+        requireAuthentication
+        roles
+        permissions
+        allowed
+        denialReason
+        allowClientData
+        clientDataFields
+        clientDataSchema
+      }
+    }
+  }
+`;
+
 export const TABLE_MODEL_METADATA_QUERY = gql`
   query TableModelMetadata($app: String!, $model: String!, $objectId: ID) {
     modelSchema(app: $app, model: $model, objectId: $objectId) {

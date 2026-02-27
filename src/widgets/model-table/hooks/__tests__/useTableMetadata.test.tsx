@@ -1,20 +1,22 @@
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderHook } from "@testing-library/react";
 import { useTableMetadata } from "../useTableMetadata";
+import { TABLE_BOOTSTRAP_METADATA_QUERY } from "@/shared/api/graphql/graphql/metadata/queries";
 
-const mockUseModelQueryMetadata = vi.fn();
+const mockUseQuery = vi.fn();
+const mockUseLazyQuery = vi.fn();
 const mockReadPersisted = vi.fn();
 const mockPersist = vi.fn();
 const mockRecordUsage = vi.fn();
 
-vi.mock("@/shared/api/graphql/graphql", async () => {
-  const actual = await vi.importActual<typeof import("@/shared/api/graphql/graphql")>(
-    "@/shared/api/graphql/graphql",
+vi.mock("@apollo/client", async () => {
+  const actual = await vi.importActual<typeof import("@apollo/client")>(
+    "@apollo/client",
   );
   return {
     ...actual,
-    useModelQueryMetadata: (...args: unknown[]) =>
-      mockUseModelQueryMetadata(...args),
+    useQuery: (...args: unknown[]) => mockUseQuery(...args),
+    useLazyQuery: (...args: unknown[]) => mockUseLazyQuery(...args),
   };
 });
 
@@ -27,9 +29,19 @@ vi.mock("@/shared/api/graphql/graphql/metadata/persisted-cache", () => ({
 describe("useTableMetadata", () => {
   beforeEach(() => {
     vi.clearAllMocks();
+
+    mockUseLazyQuery.mockReturnValue([
+      vi.fn().mockResolvedValue(undefined),
+      {
+        data: undefined,
+        loading: false,
+        error: undefined,
+        called: false,
+      },
+    ]);
   });
 
-  it("returns query metadata when available", () => {
+  it("returns bootstrap metadata when available", () => {
     const metadata = {
       app: "inventory",
       model: "Product",
@@ -38,14 +50,17 @@ describe("useTableMetadata", () => {
       primaryKey: "id",
       fields: [],
       relationships: [],
-      filters: [],
-      mutations: [{ name: "createProduct", allowed: true }],
-      permissions: { canList: true },
+      filterConfig: {
+        inputTypeName: "ProductWhereInput",
+        supportsQuick: true,
+      },
       metadataVersion: "1",
     };
 
-    mockUseModelQueryMetadata.mockReturnValue({
-      metadata,
+    mockUseQuery.mockReturnValue({
+      data: {
+        modelSchema: metadata,
+      },
       loading: false,
       error: undefined,
     });
@@ -56,24 +71,27 @@ describe("useTableMetadata", () => {
     expect(result.current.loading).toBe(false);
     expect(result.current.error).toBeUndefined();
     expect(result.current.metadata?.model).toBe("Product");
-    expect(result.current.metadata?.mutations).toEqual(metadata.mutations);
+    expect(result.current.metadata?.primaryKey).toBe("id");
     expect(mockPersist).toHaveBeenCalledWith("inventory", "Product", {
-      modelSchema: metadata,
+      modelSchema: expect.objectContaining({
+        model: "Product",
+      }),
     });
     expect(mockRecordUsage).toHaveBeenCalledWith("inventory", "Product");
-    expect(mockUseModelQueryMetadata).toHaveBeenCalledWith(
+    expect(mockUseQuery).toHaveBeenCalledWith(
+      TABLE_BOOTSTRAP_METADATA_QUERY,
       expect.objectContaining({
-        app: "inventory",
-        model: "Product",
-        profile: "table",
+        variables: { app: "inventory", model: "Product" },
         skip: false,
       }),
     );
   });
 
-  it("falls back to persisted metadata when query metadata is null", () => {
-    mockUseModelQueryMetadata.mockReturnValue({
-      metadata: null,
+  it("falls back to persisted metadata when bootstrap query has no payload", () => {
+    mockUseQuery.mockReturnValue({
+      data: {
+        modelSchema: null,
+      },
       loading: false,
       error: undefined,
     });
@@ -85,16 +103,56 @@ describe("useTableMetadata", () => {
       primaryKey: "id",
       fields: [],
       relationships: [],
-      filters: [],
       mutations: [{ name: "persistedMutation", allowed: true }],
-      permissions: { canList: true },
       metadataVersion: "1",
     });
 
     const { result } = renderHook(() => useTableMetadata("inventory", "Product"));
 
     expect(result.current.metadata?.model).toBe("Product");
-    expect(result.current.metadata?.mutations).toEqual([]);
+    expect(result.current.metadata?.mutations).toEqual([
+      { name: "persistedMutation", allowed: true },
+    ]);
     expect(mockPersist).not.toHaveBeenCalled();
+  });
+
+  it("requests capabilities on demand", async () => {
+    const loadCapabilities = vi.fn().mockResolvedValue(undefined);
+
+    mockUseQuery.mockReturnValue({
+      data: {
+        modelSchema: {
+          app: "inventory",
+          model: "Product",
+          verboseName: "Product",
+          verboseNamePlural: "Products",
+          primaryKey: "id",
+          fields: [],
+          relationships: [],
+        },
+      },
+      loading: false,
+      error: undefined,
+    });
+
+    mockUseLazyQuery.mockReturnValue([
+      loadCapabilities,
+      {
+        data: undefined,
+        loading: false,
+        error: undefined,
+        called: false,
+      },
+    ]);
+
+    const { result } = renderHook(() => useTableMetadata("inventory", "Product"));
+
+    await result.current.ensureCapabilitiesLoaded();
+    await result.current.ensureCapabilitiesLoaded();
+
+    expect(loadCapabilities).toHaveBeenCalledWith({
+      variables: { app: "inventory", model: "Product" },
+    });
+    expect(loadCapabilities).toHaveBeenCalledTimes(1);
   });
 });

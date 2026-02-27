@@ -1,4 +1,4 @@
-import { gql } from "@apollo/client";
+import { gql, type DocumentNode } from "@apollo/client";
 import { buildModelQueryField } from "./naming";
 import { buildModelQuerySelection } from "./selection";
 import type {
@@ -8,9 +8,60 @@ import type {
 } from "./types";
 
 /**
+ * Maximum number of cached GQL document entries.
+ * Prevents unbounded memory growth while keeping hot queries alive.
+ */
+const DOCUMENT_CACHE_MAX_SIZE = 64;
+
+/**
+ * LRU cache mapping query text → parsed Apollo DocumentNode.
+ *
+ * When capabilities metadata arrives after bootstrap, `buildModelQueryDocument`
+ * is re-invoked even though the resulting query text hasn't changed (because the
+ * upstream `metadata` reference changes). Without this cache every call to
+ * `gql` produces a new DocumentNode — Apollo compares documents by reference
+ * and therefore treats the identical query as brand-new, firing a redundant
+ * network refetch that freezes the table.
+ *
+ * By caching by query _string_, we return the same DocumentNode reference
+ * whenever the output text is unchanged, keeping Apollo stable.
+ */
+const documentCache = new Map<string, DocumentNode>();
+
+/**
+ * Returns a cached DocumentNode for the given query string, creating and
+ * caching one only when the text has not been seen before.
+ * Implements simple LRU eviction when the cache exceeds its max size.
+ */
+function getOrCreateDocument(queryText: string): DocumentNode {
+  const cached = documentCache.get(queryText);
+  if (cached) {
+    /* Move to end for LRU ordering */
+    documentCache.delete(queryText);
+    documentCache.set(queryText, cached);
+    return cached;
+  }
+
+  const doc = gql(queryText);
+  documentCache.set(queryText, doc);
+
+  if (documentCache.size > DOCUMENT_CACHE_MAX_SIZE) {
+    /* Evict oldest (first) entry */
+    const firstKey = documentCache.keys().next().value;
+    if (firstKey !== undefined) {
+      documentCache.delete(firstKey);
+    }
+  }
+
+  return doc;
+}
+
+/**
  * Resolves whether quick-search variable should be emitted.
  */
-function resolveSupportsQuick(options: BuildModelQueryDocumentOptions): boolean {
+function resolveSupportsQuick(
+  options: BuildModelQueryDocumentOptions,
+): boolean {
   if (typeof options.supportsQuick === "boolean") {
     return options.supportsQuick;
   }
@@ -92,10 +143,7 @@ function buildDefaultArguments(
 /**
  * Builds operation selection body for current query mode.
  */
-function buildSelectionBlock(
-  mode: ModelQueryMode,
-  selection: string,
-): string {
+function buildSelectionBlock(mode: ModelQueryMode, selection: string): string {
   if (mode === "page") {
     return `pageInfo {
           totalCount
@@ -157,7 +205,7 @@ export function buildModelQueryDocument(
   const assignmentBlock = assignments.filter(Boolean).join("\n        ");
   const selectionBlock = buildSelectionBlock(options.mode, selection);
 
-  const queryDocument = gql`
+  const queryText = `
     query ${operationName}(
       ${definitionBlock}
     ) {
@@ -168,6 +216,8 @@ export function buildModelQueryDocument(
       }
     }
   `;
+
+  const queryDocument = getOrCreateDocument(queryText);
 
   return {
     queryDocument,

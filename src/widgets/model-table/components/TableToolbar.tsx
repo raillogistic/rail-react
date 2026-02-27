@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Download,
   Filter,
@@ -96,7 +96,7 @@ export function TableToolbar({
   extraActions,
 }: TableToolbarProps) {
   const isMobile = useIsMobile();
-  const { app, model, metadata } = useMetadata();
+  const { app, model, metadata, ensureCapabilitiesLoaded } = useMetadata();
   const {
     columnVisibility,
     setColumnVisibility,
@@ -145,6 +145,11 @@ export function TableToolbar({
     }),
     [filterPanel, isMobile],
   );
+
+  useEffect(() => {
+    if (!filterOpen) return;
+    void ensureCapabilitiesLoaded();
+  }, [ensureCapabilitiesLoaded, filterOpen]);
 
   // Gestion des colonnes
   const orderedColumns = useMemo<ColumnsMenuOption[]>(() => {

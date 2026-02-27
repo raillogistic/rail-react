@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useCallback, useMemo } from "react";
 import {
   ArrowDownAZ,
   ArrowUpAZ,
@@ -56,7 +56,7 @@ export function TableColumnMenu({
 }: TableColumnMenuProps) {
   const triggerTitle = typeof title === "string" ? title : "Options de colonne";
 
-  const { metadata } = useMetadata();
+  const { metadata, ensureCapabilitiesLoaded } = useMetadata();
   const {
     columnVisibility,
     setColumnVisibility,
@@ -208,9 +208,18 @@ export function TableColumnMenu({
     } as const;
   }, [relationBaseName]);
 
+  const handleMenuOpenChange = useCallback(
+    (nextOpen: boolean) => {
+      if (!nextOpen) return;
+      if (metadata?.filters) return;
+      void ensureCapabilitiesLoaded();
+    },
+    [ensureCapabilitiesLoaded, metadata?.filters],
+  );
+
   return (
     <>
-      <DropdownMenu>
+      <DropdownMenu onOpenChange={handleMenuOpenChange}>
         <DropdownMenuTrigger asChild disabled={disabled}>
           {fullWidthTrigger ? (
             <button

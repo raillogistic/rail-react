@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import {
   useModelPageQuery,
   type ModelPageQueryVariablesInput,
@@ -18,17 +18,21 @@ export type TableDataConfig = {
   relations?: Record<string, BaseModelTableRelationConfig>;
   queryManager?: string;
   skipCount?: boolean;
+  enabled?: boolean;
   dataMode?: "pagination" | "infinite";
   visibleAccessors?: string[];
   requiredAccessors?: string[];
 };
 
-type FilterVariablesInput = {
-  where?: unknown;
-  presets?: unknown;
-  distinctOn?: unknown;
-  orderBy?: unknown;
-} | null | undefined;
+type FilterVariablesInput =
+  | {
+      where?: unknown;
+      presets?: unknown;
+      distinctOn?: unknown;
+      orderBy?: unknown;
+    }
+  | null
+  | undefined;
 
 /**
  * Default backend ordering when no explicit order is provided.
@@ -79,6 +83,13 @@ function resolveSelectionFields(
 
 /**
  * Fetch table rows using generated model-page query hooks.
+ *
+ * Uses refs for `currentData` and `currentTableLoading` inside the sync
+ * effect so they are **not** effect dependencies.  Previously they were
+ * listed in the dep array while the effect also _wrote_ to them via
+ * `_setData`, creating a dependency cycle that – once disturbed by the
+ * capabilities metadata arriving – amplified into excessive re-renders
+ * and froze the table.
  */
 export function useTableData(config?: TableDataConfig) {
   const { app, model, metadata } = useMetadata();
@@ -94,10 +105,25 @@ export function useTableData(config?: TableDataConfig) {
     _setQueryPage,
   } = useTable();
   const debouncedQuickSearch = useDebouncedValue(quickSearch, 300);
+  const queryEnabled = config?.enabled ?? true;
+
+  /**
+   * Refs for values that the sync effect needs to _read_ but must NOT
+   * trigger the effect when they change (because the effect is the one
+   * changing them, creating a cycle).
+   */
+  const currentDataRef = useRef(currentData);
+  currentDataRef.current = currentData;
+
+  const currentTableLoadingRef = useRef(currentTableLoading);
+  currentTableLoadingRef.current = currentTableLoading;
 
   const selectionFields = useMemo(
     () =>
-      resolveSelectionFields(config?.visibleAccessors, config?.requiredAccessors),
+      resolveSelectionFields(
+        config?.visibleAccessors,
+        config?.requiredAccessors,
+      ),
     [config?.requiredAccessors, config?.visibleAccessors],
   );
 
@@ -144,11 +170,11 @@ export function useTableData(config?: TableDataConfig) {
     },
     variables,
     apollo: {
-      skip: !app || !model || !metadata,
-      fetchPolicy: "cache-and-network",
+      skip: !queryEnabled || !app || !model || !metadata,
+      fetchPolicy: "cache-first",
       nextFetchPolicy: "cache-first",
       returnPartialData: true,
-      notifyOnNetworkStatusChange: true,
+      notifyOnNetworkStatusChange: false,
     },
   });
 
@@ -175,15 +201,23 @@ export function useTableData(config?: TableDataConfig) {
     [primaryKey],
   );
 
+  /**
+   * Synchronise Apollo query results → TableProvider state.
+   *
+   * `currentDataRef` / `currentTableLoadingRef` are **intentionally read
+   * through refs** so changes to the table state do not re-trigger this
+   * effect, breaking the former dependency cycle.
+   */
   useEffect(() => {
     const result = data as QueryPageData | null;
 
     if (result) {
       _setQueryPage(result);
       const nextItems = Array.isArray(result.items) ? result.items : [];
-      const shouldAppend = config?.dataMode === "infinite" && pagination.page > 1;
+      const shouldAppend =
+        config?.dataMode === "infinite" && pagination.page > 1;
       const syncedItems = shouldAppend
-        ? mergeUniqueRows(currentData, nextItems)
+        ? mergeUniqueRows(currentDataRef.current, nextItems)
         : nextItems;
       _setData(syncedItems, loading, error);
       _setPageInfo({
@@ -197,13 +231,11 @@ export function useTableData(config?: TableDataConfig) {
       _setData([], false, error);
     }
 
-    if (loading && !result && !currentTableLoading) {
-      _setData(currentData, true);
+    if (loading && !result && !currentTableLoadingRef.current) {
+      _setData(currentDataRef.current, true);
     }
   }, [
     config?.dataMode,
-    currentData,
-    currentTableLoading,
     data,
     error,
     loading,
@@ -215,9 +247,9 @@ export function useTableData(config?: TableDataConfig) {
   ]);
 
   useEffect(() => {
-    if (!refetch || refreshKey === 0 || !metadata) return;
+    if (!queryEnabled || !refetch || refreshKey === 0 || !metadata) return;
     refetch(variables as Record<string, unknown>);
-  }, [metadata, refreshKey, refetch, variables]);
+  }, [Boolean(metadata), queryEnabled, refreshKey, refetch, variables]);
 
   return { refetch };
 }
