@@ -3,10 +3,15 @@ import { PlusCircle, Sparkles, Upload } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import type { FormSchema } from "@/widgets/model-form/inputs/types";
+import type { ModelFormProps } from "@/widgets/model-form/types.model";
+import type { ModelFormMutationOutcome } from "@/widgets/model-form/types/generatedContract";
 import { useMetadata } from "../../context/MetadataContext";
 import { useTable } from "../../context/TableContext";
 import type { TemplateInfo } from "../../types";
 import type {
+  ModelTableCreateConfig,
+  ModelTableCreateContext,
+  ModelTableCreateFormOverrides,
   ModelTableFilterPanelProps,
   ModelTableV2TableConfig,
   ModelTableV2TopAction,
@@ -30,6 +35,8 @@ import type {
 export type UseModelTableContentControllerInput = {
   /** Optional filter-panel configuration. */
   filterPanel?: ModelTableFilterPanelProps;
+  /** Optional create-action configuration. */
+  create?: ModelTableCreateConfig;
   /** Optional table configuration object. */
   tableConfig?: ModelTableV2TableConfig;
   /** Enables toolbar quick search behavior. */
@@ -38,6 +45,23 @@ export type UseModelTableContentControllerInput = {
   fields?: import("../../types").BaseModelTableFieldsInput;
   /** Optional custom top-actions input. */
   topActions?: ModelTableV2TopActionsInput;
+};
+
+type CreateFormValues = Record<string, unknown>;
+
+/**
+ * Normalized create-action configuration resolved for one table instance.
+ */
+type ResolvedCreateConfig = {
+  type: "drawer" | "modal" | "link";
+  title: React.ReactNode;
+  width?: string;
+  height?: string;
+  drawerDirection: "left" | "right" | "top" | "bottom";
+  hrefTemplate?: string;
+  closeOnSuccess: boolean;
+  refetchOnSuccess: boolean;
+  formOverrides: ModelTableCreateFormOverrides;
 };
 
 /**
@@ -61,10 +85,83 @@ function extractSelectedRowIds(rows: Record<string, unknown>[]): string[] {
 }
 
 /**
+ * Merges two optional ModelForm override records.
+ */
+function mergeModelFormOverrides(
+  base: ModelTableCreateFormOverrides | undefined,
+  extra: ModelTableCreateFormOverrides | undefined,
+): ModelTableCreateFormOverrides {
+  const left = base ?? {};
+  const right = extra ?? {};
+  const leftFormProps = left.formProps ?? {};
+  const rightFormProps = right.formProps ?? {};
+
+  return {
+    ...left,
+    ...right,
+    state: { ...(left.state ?? {}), ...(right.state ?? {}) },
+    behavior: { ...(left.behavior ?? {}), ...(right.behavior ?? {}) },
+    layout: { ...(left.layout ?? {}), ...(right.layout ?? {}) },
+    actions: { ...(left.actions ?? {}), ...(right.actions ?? {}) },
+    devtools: { ...(left.devtools ?? {}), ...(right.devtools ?? {}) },
+    formProps: {
+      ...leftFormProps,
+      ...rightFormProps,
+      state: { ...(leftFormProps.state ?? {}), ...(rightFormProps.state ?? {}) },
+      behavior: {
+        ...(leftFormProps.behavior ?? {}),
+        ...(rightFormProps.behavior ?? {}),
+      },
+      layout: {
+        ...(leftFormProps.layout ?? {}),
+        ...(rightFormProps.layout ?? {}),
+      },
+      actions: {
+        ...(leftFormProps.actions ?? {}),
+        ...(rightFormProps.actions ?? {}),
+      },
+      devtools: {
+        ...(leftFormProps.devtools ?? {}),
+        ...(rightFormProps.devtools ?? {}),
+      },
+    },
+  };
+}
+
+/**
+ * Resolves create overlay title from static text/callback with safe fallback.
+ */
+function resolveCreateTitle(
+  title: ModelTableCreateConfig["title"],
+  context: ModelTableCreateContext,
+): React.ReactNode {
+  if (typeof title === "function") {
+    return title(context);
+  }
+  if (title !== undefined && title !== null) {
+    return title;
+  }
+  return `Ajouter ${context.metadata?.verboseName ?? context.model}`;
+}
+
+/**
+ * Replaces create link placeholders with encoded app/model values.
+ */
+function buildCreateHrefFromTemplate(
+  template: string,
+  context: Pick<ModelTableCreateContext, "app" | "model">,
+): string {
+  return template
+    .replace(/:app\b/g, encodeURIComponent(context.app))
+    .replace(/:model\b/g, encodeURIComponent(context.model));
+}
+
+/**
  * Builds the full content view-model used by composed table content slots.
  */
 export function useModelTableContentController({
   filterPanel,
+  create,
   tableConfig,
   quickSearch,
   fields,
@@ -97,6 +194,7 @@ export function useModelTableContentController({
     useState<FormSchema | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
   useEffect(() => {
     if (!loading) {
@@ -124,6 +222,103 @@ export function useModelTableContentController({
   const createMutation = findMutation(metadata?.mutations, "create");
   const canCreate = Boolean(createMutation?.allowed);
 
+  const createContext = useMemo<ModelTableCreateContext>(
+    () => ({
+      app,
+      model,
+      metadata: metadata ?? undefined,
+      selectedRows,
+      selectionState: rowSelection,
+    }),
+    [app, metadata, model, rowSelection, selectedRows],
+  );
+
+  const resolvedCreateConfig = useMemo<ResolvedCreateConfig>(() => {
+    const globalOverrides = create?.form;
+    const runtimeOverrides = create?.resolveFormProps?.(createContext);
+    const mergedOverrides = mergeModelFormOverrides(
+      globalOverrides,
+      runtimeOverrides,
+    );
+    return {
+      type: create?.type ?? "drawer",
+      title: resolveCreateTitle(create?.title, createContext),
+      width: create?.width,
+      height: create?.height,
+      drawerDirection: create?.drawerDirection ?? "right",
+      hrefTemplate: create?.hrefTemplate,
+      closeOnSuccess: create?.closeOnSuccess ?? true,
+      refetchOnSuccess: create?.refetchOnSuccess ?? true,
+      formOverrides: mergedOverrides,
+    };
+  }, [create, createContext]);
+
+  /**
+   * Handles successful create submissions by closing the popup and refreshing rows.
+   */
+  const handleCreateSubmitResult = useCallback(
+    (outcome: ModelFormMutationOutcome) => {
+      if (!outcome.ok) {
+        return;
+      }
+
+      if (resolvedCreateConfig.closeOnSuccess) {
+        setCreateDialogOpen(false);
+      }
+
+      if (!resolvedCreateConfig.refetchOnSuccess) {
+        return;
+      }
+
+      try {
+        refresh();
+      } catch (error) {
+        const message =
+          error instanceof Error
+            ? error.message
+            : "Impossible de recharger la table apres creation.";
+        toast.error(message);
+      }
+    },
+    [
+      refresh,
+      resolvedCreateConfig.closeOnSuccess,
+      resolvedCreateConfig.refetchOnSuccess,
+    ],
+  );
+
+  const createFormProps = useMemo<ModelFormProps<CreateFormValues> | null>(() => {
+    if (resolvedCreateConfig.type === "link") {
+      return null;
+    }
+
+    const overrides = resolvedCreateConfig.formOverrides;
+    const formPropsLayout =
+      (overrides.formProps?.layout as
+        | Record<string, unknown>
+        | undefined) ?? {};
+
+    return {
+      app,
+      model,
+      mode: "create",
+      showHeading: false,
+      ...overrides,
+      layout: {
+        variant: "popup",
+        ...(overrides.layout as Record<string, unknown> | undefined),
+      },
+      formProps: {
+        ...(overrides.formProps ?? {}),
+        layout: {
+          variant: "popup",
+          ...formPropsLayout,
+        },
+      },
+      onSubmitResult: handleCreateSubmitResult,
+    };
+  }, [app, handleCreateSubmitResult, model, resolvedCreateConfig]);
+
   const addAction = useMemo<ModelTableV2TopAction | undefined>(() => {
     if (!canCreate) {
       return undefined;
@@ -137,10 +332,30 @@ export function useModelTableContentController({
       order: -1,
       show_when: "always",
       on_click: () => {
-        console.info("add item");
+        if (resolvedCreateConfig.type === "link") {
+          if (!resolvedCreateConfig.hrefTemplate) {
+            toast.error("Configuration create.link manquante (hrefTemplate).");
+            return;
+          }
+          navigate(
+            buildCreateHrefFromTemplate(
+              resolvedCreateConfig.hrefTemplate,
+              createContext,
+            ),
+          );
+          return;
+        }
+        setCreateDialogOpen(true);
       },
     };
-  }, [canCreate, tableConfig?.addLabel]);
+  }, [
+    canCreate,
+    createContext,
+    navigate,
+    resolvedCreateConfig.hrefTemplate,
+    resolvedCreateConfig.type,
+    tableConfig?.addLabel,
+  ]);
 
   const importAction = useMemo<ModelTableV2TopAction>(
     () => ({
@@ -361,6 +576,16 @@ export function useModelTableContentController({
       printTemplate && normalizeTemplateType(printTemplate) === "excel"
         ? "Telecharger"
         : "Generer",
+    createDialogOpen:
+      resolvedCreateConfig.type === "link" ? false : createDialogOpen,
+    setCreateDialogOpen,
+    createOverlayMode:
+      resolvedCreateConfig.type === "modal" ? "modal" : "drawer",
+    createOverlayTitle: resolvedCreateConfig.title,
+    createOverlayWidth: resolvedCreateConfig.width,
+    createOverlayHeight: resolvedCreateConfig.height,
+    createOverlayDrawerDirection: resolvedCreateConfig.drawerDirection,
+    createFormProps,
     handleTopActionClick,
     triggerRefresh: refresh,
     clearSelection,

@@ -1,10 +1,12 @@
 import type React from "react";
 import type { FormSchema } from "@/widgets/model-form/inputs/types";
+import type { ModelFormProps } from "@/widgets/model-form/types.model";
 import type {
   BaseModelTableFieldsInput,
   ModelSchema,
   TemplateInfo,
 } from "../../types";
+import type { ModelTableCreateDrawerDirection } from "../../config/types";
 
 /**
  * Top-action item rendered in the content header action area.
@@ -91,6 +93,22 @@ export type ModelTableContentControllerState = {
   printDialogSchema: FormSchema;
   /** Print/template dialog submit label. */
   printDialogSubmitLabel: string;
+  /** Whether create popup overlay is open. */
+  createDialogOpen: boolean;
+  /** Updates create popup open state. */
+  setCreateDialogOpen: (open: boolean) => void;
+  /** Create overlay mode for popup rendering. */
+  createOverlayMode: "modal" | "drawer";
+  /** Create overlay title. */
+  createOverlayTitle: React.ReactNode;
+  /** Optional create overlay width. */
+  createOverlayWidth?: string;
+  /** Optional create overlay height. */
+  createOverlayHeight?: string;
+  /** Drawer direction when create overlay is drawer. */
+  createOverlayDrawerDirection: ModelTableCreateDrawerDirection;
+  /** Resolved ModelForm props for create overlay. */
+  createFormProps: ModelFormProps<Record<string, unknown>> | null;
   /** Invokes one resolved top action. */
   handleTopActionClick: (action: ModelTableContentTopAction) => void;
   /** Triggers table data refresh. */

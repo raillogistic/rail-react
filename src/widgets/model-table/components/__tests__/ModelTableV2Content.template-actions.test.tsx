@@ -62,6 +62,10 @@ vi.mock("@/shared/ui/kit/dropdown-menu", () => ({
 }));
 
 vi.mock("../ModelTableOverlays", () => ({
+  FormOverlay: (props: {
+    open: boolean;
+    children: React.ReactNode;
+  }) => (props.open ? <div>{props.children}</div> : null),
   PrintDialog: (props: {
     open: boolean;
     title: string;
@@ -108,14 +112,14 @@ vi.mock("@/features/auth/utils/token-storage", () => ({
 async function openPdfTemplatesDropdown() {
   fireEvent.click(screen.getByTestId("templates-pdf-dropdown-trigger"));
   await waitFor(() => {
-    expect(screen.getByText("PDF Templates")).toBeInTheDocument();
+    expect(screen.getByText("Templates PDF")).toBeInTheDocument();
   });
 }
 
 async function openExcelTemplatesDropdown() {
   fireEvent.click(screen.getByTestId("templates-excel-dropdown-trigger"));
   await waitFor(() => {
-    expect(screen.getByText("Excel Templates")).toBeInTheDocument();
+    expect(screen.getByText("Templates Excel")).toBeInTheDocument();
   });
 }
 

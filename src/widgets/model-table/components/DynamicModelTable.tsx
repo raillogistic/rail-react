@@ -42,6 +42,7 @@ import type {
   DynamicModelTableInitVariables,
   DynamicModelTableProps,
   DynamicModelTableSnapshot,
+  ModelTableCreateConfig,
   ModelTableFilterPanelProps,
   ModelTableUpdateConfig,
   ModelTableV2ExpandConfig,
@@ -101,6 +102,7 @@ import {
 type DynamicBaseTableContentProps = {
   persistenceKey?: string;
   filterPanel?: ModelTableFilterPanelProps;
+  create?: ModelTableCreateConfig;
   update?: ModelTableUpdateConfig;
   tableConfig?: ModelTableV2TableConfig;
   view?: ModelTableV2ViewOptions;
@@ -414,6 +416,7 @@ function resolveRowId(
 function DynamicBaseTableContent({
   persistenceKey,
   filterPanel,
+  create,
   update,
   tableConfig,
   quickSearch,
@@ -1056,6 +1059,7 @@ function DynamicBaseTableContent({
 
   const sectionControllerInput: UseModelTableContentControllerInput = {
     filterPanel,
+    create,
     tableConfig,
     quickSearch,
     fields,
@@ -1216,7 +1220,15 @@ export const DynamicModelTable = forwardRef<
   DynamicModelTableHandle,
   DynamicModelTableProps
 >(function DynamicModelTable(
-  { app, model, filterPanel, update, baseTable, initVariables }: DynamicModelTableProps,
+  {
+    app,
+    model,
+    filterPanel,
+    create,
+    update,
+    baseTable,
+    initVariables,
+  }: DynamicModelTableProps,
   ref,
 ) {
   const tableInstanceKey = `${app}:${model}`;
@@ -1330,6 +1342,7 @@ export const DynamicModelTable = forwardRef<
           <DynamicBaseTableContent
             persistenceKey={baseTable?.persistenceKey}
             filterPanel={resolvedFilterPanel}
+            create={create}
             update={update}
             tableConfig={baseTable?.tableConfig}
             view={baseTable?.view}

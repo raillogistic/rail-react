@@ -33,9 +33,23 @@ export type ModelTableFilterPanelProps = FilterPanelOptions &
 export type ModelTableUpdatePresentation = "drawer" | "modal" | "link";
 
 /**
+ * Supported create-action presentation modes.
+ */
+export type ModelTableCreatePresentation = "drawer" | "modal" | "link";
+
+/**
  * Drawer direction options for update overlays.
  */
 export type ModelTableUpdateDrawerDirection =
+  | "left"
+  | "right"
+  | "top"
+  | "bottom";
+
+/**
+ * Drawer direction options for create overlays.
+ */
+export type ModelTableCreateDrawerDirection =
   | "left"
   | "right"
   | "top"
@@ -53,9 +67,28 @@ export type ModelTableUpdateContext = {
 };
 
 /**
+ * Runtime context supplied to create configuration callbacks.
+ */
+export type ModelTableCreateContext = {
+  app: string;
+  model: string;
+  metadata?: ModelSchema;
+  selectedRows: Record<string, unknown>[];
+  selectionState: Record<string, boolean>;
+};
+
+/**
  * ModelForm override surface accepted by table row update popups.
  */
 export type ModelTableUpdateFormOverrides = Omit<
+  ModelFormProps<Record<string, unknown>>,
+  "app" | "model" | "mode" | "objectId"
+>;
+
+/**
+ * ModelForm override surface accepted by table create popups.
+ */
+export type ModelTableCreateFormOverrides = Omit<
   ModelFormProps<Record<string, unknown>>,
   "app" | "model" | "mode" | "objectId"
 >;
@@ -118,6 +151,59 @@ export type ModelTableUpdateConfig = {
   closeOnSuccess?: boolean;
   /**
    * Refetch table data automatically after successful update submit.
+   * Defaults to true.
+   */
+  refetchOnSuccess?: boolean;
+};
+
+/**
+ * Create-action configuration used by DynamicModelTable top add behavior.
+ */
+export type ModelTableCreateConfig = {
+  /**
+   * Overlay type for create action.
+   * - "drawer" (default)
+   * - "modal"
+   * - "link"
+   */
+  type?: ModelTableCreatePresentation;
+  /**
+   * Popup title or title resolver.
+   */
+  title?: React.ReactNode | ((ctx: ModelTableCreateContext) => React.ReactNode);
+  /**
+   * Overlay width CSS value (e.g. "50vw", "900px", "min(90vw, 960px)").
+   */
+  width?: string;
+  /**
+   * Overlay height CSS value.
+   */
+  height?: string;
+  /**
+   * Drawer direction when `type` is "drawer".
+   */
+  drawerDirection?: ModelTableCreateDrawerDirection;
+  /**
+   * Link template for `type: "link"` (e.g. "/orders/create").
+   */
+  hrefTemplate?: string;
+  /**
+   * Global ModelForm overrides for popup create mode.
+   */
+  form?: ModelTableCreateFormOverrides;
+  /**
+   * Runtime ModelForm override resolver.
+   */
+  resolveFormProps?: (
+    ctx: ModelTableCreateContext,
+  ) => ModelTableCreateFormOverrides | undefined;
+  /**
+   * Close popup automatically after successful create submit.
+   * Defaults to true.
+   */
+  closeOnSuccess?: boolean;
+  /**
+   * Refetch table data automatically after successful create submit.
    * Defaults to true.
    */
   refetchOnSuccess?: boolean;
@@ -296,6 +382,7 @@ export interface ModelTableV2Props {
   app: string;
   model: string;
   filterPanel?: ModelTableFilterPanelProps;
+  create?: ModelTableCreateConfig;
   update?: ModelTableUpdateConfig;
   baseTable?: Omit<BaseModelTableProps, "app" | "model" | "children">;
   /**
