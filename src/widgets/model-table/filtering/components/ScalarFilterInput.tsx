@@ -188,7 +188,6 @@ export const ScalarFilterInput: React.FC<ScalarFilterInputProps> = ({
           onChange={onChange}
           disabled={disabled}
           placeholder={uiHints?.placeholder ?? "Sélectionner des valeurs..."}
-          ariaLabel={ariaLabel}
         />
       );
     }
@@ -199,7 +198,6 @@ export const ScalarFilterInput: React.FC<ScalarFilterInputProps> = ({
         onChange={onChange}
         disabled={disabled}
         placeholder={uiHints?.placeholder ?? "Sélectionner..."}
-        ariaLabel={ariaLabel}
       />
     );
   }

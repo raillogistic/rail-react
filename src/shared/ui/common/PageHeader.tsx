@@ -24,9 +24,9 @@ interface PageHeaderProps {
  * PageHeader component displays a consistent page header with a title and an optional description.
  *
  * @param {PageHeaderProps} { title, description } - The props for the component.
- * @returns {JSX.Element} The rendered page header.
+ * @returns {React.ReactElement} The rendered page header.
  */
-export function PageHeader({ title, description }: PageHeaderProps): JSX.Element {
+export function PageHeader({ title, description }: PageHeaderProps): React.ReactElement {
   return (
     <div className="flex flex-col space-y-1">
       <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>

@@ -5,6 +5,10 @@ import type {
   ModelQueryRelationFieldConfig,
   ModelQuerySelectionTree,
   UseModelQueryBaseOptions,
+  UseModelQueryExecutionOptions,
+  UseModelQueryIdentityOptions,
+  UseModelQueryMetadataOptions,
+  UseModelQuerySelectionOptions,
 } from "../types";
 import type { MetadataProfile } from "@/shared/api/graphql/graphql/metadata/telemetry";
 import type { ModelMetadata } from "@/shared/api/graphql/graphql/metadata/types";
@@ -77,10 +81,14 @@ export interface ResolvedModelQueryOptions {
 export function resolveModelQueryOptions(
   options: UseModelQueryBaseOptions,
 ): ResolvedModelQueryOptions {
-  const identity = options.identity || {};
-  const metadataOptions = options.metadataOptions || {};
-  const selectionOptions = options.selectionOptions || {};
-  const executionOptions = options.executionOptions || {};
+  const identity: Partial<UseModelQueryIdentityOptions> =
+    options.identity ?? {};
+  const metadataOptions: Partial<UseModelQueryMetadataOptions> =
+    options.metadataOptions ?? {};
+  const selectionOptions: Partial<UseModelQuerySelectionOptions> =
+    options.selectionOptions ?? {};
+  const executionOptions: Partial<UseModelQueryExecutionOptions> =
+    options.executionOptions ?? {};
 
   return {
     app: identity.app ?? options.app ?? "",

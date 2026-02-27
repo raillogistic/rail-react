@@ -152,17 +152,15 @@ export const FilterRow: React.FC<FilterRowProps> = ({
 
   const fieldIcon = useMemo(() => {
     if (!field) return <Search className="h-3 w-3" />;
-    switch (field.type) {
-      case "INT":
-      case "FLOAT":
-      case "DECIMAL":
+    switch (field.baseType) {
+      case "Number":
         return <Hash className="h-3 w-3" />;
-      case "DATE":
-      case "DATETIME":
+      case "Date":
+      case "DateTime":
         return <Calendar className="h-3 w-3" />;
-      case "BOOLEAN":
+      case "Boolean":
         return <CheckSquare className="h-3 w-3" />;
-      case "ENUM":
+      case "Relationship":
         return <Tag className="h-3 w-3" />;
       default:
         return <Type className="h-3 w-3" />;

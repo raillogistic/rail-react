@@ -2,6 +2,7 @@ import React from "react";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/shared/ui/kit/dialog";
@@ -67,6 +68,9 @@ export function FormOverlay({
         >
           <DialogHeader>
             <DialogTitle className="font-bold text-lg">{title}</DialogTitle>
+            <DialogDescription className="sr-only">
+              Fill the form and confirm your changes.
+            </DialogDescription>
           </DialogHeader>
           <div className="max-h-[70vh] overflow-y-auto">{children}</div>
         </DialogContent>
@@ -127,10 +131,13 @@ export function DeleteConfirmationDialog({
         <div className="p-6">
           <DialogHeader className="mb-3">
             <DialogTitle className="font-bold text-lg">{title}</DialogTitle>
+            <DialogDescription className="sr-only">
+              Confirm before applying this action.
+            </DialogDescription>
           </DialogHeader>
-          <p className="text-sm text-muted-foreground leading-relaxed">
+          <DialogDescription className="text-sm text-muted-foreground leading-relaxed">
             {message}
-          </p>
+          </DialogDescription>
           <div className="mt-6 flex justify-end gap-3">
             <Button
               type="button"
@@ -229,14 +236,19 @@ export function ActionDialog({
               actionMeta.description ??
               actionMeta.name}
           </DialogTitle>
+          <DialogDescription className={mode === "confirm" ? "sr-only" : undefined}>
+            {(actionPayload.message as string | undefined) ??
+              (actionMeta.description as string | undefined) ??
+              "Confirm or submit the requested action."}
+          </DialogDescription>
         </DialogHeader>
         {mode === "confirm" ? (
           <div className="space-y-4">
-            <p className="text-sm text-muted-foreground leading-relaxed">
+            <DialogDescription className="text-sm text-muted-foreground leading-relaxed">
               {(actionPayload.message as string | undefined) ??
                 (actionMeta.description as string | undefined) ??
                 "Voulez-vous exécuter cette action ?"}
-            </p>
+            </DialogDescription>
             <div className="flex justify-end gap-3">
               <Button
                 variant="outline"
@@ -316,6 +328,9 @@ export function PrintDialog({
       <DialogContent className="max-w-xl rounded-2xl border-border/30 shadow-2xl backdrop-blur-xl bg-background/95">
         <DialogHeader>
           <DialogTitle className="font-bold text-lg">{title}</DialogTitle>
+          <DialogDescription className="sr-only">
+            Provide template parameters and generate the document.
+          </DialogDescription>
         </DialogHeader>
         <DynamicForm
           schema={schema}

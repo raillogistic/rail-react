@@ -24,7 +24,7 @@ export function toExecutionErrorMessage(error: unknown) {
 
 function normalizeThrownErrors(error: unknown): NormalizedSubmitErrorPayload[] {
   if (error instanceof NestedMutationPayloadError) {
-    return [error.toNormalizedError()];
+    return [error.toNormalizedError() as NormalizedSubmitErrorPayload];
   }
   if (error instanceof AggregateError) {
     return error.errors.flatMap((entry) => normalizeThrownErrors(entry));
@@ -46,7 +46,10 @@ export function buildSubmitErrorOutcome(
       field: item.field ?? options.formErrorKey,
       message: item.message ?? "Submit execution failed.",
       code: item.code ?? null,
-      source: item.source ?? "EXECUTION",
+      source: (item.source ?? "EXECUTION") as
+        | "OPERATION"
+        | "EXECUTION"
+        | "TRANSPORT",
       meta: item.meta ?? null,
     })),
     {

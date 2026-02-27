@@ -583,7 +583,7 @@ function mergeWhereClauses(
   );
   if (normalized.length === 0) return null;
   if (normalized.length === 1) return normalized[0];
-  return { AND: normalized };
+  return { AND: normalized } as unknown as ComplexFilterInput<string>;
 }
 
 function buildNestedRelationClause(
@@ -597,7 +597,7 @@ function buildNestedRelationClause(
   if (!root) return null;
 
   if (rest.length === 0) {
-    return { [root]: { [operator]: value } } as ComplexFilterInput<string>;
+    return { [root]: { [operator]: value } } as unknown as ComplexFilterInput<string>;
   }
 
   let nested: Record<string, unknown> = {
@@ -606,7 +606,7 @@ function buildNestedRelationClause(
   for (let index = rest.length - 2; index >= 0; index -= 1) {
     nested = { [rest[index]]: nested };
   }
-  return { [`${root}Rel`]: nested } as ComplexFilterInput<string>;
+  return { [`${root}Rel`]: nested } as unknown as ComplexFilterInput<string>;
 }
 
 function legacyEntryToWhereClause(
@@ -638,7 +638,7 @@ function legacyEntryToWhereClause(
     if (operatorEntries.length > 0) {
       return {
         [toCamelCase(pathSegments[0])]: Object.fromEntries(operatorEntries),
-      } as ComplexFilterInput<string>;
+      } as unknown as ComplexFilterInput<string>;
     }
   }
 
@@ -892,7 +892,7 @@ export function useGraphQLModelTable({
   /* --- 3. Build GraphQL Query --- */
   const supportsQuickSearch =
     (queryOptions?.includeQuickArgument ?? true) &&
-    (modelMeta?.filterConfig?.supportsQuick ?? true);
+    (modelMeta?.filterConfig?.supportsFts ?? true);
   const queryFieldName =
     queryOptions?.fieldName ??
     buildModelQueryField(modelName, "page", queryOptions?.managerName);

@@ -71,7 +71,7 @@ export const AdvancedFiltersDialog: React.FC<AdvancedFiltersDialogProps> = ({
     const mergedDrawerClassName = cn(drawerContentProps?.className);
     return (
       <Drawer
-        {...drawerProps}
+        {...(drawerProps as any)}
         open={controller.isOpen}
         onOpenChange={controller.setDialogOpen}
       >

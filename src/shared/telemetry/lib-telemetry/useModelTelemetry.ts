@@ -16,6 +16,23 @@ export interface ModelTelemetryHandle {
 
 const tracer = trace.getTracer("rail-logistic-frontend");
 
+function normalizeTelemetryAttributes(
+  attributes?: Record<string, unknown>,
+): Record<string, string | number | boolean> | undefined {
+  if (!attributes) return undefined;
+  const normalized: Record<string, string | number | boolean> = {};
+  for (const [key, value] of Object.entries(attributes)) {
+    if (
+      typeof value === "string" ||
+      typeof value === "number" ||
+      typeof value === "boolean"
+    ) {
+      normalized[key] = value;
+    }
+  }
+  return Object.keys(normalized).length > 0 ? normalized : undefined;
+}
+
 export function useModelTelemetry(options: UseModelTelemetryOptions): ModelTelemetryHandle {
   const { component, appName, modelName, attributes } = options;
   const attrSignature = React.useMemo(
@@ -52,7 +69,7 @@ export function useModelTelemetry(options: UseModelTelemetryOptions): ModelTelem
 
   const logEvent = React.useCallback((name: string, eventAttributes?: Record<string, unknown>) => {
     if (!spanRef.current) return;
-    spanRef.current.addEvent(name, eventAttributes);
+    spanRef.current.addEvent(name, normalizeTelemetryAttributes(eventAttributes));
   }, []);
 
   const recordError = React.useCallback((error: unknown) => {

@@ -43,7 +43,7 @@ export const ReviewMode = <TValues extends Record<string, any>>({
   globalDisabled,
 }: ReviewModeProps<TValues>) => {
   const [locked, setLocked] = React.useState(false);
-  const values = useStore(form.store, (state) => state.values as TValues);
+  const values = useStore(form.store, (state: any) => state.values as TValues);
 
   const effectiveReadOnly = globalReadOnly || locked;
 

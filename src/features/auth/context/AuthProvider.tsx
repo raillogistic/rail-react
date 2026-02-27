@@ -2,7 +2,7 @@ import React, { createContext, useContext, useEffect, useState, useCallback } fr
 import { AuthenticationManager } from '../AuthenticationManager';
 import type {
   AuthState,
-  AuthConfig,
+  AuthConfigInput,
   LoginCredentials,
   AuthResult,
   AuthUser,
@@ -25,7 +25,7 @@ export const AuthContext = createContext<AuthContextValue | null>(null);
 
 interface AuthProviderProps {
   children: React.ReactNode;
-  config?: Partial<AuthConfig>;
+  config?: AuthConfigInput;
   onLogin?: (credentials: LoginCredentials) => Promise<
     | { success: true; user: AuthUser; tokens: TokenPair; sessionId: string }
     | { success: false; requiresMFA: true; ephemeralToken: string; mfaSetupRequired?: boolean }

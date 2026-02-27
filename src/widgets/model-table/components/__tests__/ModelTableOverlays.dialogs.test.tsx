@@ -121,9 +121,6 @@ describe("ModelTableOverlays dialogs", () => {
         mode="form"
         actionMeta={{
           name: "publishOrder",
-          operation: "update",
-          allowed: true,
-          requiredPermissions: [],
           action: {
             submit_label: "Execute",
           },

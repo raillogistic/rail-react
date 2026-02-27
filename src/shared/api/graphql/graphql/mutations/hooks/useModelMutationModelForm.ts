@@ -41,7 +41,7 @@ type InitialDataQueryVariables = {
 /**
  * Input options for model-form contract and initial-data resolution.
  */
-export interface UseModelMutationModelFormOptions {
+interface UseModelMutationModelFormOptions {
   /**
    * Mutation mode used to derive default contract mode behavior.
    */

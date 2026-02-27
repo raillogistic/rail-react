@@ -6,6 +6,7 @@ import { formatCellValue, resolveFieldValue } from "../../utils";
 import type {
   BaseModelTableColumnActionsInput,
   BaseModelTableColumnDef,
+  BaseModelTableRelationStatsOverride,
   BaseModelTableRefetch,
   FieldSchema,
   RowMutationPermissions,
@@ -18,7 +19,7 @@ type DataRowProps = {
   row: Record<string, unknown>;
   rowIndex: number;
   data: Record<string, unknown>[];
-  visibleColumns: BaseModelTableColumnDef[];
+  visibleColumns: Array<BaseModelTableColumnDef | FieldSchema>;
   enableSelection?: boolean;
   rowSelection: Record<string, boolean>;
   handleRowSelect: (rowId: string, checked: boolean) => void;
@@ -35,7 +36,10 @@ type DataRowProps = {
     accessor: string,
     fieldMeta?: FieldSchema,
   ) => StatsRelationMeta | null;
-  resolveStatsOverride: (accessor: string, relationName: string) => unknown;
+  resolveStatsOverride: (
+    accessor: string,
+    relationName: string,
+  ) => BaseModelTableRelationStatsOverride | undefined;
   primaryKey: string;
   modelName: string;
   whereType: string;
@@ -179,25 +183,26 @@ export function DataRow({
           );
         }
 
+        const legacyField = field as FieldSchema;
         const statsRelation = resolveStatsRelation(
-          field.name || field.fieldName,
-          field,
+          legacyField.name || legacyField.fieldName,
+          legacyField,
         );
         const statsOverride = statsRelation
           ? resolveStatsOverride(
-              field.name || field.fieldName,
+              legacyField.name || legacyField.fieldName,
               statsRelation.relationName,
             )
           : undefined;
         const renderedValue = formatCellValue(
-          resolveFieldValue(row, field),
-          field,
+          resolveFieldValue(row, legacyField),
+          legacyField,
         );
 
         return (
           <TableCell
-            key={field.name}
-            style={resolveColumnStyle(field.name)}
+            key={legacyField.name}
+            style={resolveColumnStyle(legacyField.name)}
             className={cn(
               cellPadding,
               cellTextSize,

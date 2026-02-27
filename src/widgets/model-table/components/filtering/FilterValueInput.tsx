@@ -393,7 +393,6 @@ const RelatedModelFilterInput: React.FC<RelatedModelFilterInputProps> = ({
         <div className="flex items-center gap-2">
           <Search className="h-4 w-4 text-muted-foreground" />
           <Input
-            size="sm"
             placeholder="Rechercher..."
             value={search}
             onChange={(event) => setSearch(event.target.value)}

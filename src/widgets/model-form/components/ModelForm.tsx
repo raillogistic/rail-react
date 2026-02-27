@@ -221,6 +221,7 @@ export function ModelForm<TFormValues extends Record<string, unknown> = Record<s
   const { mergedBehavior, mergedState, mergedActions, resolvedDevtools } = useModelFormLogic({
     generatedEnabled, contract, generated, formValidator, editableFieldPaths, sanitizeValuesForControlledSchema,
     relationOperationOverrides, submitRelations, modePermissionDenied, resolvedMode, resolvedObjectIdValue,
+    finalSchema,
     formProps, state, behavior, actions, devtools, onSubmitResult,
   });
 

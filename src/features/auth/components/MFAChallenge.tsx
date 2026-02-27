@@ -83,7 +83,8 @@ export function MFAChallenge({
                   }}
                   onKeyDown={(e) => {
                     if (e.key === 'Backspace' && !code[i] && i > 0) {
-                      const prev = e.target.parentElement?.previousElementSibling?.querySelector('input');
+                      const target = e.target as HTMLInputElement;
+                      const prev = target.parentElement?.previousElementSibling?.querySelector('input');
                       prev?.focus();
                     }
                   }}

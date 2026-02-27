@@ -35,6 +35,7 @@ import type {
   QueryChoiceRecordContext,
   QueryChoiceInlineCreateConfig,
 } from "./types";
+export type { ChoiceOption } from "./types";
 
 type Props = FieldComponentProps<QueryChoiceFieldConfig>;
 

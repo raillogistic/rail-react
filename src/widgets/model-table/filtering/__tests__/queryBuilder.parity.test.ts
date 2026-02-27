@@ -9,6 +9,7 @@ import type {
   FilterFormState,
   FilterableField,
   RelationFilter,
+  FilterGroup,
   UnifiedFilterSchema,
 } from "../types";
 
@@ -67,7 +68,7 @@ function makeSchema(
 }
 
 function makeState(
-  conditions: FilterCondition[],
+  conditions: Array<FilterCondition | FilterGroup>,
   overrides: Partial<FilterFormState> = {},
 ): FilterFormState {
   return {

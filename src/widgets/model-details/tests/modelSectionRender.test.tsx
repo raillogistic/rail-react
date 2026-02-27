@@ -50,6 +50,10 @@ describe("ModelSection render", () => {
       createField("f4", "Field 4", "v4"),
     ];
     const data: ModelSectionData = {
+      objectId: "42",
+      access: { canView: true, canUpdate: true },
+      customMutations: [],
+      templates: [],
       groups: [
         {
           id: "main",
@@ -70,6 +74,10 @@ describe("ModelSection render", () => {
   it("falls back to section config columns when group columns are not set", () => {
     const fields = [createField("f1", "Field 1", "v1"), createField("f2", "Field 2", "v2")];
     const data: ModelSectionData = {
+      objectId: "42",
+      access: { canView: true, canUpdate: true },
+      customMutations: [],
+      templates: [],
       groups: [
         {
           id: "main",

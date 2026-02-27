@@ -217,10 +217,13 @@ export function useFilterPanel({
   const updateCondition = useCallback(
     (id: string, updates: Partial<FilterCondition>) => {
       setState((prev) => {
-        const result = updateById(prev.root, id, (node) => ({
-          ...node,
-          ...updates,
-        }));
+        const result = updateById(prev.root, id, (node) => {
+          if (node.type !== "condition") return node;
+          return {
+            ...node,
+            ...updates,
+          };
+        });
         return result.success ? { ...prev, root: result.root } : prev;
       });
     },

@@ -1,3 +1,5 @@
+import type { MFAChallenge } from "./mfa";
+
 export interface AuthUser {
   id: string;
   email: string;
@@ -52,13 +54,6 @@ export interface LoginCredentials {
   rememberMe?: boolean;
   deviceName?: string;
   deviceId?: string;
-}
-
-export interface MFAChallenge {
-  challengeId: string;
-  method: 'totp' | 'email' | 'sms' | 'webauthn';
-  hint?: string;
-  expiresAt: Date;
 }
 
 export interface AuthResult {

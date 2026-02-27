@@ -51,7 +51,10 @@ import { cn } from "@/shared/utils";
 import { ModelForm } from "@/widgets/model-form";
 import type { ModelFormProps } from "@/widgets/model-form/types.model";
 import type { ModelFormMutationOutcome } from "@/widgets/model-form/types/generatedContract";
-import type { FormSchema } from "@/widgets/model-form/inputs/types";
+import type {
+  FormFieldConfig,
+  FormSchema,
+} from "@/widgets/model-form/inputs/types";
 import { useMetadata } from "../../context/MetadataContext";
 import { useTable } from "../../context/TableContext";
 import type {
@@ -244,17 +247,20 @@ function buildMutationSchema(
 ): FormSchema | null {
   if (!fields.length) return null;
   return {
-    fields: fields.map((field) => ({
-      name: field.name || "",
-      label: humanizeLabel(field.name || field.fieldName || "Field"),
-      type: resolveFormFieldType(field),
-      required: Boolean(field.required),
-      description: field.description || undefined,
-      choices: (field.choices ?? []).map((choice) => ({
-        value: String(choice.value),
-        label: String(choice.label),
-      })),
-    })),
+    fields: fields.map(
+      (field) =>
+        ({
+          name: field.name || "",
+          label: humanizeLabel(field.name || field.fieldName || "Field"),
+          type: resolveFormFieldType(field),
+          required: Boolean(field.required),
+          description: field.description || undefined,
+          choices: (field.choices ?? []).map((choice) => ({
+            value: String(choice.value),
+            label: String(choice.label),
+          })),
+        }) as unknown as FormFieldConfig,
+    ),
   };
 }
 

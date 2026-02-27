@@ -103,7 +103,9 @@ export type ModelAdvancedFiltersControlProps = {
   /** Rendered while the filter metadata is loading and no UI can be shown yet. */
   loadingFallback?: React.ReactNode;
   /** Rendered when metadata fails to load. */
-  errorFallback?: React.ReactNode | ((error: ApolloError) => React.ReactNode);
+  errorFallback?:
+    | React.ReactNode
+    | ((error: ApolloError | Error) => React.ReactNode);
   /** When true, skips metadata fetching (renders nothing). */
   skip?: boolean;
 };

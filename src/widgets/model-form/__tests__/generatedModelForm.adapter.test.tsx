@@ -421,8 +421,8 @@ describe("useGeneratedModelForm adapter", () => {
       ]),
     );
 
-    const categoryField = fieldMap.get("category") as Record<string, unknown>;
-    const orderItemsField = fieldMap.get("orderItems") as Record<string, unknown>;
+    const categoryField = fieldMap.get("category") as unknown as Record<string, unknown>;
+    const orderItemsField = fieldMap.get("orderItems") as unknown as Record<string, unknown>;
 
     expect(categoryField?.type).toBe("select-query");
     expect(categoryField?.relatedModel).toBe("store.Category");

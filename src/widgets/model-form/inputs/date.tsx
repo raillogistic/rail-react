@@ -96,7 +96,7 @@ const DateInput: React.FC<Props> = ({ config, field, form }) => {
             mode="single"
             selected={parsedValue}
             onSelect={handleSelect}
-            disabled={disabledRanges.length ? disabledRanges : undefined}
+            disabled={disabledRanges.length ? (disabledRanges as any) : undefined}
             initialFocus
             locale={fr}
             className="p-3"

@@ -104,7 +104,9 @@ export function useModelFormLogic<TFormValues extends Record<string, unknown>>(
       return undefined;
     }
 
-    const validate = (values: TFormValues) => {
+    const validate: NonNullable<FormBehaviorConfig<TFormValues>["validate"]> = (
+      values: TFormValues,
+    ) => {
       const sanitizedValues = sanitizeValuesForControlledSchema(
         values as Record<string, unknown>,
       );
@@ -121,7 +123,7 @@ export function useModelFormLogic<TFormValues extends Record<string, unknown>>(
           )
         : undefined;
       const customErrors = userValidate ? userValidate(values) : undefined;
-      return mergeValidationErrors(generatedErrors, customErrors);
+      return mergeValidationErrors(generatedErrors, customErrors) as any;
     };
 
     const mergedOnSubmit = shouldUseGeneratedSubmit

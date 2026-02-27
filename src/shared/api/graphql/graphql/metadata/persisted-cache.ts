@@ -1,4 +1,4 @@
-import type { InMemoryCache } from "@apollo/client";
+import type { ApolloCache } from "@apollo/client";
 import { FILTER_METADATA_QUERY, TABLE_MODEL_METADATA_QUERY as GET_MODEL_SCHEMA } from "./queries";
 
 
@@ -364,7 +364,7 @@ export const isEntryStale = (
 };
 
 export const hydrateMetadataCache = (
-  cache: InMemoryCache,
+  cache: ApolloCache<object>,
   userKey?: string,
   options?: {
     routeHints?: Array<{ app: string; model: string }>;

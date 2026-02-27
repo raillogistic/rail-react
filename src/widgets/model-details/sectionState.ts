@@ -50,7 +50,7 @@ export function createSectionCacheApi(
   map: Map<string, unknown>,
 ): SectionLoadCacheApi {
   return {
-    get: (key) => map.get(key),
+    get: (key) => map.get(key) as any,
     set: (key, value) => {
       map.set(key, value);
     },

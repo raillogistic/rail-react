@@ -67,7 +67,7 @@ export function LoginForm({ onSuccess, rateLimitMessage }: LoginFormProps) {
       )}
 
       {isLockedOut && (
-        <Alert variant="warning">
+        <Alert>
           <AlertDescription>
             {rateLimitMessage || 'Too many failed attempts. Please try again later.'}
           </AlertDescription>

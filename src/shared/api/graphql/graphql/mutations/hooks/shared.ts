@@ -1,5 +1,11 @@
 import type { UseModelMutationBaseOptions } from "../types";
 import type { ModelMutationMode } from "../types";
+import type {
+  UseModelMutationExecutionOptions,
+  UseModelMutationIdentityOptions,
+  UseModelMutationModelFormOptions,
+  UseModelMutationSelectionOptions,
+} from "../types";
 import type { ModelFormMutationBindings } from "@/shared/api/graphql/graphql/model-form/generatedContract";
 
 /**
@@ -43,10 +49,14 @@ export interface ResolvedModelMutationOptions {
 export function resolveModelMutationOptions(
   options: UseModelMutationBaseOptions,
 ): ResolvedModelMutationOptions {
-  const identity = options.identity || {};
-  const selectionOptions = options.selectionOptions || {};
-  const executionOptions = options.executionOptions || {};
-  const modelFormOptions = options.modelFormOptions || {};
+  const identity: Partial<UseModelMutationIdentityOptions> =
+    options.identity ?? {};
+  const selectionOptions: Partial<UseModelMutationSelectionOptions> =
+    options.selectionOptions ?? {};
+  const executionOptions: Partial<UseModelMutationExecutionOptions> =
+    options.executionOptions ?? {};
+  const modelFormOptions: Partial<UseModelMutationModelFormOptions> =
+    options.modelFormOptions ?? {};
 
   return {
     app: identity.app ?? options.app ?? "",

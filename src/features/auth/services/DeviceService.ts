@@ -18,7 +18,10 @@ export class DeviceService {
       // Store device ID persistently (local storage usually)
       // Note: StorageAdapter configuration determines persistence
       this.storage.set(this.DEVICE_ID_KEY, deviceId);
-      this.eventBus.emitLocal('auth:device_registered', { deviceId });
+      this.eventBus.emitLocal('auth:device_registered', {
+        deviceId,
+        deviceName: this.getDeviceName(),
+      });
     }
     return deviceId;
   }

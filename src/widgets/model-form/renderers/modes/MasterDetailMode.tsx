@@ -41,7 +41,7 @@ export const MasterDetailMode = <TValues extends Record<string, any>>({
   globalReadOnly,
   globalDisabled,
 }: MasterDetailModeProps<TValues>) => {
-  const values = useStore(form.store, (state) => state.values as TValues);
+  const values = useStore(form.store, (state: any) => state.values as TValues);
 
   const [left, right] = config.splitRatio ?? [60, 40];
   const gridTemplate = `${left}fr ${right}fr`;

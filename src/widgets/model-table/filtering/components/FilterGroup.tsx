@@ -287,9 +287,13 @@ export const FilterGroupComponent: React.FC<FilterGroupProps> = ({
                       schema={schema}
                       config={config}
                       onChange={(updates) => {
-                        const updatedConditions = group.conditions.map((c) =>
-                          c.id === item.id ? { ...c, ...updates } : c,
-                        );
+                        const updatedConditions = group.conditions.map((c) => {
+                          if (c.id === item.id && c.type === "group") {
+                            const next: FilterGroupType = { ...c, ...updates };
+                            return next;
+                          }
+                          return c;
+                        });
                         onChange({ conditions: updatedConditions });
                       }}
                       onRemove={() => onRemoveItem(item.id)}

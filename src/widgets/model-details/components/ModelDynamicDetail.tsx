@@ -40,6 +40,7 @@ import {
 } from "@/widgets/model-form/utils/objectPath";
 import type {
   FormActionsConfig,
+  FormFieldConfig,
   FormSchema,
 } from "@/widgets/model-form/inputs/types";
 import {
@@ -66,6 +67,7 @@ import { Button } from "@/shared/ui/kit/button";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from "@/shared/ui/kit/dialog";
@@ -109,7 +111,9 @@ import type {
 } from "../config/types";
 import { IconInfoCircle } from "@tabler/icons-react";
 
-type SelectionTreeNode = Record<string, true | SelectionTreeNode>;
+interface SelectionTreeNode {
+  [key: string]: true | SelectionTreeNode;
+}
 
 type RowPermissionSnapshot = {
   canUpdate?: boolean | null;
@@ -155,7 +159,7 @@ type ResolvedNestedField = ResolvedFieldConfig & {
 
 type ResolvedNestedSection = {
   sectionId: string;
-  tabId?: string;
+  tabId: string;
   path: string;
   relation: RelationshipMetadata;
   config: ModelDynamicDetailNestedConfig;
@@ -618,17 +622,20 @@ function buildMutationSchema(fields: MutationInputField[]): FormSchema | null {
   if (!fields.length) return null;
 
   return {
-    fields: fields.map((field) => ({
-      name: field.name || "",
-      label: humanizeLabel(field.name || field.fieldName || "Field"),
-      type: resolveFormFieldType(field),
-      required: Boolean(field.required),
-      description: field.description || undefined,
-      choices: (field.choices ?? []).map((choice) => ({
-        value: String(choice.value),
-        label: String(choice.label),
-      })),
-    })),
+    fields: fields.map(
+      (field) =>
+        ({
+          name: field.name || "",
+          label: humanizeLabel(field.name || field.fieldName || "Field"),
+          type: resolveFormFieldType(field),
+          required: Boolean(field.required),
+          description: field.description || undefined,
+          choices: (field.choices ?? []).map((choice) => ({
+            value: String(choice.value),
+            label: String(choice.label),
+          })),
+        }) as unknown as FormFieldConfig,
+    ),
   };
 }
 
@@ -2010,17 +2017,14 @@ export const ModelDynamicDetail = React.forwardRef<
   );
 
   const layoutSectionSpanClassById = React.useMemo(() => {
-    const entries = layoutSectionsWithData
-      .map((section) => {
-        const className = resolveSectionContainerSpanClassName(
-          section.containerSpan,
-        );
-        if (!className) return null;
-        return [`layout:${section.id}`, className] as const;
-      })
-      .filter(
-        (entry): entry is readonly [string, string] => Boolean(entry),
+    const entries: Array<readonly [string, string]> = [];
+    layoutSectionsWithData.forEach((section) => {
+      const className = resolveSectionContainerSpanClassName(
+        section.containerSpan,
       );
+      if (!className) return;
+      entries.push([`layout:${section.id}`, className]);
+    });
 
     return new Map<string, string>(entries);
   }, [layoutSectionsWithData]);
@@ -2269,7 +2273,7 @@ export const ModelDynamicDetail = React.forwardRef<
     const headerSections =
       frameTitle || hasHeaderActions
         ? [
-            createCustomSection({
+            createCustomSection<{ ready: boolean }>({
               id: "header:main",
               title: frameTitle,
               description: resolvedHeaderDescription,
@@ -2283,12 +2287,15 @@ export const ModelDynamicDetail = React.forwardRef<
               disabledIf: headerFrame?.disabledIf,
               noAccessBehavior: headerFrame?.noAccessBehavior,
               load: headerFrame?.load,
-              select: headerFrame?.select ?? (() => ({ ready: true })),
+              select:
+                (headerFrame?.select as
+                  | ((ctx: SectionRuntimeCtx) => { ready: boolean } | undefined)
+                  | undefined) ?? (() => ({ ready: true })),
               skeleton: headerFrame?.skeleton,
               empty: headerFrame?.empty,
               error: headerFrame?.error,
               actions: (runtime, state) => [
-                ...(headerFrame?.actions?.(runtime, state) ?? []),
+                ...(headerFrame?.actions?.(runtime, state as any) ?? []),
                 ...headerSectionActions,
               ],
               testId: headerFrame?.testId,
@@ -2299,9 +2306,8 @@ export const ModelDynamicDetail = React.forwardRef<
 
     const layoutSectionEntries = layoutSectionsWithData.map((section) => ({
       tabId: section.tabId,
-      section: createCustomSection({
+      section: createCustomSection<{ ready: boolean }>({
         id: `layout:${section.id}`,
-        kind: "custom",
         order: section.order,
         select: () => ({ ready: true }),
         title: typeof section.title === "string" ? section.title : undefined,
@@ -2349,9 +2355,8 @@ export const ModelDynamicDetail = React.forwardRef<
 
     const nestedSectionEntries = resolvedNestedWithData.map((nested) => ({
       tabId: nested.tabId,
-      section: createCustomSection({
+      section: createCustomSection<{ ready: boolean }>({
         id: nested.sectionId,
-        kind: "custom",
         order: undefined,
         select: () => ({ ready: true }),
         title:
@@ -2439,9 +2444,8 @@ export const ModelDynamicDetail = React.forwardRef<
     const customSectionEntries = (config.layout?.customSections ?? []).map(
       (section) => ({
         tabId: normalizeTabId(section.tabId),
-        section: createCustomSection({
+        section: createCustomSection<{ ready: boolean }>({
           id: `custom:${section.id}`,
-          kind: "custom",
           order: section.order,
           select: () => ({ ready: true }),
           title: typeof section.title === "string" ? section.title : undefined,
@@ -2656,6 +2660,10 @@ export const ModelDynamicDetail = React.forwardRef<
                   `Update ${metadataState.metadata?.verboseName ?? model}`}
               </DialogTitle>
             </div>
+            <DialogDescription className="sr-only">
+              Update form for the selected{" "}
+              {metadataState.metadata?.verboseName ?? model} record.
+            </DialogDescription>
           </DialogHeader>
           <ModelForm
             app={app}

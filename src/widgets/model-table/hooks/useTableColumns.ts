@@ -5,6 +5,7 @@ import {
   BaseModelTableFieldsInput,
   BaseModelTableRelationConfig,
   FieldSchema,
+  ModelSchema,
   RelationshipSchema,
 } from "../types";
 import {

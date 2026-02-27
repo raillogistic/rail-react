@@ -736,6 +736,77 @@ interface PresetItemProps {
   showActions?: boolean;
 }
 
+interface PresetCardProps {
+  preset: FilterPreset;
+  isSelected: boolean;
+  onToggle: () => void;
+  onApply: () => void;
+  onEdit?: () => void;
+  onDelete?: () => void;
+  onShare?: () => void;
+}
+
+const PresetCard: React.FC<PresetCardProps> = ({
+  preset,
+  isSelected,
+  onToggle,
+  onApply,
+  onEdit,
+  onDelete,
+  onShare,
+}) => {
+  return (
+    <Card
+      className={cn(
+        "border rounded-xl transition-all cursor-pointer",
+        isSelected ? "border-primary/40 bg-primary/5" : "hover:border-border/70",
+      )}
+      onClick={onToggle}
+    >
+      <CardHeader className="p-3">
+        <CardTitle className="text-sm truncate">{preset.name}</CardTitle>
+        {preset.description ? (
+          <CardDescription className="text-xs line-clamp-2">
+            {preset.description}
+          </CardDescription>
+        ) : null}
+      </CardHeader>
+      <CardFooter className="px-3 pb-3 pt-0 flex items-center gap-2">
+        <Button size="sm" variant="outline" onClick={(e) => {
+          e.stopPropagation();
+          onApply();
+        }}>
+          Appliquer
+        </Button>
+        {onEdit ? (
+          <Button size="sm" variant="ghost" onClick={(e) => {
+            e.stopPropagation();
+            onEdit();
+          }}>
+            Edit
+          </Button>
+        ) : null}
+        {onShare ? (
+          <Button size="sm" variant="ghost" onClick={(e) => {
+            e.stopPropagation();
+            onShare();
+          }}>
+            Share
+          </Button>
+        ) : null}
+        {onDelete ? (
+          <Button size="sm" variant="ghost" onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}>
+            Delete
+          </Button>
+        ) : null}
+      </CardFooter>
+    </Card>
+  );
+};
+
 const PresetItem: React.FC<PresetItemProps> = ({
   preset,
   isSelected,

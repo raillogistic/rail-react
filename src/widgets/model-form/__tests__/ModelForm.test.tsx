@@ -1,6 +1,6 @@
 import React from "react";
 import { gql } from "@apollo/client";
-import { MockedProvider } from "@apollo/client/testing";
+import { MockedProvider, type MockedResponse } from "@apollo/client/testing";
 import { act, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -62,7 +62,7 @@ vi.mock("../inputs/form", () => ({
 
 function renderWithMocks(
   ui: React.ReactElement,
-  mocks: Array<Record<string, unknown>>,
+  mocks: readonly MockedResponse<Record<string, unknown>, Record<string, unknown>>[],
 ) {
   return render(<MockedProvider mocks={mocks}>{ui}</MockedProvider>);
 }

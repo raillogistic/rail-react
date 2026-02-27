@@ -8,7 +8,9 @@ import type {
 import type { ModelMetadata } from "@/shared/api/graphql/graphql/metadata/types";
 import { toCamelCase, toGraphqlFieldName, toSnakeCase } from "./naming";
 
-type SelectionTreeNode = Record<string, SelectionTreeNode | true>;
+interface SelectionTreeNode {
+  [key: string]: SelectionTreeNode | true;
+}
 
 /**
  * Returns true when a value is a valid field config object.

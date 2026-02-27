@@ -9,7 +9,7 @@
 import type React from "react";
 import type { DocumentNode } from "graphql";
 import type { FetchPolicy } from "@apollo/client";
-import type { FieldApi, UseFormReturn } from "@tanstack/react-form";
+import type { UseFormReturn } from "@tanstack/react-form";
 
 // ─── Input Types ─────────────────────────────────────────────────────────────
 
@@ -130,12 +130,12 @@ export type QueryChoiceVariableBuilderContext = {
   search: string;
   values: Record<string, any>;
   form: UseFormReturn<Record<string, any>>;
-  field: FieldApi<Record<string, any>, any, any, any>;
+  field: any;
 };
 
 export type QueryChoiceRecordContext = {
   form: UseFormReturn<Record<string, any>>;
-  field: FieldApi<Record<string, any>, any, any, any>;
+  field: any;
   search: string;
 };
 
@@ -308,7 +308,7 @@ export type FieldComponentProps<
   TValue = any,
 > = {
   config: TConfig;
-  field: FieldApi<Record<string, any>, TValue, TValue, TValue>;
+  field: any;
   form: UseFormReturn<Record<string, any>>;
   disabled?: boolean;
 };
@@ -317,7 +317,7 @@ export type FieldRendererComponent = React.ComponentType<FieldComponentProps>;
 
 export type FieldRenderContext = {
   config: FormFieldConfig;
-  field: FieldApi<Record<string, any>, any, any, any>;
+  field: any;
   form: UseFormReturn<Record<string, any>>;
 };
 

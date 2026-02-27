@@ -26,6 +26,7 @@ export type {
   CustomFieldConfig,
   ObjectFieldConfig,
   ListFieldConfig,
+  RichTextFieldConfig,
   FormFieldConfig,
   FieldComponentProps,
   FieldRendererComponent,

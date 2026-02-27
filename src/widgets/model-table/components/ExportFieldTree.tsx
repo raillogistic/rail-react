@@ -193,6 +193,7 @@ function RelationFieldRow({
   relation,
   accessor,
   labelPath,
+  selection,
   selected,
   onToggle,
   depth,
@@ -205,6 +206,7 @@ function RelationFieldRow({
   relation: RelationshipSchema | null;
   accessor: string;
   labelPath: string[];
+  selection: ExportFieldSelection;
   selected: boolean;
   onToggle: (accessor: string, label: string) => void;
   depth: number;
@@ -308,7 +310,7 @@ function RelationFieldRow({
             {metadata ? (
               <ExportFieldTree
                 metadata={metadata}
-                selected={selected}
+                selected={selection}
                 onToggle={onToggle}
                 depth={depth + 1}
                 maxDepth={maxDepth}
@@ -473,6 +475,7 @@ export function ExportFieldTree({
                         relation={relation}
                         accessor={accessor}
                         labelPath={nextLabelPath}
+                        selection={selected}
                         selected={!!selected[accessor]}
                         onToggle={onToggle}
                         depth={depth}

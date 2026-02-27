@@ -8,6 +8,7 @@ import { DeviceService } from "./services/DeviceService";
 import { MFAService } from "./services/MFAService";
 import type {
   AuthConfig,
+  AuthConfigInput,
   AuthState,
   AuthUser,
   LoginCredentials,
@@ -48,7 +49,7 @@ export class AuthenticationManager {
 
   private stateListeners = new Set<(state: AuthState) => void>();
 
-  constructor(config: Partial<AuthConfig> = {}) {
+  constructor(config: AuthConfigInput = {}) {
     this.config = mergeConfig(config);
 
     // Initialize core services
@@ -220,7 +221,7 @@ export class AuthenticationManager {
     try {
       const result = await loginFn(enhancedCredentials);
 
-      if (!result.success && result.requiresMFA) {
+      if (!result.success && "requiresMFA" in result && result.requiresMFA) {
         this.mfaService.setEphemeralToken(result.ephemeralToken);
         const mfaSetupRequired = !!result.mfaSetupRequired;
         

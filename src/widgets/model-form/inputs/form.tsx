@@ -190,7 +190,7 @@ function countFieldNodes(fields: FormFieldConfig[]): number {
 const DynamicForm = <TValues extends Record<string, any> = Record<string, any>>(
   props: DynamicFormProps<TValues>,
 ) => {
-  assertNoLegacyDynamicFormProps(props as Record<string, unknown>);
+  assertNoLegacyDynamicFormProps(props as unknown as Record<string, unknown>);
 
   const {
     schema,
@@ -296,7 +296,7 @@ const DynamicForm = <TValues extends Record<string, any> = Record<string, any>>(
 
   // ─── Store subscriptions ─────────────────────────────────────────────
 
-  const formValues = useStore(form.store, (state) => state.values) as TValues;
+  const formValues = useStore(form.store, (state: any) => state.values) as TValues;
   const fieldMeta = useStore(
     form.store,
     (state) => (state as { fieldMeta?: Record<string, unknown> }).fieldMeta ?? {},

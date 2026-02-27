@@ -12,6 +12,7 @@ import type {
   RelationFilter,
   FieldGroup,
   FilterBaseType,
+  DatePreset,
   FilterUIHints,
   FilterOperator,
 } from "./types";
@@ -374,7 +375,7 @@ function buildUIHints(
 
   if (modelField?.choices?.length > 0) {
     hints.widget = "select";
-  } else if (baseType === "Number" || baseType === "Int" || baseType === "Float") {
+  } else if (baseType === "Number") {
     hints.widget = "number";
     if (modelField?.minValue != null) hints.minValue = modelField.minValue;
     if (modelField?.maxValue != null) hints.maxValue = modelField.maxValue;
@@ -439,7 +440,7 @@ function getDatePresets(baseType: string): FilterUIHints["datePresets"] {
   return DEFAULT_DATE_PRESETS;
 }
 
-const DEFAULT_DATE_PRESETS = [
+const DEFAULT_DATE_PRESETS: DatePreset[] = [
   { key: "today", label: "Aujourd'hui", startOfPeriod: "day" },
   { key: "yesterday", label: "Hier" },
   { key: "thisWeek", label: "Cette semaine", startOfPeriod: "week" },

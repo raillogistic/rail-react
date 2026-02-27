@@ -34,6 +34,12 @@ export interface AuthConfig {
   };
 }
 
+type DeepPartial<T> = {
+  [K in keyof T]?: T[K] extends object ? DeepPartial<T[K]> : T[K];
+};
+
+export type AuthConfigInput = DeepPartial<AuthConfig>;
+
 export const DEFAULT_AUTH_CONFIG: AuthConfig = {
   token: {
     refreshThresholdSeconds: 300,      // 5 min before expiry
@@ -70,7 +76,7 @@ export const DEFAULT_AUTH_CONFIG: AuthConfig = {
   },
 };
 
-export function mergeConfig(partial: Partial<AuthConfig>): AuthConfig {
+export function mergeConfig(partial: AuthConfigInput): AuthConfig {
   return {
     token: { ...DEFAULT_AUTH_CONFIG.token, ...partial.token },
     session: { ...DEFAULT_AUTH_CONFIG.session, ...partial.session },

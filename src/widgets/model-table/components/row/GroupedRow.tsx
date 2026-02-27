@@ -4,7 +4,7 @@ import { Button } from "@/shared/ui/kit/button";
 import { TableCell, TableRow as ShadcnTableRow } from "../TableFrame";
 
 type GroupedRowProps = {
-  group: { key: string; label: string; rows: Record<string, unknown>[] };
+  group: { groupKey: string; label: string; rows: Record<string, unknown>[] };
   collapsed: boolean;
   colSpan: number;
   onToggle: (groupKey: string) => void;
@@ -19,7 +19,7 @@ export function GroupedRow({
   return (
     <ShadcnTableRow
       className="bg-muted/25 border-b border-border/20 hover:bg-muted/40 transition-colors cursor-pointer"
-      onClick={() => onToggle(group.key)}
+      onClick={() => onToggle(group.groupKey)}
     >
       <TableCell colSpan={colSpan} className="px-2 py-1.5">
         <div className="flex items-center gap-2">
@@ -29,7 +29,7 @@ export function GroupedRow({
             className="size-6 rounded-lg hover:bg-background/80 transition-all"
             onClick={(e) => {
               e.stopPropagation();
-              onToggle(group.key);
+              onToggle(group.groupKey);
             }}
           >
             {collapsed ? (

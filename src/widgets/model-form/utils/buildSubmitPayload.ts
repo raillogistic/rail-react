@@ -28,11 +28,12 @@ export type BuildSubmitPayloadOptions = {
 export function buildSubmitPayload(
   options: BuildSubmitPayloadOptions,
 ): SubmitPayloadEnvelope {
+  const nestedPayloadMode = options.mode === "UPDATE" ? "UPDATE" : "CREATE";
   const input = buildNestedMutationPayload(
     options.resolvedValues,
     options.relations ?? [],
     {
-      mode: options.mode,
+      mode: nestedPayloadMode,
       operationOverrides: options.relationOperationOverrides,
       baselineValues: options.baselineValues,
     },

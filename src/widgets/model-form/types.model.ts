@@ -145,7 +145,7 @@ export type ModelFormErrorFallbackContext = {
 
 export interface ModelFormProps<
   TFormValues extends Record<string, unknown> = Record<string, unknown>,
-> extends Partial<DynamicFormProps<TFormValues>> {
+> extends Omit<Partial<DynamicFormProps<TFormValues>>, "mode"> {
   app?: string;
   model?: string;
   mode?: ModelFormModeInput;

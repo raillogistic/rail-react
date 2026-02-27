@@ -21,7 +21,10 @@ describe('DeviceService', () => {
     expect(deviceId).toBeDefined();
     expect(deviceId.length).toBeGreaterThan(0);
     expect(storage.get('device_id')).toBe(deviceId);
-    expect(emitSpy).toHaveBeenCalledWith('auth:device_registered', { deviceId });
+    expect(emitSpy).toHaveBeenCalledWith('auth:device_registered', {
+      deviceId,
+      deviceName: 'Desktop',
+    });
   });
 
   it('retrieves existing device ID', () => {

@@ -7,7 +7,7 @@ import type { UseModelQueryMetadataResult } from "../types";
 /**
  * Parameters for metadata resolution hook.
  */
-export interface UseModelQueryMetadataOptions {
+interface UseModelQueryMetadataOptions {
   /**
    * Django app label.
    */

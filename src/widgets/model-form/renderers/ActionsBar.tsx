@@ -19,6 +19,7 @@ import {
 } from "@/shared/ui/kit/dialog";
 import { cn } from "@/shared/utils";
 import { Save, RotateCcw, CheckCircle2, AlertTriangle, Loader2, Undo, Redo } from "lucide-react";
+import type { FormActionsConfig } from "../types/actions";
 
 export type ActionsBarProps<TValues> = {
   form: UseFormReturn<TValues>;
@@ -52,10 +53,13 @@ export const ActionsBar = <TValues extends Record<string, any>>({
     submitOutcome,
   } = config ?? {};
 
-  const formSubmitting = useStore(form.store, (state) => state.isSubmitting);
+  const formSubmitting = useStore(
+    form.store,
+    (state: any) => state.isSubmitting,
+  );
   const isSubmitting = Boolean(formSubmitting || externalSubmitting);
-  const canSubmit = useStore(form.store, (state) => state.canSubmit);
-  const isDirty = useStore(form.store, (state) => state.isDirty);
+  const canSubmit = useStore(form.store, (state: any) => state.canSubmit);
+  const isDirty = useStore(form.store, (state: any) => state.isDirty);
 
   const [confirmOpen, setConfirmOpen] = React.useState(false);
 

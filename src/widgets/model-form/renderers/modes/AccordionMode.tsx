@@ -33,7 +33,7 @@ export type AccordionModeProps<TValues> = {
 const renderIcon = (Icon: any, className: string) => {
   if (!Icon) return null;
   if (React.isValidElement(Icon)) {
-    return React.cloneElement(Icon as React.ReactElement, {
+    return React.cloneElement(Icon as React.ReactElement<any>, {
       className: cn(className, (Icon.props as any)?.className),
     });
   }

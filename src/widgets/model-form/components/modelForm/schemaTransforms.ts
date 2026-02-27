@@ -251,12 +251,12 @@ function buildNestedRelationFieldConfig<
 
   if (relation.toMany) {
     const addButtonConfig = mergeAddButtonConfig(
-      nestedFormConfig?.addButton,
-      nestedControl.addButton,
+      nestedFormConfig?.addButton as any,
+      nestedControl.addButton as any,
     );
     const sortableConfig = mergeSortableConfig(
-      nestedFormConfig?.sortable,
-      nestedControl.sortable,
+      nestedFormConfig?.sortable as any,
+      nestedControl.sortable as any,
     );
     const hasSortableConfig = sortableConfig !== undefined;
     const sortableEnabled = sortableConfig?.enabled ?? false;

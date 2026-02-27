@@ -196,8 +196,8 @@ export const DebugPanel = <TValues extends Record<string, any>>({
 }: DebugPanelProps<TValues>) => {
   if (!config?.enabled) return null;
 
-  const isSubmitting = useStore(form.store, (state) => state.isSubmitting);
-  const canSubmit = useStore(form.store, (state) => state.canSubmit);
+  const isSubmitting = useStore(form.store, (state: any) => state.isSubmitting);
+  const canSubmit = useStore(form.store, (state: any) => state.canSubmit);
   const fieldMeta = useStore(
     form.store,
     (state) => (state as any).fieldMeta ?? {},

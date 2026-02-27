@@ -153,6 +153,11 @@ export async function fetchMetadataSnapshot(
       : MODEL_METADATA_QUERY;
 
   const startedAt = Date.now();
+  const resolvedFetchPolicy = options.forceNetwork
+    ? "network-only"
+    : params.queryOptions?.fetchPolicy === "cache-and-network"
+      ? "network-only"
+      : (params.queryOptions?.fetchPolicy ?? "network-only");
   const queryPromise = client
     .query<ModelMetadataQueryData>({
       query: queryDocument,
@@ -161,9 +166,7 @@ export async function fetchMetadataSnapshot(
         model: params.model,
         objectId: params.objectId ?? undefined,
       },
-      fetchPolicy: options.forceNetwork
-        ? "network-only"
-        : (params.queryOptions?.fetchPolicy ?? "network-only"),
+      fetchPolicy: resolvedFetchPolicy,
       errorPolicy: params.queryOptions?.errorPolicy,
       context: params.queryOptions?.context,
     })

@@ -44,7 +44,7 @@ export const WizardMode = <TValues extends Record<string, any>>({
   globalDisabled,
   onFinalSubmit,
 }: WizardModeProps<TValues>) => {
-  const values = useStore(form.store, (state) => state.values as TValues);
+  const values = useStore(form.store, (state: any) => state.values as TValues);
 
   const visibleSections = React.useMemo(() => {
     let resolved = sections.filter((section, index) => {

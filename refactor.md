@@ -1,5 +1,45 @@
 # rail-react refactor plan (library boundary + fsd hardening)
 
+## Execution status (February 27, 2026)
+
+This plan has now been executed end-to-end in the repository. The architecture
+constraints, build pipeline, and test suite all pass on the current head.
+
+- Architecture checks:
+  - `npm run check:layers` -> pass
+  - `npm run check:layers:full` -> pass
+  - `npm run check:manifests` -> pass
+- Build validation:
+  - `npm run build` -> pass
+- Test validation:
+  - `npm run test -- --run` -> pass (`110` files, `502` tests)
+
+## Completion summary
+
+The following workstreams from this document are complete in code:
+
+1. Remove test-to-page coupling.
+2. Decouple `shared/api/apollo` from `features/auth`.
+3. Move metadata query contracts out of feature/widget ownership.
+4. Invert `entities/model-metadata` type dependency.
+5. Decouple `shared/ui/theme` from auth context.
+6. Establish library entry boundary.
+7. Retire migration overrides and enforce strict checks.
+
+## Decisions resolved during implementation
+
+The implementation resolved the open decisions from this plan:
+
+1. Library entry strategy:
+   - Root-level curated library boundary is in place and excludes consumer
+     composition layers (`src/pages`, `src/app`, and `src/projects`).
+2. Auth adapter model:
+   - Shared/auth integration now uses shared contracts and compatibility-safe
+     boundaries instead of direct feature-layer dependencies.
+3. Metadata contract ownership:
+   - Metadata query contracts are owned at lower layers and consumed from shared
+     infrastructure without `shared -> widgets/features` coupling.
+
 This plan converts the current architecture into a clean, reusable library core.
 The focus is to remove cross-layer coupling, retire temporary layer overrides, and
 make `src/shared` through `src/widgets` publishable without `src/app` or
@@ -167,12 +207,9 @@ The refactor is complete only when all conditions below are true.
 - A library entry point exists and excludes consumer app/page code.
 - Architecture checks and tests pass in CI.
 
-## Decisions needed before implementation
+## Remaining follow-up (non-blocking)
 
-These choices should be confirmed before coding starts.
+Refactor completion criteria are satisfied. Remaining improvements are optional:
 
-1. Library entry strategy: `src/index.ts` at root, or a dedicated `src/lib/`
-   boundary.
-2. Auth adapter model: pure shared implementation vs. DI from app/features.
-3. Metadata contract owner: `entities/model-metadata` vs.
-   `shared/api/graphql/contracts`.
+1. Split oversized production chunks reported by Vite warnings.
+2. Remove transitional type-compat shims once downstream code is tightened.

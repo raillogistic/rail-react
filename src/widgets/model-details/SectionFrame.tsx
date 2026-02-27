@@ -108,7 +108,7 @@ export default function SectionFrame({
   children,
 }: SectionFrameProps) {
   const hasContent = React.Children.count(children) > 0;
-  const HeadingTag = `h${headingLevel}` as keyof JSX.IntrinsicElements;
+  const HeadingTag = `h${headingLevel}` as keyof React.JSX.IntrinsicElements;
 
   const renderedActions = actions.filter((action) => action.render);
   const buttonActions = actions.filter((action) => !action.render);
