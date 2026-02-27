@@ -577,6 +577,37 @@ function isRelationBackedField(field: FormFieldConfig): boolean {
   );
 }
 
+/**
+ * Returns true when a field (or one of its nested children) is required.
+ * Used to preserve relation-backed nested blocks in `onlyRequired` mode.
+ */
+function hasRequiredFieldInTree(field: FormFieldConfig): boolean {
+  if (Boolean(field.required)) {
+    return true;
+  }
+  const nestedFields = Array.isArray((field as { fields?: unknown }).fields)
+    ? ((field as { fields?: FormFieldConfig[] }).fields ?? [])
+    : [];
+  if (nestedFields.length === 0) {
+    return false;
+  }
+  return nestedFields.some((nestedField) => hasRequiredFieldInTree(nestedField));
+}
+
+/**
+ * Determines whether a field should remain visible when `onlyRequired` is active.
+ * Relation-backed fields are kept when they contain at least one required child.
+ */
+function shouldKeepFieldInOnlyRequiredMode(field: FormFieldConfig): boolean {
+  if (field.required) {
+    return true;
+  }
+  if (!isRelationBackedField(field)) {
+    return false;
+  }
+  return hasRequiredFieldInTree(field);
+}
+
 function moveListFieldsToSectionEnd(
   fields: FormFieldConfig[],
 ): FormFieldConfig[] {
@@ -844,7 +875,10 @@ export function applySchemaControls<TValues extends Record<string, unknown>>(
             return null;
           }
 
-          if (options.onlyRequired && !globallyOverridden.required) {
+          if (
+            options.onlyRequired &&
+            !shouldKeepFieldInOnlyRequiredMode(globallyOverridden)
+          ) {
             return null;
           }
 

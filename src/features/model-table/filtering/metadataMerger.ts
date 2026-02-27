@@ -341,13 +341,17 @@ function normalizeBaseType(baseType: string): FilterBaseType {
 }
 
 function resolveFieldBaseType(filter: any, modelField: any): FilterBaseType {
+  /**
+   * Resolve using field-level metadata only.
+   *
+   * Operator GraphQL types are intentionally excluded because operators like
+   * `isNull` use `Boolean`, which can incorrectly coerce string fields to
+   * boolean widgets in the UI.
+   */
   const candidates = [
     filter.baseType,
-    filter.filterInputType,
     modelField?.graphqlType,
-    ...(Array.isArray(filter.options)
-      ? filter.options.map((option: any) => option?.graphqlType)
-      : []),
+    filter.filterInputType,
   ];
 
   for (const candidate of candidates) {

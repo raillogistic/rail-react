@@ -22,7 +22,7 @@
     "test:ui": "vitest --ui",
     "preview": "vite preview",
     "schema": "node scripts/generate-schema-types.mjs",
-    "get_models": "node scripts/generate-user-models.mjs",
+    "getModels": "node scripts/getModels.mjs",
     "startapp": "node scripts/startapp.mjs"
   },
   "dependencies": {

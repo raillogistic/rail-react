@@ -31,7 +31,7 @@ export const SmartValueInput: React.FC<SmartValueInputProps> = ({
   const showPresets = presets.length > 0 && (field.baseType === "Date" || field.baseType === "DateTime");
 
   return (
-    <div className={cn("flex items-start gap-2", className)}>
+    <div className={cn("flex items-center gap-2", className)}>
       <div className="flex-1 min-w-0">
         <ScalarFilterInput
           field={field}

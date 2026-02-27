@@ -952,6 +952,158 @@ describe("ModelForm", () => {
     );
   });
 
+  it("keeps relation-backed nested blocks in onlyRequired mode when nested fields are required", async () => {
+    const rootContract: ModelFormContract = {
+      ...sampleModelFormContract,
+      appLabel: "store",
+      modelName: "Product",
+      mode: "CREATE",
+      fields: [
+        {
+          ...sampleModelFormContract.fields[0],
+          name: "status",
+          path: "status",
+          fieldName: "status",
+          label: "Status",
+          required: false,
+          readOnly: false,
+          hidden: false,
+          kind: "TEXT",
+        },
+      ],
+      sections: [
+        {
+          ...sampleModelFormContract.sections[0],
+          fieldPaths: ["status"],
+        },
+      ],
+      relations: [
+        {
+          path: "category",
+          label: "Category",
+          relationType: "FOREIGN_KEY",
+          toMany: false,
+          relatedAppLabel: "store",
+          relatedModelName: "Category",
+          policy: {
+            path: "category",
+            allowedActions: ["CONNECT", "CREATE", "UPDATE", "SET"],
+            blockedActions: [],
+            nestedEnabled: true,
+          },
+          nestedForm: JSON.stringify({
+            enabled: true,
+            fields: ["name", "description"],
+          }) as unknown as Record<string, unknown>,
+        },
+      ],
+    };
+
+    const categoryContract: ModelFormContract = {
+      ...sampleModelFormContract,
+      id: "store.Category.CREATE",
+      appLabel: "store",
+      modelName: "Category",
+      mode: "CREATE",
+      fields: [
+        {
+          ...sampleModelFormContract.fields[0],
+          name: "name",
+          path: "name",
+          fieldName: "name",
+          label: "Category Name",
+          required: true,
+          readOnly: false,
+          hidden: false,
+          kind: "TEXT",
+        },
+        {
+          ...sampleModelFormContract.fields[1],
+          name: "description",
+          path: "description",
+          fieldName: "description",
+          label: "Category Description",
+          required: false,
+          readOnly: false,
+          hidden: false,
+          kind: "TEXTAREA",
+        },
+      ],
+      sections: [
+        {
+          ...sampleModelFormContract.sections[0],
+          fieldPaths: ["name", "description"],
+        },
+      ],
+      relations: [],
+    };
+
+    const mocks = [
+      {
+        request: {
+          query: MODEL_FORM_CONTRACT_QUERY,
+          variables: {
+            appLabel: "store",
+            modelName: "Product",
+            mode: "CREATE",
+            includeNested: true,
+          },
+        },
+        result: {
+          data: {
+            modelFormContract: rootContract,
+          },
+        },
+      },
+      {
+        request: {
+          query: MODEL_FORM_CONTRACT_PAGES_QUERY,
+          variables: {
+            page: 1,
+            perPage: 1,
+            models: [{ appLabel: "store", modelName: "Category" }],
+            mode: "CREATE",
+            includeNested: false,
+          },
+        },
+        result: {
+          data: {
+            modelFormContractPages: {
+              page: 1,
+              perPage: 1,
+              total: 1,
+              results: [categoryContract],
+            },
+          },
+        },
+      },
+    ];
+
+    renderWithMocks(
+      <ModelForm
+        app="store"
+        model="Product"
+        mode="CREATE"
+        nested={["category"]}
+        onlyRequired
+      />,
+      mocks,
+    );
+
+    const payload = await getRenderedSchema();
+    const fields = payload.sections[0].fields as Array<Record<string, unknown>>;
+    const fieldNames = fields.map((field) => String(field.name ?? ""));
+    expect(fieldNames).toEqual(["category"]);
+
+    const categoryField = fields.find((field) => field.name === "category");
+    expect(categoryField?.type).toBe("object");
+    expect(
+      (categoryField?.fields as Array<{ name: string }>).some(
+        (field) => field.name === "name",
+      ),
+    ).toBe(true);
+  });
+
   it("applies extended nested controls for relation forms", async () => {
     const rootContract: ModelFormContract = {
       ...sampleModelFormContract,

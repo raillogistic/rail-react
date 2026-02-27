@@ -498,14 +498,38 @@ export function buildSchemaFromContract(
   contract: ModelFormContract,
 ): FormSchema<Record<string, any>> {
   const fieldsByPath = new Map<string, FormFieldConfig>();
+  const relationFieldInfoByPath = new Map<
+    string,
+    {
+      required: boolean;
+      defaultValue: unknown;
+    }
+  >();
   const resolveFieldByContractPath = (
     path: string,
   ): FormFieldConfig | undefined => fieldsByPath.get(path);
+
+  /**
+   * Returns relation field metadata captured from contract.fields so relation-only
+   * fallback fields preserve required/default semantics.
+   */
+  const resolveRelationFieldInfo = (
+    relation: ModelFormContract["relations"][number],
+  ) => {
+    for (const candidate of relationFieldCandidates(relation)) {
+      const info = relationFieldInfoByPath.get(candidate);
+      if (info) {
+        return info;
+      }
+    }
+    return undefined;
+  };
 
   const buildGeneratedRelationField = (
     relation: ModelFormContract["relations"][number],
   ): FormFieldConfig => {
     const relationFieldName = resolveRelationFieldName(relation) || relation.path;
+    const relationFieldInfo = resolveRelationFieldInfo(relation);
     const relationReadable = isRelationReadable(relation);
     const relationWritable = isRelationWritable(relation);
     const relatedModel = [relation.relatedAppLabel, relation.relatedModelName]
@@ -515,10 +539,11 @@ export function buildSchemaFromContract(
       name: relationFieldName,
       type: "select-query",
       label: relation.label,
-      required: false,
+      required: relationFieldInfo?.required ?? false,
       readOnly: !relationWritable,
       hidden: !relationReadable,
-      defaultValue: relation.toMany ? [] : null,
+      defaultValue:
+        relationFieldInfo?.defaultValue ?? (relation.toMany ? [] : null),
       multiple: relation.toMany,
       relatedModel: relatedModel || relation.relatedModelName,
       graphql: relatedModel
@@ -541,6 +566,27 @@ export function buildSchemaFromContract(
   };
 
   for (const field of contract.fields) {
+    if (field.kind === "RELATION") {
+      const relationRequired = Boolean(field.required || !field.nullable);
+      const relationDefaultValue = parseJsonValue(field.defaultValue);
+      const relationFieldAliases = contractFieldCandidates(field);
+      const canonicalRelationFieldName = resolveContractFieldName(field);
+
+      if (canonicalRelationFieldName) {
+        relationFieldInfoByPath.set(canonicalRelationFieldName, {
+          required: relationRequired,
+          defaultValue: relationDefaultValue,
+        });
+      }
+
+      for (const alias of relationFieldAliases) {
+        relationFieldInfoByPath.set(alias, {
+          required: relationRequired,
+          defaultValue: relationDefaultValue,
+        });
+      }
+    }
+
     const readable = field.readable ?? true;
     const writable = field.writable ?? !field.readOnly;
     const visibility = normalizeVisibility(field.visibility);

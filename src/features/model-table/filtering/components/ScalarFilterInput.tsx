@@ -74,9 +74,6 @@ export const ScalarFilterInput: React.FC<ScalarFilterInputProps> = ({
     baseType === "Boolean" ||
     String(field.filterInputType ?? "")
       .toLowerCase()
-      .includes("boolean") ||
-    String(operator.graphqlType ?? "")
-      .toLowerCase()
       .includes("boolean");
 
   // Dummy form for QueryChoiceInput
@@ -123,6 +120,8 @@ export const ScalarFilterInput: React.FC<ScalarFilterInputProps> = ({
       type: "select-query",
       relatedModel: fullModel,
       multiple: isList,
+      className:
+        "py-0 [&>div:first-child]:hidden [&_[data-slot=button]]:min-h-8 [&_[data-slot=button]]:h-8 [&_[data-slot=button]]:py-0",
       placeholder: uiHints?.placeholder ?? "Rechercher...",
       graphql: {
         listFieldName: listFieldName.toLowerCase(),

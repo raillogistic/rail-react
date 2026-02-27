@@ -1301,7 +1301,7 @@ export function StoreOrderUpdateModelFormExample({
       </h2>
       <ModelForm
         app="store"
-        model="Product"
+        model="Order"
         mode="UPDATE"
         objectId={objectId}
         runtimeOverrides={ORDER_RUNTIME_OVERRIDES}
