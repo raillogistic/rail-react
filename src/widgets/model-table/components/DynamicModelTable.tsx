@@ -658,8 +658,13 @@ function DynamicBaseTableContent({
     if (enableSelection) {
       return true;
     }
-    return (metadata?.templates ?? []).length > 0;
-  }, [enableSelection, metadata?.templates]);
+    if ((metadata?.templates ?? []).length > 0) {
+      return true;
+    }
+    // Keep selection column visible while capabilities are unresolved to avoid
+    // late layout shifts when template capabilities arrive.
+    return !capabilitiesLoaded;
+  }, [capabilitiesLoaded, enableSelection, metadata?.templates]);
   const rowDetailExpandEnabled = useMemo(() => {
     const requested = expand?.enabled ?? Boolean(expand?.renderRow);
     return requested && Boolean(expand?.renderRow);

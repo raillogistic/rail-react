@@ -49,6 +49,10 @@ export type ModelTableContentControllerState = {
   model: string;
   /** Loaded metadata schema. */
   metadata?: ModelSchema;
+  /** Whether capabilities metadata has finished resolving. */
+  capabilitiesLoaded: boolean;
+  /** True while template capabilities are still being resolved. */
+  templateCapabilitiesPending: boolean;
   /** Toolbar filter panel configuration. */
   filterPanel?: unknown;
   /** Table-level labels/configuration object. */

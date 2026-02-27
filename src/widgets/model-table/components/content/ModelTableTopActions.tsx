@@ -23,6 +23,7 @@ export function ModelTableTopActions({
           key={action.key}
           variant={action.variant ?? "outline"}
           size={action.size === "icon" ? "icon" : "sm"}
+          title={action.disabled ? action.disabledReason : undefined}
           className={cn(
             "h-9 rounded-xl transition-all duration-200 font-bold uppercase tracking-wider text-[10px]",
             action.key === "add" &&

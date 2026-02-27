@@ -50,6 +50,11 @@ type ModelTableBulkActionsBarProps = ModelTableBulkActionsBarSlotProps;
 export function ModelTableBulkActionsBar({
   controller,
 }: ModelTableBulkActionsBarProps) {
+  const showTemplatePlaceholders =
+    controller.templateCapabilitiesPending &&
+    controller.pdfTemplates.length === 0 &&
+    controller.excelTemplates.length === 0;
+
   return (
     <div
       className={cn(
@@ -83,7 +88,7 @@ export function ModelTableBulkActionsBar({
         {/* Actions cluster */}
         <div className="flex items-center gap-1.5 rounded-xl bg-muted/30 p-1">
           <div className="flex items-center gap-0.5">
-            {controller.pdfTemplates.length > 0 && (
+            {controller.pdfTemplates.length > 0 ? (
               <DropdownMenu>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -140,9 +145,29 @@ export function ModelTableBulkActionsBar({
                   </div>
                 </DropdownMenuContent>
               </DropdownMenu>
-            )}
+            ) : showTemplatePlaceholders ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    disabled
+                    className="size-8 rounded-lg text-blue-500/60"
+                    title="Chargement des templates PDF..."
+                  >
+                    <FileText className="size-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="top"
+                  className="rounded-lg bg-blue-600 font-bold uppercase text-[9px] tracking-widest text-white"
+                >
+                  Chargement des templates PDF...
+                </TooltipContent>
+              </Tooltip>
+            ) : null}
 
-            {controller.excelTemplates.length > 0 && (
+            {controller.excelTemplates.length > 0 ? (
               <DropdownMenu>
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -199,7 +224,27 @@ export function ModelTableBulkActionsBar({
                   </div>
                 </DropdownMenuContent>
               </DropdownMenu>
-            )}
+            ) : showTemplatePlaceholders ? (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    disabled
+                    className="size-8 rounded-lg text-emerald-500/60"
+                    title="Chargement des templates Excel..."
+                  >
+                    <FileSpreadsheet className="size-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent
+                  side="top"
+                  className="rounded-lg bg-emerald-600 font-bold uppercase text-[9px] tracking-widest text-white"
+                >
+                  Chargement des templates Excel...
+                </TooltipContent>
+              </Tooltip>
+            ) : null}
           </div>
 
           <Separator

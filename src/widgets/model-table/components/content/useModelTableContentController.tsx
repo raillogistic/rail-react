@@ -167,7 +167,7 @@ export function useModelTableContentController({
   fields,
   topActions,
 }: UseModelTableContentControllerInput): ModelTableContentControllerState {
-  const { metadata, app, model } = useMetadata();
+  const { metadata, app, model, capabilitiesLoaded } = useMetadata();
   const tableState = useTable();
   const data = tableState.data ?? [];
   const queryPage = tableState.queryPage;
@@ -221,6 +221,7 @@ export function useModelTableContentController({
 
   const createMutation = findMutation(metadata?.mutations, "create");
   const canCreate = Boolean(createMutation?.allowed);
+  const createCapabilitiesPending = !capabilitiesLoaded && !canCreate;
 
   const createContext = useMemo<ModelTableCreateContext>(
     () => ({
@@ -319,10 +320,7 @@ export function useModelTableContentController({
     };
   }, [app, handleCreateSubmitResult, model, resolvedCreateConfig]);
 
-  const addAction = useMemo<ModelTableV2TopAction | undefined>(() => {
-    if (!canCreate) {
-      return undefined;
-    }
+  const addAction = useMemo<ModelTableV2TopAction>(() => {
     return {
       key: "add",
       label: tableConfig?.addLabel ?? "Ajouter",
@@ -331,7 +329,16 @@ export function useModelTableContentController({
       size: "sm",
       order: -1,
       show_when: "always",
+      disabled: !canCreate,
+      disabledReason: canCreate
+        ? undefined
+        : createCapabilitiesPending
+          ? "Chargement des capacites de creation..."
+          : "Creation non autorisee.",
       on_click: () => {
+        if (!canCreate) {
+          return;
+        }
         if (resolvedCreateConfig.type === "link") {
           if (!resolvedCreateConfig.hrefTemplate) {
             toast.error("Configuration create.link manquante (hrefTemplate).");
@@ -350,6 +357,7 @@ export function useModelTableContentController({
     };
   }, [
     canCreate,
+    createCapabilitiesPending,
     createContext,
     navigate,
     resolvedCreateConfig.hrefTemplate,
@@ -442,6 +450,8 @@ export function useModelTableContentController({
       ),
     [metadata?.templates],
   );
+  const templateCapabilitiesPending =
+    !capabilitiesLoaded && templateEntries.length === 0;
 
   const pdfTemplates = useMemo(
     () => templateEntries.filter((template) => normalizeTemplateType(template) === "pdf"),
@@ -478,7 +488,9 @@ export function useModelTableContentController({
     return combined
       .map((action) => ({
         ...action,
-        disabled: action.show_when === "has_selection" && !hasSelection,
+        disabled:
+          Boolean(action.disabled) ||
+          (action.show_when === "has_selection" && !hasSelection),
       }))
       .sort((left, right) => (left.order ?? 0) - (right.order ?? 0));
   }, [
@@ -551,6 +563,8 @@ export function useModelTableContentController({
     app,
     model,
     metadata,
+    capabilitiesLoaded,
+    templateCapabilitiesPending,
     filterPanel,
     tableConfig,
     quickSearch,

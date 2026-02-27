@@ -44,8 +44,14 @@ vi.mock("@/shared/ui/kit/button", () => ({
     children: React.ReactNode;
     disabled?: boolean;
     onClick?: () => void;
+    title?: string;
   }) => (
-    <button type="button" disabled={props.disabled} onClick={props.onClick}>
+    <button
+      type="button"
+      disabled={props.disabled}
+      onClick={props.onClick}
+      title={props.title}
+    >
       {props.children}
     </button>
   ),
@@ -122,6 +128,7 @@ describe("ModelTable top-action create flow", () => {
     mockUseMetadata.mockReturnValue({
       app: "store",
       model: "Order",
+      capabilitiesLoaded: true,
       metadata: {
         model: "Order",
         verboseName: "Commande",
@@ -213,10 +220,11 @@ describe("ModelTable top-action create flow", () => {
     });
   });
 
-  it("hides add top action when create permission is denied", () => {
+  it("disables add top action when create permission is denied", () => {
     mockUseMetadata.mockReturnValue({
       app: "store",
       model: "Order",
+      capabilitiesLoaded: true,
       metadata: {
         model: "Order",
         verboseName: "Commande",
@@ -228,6 +236,30 @@ describe("ModelTable top-action create flow", () => {
 
     render(<CreateHarness />);
 
-    expect(screen.queryByRole("button", { name: /Ajouter/i })).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /Ajouter/i })).toBeDisabled();
+  });
+
+  it("keeps add top action visible while create capabilities are loading", () => {
+    mockUseMetadata.mockReturnValue({
+      app: "store",
+      model: "Order",
+      capabilitiesLoaded: false,
+      metadata: {
+        model: "Order",
+        verboseName: "Commande",
+        verboseNamePlural: "Commandes",
+        templates: [],
+        mutations: [],
+      },
+    });
+
+    render(<CreateHarness />);
+
+    const addButton = screen.getByRole("button", { name: /Ajouter/i });
+    expect(addButton).toBeDisabled();
+    expect(addButton).toHaveAttribute(
+      "title",
+      "Chargement des capacites de creation...",
+    );
   });
 });

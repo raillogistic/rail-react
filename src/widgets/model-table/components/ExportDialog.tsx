@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  cloneElement,
+  isValidElement,
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
 import {
   Download,
   Loader2,
@@ -137,7 +144,8 @@ export function ModelTableExportDialog({
   };
   trigger?: React.ReactNode;
 }) {
-  const { metadata, ensureCapabilitiesLoaded } = useMetadata();
+  const { metadata, capabilitiesLoaded, ensureCapabilitiesLoaded } =
+    useMetadata();
   const {
     columnOrder,
     columnVisibility,
@@ -160,7 +168,13 @@ export function ModelTableExportDialog({
   const [searchQuery, setSearchQuery] = useState("");
   const hasGrouping = !!groupingField;
 
-  const canExport = !!metadata?.permissions?.canExport;
+  const canExport = metadata?.permissions?.canExport === true;
+  const canOpenDialog = Boolean(metadata) && canExport;
+  const capabilitiesPending = !capabilitiesLoaded && !canExport;
+  const triggerDisabled = !canOpenDialog;
+  const triggerDisabledReason = capabilitiesPending
+    ? "Chargement des capacites d'export..."
+    : "Export non autorise.";
 
   useEffect(() => {
     if (!open || !metadata) return;
@@ -177,6 +191,12 @@ export function ModelTableExportDialog({
     if (!open) return;
     void ensureCapabilitiesLoaded();
   }, [ensureCapabilitiesLoaded, open]);
+
+  useEffect(() => {
+    if (open && !canOpenDialog) {
+      setOpen(false);
+    }
+  }, [canOpenDialog, open]);
 
   useEffect(() => {
     if (!hasGrouping) return;
@@ -371,23 +391,66 @@ export function ModelTableExportDialog({
     }
   }, [metadata, buildExportPayload, fileExtension, hasGrouping]);
 
-  if (!metadata || !canExport) return null;
+  const handleDialogOpenChange = useCallback(
+    (nextOpen: boolean) => {
+      if (!nextOpen) {
+        setOpen(false);
+        return;
+      }
+      if (!canOpenDialog) {
+        if (capabilitiesPending) {
+          void ensureCapabilitiesLoaded();
+        }
+        return;
+      }
+      setOpen(true);
+    },
+    [canOpenDialog, capabilitiesPending, ensureCapabilitiesLoaded],
+  );
+
+  const resolvedTrigger = useMemo(() => {
+    if (!trigger) {
+      return (
+        <Button
+          variant="outline"
+          size="icon"
+          disabled={triggerDisabled}
+          title={triggerDisabled ? triggerDisabledReason : undefined}
+          className="size-8 rounded-xl border-border/30 hover:bg-primary/5 hover:text-primary transition-all active:scale-95 disabled:opacity-50"
+          aria-label={labels?.buttonAria ?? "Exporter les donnees"}
+        >
+          <Download className="size-3.5" />
+        </Button>
+      );
+    }
+
+    if (!isValidElement<Record<string, unknown>>(trigger)) {
+      return trigger;
+    }
+
+    const existingDisabled = Boolean(trigger.props.disabled);
+    const effectiveDisabled = triggerDisabled || existingDisabled;
+    const existingClassName =
+      typeof trigger.props.className === "string" ? trigger.props.className : "";
+    const existingTitle =
+      typeof trigger.props.title === "string" ? trigger.props.title : undefined;
+
+    return cloneElement(trigger, {
+      disabled: effectiveDisabled,
+      "aria-disabled": effectiveDisabled ? true : undefined,
+      title: existingTitle ?? (effectiveDisabled ? triggerDisabledReason : undefined),
+      className: cn(
+        existingClassName,
+        effectiveDisabled && "disabled:opacity-50 cursor-not-allowed",
+      ),
+    });
+  }, [labels?.buttonAria, trigger, triggerDisabled, triggerDisabledReason]);
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {trigger ?? (
-          <Button
-            variant="outline"
-            size="icon"
-            className="size-8 rounded-xl border-border/30 hover:bg-primary/5 hover:text-primary transition-all active:scale-95"
-            aria-label={labels?.buttonAria ?? "Exporter les donnÃƒÂ©es"}
-          >
-            <Download className="size-3.5" />
-          </Button>
-        )}
-      </DialogTrigger>
-      <DialogContent className="max-w-5xl h-[90vh] max-h-[900px] gap-0 p-0 overflow-hidden border-border/30 shadow-2xl backdrop-blur-xl bg-background/95 rounded-2xl flex flex-col">
+    <Dialog open={open} onOpenChange={handleDialogOpenChange}>
+      <DialogTrigger asChild>{resolvedTrigger}</DialogTrigger>
+      {canOpenDialog && metadata ? (
+        <DialogContent className="max-w-5xl h-[90vh] max-h-[900px] gap-0 p-0 overflow-hidden border-border/30 shadow-2xl backdrop-blur-xl bg-background/95 rounded-2xl flex flex-col">
         <DialogHeader className="flex-none px-6 py-5 border-b border-border/15">
           <div className="flex items-center gap-3">
             <div className="flex size-10 items-center justify-center rounded-xl bg-primary/10">
@@ -607,6 +670,8 @@ export function ModelTableExportDialog({
           </div>
         </DialogFooter>
       </DialogContent>
+      ) : null}
     </Dialog>
   );
 }
+
