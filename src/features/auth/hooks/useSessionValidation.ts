@@ -10,7 +10,7 @@
 
 import { useCallback, useState } from "react";
 import { useLazyQuery } from "@apollo/client/react";
-import { tokenStorage } from "../utils/token-storage";
+import { tokenStorage } from "@/shared/api/auth/token-storage";
 import {
   GET_CURRENT_USER_RESOLVED,
   type CurrentUserResponse,

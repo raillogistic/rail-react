@@ -21,7 +21,7 @@ import {
   persistTableMetadata,
   readPersistedTableMetadata,
 } from "@/shared/api/graphql/graphql/metadata/persisted-cache";
-import { GET_MODEL_SCHEMA } from "../queries";
+import { TABLE_MODEL_METADATA_QUERY as GET_MODEL_SCHEMA } from "@/shared/api/graphql/graphql/metadata/queries";
 import { mergeModelSchemaWithRelationships } from "../utils";
 import type { FieldSchema, ModelSchema, RelationshipSchema } from "../types";
 
@@ -332,7 +332,7 @@ function RelationFieldRow({
       ) : null}
       {isCycle ? (
         <div className="ml-7 mt-0.5 border-l border-dashed border-amber-300/40 pl-3.5 py-1.5 text-[9px] font-medium text-amber-500/50">
-          Cycle détecté (récursion bloquée)
+          Cycle dÃ©tectÃ© (rÃ©cursion bloquÃ©e)
         </div>
       ) : null}
     </Collapsible>
@@ -433,7 +433,7 @@ export function ExportFieldTree({
             <Layers className="size-5 text-muted-foreground/30" />
           </div>
           <p className="text-[11px] font-medium text-muted-foreground/40">
-            Aucun champ trouvé
+            Aucun champ trouvÃ©
           </p>
         </div>
       ) : (

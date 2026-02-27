@@ -102,7 +102,7 @@ vi.mock("sonner", () => ({
   toast: sonnerToast,
 }));
 
-vi.mock("@/features/auth/utils/token-storage", () => ({
+vi.mock("@/shared/api/auth/token-storage", () => ({
   getAuthorizationHeader: () => "Bearer test-token",
   getSecureHeaders: () => ({
     "X-CSRFToken": "csrf-token",

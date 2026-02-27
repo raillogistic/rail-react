@@ -10,7 +10,7 @@ import {
   GET_CURRENT_USER,
 } from "@/features/auth/api";
 import { AuthUser, LoginCredentials, TokenPair } from "../types";
-import { tokenStorage } from "../utils/token-storage";
+import { tokenStorage } from "@/shared/api/auth/token-storage";
 import { decodeToken } from "../utils/token";
 import { SessionValidationIndeterminateError } from "../services/SessionService";
 import {

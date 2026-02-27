@@ -15,7 +15,7 @@ import type {
   ModelFormInitialData,
   ModelFormMode,
   ModelFormMutationBindings,
-} from "@/widgets/model-form/types/generatedContract";
+} from "@/shared/api/graphql/graphql/model-form/generatedContract";
 
 /**
  * Supported generated model mutation modes.

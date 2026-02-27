@@ -1,5 +1,5 @@
 import React, { Component, ReactNode } from 'react';
-import { AuthError, AuthErrorType, getErrorMessage } from '../utils/error-handler';
+import { AuthError, AuthErrorType, getErrorMessage } from '@/shared/api/auth/error-handler';
 
 interface Props {
   children: ReactNode;
@@ -119,17 +119,17 @@ function DefaultAuthErrorUI({ error, onRetry, onLogout, canRetry }: DefaultAuthE
   const getErrorIcon = () => {
     switch (error.type) {
       case AuthErrorType.NETWORK_ERROR:
-        return '🌐';
+        return 'ðŸŒ';
       case AuthErrorType.TOKEN_EXPIRED:
       case AuthErrorType.SESSION_EXPIRED:
-        return '⏰';
+        return 'â°';
       case AuthErrorType.UNAUTHORIZED:
       case AuthErrorType.TOKEN_INVALID:
-        return '🔒';
+        return 'ðŸ”’';
       case AuthErrorType.FORBIDDEN:
-        return '🚫';
+        return 'ðŸš«';
       default:
-        return '⚠️';
+        return 'âš ï¸';
     }
   };
 

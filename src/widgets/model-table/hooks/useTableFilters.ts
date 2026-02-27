@@ -3,22 +3,22 @@ import { useTable } from "../context/TableContext";
 import {
   FilterFormState,
   RelationFunctionFilter,
-} from "@/features/model-table/filtering/types";
+} from "@/widgets/model-table/filtering/types";
 import {
   appendChild,
   createCondition,
   findAll,
   removeById,
   updateById,
-} from "@/features/model-table/filtering/tree/operations";
-import { buildQueryVariablesFromState } from "@/features/model-table/filtering/queryBuilder";
+} from "@/widgets/model-table/filtering/tree/operations";
+import { buildQueryVariablesFromState } from "@/widgets/model-table/filtering/queryBuilder";
 import {
   getActiveFilterStats,
   normalizeFilterFormState,
   removeRelationFunctionsByRelation,
   upsertRelationFunction,
-} from "@/features/model-table/filtering/engine";
-import { createInitialFilterState } from "@/features/model-table/filtering/state";
+} from "@/widgets/model-table/filtering/engine";
+import { createInitialFilterState } from "@/widgets/model-table/filtering/state";
 
 type AddConditionInput = {
   field?: string;

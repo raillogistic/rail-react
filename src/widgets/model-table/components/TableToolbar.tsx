@@ -45,8 +45,8 @@ import { cn } from "@/shared/utils";
 import { useTable } from "../context/TableContext";
 import { useMetadata } from "../context/MetadataContext";
 import { useTableFilters } from "../hooks/useTableFilters";
-import { FilterPanel } from "@/features/model-table/filtering/FilterPanel";
-import { FilterFormState, FilterQueryVariables } from "@/features/model-table/filtering/types";
+import { FilterPanel } from "@/widgets/model-table/filtering/FilterPanel";
+import { FilterFormState, FilterQueryVariables } from "@/widgets/model-table/filtering/types";
 import type {
   ModelTableFilterPanelProps,
   ModelTableV2TableConfig,
@@ -79,14 +79,14 @@ type TableToolbarProps = {
 
 /**
  * Composant Toolbar pour le ModelTableV2.
- * Gère la recherche, les filtres, l'affichage des colonnes, le groupement et l'export.
- * Design moderne, responsive et optimisé pour une utilisation intensive.
+ * GÃ¨re la recherche, les filtres, l'affichage des colonnes, le groupement et l'export.
+ * Design moderne, responsive et optimisÃ© pour une utilisation intensive.
  *
  * @param {ModelTableFilterPanelProps} filterPanel - Configuration du panneau de filtres.
  * @param {ModelTableV2TableConfig} tableConfig - Configuration globale de la table.
- * @param {boolean} quickSearch - Active/Désactive la recherche rapide.
+ * @param {boolean} quickSearch - Active/DÃ©sactive la recherche rapide.
  * @param {BaseModelTableFieldsInput} fields - Configuration des colonnes exposees dans le selecteur.
- * @param {React.ReactNode} extraActions - Actions supplémentaires à afficher.
+ * @param {React.ReactNode} extraActions - Actions supplÃ©mentaires Ã  afficher.
  */
 export function TableToolbar({
   filterPanel,
@@ -138,7 +138,7 @@ export function TableToolbar({
   const panelConfig = useMemo(
     () => ({
       mode: filterPanel?.mode ?? (isMobile ? "modal" : "drawer"),
-      title: filterPanel?.title ?? "Filtres Avancés",
+      title: filterPanel?.title ?? "Filtres AvancÃ©s",
       side: filterPanel?.side ?? "right",
       widthClassName:
         filterPanel?.widthClassName ?? (isMobile ? "w-full" : "sm:w-[450px]"),
@@ -307,7 +307,7 @@ export function TableToolbar({
                         <span className="relative inline-flex h-2 w-2 rounded-full bg-primary"></span>
                       </div>
                       <span className="text-[10px] uppercase tracking-wider">
-                        Groupé par {groupingField}
+                        GroupÃ© par {groupingField}
                       </span>
                       <button
                         onClick={() => setGroupingField(null)}
@@ -358,7 +358,7 @@ export function TableToolbar({
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent side="bottom">
-                        Glisser-déposer
+                        Glisser-dÃ©poser
                       </TooltipContent>
                     </Tooltip>
 
@@ -455,19 +455,19 @@ export function TableToolbar({
                         }
                       >
                         <LayoutGrid className="mr-2 h-4 w-4" />
-                        Densité: {density}
+                        DensitÃ©: {density}
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => setWrapCells(!wrapCells)}
                       >
                         <Layers className="mr-2 h-4 w-4" />
-                        Retour à la ligne: {wrapCells ? "Oui" : "Non"}
+                        Retour Ã  la ligne: {wrapCells ? "Oui" : "Non"}
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => setDragModeEnabled(!dragModeEnabled)}
                       >
                         <GripVertical className="mr-2 h-4 w-4" />
-                        Mode Glisser: {dragModeEnabled ? "Activé" : "Désactivé"}
+                        Mode Glisser: {dragModeEnabled ? "ActivÃ©" : "DÃ©sactivÃ©"}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -610,7 +610,7 @@ export function TableToolbar({
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent side="bottom">
-                      Rafraîchir les données
+                      RafraÃ®chir les donnÃ©es
                     </TooltipContent>
                   </Tooltip>
                 </div>

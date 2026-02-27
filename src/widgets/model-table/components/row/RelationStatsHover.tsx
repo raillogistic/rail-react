@@ -6,7 +6,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/shared/ui/kit/tooltip";
-import { GET_MODEL_SCHEMA } from "../../queries";
+import { TABLE_MODEL_METADATA_QUERY as GET_MODEL_SCHEMA } from "@/shared/api/graphql/graphql/metadata/queries";
 import type { BaseModelTableRelationStatsOverride } from "../../types";
 import { toGraphqlFieldName } from "../../utils";
 import {

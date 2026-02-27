@@ -25,7 +25,7 @@ export interface FilterPanelOptions {
 }
 
 export type ModelTableFilterPanelProps = FilterPanelOptions &
-  Partial<import("@/features/model-table/filtering/FilterPanel").FilterPanelProps>;
+  Partial<import("@/widgets/model-table/filtering/FilterPanel").FilterPanelProps>;
 
 /**
  * Supported update-action presentation modes.

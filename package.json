@@ -11,7 +11,7 @@
     "lint:changed": "node scripts/lint-changed.mjs",
     "check:encoding": "node scripts/check-mojibake.mjs",
     "check:layers": "node scripts/check-layer-imports.mjs",
-    "check:layers:full": "node scripts/check-layer-imports-full.mjs",
+    "check:layers:full": "node scripts/check-layer-imports-full.mjs --strict",
     "check:manifests": "node scripts/check-manifests.mjs",
     "check:architecture": "npm run check:layers && npm run check:manifests",
     "check:architecture:full": "npm run check:layers:full && npm run check:manifests",

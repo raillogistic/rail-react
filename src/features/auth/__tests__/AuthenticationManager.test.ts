@@ -4,7 +4,7 @@ import { LoginCredentials, AuthUser, TokenPair } from '../types';
 import { SessionValidationIndeterminateError } from '../services/SessionService';
 
 // Mock legacy token storage
-vi.mock('../utils/token-storage', () => ({
+vi.mock('@/shared/api/auth/token-storage', () => ({
   tokenStorage: {
     setAccessToken: vi.fn(),
     setRefreshToken: vi.fn(),

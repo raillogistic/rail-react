@@ -1,5 +1,46 @@
-import type { ModelTableType, FieldPermissionSnapshot } from "@/widgets/model-table/compat/types";
-import type { ModelSchema } from "@/widgets/model-table/types";
+export interface FieldPermissionSnapshot {
+  can_read?: boolean;
+  can_write?: boolean;
+  visibility?: string | null;
+  access_level?: string | null;
+  mask_value?: string | null;
+  reason?: string | null;
+}
+
+export interface ModelTableFieldMetadata {
+  name: string;
+  permissions?: FieldPermissionSnapshot | null;
+  readable?: boolean;
+  writable?: boolean;
+  visibility?: string | null;
+}
+
+export interface ModelTableType {
+  fields?: ModelTableFieldMetadata[];
+  permissions?: unknown;
+}
+
+export interface ModelSchemaField {
+  name: string;
+  permissions?: FieldPermissionSnapshot | null;
+  readable?: boolean;
+  writable?: boolean;
+  visibility?: string | null;
+}
+
+export interface ModelSchemaRelationship {
+  name: string;
+  permissions?: FieldPermissionSnapshot | null;
+  readable?: boolean;
+  writable?: boolean;
+  visibility?: string | null;
+}
+
+export interface ModelSchema {
+  fields?: ModelSchemaField[];
+  relationships?: ModelSchemaRelationship[];
+  permissions?: unknown;
+}
 
 export type GraphQLModelMetadataResource =
   | { kind: "table"; metadata: ModelTableType }
@@ -28,7 +69,7 @@ export interface NormalizedFieldPermission {
 }
 
 export const normalizeFieldPermission = (
-  permission: RawFieldPermission
+  permission: RawFieldPermission,
 ): NormalizedFieldPermission => {
   if (!permission) {
     return {

@@ -7,7 +7,7 @@ import {
   MODEL_FORM_CONTRACT_QUERY,
   MODEL_FORM_INITIAL_DATA_QUERY,
 } from "../modelFormQueries";
-import type { ModelFormContract } from "@/widgets/model-form/types/generatedContract";
+import type { ModelFormContract } from "@/shared/api/graphql/graphql/model-form/generatedContract";
 import { buildModelMutationDocument } from "../mutationBuilder";
 import {
   buildModelCreateMutationVariables,

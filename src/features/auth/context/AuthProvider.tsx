@@ -9,7 +9,7 @@ import type {
   TokenPair,
   LogoutOptions,
 } from '../types';
-import { AUTH_SESSION_EVENT } from '../utils/token-storage';
+import { AUTH_SESSION_EVENT } from '@/shared/api/auth/token-storage';
 
 interface AuthContextValue extends AuthState {
   login: (credentials: LoginCredentials) => Promise<AuthResult>;

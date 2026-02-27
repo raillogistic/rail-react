@@ -5,7 +5,7 @@ import { EventBus } from '../../core/EventBus';
 import { TokenPair } from '../../types';
 
 // Mock legacy token storage to avoid side effects and decoding errors
-vi.mock('../../utils/token-storage', () => ({
+vi.mock('@/shared/api/auth/token-storage', () => ({
   tokenStorage: {
     setAccessToken: vi.fn(),
     setRefreshToken: vi.fn(),

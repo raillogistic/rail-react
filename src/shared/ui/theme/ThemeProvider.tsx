@@ -25,7 +25,7 @@ import {
   DEFAULT_LETTER_SPACING,
   DEFAULT_STORAGE_KEY
 } from './constants';
-import { 
+import {
   CREATE_USER_SETTINGS_MUTATION_RESOLVED,
   UPDATE_USER_SETTINGS_MUTATION_RESOLVED,
   type CreateUserSettingsResponse,
@@ -34,7 +34,7 @@ import {
   type UpdateUserSettingsVariables,
   type UserSettingsInputPayload,
 } from '@/shared/api/graphql/legacy/mutations';
-import { useAuthContext } from '@/features/auth/context';
+import { AUTH_SESSION_EVENT } from '@/shared/api/auth/token-storage';
 
 type ThemeProviderProps = {
   children: React.ReactNode;
@@ -202,7 +202,7 @@ export function ThemeProvider({
   ...props
 }: ThemeProviderProps) {
   const apolloClient = useApolloClient();
-  const { user } = useAuthContext();
+  const [sessionHydrationKey, setSessionHydrationKey] = useState(0);
   const [theme, setThemeState] = useState<ThemeKey>(() => {
     return (localStorage.getItem(`${storageKey}-theme`) as ThemeKey) || defaultTheme;
   });
@@ -237,42 +237,23 @@ export function ThemeProvider({
 
   const settingsIdRef = useRef<string | null>(null);
   const currentUserIdRef = useRef<string | null>(null);
-  const hydratedUserIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (user?.id) {
-      currentUserIdRef.current = String(user.id);
-    }
-
-    const userSettings = (user?.settings as { id?: string | number } | undefined) ?? undefined;
-    if (userSettings?.id != null) {
-      settingsIdRef.current = String(userSettings.id);
-    }
-  }, [user?.id, user?.settings]);
-
-  useEffect(() => {
-    const userId = user?.id ? String(user.id) : null;
-    if (!userId) {
-      hydratedUserIdRef.current = null;
-      return;
-    }
-    if (hydratedUserIdRef.current === userId) {
+    if (typeof window === 'undefined') {
       return;
     }
 
-    const userSettings = (user?.settings as {
-      id?: string | number;
-      theme?: string;
-      mode?: string;
-      layout?: string;
-      sidebar_collapse_mode?: string;
-      font_size?: string;
-      font_family?: string;
-      sidebarCollapseMode?: string;
-      fontSize?: string;
-      fontFamily?: string;
-    } | undefined) ?? undefined;
+    const handleSessionChange = () => {
+      setSessionHydrationKey((prev) => prev + 1);
+    };
 
+    window.addEventListener(AUTH_SESSION_EVENT, handleSessionChange);
+    return () => {
+      window.removeEventListener(AUTH_SESSION_EVENT, handleSessionChange);
+    };
+  }, []);
+
+  useEffect(() => {
     const applyResolvedSettings = (settings: {
       id?: string | number | null;
       theme?: string | null;
@@ -323,44 +304,39 @@ export function ThemeProvider({
       }
     };
 
-    // Apply quickly from in-memory context when available, but still refresh from server.
-    if (userSettings) {
-      applyResolvedSettings(userSettings);
-    } else {
-      // Apply local fallback immediately while waiting for server-authoritative values.
-      const persistedTheme = localStorage.getItem(`${storageKey}-theme`);
-      const persistedMode = localStorage.getItem(`${storageKey}-mode`);
-      const persistedLayout = localStorage.getItem(`${storageKey}-layout`);
-      const persistedSidebarCollapseMode = localStorage.getItem(`${storageKey}-sidebar-collapse`);
-      const persistedFontSize = localStorage.getItem(`${storageKey}-font-size`);
-      const persistedFontFamily = localStorage.getItem(`${storageKey}-font-family`);
-      const persistedLineHeight = localStorage.getItem(`${storageKey}-line-height`);
-      const persistedLetterSpacing = localStorage.getItem(`${storageKey}-letter-spacing`);
+    // Apply local fallback immediately while waiting for server-authoritative values.
+    const persistedTheme = localStorage.getItem(`${storageKey}-theme`);
+    const persistedMode = localStorage.getItem(`${storageKey}-mode`);
+    const persistedLayout = localStorage.getItem(`${storageKey}-layout`);
+    const persistedSidebarCollapseMode = localStorage.getItem(`${storageKey}-sidebar-collapse`);
+    const persistedFontSize = localStorage.getItem(`${storageKey}-font-size`);
+    const persistedFontFamily = localStorage.getItem(`${storageKey}-font-family`);
+    const persistedLineHeight = localStorage.getItem(`${storageKey}-line-height`);
+    const persistedLetterSpacing = localStorage.getItem(`${storageKey}-letter-spacing`);
 
-      if (persistedTheme) {
-        setThemeState(persistedTheme as ThemeKey);
-      }
-      if (persistedMode) {
-        setModeState(persistedMode as ThemeMode);
-      }
-      if (persistedLayout) {
-        setLayoutState(persistedLayout as Layout);
-      }
-      if (persistedSidebarCollapseMode) {
-        setSidebarCollapseModeState(persistedSidebarCollapseMode as SidebarCollapseMode);
-      }
-      if (persistedFontSize) {
-        setFontSizeState(persistedFontSize as FontSize);
-      }
-      if (persistedFontFamily) {
-        setFontFamilyState(persistedFontFamily as FontFamily);
-      }
-      if (persistedLineHeight) {
-        setLineHeightState(persistedLineHeight as LineHeight);
-      }
-      if (persistedLetterSpacing) {
-        setLetterSpacingState(persistedLetterSpacing as LetterSpacing);
-      }
+    if (persistedTheme) {
+      setThemeState(persistedTheme as ThemeKey);
+    }
+    if (persistedMode) {
+      setModeState(persistedMode as ThemeMode);
+    }
+    if (persistedLayout) {
+      setLayoutState(persistedLayout as Layout);
+    }
+    if (persistedSidebarCollapseMode) {
+      setSidebarCollapseModeState(persistedSidebarCollapseMode as SidebarCollapseMode);
+    }
+    if (persistedFontSize) {
+      setFontSizeState(persistedFontSize as FontSize);
+    }
+    if (persistedFontFamily) {
+      setFontFamilyState(persistedFontFamily as FontFamily);
+    }
+    if (persistedLineHeight) {
+      setLineHeightState(persistedLineHeight as LineHeight);
+    }
+    if (persistedLetterSpacing) {
+      setLetterSpacingState(persistedLetterSpacing as LetterSpacing);
     }
 
     let cancelled = false;
@@ -377,8 +353,12 @@ export function ThemeProvider({
           return;
         }
 
+        const resolvedUserId = data?.me?.id ? String(data.me.id) : null;
+        currentUserIdRef.current = resolvedUserId;
+
         const settings = data?.me?.settings;
         if (!settings) {
+          settingsIdRef.current = null;
           return;
         }
 
@@ -386,10 +366,6 @@ export function ThemeProvider({
         applyResolvedSettings(settings);
       } catch {
         // keep local/default values when backend settings cannot be fetched
-      } finally {
-        if (!cancelled) {
-          hydratedUserIdRef.current = userId;
-        }
       }
     };
 
@@ -398,7 +374,7 @@ export function ThemeProvider({
     return () => {
       cancelled = true;
     };
-  }, [apolloClient, storageKey, user?.id, user?.settings]);
+  }, [apolloClient, storageKey, sessionHydrationKey]);
 
   const [createUserSettings] = useMutation<
     CreateUserSettingsResponse,
@@ -450,10 +426,6 @@ export function ThemeProvider({
   );
 
   const resolveSettingsContext = useCallback(async () => {
-    const localUserId = user?.id ? String(user.id) : null;
-    if (localUserId) {
-      currentUserIdRef.current = localUserId;
-    }
     if (currentUserIdRef.current && settingsIdRef.current) {
       return {
         userId: currentUserIdRef.current,
@@ -486,7 +458,7 @@ export function ThemeProvider({
       userId: currentUserIdRef.current,
       settingsId: settingsIdRef.current,
     };
-  }, [apolloClient, user?.id]);
+  }, [apolloClient]);
 
   const saveSetting = useCallback(
     async (

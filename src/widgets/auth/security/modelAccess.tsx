@@ -1,10 +1,14 @@
 import * as React from "react";
 import { useModelTableMetadata } from "@/widgets/model-table/compat/hooks";
-import type { ModelTableType, FieldPermissionSnapshot } from "@/widgets/model-table/compat/types";
 import { useModelPermissions, type ModelPermissions } from "@/features/auth/lib-auth/hooks/useModelPermissions";
-import { normalizeFieldPermission, type NormalizedFieldPermission } from "@/entities/model-metadata/types";
+import {
+  normalizeFieldPermission,
+  type FieldPermissionSnapshot,
+  type ModelSchema,
+  type ModelTableType,
+  type NormalizedFieldPermission,
+} from "@/entities/model-metadata/types";
 import { useMetadata } from "@/shared/api/graphql/graphql/metadata/gateway";
-import type { ModelSchema } from "@/widgets/model-table/types";
 
 export interface ModelAccessSnapshot {
   appName: string;

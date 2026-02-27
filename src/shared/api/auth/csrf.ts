@@ -1,4 +1,4 @@
-import { tokenStorage } from "./token-storage";
+import { tokenStorage } from "@/shared/api/auth/token-storage";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const csrfBootstrapUrl: string | null = (import.meta as any).env?.VITE_CSRF_ENDPOINT ?? null;

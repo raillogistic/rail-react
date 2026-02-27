@@ -5,11 +5,11 @@ import { gql } from "@apollo/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 import { DynamicModelTable } from "../components/DynamicModelTable";
-import { GET_MODEL_SCHEMA } from "../queries";
+import { TABLE_MODEL_METADATA_QUERY as GET_MODEL_SCHEMA } from "@/shared/api/graphql/graphql/metadata/queries";
 
 vi.stubEnv("VITE_METADATA_GATEWAY_TABLE", "0");
 
-vi.mock("@/features/model-table/filtering/FilterPanel", () => ({
+vi.mock("@/widgets/model-table/filtering/FilterPanel", () => ({
   FilterPanel: () => <div data-testid="dynamic-filter-form-mock">Filter Form</div>,
 }));
 

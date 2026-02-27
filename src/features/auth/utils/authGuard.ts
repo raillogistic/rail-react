@@ -9,7 +9,7 @@
  */
 
 import { isTokenValid, getUserFromToken, hasPermission } from './token';
-import { tokenStorage } from './token-storage';
+import { tokenStorage } from '@/shared/api/auth/token-storage';
 import { PUBLIC_ROUTE_PATHS, ROUTES } from "@/shared/routing/routes";
 
 export class AuthenticationError extends Error {

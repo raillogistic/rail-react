@@ -29,7 +29,7 @@ export default defineConfig({
           if (!normalizedId.includes("node_modules")) {
             if (
               normalizedId.includes("/src/widgets/model-table/components/filtering/") ||
-              normalizedId.includes("/src/features/model-table/filtering/")
+              normalizedId.includes("/src/widgets/model-table/filtering/")
             ) {
               return "table-filtering";
             }
@@ -105,7 +105,7 @@ export default defineConfig({
     environment: "jsdom",
     setupFiles: [
       "./src/test/setup.ts",
-      "./src/features/model-table/filtering/__tests__/setup/setup.ts",
+      "./src/widgets/model-table/filtering/__tests__/setup/setup.ts",
     ],
     css: true,
   },

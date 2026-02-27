@@ -9,7 +9,7 @@ import { useQuery, gql, useApolloClient } from "@apollo/client";
 import { useMemo, useCallback, useRef, useState, useEffect } from "react";
 import { mergeFilterMetadata } from "../metadataMerger";
 import type { UnifiedFilterSchema, RelationFilter } from "../types";
-import { FILTER_METADATA_QUERY } from "../queries";
+import { FILTER_METADATA_QUERY } from "@/shared/api/graphql/graphql/metadata/queries";
 import {
   persistFilterMetadata,
   readPersistedFilterMetadata,

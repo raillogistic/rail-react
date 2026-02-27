@@ -8,7 +8,7 @@ import type {
   ModelFormContract,
   ModelFormInitialData,
   ModelFormMode,
-} from "@/widgets/model-form/types/generatedContract";
+} from "@/shared/api/graphql/graphql/model-form/generatedContract";
 import type {
   ModelMutationMode,
   UseModelMutationModelFormResult,

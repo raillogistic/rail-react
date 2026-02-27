@@ -16,7 +16,7 @@ import {
   DrawerTitle,
   DrawerDescription,
 } from "@/shared/ui/kit/drawer";
-import { UIConfigForm } from "@/features/settings/configuration/UIConfigForm";
+import { UIConfigForm } from "@/widgets/settings/configuration/UIConfigForm";
 
 export function AdminUISettings() {
   const [editingConfig, setEditingConfig] = useState<Record<string, unknown> | null>(null);

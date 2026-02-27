@@ -32,10 +32,10 @@ import type {
   DistinctField,
   RelationFilter,
   FieldGroup,
-} from "@/features/model-table/filtering/types";
+} from "@/widgets/model-table/filtering/types";
 
 /* ----------------------------
-   âš¡ Complete V2 Metadata Query
+   Ã¢Å¡Â¡ Complete V2 Metadata Query
    ---------------------------- */
 // Replaced by @/shared/api/graphql/graphql/metadata/hooks
 
@@ -695,7 +695,7 @@ const resolveOrderingWithDefault = (
 };
 
 /* ----------------------------
-   âš™ï¸ Helper: Build Data Query
+   Ã¢Å¡â„¢Ã¯Â¸Â Helper: Build Data Query
 ----------------------------- */
 function buildAutoDataQuery(
   modelName: string,
@@ -761,7 +761,7 @@ const buildInitialSortingState = (
 };
 
 /* ----------------------------
-   âš¡ Hook: useGraphQLModelTable
+   Ã¢Å¡Â¡ Hook: useGraphQLModelTable
 ---------------------------- */
 export function useGraphQLModelTable({
   appName,
@@ -1130,7 +1130,7 @@ export function useGraphQLModelTable({
         meta: { display: f.display?.replace(".", "__") ?? f.name },
         cell: (info: any) => {
           const val = info.getValue();
-          if (f.field_type === "BooleanField") return val ? "âœ…" : "âŒ";
+          if (f.field_type === "BooleanField") return val ? "Ã¢Å“â€¦" : "Ã¢ÂÅ’";
           if (
             f.field_type === "DateField" ||
             f.field_type === "DateTimeField"

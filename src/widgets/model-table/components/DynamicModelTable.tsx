@@ -20,7 +20,7 @@ import {
   DYNAMIC_TABLE_SELECTION_COLUMN_ID,
   type DynamicTableColumnInput,
 } from "@/widgets/dynamic-table";
-import { createInitialFilterState } from "@/features/model-table/filtering/state";
+import { createInitialFilterState } from "@/widgets/model-table/filtering/state";
 import type { DynamicTableFeatureFlags } from "@/widgets/dynamic-table";
 import { TooltipProvider } from "@/shared/ui/kit/tooltip";
 import { cn } from "@/shared/utils";
@@ -1459,7 +1459,7 @@ function ErrorState({ error }: { error: Error }) {
           </div>
           <div>
             <h3 className="text-lg font-bold text-foreground">
-              Erreur de métadonnées
+              Erreur de mÃ©tadonnÃ©es
             </h3>
             <p className="mt-1 text-sm text-muted-foreground leading-relaxed">
               {localizeTableErrorMessage(error)}
@@ -1469,7 +1469,7 @@ function ErrorState({ error }: { error: Error }) {
             onClick={() => window.location.reload()}
             className="mt-2 rounded-xl bg-rose-500 px-6 py-2.5 text-xs font-bold uppercase tracking-widest text-white shadow-lg shadow-rose-500/20 transition-all hover:bg-rose-600 hover:scale-[1.02] active:scale-95"
           >
-            Réessayer
+            RÃ©essayer
           </button>
         </div>
       </div>
@@ -1500,7 +1500,7 @@ function DataErrorDisplay({ error }: { error: Error }) {
           />
         </svg>
       </div>
-      <span>Erreur de données : {localizeTableErrorMessage(error)}</span>
+      <span>Erreur de donnÃ©es : {localizeTableErrorMessage(error)}</span>
     </div>
   );
 }

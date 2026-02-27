@@ -1,5 +1,5 @@
 import type { FormSchema } from "@/widgets/model-form/inputs/types";
-import { getAuthorizationHeader, getSecureHeaders } from "@/features/auth/utils/token-storage";
+import { getAuthorizationHeader, getSecureHeaders } from "@/shared/api/auth/token-storage";
 import * as XLSX from "xlsx";
 import type { TemplateClientField, TemplateInfo } from "../types";
 
@@ -266,7 +266,7 @@ async function fetchTemplateBlob(
     credentials: "include",
   });
   if (!response.ok) {
-    let detail = "Échec de génération du template.";
+    let detail = "Ã‰chec de gÃ©nÃ©ration du template.";
     try {
       const payload = (await response.json()) as {
         error?: string;
@@ -308,7 +308,7 @@ async function mergeExcelBlobs(
   }
 
   if (!mergedWorkbook.SheetNames.length) {
-    throw new Error("Aucune feuille Excel n'a été générée.");
+    throw new Error("Aucune feuille Excel n'a Ã©tÃ© gÃ©nÃ©rÃ©e.");
   }
   const mergedBytes = XLSX.write(mergedWorkbook, {
     type: "array",
@@ -326,7 +326,7 @@ export async function executeTemplateForRows(
 ): Promise<{ templateType: TemplateActionType; count: number }> {
   const orderedIds = rowIds.filter(Boolean);
   if (!orderedIds.length) {
-    throw new Error("Sélectionnez au moins une ligne.");
+    throw new Error("SÃ©lectionnez au moins une ligne.");
   }
 
   const templateType = normalizeTemplateType(template);

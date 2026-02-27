@@ -1,63 +1,24 @@
 {
-  "topFolders": {
-    "app": "app",
-    "apps": "app",
-    "projects": "app",
-    "pages": "pages",
-    "features": "features",
-    "widgets": "widgets",
-    "entities": "entities",
-    "shared": "shared",
-    "processes": "processes",
-    "test": "shared",
-    "auth": "features",
-    "lib": "widgets",
-    "graphql": "widgets",
-    "hooks": "shared",
-    "utils": "shared",
-    "assets": "shared",
-    "styles": "shared"
-  },
-  "pathOverrides": [
-    {
-      "prefix": "shared/api/apollo",
-      "layer": "features"
-    },
-    {
-      "prefix": "shared/api/graphql/graphql",
-      "layer": "widgets"
-    },
-    {
-      "prefix": "shared/api/graphql/legacy",
-      "layer": "shared"
-    },
-    {
-      "prefix": "shared/ui/theme",
-      "layer": "features"
-    },
-    {
-      "prefix": "shared/ui/kit",
-      "layer": "features"
-    },
-    {
-      "prefix": "shared/telemetry",
-      "layer": "widgets"
-    },
-    {
-      "prefix": "entities/model-metadata",
-      "layer": "widgets"
-    },
-    {
-      "prefix": "features/settings/configuration",
-      "layer": "widgets"
-    },
-    {
-      "prefix": "features/model-table/filtering",
-      "layer": "widgets"
-    },
-    {
-      "prefix": "features/auth/security",
-      "layer": "widgets"
-    }
-  ]
+    "topFolders":  {
+                       "app":  "app",
+                       "apps":  "app",
+                       "projects":  "app",
+                       "pages":  "pages",
+                       "features":  "features",
+                       "widgets":  "widgets",
+                       "entities":  "entities",
+                       "shared":  "shared",
+                       "processes":  "processes",
+                       "test":  "shared",
+                       "auth":  "features",
+                       "lib":  "widgets",
+                       "graphql":  "widgets",
+                       "hooks":  "shared",
+                       "utils":  "shared",
+                       "assets":  "shared",
+                       "styles":  "shared"
+                   },
+    "pathOverrides":  [
+
+                      ]
 }

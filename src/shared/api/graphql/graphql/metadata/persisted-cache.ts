@@ -1,6 +1,6 @@
 import type { InMemoryCache } from "@apollo/client";
-import { FILTER_METADATA_QUERY } from "@/features/model-table/filtering/queries";
-import { GET_MODEL_SCHEMA } from "@/widgets/model-table/queries";
+import { FILTER_METADATA_QUERY, TABLE_MODEL_METADATA_QUERY as GET_MODEL_SCHEMA } from "./queries";
+
 
 const STORAGE_VERSION = 1;
 const STORAGE_PREFIX = "rail:metadata-cache:v1";

@@ -24,12 +24,16 @@ export function useTableMetadata(
 ): UseTableMetadataResult {
   const metadataQueryOptions = useMemo(
     () => ({
-      fetchPolicy: "network-only" as const,
+      fetchPolicy: "cache-first" as const,
     }),
     [],
   );
 
-  const { metadata: queryMetadata, loading, error } = useModelQueryMetadata({
+  const {
+    metadata: queryMetadata,
+    loading,
+    error,
+  } = useModelQueryMetadata({
     app,
     model,
     profile: "table",

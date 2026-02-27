@@ -9,7 +9,7 @@ import {
   Loader2,
   ShieldCheck,
 } from "lucide-react";
-import { getAuthorizationHeader, getSecureHeaders } from "@/features/auth/utils/token-storage";
+import { getAuthorizationHeader, getSecureHeaders } from "@/shared/api/auth/token-storage";
 import { Badge } from "@/shared/ui/kit/badge";
 import { Button } from "@/shared/ui/kit/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/shared/ui/kit/card";

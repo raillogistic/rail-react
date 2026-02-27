@@ -27,11 +27,11 @@ import { Separator } from "@/shared/ui/kit/separator";
 import {
   getAuthorizationHeader,
   getSecureHeaders,
-} from "@/features/auth/utils/token-storage";
+} from "@/shared/api/auth/token-storage";
 import { cn } from "@/shared/utils";
 import { useMetadata } from "../context/MetadataContext";
 import { useTable } from "../context/TableContext";
-import type { FilterGroup, FilterQueryVariables } from "@/features/model-table/filtering/types";
+import type { FilterGroup, FilterQueryVariables } from "@/widgets/model-table/filtering/types";
 import type { ModelSchema } from "../types";
 import {
   ExportFieldTree,
@@ -291,12 +291,12 @@ export function ModelTableExportDialog({
 
   const handleExport = useCallback(async () => {
     if (!metadata) {
-      setExportError("Les métadonnées ne sont pas disponibles.");
+      setExportError("Les mÃƒÂ©tadonnÃƒÂ©es ne sont pas disponibles.");
       return;
     }
     const payload = buildExportPayload();
     if (!payload) {
-      setExportError("Sélectionnez au moins un champ à exporter.");
+      setExportError("SÃƒÂ©lectionnez au moins un champ ÃƒÂ  exporter.");
       return;
     }
     if (hasGrouping && fileExtension !== "xlsx") {
@@ -328,7 +328,7 @@ export function ModelTableExportDialog({
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || "Échec de l'export.");
+        throw new Error(errorData.error || "Ãƒâ€°chec de l'export.");
       }
 
       const contentType = response.headers.get("content-type") ?? "";
@@ -336,7 +336,7 @@ export function ModelTableExportDialog({
         const result = await response.json();
         throw new Error(
           result.error ||
-            "Export en file d'attente. Utilisez l'endpoint des exports pour télécharger.",
+            "Export en file d'attente. Utilisez l'endpoint des exports pour tÃƒÂ©lÃƒÂ©charger.",
         );
       }
 
@@ -354,11 +354,11 @@ export function ModelTableExportDialog({
       link.remove();
       window.URL.revokeObjectURL(url);
 
-      toast.success(`Export ${fileExtension.toUpperCase()} généré.`);
+      toast.success(`Export ${fileExtension.toUpperCase()} gÃƒÂ©nÃƒÂ©rÃƒÂ©.`);
       setOpen(false);
     } catch (error) {
       const message =
-        error instanceof Error ? error.message : "Échec de l'export.";
+        error instanceof Error ? error.message : "Ãƒâ€°chec de l'export.";
       setExportError(message);
       toast.error(message);
     } finally {
@@ -376,7 +376,7 @@ export function ModelTableExportDialog({
             variant="outline"
             size="icon"
             className="size-8 rounded-xl border-border/30 hover:bg-primary/5 hover:text-primary transition-all active:scale-95"
-            aria-label={labels?.buttonAria ?? "Exporter les données"}
+            aria-label={labels?.buttonAria ?? "Exporter les donnÃƒÂ©es"}
           >
             <Download className="size-3.5" />
           </Button>
@@ -395,7 +395,7 @@ export function ModelTableExportDialog({
               </DialogTitle>
               <DialogDescription className="text-[11px] text-muted-foreground/60">
                 {labels?.description ??
-                  "Configuration de l'extraction des données"}
+                  "Configuration de l'extraction des donnÃƒÂ©es"}
               </DialogDescription>
             </div>
           </div>
@@ -415,7 +415,7 @@ export function ModelTableExportDialog({
                   </div>
                   <span className="text-[10px] font-medium text-primary/70 tabular-nums">
                     {selectedCount} champ{selectedCount > 1 ? "s" : ""}{" "}
-                    sélectionné{selectedCount > 1 ? "s" : ""}
+                    sÃƒÂ©lectionnÃƒÂ©{selectedCount > 1 ? "s" : ""}
                   </span>
                 </div>
                 <div className="flex gap-2">
@@ -551,7 +551,7 @@ export function ModelTableExportDialog({
                     </div>
                     {hasGrouping ? (
                       <p className="text-[10px] font-bold text-primary/80">
-                        Export groupé actif: Excel uniquement.
+                        Export groupÃƒÂ© actif: Excel uniquement.
                       </p>
                     ) : null}
                   </div>
@@ -577,7 +577,7 @@ export function ModelTableExportDialog({
           <div className="flex items-center gap-2 text-[11px] font-medium text-muted-foreground/50 tabular-nums">
             <span className="size-1.5 rounded-full bg-primary/40" />
             {labels?.footerSelectedCount?.(selectedCount) ??
-              `${selectedCount} champ${selectedCount <= 1 ? "" : "s"} prêt${selectedCount <= 1 ? "" : "s"} pour l'export`}
+              `${selectedCount} champ${selectedCount <= 1 ? "" : "s"} prÃƒÂªt${selectedCount <= 1 ? "" : "s"} pour l'export`}
           </div>
           <div className="flex w-full justify-end gap-2 sm:w-auto">
             <Button
@@ -597,7 +597,7 @@ export function ModelTableExportDialog({
               ) : (
                 <Download className="mr-2 size-3.5" />
               )}
-              {labels?.download ?? "Générer"}
+              {labels?.download ?? "GÃƒÂ©nÃƒÂ©rer"}
             </Button>
           </div>
         </DialogFooter>

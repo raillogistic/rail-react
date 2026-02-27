@@ -3,7 +3,7 @@ import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { TableProvider } from "../../context/TableContext";
 import { useTableFilters } from "../useTableFilters";
-import type { FilterFormState } from "@/features/model-table/filtering/types";
+import type { FilterFormState } from "@/widgets/model-table/filtering/types";
 
 function makeState(overrides: Partial<FilterFormState> = {}): FilterFormState {
   return {

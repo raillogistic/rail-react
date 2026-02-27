@@ -9,7 +9,7 @@
  */
 
 import { jwtDecode } from "jwt-decode";
-import { tokenStorage } from "./token-storage";
+import { tokenStorage } from "@/shared/api/auth/token-storage";
 
 export interface DecodedToken {
   user_id?: string | number;

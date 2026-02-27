@@ -35,8 +35,8 @@ import {
 import {
   removeRelationFunctionsByRelation,
   upsertRelationFunction,
-} from "@/features/model-table/filtering/engine";
-import type { RelationFunctionFilter } from "@/features/model-table/filtering/types";
+} from "@/widgets/model-table/filtering/engine";
+import type { RelationFunctionFilter } from "@/widgets/model-table/filtering/types";
 import type {
   AggFunction,
   RelationFieldOption,
@@ -296,7 +296,7 @@ export function RelationFilterDialog({
               openRelationDialog("agg");
             }}
           >
-            Agrégation (AGG)
+            AgrÃ©gation (AGG)
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem
@@ -332,7 +332,7 @@ export function RelationFilterDialog({
                   </Label>
                   <Select value={aggField} onValueChange={setAggField}>
                     <SelectTrigger>
-                      <SelectValue placeholder="Sélectionner un champ" />
+                      <SelectValue placeholder="SÃ©lectionner un champ" />
                     </SelectTrigger>
                     <SelectContent>
                       {relationFieldOptions.map((option) => (
@@ -374,22 +374,22 @@ export function RelationFilterDialog({
                 <div className="grid grid-cols-2 gap-2">
                   <div className="space-y-1">
                     <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/50">
-                      Opérateur
+                      OpÃ©rateur
                     </Label>
                     <Select value={aggOperator} onValueChange={setAggOperator}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="eq">égal à (eq)</SelectItem>
-                        <SelectItem value="neq">différent de (neq)</SelectItem>
-                        <SelectItem value="gt">supérieur à (gt)</SelectItem>
+                        <SelectItem value="eq">Ã©gal Ã  (eq)</SelectItem>
+                        <SelectItem value="neq">diffÃ©rent de (neq)</SelectItem>
+                        <SelectItem value="gt">supÃ©rieur Ã  (gt)</SelectItem>
                         <SelectItem value="gte">
-                          supérieur ou égal à (gte)
+                          supÃ©rieur ou Ã©gal Ã  (gte)
                         </SelectItem>
-                        <SelectItem value="lt">inférieur à (lt)</SelectItem>
+                        <SelectItem value="lt">infÃ©rieur Ã  (lt)</SelectItem>
                         <SelectItem value="lte">
-                          inférieur ou égal à (lte)
+                          infÃ©rieur ou Ã©gal Ã  (lte)
                         </SelectItem>
                       </SelectContent>
                     </Select>
@@ -410,7 +410,7 @@ export function RelationFilterDialog({
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
                   <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/50">
-                    Opérateur
+                    OpÃ©rateur
                   </Label>
                   <Select
                     value={relationOperator}
@@ -465,7 +465,7 @@ export function RelationFilterDialog({
                     }}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Sélectionner un champ" />
+                      <SelectValue placeholder="SÃ©lectionner un champ" />
                     </SelectTrigger>
                     <SelectContent>
                       {relationFieldOptions.map((option) => (
@@ -483,7 +483,7 @@ export function RelationFilterDialog({
                 <div className="grid grid-cols-2 gap-2">
                   <div className="space-y-1">
                     <Label className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/50">
-                      Opérateur
+                      OpÃ©rateur
                     </Label>
                     <Select
                       value={relationOperator}

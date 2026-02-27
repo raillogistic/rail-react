@@ -8,7 +8,7 @@
  * Presence of auth session is inferred from successful API calls or a non-HttpOnly 'logged_in' flag cookie if implemented.
  */
 
-import { tokenStorage } from "../token-storage";
+import { tokenStorage } from "@/shared/api/auth/token-storage";
 
 export const isAuthCookiePresent = (): boolean => {
   // In a HttpOnly flow, we can't read the cookie value directly in JS.

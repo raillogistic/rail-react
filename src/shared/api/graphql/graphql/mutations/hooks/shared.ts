@@ -1,6 +1,6 @@
 import type { UseModelMutationBaseOptions } from "../types";
 import type { ModelMutationMode } from "../types";
-import type { ModelFormMutationBindings } from "@/widgets/model-form/types/generatedContract";
+import type { ModelFormMutationBindings } from "@/shared/api/graphql/graphql/model-form/generatedContract";
 
 /**
  * Normalized mutation options consumed by generated mutation hooks.

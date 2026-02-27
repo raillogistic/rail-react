@@ -1,7 +1,7 @@
 import { StorageAdapter } from '../core/StorageAdapter';
 import { EventBus } from '../core/EventBus';
 import type { TokenPair, TokenPayload, TokenRefreshConfig } from '../types';
-import { tokenStorage } from '../utils/token-storage';
+import { tokenStorage } from '@/shared/api/auth/token-storage';
 
 export class TokenService {
   private storage: StorageAdapter;

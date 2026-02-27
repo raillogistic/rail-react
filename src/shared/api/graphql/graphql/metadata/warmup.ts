@@ -1,6 +1,6 @@
 import { gql, type ApolloClient } from "@apollo/client";
-import { FILTER_METADATA_QUERY } from "@/features/model-table/filtering/queries";
-import { GET_MODEL_SCHEMA } from "@/widgets/model-table/queries";
+import { FILTER_METADATA_QUERY, TABLE_MODEL_METADATA_QUERY as GET_MODEL_SCHEMA } from "./queries";
+
 import {
   clearPersistedMetadataStore,
   getPersistedDeployVersion,

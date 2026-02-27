@@ -5,10 +5,10 @@ import { InMemoryCache } from '@apollo/client';
 import { MFASetupPage } from '@/pages/auth/MFASetupPage';
 import { SETUP_MFA_MUTATION, VERIFY_MFA_SETUP_MUTATION } from '@/shared/api/graphql/legacy/mutations';
 import { GET_MFA_STATUS } from '@/shared/api/graphql/legacy/queries';
-import * as useAuthHook from '../../hooks/useAuth';
+import * as useAuthHook from '@/features/auth/hooks/useAuth';
 
 // Mock useAuth
-vi.mock('../../hooks/useAuth', () => ({
+vi.mock('@/features/auth/hooks/useAuth', () => ({
   useAuth: vi.fn(),
 }));
 

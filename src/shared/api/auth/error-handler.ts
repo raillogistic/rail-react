@@ -2,7 +2,7 @@ import type { } from '@apollo/client/errors';
 import type { } from '@apollo/client/link/error';
 import { } from '@apollo/client';
 import { isServerOfflineError, getEnhancedErrorMessage } from '@/shared/utils/legacy-utils/offline-detector';
-import { tokenStorage } from './token-storage';
+import { tokenStorage } from '@/shared/api/auth/token-storage';
 
 /**
  * Authentication error types for better error handling

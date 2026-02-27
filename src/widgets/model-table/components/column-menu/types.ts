@@ -1,5 +1,5 @@
 import type { FilterSchema } from "../../types";
-import type { FilterFormState } from "@/features/model-table/filtering/types";
+import type { FilterFormState } from "@/widgets/model-table/filtering/types";
 
 export type RelationFunctionMode = "some" | "none" | "every" | "count" | "agg";
 

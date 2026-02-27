@@ -3,10 +3,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useAuth } from '../useAuth';
 import { AuthProvider } from '../../context/AuthProvider';
 import { AuthUser, TokenPair } from '../../types';
-import { tokenStorage, AUTH_SESSION_EVENT } from '../../utils/token-storage';
+import { tokenStorage, AUTH_SESSION_EVENT } from '@/shared/api/auth/token-storage';
 
 // Mock legacy token storage to avoid side effects and decoding errors
-vi.mock('../../utils/token-storage', () => ({
+vi.mock('@/shared/api/auth/token-storage', () => ({
   tokenStorage: {
     setAccessToken: vi.fn(),
     setRefreshToken: vi.fn(),

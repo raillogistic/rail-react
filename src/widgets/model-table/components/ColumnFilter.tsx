@@ -18,12 +18,12 @@ import { useMetadata } from "../context/MetadataContext";
 import { useTableFilters } from "../hooks/useTableFilters";
 import { useTable } from "../context/TableContext";
 import { FieldSchema } from "../types";
-import { ScalarFilterInput } from "@/features/model-table/filtering/components/ScalarFilterInput";
+import { ScalarFilterInput } from "@/widgets/model-table/filtering/components/ScalarFilterInput";
 import type {
   FilterableField,
   FilterOperator,
   FilterBaseType,
-} from "@/features/model-table/filtering/types";
+} from "@/widgets/model-table/filtering/types";
 import { cn } from "@/shared/utils";
 import { translateLookupLabelFr } from "./filtering/operatorLabels";
 
@@ -349,7 +349,7 @@ export function ColumnFilter({
 
           <div className="space-y-2">
             <label className="text-[10px] text-muted-foreground/60 font-bold uppercase tracking-wider">
-              Opérateur
+              OpÃ©rateur
             </label>
             <Select value={operator} onValueChange={setOperator}>
               <SelectTrigger className="h-8 text-xs rounded-lg border-border/30">
