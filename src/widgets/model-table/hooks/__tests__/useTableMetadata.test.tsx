@@ -155,4 +155,38 @@ describe("useTableMetadata", () => {
     });
     expect(loadCapabilities).toHaveBeenCalledTimes(1);
   });
+
+  it("re-reads persisted metadata on rerender for the same app/model", () => {
+    let persisted: Record<string, unknown> | null = null;
+
+    mockReadPersisted.mockImplementation(() => persisted);
+    mockUseQuery.mockReturnValue({
+      data: {
+        modelSchema: null,
+      },
+      loading: false,
+      error: undefined,
+    });
+
+    const { result, rerender } = renderHook(() =>
+      useTableMetadata("inventory", "Product"),
+    );
+
+    expect(result.current.metadata).toBeUndefined();
+
+    persisted = {
+      app: "inventory",
+      model: "Product",
+      verboseName: "Product",
+      verboseNamePlural: "Products",
+      primaryKey: "id",
+      fields: [],
+      relationships: [],
+      metadataVersion: "1",
+    };
+
+    rerender();
+
+    expect(result.current.metadata?.model).toBe("Product");
+  });
 });

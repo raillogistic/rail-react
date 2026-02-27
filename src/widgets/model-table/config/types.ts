@@ -305,6 +305,16 @@ export type ModelTableV2ViewOptions = {
 };
 
 /**
+ * Optional development helpers for DynamicModelTable.
+ */
+export type DynamicModelTableDevtoolsConfig = {
+  /**
+   * Enables the in-table diagnostics panel.
+   */
+  enabled?: boolean;
+};
+
+/**
  * Expansion config forwarded to DynamicTable from DynamicModelTable.
  */
 export type ModelTableV2ExpandConfig =
@@ -385,6 +395,10 @@ export interface ModelTableV2Props {
   create?: ModelTableCreateConfig;
   update?: ModelTableUpdateConfig;
   baseTable?: Omit<BaseModelTableProps, "app" | "model" | "children">;
+  /**
+   * Enables simple runtime diagnostics for table bootstrap timings.
+   */
+  devtools?: boolean | DynamicModelTableDevtoolsConfig;
   /**
    * Initial query variables used for the first table request.
    */

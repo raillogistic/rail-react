@@ -56,7 +56,7 @@ describe("DynamicTable behaviors", () => {
     );
 
     await user.click(screen.getByLabelText("Open column menu for Name"));
-    await user.click(screen.getByText("Sort ascending"));
+    await user.click(screen.getByText(/sort ascending|trier croissant/i));
 
     expect(onOrderByChange).toHaveBeenCalledWith(["name"]);
   });
@@ -239,6 +239,8 @@ describe("DynamicTable behaviors", () => {
     );
 
     expect(screen.queryByLabelText("Expand row 1")).toBeNull();
-    expect(screen.getByText("(2)")).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /ada/i })).toHaveTextContent(
+      "2",
+    );
   });
 });

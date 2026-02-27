@@ -38,6 +38,7 @@ import type {
   RowMutationPermissions,
 } from "../types";
 import type {
+  DynamicModelTableDevtoolsConfig,
   DynamicModelTableHandle,
   DynamicModelTableInitVariables,
   DynamicModelTableProps,
@@ -121,6 +122,7 @@ type DynamicBaseTableContentProps = {
   enableSelection?: boolean;
   expand?: ModelTableV2ExpandConfig;
   columnActions?: BaseModelTableColumnActionsInput;
+  devtoolsEnabled?: boolean;
   /**
    * Emits the current query refetch function to the parent wrapper.
    */
@@ -149,6 +151,38 @@ const DEFAULT_SECTION_VISIBILITY: Required<ModelTableContentSectionVisibility> =
  * Keeps newest records first.
  */
 const DEFAULT_BACKEND_ORDER_BY = ["-id"] as const;
+
+type TableDevtoolsTimings = {
+  metadataFetchMs: number | null;
+  dataFetchMs: number | null;
+  tableBuildMs: number | null;
+};
+
+function getMonotonicNow(): number {
+  if (typeof performance !== "undefined" && typeof performance.now === "function") {
+    return performance.now();
+  }
+  return Date.now();
+}
+
+function formatTimingMs(value: number | null): string {
+  if (value === null || !Number.isFinite(value)) {
+    return "--";
+  }
+  if (value <= 0) {
+    return "0 ms";
+  }
+  return `${Math.max(1, Math.ceil(value))} ms`;
+}
+
+function resolveDevtoolsEnabled(
+  devtools?: boolean | DynamicModelTableDevtoolsConfig,
+): boolean {
+  if (typeof devtools === "boolean") {
+    return devtools;
+  }
+  return devtools?.enabled ?? false;
+}
 
 /**
  * Resolves effective section visibility from defaults and optional overrides.
@@ -483,6 +517,7 @@ function DynamicBaseTableContent({
   enableSelection,
   expand,
   columnActions,
+  devtoolsEnabled = false,
   onRefetchResolved,
   onSnapshotResolved,
 }: DynamicBaseTableContentProps) {
@@ -528,6 +563,131 @@ function DynamicBaseTableContent({
   const [dynamicExpanded, setDynamicExpanded] = useState<ExpandedState>({});
   const tableScrollRef = useRef<HTMLDivElement>(null);
   const isInfiniteMode = performance?.dataMode === "infinite";
+  const [timings, setTimings] = useState<TableDevtoolsTimings>({
+    metadataFetchMs: null,
+    dataFetchMs: null,
+    tableBuildMs: null,
+  });
+  const metadataFetchStartedAtRef = useRef<number | null>(null);
+  const dataFetchStartedAtRef = useRef<number | null>(null);
+  const buildFrameRequestRef = useRef<number | null>(null);
+
+  const scheduleBuildMeasure = useCallback(() => {
+    if (!devtoolsEnabled) {
+      return;
+    }
+
+    const buildStartedAt = getMonotonicNow();
+    if (
+      typeof window === "undefined" ||
+      typeof window.requestAnimationFrame !== "function"
+    ) {
+      setTimings((previous) =>
+        previous.tableBuildMs === 0
+          ? previous
+          : { ...previous, tableBuildMs: 0 },
+      );
+      return;
+    }
+
+    if (buildFrameRequestRef.current !== null) {
+      window.cancelAnimationFrame(buildFrameRequestRef.current);
+    }
+
+    buildFrameRequestRef.current = window.requestAnimationFrame(() => {
+      buildFrameRequestRef.current = null;
+      const nextBuildMs = getMonotonicNow() - buildStartedAt;
+      setTimings((previous) => ({
+        ...previous,
+        tableBuildMs: nextBuildMs,
+      }));
+    });
+  }, [devtoolsEnabled]);
+
+  useEffect(() => {
+    return () => {
+      if (
+        typeof window !== "undefined" &&
+        buildFrameRequestRef.current !== null &&
+        typeof window.cancelAnimationFrame === "function"
+      ) {
+        window.cancelAnimationFrame(buildFrameRequestRef.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (
+      devtoolsEnabled ||
+      typeof window === "undefined" ||
+      buildFrameRequestRef.current === null ||
+      typeof window.cancelAnimationFrame !== "function"
+    ) {
+      return;
+    }
+    window.cancelAnimationFrame(buildFrameRequestRef.current);
+    buildFrameRequestRef.current = null;
+  }, [devtoolsEnabled]);
+
+  useEffect(() => {
+    if (!devtoolsEnabled) {
+      return;
+    }
+    metadataFetchStartedAtRef.current = getMonotonicNow();
+    setTimings((previous) => ({
+      ...previous,
+      metadataFetchMs: null,
+    }));
+  }, [app, devtoolsEnabled, model]);
+
+  useEffect(() => {
+    if (!devtoolsEnabled) {
+      metadataFetchStartedAtRef.current = null;
+      return;
+    }
+    if (metadataLoading) {
+      if (metadataFetchStartedAtRef.current === null) {
+        metadataFetchStartedAtRef.current = getMonotonicNow();
+      }
+      return;
+    }
+
+    if (metadataFetchStartedAtRef.current !== null) {
+      const nextMetadataFetchMs =
+        getMonotonicNow() - metadataFetchStartedAtRef.current;
+      metadataFetchStartedAtRef.current = null;
+      setTimings((previous) => ({
+        ...previous,
+        metadataFetchMs: nextMetadataFetchMs,
+      }));
+      return;
+    }
+  }, [devtoolsEnabled, metadata, metadataError, metadataLoading]);
+
+  useEffect(() => {
+    if (!devtoolsEnabled) {
+      dataFetchStartedAtRef.current = null;
+      return;
+    }
+    if (tableLoading) {
+      if (dataFetchStartedAtRef.current === null) {
+        dataFetchStartedAtRef.current = getMonotonicNow();
+      }
+      return;
+    }
+
+    if (dataFetchStartedAtRef.current === null) {
+      return;
+    }
+
+    const nextDataFetchMs = getMonotonicNow() - dataFetchStartedAtRef.current;
+    dataFetchStartedAtRef.current = null;
+    setTimings((previous) => ({
+      ...previous,
+      dataFetchMs: nextDataFetchMs,
+    }));
+    scheduleBuildMeasure();
+  }, [devtoolsEnabled, scheduleBuildMeasure, tableLoading]);
 
   const locationPath =
     typeof window !== "undefined" ? window.location.pathname : "";
@@ -559,7 +719,9 @@ function DynamicBaseTableContent({
   );
   const persistedStateRef = useRef<PersistedTableState | null>(null);
   const persistedState = useMemo(() => {
-    if (isPersistedTableStateEqual(rawPersistedState, persistedStateRef.current)) {
+    if (
+      isPersistedTableStateEqual(rawPersistedState, persistedStateRef.current)
+    ) {
       return persistedStateRef.current;
     }
     persistedStateRef.current = rawPersistedState;
@@ -1211,7 +1373,8 @@ function DynamicBaseTableContent({
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div className="flex h-full w-full max-w-full min-w-0 flex-col overflow-hidden animate-in fade-in duration-500 p-1 sm:p-2">
+      <div className="relative flex h-full w-full max-w-full min-w-0 flex-col overflow-hidden animate-in fade-in duration-500 p-1 sm:p-2">
+        {devtoolsEnabled && <TableDevtoolsPanel timings={timings} />}
         {sectionController.metadata && (
           <div className="flex-none">
             <div className="flex flex-col gap-6 w-full animate-in fade-in duration-700">
@@ -1347,6 +1510,7 @@ export const DynamicModelTable = forwardRef<
     create,
     update,
     baseTable,
+    devtools,
     initVariables,
   }: DynamicModelTableProps,
   ref,
@@ -1360,6 +1524,7 @@ export const DynamicModelTable = forwardRef<
     ...(filterPanel ?? {}),
     widthClassName: "!w-full lg:!w-1/2 sm:!max-w-none",
   };
+  const devtoolsEnabled = resolveDevtoolsEnabled(devtools);
   const refetchRef = useRef<BaseModelTableRefetch | undefined>(undefined);
   const snapshotRef = useRef<DynamicModelTableSnapshot>({
     data: [],
@@ -1481,6 +1646,7 @@ export const DynamicModelTable = forwardRef<
             enableSelection={baseTable?.enableSelection}
             expand={baseTable?.expand}
             columnActions={baseTable?.columnActions}
+            devtoolsEnabled={devtoolsEnabled}
             onRefetchResolved={handleRefetchResolved}
             onSnapshotResolved={handleSnapshotResolved}
           />
@@ -1491,6 +1657,17 @@ export const DynamicModelTable = forwardRef<
 });
 
 DynamicModelTable.displayName = "DynamicModelTable";
+
+function TableDevtoolsPanel({ timings }: { timings: TableDevtoolsTimings }) {
+  return (
+    <div className="pointer-events-none absolute right-3 top-3 z-20 rounded-xl border border-amber-300/60 bg-amber-50/95 px-3 py-2 text-[11px] leading-5 text-amber-900 shadow-sm backdrop-blur-sm dark:border-amber-700/50 dark:bg-amber-950/70 dark:text-amber-100">
+      <div className="font-semibold uppercase tracking-wide">Devtools</div>
+      <div>Metadata fetch: {formatTimingMs(timings.metadataFetchMs)}</div>
+      <div>Data fetch: {formatTimingMs(timings.dataFetchMs)}</div>
+      <div>Table build: {formatTimingMs(timings.tableBuildMs)}</div>
+    </div>
+  );
+}
 
 /**
  * Skeleton displayed while metadata is loading.

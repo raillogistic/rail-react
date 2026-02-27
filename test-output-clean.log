@@ -1,0 +1,1611 @@
+
+> vite-project@0.0.0 test
+> npm run test:unit --run
+
+
+> vite-project@0.0.0 test:unit
+> vitest run --exclude src/test/integration/**
+
+
+[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90mE:/Projects/libraries/rail-react[39m
+
+ [32m?[39m src/features/auth/components/__tests__/MFAChallenge.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[33m 1018[2mms[22m[39m
+     [33m[2m?[22m[39m renders TOTP method correctly [33m 418[2mms[22m[39m
+ [32m?[39m src/pages/auth/__tests__/SessionsPage.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[33m 732[2mms[22m[39m
+     [33m[2m?[22m[39m handles session revocation [33m 491[2mms[22m[39m
+ [32m?[39m src/features/auth/components/__tests__/ActivityTimeoutModal.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[33m 829[2mms[22m[39m
+     [33m[2m?[22m[39m renders modal when warning [33m 496[2mms[22m[39m
+ [32m?[39m src/widgets/model-details/tests/dynamicDetail.viewConfig.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 1057[2mms[22m[39m
+     [33m[2m?[22m[39m supports grouped tab controls through view config [33m 828[2mms[22m[39m
+ [32m?[39m src/widgets/model-details/tests/lazyLoading.test.tsx [2m([22m[2m1 test[22m[2m)[22m[33m 933[2mms[22m[39m
+     [33m[2m?[22m[39m does not load lazy tab sections until tab activation and avoids refetch on tab switch [33m 930[2mms[22m[39m
+ [32m?[39m src/pages/auth/__tests__/MFASetupPage.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[33m 1131[2mms[22m[39m
+     [33m[2m?[22m[39m renders intro step initially [33m 478[2mms[22m[39m
+ [32m?[39m src/features/model-import/__tests__/ModelImportReviewFlow.test.tsx [2m([22m[2m1 test[22m[2m)[22m[33m 1284[2mms[22m[39m
+     [33m[2m?[22m[39m uploads a file and supports inline correction/save [33m 1281[2mms[22m[39m
+ [31m?[39m src/widgets/model-details/tests/retryAbort.test.tsx [2m([22m[2m4 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[33m 1704[2mms[22m[39m
+     [33m[2m?[22m[39m retries a failed section load when retry is clicked [33m 617[2mms[22m[39m
+     [32m?[39m does not swallow abort-like errors when the signal was not aborted[32m 31[2mms[22m[39m
+     [32m?[39m aborts in-flight section loads on unmount[32m 14[2mms[22m[39m
+[31m     [31m×[31m treats abort-like entity loader failures as errors when not explicitly aborted[39m[33m 1031[2mms[22m[39m
+npm : [90mstderr[2m | src/features/model-import/__tests__/ModelImportCommitFlow.test.tsx[2m > [22m[2mModelImport commit flow[2m > [22m[2mruns validate/simulate/commit callbacks when summary allows 
+commit
+Au caractère Ligne:2 : 1
++ npm run test -- --run 2>&1 | Tee-Object -FilePath test-output.log
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([90mstderr[2m...y allows commit:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[22m[39mThe width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+The width(0) and height(0) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width.
+
+ [32m?[39m src/widgets/model-form/__tests__/ModelForm.test.tsx [2m([22m[2m24 tests[22m[2m)[22m[33m 1889[2mms[22m[39m
+ [32m?[39m src/features/model-import/__tests__/ModelImportCommitFlow.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[33m 1875[2mms[22m[39m
+     [33m[2m?[22m[39m runs validate/simulate/commit callbacks when summary allows commit [33m 1794[2mms[22m[39m
+ [31m?[39m src/widgets/dynamic-table/__tests__/DynamicTable.behavior.test.tsx [2m([22m[2m8 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[33m 3640[2mms[22m[39m
+     [33m[2m?[22m[39m emits row selection updates when select-all is toggled [33m 1036[2mms[22m[39m
+[31m     [31m×[31m emits orderBy updates from header sort menu actions[39m[33m 774[2mms[22m[39m
+     [32m?[39m keeps selection as the first visible column in controlled column order[32m 204[2mms[22m[39m
+     [33m[2m?[22m[39m renders row-detail panels and toggles them from the expand column [33m 581[2mms[22m[39m
+     [33m[2m?[22m[39m allows multiple row-detail panels to be expanded at once [33m 443[2mms[22m[39m
+     [33m[2m?[22m[39m emits expanded state changes when detail panels are toggled [33m 304[2mms[22m[39m
+     [32m?[39m keeps expand first, selection second, and data after utility columns[32m 181[2mms[22m[39m
+[31m     [31m×[31m disables detail panels when grouping is active[39m[32m 114[2mms[22m[39m
+ [32m?[39m src/features/auth/components/__tests__/SessionManager.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[33m 638[2mms[22m[39m
+     [33m[2m?[22m[39m handles revocation of a single session [33m 366[2mms[22m[39m
+ [32m?[39m src/widgets/model-table/components/__tests__/ModelTableOverlays.dialogs.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[33m 408[2mms[22m[39m
+     [33m[2m?[22m[39m PrintDialog wires DynamicForm submit through behavior.onSubmit [33m 358[2mms[22m[39m
+ [32m?[39m src/widgets/model-details/tests/visibilityPermissions.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 641[2mms[22m[39m
+     [33m[2m?[22m[39m hides sections and tabs when permissions fail [33m 505[2mms[22m[39m
+ [32m?[39m src/features/auth/components/__tests__/LoginForm.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[33m 658[2mms[22m[39m
+     [33m[2m?[22m[39m renders login form [33m 433[2mms[22m[39m
+ [32m?[39m src/pages/auth/__tests__/LoginPage.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[33m 805[2mms[22m[39m
+     [33m[2m?[22m[39m renders login form by default [33m 551[2mms[22m[39m
+[90mstderr[2m | src/widgets/model-form/__tests__/new-features.test.tsx[2m > [22m[2mDynamicForm - New Features[2m > [22m[2m1. Undo/Redo History[2m > [22m[2mshould track changes and allow undo/redo
+[22m[39mAn update to %s inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act DynamicForm
+
+ [32m?[39m src/widgets/model-form/__tests__/DynamicForm.test.tsx [2m([22m[2m21 tests[22m[2m)[22m[33m 1574[2mms[22m[39m
+     [33m[2m?[22m[39m renders ModelForm-style debug tabs for formValues and mutationRequest [33m 490[2mms[22m[39m
+ [32m?[39m src/widgets/model-table/components/__tests__/RowActions.update.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 778[2mms[22m[39m
+     [33m[2m?[22m[39m opens default drawer update form and wires id + popup layout [33m 503[2mms[22m[39m
+[90mstderr[2m | src/widgets/model-form/__tests__/new-features.test.tsx[2m > [22m[2mDynamicForm - New Features[2m > [22m[2m1. Undo/Redo History[2m > [22m[2mshould track changes and allow undo/redo
+[22m[39mAn update to %s inside a test was not wrapped in act(...).
+
+When testing, code that causes React state updates should be wrapped into act(...):
+
+act(() => {
+  /* fire events that update state */
+});
+/* assert on the output */
+
+This ensures that you're testing the behavior the user would see in the browser. Learn more at https://react.dev/link/wrap-tests-with-act DynamicForm
+
+ [32m?[39m src/features/model-import/__tests__/TemplateDownloadCard.test.tsx [2m([22m[2m1 test[22m[2m)[22m[33m 876[2mms[22m[39m
+     [33m[2m?[22m[39m renders template metadata and field selector with required fields locked [33m 873[2mms[22m[39m
+ [32m?[39m src/features/model-import/__tests__/ModelImportA11y.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[33m 430[2mms[22m[39m
+     [33m[2m?[22m[39m exposes labeled controls and readable issue errors [33m 368[2mms[22m[39m
+ [32m?[39m src/widgets/model-table/components/__tests__/ModelTableTopActions.create.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[33m 934[2mms[22m[39m
+     [33m[2m?[22m[39m opens default drawer create form and enforces popup layout variant [33m 575[2mms[22m[39m
+ [32m?[39m src/shared/api/graphql/graphql/mutations/__tests__/hooks.test.tsx [2m([22m[2m7 tests[22m[2m)[22m[33m 424[2mms[22m[39m
+ [32m?[39m src/features/auth/__tests__/MFAManagement.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 206[2mms[22m[39m
+ [32m?[39m src/widgets/model-form/__tests__/generatedSubmit.workflow.test.tsx [2m([22m[2m9 tests[22m[2m)[22m[32m 128[2mms[22m[39m
+ [32m?[39m src/widgets/model-form/__tests__/generatedModelForm.adapter.test.tsx [2m([22m[2m14 tests[22m[2m)[22m[32m 236[2mms[22m[39m
+ [32m?[39m src/shared/api/graphql/graphql/__tests__/hooks.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 268[2mms[22m[39m
+ [32m?[39m src/widgets/model-form/__tests__/new-features.test.tsx [2m([22m[2m6 tests[22m[2m)[22m[33m 4637[2mms[22m[39m
+       [33m[2m?[22m[39m should track changes and allow undo/redo [33m 3112[2mms[22m[39m
+       [33m[2m?[22m[39m should save values to localStorage and restore them [33m 1024[2mms[22m[39m
+Not implemented: navigation to another Document
+Not implemented: navigation to another Document
+ [32m?[39m src/features/auth/hooks/__tests__/useAuth.test.tsx [2m([22m[2m5 tests[22m[2m)[22m[32m 178[2mms[22m[39m
+ [32m?[39m src/widgets/model-table/components/__tests__/ModelTableV2Content.template-actions.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[33m 1078[2mms[22m[39m
+     [33m[2m?[22m[39m opens a client-data modal for template actions requiring extra fields [33m 667[2mms[22m[39m
+ [32m?[39m src/widgets/model-details/units/unitFieldFormatters.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 52[2mms[22m[39m
+ [32m?[39m src/widgets/model-table/context/__tests__/TableContext.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 52[2mms[22m[39m
+ [32m?[39m src/widgets/model-form/__tests__/generatedSubmit.loading.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 57[2mms[22m[39m
+ [32m?[39m src/features/auth/hooks/__tests__/useActivityMonitor.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 74[2mms[22m[39m
+[90mstderr[2m | src/widgets/model-details/tests/modelDynamicDetail.test.tsx[2m > [22m[2mModelDynamicDetail[2m > [22m[2mroutes layout and custom sections into tabs with body fallback for unknown tabId
+[22m[39m[ModelDynamicDetail] Unknown tabId "missing-tab". Section "custom:fallback-custom" was routed to body.
+
+ [32m?[39m src/widgets/model-form/__tests__/generatedModelForm.validators.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 71[2mms[22m[39m
+ [32m?[39m src/widgets/model-details/tests/modelSectionRender.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 149[2mms[22m[39m
+ [32m?[39m src/widgets/model-form/__tests__/generatedSubmit.override.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 63[2mms[22m[39m
+ [32m?[39m src/widgets/model-table/hooks/__tests__/useTableFilters.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 61[2mms[22m[39m
+[90mstdout[2m | src/widgets/model-form/__tests__/debug.test.tsx[2m > [22m[2mDebug Form[2m > [22m[2mshould log form structure
+[22m[39mForm keys: [
+  [32m'options'[39m,
+  [32m'fieldInfo'[39m,
+  [32m'prevTransformArray'[39m,
+  [32m'mount'[39m,
+  [32m'update'[39m,
+  [32m'reset'[39m,
+  [32m'validateAllFields'[39m,
+  [32m'validateArrayFieldsStartingFrom'[39m,
+  [32m'validateField'[39m,
+  [32m'validateSync'[39m,
+  [32m'validateAsync'[39m,
+  [32m'validate'[39m,
+  [32m'getFieldValue'[39m,
+  [32m'getFieldMeta'[39m,
+  [32m'getFieldInfo'[39m,
+  [32m'setFieldMeta'[39m,
+  [32m'resetFieldMeta'[39m,
+  [32m'setFieldValue'[39m,
+  [32m'deleteField'[39m,
+  [32m'pushFieldValue'[39m,
+  [32m'insertFieldValue'[39m,
+  [32m'replaceFieldValue'[39m,
+  [32m'removeFieldValue'[39m,
+  [32m'swapFieldValues'[39m,
+  [32m'moveFieldValues'[39m,
+  [32m'clearFieldValues'[39m,
+  [32m'resetField'[39m,
+  [32m'getAllErrors'[39m,
+  [32m'parseValuesWithSchema'[39m,
+  [32m'parseValuesWithSchemaAsync'[39m,
+  [32m'timeoutIds'[39m,
+  [32m'_formId'[39m,
+  [32m'_devtoolsSubmissionOverride'[39m,
+  [32m'baseStore'[39m,
+  [32m'fieldMetaDerived'[39m,
+  [32m'store'[39m,
+  [32m'handleSubmit'[39m,
+  [32m'Field'[39m,
+  [32m'Subscribe'[39m
+]
+Form store keys: [
+  [32m'listeners'[39m,
+  [32m'_subscriptions'[39m,
+  [32m'lastSeenDepValues'[39m,
+  [32m'getDepVals'[39m,
+  [32m'recompute'[39m,
+  [32m'checkIfRecalculationNeededDeeply'[39m,
+  [32m'mount'[39m,
+  [32m'subscribe'[39m,
+  [32m'options'[39m,
+  [32m'state'[39m,
+  [32m'prevState'[39m
+]
+Form store prototype: {}
+
+ [32m?[39m src/widgets/model-form/__tests__/debug.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 43[2mms[22m[39m
+ [32m?[39m src/features/auth/__tests__/AuthenticationManager.test.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 38[2mms[22m[39m
+[90mstderr[2m | src/widgets/model-details/tests/modelDynamicDetail.test.tsx[2m > [22m[2mModelDynamicDetail[2m > [22m[2mdefaults update dialog form layout variant to popup
+[22m[39mWarning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+
+ [32m?[39m src/test/sample.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 88[2mms[22m[39m
+ [32m?[39m src/widgets/model-details/tests/modelSectionActions.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 80[2mms[22m[39m
+[90mstderr[2m | src/widgets/model-details/tests/modelDynamicDetail.test.tsx[2m > [22m[2mModelDynamicDetail[2m > [22m[2mpreserves popup variant from update formProps layout when direct layout omits 
+variant
+[22m[39mWarning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+
+ [32m?[39m src/features/auth/hooks/__tests__/usePermissions.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 44[2mms[22m[39m
+[90mstderr[2m | src/widgets/model-details/tests/modelDynamicDetail.test.tsx[2m > [22m[2mModelDynamicDetail[2m > [22m[2mdoes not refetch detail data when opening the update action
+[22m[39mWarning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+
+ [32m?[39m src/widgets/model-form/__tests__/generatedSubmit.lock.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 47[2mms[22m[39m
+ [32m?[39m src/widgets/model-form/__tests__/generatedModelForm.compatibility.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 32[2mms[22m[39m
+[90mstderr[2m | src/widgets/model-details/tests/modelDynamicDetail.test.tsx[2m > [22m[2mModelDynamicDetail[2m > [22m[2mrefetches detail data after successful update submit by default
+[22m[39mWarning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+
+[90mstderr[2m | src/widgets/model-details/tests/modelDynamicDetail.test.tsx[2m > [22m[2mModelDynamicDetail[2m > [22m[2msupports disabling refetch after successful update submit
+[22m[39mWarning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+
+ [32m?[39m src/widgets/model-form/__tests__/generatedModelForm.bulkWorkflow.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 32[2mms[22m[39m
+ [31m?[39m src/widgets/model-table/__tests__/DynamicModelTable.integration.test.tsx [2m([22m[2m4 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[33m 5683[2mms[22m[39m
+     [33m[2m?[22m[39m renders headers and rows from metadata-driven query [33m 1475[2mms[22m[39m
+     [33m[2m?[22m[39m enables row selection when selection is configured [33m 1153[2mms[22m[39m
+[31m     [31m×[31m renders detail expansion when baseTable.expand is configured[39m[33m 2341[2mms[22m[39m
+     [33m[2m?[22m[39m applies initVariables to the initial query request [33m 710[2mms[22m[39m
+ [32m?[39m src/features/auth/services/__tests__/AuditService.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 31[2mms[22m[39m
+ [32m?[39m src/widgets/model-table/hooks/__tests__/useTableData.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 71[2mms[22m[39m
+ [32m?[39m src/features/auth/hooks/__tests__/useSession.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 34[2mms[22m[39m
+ [32m?[39m src/features/auth/core/__tests__/StorageAdapter.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 31[2mms[22m[39m
+ [32m?[39m src/shared/api/graphql/graphql/metadata/__tests__/useMetadataWarmup.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 47[2mms[22m[39m
+ [32m?[39m src/features/auth/services/__tests__/SessionService.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 27[2mms[22m[39m
+ [32m?[39m src/test/unit/graphqlAuthClient.unit.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 24[2mms[22m[39m
+ [32m?[39m src/features/auth/services/__tests__/TokenService.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 27[2mms[22m[39m
+ [32m?[39m src/widgets/model-form/__tests__/generatedModelForm.metrics.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 31[2mms[22m[39m
+ [32m?[39m src/app/router/__tests__/manifestValidation.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 26[2mms[22m[39m
+[90mstderr[2m | src/widgets/model-details/tests/modelDynamicDetail.test.tsx[2m > [22m[2mModelDynamicDetail[2m > [22m[2mdoes not refetch detail data after custom action mutation success
+[22m[39mWarning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
+
+ [32m?[39m src/features/auth/core/__tests__/EventBus.test.ts [2m([22m[2m5 tests[22m[2m)[22m[32m 21[2mms[22m[39m
+ [32m?[39m src/widgets/model-form/__tests__/generatedModelForm.nested.test.ts [2m([22m[2m22 tests[22m[2m)[22m[32m 21[2mms[22m[39m
+ [32m?[39m src/features/auth/core/__tests__/RateLimiter.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+ [32m?[39m src/widgets/model-table/hooks/__tests__/useTableMetadata.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 49[2mms[22m[39m
+ [32m?[39m src/widgets/model-form/__tests__/fieldOrder.test.ts [2m([22m[2m11 tests[22m[2m)[22m[32m 29[2mms[22m[39m
+ [32m?[39m src/shared/api/graphql/graphql/metadata/__tests__/gateway.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+ [31m?[39m src/widgets/model-details/tests/modelDynamicDetail.test.tsx [2m([22m[2m26 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[33m 8670[2mms[22m[39m
+[31m     [31m×[31m renders metadata-driven fields and default actions[39m[33m 1398[2mms[22m[39m
+     [32m?[39m keeps built-in actions hidden until backend row permissions are resolved[32m 39[2mms[22m[39m
+     [32m?[39m supports frontend permission overrides for actions[32m 54[2mms[22m[39m
+     [32m?[39m renders nested to-many relation in auto table mode[32m 180[2mms[22m[39m
+     [32m?[39m sorts nested object fields by field.order and forwards nested section host id[32m 173[2mms[22m[39m
+     [32m?[39m supports nested sectionId override with per-field sectionId override[32m 135[2mms[22m[39m
+     [32m?[39m renders nested sections after the main details section[32m 106[2mms[22m[39m
+     [33m[2m?[22m[39m routes layout and custom sections into tabs with body fallback for unknown tabId [33m 565[2mms[22m[39m
+     [33m[2m?[22m[39m routes nested sections into configured tab [33m 385[2mms[22m[39m
+     [33m[2m?[22m[39m forwards tab view controls to DynamicDetail [33m 421[2mms[22m[39m
+     [32m?[39m applies section container spans declared in layout sections[32m 44[2mms[22m[39m
+     [32m?[39m defaults update dialog form layout variant to popup[32m 284[2mms[22m[39m
+     [33m[2m?[22m[39m preserves popup variant from update formProps layout when direct layout omits variant [33m 346[2mms[22m[39m
+     [32m?[39m does not refetch detail data when opening the update action[32m 260[2mms[22m[39m
+     [33m[2m?[22m[39m refetches detail data after successful update submit by default [33m 403[2mms[22m[39m
+     [33m[2m?[22m[39m supports disabling refetch after successful update submit [33m 442[2mms[22m[39m
+[31m     [31m×[31m executes delete mutation after confirmation[39m[33m 1065[2mms[22m[39m
+     [33m[2m?[22m[39m shows store.Product custom action for user mkhaled when permission check passes [33m 381[2mms[22m[39m
+     [32m?[39m hides Actions dropdown when no custom mutation is enabled[32m 134[2mms[22m[39m
+     [33m[2m?[22m[39m keeps custom mutation enabled when backend allows it and runtime permission source is absent [33m 356[2mms[22m[39m
+     [33m[2m?[22m[39m does not refetch detail data after custom action mutation success [33m 1040[2mms[22m[39m
+     [32m?[39m renders header title from name by default[32m 57[2mms[22m[39m
+     [32m?[39m renders header title from title fallback when name is missing[32m 51[2mms[22m[39m
+     [32m?[39m renders custom header actions sorted by position and receives refetch[32m 212[2mms[22m[39m
+     [32m?[39m forwards DynamicDetail header frame props[32m 80[2mms[22m[39m
+     [32m?[39m supports header.frame.description resolver returning React element[32m 54[2mms[22m[39m
+ [32m?[39m src/widgets/model-form/__tests__/changeTracking.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m?[39m src/widgets/model-details/tests/modelSectionEngine.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 16[2mms[22m[39m
+ [32m?[39m src/features/auth/services/__tests__/DeviceService.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m?[39m src/features/auth/core/__tests__/CryptoService.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m?[39m src/shared/api/graphql/graphql/__tests__/selection.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 12[2mms[22m[39m
+ [32m?[39m src/widgets/model-form/inputs/__tests__/query.naming.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 14[2mms[22m[39m
+ [32m?[39m src/widgets/model-form/__tests__/examples.orderUpdate.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 55[2mms[22m[39m
+ [32m?[39m src/widgets/model-table/filtering/__tests__/queryBuilder.parity.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m?[39m src/features/auth/services/__tests__/PermissionService.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 13[2mms[22m[39m
+ [32m?[39m src/widgets/model-form/__tests__/defaults.test.ts [2m([22m[2m23 tests[22m[2m)[22m[32m 17[2mms[22m[39m
+ [32m?[39m src/features/model-import/__tests__/download-url.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m?[39m src/shared/api/graphql/graphql/__tests__/variables.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m?[39m src/shared/api/graphql/graphql/mutations/__tests__/mutationBuilder.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 15[2mms[22m[39m
+ [32m?[39m src/widgets/model-table/__tests__/fieldConfig.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m?[39m src/widgets/model-table/compat/__tests__/compatibility.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m?[39m src/widgets/model-form/__tests__/generatedSubmit.performance.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m?[39m src/features/model-import/__tests__/error-messages.test.ts [2m([22m[2m7 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m?[39m src/widgets/model-table/utils/__tests__/valueResolution.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 10[2mms[22m[39m
+ [32m?[39m src/shared/api/graphql/graphql/metadata/__tests__/persisted-cache.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m?[39m src/widgets/model-table/filtering/__tests__/serializer.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m?[39m src/widgets/dynamic-table/__tests__/sorting.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m?[39m src/widgets/model-form/__tests__/schemaTransforms.ordering.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m?[39m src/widgets/model-form/__tests__/generatedModelForm.conflict.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m?[39m src/widgets/model-table/filtering/__tests__/metadataMerger.baseType.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m?[39m src/features/auth/context/__tests__/sessionIds.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 9[2mms[22m[39m
+ [32m?[39m src/widgets/model-form/__tests__/generatedSubmit.errors.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m?[39m src/test/unit/authConfig.unit.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m?[39m src/features/auth/utils/__tests__/permission-matching.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m?[39m src/widgets/model-form/__tests__/mutations.naming.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m?[39m src/shared/api/graphql/graphql/__tests__/naming.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m?[39m src/widgets/model-details/tests/schemaValidation.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m?[39m src/widgets/model-form/__tests__/operationPermissions.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m?[39m src/features/auth/__tests__/MFAErrorHandler.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m?[39m src/widgets/model-form/__tests__/ListFieldRenderer.permissions.test.ts [2m([22m[2m4 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m?[39m src/features/auth/services/__tests__/MFAService.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m?[39m src/widgets/model-form/components/modelForm/__tests__/submitRelations.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32m?[39m src/widgets/model-form/components/modelForm/__tests__/queryLifecycle.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m?[39m src/shared/api/graphql/legacy/__tests__/authHeaders.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m?[39m src/widgets/model-form/__tests__/generatedSubmit.conflict.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m?[39m src/app/router/__tests__/manifestRegistry.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 19[2mms[22m[39m
+ [32m?[39m src/widgets/model-table/utils/__tests__/queryNaming.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m?[39m src/widgets/model-form/__tests__/generatedModelForm.mutations.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 7[2mms[22m[39m
+ [32m?[39m src/widgets/model-form/__tests__/generatedModelForm.bulkErrors.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m?[39m src/app/router/__tests__/manifestFactory.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m?[39m src/widgets/model-table/utils/__tests__/groupingHelpers.test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 6[2mms[22m[39m
+ [32m?[39m src/shared/api/graphql/graphql/mutations/__tests__/naming.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+ [32m?[39m src/widgets/model-form/__tests__/requiredBoolean.validation.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 4[2mms[22m[39m
+
+[31m???????[39m[1m[41m Failed Tests 6 [49m[22m[31m???????[39m
+
+[41m[1m FAIL [22m[49m src/widgets/dynamic-table/__tests__/DynamicTable.behavior.test.tsx[2m > [22mDynamicTable behaviors[2m > [22memits orderBy updates from header sort menu actions
+[31m[1mTestingLibraryElementError[22m[39m: Unable to find an element with the text: Sort ascending. This could be because the text is broken up by multiple elements. In this case, you can provide a 
+function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body[39m
+  [33mdata-scroll-locked[39m=[32m"1"[39m
+  [33mstyle[39m=[32m"pointer-events: none;"[39m
+[36m>[39m
+  [36m<span[39m
+    [33maria-hidden[39m=[32m"true"[39m
+    [33mdata-aria-hidden[39m=[32m"true"[39m
+    [33mdata-radix-focus-guard[39m=[32m""[39m
+    [33mstyle[39m=[32m"outline: none; opacity: 0; position: fixed; pointer-events: none;"[39m
+    [33mtabindex[39m=[32m"0"[39m
+  [36m/>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"flex h-full w-full min-w-0 flex-col overflow-hidden"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border/30 bg-card/50 shadow-sm backdrop-blur-sm transition-shadow duration-300 
+hover:shadow-md"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"min-h-0 flex-1 overflow-auto scroll-smooth custom-scrollbar"[39m
+        [36m>[39m
+          [36m<table[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"caption-bottom text-sm w-full"[39m
+            [33mdata-aria-hidden[39m=[32m"true"[39m
+            [33mdata-slot[39m=[32m"table"[39m
+            [33mstyle[39m=[32m"min-width: 100%; border-collapse: separate; border-spacing: 0px;"[39m
+          [36m>[39m
+            [36m<thead[39m
+              [33mclass[39m=[32m"[&_tr]:border-b"[39m
+              [33mdata-slot[39m=[32m"table-header"[39m
+            [36m>[39m
+              [36m<tr[39m
+                [33mclass[39m=[32m"data-[state=selected]:bg-muted transition-colors hover:bg-transparent border-0"[39m
+                [33mdata-slot[39m=[32m"table-row"[39m
+              [36m>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"h-10 text-left whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] group/header relative border-b border-border/30 bg-muted/30 p-0 
+align-middle text-[11px] font-medium tracking-wide text-muted-foreground"[39m
+                  [33mcolspan[39m=[32m"1"[39m
+                  [33mdata-slot[39m=[32m"table-head"[39m
+                  [33mstyle[39m=[32m"width: 150px; min-width: 150px; max-width: 150px;"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"flex h-full min-h-9 items-stretch"[39m
+                  [36m>[39m
+                    [36m<div[39m
+                      [33mclass[39m=[32m"min-w-0 flex-1"[39m
+                    [36m>[39m
+                      [36m<button[39m
+                        [33maria-controls[39m=[32m"radix-_r_e_"[39m
+                        [33maria-expanded[39m=[32m"true"[39m
+                        [33maria-haspopup[39m=[32m"menu"[39m
+                        [33maria-label[39m=[32m"Open column menu for Name"[39m
+                        [33mclass[39m=[32m"flex h-full w-full items-center justify-between gap-2 px-3 py-0 outline-none text-[10px] font-bold uppercase tracking-widest transition-all duration-300 
+hover:bg-primary/5 active:bg-primary/8 group/trigger text-muted-foreground/70 hover:text-foreground"[39m
+                        [33mdata-slot[39m=[32m"dropdown-menu-trigger"[39m
+                        [33mdata-state[39m=[32m"open"[39m
+                        [33mid[39m=[32m"radix-_r_d_"[39m
+                        [33mtype[39m=[32m"button"[39m
+                      [36m>[39m
+                        [36m<div[39m
+                          [33mclass[39m=[32m"min-w-0 flex-1 flex items-center gap-2"[39m
+                        [36m>[39m
+                          [36m<span[39m
+                            [33mclass[39m=[32m"truncate"[39m
+                          [36m>[39m
+                            [0mName[0m
+                          [36m</span>[39m
+                          [36m<div[39m
+                            [33maria-hidden[39m=[32m"true"[39m
+                            [33mclass[39m=[32m"flex shrink-0 items-center gap-1"[39m
+                          [36m/>[39m
+                        [36m</div>[39m
+                        [36m<svg[39m
+                          [33maria-hidden[39m=[32m"true"[39m
+                          [33mclass[39m=[32m"lucide lucide-arrow-up-down size-3 shrink-0 opacity-0 group-hover/trigger:opacity-40 transition-opacity"[39m
+                          [33mfill[39m=[32m"none"[39m
+                          [33mheight[39m=[32m"24"[39m
+                          [33mstroke[39m=[32m"currentColor"[39m
+                          [33mstroke-linecap[39m=[32m"round"[39m
+                          [33mstroke-linejoin[39m=[32m"round"[39m
+                          [33mstroke-width[39m=[32m"2"[39m
+                          [33mviewBox[39m=[32m"0 0 24 24"[39m
+                          [33mwidth[39m=[32m"24"[39m
+                          [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                        [36m>[39m
+                          [36m<path[39m
+                            [33md[39m=[32m"m21 16-4 4-4-4"[39m
+                          [36m/>[39m
+                          [36m<path[39m
+                            [33md[39m=[32m"M17 20V4"[39m
+                          [36m/>[39m
+                          [36m<path[39m
+                            [33md[39m=[32m"m3 8 4-4 4 4"[39m
+                          [36m/>[39m
+                          [36m<path[39m
+                            [33md[39m=[32m"M7 4v16"[39m
+                          [36m/>[39m
+                        [36m</svg>[39m
+                      [36m</button>[39m
+                    [36m</div>[39m
+                  [36m</div>[39m
+                [36m</th>[39m
+              [36m</tr>[39m
+            [36m</thead>[39m
+            [36m<tbody[39m
+              [33mclass[39m=[32m"[&_tr:last-child]:border-0"[39m
+              [33mdata-slot[39m=[32m"table-body"[39m
+            [36m>[39m
+              [36m<tr[39m
+                [33mclass[39m=[32m"data-[state=selected]:bg-muted border-b transition-colors duration-150 hover:bg-muted/30"[39m
+                [33mdata-slot[39m=[32m"table-row"[39m
+              [36m>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"p-2 whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] border-b border-border/20 align-middle text-foreground/80 text-[13px] px-3 
+py-2.5 truncate"[39m
+                  [33mdata-slot[39m=[32m"table-cell"[39m
+                  [33mstyle[39m=[32m"width: 150px; min-width: 150px; max-width: 150px;"[39m
+                [36m>[39m
+                  [0mAda[0m
+                [36m</td>[39m
+              [36m</tr>[39m
+              [36m<tr[39m
+                [33mclass[39m=[32m"data-[state=selected]:bg-muted border-b transition-colors duration-150 hover:bg-muted/30 ...
+[90m [2m?[22m Object.getElementError node_modules/@testing-library/dom/dist/config.js:[2m37:19[22m[39m
+[90m [2m?[22m node_modules/@testing-library/dom/dist/query-helpers.js:[2m76:38[22m[39m
+[90m [2m?[22m node_modules/@testing-library/dom/dist/query-helpers.js:[2m52:17[22m[39m
+[90m [2m?[22m node_modules/@testing-library/dom/dist/query-helpers.js:[2m95:19[22m[39m
+[36m [2m?[22m src/widgets/dynamic-table/__tests__/DynamicTable.behavior.test.tsx:[2m59:29[22m[39m
+    [90m 57| [39m
+    [90m 58| [39m    await user.click(screen.getByLabelText("Open column menu for Name"…
+    [90m 59| [39m    [35mawait[39m user[33m.[39m[34mclick[39m(screen[33m.[39m[34mgetByText[39m([32m"Sort ascending"[39m))[33m;[39m
+    [90m   | [39m                            [31m^[39m
+    [90m 60| [39m
+    [90m 61| [39m    [34mexpect[39m(onOrderByChange)[33m.[39m[34mtoHaveBeenCalledWith[39m([[32m"name"[39m])[33m;[39m
+
+[31m[2m????????????????????????[1/6]?[22m[39m
+
+[41m[1m FAIL [22m[49m src/widgets/dynamic-table/__tests__/DynamicTable.behavior.test.tsx[2m > [22mDynamicTable behaviors[2m > [22mdisables detail panels when grouping is active
+[31m[1mTestingLibraryElementError[22m[39m: Unable to find an element with the text: (2). This could be because the text is broken up by multiple elements. In this case, you can provide a function for 
+your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body[39m
+  [33mstyle[39m=[32m""[39m
+[36m>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"flex h-full w-full min-w-0 flex-col overflow-hidden"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"relative flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-border/30 bg-card/50 shadow-sm backdrop-blur-sm transition-shadow duration-300 
+hover:shadow-md"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"min-h-0 flex-1 overflow-auto scroll-smooth custom-scrollbar"[39m
+        [36m>[39m
+          [36m<table[39m
+            [33mclass[39m=[32m"caption-bottom text-sm w-full"[39m
+            [33mdata-slot[39m=[32m"table"[39m
+            [33mstyle[39m=[32m"min-width: 100%; border-collapse: separate; border-spacing: 0px;"[39m
+          [36m>[39m
+            [36m<thead[39m
+              [33mclass[39m=[32m"[&_tr]:border-b"[39m
+              [33mdata-slot[39m=[32m"table-header"[39m
+            [36m>[39m
+              [36m<tr[39m
+                [33mclass[39m=[32m"data-[state=selected]:bg-muted transition-colors hover:bg-transparent border-0"[39m
+                [33mdata-slot[39m=[32m"table-row"[39m
+              [36m>[39m
+                [36m<th[39m
+                  [33mclass[39m=[32m"h-10 text-left whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] group/header relative border-b border-border/30 bg-muted/30 p-0 
+align-middle text-[11px] font-medium tracking-wide text-muted-foreground"[39m
+                  [33mcolspan[39m=[32m"1"[39m
+                  [33mdata-slot[39m=[32m"table-head"[39m
+                  [33mstyle[39m=[32m"width: 150px; min-width: 150px; max-width: 150px;"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"flex h-full min-h-9 items-stretch"[39m
+                  [36m>[39m
+                    [36m<div[39m
+                      [33mclass[39m=[32m"min-w-0 flex-1"[39m
+                    [36m>[39m
+                      [36m<button[39m
+                        [33maria-expanded[39m=[32m"false"[39m
+                        [33maria-haspopup[39m=[32m"menu"[39m
+                        [33maria-label[39m=[32m"Open column menu for Name"[39m
+                        [33mclass[39m=[32m"flex h-full w-full items-center justify-between gap-2 px-3 py-0 outline-none text-[10px] font-bold uppercase tracking-widest transition-all duration-300 
+hover:bg-primary/5 active:bg-primary/8 group/trigger text-muted-foreground/70 hover:text-foreground"[39m
+                        [33mdata-slot[39m=[32m"dropdown-menu-trigger"[39m
+                        [33mdata-state[39m=[32m"closed"[39m
+                        [33mid[39m=[32m"radix-_r_32_"[39m
+                        [33mtype[39m=[32m"button"[39m
+                      [36m>[39m
+                        [36m<div[39m
+                          [33mclass[39m=[32m"min-w-0 flex-1 flex items-center gap-2"[39m
+                        [36m>[39m
+                          [36m<span[39m
+                            [33mclass[39m=[32m"truncate"[39m
+                          [36m>[39m
+                            [0mName[0m
+                          [36m</span>[39m
+                          [36m<div[39m
+                            [33maria-hidden[39m=[32m"true"[39m
+                            [33mclass[39m=[32m"flex shrink-0 items-center gap-1"[39m
+                          [36m/>[39m
+                        [36m</div>[39m
+                        [36m<svg[39m
+                          [33maria-hidden[39m=[32m"true"[39m
+                          [33mclass[39m=[32m"lucide lucide-arrow-up-down size-3 shrink-0 opacity-0 group-hover/trigger:opacity-40 transition-opacity"[39m
+                          [33mfill[39m=[32m"none"[39m
+                          [33mheight[39m=[32m"24"[39m
+                          [33mstroke[39m=[32m"currentColor"[39m
+                          [33mstroke-linecap[39m=[32m"round"[39m
+                          [33mstroke-linejoin[39m=[32m"round"[39m
+                          [33mstroke-width[39m=[32m"2"[39m
+                          [33mviewBox[39m=[32m"0 0 24 24"[39m
+                          [33mwidth[39m=[32m"24"[39m
+                          [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                        [36m>[39m
+                          [36m<path[39m
+                            [33md[39m=[32m"m21 16-4 4-4-4"[39m
+                          [36m/>[39m
+                          [36m<path[39m
+                            [33md[39m=[32m"M17 20V4"[39m
+                          [36m/>[39m
+                          [36m<path[39m
+                            [33md[39m=[32m"m3 8 4-4 4 4"[39m
+                          [36m/>[39m
+                          [36m<path[39m
+                            [33md[39m=[32m"M7 4v16"[39m
+                          [36m/>[39m
+                        [36m</svg>[39m
+                      [36m</button>[39m
+                    [36m</div>[39m
+                  [36m</div>[39m
+                [36m</th>[39m
+              [36m</tr>[39m
+            [36m</thead>[39m
+            [36m<tbody[39m
+              [33mclass[39m=[32m"[&_tr:last-child]:border-0"[39m
+              [33mdata-slot[39m=[32m"table-body"[39m
+            [36m>[39m
+              [36m<tr[39m
+                [33mclass[39m=[32m"data-[state=selected]:bg-muted border-b transition-colors duration-150 hover:bg-muted/30"[39m
+                [33mdata-slot[39m=[32m"table-row"[39m
+              [36m>[39m
+                [36m<td[39m
+                  [33mclass[39m=[32m"p-2 whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px] border-b border-border/20 align-middle text-foreground/80 text-[13px] px-3 
+py-2.5 truncate"[39m
+                  [33mdata-slot[39m=[32m"table-cell"[39m
+                  [33mstyle[39m=[32m"width: 150px; min-width: 150px; max-width: 150px;"[39m
+                [36m>[39m
+                  [36m<button[39m
+                    [33mclass[39m=[32m"inline-flex items-center gap-2.5 text-left font-semibold text-foreground transition-colors hover:text-primary"[39m
+                    [33mtype[39m=[32m"button"[39m
+                  [36m>[39m
+                    [36m<div[39m
+                      [33mclass[39m=[32m"flex size-5 items-center justify-center rounded-md bg-primary/10 text-primary transition-colors"[39m
+                    [36m>[39m
+                      [36m<svg[39m
+                        [33maria-hidden[39m=[32m"true"[39m
+                        [33mclass[39m=[32m"lucide lucide-chevron-right size-3.5 transition-transform duration-200"[39m
+                        [33mfill[39m=[32m"none"[39m
+                        [3...
+[90m [2m?[22m Object.getElementError node_modules/@testing-library/dom/dist/config.js:[2m37:19[22m[39m
+[90m [2m?[22m node_modules/@testing-library/dom/dist/query-helpers.js:[2m76:38[22m[39m
+[90m [2m?[22m node_modules/@testing-library/dom/dist/query-helpers.js:[2m52:17[22m[39m
+[90m [2m?[22m node_modules/@testing-library/dom/dist/query-helpers.js:[2m95:19[22m[39m
+[36m [2m?[22m src/widgets/dynamic-table/__tests__/DynamicTable.behavior.test.tsx:[2m242:19[22m[39m
+    [90m240| [39m
+    [90m241| [39m    [34mexpect[39m(screen[33m.[39m[34mqueryByLabelText[39m([32m"Expand row 1"[39m))[33m.[39m[34mtoBeNull[39m()[33m;[39m
+    [90m242| [39m    [34mexpect[39m(screen[33m.[39m[34mgetByText[39m([32m"(2)"[39m))[33m.[39m[34mtoBeInTheDocument[39m()[33m;[39m
+    [90m   | [39m                  [31m^[39m
+    [90m243| [39m  })[33m;[39m
+    [90m244| [39m})[33m;[39m
+
+[31m[2m????????????????????????[2/6]?[22m[39m
+
+[41m[1m FAIL [22m[49m src/widgets/model-details/tests/modelDynamicDetail.test.tsx[2m > [22mModelDynamicDetail[2m > [22mrenders metadata-driven fields and default actions
+[31m[1mTestingLibraryElementError[22m[39m: Unable to find an accessible element with the role "button" and name "Update"
+
+Here are the accessible roles:
+
+  heading:
+
+  Name "Product Alpha":
+  [36m<h3[39m
+    [33mclass[39m=[32m"text-[15px] font-semibold tracking-tight text-foreground truncate"[39m
+  [36m/>[39m
+
+  Name "Details":
+  [36m<h3[39m
+    [33mclass[39m=[32m"text-[15px] font-semibold tracking-tight text-foreground truncate"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  button:
+
+  Name "":
+  [36m<button[39m
+    [33maria-label[39m=[32m""[39m
+    [33mclass[39m=[32m"inline-flex items-center justify-center whitespace-nowrap disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 
+[&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 
+aria-invalid:border-destructive border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 gap-1.5 has-[>svg]:px-2.5 h-8 px-3.5 
+rounded-lg text-xs font-medium transition-all active:scale-[0.97]"[39m
+    [33mdata-slot[39m=[32m"button"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  Name "":
+  [36m<button[39m
+    [33maria-label[39m=[32m""[39m
+    [33mclass[39m=[32m"inline-flex items-center justify-center whitespace-nowrap disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg:not([class*='size-'])]:size-4 shrink-0 
+[&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive bg-destructive 
+text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60 gap-1.5 has-[>svg]:px-2.5 h-8 px-3.5 rounded-lg text-xs font-medium 
+transition-all active:scale-[0.97]"[39m
+    [33mdata-slot[39m=[32m"button"[39m
+    [33mtype[39m=[32m"button"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  term:
+
+  Name "":
+  [36m<dt[39m
+    [33mclass[39m=[32m"flex items-center gap-1.5"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+  definition:
+
+  Name "":
+  [36m<dd[39m
+    [33mclass[39m=[32m"text-sm leading-relaxed text-left text-foreground/90 max-w-prose"[39m
+  [36m/>[39m
+
+  --------------------------------------------------
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"space-y-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"animate-in fade-in duration-500 space-y-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"space-y-6"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"space-y-6"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"min-w-0 transition-all duration-300 ease-out"[39m
+              [33mdata-testid[39m=[32m"section-header:main"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"text-card-foreground flex flex-col gap-6 rounded-xl border py-6 group/frame relative overflow-hidden transition-all duration-300 ease-out border-border/30 bg-card 
+shadow-sm hover:shadow-md hover:border-border/50"[39m
+                [33mdata-slot[39m=[32m"card"[39m
+                [33mdata-testid[39m=[32m"section-frame-header:main"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent opacity-0 group-hover/frame:opacity-100 transition-opacity 
+duration-500"[39m
+                [36m/>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-2 has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-6 px-6 py-5 border-b 
+border-border/10"[39m
+                  [33mdata-slot[39m=[32m"card-header"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"flex flex-wrap items-center justify-between gap-4"[39m
+                  [36m>[39m
+                    [36m<div[39m
+                      [33mclass[39m=[32m"flex items-center gap-3.5 min-w-0 flex-1"[39m
+                    [36m>[39m
+                      [36m<div[39m
+                        [33mclass[39m=[32m"flex items-center justify-center size-10 rounded-xl bg-primary/10 text-primary shrink-0 transition-all duration-300 group-hover/frame:bg-primary/15 
+group-hover/frame:scale-105"[39m
+                      [36m>[39m
+                        [36m<svg[39m
+                          [33mclass[39m=[32m"tabler-icon tabler-icon-info-circle "[39m
+                          [33mfill[39m=[32m"none"[39m
+                          [33mheight[39m=[32m"24"[39m
+                          [33mstroke[39m=[32m"currentColor"[39m
+                          [33mstroke-linecap[39m=[32m"round"[39m
+                          [33mstroke-linejoin[39m=[32m"round"[39m
+                          [33mstroke-width[39m=[32m"2"[39m
+                          [33mviewBox[39m=[32m"0 0 24 24"[39m
+                          [33mwidth[39m=[32m"24"[39m
+                          [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                        [36m>[39m
+                          [36m<path[39m
+                            [33md[39m=[32m"M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0"[39m
+                          [36m/>[39m
+                          [36m<path[39m
+                            [33md[39m=[32m"M12 9h.01"[39m
+                          [36m/>[39m
+                          [36m<path[39m
+                            [33md[39m=[32m"M11 12h1v4h1"[39m
+                          [36m/>[39m
+                        [36m</svg>[39m
+                      [36m</div>[39m
+                      [36m<div[39m
+                        [33mclass[39m=[32m"space-y-1 min-w-0"[39m
+                      [36m>[39m
+                        [36m<div[39m
+                          [33mclass[39m=[32m"leading-none font-semibold flex items-center gap-2"[39m
+                          [33mdata-slot[39m=[32m"card-title"[39m
+                        [36m>[39m
+                          [36m<h3[39m
+                            [33mclass[39m=[32m"text-[15px] font-semibold tracking-tight text-foreground truncate"[39m
+                          [36m>[39m
+                            [0mProduct Alpha[0m
+                          [36m</h3>[39m
+                        [36m</div>[39m
+                      [36m</div>[39m
+                    [36m</div>[39m
+                    [36m<div[39m
+                      [33mclass[39m=[32m"flex items-center gap-2"[39m
+                    [36m>[39m
+                      [36m<div[39m
+                        [33mclass[39m=[32m"hidden sm:flex items-center gap-1.5"[39m
+                      [36m>[39m
+                        [36m<button[39m
+                          [33maria-label[39m=[32m""[39m
+                          [33mclass[39m=[32m"inline-flex items-center justify-center whitespace-nowrap disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none 
+[&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 
+dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 
+gap-1.5 has-[>svg]:px-2.5 h-8 px-3.5 rounded-lg text-xs font-medium transition-all active:scale-[0.97]"[39m
+                          [33mdata-slot[39m=[32m"button"[39m
+                          [33mtype[39m=[32m"button"[39m
+                        [36m>[39m
+                          [36m<span[39m
+                            [33mclass[39m=[32m"mr-1.5 size-3.5 shrink-0"[39m
+                          [36m>[39m
+                            [36m<svg[39m
+                              [33maria-hidden[39m=[32m"true"[39m
+                              [33mclass[39m=[32m"lucide lucide-pencil size-4"[39m
+                              [33mfill[39m=[32m"none"[39m
+                              [33mheight[39m=[32m"24"[39m
+                              [33mstroke[39m=[32m"currentColor"[39m
+                              [33mstroke-linecap[39m=[32m"round"[39m
+                              [33mstroke-linejoin[39m=[32m"round"[39m
+                              [33mstroke-width[39m=[32m"2"[39m
+                              [33mviewBox[39m=[32m"0 0 24 24"[39m
+                              [33mwidth[39m=[32m"24"[39m
+                              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                            [36m>[39m
+                              [36m<path[39m
+                                [33md[39m=[32m"M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"[39m
+                              [36m/>[39m
+                              [36m<path[39m
+                                [33md[39m=[32m"m15 5 4 4"[39m
+                              [36m/>[39m
+                            [36m</svg>[39m
+                          [36m</span>[39m
+                        [36m</button>[39m
+                        [36m<button[39m
+                          [33maria-label[39m=[32m""[39m
+                          [33mclass[39m=[32m"inline-flex items-center justify-center whitespace-nowrap disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none 
+[&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 
+aria-invalid:border-destructive bg-destructive text-white hover:bg-destructive/90 focus-visible:ring-destructive/20 dark:focus-visible:ring-destructive/40 dark:bg-destructive/60 gap-1.5 has-[>svg]:px-2.5 h-8 
+px-3.5 rounded-lg text-xs font-medium transition-all active:scale-[0.97]"[39m
+                          [33mdata-slot[39m=[32m"button"[39m
+                          [33mtype[39m=[32m"button"[39m
+                        [36m>[39m
+                          [36m<span[39m
+                            [33mclass[39m=[32m"mr-1.5 size-3.5 shrink-0"[39m
+                          [36m>[39m
+                            [36m<svg[39m
+                              [33maria-hidden[39m=[32m"true"[39m
+                              [33mclass[39m=[32m"lucide lucide-trash2 lucide-trash-2 size-4"[39m
+                              [33mfill[39m=[32m"none"[39m
+                              [33mheight[39m=[32m"24"[39m
+                              [33mstroke[39m=[32m"currentColor"[39m
+                              [33mstroke-linecap[39m=[32m"round"[39m
+                              [33mstroke-linejoin[39m=[32m"round"[39m
+                              [33mstroke-width[39m=[32m"2"[39m
+                              [33mviewBox[39m=[32m"0 0 24 24"[39m
+                              [33mwidth[39m=[32m"24"[39m
+                              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                            [36m>[39m
+                              [36m<path[39m
+                                [33md[39m=[32m"M10 11v6"[39m
+                              [36m/>[39m
+                              [36m<path[39m
+                                [33md[39m=[32m"M14 11v6"[39m
+                              [36m/>[39m
+                              [36m<path[39m
+                                [33md[39m=[32m"M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"[39m
+                              [36m/>[39m
+                              [36m<path[39m
+                                [33md[39m=[32m"M3 6h18"[39m
+                              [36m/>[39m
+                              [36m<path[39m
+                                [33md[39m=[32m"M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"[39m
+                              [36m/>[39m
+                            [36m</svg>[39m
+                          [36m</span>[39m
+                        [36m</button>[39m
+                      [36m</div>[39m
+                    [36m</div>[39m
+                  [36m</div>[39m
+                [36m</div>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"space-y-6"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"space-y-6"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"min-w-0 transition-all duration-300 ease-out"[39m
+              [33mdata-testid[39m=[32m"section-layout:base-detail:auto"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"text-card-foreground flex flex-col gap-6 rounded-xl border py-6 group/frame relative overflow-hidden transition-all duration-300 ease-out border-border/30 bg-card 
+shadow-sm hover:shadow-md hover:border-border/50"[39m
+                [33mdata-slot[39m=[32m"card"[39m
+                [33mdata-testid[39m=[32m"section-frame-layout:base-detail:auto"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent opacity-0 group-hover/frame:opacity-100 transition-opacity 
+duration-500"[39m
+                [36m/>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-2 has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-6 px-6 py-5 border-b 
+border-border/10"[39m
+                  [33mdata-slot[39m=[32m"card-header"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"flex flex-wrap items-center justify-between gap-4"[39m
+                  [36m>[39m
+                    [36m<div[39m
+                      [33mclass[39m=[32m"flex items-center gap-3.5 min-w-0 flex-1"[39m
+                    [36m>[39m
+                      [36m<div[39m
+                        [33mclass[39m=[32m"space-y-1 min-w-0"[39m
+                      [36m>[39m
+                        [36m<div[39m
+                          [33mclass[39m=[32m"leading-none font-semibold flex items-center gap-2"[39m
+                          [33mdata-slot[39m=[32m"card-title"[39m
+                        [36m>[39m
+                          [36m<h3[39m
+                            [33mclass[39m=[32m"text-[15px] font-semibold tracking-tight text-foreground truncate"[39m
+                          [36m>[39m
+                            [0mDetails[0m
+                          [36m</h3>[39m
+                        [36m</div>[39m
+                      [36m</div>[39m
+                    [36m</div>[39m
+                  [36m</div>[39m
+                [36m</div>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"px-6 py-6"[39m
+                  [33mdata-slot[39m=[32m"card-content"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"animate-in fade-in duration-400"[39m
+                  [36m>[39m
+                    [36m<div[39m
+                      [33mclass[39m=[32m"space-y-5"[39m
+                    [36m>[39m
+                      [36m<div[39m
+                        [33mclass[39m=[32m"grid grid-cols-1 gap-x-8 gap-y-5 sm:grid-cols-2 py-1"[39m
+                      [36m>[39m
+                        [36m<div[39m
+                          [33mclass[39m=[32m"min-w-0"[39m
+                        [36m>[39m
+                          [36m<dl[39m
+                            [33mclass[39m=[32m"unit-field group/field relative min-w-0 transition-colors rounded-lg unit-field-kind-text unit-field-size-md unit-field-align-start unit-field-density-normal 
+py-2.5 px-2 hover:bg-muted/20"[39m
+                          [36m>[39m
+                            [36m<div[39m
+                              [33mclass[39m=[32m"flex min-w-0 flex-col gap-1"[39m
+                            [36m>[39m
+                              [36m<div[39m
+                                [33mclass[39m=[32m"flex w-full items-center justify-between gap-2"[39m
+                              [36m>[39m
+                                [36m<dt[39m
+                                  [33mclass[39m=[32m"flex items-center gap-1.5"[39m
+                                [36m>[39m
+                                  [36m<label[39m
+                                    [33mclass[39m=[32m"flex items-center gap-2 select-none group-data-[disabled=true]:pointer-events-none group-data-[disabled=true]:opacity-50 
+peer-disabled:cursor-not-allowed peer-disabled:opacity-50 text-[11px] font-medium uppercase tracking-wider text-muted-foreground/50"[39m
+                                    [33mdata-slot[39m=[32m"label"[39m
+                                  [36m>[39m
+                                    [0mName[0m
+                                  [36m</label>[39m
+                                [36m</dt>[39m
+                              [36m</div>[39m
+                              [36m<dd[39m
+                                [33mclass[39m=[32m"text-sm leading-relaxed text-left text-foreground/90 max-w-prose"[39m
+                              [36m>[39m
+                                [36m<div[39m
+                                  [33mclass[39m=[32m"space-y-1.5"[39m
+                                [36m>[39m
+                                  [36m<div[39m
+                                    [33mclass[39m=[32m"unit-field-value flex min-w-0 items-start gap-2 unit-field-tone-default"[39m
+                                  [36m>[39m
+                                    [36m<div[39m
+                                      [33mclass[39m=[32m"min-w-0 flex-1"[39m
+                                    [36m>[39m
+                                      [36m<span[39m
+                                        [33mclass[39m=[32m"font-medium text-foreground/90 unit-field-text break-words text-sm"[39m
+                                      [36m>[39m
+                                        [0mProduct Alpha[0m
+                                      [36m</span>[39m
+                                    [36m</div>[39m
+                                  [36m</div>[39m
+                                [36m</div>[39m
+                              [36m</dd>[39m
+                            [36m</div>[39m
+                          [36m</dl>[39m
+                        [36m</div>[39m
+                      [36m</div>[39m
+                    [36m</div>[39m
+                  [36m</div>[39m
+                [36m</div>[39m
+              [36m</div>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+[90m [2m?[22m Object.getElementError node_modules/@testing-library/dom/dist/config.js:[2m37:19[22m[39m
+[90m [2m?[22m node_modules/@testing-library/dom/dist/query-helpers.js:[2m76:38[22m[39m
+[90m [2m?[22m node_modules/@testing-library/dom/dist/query-helpers.js:[2m52:17[22m[39m
+[90m [2m?[22m node_modules/@testing-library/dom/dist/query-helpers.js:[2m95:19[22m[39m
+[36m [2m?[22m src/widgets/model-details/tests/modelDynamicDetail.test.tsx:[2m280:19[22m[39m
+    [90m278| [39m    })[33m;[39m
+    [90m279| [39m
+    [90m280| [39m    expect(screen.getByRole("button", { name: "Update" })).toBeInTheDo…
+    [90m   | [39m                  [31m^[39m
+    [90m281| [39m    expect(screen.getByRole("button", { name: "Delete" })).toBeInTheDo…
+    [90m282| [39m    [34mexpect[39m(useModelSingleQueryMock)[33m.[39m[34mtoHaveBeenCalledWith[39m(
+
+[31m[2m????????????????????????[3/6]?[22m[39m
+
+[41m[1m FAIL [22m[49m src/widgets/model-details/tests/modelDynamicDetail.test.tsx[2m > [22mModelDynamicDetail[2m > [22mexecutes delete mutation after confirmation
+[31m[1mTestingLibraryElementError[22m[39m: Unable to find role="button" and name "Delete"
+
+Ignored nodes: comments, script, style
+[36m<body[39m
+  [33mstyle[39m=[32m""[39m
+[36m>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"space-y-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"animate-in fade-in duration-500 space-y-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"space-y-6"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"space-y-6"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"min-w-0 transition-all duration-300 ease-out"[39m
+              [33mdata-testid[39m=[32m"section-header:main"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"text-card-foreground flex flex-col gap-6 rounded-xl border py-6 group/frame relative overflow-hidden transition-all duration-300 ease-out border-border/30 bg-card 
+shadow-sm hover:shadow-md hover:border-border/50"[39m
+                [33mdata-slot[39m=[32m"card"[39m
+                [33mdata-testid[39m=[32m"section-frame-header:main"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent opacity-0 group-hover/frame:opacity-100 transition-opacity 
+duration-500"[39m
+                [36m/>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-2 has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-6 px-6 py-5 border-b 
+border-border/10"[39m
+                  [33mdata-slot[39m=[32m"card-header"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"flex flex-wrap items-center justify-between gap-4"[39m
+                  [36m>[39m
+                    [36m<div[39m
+                      [33mclass[39m=[32m"flex items-center gap-3.5 min-w-0 flex-1"[39m
+                    [36m>[39m
+                      [36m<div[39m
+                        [33mclass[39m=[32m"flex items-center justify-center size-10 rounded-xl bg-primary/10 text-primary shrink-0 transition-all duration-300 group-hover/frame:bg-primary/15 
+group-hover/frame:scale-105"[39m
+                      [36m>[39m
+                        [36m<svg[39m
+                          [33mclass[39m=[32m"tabler-icon tabler-icon-info-circle "[39m
+                          [33mfill[39m=[32m"none"[39m
+                          [33mheight[39m=[32m"24"[39m
+                          [33mstroke[39m=[32m"currentColor"[39m
+                          [33mstroke-linecap[39m=[32m"round"[39m
+                          [33mstroke-linejoin[39m=[32m"round"[39m
+                          [33mstroke-width[39m=[32m"2"[39m
+                          [33mviewBox[39m=[32m"0 0 24 24"[39m
+                          [33mwidth[39m=[32m"24"[39m
+                          [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                        [36m>[39m
+                          [36m<path[39m
+                            [33md[39m=[32m"M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0"[39m
+                          [36m/>[39m
+                          [36m<path[39m
+                            [33md[39m=[32m"M12 9h.01"[39m
+                          [36m/>[39m
+                          [36m<path[39m
+                            [33md[39m=[32m"M11 12h1v4h1"[39m
+                          [36m/>[39m
+                        [36m</svg>[39m
+                      [36m</div>[39m
+                      [36m<div[39m
+                        [33mclass[39m=[32m"space-y-1 min-w-0"[39m
+                      [36m>[39m
+                        [36m<div[39m
+                          [33mclass[39m=[32m"leading-none font-semibold flex items-center gap-2"[39m
+                          [33mdata-slot[39m=[32m"card-title"[39m
+                        [36m>[39m
+                          [36m<h3[39m
+                            [33mclass[39m=[32m"text-[15px] font-semibold tracking-tight text-foreground truncate"[39m
+                          [36m>[39m
+                            [0mProduct Alpha[0m
+                          [36m</h3>[39m
+                        [36m</div>[39m
+                      [36m</div>[39m
+                    [36m</div>[39m
+                    [36m<div[39m
+                      [33mclass[39m=[32m"flex items-center gap-2"[39m
+                    [36m>[39m
+                      [36m<div[39m
+                        [33mclass[39m=[32m"hidden sm:flex items-center gap-1.5"[39m
+                      [36m>[39m
+                        [36m<button[39m
+                          [33maria-label[39m=[32m""[39m
+                          [33mclass[39m=[32m"inline-flex items-center justify-center whitespace-nowrap disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none 
+[&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 
+dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 
+gap-1.5 has-[>svg]:px-2.5 h-8 px-3.5 rounded-lg text-xs font-medium transition-all active:scale-[0.97]"[39m
+                          [33mdata-slot[39m=[32m"button"[39m
+                          [33mtype[39m=[32m"button"[39m
+                        [36m>[39m
+                          [36m<span[39m
+                            [33mclass[39m=[32m"mr-1.5 size-3.5 shrink-0"[39m
+                          [36m>[39m
+                            [36m<svg[39m
+                              [33maria-hidden[39m=[32m"true"[39m
+                              [33mclass[39m=[32m"lucide lucide-pencil size-4"[39m
+                              [33mfill[39m=[32m"none"[39m
+                              [33mheight[39m=[32m"24"[39m
+                              [33mstroke[39m=[32m"currentColor"[39m
+                              [33mstroke-linecap[39m=[32m"round"[39m
+                              [33mstroke-linejoin[39m=[32m"round"[39m
+                              [33mstroke-width[39m=[32m"2"[39m
+                              [33mviewBox[39m=[32m"0 0 24 24"[39m
+                              [33mwidth[39m=[32m"24"[39m
+                              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                            [36m>[39m
+                              [36m<path[39m
+                                [33md[39m=[32m"M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"[39m
+                              [36m/>[39m
+             ...
+
+Ignored nodes: comments, script, style
+[36m<body[39m
+  [33mstyle[39m=[32m""[39m
+[36m>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"space-y-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"animate-in fade-in duration-500 space-y-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"space-y-6"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"space-y-6"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"min-w-0 transition-all duration-300 ease-out"[39m
+              [33mdata-testid[39m=[32m"section-header:main"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"text-card-foreground flex flex-col gap-6 rounded-xl border py-6 group/frame relative overflow-hidden transition-all duration-300 ease-out border-border/30 bg-card 
+shadow-sm hover:shadow-md hover:border-border/50"[39m
+                [33mdata-slot[39m=[32m"card"[39m
+                [33mdata-testid[39m=[32m"section-frame-header:main"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-primary/20 to-transparent opacity-0 group-hover/frame:opacity-100 transition-opacity 
+duration-500"[39m
+                [36m/>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"@container/card-header grid auto-rows-min grid-rows-[auto_auto] items-start gap-2 has-data-[slot=card-action]:grid-cols-[1fr_auto] [.border-b]:pb-6 px-6 py-5 border-b 
+border-border/10"[39m
+                  [33mdata-slot[39m=[32m"card-header"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"flex flex-wrap items-center justify-between gap-4"[39m
+                  [36m>[39m
+                    [36m<div[39m
+                      [33mclass[39m=[32m"flex items-center gap-3.5 min-w-0 flex-1"[39m
+                    [36m>[39m
+                      [36m<div[39m
+                        [33mclass[39m=[32m"flex items-center justify-center size-10 rounded-xl bg-primary/10 text-primary shrink-0 transition-all duration-300 group-hover/frame:bg-primary/15 
+group-hover/frame:scale-105"[39m
+                      [36m>[39m
+                        [36m<svg[39m
+                          [33mclass[39m=[32m"tabler-icon tabler-icon-info-circle "[39m
+                          [33mfill[39m=[32m"none"[39m
+                          [33mheight[39m=[32m"24"[39m
+                          [33mstroke[39m=[32m"currentColor"[39m
+                          [33mstroke-linecap[39m=[32m"round"[39m
+                          [33mstroke-linejoin[39m=[32m"round"[39m
+                          [33mstroke-width[39m=[32m"2"[39m
+                          [33mviewBox[39m=[32m"0 0 24 24"[39m
+                          [33mwidth[39m=[32m"24"[39m
+                          [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                        [36m>[39m
+                          [36m<path[39m
+                            [33md[39m=[32m"M3 12a9 9 0 1 0 18 0a9 9 0 0 0 -18 0"[39m
+                          [36m/>[39m
+                          [36m<path[39m
+                            [33md[39m=[32m"M12 9h.01"[39m
+                          [36m/>[39m
+                          [36m<path[39m
+                            [33md[39m=[32m"M11 12h1v4h1"[39m
+                          [36m/>[39m
+                        [36m</svg>[39m
+                      [36m</div>[39m
+                      [36m<div[39m
+                        [33mclass[39m=[32m"space-y-1 min-w-0"[39m
+                      [36m>[39m
+                        [36m<div[39m
+                          [33mclass[39m=[32m"leading-none font-semibold flex items-center gap-2"[39m
+                          [33mdata-slot[39m=[32m"card-title"[39m
+                        [36m>[39m
+                          [36m<h3[39m
+                            [33mclass[39m=[32m"text-[15px] font-semibold tracking-tight text-foreground truncate"[39m
+                          [36m>[39m
+                            [0mProduct Alpha[0m
+                          [36m</h3>[39m
+                        [36m</div>[39m
+                      [36m</div>[39m
+                    [36m</div>[39m
+                    [36m<div[39m
+                      [33mclass[39m=[32m"flex items-center gap-2"[39m
+                    [36m>[39m
+                      [36m<div[39m
+                        [33mclass[39m=[32m"hidden sm:flex items-center gap-1.5"[39m
+                      [36m>[39m
+                        [36m<button[39m
+                          [33maria-label[39m=[32m""[39m
+                          [33mclass[39m=[32m"inline-flex items-center justify-center whitespace-nowrap disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none 
+[&_svg:not([class*='size-'])]:size-4 shrink-0 [&_svg]:shrink-0 outline-none focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 
+dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive border bg-background shadow-xs hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50 
+gap-1.5 has-[>svg]:px-2.5 h-8 px-3.5 rounded-lg text-xs font-medium transition-all active:scale-[0.97]"[39m
+                          [33mdata-slot[39m=[32m"button"[39m
+                          [33mtype[39m=[32m"button"[39m
+                        [36m>[39m
+                          [36m<span[39m
+                            [33mclass[39m=[32m"mr-1.5 size-3.5 shrink-0"[39m
+                          [36m>[39m
+                            [36m<svg[39m
+                              [33maria-hidden[39m=[32m"true"[39m
+                              [33mclass[39m=[32m"lucide lucide-pencil size-4"[39m
+                              [33mfill[39m=[32m"none"[39m
+                              [33mheight[39m=[32m"24"[39m
+                              [33mstroke[39m=[32m"currentColor"[39m
+                              [33mstroke-linecap[39m=[32m"round"[39m
+                              [33mstroke-linejoin[39m=[32m"round"[39m
+                              [33mstroke-width[39m=[32m"2"[39m
+                              [33mviewBox[39m=[32m"0 0 24 24"[39m
+                              [33mwidth[39m=[32m"24"[39m
+                              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                            [36m>[39m
+                              [36m<path[39m
+                                [33md[39m=[32m"M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"[39m
+                              [36m/>[39m
+             ...
+[90m [2m?[22m waitForWrapper node_modules/@testing-library/dom/dist/wait-for.js:[2m163:27[22m[39m
+[90m [2m?[22m node_modules/@testing-library/dom/dist/query-helpers.js:[2m86:33[22m[39m
+[36m [2m?[22m src/widgets/model-details/tests/modelDynamicDetail.test.tsx:[2m1221:40[22m[39m
+    [90m1219| [39m    )[33m;[39m
+    [90m1220| [39m
+    [90m1221| [39m    const toolbarDelete = await screen.findByRole("button", { name: "D…
+    [90m   | [39m                                       [31m^[39m
+    [90m1222| [39m    [35mawait[39m user[33m.[39m[34mclick[39m(toolbarDelete)[33m;[39m
+    [90m1223| [39m
+
+[31m[2m????????????????????????[4/6]?[22m[39m
+
+[41m[1m FAIL [22m[49m src/widgets/model-details/tests/retryAbort.test.tsx[2m > [22mretry and abort behavior[2m > [22mtreats abort-like entity loader failures as errors when not explicitly aborted
+[31m[1mTestingLibraryElementError[22m[39m: Unable to find an element with the text: /unable to load details|system sync lost|connection interrupted/i. This could be because the text is broken up by 
+multiple elements. In this case, you can provide a function for your text matcher to make your matcher more flexible.
+
+Ignored nodes: comments, script, style
+[36m<body>[39m
+  [36m<div>[39m
+    [36m<div[39m
+      [33mclass[39m=[32m"max-w-5xl mx-auto py-10 px-6"[39m
+    [36m>[39m
+      [36m<div[39m
+        [33maria-live[39m=[32m"polite"[39m
+        [33mclass[39m=[32m"flex flex-col items-center justify-center py-14 px-8 text-center rounded-xl border border-destructive/15 bg-destructive/[0.03] transition-all animate-in fade-in 
+duration-500"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"relative mb-6"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"size-16 rounded-2xl bg-destructive/10 flex items-center justify-center"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-circle-alert size-7 text-destructive/60"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"24"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"24"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<circle[39m
+                [33mcx[39m=[32m"12"[39m
+                [33mcy[39m=[32m"12"[39m
+                [33mr[39m=[32m"10"[39m
+              [36m/>[39m
+              [36m<line[39m
+                [33mx1[39m=[32m"12"[39m
+                [33mx2[39m=[32m"12"[39m
+                [33my1[39m=[32m"8"[39m
+                [33my2[39m=[32m"12"[39m
+              [36m/>[39m
+              [36m<line[39m
+                [33mx1[39m=[32m"12"[39m
+                [33mx2[39m=[32m"12.01"[39m
+                [33my1[39m=[32m"16"[39m
+                [33my2[39m=[32m"16"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"max-w-sm space-y-3 mb-6"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"space-y-1.5"[39m
+          [36m>[39m
+            [36m<h4[39m
+              [33mclass[39m=[32m"text-sm font-semibold tracking-tight text-destructive"[39m
+            [36m>[39m
+              [0mUnable to Load Record[0m
+            [36m</h4>[39m
+            [36m<p[39m
+              [33mclass[39m=[32m"text-xs text-muted-foreground/60 leading-relaxed max-w-xs mx-auto"[39m
+            [36m>[39m
+              [0mWe couldn't establish a connection with the server. This may be due to a session timeout or a temporary network issue.[0m
+            [36m</p>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"flex items-center gap-2 px-3 py-1.5 rounded-lg bg-destructive/5 text-destructive/70 border border-destructive/10 text-xs font-medium"[39m
+        [36m>[39m
+          [36m<svg[39m
+            [33maria-hidden[39m=[32m"true"[39m
+            [33mclass[39m=[32m"lucide lucide-circle-alert size-3.5"[39m
+            [33mfill[39m=[32m"none"[39m
+            [33mheight[39m=[32m"24"[39m
+            [33mstroke[39m=[32m"currentColor"[39m
+            [33mstroke-linecap[39m=[32m"round"[39m
+            [33mstroke-linejoin[39m=[32m"round"[39m
+            [33mstroke-width[39m=[32m"2"[39m
+            [33mviewBox[39m=[32m"0 0 24 24"[39m
+            [33mwidth[39m=[32m"24"[39m
+            [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+          [36m>[39m
+            [36m<circle[39m
+              [33mcx[39m=[32m"12"[39m
+              [33mcy[39m=[32m"12"[39m
+              [33mr[39m=[32m"10"[39m
+            [36m/>[39m
+            [36m<line[39m
+              [33mx1[39m=[32m"12"[39m
+              [33mx2[39m=[32m"12"[39m
+              [33my1[39m=[32m"8"[39m
+              [33my2[39m=[32m"12"[39m
+            [36m/>[39m
+            [36m<line[39m
+              [33mx1[39m=[32m"12"[39m
+              [33mx2[39m=[32m"12.01"[39m
+              [33my1[39m=[32m"16"[39m
+              [33my2[39m=[32m"16"[39m
+            [36m/>[39m
+          [36m</svg>[39m
+          [36m<span>[39m
+            [0mError reported[0m
+          [36m</span>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</div>[39m
+[36m</body>[39m
+
+Ignored nodes: comments, script, style
+[36m<html>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"max-w-5xl mx-auto py-10 px-6"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33maria-live[39m=[32m"polite"[39m
+          [33mclass[39m=[32m"flex flex-col items-center justify-center py-14 px-8 text-center rounded-xl border border-destructive/15 bg-destructive/[0.03] transition-all animate-in fade-in 
+duration-500"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"relative mb-6"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"size-16 rounded-2xl bg-destructive/10 flex items-center justify-center"[39m
+            [36m>[39m
+              [36m<svg[39m
+                [33maria-hidden[39m=[32m"true"[39m
+                [33mclass[39m=[32m"lucide lucide-circle-alert size-7 text-destructive/60"[39m
+                [33mfill[39m=[32m"none"[39m
+                [33mheight[39m=[32m"24"[39m
+                [33mstroke[39m=[32m"currentColor"[39m
+                [33mstroke-linecap[39m=[32m"round"[39m
+                [33mstroke-linejoin[39m=[32m"round"[39m
+                [33mstroke-width[39m=[32m"2"[39m
+                [33mviewBox[39m=[32m"0 0 24 24"[39m
+                [33mwidth[39m=[32m"24"[39m
+                [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+              [36m>[39m
+                [36m<circle[39m
+                  [33mcx[39m=[32m"12"[39m
+                  [33mcy[39m=[32m"12"[39m
+                  [33mr[39m=[32m"10"[39m
+                [36m/>[39m
+                [36m<line[39m
+                  [33mx1[39m=[32m"12"[39m
+                  [33mx2[39m=[32m"12"[39m
+                  [33my1[39m=[32m"8"[39m
+                  [33my2[39m=[32m"12"[39m
+                [36m/>[39m
+                [36m<line[39m
+                  [33mx1[39m=[32m"12"[39m
+                  [33mx2[39m=[32m"12.01"[39m
+                  [33my1[39m=[32m"16"[39m
+                  [33my2[39m=[32m"16"[39m
+                [36m/>[39m
+              [36m</svg>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"max-w-sm space-y-3 mb-6"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"space-y-1.5"[39m
+            [36m>[39m
+              [36m<h4[39m
+                [33mclass[39m=[32m"text-sm font-semibold tracking-tight text-destructive"[39m
+              [36m>[39m
+                [0mUnable to Load Record[0m
+              [36m</h4>[39m
+              [36m<p[39m
+                [33mclass[39m=[32m"text-xs text-muted-foreground/60 leading-relaxed max-w-xs mx-auto"[39m
+              [36m>[39m
+                [0mWe couldn't establish a connection with the server. This may be due to a session timeout or a temporary network issue.[0m
+              [36m</p>[39m
+            [36m</div>[39m
+          [36m</div>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex items-center gap-2 px-3 py-1.5 rounded-lg bg-destructive/5 text-destructive/70 border border-destructive/10 text-xs font-medium"[39m
+          [36m>[39m
+            [36m<svg[39m
+              [33maria-hidden[39m=[32m"true"[39m
+              [33mclass[39m=[32m"lucide lucide-circle-alert size-3.5"[39m
+              [33mfill[39m=[32m"none"[39m
+              [33mheight[39m=[32m"24"[39m
+              [33mstroke[39m=[32m"currentColor"[39m
+              [33mstroke-linecap[39m=[32m"round"[39m
+              [33mstroke-linejoin[39m=[32m"round"[39m
+              [33mstroke-width[39m=[32m"2"[39m
+              [33mviewBox[39m=[32m"0 0 24 24"[39m
+              [33mwidth[39m=[32m"24"[39m
+              [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+            [36m>[39m
+              [36m<circle[39m
+                [33mcx[39m=[32m"12"[39m
+                [33mcy[39m=[32m"12"[39m
+                [33mr[39m=[32m"10"[39m
+              [36m/>[39m
+              [36m<line[39m
+                [33mx1[39m=[32m"12"[39m
+                [33mx2[39m=[32m"12"[39m
+                [33my1[39m=[32m"8"[39m
+                [33my2[39m=[32m"12"[39m
+              [36m/>[39m
+              [36m<line[39m
+                [33mx1[39m=[32m"12"[39m
+                [33mx2[39m=[32m"12.01"[39m
+                [33my1[39m=[32m"16"[39m
+                [33my2[39m=[32m"16"[39m
+              [36m/>[39m
+            [36m</svg>[39m
+            [36m<span>[39m
+              [0mError reported[0m
+            [36m</span>[39m
+          [36m</div>[39m
+        [36m</div>[39m
+      [36m</div>[39m
+    [36m</div>[39m
+  [36m</body>[39m
+[36m</html>[39m
+[90m [2m?[22m waitForWrapper node_modules/@testing-library/dom/dist/wait-for.js:[2m163:27[22m[39m
+[36m [2m?[22m src/widgets/model-details/tests/retryAbort.test.tsx:[2m146:11[22m[39m
+    [90m144| [39m    )[33m;[39m
+    [90m145| [39m
+    [90m146| [39m    [35mawait[39m [34mwaitFor[39m(() [33m=>[39m {
+    [90m   | [39m          [31m^[39m
+    [90m147| [39m      [34mexpect[39m(
+    [90m148| [39m        screen[33m.[39m[34mgetByText[39m(
+
+[31m[2m????????????????????????[5/6]?[22m[39m
+
+[41m[1m FAIL [22m[49m src/widgets/model-table/__tests__/DynamicModelTable.integration.test.tsx[2m > [22mDynamicModelTable integration[2m > [22mrenders detail expansion when baseTable.expand is 
+configured
+[31m[1mAssertionError[22m[39m: expected "vi.fn()" to be called at least once
+
+Ignored nodes: comments, script, style
+[36m<html>[39m
+  [36m<head />[39m
+  [36m<body>[39m
+    [36m<div>[39m
+      [36m<div[39m
+        [33mclass[39m=[32m"h-full w-full"[39m
+      [36m>[39m
+        [36m<div[39m
+          [33mclass[39m=[32m"relative flex h-full w-full max-w-full min-w-0 flex-col overflow-hidden animate-in fade-in duration-500 p-1 sm:p-2"[39m
+        [36m>[39m
+          [36m<div[39m
+            [33mclass[39m=[32m"flex-none"[39m
+          [36m>[39m
+            [36m<div[39m
+              [33mclass[39m=[32m"flex flex-col gap-6 w-full animate-in fade-in duration-700"[39m
+            [36m>[39m
+              [36m<div[39m
+                [33mclass[39m=[32m"flex flex-col lg:flex-row lg:items-center justify-between gap-6 px-1 py-4"[39m
+              [36m>[39m
+                [36m<div[39m
+                  [33mclass[39m=[32m"flex items-start gap-4"[39m
+                [36m>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"hidden sm:flex size-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/15 to-primary/5 text-primary shadow-sm ring-1 
+ring-primary/10"[39m
+                  [36m>[39m
+                    [36m<svg[39m
+                      [33maria-hidden[39m=[32m"true"[39m
+                      [33mclass[39m=[32m"lucide lucide-box size-6"[39m
+                      [33mfill[39m=[32m"none"[39m
+                      [33mheight[39m=[32m"24"[39m
+                      [33mstroke[39m=[32m"currentColor"[39m
+                      [33mstroke-linecap[39m=[32m"round"[39m
+                      [33mstroke-linejoin[39m=[32m"round"[39m
+                      [33mstroke-width[39m=[32m"2"[39m
+                      [33mviewBox[39m=[32m"0 0 24 24"[39m
+                      [33mwidth[39m=[32m"24"[39m
+                      [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                    [36m>[39m
+                      [36m<path[39m
+                        [33md[39m=[32m"M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z"[39m
+                      [36m/>[39m
+                      [36m<path[39m
+                        [33md[39m=[32m"m3.3 7 8.7 5 8.7-5"[39m
+                      [36m/>[39m
+                      [36m<path[39m
+                        [33md[39m=[32m"M12 22V12"[39m
+                      [36m/>[39m
+                    [36m</svg>[39m
+                  [36m</div>[39m
+                  [36m<div[39m
+                    [33mclass[39m=[32m"flex flex-col gap-1.5"[39m
+                  [36m>[39m
+                    [36m<div[39m
+                      [33mclass[39m=[32m"flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/50"[39m
+
+[2m Test Files [22m [1m[31m4 failed[39m[22m[2m | [22m[1m[32m106 passed[39m[22m[90m (110)[39m
+[2m      Tests [22m [1m[31m6 failed[39m[22m[2m | [22m[1m[32m496 passed[39m[22m[90m (502)[39m
+[2m   Start at [22m 21:17:35
+[2m   Duration [22m 35.23s[2m (transform 43.06s, setup 27.59s, import 173.17s, tests 47.28s, environment 191.91s)[22m
+
+                    [36m>[39m
+                      [36m<svg[39m
+                        [33maria-hidden[39m=[32m"true"[39m
+                        [33mclass[39m=[32m"lucide lucide-database size-3"[39m
+                        [33mfill[39m=[32m"none"[39m
+                        [33mheight[39m=[32m"24"[39m
+                        [33mstroke[39m=[32m"currentColor"[39m
+                        [33mstroke-linecap[39m=[32m"round"[39m
+                        [33mstroke-linejoin[39m=[32m"round"[39m
+                        [33mstroke-width[39m=[32m"2"[39m
+                        [33mviewBox[39m=[32m"0 0 24 24"[39m
+                        [33mwidth[39m=[32m"24"[39m
+                        [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                      [36m>[39m
+                        [36m<ellipse[39m
+                          [33mcx[39m=[32m"12"[39m
+                          [33mcy[39m=[32m"5"[39m
+                          [33mrx[39m=[32m"9"[39m
+                          [33mry[39m=[32m"3"[39m
+                        [36m/>[39m
+                        [36m<path[39m
+                          [33md[39m=[32m"M3 5V19A9 3 0 0 0 21 19V5"[39m
+                        [36m/>[39m
+                        [36m<path[39m
+                          [33md[39m=[32m"M3 12A9 3 0 0 0 21 12"[39m
+                        [36m/>[39m
+                      [36m</svg>[39m
+                      [36m<span>[39m
+                        [0mauth[0m
+                      [36m</span>[39m
+                      [36m<svg[39m
+                        [33maria-hidden[39m=[32m"true"[39m
+                        [33mclass[39m=[32m"lucide lucide-chevron-right size-2.5"[39m
+                        [33mfill[39m=[32m"none"[39m
+                        [33mheight[39m=[32m"24"[39m
+                        [33mstroke[39m=[32m"currentColor"[39m
+                        [33mstroke-linecap[39m=[32m"round"[39m
+                        [33mstroke-linejoin[39m=[32m"round"[39m
+                        [33mstroke-width[39m=[32m"2"[39m
+                        [33mviewBox[39m=[32m"0 0 24 24"[39m
+                        [33mwidth[39m=[32m"24"[39m
+                        [33mxmlns[39m=[32m"http://www.w3.org/2000/svg"[39m
+                      [36m>[39m
+                        [36m<path[39m
+                          [33md[39m=[32m"m9 18 6-6-6-6"[39m
+                        [36m/>[39m
+                      [36m</svg>[39m
+                      [36m<span[39m
+                        [33mclass[39m=[32m"text-primary/60"[39m
+                      [36m>[39m
+                        [0mUser[0m
+                      [36m</span>[39m
+                    [36m</div>[39m
+                    [36m<div[39m
+                      [33mclass[39m=[32m"flex items-center gap-3.5"[39m
+                    [36m>[39m
+                      [36m<h1[39m
+                        [33mclass[39m=[32m"text-3xl font-extrabold tracking-tight text-foreground/90"[39m
+                      [36m>[39m
+                        [0mUsers[0m
+                      [36m</h1>[39m
+                      [36m<div[39m
+                        [33mclass[39m=[32m"flex items-center gap-2"[39m
+                      [36m>[39m
+                        [36m<span[39m
+                          [33mclass[39m=[32m"inline-flex items-center justify-center border py-0.5 w-fit whitespace-nowrap shrink-0 [&>svg]:size-3 gap-1 [&>svg]:pointer-events-none 
+focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px] aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive 
+transition-[color,box-shadow] overflow-hidden border-transparent [a&]:hover:bg-secondary/90 h-7 rounded-full px-3.5 bg-primary text-primary-foreground border-none font-bold text-xs shadow-md 
+shadow-primary/15 tabular-nums"[39m
+                          [33mdata-slot[39m=[32m"badge"[39m
+                        [36m>[39m
+                          [0m2[0m
+                        [36m</span>[39m
+...
+[36m [2m?[22m src/widgets/model-table/__tests__/DynamicModelTable.integration.test.tsx:[2m483:32[22m[39m
+    [90m481| [39m
+    [90m482| [39m    [35mawait[39m [34mwaitFor[39m(() [33m=>[39m {
+    [90m483| [39m      [34mexpect[39m(onExpandedChange)[33m.[39m[34mtoHaveBeenCalled[39m()[33m;[39m
+    [90m   | [39m                               [31m^[39m
+    [90m484| [39m    })[33m;[39m
+    [90m485| [39m  })[33m;[39m
+[90m [2m?[22m runWithExpensiveErrorDiagnosticsDisabled node_modules/@testing-library/dom/dist/config.js:[2m47:12[22m[39m
+[90m [2m?[22m checkCallback node_modules/@testing-library/dom/dist/wait-for.js:[2m124:77[22m[39m
+[90m [2m?[22m Timeout.checkRealTimersCallback node_modules/@testing-library/dom/dist/wait-for.js:[2m118:16[22m[39m
+
+[31m[2m????????????????????????[6/6]?[22m[39m
+
+

@@ -175,6 +175,7 @@ export const CORE_MANIFEST: AppManifest = defineProjectManifest({
           app="store"
           model="Product"
           baseTable={{}}
+          devtools={{ enabled: true }}
           create={{ form: { onlyRequired: true } }}
           update={{ drawerDirection: "left", form: { onlyRequired: true } }}
         />,
@@ -415,4 +416,3 @@ export const CORE_MANIFEST: AppManifest = defineProjectManifest({
 });
 
 export default CORE_MANIFEST;
-

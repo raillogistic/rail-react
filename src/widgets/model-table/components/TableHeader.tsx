@@ -385,7 +385,7 @@ export function TableHeader({
         >
           <div className="flex w-full items-center justify-end pr-4 gap-1.5">
             <span className="block text-[9px] font-semibold uppercase tracking-widest text-muted-foreground/50">
-              {actionsLabel ?? "Actions"}
+              {actionsLabel ?? ""}
             </span>
           </div>
         </DraggableHead>

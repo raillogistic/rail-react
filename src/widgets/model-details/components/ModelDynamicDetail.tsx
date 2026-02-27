@@ -2149,7 +2149,8 @@ export const ModelDynamicDetail = React.forwardRef<
         ? [
             {
               id: "header-update",
-              label: "",
+              label: "Update",
+              ariaLabel: "Update",
               icon: <Pencil className="size-4" />,
               onClick: () => {
                 void handleUpdate();
@@ -2161,7 +2162,8 @@ export const ModelDynamicDetail = React.forwardRef<
         ? [
             {
               id: "header-delete",
-              label: "",
+              label: "Delete",
+              ariaLabel: "Delete",
               tone: "danger" as const,
               icon: deleting ? (
                 <Loader2 className="size-4 animate-spin" />

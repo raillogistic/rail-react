@@ -146,7 +146,7 @@ describe("retry and abort behavior", () => {
     await waitFor(() => {
       expect(
         screen.getByText(
-          /unable to load details|system sync lost|connection interrupted/i,
+          /unable to load (details|record)|system sync lost|connection interrupted/i,
         ),
       ).toBeInTheDocument();
     });

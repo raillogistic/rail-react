@@ -35,12 +35,12 @@ export function useMetadataWarmup(options: UseMetadataWarmupOptions) {
   const [hydrated, setHydrated] = useState(false);
   const [warming, setWarming] = useState(false);
   const hasWarmedUp = useRef(false);
-  const lastUserKey = useRef<string | null>(null);
+  const lastRunKey = useRef<string | null>(null);
 
   useEffect(() => {
     if (!options.enabled || !options.userKey) {
       hasWarmedUp.current = false;
-      lastUserKey.current = null;
+      lastRunKey.current = null;
       setActiveMetadataUserKey(null);
       setHydrated(false);
       setWarming(false);
@@ -48,23 +48,32 @@ export function useMetadataWarmup(options: UseMetadataWarmupOptions) {
     }
 
     const routeHints = options.routeHints ?? [];
-    if (!routeHints.length) {
-      hasWarmedUp.current = false;
-      lastUserKey.current = null;
-      setActiveMetadataUserKey(null);
-      setHydrated(false);
-      setWarming(false);
-      return;
-    }
+    const runKey = JSON.stringify({
+      userKey: options.userKey,
+      routeHints: routeHints.map((hint) => ({
+        app: hint.app,
+        model: hint.model,
+        profiles: hint.profiles ?? [],
+      })),
+      profiles: options.profiles ?? [],
+    });
 
-    if (hasWarmedUp.current && lastUserKey.current === options.userKey) {
+    if (hasWarmedUp.current && lastRunKey.current === runKey) {
       return;
     }
 
     let cancelled = false;
     hasWarmedUp.current = true;
-    lastUserKey.current = options.userKey;
+    lastRunKey.current = runKey;
     setActiveMetadataUserKey(options.userKey);
+
+    if (!routeHints.length) {
+      const hydrateResult = hydrateMetadataCache(client.cache, options.userKey);
+      setHydrated(hydrateResult.entries > 0);
+      setWarming(false);
+      return;
+    }
+
     const storedVersion = getPersistedDeployVersion(options.userKey);
     if (storedVersion || hasPersistedMetadataEntries(options.userKey)) {
       const hydrateResult = hydrateMetadataCache(client.cache, options.userKey, {

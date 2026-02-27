@@ -128,10 +128,10 @@ export function useTableMetadata(
       notifyOnNetworkStatusChange: false,
     });
 
-  const persistedMetadata = useMemo(
-    () => readPersistedTableMetadata(app, model) as Partial<ModelSchema> | null,
-    [app, model],
-  );
+  const persistedMetadata = readPersistedTableMetadata(
+    app,
+    model,
+  ) as Partial<ModelSchema> | null;
 
   const bootstrapMetadata = useMemo(
     () =>
