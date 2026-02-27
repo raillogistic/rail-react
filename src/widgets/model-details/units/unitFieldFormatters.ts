@@ -20,7 +20,7 @@ import type {
   UnitFieldUserValue,
 } from "./unitFieldTypes";
 
-const DEFAULT_EMPTY_TEXT = "—";
+const DEFAULT_EMPTY_TEXT = "-";
 const DEFAULT_LOCALE = "en-US";
 const DEFAULT_TIMEZONE = "UTC";
 
@@ -188,7 +188,7 @@ function normalizeTimezone(
 function resolveEmptyText(field: UnitField): string {
   const behavior = field.format?.nullBehavior;
   if (behavior === "empty") return "";
-  if (behavior === "dash") return "—";
+  if (behavior === "dash") return "-";
   if (behavior === "custom") {
     return field.format?.customEmptyText ?? field.emptyText;
   }
@@ -474,7 +474,7 @@ export function formatTokenPreview(
     ...format,
     keepStart: format.keepStart ?? 6,
     keepEnd: format.keepEnd ?? 0,
-    maskChar: format.maskChar ?? "•",
+    maskChar: format.maskChar ?? "*",
   });
 }
 
@@ -684,7 +684,7 @@ function formatTemperatureValue(
     { decimals: format.decimals ?? 1, signDisplay: "auto" },
     locale,
   );
-  return formatted ? `${formatted}°${outputUnit}` : null;
+  return formatted ? `${formatted} ${outputUnit}` : null;
 }
 
 function formatSpeedValue(

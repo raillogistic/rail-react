@@ -10,7 +10,7 @@
 
 import { isTokenValid, getUserFromToken, hasPermission } from './token';
 import { tokenStorage } from './token-storage';
-import { PUBLIC_ROUTE_PATHS, ROUTES } from "@/projects/core/config/routes";
+import { PUBLIC_ROUTE_PATHS, ROUTES } from "@/shared/routing/routes";
 
 export class AuthenticationError extends Error {
   constructor(message: string, public code: string = 'AUTH_ERROR') {
@@ -140,3 +140,4 @@ export const isSessionExpiringSoon = (): boolean => {
   // Return true if token expires within 5 minutes (300 seconds)
   return timeUntilExpiry <= 300 && timeUntilExpiry > 0;
 };
+

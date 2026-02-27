@@ -1,6 +1,6 @@
 import React, { Suspense, lazy, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ROUTES } from "@/projects/core/config/routes";
+import { ROUTES } from "@/shared/routing/routes";
 import { useAuthContext } from "@/features/auth/context";
 import { MFAChallenge } from "@/features/auth/components";
 import { useForm, Controller } from "react-hook-form";
@@ -23,7 +23,7 @@ import {
   onOfflineStatusChange,
   testServerConnectivity,
 } from "@/shared/utils/legacy-utils/offline-detector";
-import { BRANDING } from "@/projects/branding";
+import { BRANDING } from "@/shared/config/branding";
 import Logo from "@/shared/assets/legacy-assets/logos/logo.png";
 import Cover960 from "@/shared/assets/legacy-assets/images/cover-960.jpg";
 import Cover1600 from "@/shared/assets/legacy-assets/images/cover-1600.jpg";
@@ -454,3 +454,5 @@ export const LoginPage: React.FC = () => {
     </div>
   );
 };
+
+

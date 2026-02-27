@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import type { AppManifest } from "@/app/router/contracts";
 import { defineProjectManifest, navGroup } from "@/app/router/manifestFactory";
-import { ROUTES } from "@/projects/core/config/routes";
+import { ROUTES } from "@/shared/routing/routes";
 import ExampleDetailsPage from "@/widgets/model-details/example/ExampleDetailsPage";
 import DashboardPage from "@/pages/dashboard/DashboardPage";
 
@@ -415,3 +415,4 @@ export const CORE_MANIFEST: AppManifest = defineProjectManifest({
 });
 
 export default CORE_MANIFEST;
+

@@ -51,7 +51,7 @@ const LOOKUP_SYMBOLS: Partial<Record<FilterOptionType["lookup_expr"], string>> =
     lte: "â‰¤",
     gt: ">",
     gte: "â‰¥",
-    range: "â†”",
+    range: "<->",
     in: "âˆˆ",
   };
 
@@ -94,7 +94,7 @@ export const ColumnFilterInput: React.FC<Props> = ({
             variant="ghost"
             size="icon"
             className="h-7 w-7"
-            aria-label="Choisir l'opÃ©rateur"
+            aria-label="Choisir l'operateur"
           >
             <span className="text-[11px] font-semibold">{operatorSymbol}</span>
           </Button>
@@ -142,4 +142,5 @@ export const ColumnFilterInput: React.FC<Props> = ({
     </div>
   );
 };
+
 

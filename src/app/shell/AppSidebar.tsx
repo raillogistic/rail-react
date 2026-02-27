@@ -18,7 +18,7 @@ import {
 } from "@/shared/ui/kit/tooltip";
 import { cn } from "@/shared/utils";
 import { useTheme } from "@/shared/ui/theme";
-import { BRANDING, SYSTEM_STATUS } from "@/projects/branding";
+import { BRANDING, SYSTEM_STATUS } from "@/shared/config/branding";
 import LogoMark from "@/shared/assets/legacy-assets/logos/logo.png";
 import { Badge } from "@/shared/ui/kit/badge";
 import { Zap } from "lucide-react";
@@ -182,3 +182,4 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     </Sidebar>
   );
 }
+

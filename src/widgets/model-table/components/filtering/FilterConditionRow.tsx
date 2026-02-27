@@ -157,7 +157,7 @@ export const FilterConditionRow: React.FC<Props> = ({
               </DropdownMenuContent>
             </DropdownMenu>
             {/* <div className="text-sm font-medium text-foreground line-clamp-1 hidden md:block">
-                {option ? translateLookup(option.lookup_expr) : "Choisir un opÃ©rateur"}
+                {option ? translateLookup(option.lookup_expr) : "Choisir un operateur"}
               </div> */}
             {/* </div> */}
           </div>
@@ -227,4 +227,5 @@ const lookupIconFor = (lookup?: FilterOptionType["lookup_expr"]) => {
       return ListFilter;
   }
 };
+
 

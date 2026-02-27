@@ -46,7 +46,7 @@ export const FilterValueInput: React.FC<Props> = ({
   placeholder,
 }) => {
   if (!option) {
-    return <Input disabled placeholder="SÃ©lectionnez un champ" />;
+    return <Input disabled placeholder="Selectionnez un champ" />;
   }
   const effectivePlaceholder =
     placeholder && placeholder.trim().length ? placeholder : undefined;
@@ -80,7 +80,7 @@ export const FilterValueInput: React.FC<Props> = ({
     return (
       <div className="grid grid-cols-2 gap-2">
         <Input
-          placeholder={effectivePlaceholder ?? "DÃ©but"}
+          placeholder={effectivePlaceholder ?? "Debut"}
           value={rangeValue.start ?? ""}
           onChange={(event) =>
             onChange({ start: event.target.value, end: rangeValue.end })
@@ -121,7 +121,7 @@ export const FilterValueInput: React.FC<Props> = ({
       >
         <SelectTrigger>
           <SelectValue
-            placeholder={effectivePlaceholder ?? "SÃ©lectionnez une valeur"}
+            placeholder={effectivePlaceholder ?? "Selectionnez une valeur"}
           />
         </SelectTrigger>
         <SelectContent>
@@ -139,7 +139,7 @@ export const FilterValueInput: React.FC<Props> = ({
       return (
         <Input
           placeholder={
-            effectivePlaceholder ?? "Valeurs sÃ©parÃ©es par des virgules"
+            effectivePlaceholder ?? "Valeurs separees par des virgules"
           }
           value={
             Array.isArray(condition.value) ? condition.value.join(", ") : ""
@@ -172,10 +172,10 @@ export const FilterValueInput: React.FC<Props> = ({
           <Button variant="outline" className="w-full justify-between">
             <span className="truncate">
               {selected.length > 0
-                ? `${selected.length} sÃ©lectionnÃ©e${
+                ? `${selected.length} selectionnee${
                     selected.length > 1 ? "s" : ""
                   }`
-                : "SÃ©lectionner des valeurs"}
+                : "Selectionner des valeurs"}
             </span>
             <ChevronDown className="h-4 w-4" />
           </Button>
@@ -205,7 +205,7 @@ export const FilterValueInput: React.FC<Props> = ({
       <Select value={String(scalar)} onValueChange={(value) => onChange(value)}>
         <SelectTrigger>
           <SelectValue
-            placeholder={effectivePlaceholder ?? "SÃ©lectionnez une valeur"}
+            placeholder={effectivePlaceholder ?? "Selectionnez une valeur"}
           />
         </SelectTrigger>
         <SelectContent>
@@ -353,7 +353,7 @@ const RelatedModelFilterInput: React.FC<RelatedModelFilterInputProps> = ({
     if (selectedValues.length === 0) {
       return (
         placeholder ??
-        (isMulti ? "SÃ©lectionnez des valeurs" : "Choisir une valeur")
+        (isMulti ? "Selectionnez des valeurs" : "Choisir une valeur")
       );
     }
     const labels = selectedValues
@@ -442,4 +442,5 @@ const RelatedModelFilterInput: React.FC<RelatedModelFilterInputProps> = ({
     </DropdownMenu>
   );
 };
+
 

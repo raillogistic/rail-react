@@ -1,13 +1,4 @@
-export const BRANDING = {
-  productName: "RAIL LOGISTICxx",
-  productNameLong: "Rail Logisticxxxx",
-  editionLabel: "PRO",
-  platformLabel: "System Platform",
-  hubLabel: "System Hubddd",
-  logoAlt: "Rail logo",
-} as const;
-
-export const SYSTEM_STATUS = {
-  connectedLabel: "System connectedxxx",
-  latencyRegionLabel: "Latency: 24ms | Region: EU-WEST",
-} as const;
+/**
+ * @deprecated Import from "@/shared/config/branding" instead.
+ */
+export { BRANDING, SYSTEM_STATUS } from "@/shared/config/branding";

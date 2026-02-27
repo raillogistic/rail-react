@@ -7,7 +7,7 @@ import {
   IconShieldLock,
   IconUserCircle,
 } from "@tabler/icons-react";
-import { ROUTES } from "@/projects/core/config/routes";
+import { ROUTES } from "@/shared/routing/routes";
 import { getUserIdentity, type UserLike } from "@/shared/auth/userIdentity";
 import {
   Avatar,
@@ -146,3 +146,4 @@ export function UserNav({ user, onLogout }: UserNavProps = {}) {
     </DropdownMenu>
   );
 }
+

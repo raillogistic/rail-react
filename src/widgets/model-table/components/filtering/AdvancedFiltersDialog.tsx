@@ -107,7 +107,7 @@ export const AdvancedFiltersDialog: React.FC<AdvancedFiltersDialogProps> = ({
           </div>
           <DrawerFooter>
             <Button variant="outline" onClick={controller.resetBuilder}>
-              RÃ©initialiser
+              Reinitialiser
             </Button>
             <Button onClick={controller.applyFilters} disabled={builderIsEmpty}>
               Appliquer
@@ -156,7 +156,7 @@ export const AdvancedFiltersDialog: React.FC<AdvancedFiltersDialogProps> = ({
         <BuilderBody controller={controller} />
         <DialogFooter>
           <Button variant="outline" onClick={controller.resetBuilder}>
-            RÃ©initialiser
+            Reinitialiser
           </Button>
           <Button onClick={controller.applyFilters} disabled={builderIsEmpty}>
             Appliquer

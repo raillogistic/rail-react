@@ -1,4 +1,4 @@
-﻿import * as React from "react";
+import * as React from "react";
 import { ComplexFilterInput, FilterFieldType, FilterOptionType } from "../../compat/types";
 import { findRelatedValueLabel } from "./relatedValueLabelCache";
 import {
@@ -29,7 +29,7 @@ const flattenFilterFields = (
     const groupLabel = parents[0] ?? "Champs simples";
     const current: FlattenedFilterField = {
       field_name: field.field_name,
-      display_label: path.join(" â–¸ "),
+      display_label: path.join(" ▸ "),
       field,
       path_labels: path,
       group_label: groupLabel,
@@ -78,8 +78,9 @@ const resolveOptionMeta = (
     return undefined;
   }
   const fallback =
-    fieldMeta.options.find((opt) => opt.lookup_expr === lookup || opt.name === optionName) ??
-    fieldMeta.options[0];
+    fieldMeta.options.find(
+      (opt) => opt.lookup_expr === lookup || opt.name === optionName,
+    ) ?? fieldMeta.options[0];
   if (!fallback) return undefined;
   return { field: fieldMeta, option: fallback };
 };
@@ -210,7 +211,7 @@ const flattenActiveFilters = (
     };
     const valueLabel = Array.isArray(value)
       ? value.length === 2
-        ? `${formatValue(value[0])} â€“ ${formatValue(value[1])}`
+        ? `${formatValue(value[0])} – ${formatValue(value[1])}`
         : value.map((cell) => formatValue(cell)).join(", ")
       : formatValue(value);
     const label = group === "ROOT" ? labelBase : `[${group}] ${labelBase}`;
@@ -294,7 +295,7 @@ export const useAdvancedFiltering = ({
   filtersMeta,
   chipFiltersMeta,
   onApply,
-  title = "Filtres avancÃ©s",
+  title = "Filtres avancés",
   displayMode = "dialog",
 }: AdvancedFilteringOptions): AdvancedFilteringController => {
   const flattenedFields = React.useMemo(() => flattenFilterFields(filtersMeta ?? []), [filtersMeta]);
@@ -532,4 +533,5 @@ export const useAdvancedFiltering = ({
     seedFromSpecs,
   };
 };
+
 

@@ -35,7 +35,7 @@ export function AdminUISettings() {
           <div>
             <CardTitle>Administration UI</CardTitle>
             <CardDescription>
-              GÃ©rez les configurations globales de l'interface utilisateur.
+              Gerez les configurations globales de l'interface utilisateur.
             </CardDescription>
           </div>
           <Button onClick={() => setIsCreateOpen(true)}>
@@ -68,7 +68,7 @@ export function AdminUISettings() {
           <DrawerHeader>
             <DrawerTitle>Modifier la configuration</DrawerTitle>
             <DrawerDescription>
-              Modifiez les paramÃ¨tres du composant {String(editingConfig?.component_id ?? "")}.
+              Modifiez les parametres du composant {String(editingConfig?.component_id ?? "")}. 
             </DrawerDescription>
           </DrawerHeader>
           <div className="p-4 pb-0 h-[80vh] overflow-y-auto">
@@ -88,7 +88,7 @@ export function AdminUISettings() {
           <DrawerHeader>
             <DrawerTitle>Nouvelle configuration</DrawerTitle>
             <DrawerDescription>
-              CrÃ©ez une nouvelle configuration d'interface.
+              Creez une nouvelle configuration d'interface.
             </DrawerDescription>
           </DrawerHeader>
           <div className="p-4 pb-0 h-[80vh] overflow-y-auto">
@@ -102,4 +102,5 @@ export function AdminUISettings() {
     </div>
   );
 }
+
 

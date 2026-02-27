@@ -33,7 +33,7 @@ export const AdvancedFilterChips: React.FC<AdvancedFilterChipsProps> = ({
           <span className="ml-1">
             {Array.isArray(chip.value)
               ? chip.value.length === 2
-                ? `${chip.value[0]} â€“ ${chip.value[1]}`
+                ? `${chip.value[0]} - ${chip.value[1]}`
                 : chip.value.join(", ")
               : String(chip.value)}
           </span>

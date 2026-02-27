@@ -20,7 +20,7 @@ const getFieldLabel = (field?: FlattenedFilterField) =>
   field?.display_label ??
   field?.field.field_label ??
   field?.field.field_name ??
-  "SÃ©lectionner un champ";
+  "Selectionner un champ";
 
 export const FilterFieldSelector: React.FC<Props> = ({
   controller,
@@ -100,7 +100,7 @@ export const FilterFieldSelector: React.FC<Props> = ({
         <div className="max-h-72 overflow-auto pr-1 space-y-3">
           {filteredGroups.length === 0 ? (
             <div className="py-4 text-center text-xs text-muted-foreground">
-              Aucun champ trouvÃ©
+              Aucun champ trouve
             </div>
           ) : (
             filteredGroups.map((group) => {
@@ -156,4 +156,5 @@ export const FilterFieldSelector: React.FC<Props> = ({
     </DropdownMenu>
   );
 };
+
 

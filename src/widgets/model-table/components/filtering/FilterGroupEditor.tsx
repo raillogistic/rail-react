@@ -28,7 +28,7 @@ export const FilterGroupEditor: React.FC<Props> = ({
       <div className="flex flex-wrap items-center gap-3">
         <div className="flex items-center gap-2">
           <Label className="text-xs uppercase text-muted-foreground">
-            OpÃ©rateur
+            Operateur
           </Label>
           <ToggleGroup
             type="single"

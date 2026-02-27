@@ -14,7 +14,7 @@ import { Input } from "@/shared/ui/kit/input";
 import { toast } from "sonner";
 import { gql, useMutation } from "@apollo/client";
 import { Link, useNavigate } from "react-router-dom";
-import { ROUTES } from "@/projects/core/config/routes";
+import { ROUTES } from "@/shared/routing/routes";
 const REQUEST_PASSWORD_RESET_MUTATION = gql`
   mutation RequestPasswordReset($email: String!) {
     request_password_reset: requestPasswordReset(email: $email) {
@@ -120,5 +120,6 @@ export function ForgotPasswordPage() {
     </div>
   );
 }
+
 
 

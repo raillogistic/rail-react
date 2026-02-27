@@ -13,7 +13,7 @@ type AdvancedFiltersTriggerProps = {
 export const AdvancedFiltersTrigger: React.FC<AdvancedFiltersTriggerProps> = ({
   controller,
   variant = "icon",
-  label = "Filtres avancÃ©s",
+  label = "Filtres avances",
 }) => {
   const handleClick = React.useCallback(
     () => controller.openDialog(),

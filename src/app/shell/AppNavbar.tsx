@@ -11,7 +11,7 @@ import {
   NAVIGATION_LINKS,
   type NavigationSection,
 } from "@/app/router/navigation";
-import { BRANDING } from "@/projects/branding";
+import { BRANDING } from "@/shared/config/branding";
 import { UserNav } from "@/widgets/navigation/nav-user-menu";
 import Logo from "@/shared/assets/legacy-assets/logos/logo.png";
 import { useTheme } from "@/shared/ui/theme";
@@ -460,3 +460,4 @@ function MobileNav() {
     </Sheet>
   );
 }
+

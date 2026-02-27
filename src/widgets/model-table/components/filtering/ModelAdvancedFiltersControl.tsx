@@ -146,7 +146,7 @@ export const ModelAdvancedFiltersControl: React.FC<
   onApply,
   seedSpecs,
   className,
-  buttonLabel = "Filtres avancÃ©s",
+  buttonLabel = "Filtres avances",
   buttonIcon,
   buttonVariant = "outline",
   buttonSize = "sm",
@@ -237,4 +237,5 @@ export const ModelAdvancedFiltersControl: React.FC<
     </div>
   );
 };
+
 

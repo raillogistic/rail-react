@@ -15,7 +15,7 @@ import { Input } from "@/shared/ui/kit/input";
 import { toast } from "sonner";
 import { gql, useMutation } from "@apollo/client";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { ROUTES } from "@/projects/core/config/routes";
+import { ROUTES } from "@/shared/routing/routes";
 const VALIDATE_RESET_CODE_MUTATION = gql`
   mutation ValidateResetCode($email: String!, $code: String!) {
     validate_reset_code: validateResetCode(email: $email, code: $code) {
@@ -206,5 +206,6 @@ export function ResetPasswordPage() {
     </div>
   );
 }
+
 
 

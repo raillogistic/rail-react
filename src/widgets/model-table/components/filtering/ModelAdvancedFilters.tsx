@@ -63,7 +63,7 @@ export const ModelAdvancedFilters: React.FC<ModelAdvancedFiltersProps> = ({
   appName,
   modelName,
   filtersOptions,
-  title = "Filtres avancÃ©s",
+  title = "Filtres avances",
   onApply,
   skip = false,
   loadingFallback = null,
@@ -76,7 +76,7 @@ export const ModelAdvancedFilters: React.FC<ModelAdvancedFiltersProps> = ({
   showFooter = true,
   addConditionLabel = "Condition",
   addGroupLabel = "Groupe",
-  resetLabel = "RÃ©initialiser",
+  resetLabel = "Reinitialiser",
   applyLabel = "Appliquer",
 }) => {
   const { controller, loading, error } = useModelAdvancedFiltering({
