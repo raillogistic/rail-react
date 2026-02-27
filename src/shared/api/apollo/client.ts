@@ -6,7 +6,7 @@ import { createUploadLink } from 'apollo-upload-client';
 import { tokenStorage, getSecureHeaders } from '@/features/auth/utils/token-storage';
 import { ensureCsrfCookie } from '@/features/auth/utils/csrf';
 import { AuthError, AuthErrorType, handleAuthError } from '@/features/auth/utils/error-handler';
-import { ROUTES } from "@/shared/routing/paths";
+import { ROUTES } from "@/projects/core/config/routes";
 import { hasExplicitAuthorizationHeader } from './authHeaders';
 
 // Prefer environment configuration; fall back to local dev.

@@ -52,6 +52,7 @@ const routes = {
 const root = process.cwd();
 const projectDir = path.join(root, "src", "projects", appName);
 const pagesDir = path.join(projectDir, "pages");
+const configDir = path.join(projectDir, "config");
 
 const assertMissing = async (targetPath) => {
   try {
@@ -107,6 +108,12 @@ export const ${componentPrefix}ReportsPage: FC = () => {
 export default ${componentPrefix}ReportsPage;
 `;
 
+const routesConfigContent = `export const ROUTES = {
+  OVERVIEW: "${routes.overview}",
+  REPORTS: "${routes.reports}",
+} as const;
+`;
+
 const manifestContent = `import { lazy, Suspense, type ReactNode } from "react";
 import { FileText, LayoutDashboard } from "lucide-react";
 import type { AppManifest } from "@/app/router/contracts";
@@ -115,11 +122,7 @@ import {
   navGroup,
   protectedRoute,
 } from "@/app/router/manifestFactory";
-
-const ROUTES = {
-  OVERVIEW: "${routes.overview}",
-  REPORTS: "${routes.reports}",
-} as const;
+import { ROUTES } from "@/projects/${projectId}/config/routes";
 
 const routeFallback = (
   <div className="rounded-md border p-3 text-sm text-muted-foreground">
@@ -200,7 +203,10 @@ const manifestReExportContent = `export { default, ${componentPrefix.toUpperCase
 
 const run = async () => {
   await assertMissing(projectDir);
-  await mkdir(pagesDir, { recursive: true });
+  await Promise.all([
+    mkdir(pagesDir, { recursive: true }),
+    mkdir(configDir, { recursive: true }),
+  ]);
 
   await Promise.all([
     writeFile(
@@ -213,6 +219,7 @@ const run = async () => {
       reportsPageContent,
       "utf8",
     ),
+    writeFile(path.join(configDir, "routes.ts"), routesConfigContent, "utf8"),
     writeFile(path.join(projectDir, "manifest.tsx"), manifestContent, "utf8"),
     writeFile(path.join(projectDir, "manifest.ts"), manifestReExportContent, "utf8"),
   ]);

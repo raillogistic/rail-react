@@ -1,6 +1,6 @@
 export const BRANDING = {
-  productName: "RAIL LOGISTIC",
-  productNameLong: "Rail Logistics",
+  productName: "RAIL LOGISTICxx",
+  productNameLong: "Rail Logisticxxxx",
   editionLabel: "PRO",
   platformLabel: "System Platform",
   hubLabel: "System Hubddd",

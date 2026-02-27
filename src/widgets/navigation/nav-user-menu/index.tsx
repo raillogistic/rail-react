@@ -7,7 +7,7 @@ import {
   IconShieldLock,
   IconUserCircle,
 } from "@tabler/icons-react";
-import { ROUTES } from "@/shared/routing/paths";
+import { ROUTES } from "@/projects/core/config/routes";
 import { getUserIdentity, type UserLike } from "@/shared/auth/userIdentity";
 import {
   Avatar,

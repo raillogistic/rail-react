@@ -6,11 +6,7 @@ import {
   navGroup,
   protectedRoute,
 } from "@/app/router/manifestFactory";
-
-const ROUTES = {
-  OVERVIEW: "/billing/overview",
-  REPORTS: "/billing/reports",
-} as const;
+import { ROUTES } from "@/projects/billing/config/routes";
 
 const routeFallback = (
   <div className="rounded-md border p-3 text-sm text-muted-foreground">

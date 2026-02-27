@@ -19,7 +19,7 @@ import {
   VERIFY_MFA_SETUP_MUTATION,
 } from "@/shared/api/graphql/legacy/mutations";
 import { GET_MFA_STATUS } from "@/shared/api/graphql/legacy/queries";
-import { ROUTES } from "@/shared/routing/paths";
+import { ROUTES } from "@/projects/core/config/routes";
 import { MFAManagement } from "@/features/auth/components/MFAManagement";
 import { MFAErrorHandler } from "@/features/auth/utils/mfa-errors";
 

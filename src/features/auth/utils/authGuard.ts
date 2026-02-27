@@ -10,7 +10,7 @@
 
 import { isTokenValid, getUserFromToken, hasPermission } from './token';
 import { tokenStorage } from './token-storage';
-import { PUBLIC_ROUTE_PATHS, ROUTES } from "@/shared/routing/paths";
+import { PUBLIC_ROUTE_PATHS, ROUTES } from "@/projects/core/config/routes";
 
 export class AuthenticationError extends Error {
   constructor(message: string, public code: string = 'AUTH_ERROR') {

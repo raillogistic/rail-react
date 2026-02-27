@@ -1,6 +1,6 @@
 import React, { Suspense, lazy, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { ROUTES } from "@/shared/routing/paths";
+import { ROUTES } from "@/projects/core/config/routes";
 import { useAuthContext } from "@/features/auth/context";
 import { MFAChallenge } from "@/features/auth/components";
 import { useForm, Controller } from "react-hook-form";
@@ -23,7 +23,7 @@ import {
   onOfflineStatusChange,
   testServerConnectivity,
 } from "@/shared/utils/legacy-utils/offline-detector";
-import { BRANDING } from "@/shared/config/branding";
+import { BRANDING } from "@/projects/branding";
 import Logo from "@/shared/assets/legacy-assets/logos/logo.png";
 import Cover960 from "@/shared/assets/legacy-assets/images/cover-960.jpg";
 import Cover1600 from "@/shared/assets/legacy-assets/images/cover-1600.jpg";
@@ -137,7 +137,10 @@ export const LoginPage: React.FC = () => {
       return "";
     }
     const details = authError.details as { userMessage?: unknown } | undefined;
-    if (typeof details?.userMessage === "string" && details.userMessage.trim()) {
+    if (
+      typeof details?.userMessage === "string" &&
+      details.userMessage.trim()
+    ) {
       return details.userMessage;
     }
     return authError.message;
@@ -276,7 +279,9 @@ export const LoginPage: React.FC = () => {
         </div>
 
         <div className="relative z-10 flex items-center justify-between text-[10px] font-bold text-white/30 uppercase tracking-[0.2em]">
-          <span>&copy; {new Date().getFullYear()} {BRANDING.productNameLong}</span>
+          <span>
+            &copy; {new Date().getFullYear()} {BRANDING.productNameLong}
+          </span>
           <div className="flex gap-6">
             <span className="hover:text-white/60 cursor-pointer transition-colors">
               Support
@@ -449,5 +454,3 @@ export const LoginPage: React.FC = () => {
     </div>
   );
 };
-
-

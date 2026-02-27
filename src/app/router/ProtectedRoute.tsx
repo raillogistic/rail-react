@@ -11,7 +11,7 @@
 import React from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/features/auth/hooks/useAuth";
-import { ROUTES } from "@/shared/routing/paths";
+import { ROUTES } from "@/projects/core/config/routes";
 import OfflineNotification from "@/widgets/components/OfflineNotification";
 import { userHasPermission } from "@/features/auth/utils/permission-matching";
 

@@ -11,7 +11,7 @@ import {
   NAVIGATION_LINKS,
   type NavigationSection,
 } from "@/app/router/navigation";
-import { BRANDING } from "@/shared/config/branding";
+import { BRANDING } from "@/projects/branding";
 import { UserNav } from "@/widgets/navigation/nav-user-menu";
 import Logo from "@/shared/assets/legacy-assets/logos/logo.png";
 import { useTheme } from "@/shared/ui/theme";
@@ -157,7 +157,8 @@ const AppNavMenu = ({
                 <NavigationMenuTrigger
                   className={cn(
                     "h-9 px-4 font-semibold rounded-full bg-transparent hover:bg-muted transition-all duration-300",
-                    isActive && "bg-primary/10 text-primary hover:bg-primary/15",
+                    isActive &&
+                      "bg-primary/10 text-primary hover:bg-primary/15",
                   )}
                 >
                   {section.label}
@@ -348,10 +349,16 @@ const ListItem = React.forwardRef<
               : "bg-muted/50 text-muted-foreground group-hover/item:bg-primary/10 group-hover/item:text-primary",
           )}
         >
-          {Icon ? <Icon className="size-5" /> : <IconChevronRight className="size-4" />}
+          {Icon ? (
+            <Icon className="size-5" />
+          ) : (
+            <IconChevronRight className="size-4" />
+          )}
         </div>
         <div className="flex flex-col gap-0.5 flex-1 min-w-0">
-          <div className="text-sm font-bold leading-none tracking-tight">{title}</div>
+          <div className="text-sm font-bold leading-none tracking-tight">
+            {title}
+          </div>
           <p className="line-clamp-1 text-xs leading-snug text-muted-foreground opacity-70 group-hover/item:text-primary/70 transition-colors">
             {children}
           </p>

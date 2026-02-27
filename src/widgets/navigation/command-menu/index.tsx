@@ -12,7 +12,7 @@ import {
   Sparkles,
   User,
 } from "lucide-react";
-import { ROUTES } from "@/shared/routing/paths";
+import { ROUTES } from "@/projects/core/config/routes";
 import {
   CommandDialog,
   CommandEmpty,

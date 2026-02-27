@@ -23,7 +23,7 @@ import {
 import { Label } from "@/shared/ui/kit/label";
 import { Input } from "@/shared/ui/kit/input";
 import { useNavigate } from "react-router-dom";
-import { ROUTES } from "@/shared/routing/paths";
+import { ROUTES } from "@/projects/core/config/routes";
 
 export function MFAManagement() {
   const { data: mfaData, loading, refetch } = useQuery(GET_MFA_STATUS);
