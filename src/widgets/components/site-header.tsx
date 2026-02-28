@@ -114,7 +114,10 @@ export function SiteHeader({
 
         {/* Center Section: Global Command Palette */}
         <div className="flex-1 flex items-center justify-center max-w-2xl mx-auto px-4">
-          <CommandMenu navigationLinks={navigationLinks} defaultPath={defaultPath} />
+          <CommandMenu
+            navigationLinks={navigationLinks}
+            defaultPath={defaultPath}
+          />
         </div>
 
         {/* Right Section: Actions & User Menu */}

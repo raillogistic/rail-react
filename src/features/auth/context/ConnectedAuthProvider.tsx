@@ -189,7 +189,9 @@ const isExpectedLogoutAuthError = (error: unknown): boolean => {
   const hasAuthGraphQLError = Array.isArray(maybeError.graphQLErrors)
     ? maybeError.graphQLErrors.some((graphQLError) => {
         const code = String(graphQLError?.extensions?.code ?? "").toUpperCase();
-        const graphQLMessage = String(graphQLError?.message ?? "").toLowerCase();
+        const graphQLMessage = String(
+          graphQLError?.message ?? "",
+        ).toLowerCase();
         return (
           code === "UNAUTHENTICATED" ||
           code === "FORBIDDEN" ||
@@ -225,7 +227,9 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
           },
         });
 
-        const sessions = Array.isArray(data?.my_sessions) ? data.my_sessions : [];
+        const sessions = Array.isArray(data?.my_sessions)
+          ? data.my_sessions
+          : [];
         const currentSession = sessions.find(
           (session: { id?: string | number; is_current?: boolean }) =>
             session?.is_current === true,
@@ -288,7 +292,10 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }
 
       const normalizedUser = normalizeAuthUser(login.user, login.permissions);
-      const sessionId = await resolveSessionId(login.token, login.refresh_token);
+      const sessionId = await resolveSessionId(
+        login.token,
+        login.refresh_token,
+      );
 
       return {
         success: true as const,
@@ -348,7 +355,6 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
         context: {
           useAuthEndpoint: true,
           skipAuthRefresh: true,
-          skipAuthRedirect: true,
           skipAuthErrorHandling: true,
         },
         errorPolicy: "ignore",
@@ -362,10 +368,10 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [client]);
 
   const handleRefresh = useCallback(
-    async (refreshToken: string): Promise<TokenPair> => {
+    async (refreshToken?: string | null): Promise<TokenPair> => {
       const { data } = await client.mutate({
         mutation: REFRESH_TOKEN_MUTATION,
-        variables: { refresh_token: refreshToken },
+        variables: { refresh_token: refreshToken ?? null },
         context: { useAuthEndpoint: true },
       });
 
@@ -385,7 +391,10 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
   );
 
   const handleValidateSession = useCallback(async () => {
-    const isAuthError = (errorLike: { extensions?: Record<string, unknown>; message?: string }) => {
+    const isAuthError = (errorLike: {
+      extensions?: Record<string, unknown>;
+      message?: string;
+    }) => {
       const code = String(errorLike.extensions?.code ?? "").toUpperCase();
       const message = String(errorLike.message ?? "").toLowerCase();
       return (
@@ -440,10 +449,13 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
       const isMatchingUser = String(currentUserId) === String(expectedUserId);
       if (!isMatchingUser) {
-        console.error("Auth identity mismatch detected during session validation.", {
-          expectedUserId: String(expectedUserId),
-          currentUserId: String(currentUserId),
-        });
+        console.error(
+          "Auth identity mismatch detected during session validation.",
+          {
+            expectedUserId: String(expectedUserId),
+            currentUserId: String(currentUserId),
+          },
+        );
       }
 
       return isMatchingUser;
@@ -455,10 +467,16 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
       const maybeError = e as {
         message?: string;
         networkError?: unknown;
-        graphQLErrors?: Array<{ extensions?: Record<string, unknown>; message?: string }>;
+        graphQLErrors?: Array<{
+          extensions?: Record<string, unknown>;
+          message?: string;
+        }>;
       };
 
-      if (Array.isArray(maybeError.graphQLErrors) && maybeError.graphQLErrors.some(isAuthError)) {
+      if (
+        Array.isArray(maybeError.graphQLErrors) &&
+        maybeError.graphQLErrors.some(isAuthError)
+      ) {
         return false;
       }
 
@@ -493,7 +511,7 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
           refreshThresholdSeconds: 300,
           accessTokenTTLSeconds: 900,
           refreshTokenTTLSeconds: 604800,
-          storageType: "session",
+          storageType: "memory",
           storagePrefix: "auth_",
           encryptTokens: false,
         },

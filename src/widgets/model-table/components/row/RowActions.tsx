@@ -48,7 +48,6 @@ import {
 } from "@/shared/ui/kit/tooltip";
 import { Badge } from "@/shared/ui/kit/badge";
 import { cn } from "@/shared/utils";
-import { ModelForm } from "@/widgets/model-form";
 import type { ModelFormProps } from "@/widgets/model-form/types.model";
 import type { ModelFormMutationOutcome } from "@/widgets/model-form/types/generatedContract";
 import type {
@@ -96,6 +95,14 @@ const PrintDialog = lazy(() =>
   import("../ModelTableOverlays").then((module) => ({
     default: module.PrintDialog,
   })),
+);
+
+const LazyModelForm = lazy(
+  () =>
+    import("@/widgets/model-form").then((module) => ({
+      default:
+        module.ModelForm as React.ComponentType<ModelFormProps<UpdateFormValues>>,
+    })),
 );
 
 type MutationActionEntry = {
@@ -1315,7 +1322,15 @@ export function RowActions({
           height={resolvedUpdateConfig.height}
           drawerDirection={resolvedUpdateConfig.drawerDirection}
         >
-          <ModelForm<UpdateFormValues> {...updateFormProps} />
+          <Suspense
+            fallback={
+              <div className="flex min-h-32 items-center justify-center text-muted-foreground">
+                <Loader2 className="size-4 animate-spin" />
+              </div>
+            }
+          >
+            <LazyModelForm {...updateFormProps} />
+          </Suspense>
         </FormOverlay>
       ) : null}
       <Suspense fallback={null}>

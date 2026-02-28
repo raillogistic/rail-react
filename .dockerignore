@@ -1,0 +1,22 @@
+.git
+.gitignore
+node_modules
+dist
+coverage
+test-output.log
+test-output-clean.log
+playwright-devserver.err.log
+playwright-devserver.out.log
+*.log
+*.tmp
+
+# Local and secret environment files
+.env
+.env.*
+!.env.example
+
+# Python and tooling caches
+__pycache__
+.ruff_cache
+.pytest_cache
+.venv

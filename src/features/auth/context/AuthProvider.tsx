@@ -32,7 +32,7 @@ interface AuthProviderProps {
   >;
   onVerifyMFA?: (code: string, ephemeralToken: string) => Promise<{ user: AuthUser; tokens: TokenPair; sessionId: string }>;
   onLogout?: () => Promise<void>;
-  onRefresh?: (refreshToken: string) => Promise<TokenPair>;
+  onRefresh?: (refreshToken?: string | null) => Promise<TokenPair>;
   onValidateSession?: () => Promise<boolean>;
 }
 
@@ -54,6 +54,7 @@ export function AuthProvider({
   }));
 
   useEffect(() => {
+    let cancelled = false;
     // Subscribe to state changes
     const unsubscribe = manager.subscribe(setState);
 
@@ -62,8 +63,36 @@ export function AuthProvider({
       manager.sessionService.setValidationFn(onValidateSession);
     }
 
-    // Initialize on mount
-    manager.initialize();
+    const initializeAuth = async () => {
+      // Cookie-auth bootstrap: obtain a fresh access token when memory storage is empty.
+      if (onRefresh && !manager.tokenService.getAccessToken()) {
+        try {
+          const tokens = await onRefresh(null);
+          if (!cancelled) {
+            manager.tokenService.setTokens(tokens);
+          }
+        } catch {
+          // Best-effort only; manager.initialize() handles unauthenticated state.
+        }
+      }
+
+      if (!cancelled) {
+        await manager.initialize();
+      }
+    };
+
+    void initializeAuth();
+
+    const unsubscribeTokenExpiring = onRefresh
+      ? manager.on('auth:token_expiring', () => {
+          if (!manager.getState().isAuthenticated) {
+            return;
+          }
+          void manager.tokenService.refreshTokens((refreshToken) => onRefresh(refreshToken)).catch(() => {
+            // Refresh errors are handled by TokenService/Auth events.
+          });
+        })
+      : () => {};
 
     const handleSessionChange = (event: Event) => {
       const detail = (event as CustomEvent<{ isActive?: boolean }>).detail;
@@ -79,13 +108,15 @@ export function AuthProvider({
     }
 
     return () => {
+      cancelled = true;
       if (typeof window !== 'undefined') {
         window.removeEventListener(AUTH_SESSION_EVENT, handleSessionChange);
       }
+      unsubscribeTokenExpiring();
       unsubscribe();
       manager.destroy();
     };
-  }, [manager, onValidateSession]);
+  }, [manager, onRefresh, onValidateSession]);
 
   const login = useCallback(async (credentials: LoginCredentials) => {
     if (!onLogin) throw new Error('onLogin handler not provided');
@@ -123,7 +154,7 @@ export function AuthProvider({
 
   const refreshSession = useCallback(async () => {
     if (!onRefresh) throw new Error('onRefresh handler not provided');
-    await manager.tokenService.refreshTokens(onRefresh);
+    await manager.tokenService.refreshTokens((refreshToken) => onRefresh(refreshToken));
   }, [manager, onRefresh]);
 
   const clearError = useCallback(() => {

@@ -88,32 +88,15 @@ export class AuthenticationManager {
   // Initialize and check existing session
   async initialize(): Promise<void> {
     this.updateState({ status: "loading", isLoading: true });
+    // Defensive cleanup for stale tokens from older builds.
+    this.clearStorageTokens("session");
+    this.clearStorageTokens("local");
 
-    // Check default storage first
     let accessToken = this.tokenService.getAccessToken();
 
-    // Only fall back to LocalStorage when an explicit remember-me session is active.
     if (!accessToken) {
-      if (this.shouldUseRememberMeFallback()) {
-        this.storage.updateConfig({ type: "local" });
-        const localToken = this.tokenService.getAccessToken();
-
-        if (localToken) {
-          accessToken = localToken;
-          // Keep config as 'local' to maintain "Remember Me" session
-        } else {
-          // Revert to default config
-          this.storage.updateConfig({ type: this.config.token.storageType });
-          this.persistRememberMeFlag(false);
-        }
-      } else {
-        // Defensive cleanup for stale local tokens from older builds.
-        this.clearStorageTokens("local");
-        this.persistRememberMeFlag(false);
-      }
-    }
-
-    if (!accessToken) {
+      // No access token in memory: validate server-side session best-effort (cookie auth).
+      await this.sessionService.validateSession({ allowIndeterminate: true });
       this.updateState({
         status: "unauthenticated",
         isLoading: false,
@@ -126,7 +109,7 @@ export class AuthenticationManager {
 
     // Validate existing session
     const isValid = await this.sessionService.validateSession({
-      allowIndeterminate: false,
+      allowIndeterminate: true,
     });
     if (isValid) {
       const payload = this.tokenService.decodeToken(accessToken);
@@ -242,19 +225,6 @@ export class AuthenticationManager {
         if (!user) {
           throw new Error("Login successful but no user data returned");
         }
-
-        const rememberMeEnabled = credentials.rememberMe === true;
-
-        // Handle Remember Me - switch storage persistence if requested
-        if (rememberMeEnabled) {
-          this.storage.updateConfig({ type: "local" });
-          this.clearStorageTokens("session");
-        } else {
-          // Revert to configured default storage and clear persistent local remnants.
-          this.storage.updateConfig({ type: this.config.token.storageType });
-          this.clearStorageTokens("local");
-        }
-        this.persistRememberMeFlag(rememberMeEnabled);
 
         // Success
         this.rateLimiter.reset(username);
@@ -438,7 +408,6 @@ export class AuthenticationManager {
       this.tokenService.clearTokens();
       this.clearStorageTokens("session");
       this.clearStorageTokens("local");
-      this.persistRememberMeFlag(false);
 
       this.updateState({
         status: "unauthenticated",
@@ -572,41 +541,6 @@ export class AuthenticationManager {
     return `restored-session-${Date.now()}`;
   }
 
-  private shouldUseRememberMeFallback(): boolean {
-    if (this.config.token.storageType === "local") {
-      return true;
-    }
-
-    if (typeof window === "undefined") {
-      return false;
-    }
-
-    try {
-      return (
-        window.localStorage.getItem(this.getRememberMeKey()) === "true"
-      );
-    } catch {
-      return false;
-    }
-  }
-
-  private persistRememberMeFlag(enabled: boolean): void {
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    try {
-      const key = this.getRememberMeKey();
-      if (enabled) {
-        window.localStorage.setItem(key, "true");
-      } else {
-        window.localStorage.removeItem(key);
-      }
-    } catch {
-      // ignore storage failures
-    }
-  }
-
   private clearStorageTokens(storageType: "session" | "local"): void {
     if (typeof window === "undefined") {
       return;
@@ -630,13 +564,10 @@ export class AuthenticationManager {
       if (storageType === "local") {
         storage.removeItem(LEGACY_ACCESS_TOKEN_KEY);
         storage.removeItem(LEGACY_REFRESH_TOKEN_KEY);
+        storage.removeItem(`${prefix}remember_me`);
       }
     } catch {
       // ignore storage failures
     }
-  }
-
-  private getRememberMeKey(): string {
-    return `${this.config.token.storagePrefix}remember_me`;
   }
 }

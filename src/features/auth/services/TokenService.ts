@@ -2,6 +2,7 @@ import { StorageAdapter } from '../core/StorageAdapter';
 import { EventBus } from '../core/EventBus';
 import type { TokenPair, TokenPayload, TokenRefreshConfig } from '../types';
 import { tokenStorage } from '@/shared/api/auth/token-storage';
+import { jwtDecode } from 'jwt-decode';
 
 export class TokenService {
   private storage: StorageAdapter;
@@ -63,10 +64,7 @@ export class TokenService {
   // Decode JWT without verification (client-side)
   decodeToken(token: string): TokenPayload | null {
     try {
-      const parts = token.split('.');
-      if (parts.length !== 3) return null;
-      const payload = JSON.parse(atob(parts[1]));
-      return payload as TokenPayload;
+      return jwtDecode<TokenPayload>(token);
     } catch {
       return null;
     }
@@ -84,7 +82,7 @@ export class TokenService {
 
   // Refresh tokens (with deduplication)
   async refreshTokens(
-    refreshFn: (refreshToken: string) => Promise<TokenPair>
+    refreshFn: (refreshToken: string | null) => Promise<TokenPair>
   ): Promise<TokenPair> {
     // Deduplicate concurrent refresh calls
     if (this.refreshPromise) {
@@ -92,9 +90,6 @@ export class TokenService {
     }
 
     const refreshToken = this.getRefreshToken();
-    if (!refreshToken) {
-      throw new Error('No refresh token available');
-    }
 
     this.refreshPromise = this.executeRefresh(refreshFn, refreshToken);
 
@@ -107,8 +102,8 @@ export class TokenService {
   }
 
   private async executeRefresh(
-    refreshFn: (token: string) => Promise<TokenPair>,
-    refreshToken: string
+    refreshFn: (token: string | null) => Promise<TokenPair>,
+    refreshToken: string | null
   ): Promise<TokenPair> {
     let lastError: Error | null = null;
 

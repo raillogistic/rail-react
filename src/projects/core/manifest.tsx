@@ -264,6 +264,7 @@ export const CORE_MANIFEST: AppManifest = defineProjectManifest({
       path: ROUTES.SETTINGS_ADMIN,
       guard: "protected",
       projectId: "core",
+      requiredPermission: "auth.view_user",
       title: "Administration UI",
       description: "Configuration globale UI",
       icon: Shield,

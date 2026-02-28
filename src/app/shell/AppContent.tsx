@@ -5,6 +5,7 @@ import {
   findNavigationByPath,
   flattenNavigationPages,
 } from "@/app/router/navigation";
+import { ProtectedRoute } from "@/app/router/ProtectedRoute";
 import { SiteHeader } from "@/widgets/components/site-header";
 import { SidebarInset } from "@/shared/ui/kit/sidebar";
 
@@ -18,7 +19,19 @@ export const AppRoutes = () => {
     <Routes>
       <Route path="/" element={<Navigate to={DEFAULT_APP_ROUTE} replace />} />
       {pages.map((page) => (
-        <Route key={page.path} path={page.path} element={page.component} />
+        <Route
+          key={page.path}
+          path={page.path}
+          element={
+            page.requiresAuth ? (
+              <ProtectedRoute requiredPermission={page.requiredPermission}>
+                {page.component}
+              </ProtectedRoute>
+            ) : (
+              page.component
+            )
+          }
+        />
       ))}
       <Route path="*" element={<Navigate to={DEFAULT_APP_ROUTE} replace />} />
     </Routes>

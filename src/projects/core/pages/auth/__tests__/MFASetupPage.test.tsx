@@ -2,7 +2,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { MockedProvider } from '@apollo/client/testing';
 import { InMemoryCache } from '@apollo/client';
-import { MFASetupPage } from '@/pages/auth/MFASetupPage';
+import { MFASetupPage } from '@/projects/core/pages/auth/MFASetupPage';
 import { SETUP_MFA_MUTATION, VERIFY_MFA_SETUP_MUTATION } from '@/shared/api/graphql/legacy/mutations';
 import { GET_MFA_STATUS } from '@/shared/api/graphql/legacy/queries';
 import * as useAuthHook from '@/features/auth/hooks/useAuth';

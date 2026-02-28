@@ -124,6 +124,16 @@ describe('TokenService', () => {
     expect(r1).toBe(r2);
   });
 
+  it('supports cookie-based refresh when no refresh token is stored', async () => {
+    const newTokens = { ...mockTokens, accessToken: 'cookie-refresh-access' };
+    const refreshFn = vi.fn().mockResolvedValue(newTokens);
+
+    const result = await tokenService.refreshTokens(refreshFn);
+
+    expect(result.accessToken).toBe('cookie-refresh-access');
+    expect(refreshFn).toHaveBeenCalledWith(null);
+  });
+
   it('retries on failure', async () => {
     // Mock delay to resolve immediately to avoid timer issues with fake timers
     vi.spyOn(tokenService as any, 'delay').mockResolvedValue(undefined);

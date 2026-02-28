@@ -4,15 +4,15 @@
  */
 
 export const BRANDING = {
-  productName: "RAIL LOGISTICxx",
-  productNameLong: "Rail Logisticxxxx",
+  productName: "Transtev",
+  productNameLong: "Transtev",
   editionLabel: "PRO",
   platformLabel: "System Platform",
   hubLabel: "System Hubddd",
-  logoAlt: "Rail logo",
+  logoAlt: "Transtev logo",
 } as const;
 
 export const SYSTEM_STATUS = {
-  connectedLabel: "System connectedxxx",
-  latencyRegionLabel: "Latency: 24ms | Region: EU-WEST",
+  connectedLabel: "System connected",
+  latencyRegionLabel: "",
 } as const;

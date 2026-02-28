@@ -26,43 +26,7 @@ export default defineConfig({
         manualChunks(id) {
           const normalizedId = id.replace(/\\/g, "/");
 
-          if (!normalizedId.includes("node_modules")) {
-            if (
-              normalizedId.includes("/src/widgets/model-table/components/filtering/") ||
-              normalizedId.includes("/src/widgets/model-table/filtering/")
-            ) {
-              return "table-filtering";
-            }
-            if (normalizedId.includes("/src/widgets/model-table/compat/")) {
-              return "table-compat";
-            }
-            if (normalizedId.includes("/src/widgets/model-table/components/row/")) {
-              return "table-row-actions";
-            }
-            if (
-              normalizedId.includes("/src/widgets/model-table/components/toolbar/") ||
-              normalizedId.includes("/src/widgets/model-table/components/TableToolbar.tsx")
-            ) {
-              return "table-toolbar";
-            }
-            if (
-              normalizedId.includes(
-                "/src/widgets/model-table/components/ModelTableOverlays.tsx",
-              )
-            ) {
-              return "table-overlays";
-            }
-            if (normalizedId.includes("/src/widgets/model-table/hooks/")) {
-              return "table-hooks";
-            }
-            if (normalizedId.includes("/src/widgets/model-table/context/")) {
-              return "table-context";
-            }
-            if (normalizedId.includes("/src/widgets/reporting/")) {
-              return "reporting";
-            }
-            return;
-          }
+          if (!normalizedId.includes("node_modules")) return;
 
           if (
             normalizedId.includes("/node_modules/react/") ||

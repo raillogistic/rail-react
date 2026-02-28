@@ -7,6 +7,7 @@ export interface AppRouteConfig {
   path: string;
   guard: RouteGuard;
   projectId: string;
+  requiredPermission?: string;
   title?: string;
   description?: string;
   hidden?: boolean;
@@ -19,6 +20,7 @@ export interface NavigationEntry {
   title: string;
   path: string;
   guard: RouteGuard;
+  requiredPermission?: string;
   hidden?: boolean;
   description?: string;
   icon?: ComponentType<{ className?: string }>;

@@ -1,6 +1,6 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { LoginPage } from '@/pages/auth/LoginPage';
+import { LoginPage } from '@/projects/core/pages/auth/LoginPage';
 import * as AuthContext from '@/features/auth/context';
 import { BrowserRouter } from 'react-router-dom';
 import React from 'react';

@@ -231,7 +231,7 @@ describe('AuthenticationManager', () => {
     expect(authManager.tokenService.getAccessToken()).toBeNull();
   });
 
-  it('fails closed during bootstrap when session validation is indeterminate', async () => {
+  it('keeps session active during bootstrap when validation is indeterminate', async () => {
     authManager.tokenService.setTokens(mockTokens);
     authManager.sessionService.setValidationFn(async () => {
       throw new SessionValidationIndeterminateError('transient network issue');
@@ -239,9 +239,9 @@ describe('AuthenticationManager', () => {
 
     await authManager.initialize();
 
-    expect(authManager.getState().isAuthenticated).toBe(false);
-    expect(authManager.getState().status).toBe('unauthenticated');
-    expect(authManager.tokenService.getAccessToken()).toBeNull();
+    expect(authManager.getState().isAuthenticated).toBe(true);
+    expect(authManager.getState().status).toBe('authenticated');
+    expect(authManager.tokenService.getAccessToken()).toBe(mockTokens.accessToken);
   });
 
   it('logs out', async () => {
@@ -266,29 +266,12 @@ describe('AuthenticationManager', () => {
     expect(authManager.getState().status).toBe('unauthenticated');
   });
 
-  it('handles remember me functionality', async () => {
-    // Spy on storage updateConfig
-    const updateConfigSpy = vi.spyOn(authManager['storage'], 'updateConfig');
-
-    // Login with rememberMe = true
+  it('does not persist remember-me token artifacts in local storage', async () => {
     const result = await authManager.login({ username: 'u', password: 'p', rememberMe: true }, loginFn);
 
     expect(result.success).toBe(true);
-    expect(updateConfigSpy).toHaveBeenCalledWith({ type: 'local' });
-
-    // Verify token is in local storage (we mocked storage, so checking call args)
-    // Actually, we can check if the storage config changed if we access it,
-    // but the spy confirms the intent.
-  });
-
-  it('handles remember me = false', async () => {
-    // Spy on storage updateConfig
-    const updateConfigSpy = vi.spyOn(authManager['storage'], 'updateConfig');
-
-    // Login with rememberMe = false
-    await authManager.login({ username: 'u', password: 'p', rememberMe: false }, loginFn);
-
-    // Should revert/ensure memory/session storage (default config)
-    expect(updateConfigSpy).toHaveBeenCalledWith({ type: 'memory' });
+    expect(localStorage.getItem('auth_access_token')).toBeNull();
+    expect(localStorage.getItem('auth_refresh_token')).toBeNull();
+    expect(localStorage.getItem('auth_remember_me')).toBeNull();
   });
 });

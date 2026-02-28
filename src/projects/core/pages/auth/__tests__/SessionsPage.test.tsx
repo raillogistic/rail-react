@@ -2,7 +2,7 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import { MockedProvider } from '@apollo/client/testing';
 import { InMemoryCache } from '@apollo/client';
-import { SessionsPage } from '@/pages/auth/SessionsPage';
+import { SessionsPage } from '@/projects/core/pages/auth/SessionsPage';
 import { GET_ACTIVE_SESSIONS } from '@/shared/api/graphql/legacy/queries';
 import { REVOKE_SESSION_MUTATION, REVOKE_ALL_SESSIONS_MUTATION } from '@/shared/api/graphql/legacy/mutations';
 import * as useAuthHook from '@/features/auth/hooks/useAuth';

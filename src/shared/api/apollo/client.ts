@@ -19,23 +19,21 @@ const authGraphqlUri: string =
 
 const apiUploadLink = createUploadLink({
   uri: apiGraphqlUri,
-  // Security: do not send browser cookies so GraphQL auth is bound to JWT header only.
-  credentials: 'omit',
+  // Cookie-auth is authoritative; include credentials on API requests.
+  credentials: 'include',
   // Use GET for queries to leverage browser/proxy HTTP caching and avoid unnecessary POSTs
   // useGETForQueries: true,
 });
 
 const authUploadLink = createUploadLink({
   uri: authGraphqlUri,
-  // Security: do not send browser cookies so auth identity cannot fall back to Django session.
-  credentials: 'omit',
+  // Cookie-auth is authoritative; include credentials on auth requests.
+  credentials: 'include',
   // Use GET for queries to leverage browser/proxy HTTP caching and avoid unnecessary POSTs
   // useGETForQueries: true,
 });
 
 let refreshInFlight: Promise<boolean> | null = null;
-const authStoragePrefix = 'auth_';
-const rememberMeKey = `${authStoragePrefix}remember_me`;
 
 type RefreshTokenMutationPayload = {
   data?: {
@@ -47,70 +45,6 @@ type RefreshTokenMutationPayload = {
   };
 };
 
-const readStorageValue = (
-  storage: Storage | null,
-  key: string
-): string | null => {
-  if (!storage) {
-    return null;
-  }
-
-  try {
-    return storage.getItem(key);
-  } catch {
-    return null;
-  }
-};
-
-const isRememberMeActive = (): boolean => {
-  if (typeof window === 'undefined') {
-    return false;
-  }
-
-  return readStorageValue(window.localStorage, rememberMeKey) === 'true';
-};
-
-const getRefreshTokenForSilentRefresh = (): {
-  token: string | null;
-  source: 'tokenStorage' | 'session' | 'local' | 'legacy' | null;
-} => {
-  const tokenStorageRefreshToken = tokenStorage.getRefreshToken();
-  if (tokenStorageRefreshToken) {
-    return { token: tokenStorageRefreshToken, source: 'tokenStorage' };
-  }
-
-  if (typeof window === 'undefined') {
-    return { token: null, source: null };
-  }
-
-  const sessionToken = readStorageValue(
-    window.sessionStorage,
-    `${authStoragePrefix}refresh_token`
-  );
-  if (sessionToken) {
-    return { token: sessionToken, source: 'session' };
-  }
-
-  if (!isRememberMeActive()) {
-    return { token: null, source: null };
-  }
-
-  const localToken = readStorageValue(
-    window.localStorage,
-    `${authStoragePrefix}refresh_token`
-  );
-  if (localToken) {
-    return { token: localToken, source: 'local' };
-  }
-
-  const legacyToken = readStorageValue(window.localStorage, 'refresh_token');
-  if (legacyToken) {
-    return { token: legacyToken, source: 'legacy' };
-  }
-
-  return { token: null, source: null };
-};
-
 const refreshAccessToken = async (): Promise<boolean> => {
   if (refreshInFlight) {
     return refreshInFlight;
@@ -119,10 +53,9 @@ const refreshAccessToken = async (): Promise<boolean> => {
   refreshInFlight = (async () => {
     try {
       await ensureCsrfCookie();
-      const { token: currentRefreshToken, source } = getRefreshTokenForSilentRefresh();
-      if (!currentRefreshToken) {
-        return false;
-      }
+      // Refresh tokens are backend-managed HttpOnly cookies; the variable remains optional
+      // for backward compatibility with deployments still accepting header-only flows.
+      const currentRefreshToken = tokenStorage.getRefreshToken();
 
       const secureHeaders = getSecureHeaders();
       const mutation = `
@@ -137,14 +70,14 @@ const refreshAccessToken = async (): Promise<boolean> => {
 
       const response = await fetch(authGraphqlUri, {
         method: 'POST',
-        credentials: 'omit',
+        credentials: 'include',
         headers: {
           'content-type': 'application/json',
           ...secureHeaders,
         },
         body: JSON.stringify({
           query: mutation,
-          variables: { refresh_token: currentRefreshToken },
+          variables: { refresh_token: currentRefreshToken ?? null },
         }),
       });
 
@@ -166,30 +99,6 @@ const refreshAccessToken = async (): Promise<boolean> => {
         tokenStorage.setRefreshToken(refreshToken);
       }
       tokenStorage.setSessionActive(true);
-
-      // Keep AuthenticationManager storage in sync (session/local) for reload stability.
-      if (typeof window !== 'undefined') {
-        const rememberMeActive = isRememberMeActive();
-        const targetStorage =
-          source === 'session'
-            ? window.sessionStorage
-            : (source === 'local' || source === 'legacy') && rememberMeActive
-              ? window.localStorage
-              : window.sessionStorage;
-        if (targetStorage) {
-          try {
-            targetStorage.setItem(`${authStoragePrefix}access_token`, token);
-            if (refreshToken) {
-              targetStorage.setItem(
-                `${authStoragePrefix}refresh_token`,
-                refreshToken
-              );
-            }
-          } catch {
-            // ignore storage sync failures
-          }
-        }
-      }
 
       return true;
     } catch (error) {
@@ -283,7 +192,6 @@ const createErrorLink = () => {
   return onError(({ graphQLErrors, networkError, operation, forward }) => {
     const context = operation.getContext() as {
       skipAuthRefresh?: boolean;
-      skipAuthRedirect?: boolean;
       skipAuthErrorHandling?: boolean;
     } | undefined;
     const skipAuthRefresh = context?.skipAuthRefresh === true;
