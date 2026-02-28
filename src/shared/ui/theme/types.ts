@@ -1,4 +1,4 @@
-export type ThemeMode = 'light' | 'dark';
+export type ThemeMode = "light" | "dark";
 
 export type Layout = "vertical" | "horizontal" | "mixed";
 export type SidebarCollapseMode = "offcanvas" | "icon";
@@ -69,7 +69,12 @@ export interface ThemeColors {
   commandForeground: string;
   dropdown: string;
   dropdownForeground: string;
+  cssVars?: Record<string, string>;
 }
+
+export type ThemeComponentStyles = {
+  [slot: string]: string;
+};
 
 export interface ThemeDefinition {
   name: string;
@@ -77,6 +82,9 @@ export interface ThemeDefinition {
   light: ThemeColors;
   dark: ThemeColors;
   radius: string;
+  cssVars?: Record<string, string>;
+  components?: ThemeComponentStyles;
+  customCss?: string;
 }
 
 export type ThemeKey = string;

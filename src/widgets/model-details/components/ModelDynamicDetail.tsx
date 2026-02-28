@@ -1762,18 +1762,17 @@ export const ModelDynamicDetail = React.forwardRef<
     refetch,
     updateFormProps.actions,
   ]);
-  const resolvedUpdateFormLayout = React.useMemo(
-    () => {
-      const merged = mergeModelFormLayoutConfig(
-        updateFormProps.formProps?.layout,
-        updateFormProps.layout,
-      );
-      const variant = String(merged?.variant ?? "").trim().toLowerCase();
-      if (variant) return merged;
-      return { ...(merged ?? {}), variant: "popup" };
-    },
-    [updateFormProps.formProps?.layout, updateFormProps.layout],
-  );
+  const resolvedUpdateFormLayout = React.useMemo(() => {
+    const merged = mergeModelFormLayoutConfig(
+      updateFormProps.formProps?.layout,
+      updateFormProps.layout,
+    );
+    const variant = String(merged?.variant ?? "")
+      .trim()
+      .toLowerCase();
+    if (variant) return merged;
+    return { ...(merged ?? {}), variant: "popup" };
+  }, [updateFormProps.formProps?.layout, updateFormProps.layout]);
 
   const runTemplate = React.useCallback(
     async (
@@ -2187,35 +2186,36 @@ export const ModelDynamicDetail = React.forwardRef<
               id: "header-templates",
               label: "Templates",
               render: () => (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-8 rounded-lg text-xs font-medium gap-1.5"
-                    >
-                      <Printer className="size-3.5" />
-
-                      <ChevronDown className="size-3 opacity-60" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    align="end"
-                    className="w-52 p-1.5 rounded-xl shadow-xl border-border/50"
-                  >
-                    <DropdownMenuLabel className="text-xs font-medium text-muted-foreground/60 px-2"></DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    {templateEntries.map((template) => (
-                      <DropdownMenuItem
-                        key={template.key}
-                        onClick={() => handleTemplateClick(template)}
-                        className="rounded-md text-[13px] font-medium px-2.5 py-2 focus:bg-accent"
+                <>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 rounded-lg text-xs font-medium gap-1.5"
                       >
-                        {template.title || template.key}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                        <Printer className="size-3.5" />
+                        <ChevronDown className="size-3 opacity-60" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align="end"
+                      className="w-52 p-1.5 rounded-xl shadow-xl border-border/50"
+                    >
+                      <DropdownMenuLabel className="text-xs font-medium text-muted-foreground/60 px-2"></DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      {templateEntries.map((template) => (
+                        <DropdownMenuItem
+                          key={template.key}
+                          onClick={() => handleTemplateClick(template)}
+                          className="rounded-md text-[13px] font-medium px-2.5 py-2 focus:bg-accent"
+                        >
+                          {template.title || template.key}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </>
               ),
               onClick: () => undefined,
             },

@@ -159,7 +159,10 @@ type TableDevtoolsTimings = {
 };
 
 function getMonotonicNow(): number {
-  if (typeof performance !== "undefined" && typeof performance.now === "function") {
+  if (
+    typeof performance !== "undefined" &&
+    typeof performance.now === "function"
+  ) {
     return performance.now();
   }
   return Date.now();
@@ -1600,6 +1603,7 @@ export const DynamicModelTable = forwardRef<
 
   return (
     <div
+      data-slot="model-table"
       className={
         baseTable?.className
           ? `h-full w-full ${baseTable.className}`

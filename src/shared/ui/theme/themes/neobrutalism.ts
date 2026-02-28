@@ -57,6 +57,10 @@ export const neobrutalismTheme: ThemeDefinition = {
     commandForeground: "#000000",
     dropdown: "#ffffff",
     dropdownForeground: "#000000",
+    cssVars: {
+      "--border-strong": "#000000",
+      "--shadow-strong": "#000000",
+    },
   },
   dark: {
     background: "#1e1b4b",
@@ -106,5 +110,167 @@ export const neobrutalismTheme: ThemeDefinition = {
     commandForeground: "#ffffff",
     dropdown: "#312e81",
     dropdownForeground: "#ffffff",
+    cssVars: {
+      "--border-strong": "#ffffff",
+      "--shadow-strong": "#ffffff",
+    },
   },
+  components: {
+    button: `
+      border: 2px solid var(--border-strong) !important;
+      box-shadow: 4px 4px 0 0 var(--shadow-strong) !important;
+      border-radius: 0 !important;
+      font-weight: 900 !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.05em !important;
+      transition: all 0.2s ease !important;
+    `,
+    input: `
+      border: 2px solid var(--border-strong) !important;
+      box-shadow: 4px 4px 0 0 var(--shadow-strong) !important;
+      border-radius: 0 !important;
+      font-weight: 700 !important;
+      transition: all 0.2s ease !important;
+    `,
+    card: `
+      border: 2px solid var(--border-strong) !important;
+      box-shadow: 6px 6px 0 0 var(--shadow-strong) !important;
+      border-radius: 0 !important;
+    `,
+    "table-header": `
+      border-bottom: 2px solid var(--border-strong) !important;
+      text-transform: uppercase !important;
+      font-weight: 900 !important;
+    `,
+    sidebar: `
+      border-right: 2px solid var(--border-strong) !important;
+      background-color: var(--background) !important;
+    `,
+    "sidebar-inner": `
+      border: 4px solid var(--border-strong) !important;
+      border-radius: 0 !important;
+      box-shadow: 6px 6px 0 0 var(--shadow-strong) !important;
+      margin: 8px;
+    `,
+    "sidebar-menu-button": `
+      border-radius: 0 !important;
+      border: 2px solid transparent !important;
+      transition: all 0.2s ease !important;
+      font-weight: 700 !important;
+    `,
+    "sidebar-group-label": `
+      font-weight: 900 !important;
+      text-transform: uppercase !important;
+      border-bottom: 2px solid var(--border-strong) !important;
+      margin-bottom: 8px !important;
+      padding-bottom: 4px !important;
+      border-radius: 0 !important;
+      color: var(--foreground) !important;
+    `,
+    navbar: `
+      border-bottom: 4px solid var(--border-strong) !important;
+      background-color: var(--background) !important;
+      box-shadow: 0 4px 0 0 var(--shadow-strong) !important;
+    `,
+    "model-table": `
+      border: 4px solid var(--border-strong) !important;
+      border-radius: 0 !important;
+      box-shadow: 6px 6px 0 0 var(--shadow-strong) !important;
+      background-color: var(--card) !important;
+      overflow: hidden !important;
+    `,
+    "table-toolbar": `
+      border: 4px solid var(--border-strong) !important;
+      border-radius: 0 !important;
+      box-shadow: 6px 6px 0 0 var(--shadow-strong) !important;
+      background-color: var(--background) !important;
+    `,
+    "model-form": `
+      border: 4px solid var(--border-strong) !important;
+      border-radius: 0 !important;
+      box-shadow: 6px 6px 0 0 var(--shadow-strong) !important;
+      background-color: var(--card) !important;
+    `,
+    "dropdown-menu-content": `
+      border: 4px solid var(--border-strong) !important;
+      border-radius: 0 !important;
+      box-shadow: 6px 6px 0 0 var(--shadow-strong) !important;
+      background-color: var(--dropdown) !important;
+      color: var(--dropdown-foreground) !important;
+      padding: 4px !important;
+    `,
+    "dropdown-menu-sub-content": `
+      border: 4px solid var(--border-strong) !important;
+      border-radius: 0 !important;
+      box-shadow: 6px 6px 0 0 var(--shadow-strong) !important;
+      background-color: var(--dropdown) !important;
+      color: var(--dropdown-foreground) !important;
+      padding: 4px !important;
+    `,
+    "dropdown-menu-item": `
+      border-radius: 0 !important;
+      font-weight: 700 !important;
+      border: 2px solid transparent !important;
+    `,
+    "dropdown-menu-checkbox-item": `
+      border-radius: 0 !important;
+      font-weight: 700 !important;
+      border: 2px solid transparent !important;
+    `,
+    "dropdown-menu-radio-item": `
+      border-radius: 0 !important;
+      font-weight: 700 !important;
+      border: 2px solid transparent !important;
+    `,
+    "dropdown-menu-sub-trigger": `
+      border-radius: 0 !important;
+      font-weight: 700 !important;
+      border: 2px solid transparent !important;
+    `,
+    "dropdown-menu-label": `
+      font-weight: 900 !important;
+      text-transform: uppercase !important;
+      border-bottom: 2px solid var(--border-strong) !important;
+      margin-bottom: 8px !important;
+      padding-bottom: 4px !important;
+      border-radius: 0 !important;
+    `,
+    "dropdown-menu-separator": `
+      background-color: var(--border-strong) !important;
+      height: 2px !important;
+      margin: 8px -4px !important;
+    `,
+  },
+  customCss: `
+    [data-theme="neobrutalism"] [data-slot="button"]:active {
+      transform: translate(4px, 4px) !important;
+      box-shadow: 0 0 0 0 var(--shadow-strong) !important;
+    }
+    
+    [data-theme="neobrutalism"] [data-slot="input"]:focus-visible {
+      transform: translate(2px, 2px) !important;
+      box-shadow: 2px 2px 0 0 var(--shadow-strong) !important;
+      outline: none !important;
+      ring: 0 !important;
+    }
+
+    [data-theme="neobrutalism"] table {
+      border: 2px solid var(--border-strong) !important;
+    }
+    
+    [data-theme="neobrutalism"] th,
+    [data-theme="neobrutalism"] td {
+      border-right: 2px solid var(--border-strong) !important;
+      border-bottom: 2px solid var(--border-strong) !important;
+    }
+    
+    [data-theme="neobrutalism"] [data-slot="sidebar-menu-button"]:hover,
+    [data-theme="neobrutalism"] [data-slot="sidebar-menu-button"][data-active="true"] {
+      border: 2px solid var(--border-strong) !important;
+      box-shadow: 4px 4px 0 0 var(--shadow-strong) !important;
+      background-color: var(--primary) !important;
+      color: var(--primary-foreground) !important;
+      transform: translate(-2px, -2px);
+    }
+  `,
 };

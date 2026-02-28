@@ -46,7 +46,10 @@ import { useTable } from "../context/TableContext";
 import { useMetadata } from "../context/MetadataContext";
 import { useTableFilters } from "../hooks/useTableFilters";
 import { FilterPanel } from "@/widgets/model-table/filtering/FilterPanel";
-import { FilterFormState, FilterQueryVariables } from "@/widgets/model-table/filtering/types";
+import {
+  FilterFormState,
+  FilterQueryVariables,
+} from "@/widgets/model-table/filtering/types";
 import type {
   ModelTableFilterPanelProps,
   ModelTableV2TableConfig,
@@ -261,6 +264,7 @@ export function TableToolbar({
       <div className="relative z-20 mb-4 flex flex-col gap-3">
         {/* Main Toolbar Container */}
         <div
+          data-slot="table-toolbar"
           className={cn(
             "group flex flex-col gap-3 rounded-2xl border border-border/30 bg-background/50 p-2 shadow-sm backdrop-blur-xl transition-all duration-300 hover:border-border/50",
             hasActiveFilters && "ring-1 ring-primary/15 border-primary/20",
@@ -472,7 +476,8 @@ export function TableToolbar({
                         onClick={() => setDragModeEnabled(!dragModeEnabled)}
                       >
                         <GripVertical className="mr-2 h-4 w-4" />
-                        Mode Glisser: {dragModeEnabled ? "ActivÃ©" : "DÃ©sactivÃ©"}
+                        Mode Glisser:{" "}
+                        {dragModeEnabled ? "ActivÃ©" : "DÃ©sactivÃ©"}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>

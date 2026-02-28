@@ -669,10 +669,15 @@ export function ThemeProvider({
       console.warn(`Theme "${theme}" not found, falling back to default theme`);
       const defaultThemeDef = themes[DEFAULT_THEME];
       const colors = defaultThemeDef[mode];
-      applyThemeColors(root, colors, defaultThemeDef.radius);
+      applyThemeColors(
+        root,
+        colors,
+        defaultThemeDef.radius,
+        defaultThemeDef.cssVars,
+      );
     } else {
       const colors = themeDef[mode];
-      applyThemeColors(root, colors, themeDef.radius);
+      applyThemeColors(root, colors, themeDef.radius, themeDef.cssVars);
     }
 
     // Mode Class
@@ -697,6 +702,7 @@ export function ThemeProvider({
     root: HTMLElement,
     colors: ThemeColors,
     radius: string,
+    cssVars?: Record<string, string>,
   ) => {
     // Helper to set CSS Prop
     const setProperty = (key: string, value: string) => {
@@ -713,12 +719,30 @@ export function ThemeProvider({
 
     // Set Colors
     Object.entries(colors).forEach(([key, value]) => {
+      // cssVars is an object, skip it
+      if (key === "cssVars") return;
       const cssVar = `--${toKebabCase(key)}`;
-      setProperty(cssVar, value);
+      setProperty(cssVar, value as string);
     });
 
     // Set Radius
     setProperty("--radius", radius);
+
+    // Set Custom Theme Variables (Mode agnostic)
+    if (cssVars) {
+      Object.entries(cssVars).forEach(([key, value]) => {
+        const cssVar = key.startsWith("--") ? key : `--${key}`;
+        setProperty(cssVar, value);
+      });
+    }
+
+    // Set Mode Specific Custom Variables
+    if (colors.cssVars) {
+      Object.entries(colors.cssVars).forEach(([key, value]) => {
+        const cssVar = key.startsWith("--") ? key : `--${key}`;
+        setProperty(cssVar, value);
+      });
+    }
   };
 
   const value = {
@@ -744,6 +768,19 @@ export function ThemeProvider({
 
   return (
     <ThemeProviderContext.Provider {...props} value={value}>
+      {themes[theme]?.customCss && (
+        <style id="rail-theme-custom-css">{themes[theme].customCss}</style>
+      )}
+      {themes[theme]?.components && (
+        <style id="rail-theme-components-css">
+          {Object.entries(themes[theme].components!)
+            .map(
+              ([slot, css]) =>
+                `[data-theme="${theme}"] [data-slot="${slot}"] { ${css} }`,
+            )
+            .join("\n")}
+        </style>
+      )}
       {children}
     </ThemeProviderContext.Provider>
   );

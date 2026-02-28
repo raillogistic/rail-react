@@ -5,18 +5,14 @@ import { cn } from "@/shared/utils";
 import DynamicForm from "../inputs/form";
 import { useGeneratedModelForm } from "../hooks/useGeneratedModelForm";
 import { useGeneratedValidators } from "../hooks/useGeneratedValidators";
-import {
-  buildGeneratedMutationDocument,
-} from "../mutations";
+import { buildGeneratedMutationDocument } from "../mutations";
 import type { FormFieldConfig, FormSchema } from "../types";
 import type {
   ModelFormContractPermissions,
   ModelFormOperationPermission,
 } from "../types/generatedContract";
 import type { ModelFormProps } from "../types.model";
-import {
-  parseRelationNestedFormConfig,
-} from "./modelForm/nestedSchema";
+import { parseRelationNestedFormConfig } from "./modelForm/nestedSchema";
 import {
   EMPTY_RUNTIME_OVERRIDES,
   deepMergeRecords,
@@ -59,7 +55,10 @@ function assertNoLegacyModelFormProps(props: Record<string, unknown>): void {
   );
 }
 
-function resolveRelationFieldName(relation: { name?: string | null; path?: string | null }) {
+function resolveRelationFieldName(relation: {
+  name?: string | null;
+  path?: string | null;
+}) {
   const name = String(relation.name ?? "").trim();
   if (name) return name;
   return String(relation.path ?? "").trim();
@@ -70,9 +69,19 @@ function resolveModeOperationPermission(
   mode: "CREATE" | "UPDATE" | "VIEW",
 ): ModelFormOperationPermission | null {
   if (!permissions) return null;
-  const operation = mode === "CREATE" ? permissions.create : mode === "UPDATE" ? permissions.update : permissions.view;
+  const operation =
+    mode === "CREATE"
+      ? permissions.create
+      : mode === "UPDATE"
+        ? permissions.update
+        : permissions.view;
   if (operation) return operation;
-  const allowed = mode === "CREATE" ? permissions.canCreate : mode === "UPDATE" ? permissions.canUpdate : permissions.canView;
+  const allowed =
+    mode === "CREATE"
+      ? permissions.canCreate
+      : mode === "UPDATE"
+        ? permissions.canUpdate
+        : permissions.canView;
   if (typeof allowed === "boolean") {
     return { allowed, requiredPermissions: [], requiresAuthentication: false };
   }
@@ -87,7 +96,9 @@ function normalizeMutationVariablesForGraphQL(
   if (!rawIdentifierName) return variables;
   const nextVariables: Record<string, unknown> = { ...variables };
   if (rawIdentifierName !== "id") {
-    if (Object.prototype.hasOwnProperty.call(nextVariables, rawIdentifierName)) {
+    if (
+      Object.prototype.hasOwnProperty.call(nextVariables, rawIdentifierName)
+    ) {
       nextVariables.id = nextVariables[rawIdentifierName];
       delete nextVariables[rawIdentifierName];
     } else if (nextVariables.id === undefined || nextVariables.id === null) {
@@ -97,24 +108,56 @@ function normalizeMutationVariablesForGraphQL(
     nextVariables.id = identifier?.value;
   }
   if (nextVariables.id === undefined || nextVariables.id === null) {
-    throw new Error("Les mutations de mise à jour nécessitent une variable `id`.");
+    throw new Error(
+      "Les mutations de mise à jour nécessitent une variable `id`.",
+    );
   }
   return nextVariables;
 }
 
-export function ModelForm<TFormValues extends Record<string, unknown> = Record<string, unknown>>(
-  props: ModelFormProps<TFormValues>
-) {
+export function ModelForm<
+  TFormValues extends Record<string, unknown> = Record<string, unknown>,
+>(props: ModelFormProps<TFormValues>) {
   assertNoLegacyModelFormProps(props as Record<string, unknown>);
   const apolloClient = useApolloClient();
 
   const {
-    app, model, mode, objectId, includeNested, nested, generatedEnabled = true, runtimeOverrides,
-    onlyFields, excludeFields, onlyRequired, onlyRelationships, excludeRelationships,
-    fieldOverrides, sectionOverrides, validatorExtensions, legacySchema, formProps,
-    state, behavior, layout, actions, devtools, title, description, showHeading = true,
-    containerClassName, contentClassName, loadingFallback, emptySchemaFallback, errorFallback,
-    requireObjectIdForUpdate = true, onContractLoaded, onInitialDataLoaded, onSubmitResult, onLoadError,
+    app,
+    model,
+    mode,
+    objectId,
+    includeNested,
+    nested,
+    generatedEnabled = true,
+    runtimeOverrides,
+    onlyFields,
+    excludeFields,
+    onlyRequired,
+    onlyRelationships,
+    excludeRelationships,
+    fieldOverrides,
+    sectionOverrides,
+    validatorExtensions,
+    legacySchema,
+    formProps,
+    state,
+    behavior,
+    layout,
+    actions,
+    devtools,
+    title,
+    description,
+    showHeading = true,
+    containerClassName,
+    contentClassName,
+    loadingFallback,
+    emptySchemaFallback,
+    errorFallback,
+    requireObjectIdForUpdate = true,
+    onContractLoaded,
+    onInitialDataLoaded,
+    onSubmitResult,
+    onLoadError,
   } = props;
 
   const resolvedApp = app ?? "";
@@ -129,42 +172,84 @@ export function ModelForm<TFormValues extends Record<string, unknown> = Record<s
   );
 
   const {
-    nestedControls, shouldIncludeNested, initialDataNestedFields, resolvedOnlyRelationships, resolvedExcludeRelationships,
-  } = useModelFormConfig({ nested, includeNested, onlyRelationships, excludeRelationships });
-
-  const updateRequiresObjectId = resolvedMode === "UPDATE" && requireObjectIdForUpdate && !resolvedObjectIdValue;
-  const shouldFetchInitialData = generatedEnabled && isModelFormModeWithInitialData(resolvedMode) && Boolean(resolvedObjectIdValue);
-
-  const {
-    contractQuery, initialDataQuery, nestedRelationContractsQuery,
-    contract, initialData, nestedRelationModelRefs, relatedContractsByModel,
-  } = useModelFormQueries({
-    generatedEnabled, resolvedApp, resolvedModel, resolvedMode, shouldIncludeNested,
-    shouldFetchInitialData, resolvedObjectIdValue, initialDataNestedFields,
-    runtimeOverridesForQuery, nestedControls, onContractLoaded, onInitialDataLoaded, onLoadError,
+    nestedControls,
+    shouldIncludeNested,
+    initialDataNestedFields,
+    resolvedOnlyRelationships,
+    resolvedExcludeRelationships,
+  } = useModelFormConfig({
+    nested,
+    includeNested,
+    onlyRelationships,
+    excludeRelationships,
   });
 
-  const relationOperationOverrides = React.useMemo<NestedMutationOperationOverrides>(() => {
-    if (!contract) return {};
-    const overrides: NestedMutationOperationOverrides = {};
-    for (const relation of contract.relations ?? []) {
-      const relationFieldName = resolveRelationFieldName(relation);
-      const nestedControl = nestedControls?.[relationFieldName] ?? nestedControls?.[relation.path];
-      const nestedFormConfig = parseRelationNestedFormConfig(relation.nestedForm);
-      const scalarListOperation = nestedControl?.scalarListOperation ?? nestedFormConfig.scalarListOperation;
-      const removeOperation = nestedControl?.removeOperation ?? nestedFormConfig.removeOperation;
-      const deleteMutationEnabled = Boolean(nestedControl?.deleteMutation?.enabled ?? nestedFormConfig.deleteMutation?.enabled);
-      if (!scalarListOperation && !removeOperation && !deleteMutationEnabled) continue;
-      const overrideEntry = {
-        ...(scalarListOperation ? { scalarListOperation } : {}),
-        ...(removeOperation ? { removeOperation } : {}),
-        ...(deleteMutationEnabled ? { deleteMutationEnabled } : {}),
-      };
-      if (relationFieldName) overrides[relationFieldName] = overrideEntry;
-      if (relation.path) overrides[relation.path] = overrideEntry;
-    }
-    return overrides;
-  }, [contract, nestedControls]);
+  const updateRequiresObjectId =
+    resolvedMode === "UPDATE" &&
+    requireObjectIdForUpdate &&
+    !resolvedObjectIdValue;
+  const shouldFetchInitialData =
+    generatedEnabled &&
+    isModelFormModeWithInitialData(resolvedMode) &&
+    Boolean(resolvedObjectIdValue);
+
+  const {
+    contractQuery,
+    initialDataQuery,
+    nestedRelationContractsQuery,
+    contract,
+    initialData,
+    nestedRelationModelRefs,
+    relatedContractsByModel,
+  } = useModelFormQueries({
+    generatedEnabled,
+    resolvedApp,
+    resolvedModel,
+    resolvedMode,
+    shouldIncludeNested,
+    shouldFetchInitialData,
+    resolvedObjectIdValue,
+    initialDataNestedFields,
+    runtimeOverridesForQuery,
+    nestedControls,
+    onContractLoaded,
+    onInitialDataLoaded,
+    onLoadError,
+  });
+
+  const relationOperationOverrides =
+    React.useMemo<NestedMutationOperationOverrides>(() => {
+      if (!contract) return {};
+      const overrides: NestedMutationOperationOverrides = {};
+      for (const relation of contract.relations ?? []) {
+        const relationFieldName = resolveRelationFieldName(relation);
+        const nestedControl =
+          nestedControls?.[relationFieldName] ??
+          nestedControls?.[relation.path];
+        const nestedFormConfig = parseRelationNestedFormConfig(
+          relation.nestedForm,
+        );
+        const scalarListOperation =
+          nestedControl?.scalarListOperation ??
+          nestedFormConfig.scalarListOperation;
+        const removeOperation =
+          nestedControl?.removeOperation ?? nestedFormConfig.removeOperation;
+        const deleteMutationEnabled = Boolean(
+          nestedControl?.deleteMutation?.enabled ??
+          nestedFormConfig.deleteMutation?.enabled,
+        );
+        if (!scalarListOperation && !removeOperation && !deleteMutationEnabled)
+          continue;
+        const overrideEntry = {
+          ...(scalarListOperation ? { scalarListOperation } : {}),
+          ...(removeOperation ? { removeOperation } : {}),
+          ...(deleteMutationEnabled ? { deleteMutationEnabled } : {}),
+        };
+        if (relationFieldName) overrides[relationFieldName] = overrideEntry;
+        if (relation.path) overrides[relation.path] = overrideEntry;
+      }
+      return overrides;
+    }, [contract, nestedControls]);
 
   const submitRelations = React.useMemo(
     () =>
@@ -176,18 +261,48 @@ export function ModelForm<TFormValues extends Record<string, unknown> = Record<s
     [contract, nestedControls, relatedContractsByModel],
   );
 
-  const executeGeneratedMutation = React.useCallback(async (operationName: string, variables: Record<string, unknown>, envelope: any) => {
-    const mutationMode = envelope.identifier ? "update" : "create";
-    const graphqlVariables = normalizeMutationVariablesForGraphQL(variables, envelope.identifier);
-    const mutation = gql(buildGeneratedMutationDocument(mutationMode, operationName, resolvedModel, "id"));
-    const result = await apolloClient.mutate({ mutation, variables: graphqlVariables });
-    return getMutationPayload(operationName, result.data as Record<string, unknown>);
-  }, [apolloClient, resolvedModel]);
+  const executeGeneratedMutation = React.useCallback(
+    async (
+      operationName: string,
+      variables: Record<string, unknown>,
+      envelope: any,
+    ) => {
+      const mutationMode = envelope.identifier ? "update" : "create";
+      const graphqlVariables = normalizeMutationVariablesForGraphQL(
+        variables,
+        envelope.identifier,
+      );
+      const mutation = gql(
+        buildGeneratedMutationDocument(
+          mutationMode,
+          operationName,
+          resolvedModel,
+          "id",
+        ),
+      );
+      const result = await apolloClient.mutate({
+        mutation,
+        variables: graphqlVariables,
+      });
+      return getMutationPayload(
+        operationName,
+        result.data as Record<string, unknown>,
+      );
+    },
+    [apolloClient, resolvedModel],
+  );
 
   const generated = useGeneratedModelForm({
-    contract, initialData, runtimeOverrides: resolvedRuntimeOverrides, generatedEnabled,
-    legacySchema: legacySchema as any, submitMode: resolvedMode, objectId: resolvedObjectIdValue,
-    relationOperationOverrides, submissionRelations: submitRelations, executeMutation: executeGeneratedMutation,
+    contract,
+    initialData,
+    runtimeOverrides: resolvedRuntimeOverrides,
+    generatedEnabled,
+    legacySchema: legacySchema as any,
+    submitMode: resolvedMode,
+    objectId: resolvedObjectIdValue,
+    relationOperationOverrides,
+    submissionRelations: submitRelations,
+    executeMutation: executeGeneratedMutation,
   });
 
   const modePermissionDenied = React.useMemo(() => {
@@ -197,13 +312,26 @@ export function ModelForm<TFormValues extends Record<string, unknown> = Record<s
     return shouldEnforceOperationDeny(opPerm, resolvedMode as any);
   }, [contract?.permissions, resolvedMode]);
 
-  const { formValidator } = useGeneratedValidators(contract, validatorExtensions);
+  const { formValidator } = useGeneratedValidators(
+    contract,
+    validatorExtensions,
+  );
 
-  const { finalSchema, editableFieldPaths, sanitizeValuesForControlledSchema } = useModelFormSchema({
-    onlyFields, excludeFields, onlyRequired, fieldOverrides, sectionOverrides, generatedEnabled,
-    contract, generatedSchema: generated.schema as any, relatedContractsByModel,
-    nestedControls, resolvedOnlyRelationships, resolvedExcludeRelationships,
-  });
+  const { finalSchema, editableFieldPaths, sanitizeValuesForControlledSchema } =
+    useModelFormSchema({
+      onlyFields,
+      excludeFields,
+      onlyRequired,
+      fieldOverrides,
+      sectionOverrides,
+      generatedEnabled,
+      contract,
+      generatedSchema: generated.schema as any,
+      relatedContractsByModel,
+      nestedControls,
+      resolvedOnlyRelationships,
+      resolvedExcludeRelationships,
+    });
 
   const resolvedLayout = React.useMemo(() => {
     const merged = { ...(formProps?.layout ?? {}), ...(layout ?? {}) };
@@ -218,58 +346,155 @@ export function ModelForm<TFormValues extends Record<string, unknown> = Record<s
     return variant === "popup" || variant === "compact";
   }, [resolvedLayout]);
 
-  const { mergedBehavior, mergedState, mergedActions, resolvedDevtools } = useModelFormLogic({
-    generatedEnabled, contract, generated, formValidator, editableFieldPaths, sanitizeValuesForControlledSchema,
-    relationOperationOverrides, submitRelations, modePermissionDenied, resolvedMode, resolvedObjectIdValue,
-    finalSchema,
-    formProps, state, behavior, actions, devtools, onSubmitResult,
-  });
+  const { mergedBehavior, mergedState, mergedActions, resolvedDevtools } =
+    useModelFormLogic({
+      generatedEnabled,
+      contract,
+      generated,
+      formValidator,
+      editableFieldPaths,
+      sanitizeValuesForControlledSchema,
+      relationOperationOverrides,
+      submitRelations,
+      modePermissionDenied,
+      resolvedMode,
+      resolvedObjectIdValue,
+      finalSchema,
+      formProps,
+      state,
+      behavior,
+      actions,
+      devtools,
+      onSubmitResult,
+    });
 
-  const hydratedDefaultValues = React.useMemo<Partial<TFormValues> | undefined>(() => {
+  const hydratedDefaultValues = React.useMemo<
+    Partial<TFormValues> | undefined
+  >(() => {
     if (!shouldFetchInitialData || initialDataQuery.loading) return undefined;
     if (!isRecord(generated.initialValues)) return {} as any;
-    return sanitizeValuesForControlledSchema(generated.initialValues as any) as any;
-  }, [shouldFetchInitialData, initialDataQuery.loading, generated.initialValues, sanitizeValuesForControlledSchema]);
+    return sanitizeValuesForControlledSchema(
+      generated.initialValues as any,
+    ) as any;
+  }, [
+    shouldFetchInitialData,
+    initialDataQuery.loading,
+    generated.initialValues,
+    sanitizeValuesForControlledSchema,
+  ]);
 
   const finalState = React.useMemo(() => {
     const baseState = { ...(mergedState ?? {}) };
     const mergedDefaultValues = deepMergeRecords(
-      isRecord(baseState.defaultValues) ? (baseState.defaultValues as any) : undefined,
-      isRecord(hydratedDefaultValues) ? (hydratedDefaultValues as any) : undefined,
+      isRecord(baseState.defaultValues)
+        ? (baseState.defaultValues as any)
+        : undefined,
+      isRecord(hydratedDefaultValues)
+        ? (hydratedDefaultValues as any)
+        : undefined,
     );
-    if (mergedDefaultValues) baseState.defaultValues = sanitizeValuesForControlledSchema(mergedDefaultValues) as any;
-    if (shouldFetchInitialData && hydratedDefaultValues !== undefined) baseState.disableAutoReset = true;
+    if (mergedDefaultValues)
+      baseState.defaultValues = sanitizeValuesForControlledSchema(
+        mergedDefaultValues,
+      ) as any;
+    if (shouldFetchInitialData && hydratedDefaultValues !== undefined)
+      baseState.disableAutoReset = true;
     return Object.keys(baseState).length > 0 ? baseState : undefined;
-  }, [mergedState, hydratedDefaultValues, shouldFetchInitialData, sanitizeValuesForControlledSchema]);
+  }, [
+    mergedState,
+    hydratedDefaultValues,
+    shouldFetchInitialData,
+    sanitizeValuesForControlledSchema,
+  ]);
 
-  const contractError = contractQuery.error ? toError(contractQuery.error) : null;
-  const initialDataError = initialDataQuery.error ? toError(initialDataQuery.error) : null;
-  const isLoading = (generatedEnabled && contractQuery.loading) || (shouldFetchInitialData && initialDataQuery.loading) || (generatedEnabled && nestedRelationModelRefs.length > 0 && nestedRelationContractsQuery.loading);
-  const hasRenderableFields = Boolean(finalSchema.sections?.some((section) => section.fields.length > 0) || finalSchema.fields?.length);
+  const contractError = contractQuery.error
+    ? toError(contractQuery.error)
+    : null;
+  const initialDataError = initialDataQuery.error
+    ? toError(initialDataQuery.error)
+    : null;
+  const isLoading =
+    (generatedEnabled && contractQuery.loading) ||
+    (shouldFetchInitialData && initialDataQuery.loading) ||
+    (generatedEnabled &&
+      nestedRelationModelRefs.length > 0 &&
+      nestedRelationContractsQuery.loading);
+  const hasRenderableFields = Boolean(
+    finalSchema.sections?.some((section) => section.fields.length > 0) ||
+    finalSchema.fields?.length,
+  );
 
   const renderError = (error: Error, stage: "contract" | "initialData") => {
-    if (typeof errorFallback === "function") return errorFallback({ error, stage, app: resolvedApp, model: resolvedModel, mode: resolvedMode, objectId: resolvedObjectIdValue });
-    return errorFallback ?? <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive">{error.message}</div>;
+    if (typeof errorFallback === "function")
+      return errorFallback({
+        error,
+        stage,
+        app: resolvedApp,
+        model: resolvedModel,
+        mode: resolvedMode,
+        objectId: resolvedObjectIdValue,
+      });
+    return (
+      errorFallback ?? (
+        <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive">
+          {error.message}
+        </div>
+      )
+    );
   };
 
-  if (!resolvedApp || !resolvedModel) return renderError(new Error("ModelForm nécessite les props `app` and `model`."), "contract");
-  if (updateRequiresObjectId) return renderError(new Error("ModelForm nécessite `objectId` lorsque le mode est UPDATE."), "initialData");
+  if (!resolvedApp || !resolvedModel)
+    return renderError(
+      new Error("ModelForm nécessite les props `app` and `model`."),
+      "contract",
+    );
+  if (updateRequiresObjectId)
+    return renderError(
+      new Error("ModelForm nécessite `objectId` lorsque le mode est UPDATE."),
+      "initialData",
+    );
   if (contractError) return renderError(contractError, "contract");
   if (initialDataError) return renderError(initialDataError, "initialData");
-  if (isLoading) return loadingFallback ?? <div className="rounded-md border p-3 text-sm text-muted-foreground">Chargement du contrat du formulaire...</div>;
-  if (!hasRenderableFields) return emptySchemaFallback ?? <div className="rounded-md border p-3 text-sm text-muted-foreground">Aucun champ n'est disponible pour ce formulaire.</div>;
+  if (isLoading)
+    return (
+      loadingFallback ?? (
+        <div className="rounded-md border p-3 text-sm text-muted-foreground">
+          Chargement du contrat du formulaire...
+        </div>
+      )
+    );
+  if (!hasRenderableFields)
+    return (
+      emptySchemaFallback ?? (
+        <div className="rounded-md border p-3 text-sm text-muted-foreground">
+          Aucun champ n'est disponible pour ce formulaire.
+        </div>
+      )
+    );
 
   return (
-    <div className={cn("group/model-form relative w-full transition-all duration-500", containerClassName)}>
+    <div
+      data-slot="model-form"
+      className={cn(
+        "group/model-form relative w-full transition-all duration-500",
+        containerClassName,
+      )}
+    >
       {showHeading && (title || description) ? (
         <header className="mb-8 space-y-3 px-1">
           {title && (
             <div className="flex items-center gap-4">
               <div className="h-8 w-1.5 rounded-full bg-primary/80 shadow-[0_0_15px_rgba(var(--primary),0.3)]" />
-              <h2 className="text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">{title}</h2>
+              <h2 className="text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
+                {title}
+              </h2>
             </div>
           )}
-          {description && <p className="max-w-3xl text-sm font-medium leading-relaxed text-muted-foreground/80 sm:text-base">{description}</p>}
+          {description && (
+            <p className="max-w-3xl text-sm font-medium leading-relaxed text-muted-foreground/80 sm:text-base">
+              {description}
+            </p>
+          )}
         </header>
       ) : null}
       <div

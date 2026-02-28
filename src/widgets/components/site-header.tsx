@@ -54,6 +54,7 @@ export function SiteHeader({
 
   return (
     <header
+      data-slot="navbar"
       className={cn(
         "sticky top-0 z-40 w-full transition-all duration-300 ease-in-out",
         scrolled
