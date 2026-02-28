@@ -89,8 +89,11 @@ export class AuthenticationManager {
   async initialize(): Promise<void> {
     this.updateState({ status: "loading", isLoading: true });
     // Defensive cleanup for stale tokens from older builds.
-    this.clearStorageTokens("session");
-    this.clearStorageTokens("local");
+    // Keep persisted tokens intact when the configured storage is session/local/cookie.
+    if (this.config.token.storageType === "memory") {
+      this.clearStorageTokens("session");
+      this.clearStorageTokens("local");
+    }
 
     let accessToken = this.tokenService.getAccessToken();
 

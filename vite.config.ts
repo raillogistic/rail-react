@@ -28,38 +28,9 @@ export default defineConfig({
 
           if (!normalizedId.includes("node_modules")) return;
 
-          if (
-            normalizedId.includes("/node_modules/react/") ||
-            normalizedId.includes("/node_modules/react-dom/") ||
-            normalizedId.includes("/node_modules/react-router/") ||
-            normalizedId.includes("/node_modules/react-router-dom/")
-          ) {
-            return "vendor-react";
-          }
-          if (
-            normalizedId.includes("/node_modules/@apollo/client/") ||
-            normalizedId.includes("/node_modules/graphql/")
-          ) {
-            return "vendor-apollo";
-          }
-          if (
-            normalizedId.includes("/node_modules/@tanstack/react-table/") ||
-            normalizedId.includes("/node_modules/@tanstack/react-virtual/")
-          ) {
-            return "vendor-table";
-          }
-          if (
-            normalizedId.includes("/node_modules/recharts/") ||
-            normalizedId.includes("/node_modules/d3-")
-          ) {
-            return "vendor-charts";
-          }
-          if (
-            normalizedId.includes("/node_modules/@radix-ui/") ||
-            normalizedId.includes("/node_modules/vaul/")
-          ) {
-            return "vendor-ui";
-          }
+          // Keep third-party modules in one vendor chunk to avoid
+          // cross-vendor initialization cycles in production bundles.
+          return "vendor";
         },
       },
     },

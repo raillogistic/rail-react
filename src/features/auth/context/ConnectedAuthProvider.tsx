@@ -511,7 +511,8 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
           refreshThresholdSeconds: 300,
           accessTokenTTLSeconds: 900,
           refreshTokenTTLSeconds: 604800,
-          storageType: "memory",
+          // Keep tokens across reloads in the same tab.
+          storageType: "session",
           storagePrefix: "auth_",
           encryptTokens: false,
         },

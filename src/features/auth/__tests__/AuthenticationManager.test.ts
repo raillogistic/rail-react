@@ -204,6 +204,40 @@ describe('AuthenticationManager', () => {
     expect(authManager.hasPermission('profile:read')).toBe(true);
   });
 
+  it('restores session-scoped tokens after re-instantiating the manager', async () => {
+    const persistentManager = new AuthenticationManager({
+      token: { storageType: 'session' },
+      rateLimit: { persistLockout: false },
+      eventBus: {
+        channelName: 'auth-events-session-source',
+        debounceMs: 0,
+        enableCrossTab: false,
+      },
+    });
+
+    persistentManager.tokenService.setTokens(mockTokens);
+
+    const reloadedManager = new AuthenticationManager({
+      token: { storageType: 'session' },
+      rateLimit: { persistLockout: false },
+      eventBus: {
+        channelName: 'auth-events-session-reloaded',
+        debounceMs: 0,
+        enableCrossTab: false,
+      },
+    });
+
+    reloadedManager.sessionService.setValidationFn(async () => true);
+    await reloadedManager.initialize();
+
+    expect(reloadedManager.getState().isAuthenticated).toBe(true);
+    expect(reloadedManager.getState().status).toBe('authenticated');
+    expect(reloadedManager.getState().user?.id).toBe(mockUser.id);
+
+    persistentManager.destroy();
+    reloadedManager.destroy();
+  });
+
   it('does not authenticate expired tokens during bootstrap validation', async () => {
     const header = btoa(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
     const payload = btoa(

@@ -8,7 +8,7 @@ WORKDIR /app
 
 COPY package.json package-lock.json ./
 RUN --mount=type=cache,target=/root/.npm \
-    npm ci --include=dev --no-audit --fund=false
+    npm ci --include=dev --legacy-peer-deps --no-audit --fund=false
 
 FROM ${NODE_IMAGE} AS builder
 WORKDIR /app

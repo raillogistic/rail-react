@@ -315,7 +315,7 @@ try {
   if (-not $SkipRun) {
     $existingContainer = Get-ContainerByName -Name $ContainerName
     if ($existingContainer -eq $ContainerName) {
-      $previousContainerImage = (& docker inspect --format "{{.Config.Image}}" $ContainerName).Trim()
+      $previousContainerImage = ([string](& docker inspect --format "{{.Config.Image}}" $ContainerName)).Trim()
       if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($previousContainerImage)) {
         throw "Failed to determine image for existing container '$ContainerName'."
       }
@@ -323,7 +323,7 @@ try {
 
     Write-Step "Starting candidate container '$candidateContainerName' for readiness validation ..."
     $candidateRunArgs = Get-RunArgs -Name $candidateContainerName -Image $fullImageName -PortBinding "" -RestartPolicy "no"
-    $candidateId = (& docker @candidateRunArgs).Trim()
+    $candidateId = ([string](& docker @candidateRunArgs)).Trim()
     if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($candidateId)) {
       throw "Failed to start candidate container '$candidateContainerName'."
     }
@@ -357,7 +357,7 @@ try {
 
     $runArgs = Get-RunArgs -Name $ContainerName -Image $fullImageName -PortBinding $portBinding
     Write-Step "Starting container '$ContainerName' on http://${displayHost}:$hostPort ..."
-    $containerId = (& docker @runArgs).Trim()
+    $containerId = ([string](& docker @runArgs)).Trim()
     if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($containerId)) {
       throw "Failed to start container '$ContainerName'."
     }
@@ -396,7 +396,7 @@ try {
       }
 
       $rollbackArgs = Get-RunArgs -Name $ContainerName -Image $previousContainerImage -PortBinding $rollbackPortBinding
-      $rollbackContainerId = (& docker @rollbackArgs).Trim()
+      $rollbackContainerId = ([string](& docker @rollbackArgs)).Trim()
       if ($LASTEXITCODE -ne 0 -or [string]::IsNullOrWhiteSpace($rollbackContainerId)) {
         throw "Failed to start rollback container '$ContainerName'."
       }
@@ -411,11 +411,7 @@ try {
   throw
 } finally {
   if (-not [string]::IsNullOrWhiteSpace($candidateContainerName)) {
-    try {
-      Remove-ContainerIfExists -Name $candidateContainerName
-    } catch {
-      Write-Warning "Failed to remove candidate container '$candidateContainerName': $($_.Exception.Message)"
-    }
+    & docker rm -f $candidateContainerName 2>$null | Out-Null
   }
 
   if ($null -ne $tempContext -and (Test-Path -LiteralPath $tempContext)) {
