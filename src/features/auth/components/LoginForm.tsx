@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
-import { useAuth } from '../hooks/useAuth';
-import { Button } from '@/shared/ui/kit/button';
-import { Input } from '@/shared/ui/kit/input';
-import { Label } from '@/shared/ui/kit/label';
-import { Alert, AlertDescription } from '@/shared/ui/kit/alert';
-import { MFAChallenge } from './MFAChallenge';
+import React, { useState } from "react";
+import { useAuth } from "../hooks/useAuth";
+import { Button } from "@/shared/ui/kit/button";
+import { Input } from "@/shared/ui/kit/input";
+import { Label } from "@/shared/ui/kit/label";
+import { Alert, AlertDescription } from "@/shared/ui/kit/alert";
+import { MFAChallenge } from "./MFAChallenge";
 
 interface LoginFormProps {
   onSuccess?: () => void;
@@ -13,8 +13,8 @@ interface LoginFormProps {
 
 export function LoginForm({ onSuccess, rateLimitMessage }: LoginFormProps) {
   const { login, verifyMFA, isLoading, error } = useAuth();
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [lockoutEndTime, setLockoutEndTime] = useState<Date | null>(null);
   const [showMFA, setShowMFA] = useState(false);
@@ -28,7 +28,7 @@ export function LoginForm({ onSuccess, rateLimitMessage }: LoginFormProps) {
       onSuccess?.();
     } else if (result.requiresMFA) {
       setShowMFA(true);
-    } else if (result.error?.code === 'RATE_LIMITED') {
+    } else if (result.error?.code === "RATE_LIMITED") {
       // Calculate lockout end time from retryAfter
       const retryAfter = result.error.details?.retryAfter as number;
       if (retryAfter) {
@@ -65,15 +65,14 @@ export function LoginForm({ onSuccess, rateLimitMessage }: LoginFormProps) {
           <AlertDescription>{error.message}</AlertDescription>
         </Alert>
       )}
-
       {isLockedOut && (
         <Alert>
           <AlertDescription>
-            {rateLimitMessage || 'Too many failed attempts. Please try again later.'}
+            {rateLimitMessage ||
+              "Too many failed attempts. Please try again later."}
           </AlertDescription>
         </Alert>
       )}
-
       <div className="space-y-2">
         <Label htmlFor="username">Username</Label>
         <Input
@@ -85,7 +84,6 @@ export function LoginForm({ onSuccess, rateLimitMessage }: LoginFormProps) {
           required
         />
       </div>
-
       <div className="space-y-2">
         <Label htmlFor="password">Password</Label>
         <Input
@@ -97,7 +95,6 @@ export function LoginForm({ onSuccess, rateLimitMessage }: LoginFormProps) {
           required
         />
       </div>
-
       <div className="flex items-center space-x-2">
         <input
           id="rememberMe"
@@ -110,13 +107,12 @@ export function LoginForm({ onSuccess, rateLimitMessage }: LoginFormProps) {
           Remember me
         </Label>
       </div>
-
       <Button
         type="submit"
         className="w-full"
         disabled={isLoading || isLockedOut}
       >
-        {isLoading ? 'Signing in...' : 'Sign In'}
+        {isLoading ? "Signing in..." : "Sign In"}
       </Button>
     </form>
   );

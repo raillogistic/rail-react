@@ -1,19 +1,15 @@
+import { useContext } from "react";
 import { Link } from "react-router-dom";
 import {
-  IconCreditCard,
-  IconLifebuoy,
   IconLogout,
   IconSettings,
   IconShieldLock,
   IconUserCircle,
 } from "@tabler/icons-react";
 import { ROUTES } from "@/shared/routing/routes";
+import { AuthContext } from "@/features/auth/context";
 import { getUserIdentity, type UserLike } from "@/shared/auth/userIdentity";
-import {
-  Avatar,
-  AvatarFallback,
-  AvatarImage,
-} from "@/shared/ui/kit/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/kit/avatar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -36,14 +32,17 @@ export type UserNavProps = {
 };
 
 export function UserNav({ user, onLogout }: UserNavProps = {}) {
+  const authContext = useContext(AuthContext);
+  const resolvedUser = user ?? authContext?.user ?? null;
   const { userAvatar, primaryIdentity, secondaryIdentity, avatarFallback } =
-    getUserIdentity(user);
+    getUserIdentity(resolvedUser);
 
   const handleLogout = () => {
-    if (!onLogout) {
+    const logoutAction = onLogout ?? authContext?.logout;
+    if (!logoutAction) {
       return;
     }
-    void onLogout();
+    void logoutAction();
   };
 
   return (
@@ -54,7 +53,10 @@ export function UserNav({ user, onLogout }: UserNavProps = {}) {
           className="relative h-9 w-9 rounded-full p-0 border border-transparent hover:border-border transition-all ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 overflow-hidden"
         >
           <Avatar className="h-full w-full">
-            <AvatarImage src={userAvatar} alt={user?.username ?? undefined} />
+            <AvatarImage
+              src={userAvatar}
+              alt={resolvedUser?.username ?? undefined}
+            />
             <AvatarFallback className="bg-primary/10 text-primary text-xs font-bold">
               {avatarFallback}
             </AvatarFallback>
@@ -68,7 +70,7 @@ export function UserNav({ user, onLogout }: UserNavProps = {}) {
               <Avatar className="h-10 w-10 border border-primary/10">
                 <AvatarImage
                   src={userAvatar}
-                  alt={user?.username ?? undefined}
+                  alt={resolvedUser?.username ?? undefined}
                 />
                 <AvatarFallback className="bg-primary/5 text-primary text-sm font-bold">
                   {avatarFallback}
@@ -120,30 +122,15 @@ export function UserNav({ user, onLogout }: UserNavProps = {}) {
             </DropdownMenuItem>
           </DropdownMenuGroup>
           <DropdownMenuSeparator className="my-1" />
-          <DropdownMenuGroup>
-            <DropdownMenuItem className="cursor-pointer">
-              <IconCreditCard className="mr-2 h-4 w-4 opacity-70" />
-              <span>Facturation</span>
-            </DropdownMenuItem>
-            <DropdownMenuItem className="cursor-pointer">
-              <IconLifebuoy className="mr-2 h-4 w-4 opacity-70" />
-              <span>Support</span>
-            </DropdownMenuItem>
-          </DropdownMenuGroup>
         </div>
-        <DropdownMenuSeparator />
         <DropdownMenuItem
-          onClick={handleLogout}
+          onSelect={handleLogout}
           className="text-destructive focus:bg-destructive focus:text-destructive-foreground cursor-pointer m-1 rounded-md"
         >
           <IconLogout className="mr-2 h-4 w-4" />
           <span className="font-semibold">Se deconnecter</span>
-          <DropdownMenuShortcut className="text-destructive-foreground opacity-70">
-            Option+Cmd+Q
-          </DropdownMenuShortcut>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
 }
-

@@ -260,7 +260,6 @@ export const LoginPage: React.FC = () => {
             Propulser la maintenance ferroviaire vers de nouveaux standards de
             precision, de securite et d'efficacite operationnelle.
           </p>
-
           <div className="pt-8 flex items-center gap-12">
             <div className="space-y-1">
               <p className="text-2xl font-black text-white">99.9%</p>
@@ -454,5 +453,3 @@ export const LoginPage: React.FC = () => {
     </div>
   );
 };
-
-

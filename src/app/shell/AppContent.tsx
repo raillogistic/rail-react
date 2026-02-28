@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import {
   DEFAULT_APP_ROUTE,
+  NAVIGATION_LINKS,
   findNavigationByPath,
   flattenNavigationPages,
 } from "@/app/router/navigation";
@@ -37,6 +38,8 @@ export default function AppContent() {
         title={currentNavigation?.page.title ?? "Navigation"}
         description={currentNavigation?.page.description}
         sectionLabel={currentNavigation?.section.label}
+        navigationLinks={NAVIGATION_LINKS}
+        defaultPath={DEFAULT_APP_ROUTE}
       />
       <div className="flex min-w-0 flex-1 flex-col">
         <div className="@container/main flex min-w-0 flex-1 flex-col gap-3">

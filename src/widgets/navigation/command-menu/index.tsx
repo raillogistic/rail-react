@@ -12,7 +12,7 @@ import {
   Sparkles,
   User,
 } from "lucide-react";
-import { DEFAULT_APP_ROUTE, NAVIGATION_LINKS } from "@/app/router/navigation";
+import { ROUTES } from "@/shared/routing/routes";
 import {
   CommandDialog,
   CommandEmpty,
@@ -89,8 +89,8 @@ function buildCommandLinks(navigationLinks: NavigationSection[]): CommandLink[] 
  * Integrates with navigation manifests to keep searchable links in sync.
  */
 export function CommandMenu({
-  navigationLinks = NAVIGATION_LINKS,
-  defaultPath = DEFAULT_APP_ROUTE,
+  navigationLinks = [],
+  defaultPath = ROUTES.DASHBOARD,
 }: CommandMenuProps = {}) {
   const [open, setOpen] = React.useState(false);
   const navigate = useNavigate();
