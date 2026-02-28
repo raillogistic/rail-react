@@ -347,6 +347,11 @@ export function ThemeProvider({
           query: GET_CURRENT_USER_SETTINGS_RECORD,
           // Always force latest server settings on refresh/startup.
           fetchPolicy: 'network-only',
+          // Login/public screens may run without a session; avoid noisy auth refresh/logging.
+          context: {
+            skipAuthRefresh: true,
+            skipAuthErrorHandling: true,
+          },
         });
 
         if (cancelled) {
@@ -437,6 +442,11 @@ export function ThemeProvider({
       const { data } = await apolloClient.query<CurrentUserSettingsRecordResponse>({
         query: GET_CURRENT_USER_SETTINGS_RECORD,
         fetchPolicy: 'network-only',
+        // This lookup is best-effort and can run before authentication exists.
+        context: {
+          skipAuthRefresh: true,
+          skipAuthErrorHandling: true,
+        },
       });
 
       const resolvedUserId = data?.me?.id ? String(data.me.id) : currentUserIdRef.current;

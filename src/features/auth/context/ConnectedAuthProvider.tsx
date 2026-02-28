@@ -418,6 +418,10 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
       const { data, errors } = await client.query({
         query: GET_CURRENT_USER,
         fetchPolicy: "network-only",
+        context: {
+          skipAuthRefresh: true,
+          skipAuthErrorHandling: true,
+        },
       });
 
       if (Array.isArray(errors) && errors.some(isAuthError)) {
