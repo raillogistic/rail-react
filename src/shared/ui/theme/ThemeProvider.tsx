@@ -774,10 +774,35 @@ export function ThemeProvider({
       {themes[theme]?.components && (
         <style id="rail-theme-components-css">
           {Object.entries(themes[theme].components!)
-            .map(
-              ([slot, css]) =>
-                `[data-theme="${theme}"] [data-slot="${slot}"] { ${css} }`,
-            )
+            .map(([selector, css]) => {
+              // Rule: Replace component names with [data-slot="name"]
+              // Example: "dropdown-menu-trigger[data-state=open] > button"
+              // Becomes: "[data-slot="dropdown-menu-trigger"][data-state=open] > [data-slot="button"]"
+
+              const slots = Object.keys(themes[theme].components!);
+              // Sort by length descending to avoid partial matches (e.g., matching 'button' in 'menu-button')
+              const sortedSlots = [...slots].sort(
+                (a, b) => b.length - a.length,
+              );
+
+              let finalSelector = selector;
+
+              // Simple heuristic: if it looks like a slot name or contains slot names
+              // We'll replace known slot tags/names with the data-slot attribute selector
+              sortedSlots.forEach((slotName) => {
+                // Replace as a whole word or followed by [ or : or > or space
+                const regex = new RegExp(
+                  `(?<=^|[\\s>])(${slotName})(?=[\\s\\[\\d:]|$)`,
+                  "g",
+                );
+                finalSelector = finalSelector.replace(
+                  regex,
+                  `[data-slot="$1"]`,
+                );
+              });
+
+              return `[data-theme="${theme}"] ${finalSelector} { ${css} }`;
+            })
             .join("\n")}
         </style>
       )}

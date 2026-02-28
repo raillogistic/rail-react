@@ -272,13 +272,22 @@ export const neobrutalismTheme: ThemeDefinition = {
       background-color: var(--background) !important;
       padding: 16px !important;
     `,
+    "dropdown-menu-trigger[data-state=open] > button": `
+      transform: translate(2px, 2px) !important;
+      box-shadow: 2px 2px 0 0 var(--shadow-strong) !important;
+      background-color: var(--primary) !important;
+      color: var(--primary-foreground) !important;
+      border-color: var(--border-strong) !important;
+    `,
   },
   customCss: `
     [data-theme="neobrutalism"] [data-slot="button"]:hover,
-    [data-theme="neobrutalism"] [data-slot="button"][data-state="open"],
+    [data-theme="neobrutalism"] [data-slot="dropdown-menu-trigger"][data-state="open"] [data-slot="button"],
     [data-theme="neobrutalism"] [data-slot="dropdown-menu-trigger"][data-state="open"] > [data-slot="button"] {
       transform: translate(-2px, -2px) !important;
       box-shadow: 6px 6px 0 0 var(--shadow-strong) !important;
+      border: 2px solid var(--border-strong) !important;
+      border-radius: 0 !important;
     }
 
     [data-theme="neobrutalism"] [data-slot="button"]:active {
@@ -287,6 +296,7 @@ export const neobrutalismTheme: ThemeDefinition = {
     }
     
     [data-theme="neobrutalism"] [data-slot="button"][data-state="open"],
+    [data-theme="neobrutalism"] [data-slot="dropdown-menu-trigger"][data-state="open"] [data-slot="button"],
     [data-theme="neobrutalism"] [data-slot="dropdown-menu-trigger"][data-state="open"] > [data-slot="button"] {
       background-color: var(--primary) !important;
       color: var(--primary-foreground) !important;

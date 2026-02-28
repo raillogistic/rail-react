@@ -2188,7 +2188,7 @@ export const ModelDynamicDetail = React.forwardRef<
               render: () => (
                 <>
                   <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
+                    <DropdownMenuTrigger>
                       <Button
                         size="sm"
                         variant="outline"
@@ -2228,7 +2228,7 @@ export const ModelDynamicDetail = React.forwardRef<
               label: "Actions",
               render: () => (
                 <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
+                  <DropdownMenuTrigger>
                     <Button
                       size="sm"
                       variant="outline"
