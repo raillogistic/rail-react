@@ -38,6 +38,7 @@ import { saharaTheme } from "./themes/sahara";
 import { voidTheme } from "./themes/void";
 import { botanistTheme } from "./themes/botanist";
 import { nebulaTheme } from "./themes/nebula";
+import { neobrutalismTheme } from "./themes/neobrutalism";
 
 export const themes: Record<string, ThemeDefinition> = {
   default: defaultTheme,
@@ -74,6 +75,7 @@ export const themes: Record<string, ThemeDefinition> = {
   void: voidTheme,
   botanist: botanistTheme,
   nebula: nebulaTheme,
+  neobrutalism: neobrutalismTheme,
 };
 
 /**

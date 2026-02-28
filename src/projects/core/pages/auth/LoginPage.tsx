@@ -210,7 +210,7 @@ export const LoginPage: React.FC = () => {
             <div className="h-16 w-16 bg-[#fcd34d] border-2 border-black shadow-[4px_4px_0_0_#000] flex items-center justify-center p-3 transform -rotate-2 hover:rotate-3 transition-transform">
               <img
                 src={Logo}
-                alt={BRANDING.productNameShort}
+                alt={BRANDING.productName}
                 className="w-full h-full object-contain filter drop-shadow opacity-95"
               />
             </div>
@@ -371,7 +371,7 @@ export const LoginPage: React.FC = () => {
         {/* Dynamic Footer */}
         <div className="mt-5 flex items-center justify-between px-1 text-xs text-black font-bold animate-in fade-in delay-500">
           <p className="bg-white border-2 border-black shadow-[2px_2px_0_0_#000] px-2 py-1 transform rotate-1">
-            &copy; {new Date().getFullYear()} {BRANDING.productNameShort}
+            &copy; {new Date().getFullYear()} {BRANDING.productName}
           </p>
           <button
             onClick={() => navigate(ROUTES.AUTH_ENDPOINT_CONFIG)}

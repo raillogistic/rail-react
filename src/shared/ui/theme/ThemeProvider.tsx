@@ -1,19 +1,25 @@
-import React, { createContext, useCallback, useEffect, useRef, useState } from 'react';
-import { gql, useApolloClient } from '@apollo/client';
-import { useMutation } from '@apollo/client/react';
+import React, {
+  createContext,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import { gql, useApolloClient } from "@apollo/client";
+import { useMutation } from "@apollo/client/react";
 import {
-  ThemeDefinition, 
-  ThemeKey, 
-  ThemeMode, 
+  ThemeDefinition,
+  ThemeKey,
+  ThemeMode,
   ThemeColors,
   Layout,
   SidebarCollapseMode,
   FontSize,
   FontFamily,
   LineHeight,
-  LetterSpacing
-} from './types';
-import { themes } from './themes';
+  LetterSpacing,
+} from "./types";
+import { themes } from "./themes";
 import {
   DEFAULT_THEME,
   DEFAULT_MODE,
@@ -23,8 +29,8 @@ import {
   DEFAULT_FONT_FAMILY,
   DEFAULT_LINE_HEIGHT,
   DEFAULT_LETTER_SPACING,
-  DEFAULT_STORAGE_KEY
-} from './constants';
+  DEFAULT_STORAGE_KEY,
+} from "./constants";
 import {
   CREATE_USER_SETTINGS_MUTATION_RESOLVED,
   UPDATE_USER_SETTINGS_MUTATION_RESOLVED,
@@ -33,8 +39,8 @@ import {
   type UpdateUserSettingsResponse,
   type UpdateUserSettingsVariables,
   type UserSettingsInputPayload,
-} from '@/shared/api/graphql/legacy/mutations';
-import { AUTH_SESSION_EVENT } from '@/shared/api/auth/token-storage';
+} from "@/shared/api/graphql/legacy/mutations";
+import { AUTH_SESSION_EVENT } from "@/shared/api/auth/token-storage";
 
 type ThemeProviderProps = {
   children: React.ReactNode;
@@ -91,7 +97,8 @@ const initialState: ThemeProviderState = {
   availableThemes: [],
 };
 
-export const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
+export const ThemeProviderContext =
+  createContext<ThemeProviderState>(initialState);
 
 const loadedFontFamilies = new Set<FontFamily>([
   "inter",
@@ -204,42 +211,65 @@ export function ThemeProvider({
   const apolloClient = useApolloClient();
   const [sessionHydrationKey, setSessionHydrationKey] = useState(0);
   const [theme, setThemeState] = useState<ThemeKey>(() => {
-    return (localStorage.getItem(`${storageKey}-theme`) as ThemeKey) || defaultTheme;
+    return (
+      (localStorage.getItem(`${storageKey}-theme`) as ThemeKey) || defaultTheme
+    );
   });
 
   const [mode, setModeState] = useState<ThemeMode>(() => {
-    return (localStorage.getItem(`${storageKey}-mode`) as ThemeMode) || defaultMode;
+    return (
+      (localStorage.getItem(`${storageKey}-mode`) as ThemeMode) || defaultMode
+    );
   });
 
   const [layout, setLayoutState] = useState<Layout>(() => {
-    return (localStorage.getItem(`${storageKey}-layout`) as Layout) || defaultLayout;
+    return (
+      (localStorage.getItem(`${storageKey}-layout`) as Layout) || defaultLayout
+    );
   });
 
-  const [sidebarCollapseMode, setSidebarCollapseModeState] = useState<SidebarCollapseMode>(() => {
-    return (localStorage.getItem(`${storageKey}-sidebar-collapse`) as SidebarCollapseMode) || defaultSidebarCollapseMode;
-  });
+  const [sidebarCollapseMode, setSidebarCollapseModeState] =
+    useState<SidebarCollapseMode>(() => {
+      return (
+        (localStorage.getItem(
+          `${storageKey}-sidebar-collapse`,
+        ) as SidebarCollapseMode) || defaultSidebarCollapseMode
+      );
+    });
 
   const [fontSize, setFontSizeState] = useState<FontSize>(() => {
-    return (localStorage.getItem(`${storageKey}-font-size`) as FontSize) || defaultFontSize;
+    return (
+      (localStorage.getItem(`${storageKey}-font-size`) as FontSize) ||
+      defaultFontSize
+    );
   });
 
   const [fontFamily, setFontFamilyState] = useState<FontFamily>(() => {
-    return (localStorage.getItem(`${storageKey}-font-family`) as FontFamily) || defaultFontFamily;
+    return (
+      (localStorage.getItem(`${storageKey}-font-family`) as FontFamily) ||
+      defaultFontFamily
+    );
   });
 
   const [lineHeight, setLineHeightState] = useState<LineHeight>(() => {
-    return (localStorage.getItem(`${storageKey}-line-height`) as LineHeight) || defaultLineHeight;
+    return (
+      (localStorage.getItem(`${storageKey}-line-height`) as LineHeight) ||
+      defaultLineHeight
+    );
   });
 
   const [letterSpacing, setLetterSpacingState] = useState<LetterSpacing>(() => {
-    return (localStorage.getItem(`${storageKey}-letter-spacing`) as LetterSpacing) || defaultLetterSpacing;
+    return (
+      (localStorage.getItem(`${storageKey}-letter-spacing`) as LetterSpacing) ||
+      defaultLetterSpacing
+    );
   });
 
   const settingsIdRef = useRef<string | null>(null);
   const currentUserIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (typeof window === 'undefined') {
+    if (typeof window === "undefined") {
       return;
     }
 
@@ -308,11 +338,19 @@ export function ThemeProvider({
     const persistedTheme = localStorage.getItem(`${storageKey}-theme`);
     const persistedMode = localStorage.getItem(`${storageKey}-mode`);
     const persistedLayout = localStorage.getItem(`${storageKey}-layout`);
-    const persistedSidebarCollapseMode = localStorage.getItem(`${storageKey}-sidebar-collapse`);
+    const persistedSidebarCollapseMode = localStorage.getItem(
+      `${storageKey}-sidebar-collapse`,
+    );
     const persistedFontSize = localStorage.getItem(`${storageKey}-font-size`);
-    const persistedFontFamily = localStorage.getItem(`${storageKey}-font-family`);
-    const persistedLineHeight = localStorage.getItem(`${storageKey}-line-height`);
-    const persistedLetterSpacing = localStorage.getItem(`${storageKey}-letter-spacing`);
+    const persistedFontFamily = localStorage.getItem(
+      `${storageKey}-font-family`,
+    );
+    const persistedLineHeight = localStorage.getItem(
+      `${storageKey}-line-height`,
+    );
+    const persistedLetterSpacing = localStorage.getItem(
+      `${storageKey}-letter-spacing`,
+    );
 
     if (persistedTheme) {
       setThemeState(persistedTheme as ThemeKey);
@@ -324,7 +362,9 @@ export function ThemeProvider({
       setLayoutState(persistedLayout as Layout);
     }
     if (persistedSidebarCollapseMode) {
-      setSidebarCollapseModeState(persistedSidebarCollapseMode as SidebarCollapseMode);
+      setSidebarCollapseModeState(
+        persistedSidebarCollapseMode as SidebarCollapseMode,
+      );
     }
     if (persistedFontSize) {
       setFontSizeState(persistedFontSize as FontSize);
@@ -343,16 +383,17 @@ export function ThemeProvider({
 
     const hydrateFromBackend = async () => {
       try {
-        const { data } = await apolloClient.query<CurrentUserSettingsRecordResponse>({
-          query: GET_CURRENT_USER_SETTINGS_RECORD,
-          // Always force latest server settings on refresh/startup.
-          fetchPolicy: 'network-only',
-          // Login/public screens may run without a session; avoid noisy auth refresh/logging.
-          context: {
-            skipAuthRefresh: true,
-            skipAuthErrorHandling: true,
-          },
-        });
+        const { data } =
+          await apolloClient.query<CurrentUserSettingsRecordResponse>({
+            query: GET_CURRENT_USER_SETTINGS_RECORD,
+            // Always force latest server settings on refresh/startup.
+            fetchPolicy: "network-only",
+            // Login/public screens may run without a session; avoid noisy auth refresh/logging.
+            context: {
+              skipAuthRefresh: true,
+              skipAuthErrorHandling: true,
+            },
+          });
 
         if (cancelled) {
           return;
@@ -384,22 +425,16 @@ export function ThemeProvider({
   const [createUserSettings] = useMutation<
     CreateUserSettingsResponse,
     CreateUserSettingsVariables
-  >(
-    CREATE_USER_SETTINGS_MUTATION_RESOLVED,
-    {
-      ignoreResults: true,
-    }
-  );
+  >(CREATE_USER_SETTINGS_MUTATION_RESOLVED, {
+    ignoreResults: true,
+  });
 
   const [updateUserSettings] = useMutation<
     UpdateUserSettingsResponse,
     UpdateUserSettingsVariables
-  >(
-    UPDATE_USER_SETTINGS_MUTATION_RESOLVED,
-    {
-      ignoreResults: true,
-    }
-  );
+  >(UPDATE_USER_SETTINGS_MUTATION_RESOLVED, {
+    ignoreResults: true,
+  });
 
   const buildSettingsInput = useCallback(
     (
@@ -410,7 +445,7 @@ export function ThemeProvider({
         sidebar_collapse_mode: string;
         font_size: string;
         font_family: string;
-      }>
+      }>,
     ): UserSettingsInputPayload => {
       const input: UserSettingsInputPayload = {};
       if (payload.theme !== undefined) input.theme = payload.theme;
@@ -427,7 +462,7 @@ export function ThemeProvider({
       }
       return input;
     },
-    []
+    [],
   );
 
   const resolveSettingsContext = useCallback(async () => {
@@ -439,17 +474,20 @@ export function ThemeProvider({
     }
 
     try {
-      const { data } = await apolloClient.query<CurrentUserSettingsRecordResponse>({
-        query: GET_CURRENT_USER_SETTINGS_RECORD,
-        fetchPolicy: 'network-only',
-        // This lookup is best-effort and can run before authentication exists.
-        context: {
-          skipAuthRefresh: true,
-          skipAuthErrorHandling: true,
-        },
-      });
+      const { data } =
+        await apolloClient.query<CurrentUserSettingsRecordResponse>({
+          query: GET_CURRENT_USER_SETTINGS_RECORD,
+          fetchPolicy: "network-only",
+          // This lookup is best-effort and can run before authentication exists.
+          context: {
+            skipAuthRefresh: true,
+            skipAuthErrorHandling: true,
+          },
+        });
 
-      const resolvedUserId = data?.me?.id ? String(data.me.id) : currentUserIdRef.current;
+      const resolvedUserId = data?.me?.id
+        ? String(data.me.id)
+        : currentUserIdRef.current;
       const resolvedSettingsId = data?.me?.settings?.id
         ? String(data.me.settings.id)
         : settingsIdRef.current;
@@ -479,7 +517,7 @@ export function ThemeProvider({
         sidebar_collapse_mode: string;
         font_size: string;
         font_family: string;
-      }>
+      }>,
     ) => {
       const inputPayload = buildSettingsInput(payload);
       if (!Object.keys(inputPayload).length) {
@@ -511,7 +549,8 @@ export function ThemeProvider({
           },
         });
 
-        const createdSettingsId = response.data?.create_user_settings?.object?.id;
+        const createdSettingsId =
+          response.data?.create_user_settings?.object?.id;
         if (createdSettingsId) {
           settingsIdRef.current = String(createdSettingsId);
         }
@@ -519,7 +558,12 @@ export function ThemeProvider({
         // Silently fail if not authenticated or network error.
       }
     },
-    [buildSettingsInput, createUserSettings, resolveSettingsContext, updateUserSettings]
+    [
+      buildSettingsInput,
+      createUserSettings,
+      resolveSettingsContext,
+      updateUserSettings,
+    ],
   );
 
   const setTheme = (newTheme: ThemeKey) => {
@@ -535,7 +579,7 @@ export function ThemeProvider({
   };
 
   const toggleMode = () => {
-    const newMode = mode === 'light' ? 'dark' : 'light';
+    const newMode = mode === "light" ? "dark" : "light";
     setMode(newMode);
   };
 
@@ -578,26 +622,48 @@ export function ThemeProvider({
   };
 
   useEffect(() => {
-    if (defaultTheme && defaultTheme !== DEFAULT_THEME) setThemeState(defaultTheme);
+    if (defaultTheme && defaultTheme !== DEFAULT_THEME)
+      setThemeState(defaultTheme);
     if (defaultMode && defaultMode !== DEFAULT_MODE) setModeState(defaultMode);
-    if (defaultLayout && defaultLayout !== DEFAULT_LAYOUT) setLayoutState(defaultLayout);
-    if (defaultSidebarCollapseMode && defaultSidebarCollapseMode !== DEFAULT_SIDEBAR_COLLAPSE_MODE) setSidebarCollapseModeState(defaultSidebarCollapseMode);
-    if (defaultFontSize && defaultFontSize !== DEFAULT_FONT_SIZE) setFontSizeState(defaultFontSize);
-    if (defaultFontFamily && defaultFontFamily !== DEFAULT_FONT_FAMILY) setFontFamilyState(defaultFontFamily);
-    if (defaultLineHeight && defaultLineHeight !== DEFAULT_LINE_HEIGHT) setLineHeightState(defaultLineHeight);
-    if (defaultLetterSpacing && defaultLetterSpacing !== DEFAULT_LETTER_SPACING) setLetterSpacingState(defaultLetterSpacing);
-  }, [defaultTheme, defaultMode, defaultLayout, defaultSidebarCollapseMode, defaultFontSize, defaultFontFamily, defaultLineHeight, defaultLetterSpacing]);
+    if (defaultLayout && defaultLayout !== DEFAULT_LAYOUT)
+      setLayoutState(defaultLayout);
+    if (
+      defaultSidebarCollapseMode &&
+      defaultSidebarCollapseMode !== DEFAULT_SIDEBAR_COLLAPSE_MODE
+    )
+      setSidebarCollapseModeState(defaultSidebarCollapseMode);
+    if (defaultFontSize && defaultFontSize !== DEFAULT_FONT_SIZE)
+      setFontSizeState(defaultFontSize);
+    if (defaultFontFamily && defaultFontFamily !== DEFAULT_FONT_FAMILY)
+      setFontFamilyState(defaultFontFamily);
+    if (defaultLineHeight && defaultLineHeight !== DEFAULT_LINE_HEIGHT)
+      setLineHeightState(defaultLineHeight);
+    if (defaultLetterSpacing && defaultLetterSpacing !== DEFAULT_LETTER_SPACING)
+      setLetterSpacingState(defaultLetterSpacing);
+  }, [
+    defaultTheme,
+    defaultMode,
+    defaultLayout,
+    defaultSidebarCollapseMode,
+    defaultFontSize,
+    defaultFontFamily,
+    defaultLineHeight,
+    defaultLetterSpacing,
+  ]);
 
   useEffect(() => {
     void ensureFontFamilyLoaded(fontFamily).catch((error) => {
-      console.warn(`[ThemeProvider] Failed to load font family "${fontFamily}"`, error);
+      console.warn(
+        `[ThemeProvider] Failed to load font family "${fontFamily}"`,
+        error,
+      );
     });
   }, [fontFamily]);
 
   useEffect(() => {
     const root = window.document.documentElement;
     const themeDef = themes[theme];
-    
+
     // Validate theme exists, fallback to default with warning
     if (!themeDef) {
       console.warn(`Theme "${theme}" not found, falling back to default theme`);
@@ -610,22 +676,28 @@ export function ThemeProvider({
     }
 
     // Mode Class
-    root.classList.remove('light', 'dark');
+    root.classList.remove("light", "dark");
     root.classList.add(mode);
-    
+
+    // Theme Attribute
+    root.setAttribute("data-theme", theme);
+
     // Set Font attributes/vars
-    root.setAttribute('data-font-size', fontSize);
-    root.setAttribute('data-font-family', fontFamily);
-    root.setAttribute('data-line-height', lineHeight);
-    root.setAttribute('data-letter-spacing', letterSpacing);
-    
+    root.setAttribute("data-font-size", fontSize);
+    root.setAttribute("data-font-family", fontFamily);
+    root.setAttribute("data-line-height", lineHeight);
+    root.setAttribute("data-letter-spacing", letterSpacing);
+
     // Set Color Scheme
     root.style.colorScheme = mode;
-
   }, [theme, mode, fontSize, fontFamily, lineHeight, letterSpacing]);
 
   // Helper function to apply theme colors
-  const applyThemeColors = (root: HTMLElement, colors: ThemeColors, radius: string) => {
+  const applyThemeColors = (
+    root: HTMLElement,
+    colors: ThemeColors,
+    radius: string,
+  ) => {
     // Helper to set CSS Prop
     const setProperty = (key: string, value: string) => {
       root.style.setProperty(key, value);
@@ -634,8 +706,8 @@ export function ThemeProvider({
     // Helper to convert camelCase to kebab-case, handling numbers correctly
     const toKebabCase = (str: string) => {
       return str
-        .replace(/([a-z])([A-Z])/g, '$1-$2')  // Insert hyphen between lowercase and uppercase
-        .replace(/([a-z])(\d)/g, '$1-$2')      // Insert hyphen between letter and number
+        .replace(/([a-z])([A-Z])/g, "$1-$2") // Insert hyphen between lowercase and uppercase
+        .replace(/([a-z])(\d)/g, "$1-$2") // Insert hyphen between letter and number
         .toLowerCase();
     };
 
@@ -646,7 +718,7 @@ export function ThemeProvider({
     });
 
     // Set Radius
-    setProperty('--radius', radius);
+    setProperty("--radius", radius);
   };
 
   const value = {
