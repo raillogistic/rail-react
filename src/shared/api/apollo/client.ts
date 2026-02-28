@@ -7,18 +7,11 @@ import { tokenStorage, getSecureHeaders } from '@/shared/api/auth/token-storage'
 import { ensureCsrfCookie } from '@/shared/api/auth/csrf';
 import { AuthError, AuthErrorType, handleAuthError } from '@/shared/api/auth/error-handler';
 import { ROUTES } from "@/shared/routing/routes";
+import { getRuntimeBackendConfig } from "@/shared/config/backend-endpoint";
 import { hasExplicitAuthorizationHeader } from './authHeaders';
 
-// Prefer environment configuration; fall back to local dev.
-const apiGraphqlUri: string =
-  import.meta.env.VITE_API_ENDPOINT ??
-  'http://localhost:8000/graphql/';
-const authGraphqlUri: string =
-  import.meta.env.VITE_AUTH_ENDPOINT ??
-  apiGraphqlUri;
-
 const apiUploadLink = createUploadLink({
-  uri: apiGraphqlUri,
+  uri: () => getRuntimeBackendConfig().apiEndpoint,
   // Cookie-auth is authoritative; include credentials on API requests.
   credentials: 'include',
   // Use GET for queries to leverage browser/proxy HTTP caching and avoid unnecessary POSTs
@@ -26,7 +19,7 @@ const apiUploadLink = createUploadLink({
 });
 
 const authUploadLink = createUploadLink({
-  uri: authGraphqlUri,
+  uri: () => getRuntimeBackendConfig().authEndpoint,
   // Cookie-auth is authoritative; include credentials on auth requests.
   credentials: 'include',
   // Use GET for queries to leverage browser/proxy HTTP caching and avoid unnecessary POSTs
@@ -53,6 +46,7 @@ const refreshAccessToken = async (): Promise<boolean> => {
   refreshInFlight = (async () => {
     try {
       await ensureCsrfCookie();
+      const { authEndpoint } = getRuntimeBackendConfig();
       // Refresh tokens are backend-managed HttpOnly cookies; the variable remains optional
       // for backward compatibility with deployments still accepting header-only flows.
       const currentRefreshToken = tokenStorage.getRefreshToken();
@@ -68,7 +62,7 @@ const refreshAccessToken = async (): Promise<boolean> => {
         }
       `;
 
-      const response = await fetch(authGraphqlUri, {
+      const response = await fetch(authEndpoint, {
         method: 'POST',
         credentials: 'include',
         headers: {

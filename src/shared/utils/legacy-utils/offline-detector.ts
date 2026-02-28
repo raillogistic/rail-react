@@ -7,6 +7,7 @@
  * Raises: None (handles errors internally)
  * Example: const isOffline = await isServerOffline()
  */
+import { getRuntimeBackendConfig } from "@/shared/config/backend-endpoint";
 
 /**
  * Check if an error indicates the server is offline
@@ -62,22 +63,7 @@ export const isBrowserOnline = (): boolean => {
  * Test server connectivity by making a simple request
  */
 const getDefaultServerUrl = (): string => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const apiEndpoint = (import.meta as any).env?.VITE_API_ENDPOINT as string | undefined;
-
-  if (typeof window !== 'undefined') {
-    if (apiEndpoint) {
-      try {
-        return new URL(apiEndpoint, window.location.origin).origin;
-      } catch {
-        // ignore
-      }
-    }
-
-    return window.location.origin;
-  }
-
-  return 'http://localhost:8000';
+  return getRuntimeBackendConfig().backendUrl;
 };
 
 export const testServerConnectivity = async (serverUrl?: string): Promise<boolean> => {

@@ -1,5 +1,6 @@
 import type { FormSchema } from "@/widgets/model-form/inputs/types";
 import { getAuthorizationHeader, getSecureHeaders } from "@/shared/api/auth/token-storage";
+import { getRuntimeBackendConfig } from "@/shared/config/backend-endpoint";
 import * as XLSX from "xlsx";
 import type { TemplateClientField, TemplateInfo } from "../types";
 
@@ -11,8 +12,7 @@ export type TemplateActionType = "pdf" | "excel";
 type TemplateFormFieldType = "text" | "number" | "checkbox" | "date";
 
 function getBackendBaseUrl(): string | null {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const raw = ((import.meta as any).env?.VITE_BACKEND_URL as string | undefined)?.trim();
+  const raw = getRuntimeBackendConfig().backendUrl.trim();
   if (!raw) return null;
   return raw.endsWith("/") ? raw : `${raw}/`;
 }

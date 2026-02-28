@@ -36,6 +36,12 @@ const LoginPage = lazy(() =>
   })),
 );
 
+const AuthEndpointConfigPage = lazy(() =>
+  import("@/projects/core/auth/AuthEndpointConfigPage").then((module) => ({
+    default: module.AuthEndpointConfigPage,
+  })),
+);
+
 const ForgotPasswordPage = lazy(() =>
   import("@/projects/core/pages/auth/ForgotPasswordPage").then((module) => ({
     default: module.ForgotPasswordPage,
@@ -126,6 +132,14 @@ export const CORE_MANIFEST: AppManifest = defineProjectManifest({
       projectId: "core",
       title: "Forgot password",
       element: withRouteSuspense(<ForgotPasswordPage />),
+    },
+    {
+      id: "core:auth-endpoint-config",
+      path: ROUTES.AUTH_ENDPOINT_CONFIG,
+      guard: "public",
+      projectId: "core",
+      title: "Backend endpoint config",
+      element: withRouteSuspense(<AuthEndpointConfigPage />),
     },
     {
       id: "core:reset-password",

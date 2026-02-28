@@ -1,7 +1,6 @@
 import { tokenStorage } from "@/shared/api/auth/token-storage";
+import { getRuntimeBackendConfig } from "@/shared/config/backend-endpoint";
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const csrfBootstrapUrl: string | null = (import.meta as any).env?.VITE_CSRF_ENDPOINT ?? null;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const csrfResponseHeader: string | null = (import.meta as any).env?.VITE_CSRF_RESPONSE_HEADER ?? null;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -21,6 +20,7 @@ export const ensureCsrfCookie = async (): Promise<void> => {
     return;
   }
 
+  const csrfBootstrapUrl = getRuntimeBackendConfig().csrfEndpoint;
   if (!csrfBootstrapUrl) {
     return;
   }

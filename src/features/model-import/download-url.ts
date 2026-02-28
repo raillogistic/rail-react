@@ -1,10 +1,10 @@
 const ABSOLUTE_URL_PATTERN = /^[a-zA-Z][a-zA-Z\d+\-.]*:/;
 const LEGACY_TEMPLATE_PATH_PATTERN = /^\/api\/excel\/[^/]+\/[^/]+\/template\/?$/i;
 const IMPORT_TEMPLATE_PATH_PATTERN = /^\/api\/v1\/import\/templates\/[^/]+\/[^/]+\/?$/i;
+import { getRuntimeBackendConfig } from "@/shared/config/backend-endpoint";
 
 const getBackendBaseUrl = (): string | null => {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const raw = ((import.meta as any).env?.VITE_BACKEND_URL as string | undefined)?.trim();
+  const raw = getRuntimeBackendConfig().backendUrl.trim();
   if (!raw) {
     return null;
   }
