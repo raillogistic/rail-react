@@ -27,7 +27,7 @@ export const discordTheme: ThemeDefinition = {
     destructive: "#ed4245",
     destructiveForeground: "#ffffff",
     border: "#e3e5e8",
-    input: "#e3e5e8",
+    input: "#ffffff",
     ring: "#5865f2",
     chart1: "#5865f2",
     chart2: "#57f287",
@@ -42,13 +42,13 @@ export const discordTheme: ThemeDefinition = {
     sidebarAccentForeground: "#23272a",
     sidebarBorder: "#e3e5e8",
     sidebarRing: "#5865f2",
-    navbar: "#f2f3f5",
-    navbarForeground: "#23272a",
+    navbar: "#23272a",
+    navbarForeground: "#ffffff",
     inputBackground: "#ffffff",
     tableHeader: "#e3e5e8",
     tableHeaderForeground: "#747f8d",
-    tableRowHover: "#e3e5e8",
-    tableRowSelected: "#ebedef",
+    tableRowHover: "rgba(88, 101, 242, 0.05)",
+    tableRowSelected: "rgba(88, 101, 242, 0.1)",
     dialog: "#ffffff",
     dialogForeground: "#23272a",
     sheet: "#ffffff",
@@ -57,22 +57,26 @@ export const discordTheme: ThemeDefinition = {
     commandForeground: "#23272a",
     dropdown: "#ffffff",
     dropdownForeground: "#23272a",
+    cssVars: {
+      "--blurple": "#5865f2",
+      "--green-indicator": "#57f287",
+    },
   },
   dark: {
     background: "#313338",
-    foreground: "#dcddde",
+    foreground: "#dbdee1",
     card: "#2b2d31",
-    cardForeground: "#dcddde",
+    cardForeground: "#dbdee1",
     popover: "#2b2d31",
-    popoverForeground: "#dcddde",
+    popoverForeground: "#dbdee1",
     primary: "#5865f2",
     primaryForeground: "#ffffff",
-    secondary: "#2b2d31",
-    secondaryForeground: "#dcddde",
-    muted: "#2b2d31",
+    secondary: "#232428",
+    secondaryForeground: "#dbdee1",
+    muted: "#232428",
     mutedForeground: "#949ba4",
     accent: "#404249",
-    accentForeground: "#dcddde",
+    accentForeground: "#ffffff",
     destructive: "#ed4245",
     destructiveForeground: "#ffffff",
     border: "#1e1f22",
@@ -84,27 +88,103 @@ export const discordTheme: ThemeDefinition = {
     chart4: "#ed4245",
     chart5: "#eb459e",
     sidebar: "#1e1f22",
-    sidebarForeground: "#dcddde",
+    sidebarForeground: "#949ba4",
     sidebarPrimary: "#5865f2",
     sidebarPrimaryForeground: "#ffffff",
-    sidebarAccent: "#404249",
-    sidebarAccentForeground: "#dcddde",
+    sidebarAccent: "#35373c",
+    sidebarAccentForeground: "#dbdee1",
     sidebarBorder: "#1e1f22",
     sidebarRing: "#5865f2",
     navbar: "#1e1f22",
-    navbarForeground: "#dcddde",
+    navbarForeground: "#ffffff",
     inputBackground: "#313338",
     tableHeader: "#2b2d31",
     tableHeaderForeground: "#949ba4",
-    tableRowHover: "#2b2d31",
-    tableRowSelected: "#404249",
-    dialog: "#2b2d31",
-    dialogForeground: "#dcddde",
-    sheet: "#2b2d31",
-    sheetForeground: "#dcddde",
-    command: "#2b2d31",
-    commandForeground: "#dcddde",
-    dropdown: "#2b2d31",
-    dropdownForeground: "#dcddde",
+    tableRowHover: "rgba(255, 255, 255, 0.03)",
+    tableRowSelected: "rgba(255, 255, 255, 0.05)",
+    dialog: "#313338",
+    dialogForeground: "#dbdee1",
+    sheet: "#313338",
+    sheetForeground: "#dbdee1",
+    command: "#313338",
+    commandForeground: "#dbdee1",
+    dropdown: "#313338",
+    dropdownForeground: "#dbdee1",
+    cssVars: {
+      "--blurple": "#5865f2",
+      "--green-indicator": "#57f287",
+    },
   },
+  components: {
+    button: `
+      border-radius: 3px !important;
+      font-weight: 500 !important;
+      transition: background-color 0.17s ease, color 0.17s ease !important;
+      border: none !important;
+      padding: 10px 20px !important;
+    `,
+    input: `
+      border-radius: 4px !important;
+      background: var(--input) !important;
+      border: 1px solid transparent !important;
+      color: var(--foreground) !important;
+    `,
+    card: `
+      border-radius: 8px !important;
+      background: var(--card) !important;
+      border: none !important;
+    `,
+    navbar: `
+      background: var(--background) !important;
+      border-bottom: 1px solid var(--border) !important;
+    `,
+    "tabs-list": `
+      background: transparent !important;
+      gap: 16px !important;
+    `,
+    "tabs-trigger": `
+      border-radius: 4px !important;
+      font-weight: 500 !important;
+      padding: 8px 16px !important;
+      color: var(--muted-foreground) !important;
+    `,
+    "model-detail": `
+      background: var(--card) !important;
+      border-radius: 12px !important;
+      padding: 30px !important;
+    `,
+  },
+  customCss: `
+    [data-theme="discord"] [data-slot="button"]:hover {
+       background: #4752c4 !important;
+    }
+    
+    [data-theme="discord"] [data-slot="button"][data-state="open"] {
+       background: #4752c4 !important;
+    }
+
+    [data-theme="discord"] [data-slot="tabs-trigger"][data-state="active"] {
+      background: var(--accent) !important;
+      color: var(--foreground) !important;
+    }
+
+    [data-theme="discord"] [data-slot="input"]:focus {
+      border-color: var(--primary) !important;
+      outline: none;
+    }
+
+    [data-theme="discord"] table th {
+      color: var(--muted-foreground);
+      text-transform: uppercase;
+      font-size: 0.75rem;
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+    
+    [data-theme="discord"] .sidebar-link[data-active="true"] {
+      background: var(--sidebar-accent) !important;
+      color: var(--foreground) !important;
+      border-radius: 4px;
+    }
+  `,
 };
