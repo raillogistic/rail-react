@@ -240,18 +240,95 @@ export const neobrutalismTheme: ThemeDefinition = {
       height: 2px !important;
       margin: 8px -4px !important;
     `,
+    "tabs-list": `
+      border: 2px solid var(--border-strong) !important;
+      border-radius: 0 !important;
+      background-color: var(--muted) !important;
+      padding: 4px !important;
+      gap: 4px !important;
+      height: auto !important;
+    `,
+    "tabs-trigger": `
+      border-radius: 0 !important;
+      font-weight: 700 !important;
+      transition: all 0.2s ease !important;
+      border: 2px solid transparent !important;
+      padding: 8px 16px !important;
+      text-transform: uppercase !important;
+      letter-spacing: 0.1em !important;
+      font-size: 0.75rem !important;
+    `,
+    "tabs-content": `
+      border: 2px solid var(--border-strong) !important;
+      border-top: none !important;
+      background-color: var(--card) !important;
+      padding: 20px !important;
+      border-radius: 0 !important;
+    `,
+    "model-detail": `
+      border: 4px solid var(--border-strong) !important;
+      border-radius: 0 !important;
+      box-shadow: 8px 8px 0 0 var(--shadow-strong) !important;
+      background-color: var(--background) !important;
+      padding: 16px !important;
+    `,
   },
   customCss: `
+    [data-theme="neobrutalism"] [data-slot="button"]:hover,
+    [data-theme="neobrutalism"] [data-slot="button"][data-state="open"],
+    [data-theme="neobrutalism"] [data-slot="dropdown-menu-trigger"][data-state="open"] > [data-slot="button"] {
+      transform: translate(-2px, -2px) !important;
+      box-shadow: 6px 6px 0 0 var(--shadow-strong) !important;
+    }
+
     [data-theme="neobrutalism"] [data-slot="button"]:active {
-      transform: translate(4px, 4px) !important;
-      box-shadow: 0 0 0 0 var(--shadow-strong) !important;
+      transform: translate(2px, 2px) !important;
+      box-shadow: 2px 2px 0 0 var(--shadow-strong) !important;
     }
     
+    [data-theme="neobrutalism"] [data-slot="button"][data-state="open"],
+    [data-theme="neobrutalism"] [data-slot="dropdown-menu-trigger"][data-state="open"] > [data-slot="button"] {
+      background-color: var(--primary) !important;
+      color: var(--primary-foreground) !important;
+      border-color: var(--border-strong) !important;
+    }
+    
+    [data-theme="neobrutalism"] [data-slot="tabs-trigger"]:hover {
+      background-color: var(--accent) !important;
+      color: var(--accent-foreground) !important;
+    }
+
+    [data-theme="neobrutalism"] [data-slot="tabs-trigger"][data-state="active"] {
+      background-color: var(--primary) !important;
+      color: var(--primary-foreground) !important;
+      border-color: var(--border-strong) !important;
+      box-shadow: 4px 4px 0 0 var(--shadow-strong) !important;
+      transform: translate(-2px, -2px);
+    }
+
+    [data-theme="neobrutalism"] [data-slot="tabs-list"] {
+      border-bottom-left-radius: 0 !important;
+      border-bottom-right-radius: 0 !important;
+      background-color: var(--background) !important;
+    }
+
     [data-theme="neobrutalism"] [data-slot="input"]:focus-visible {
       transform: translate(2px, 2px) !important;
       box-shadow: 2px 2px 0 0 var(--shadow-strong) !important;
       outline: none !important;
       ring: 0 !important;
+    }
+    
+    [data-theme="neobrutalism"] [data-slot="dropdown-menu-item"]:focus,
+    [data-theme="neobrutalism"] [data-slot="dropdown-menu-checkbox-item"]:focus,
+    [data-theme="neobrutalism"] [data-slot="dropdown-menu-radio-item"]:focus,
+    [data-theme="neobrutalism"] [data-slot="dropdown-menu-sub-trigger"]:focus,
+    [data-theme="neobrutalism"] [data-slot="dropdown-menu-sub-trigger"][data-state="open"] {
+      background-color: var(--primary) !important;
+      color: var(--primary-foreground) !important;
+      border-color: var(--border-strong) !important;
+      transform: translate(-2px, -2px);
+      box-shadow: 4px 4px 0 0 var(--shadow-strong);
     }
 
     [data-theme="neobrutalism"] table {

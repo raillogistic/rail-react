@@ -2630,7 +2630,7 @@ export const ModelDynamicDetail = React.forwardRef<
   };
 
   return (
-    <div className={cn("space-y-6", config.className)}>
+    <div data-slot="model-detail" className={cn("space-y-6", config.className)}>
       <DynamicDetail
         schema={detailsSchema}
         runtime={runtime}

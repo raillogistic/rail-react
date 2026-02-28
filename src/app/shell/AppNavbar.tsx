@@ -377,6 +377,7 @@ function MobileNav() {
     <Sheet>
       <SheetTrigger asChild>
         <button
+          data-slot="button"
           aria-label="Open navigation"
           className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-border/40 bg-background hover:bg-muted text-muted-foreground shadow-sm transition-all active:scale-90"
         >
