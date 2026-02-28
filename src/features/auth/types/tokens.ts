@@ -2,9 +2,9 @@ import { AuthError } from './auth';
 
 export interface TokenPair {
   accessToken: string;
-  refreshToken: string;
+  refreshToken?: string | null;
   accessTokenExpiresAt: Date;
-  refreshTokenExpiresAt: Date;
+  refreshTokenExpiresAt?: Date | null;
 }
 
 export interface TokenPayload {

@@ -44,12 +44,59 @@ type RawAuthUser = {
   settings?: unknown;
 };
 
+// Deduplicate refresh mutations across provider remounts (e.g. React StrictMode).
+let refreshMutationInFlight: Promise<TokenPair> | null = null;
+
 const toStringValue = (value: unknown): string => {
   return typeof value === "string" ? value : "";
 };
 
 const toBooleanValue = (value: unknown): boolean => {
   return value === true;
+};
+
+/**
+ * Normalizes optional refresh token values and drops invalid placeholders.
+ */
+const normalizeRefreshTokenCandidate = (value: unknown): string | null => {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  const lowered = trimmed.toLowerCase();
+  if (lowered === "null" || lowered === "undefined") {
+    return null;
+  }
+
+  return trimmed;
+};
+
+/**
+ * Builds a token payload while treating refresh token as optional (cookie-first flows).
+ */
+const buildTokenPair = (
+  accessToken: string,
+  refreshTokenCandidate: unknown,
+): TokenPair => {
+  const refreshToken = normalizeRefreshTokenCandidate(refreshTokenCandidate);
+  const accessTokenExpiresAt = new Date(Date.now() + 15 * 60 * 1000);
+  const refreshTokenExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+  return {
+    accessToken,
+    accessTokenExpiresAt,
+    ...(refreshToken
+      ? {
+          refreshToken,
+          refreshTokenExpiresAt,
+        }
+      : {}),
+  };
 };
 
 const normalizeAuthUser = (
@@ -292,20 +339,16 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }
 
       const normalizedUser = normalizeAuthUser(login.user, login.permissions);
+      const refreshToken = normalizeRefreshTokenCandidate(login.refresh_token);
       const sessionId = await resolveSessionId(
         login.token,
-        login.refresh_token,
+        refreshToken,
       );
 
       return {
         success: true as const,
         user: normalizedUser,
-        tokens: {
-          accessToken: login.token,
-          refreshToken: login.refresh_token,
-          accessTokenExpiresAt: new Date(Date.now() + 15 * 60 * 1000), // Approximate if not returned
-          refreshTokenExpiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-        },
+        tokens: buildTokenPair(login.token, refreshToken),
         sessionId,
       };
     },
@@ -329,19 +372,17 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
         verify_mfa_login.user,
         verify_mfa_login.permissions,
       );
+      const refreshToken = normalizeRefreshTokenCandidate(
+        verify_mfa_login.refresh_token,
+      );
       const sessionId = await resolveSessionId(
         verify_mfa_login.token,
-        verify_mfa_login.refresh_token,
+        refreshToken,
       );
 
       return {
         user: normalizedUser,
-        tokens: {
-          accessToken: verify_mfa_login.token,
-          refreshToken: verify_mfa_login.refresh_token,
-          accessTokenExpiresAt: new Date(Date.now() + 15 * 60 * 1000),
-          refreshTokenExpiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-        },
+        tokens: buildTokenPair(verify_mfa_login.token, refreshToken),
         sessionId,
       };
     },
@@ -369,23 +410,33 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const handleRefresh = useCallback(
     async (refreshToken?: string | null): Promise<TokenPair> => {
-      const { data } = await client.mutate({
-        mutation: REFRESH_TOKEN_MUTATION,
-        variables: { refresh_token: refreshToken ?? null },
-        context: { useAuthEndpoint: true },
-      });
-
-      const { refresh_token } = data;
-      if (!refresh_token.ok) {
-        throw new Error(refresh_token.errors?.[0] || "Refresh failed");
+      if (refreshMutationInFlight) {
+        return refreshMutationInFlight;
       }
 
-      return {
-        accessToken: refresh_token.token,
-        refreshToken: refresh_token.refresh_token,
-        accessTokenExpiresAt: new Date(Date.now() + 15 * 60 * 1000),
-        refreshTokenExpiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
-      };
+      const normalizedRefreshToken = normalizeRefreshTokenCandidate(refreshToken);
+      refreshMutationInFlight = (async () => {
+        const { data } = await client.mutate({
+          mutation: REFRESH_TOKEN_MUTATION,
+          variables: normalizedRefreshToken
+            ? { refresh_token: normalizedRefreshToken }
+            : {},
+          context: { useAuthEndpoint: true },
+        });
+
+        const { refresh_token } = data;
+        if (!refresh_token.ok) {
+          throw new Error(refresh_token.errors?.[0] || "Refresh failed");
+        }
+
+        return buildTokenPair(refresh_token.token, refresh_token.refresh_token);
+      })();
+
+      try {
+        return await refreshMutationInFlight;
+      } finally {
+        refreshMutationInFlight = null;
+      }
     },
     [client],
   );
@@ -511,8 +562,8 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
           refreshThresholdSeconds: 300,
           accessTokenTTLSeconds: 900,
           refreshTokenTTLSeconds: 604800,
-          // Keep tokens across reloads in the same tab.
-          storageType: "session",
+          // Access token stays in-memory; refresh is sourced from HttpOnly backend cookies.
+          storageType: "memory",
           storagePrefix: "auth_",
           encryptTokens: false,
         },

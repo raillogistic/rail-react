@@ -1,7 +1,6 @@
 .git
 .gitignore
 node_modules
-dist
 coverage
 test-output.log
 test-output-clean.log

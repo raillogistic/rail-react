@@ -4,6 +4,27 @@ import type { TokenPair, TokenPayload, TokenRefreshConfig } from '../types';
 import { tokenStorage } from '@/shared/api/auth/token-storage';
 import { jwtDecode } from 'jwt-decode';
 
+/**
+ * Normalizes optional token values and rejects placeholder strings persisted by older builds.
+ */
+const normalizeOptionalToken = (value: string | null | undefined): string | null => {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  const lowered = trimmed.toLowerCase();
+  if (lowered === 'null' || lowered === 'undefined') {
+    return null;
+  }
+
+  return trimmed;
+};
+
 export class TokenService {
   private storage: StorageAdapter;
   private eventBus: EventBus;
@@ -23,15 +44,32 @@ export class TokenService {
 
   // Store tokens securely
   setTokens(tokens: TokenPair): void {
+    const normalizedRefreshToken = normalizeOptionalToken(tokens.refreshToken);
     // Pass expiration for persistent storage types (like cookie)
     this.storage.set('access_token', tokens.accessToken, { expires: tokens.accessTokenExpiresAt });
-    this.storage.set('refresh_token', tokens.refreshToken, { expires: tokens.refreshTokenExpiresAt });
     this.storage.set('access_expires', tokens.accessTokenExpiresAt.toISOString());
-    this.storage.set('refresh_expires', tokens.refreshTokenExpiresAt.toISOString());
+
+    if (normalizedRefreshToken) {
+      this.storage.set('refresh_token', normalizedRefreshToken, {
+        expires: tokens.refreshTokenExpiresAt ?? undefined,
+      });
+      if (tokens.refreshTokenExpiresAt) {
+        this.storage.set('refresh_expires', tokens.refreshTokenExpiresAt.toISOString());
+      } else {
+        this.storage.remove('refresh_expires');
+      }
+    } else {
+      this.storage.remove('refresh_token');
+      this.storage.remove('refresh_expires');
+    }
 
     // Sync with legacy tokenStorage for Apollo Client compatibility
     tokenStorage.setAccessToken(tokens.accessToken);
-    tokenStorage.setRefreshToken(tokens.refreshToken);
+    if (normalizedRefreshToken) {
+      tokenStorage.setRefreshToken(normalizedRefreshToken);
+    } else {
+      tokenStorage.clearRefreshToken();
+    }
     tokenStorage.setSessionActive(true);
 
     this.scheduleRefresh(tokens.accessTokenExpiresAt);
@@ -48,6 +86,8 @@ export class TokenService {
     }
     if (refreshToken) {
       tokenStorage.setRefreshToken(refreshToken);
+    } else {
+      tokenStorage.clearRefreshToken();
     }
   }
 
@@ -58,7 +98,7 @@ export class TokenService {
 
   // Get refresh token
   getRefreshToken(): string | null {
-    return this.storage.get('refresh_token');
+    return normalizeOptionalToken(this.storage.get('refresh_token'));
   }
 
   // Decode JWT without verification (client-side)

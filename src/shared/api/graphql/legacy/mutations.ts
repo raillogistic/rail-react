@@ -93,7 +93,7 @@ export interface LoginResponse {
     ok: boolean;
     errors?: string[];
     token: string;
-    refresh_token: string;
+    refresh_token?: string | null;
     permissions?: string[];
     user: {
       id: string;
@@ -110,7 +110,7 @@ export interface RefreshTokenResponse {
     ok: boolean;
     errors?: string[];
     token: string;
-    refresh_token: string;
+    refresh_token?: string | null;
     permissions?: string[];
   };
 }

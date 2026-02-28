@@ -77,7 +77,9 @@ const refreshAccessToken = async (): Promise<boolean> => {
         },
         body: JSON.stringify({
           query: mutation,
-          variables: { refresh_token: currentRefreshToken ?? null },
+          variables: currentRefreshToken
+            ? { refresh_token: currentRefreshToken }
+            : {},
         }),
       });
 

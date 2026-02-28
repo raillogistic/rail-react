@@ -48,6 +48,27 @@ let crossTabSessionListenerRegistered = false;
 const isBrowserEnvironment = () =>
   typeof window !== 'undefined' && typeof window.sessionStorage !== 'undefined';
 
+/**
+ * Normalizes optional token values and rejects placeholder strings from stale storage.
+ */
+const normalizeOptionalToken = (value: string | null | undefined): string | null => {
+  if (typeof value !== 'string') {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  const lowered = trimmed.toLowerCase();
+  if (lowered === 'null' || lowered === 'undefined') {
+    return null;
+  }
+
+  return trimmed;
+};
+
 const registerCrossTabSessionListener = (): void => {
   if (!isBrowserEnvironment() || crossTabSessionListenerRegistered) {
     return;
@@ -281,6 +302,13 @@ export const tokenStorage: TokenStorage = {
   },
 
   setRefreshToken: (token: string): void => {
+    const normalizedToken = normalizeOptionalToken(token);
+    if (!normalizedToken) {
+      memoryRefreshToken = null;
+      writeSessionStorage(REFRESH_TOKEN_KEY, null);
+      return;
+    }
+
     if (!allowInsecureRefreshTokenStorage) {
       if (!hasWarnedInsecureRefreshTokenStorage) {
         hasWarnedInsecureRefreshTokenStorage = true;
@@ -292,8 +320,8 @@ export const tokenStorage: TokenStorage = {
       return;
     }
 
-    memoryRefreshToken = token;
-    writeSessionStorage(REFRESH_TOKEN_KEY, token);
+    memoryRefreshToken = normalizedToken;
+    writeSessionStorage(REFRESH_TOKEN_KEY, normalizedToken);
   },
 
   getRefreshToken: (): string | null => {
@@ -301,16 +329,27 @@ export const tokenStorage: TokenStorage = {
       return null;
     }
 
-    if (memoryRefreshToken) {
-      return memoryRefreshToken;
+    const normalizedMemoryToken = normalizeOptionalToken(memoryRefreshToken);
+    if (normalizedMemoryToken) {
+      memoryRefreshToken = normalizedMemoryToken;
+      return normalizedMemoryToken;
+    }
+    if (memoryRefreshToken !== null) {
+      memoryRefreshToken = null;
     }
 
     const stored = readSessionStorage(REFRESH_TOKEN_KEY);
-    if (stored) {
-      memoryRefreshToken = stored;
+    const normalizedStoredToken = normalizeOptionalToken(stored);
+    if (normalizedStoredToken) {
+      memoryRefreshToken = normalizedStoredToken;
+      return normalizedStoredToken;
     }
 
-    return memoryRefreshToken;
+    if (stored !== null) {
+      writeSessionStorage(REFRESH_TOKEN_KEY, null);
+    }
+    memoryRefreshToken = null;
+    return null;
   },
 
   clearRefreshToken: (): void => {
