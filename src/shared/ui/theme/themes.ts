@@ -39,6 +39,12 @@ import { voidTheme } from "./themes/void";
 import { botanistTheme } from "./themes/botanist";
 import { nebulaTheme } from "./themes/nebula";
 import { neobrutalismTheme } from "./themes/neobrutalism";
+import { zenithTheme } from "./themes/zenith";
+import { vulcanTheme } from "./themes/vulcan";
+import { atlantisTheme } from "./themes/atlantis";
+import { kyotoTheme } from "./themes/kyoto";
+import { pulsarTheme } from "./themes/pulsar";
+import { obsidianTheme } from "./themes/obsidian";
 
 export const themes: Record<string, ThemeDefinition> = {
   default: defaultTheme,
@@ -76,6 +82,12 @@ export const themes: Record<string, ThemeDefinition> = {
   botanist: botanistTheme,
   nebula: nebulaTheme,
   neobrutalism: neobrutalismTheme,
+  zenith: zenithTheme,
+  vulcan: vulcanTheme,
+  atlantis: atlantisTheme,
+  kyoto: kyotoTheme,
+  pulsar: pulsarTheme,
+  obsidian: obsidianTheme,
 };
 
 /**
