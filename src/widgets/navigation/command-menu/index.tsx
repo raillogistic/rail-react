@@ -12,7 +12,7 @@ import {
   Sparkles,
   User,
 } from "lucide-react";
-import { ROUTES } from "@/shared/routing/routes";
+import { DEFAULT_APP_ROUTE, NAVIGATION_LINKS } from "@/app/router/navigation";
 import {
   CommandDialog,
   CommandEmpty,
@@ -44,12 +44,53 @@ export type CommandMenuProps = {
 };
 
 /**
+ * Builds palette links from visible navigation entries.
+ * Mirrors navbar behavior: prefer visible children, otherwise include parent.
+ */
+function buildCommandLinks(navigationLinks: NavigationSection[]): CommandLink[] {
+  const output: CommandLink[] = [];
+
+  navigationLinks.forEach((section) => {
+    section.items.forEach((item) => {
+      const visibleChildren = item.children?.filter((child) => !child.hidden) ?? [];
+
+      if (visibleChildren.length > 0) {
+        visibleChildren.forEach((child) => {
+          output.push({
+            title: child.title,
+            path: child.path,
+            description: child.description,
+            section: item.title,
+            icon: child.icon || item.icon,
+          });
+        });
+        return;
+      }
+
+      if (item.hidden) {
+        return;
+      }
+
+      output.push({
+        title: item.title,
+        path: item.path,
+        description: item.description,
+        section: section.label,
+        icon: item.icon,
+      });
+    });
+  });
+
+  return output;
+}
+
+/**
  * Global command palette.
  * Integrates with navigation manifests to keep searchable links in sync.
  */
 export function CommandMenu({
-  navigationLinks = [],
-  defaultPath = ROUTES.DASHBOARD,
+  navigationLinks = NAVIGATION_LINKS,
+  defaultPath = DEFAULT_APP_ROUTE,
 }: CommandMenuProps = {}) {
   const [open, setOpen] = React.useState(false);
   const navigate = useNavigate();
@@ -71,35 +112,10 @@ export function CommandMenu({
     command();
   }, []);
 
-  const links = React.useMemo<CommandLink[]>(() => {
-    const output: CommandLink[] = [];
-
-    navigationLinks.forEach((section) => {
-      section.items.forEach((item) => {
-        if (item.component) {
-          output.push({
-            title: item.title,
-            path: item.path,
-            description: item.description,
-            section: section.label,
-            icon: item.icon,
-          });
-        }
-
-        (item.children ?? []).forEach((child) => {
-          output.push({
-            title: child.title,
-            path: child.path,
-            description: child.description,
-            section: item.title,
-            icon: child.icon || item.icon,
-          });
-        });
-      });
-    });
-
-    return output;
-  }, [navigationLinks]);
+  const links = React.useMemo<CommandLink[]>(
+    () => buildCommandLinks(navigationLinks),
+    [navigationLinks],
+  );
 
   return (
     <>
@@ -111,7 +127,7 @@ export function CommandMenu({
         onClick={() => setOpen(true)}
       >
         <Search className="mr-2 h-4 w-4 opacity-70" />
-        <span className="hidden sm:inline-flex">Search anything...</span>
+        <span className="hidden sm:inline-flex">Rechercher...</span>
         <span className="inline-flex sm:hidden">Search...</span>
         <kbd className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 hidden h-5 select-none items-center gap-1 rounded border bg-background px-1.5 font-mono text-[10px] font-medium opacity-100 md:flex">
           <span className="text-xs">Ctrl</span>K
@@ -282,4 +298,3 @@ export function CommandMenu({
     </>
   );
 }
-

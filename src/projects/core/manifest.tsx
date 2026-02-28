@@ -12,7 +12,7 @@ import type { AppManifest } from "@/app/router/contracts";
 import { defineProjectManifest, navGroup } from "@/app/router/manifestFactory";
 import { ROUTES } from "@/shared/routing/routes";
 import ExampleDetailsPage from "@/widgets/model-details/example/ExampleDetailsPage";
-import DashboardPage from "@/pages/dashboard/DashboardPage";
+import DashboardPage from "@/projects/core/pages/dashboard/DashboardPage";
 
 const routeFallback = (
   <div className="rounded-md border p-3 text-sm text-muted-foreground">
@@ -31,19 +31,19 @@ const ModelImportPage = lazy(() =>
 );
 
 const LoginPage = lazy(() =>
-  import("@/pages/auth/LoginPage").then((module) => ({
+  import("@/projects/core/pages/auth/LoginPage").then((module) => ({
     default: module.LoginPage,
   })),
 );
 
 const ForgotPasswordPage = lazy(() =>
-  import("@/pages/auth/ForgotPasswordPage").then((module) => ({
+  import("@/projects/core/pages/auth/ForgotPasswordPage").then((module) => ({
     default: module.ForgotPasswordPage,
   })),
 );
 
 const ResetPasswordPage = lazy(() =>
-  import("@/pages/auth/ResetPasswordPage").then((module) => ({
+  import("@/projects/core/pages/auth/ResetPasswordPage").then((module) => ({
     default: module.ResetPasswordPage,
   })),
 );
@@ -63,37 +63,45 @@ const StoreOrderUpdateModelFormExample = lazy(() =>
 );
 
 const AccountSettingsPage = lazy(() =>
-  import("@/pages/settings/AccountSettingsPage").then((module) => ({
-    default: module.AccountSettingsPage,
-  })),
+  import("@/projects/core/pages/settings/AccountSettingsPage").then(
+    (module) => ({
+      default: module.AccountSettingsPage,
+    }),
+  ),
 );
 
 const AdminUISettingsPage = lazy(() =>
-  import("@/pages/settings/AdminUISettingsPage").then((module) => ({
-    default: module.AdminUISettingsPage,
-  })),
+  import("@/projects/core/pages/settings/AdminUISettingsPage").then(
+    (module) => ({
+      default: module.AdminUISettingsPage,
+    }),
+  ),
 );
 
 const AppearanceSettingsPage = lazy(() =>
-  import("@/pages/settings/AppearanceSettingsPage").then((module) => ({
-    default: module.AppearanceSettingsPage,
-  })),
+  import("@/projects/core/pages/settings/AppearanceSettingsPage").then(
+    (module) => ({
+      default: module.AppearanceSettingsPage,
+    }),
+  ),
 );
 
 const LayoutSettingsPage = lazy(() =>
-  import("@/pages/settings/LayoutSettingsPage").then((module) => ({
-    default: module.LayoutSettingsPage,
-  })),
+  import("@/projects/core/pages/settings/LayoutSettingsPage").then(
+    (module) => ({
+      default: module.LayoutSettingsPage,
+    }),
+  ),
 );
 
 const SessionsPage = lazy(() =>
-  import("@/pages/auth/SessionsPage").then((module) => ({
+  import("@/projects/core/pages/auth/SessionsPage").then((module) => ({
     default: module.SessionsPage,
   })),
 );
 
 const MFASetupPage = lazy(() =>
-  import("@/pages/auth/MFASetupPage").then((module) => ({
+  import("@/projects/core/pages/auth/MFASetupPage").then((module) => ({
     default: module.MFASetupPage,
   })),
 );
