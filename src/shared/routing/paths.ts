@@ -10,8 +10,6 @@ export const ROUTES = {
   RESET_PASSWORD: "/reset-password",
   DASHBOARD: "/dashboard",
   MODEL_IMPORT: "/model-import",
-  OVERVIEW: "/billing/overview",
-  REPORTS: "/billing/reports",
   NOT_FOUND: "/404",
   SETTINGS_ACCOUNT: "/settings/account",
   SETTINGS_APPEARANCE: "/settings/appearance",

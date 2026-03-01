@@ -4,12 +4,12 @@
  */
 
 export const BRANDING = {
-  productName: "Transtev",
-  productNameLong: "Transtev",
-  editionLabel: "PRO",
-  platformLabel: "System Platform",
-  hubLabel: "System Hubddd",
-  logoAlt: "Transtev logo",
+  productName: "Rail Starter",
+  productNameLong: "Rail React Starter",
+  editionLabel: "STARTER",
+  platformLabel: "Application Platform",
+  hubLabel: "Workspace Hub",
+  logoAlt: "App logo",
 } as const;
 
 export const SYSTEM_STATUS = {

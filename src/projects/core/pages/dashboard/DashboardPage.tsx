@@ -118,7 +118,7 @@ function buildTabbedSections(
       id: "general-summary",
       tabId: "general",
       title: "Summary",
-      description: "Core business fields grouped as a dense grid.",
+      description: "Primary model fields grouped as a dense grid.",
       order: 10,
       containerSpan: {
         base: 1,
@@ -300,7 +300,8 @@ export default function DashboardPage() {
                   Active record id: {id}
                 </div>
                 <div className="text-xs text-muted-foreground">
-                  Use update/delete/custom actions from the header toolbar.
+                  Use update, delete, and custom actions from the header
+                  toolbar.
                 </div>
               </div>
             ),

@@ -3,6 +3,9 @@
 This index organizes frontend docs by workflow. Start with project structure
 and usage, then move to testing and library-specific guides.
 
+The starter baseline ships with one project manifest (`core`). You can add
+more projects with `npm run startapp -- <project-id>`.
+
 ## Start here
 
 Use these pages first when you need architecture context and day-to-day

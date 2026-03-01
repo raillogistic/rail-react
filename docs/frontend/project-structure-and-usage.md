@@ -89,8 +89,6 @@ The app uses manifest-driven routing with explicit architectural boundaries.
 Place new code in the canonical folders below.
 
 - `src/app/`: bootstrap, router, and authenticated shell composition.
-- `src/processes/`: cross-feature workflow orchestration.
-- `src/pages/`: route-level page entry points.
 - `src/widgets/`: reusable UI modules and page-composable UI systems.
 - `src/features/`: domain logic and feature API surfaces.
 - `src/entities/`: entity-level contracts and reusable domain types.
@@ -98,6 +96,7 @@ Place new code in the canonical folders below.
   kit exports.
 - `src/projects/`: project manifests that declare routes and navigation.
 - `src/apps/`: local-only manifest extension entry points.
+- `src/test/`: test bootstrap plus unit and integration suites.
 
 The auth runtime now lives under `src/features/auth/*`.
 
@@ -152,12 +151,14 @@ Legacy local extension contracts are no longer supported.
 ## Add a new project manifest
 
 Create a new folder under `src/projects/` and export a typed manifest.
+The starter keeps only `core` by default.
 
 1. Create `src/projects/<project-id>/manifest.tsx`.
 2. Export a manifest object typed as `AppManifest`.
 3. Create `src/projects/<project-id>/manifest.ts` that re-exports the default
    export from `manifest.tsx`.
 4. Run architecture checks.
+5. Optional: use `npm run startapp -- <project-id>` to scaffold these files.
 
 Use this minimal template.
 
@@ -165,29 +166,29 @@ Use this minimal template.
 import type { AppManifest } from "@/app/router/contracts";
 
 export const PROJECT_MANIFEST: AppManifest = {
-  projectId: "billing",
-  defaultRoute: "/billing",
+  projectId: "sample",
+  defaultRoute: "/sample",
   routes: [
     {
-      id: "billing:home",
-      path: "/billing",
+      id: "sample:home",
+      path: "/sample",
       guard: "protected",
-      projectId: "billing",
-      title: "Billing",
-      element: <div>Billing</div>,
+      projectId: "sample",
+      title: "Sample",
+      element: <div>Sample</div>,
     },
   ],
   navigation: [
     {
-      id: "billing-main",
-      label: "Billing",
-      projectId: "billing",
+      id: "sample-main",
+      label: "Sample",
+      projectId: "sample",
       entries: [
         {
-          id: "billing:home",
-          routeId: "billing:home",
-          title: "Billing",
-          path: "/billing",
+          id: "sample:home",
+          routeId: "sample:home",
+          title: "Sample",
+          path: "/sample",
           guard: "protected",
         },
       ],
@@ -202,8 +203,8 @@ export default PROJECT_MANIFEST;
 
 Use this workflow when you add a screen to `core` or another existing project.
 
-1. Create the route entry component in `src/pages/*`, `src/widgets/*`, or
-   `src/features/*`.
+1. Create the route entry component in `src/projects/<project-id>/pages/*`,
+   `src/widgets/*`, or `src/features/*`.
 2. Import it in the owning manifest, usually with `lazy()` and `Suspense`.
 3. Add a route entry with a unique `id` and `path`.
 4. Add a navigation entry that references the route with `routeId`.

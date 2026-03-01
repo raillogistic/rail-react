@@ -10,7 +10,7 @@ Usage:
   yarn startapp <app-name>
 
 Example:
-  npm run startapp -- billing
+  npm run startapp -- sample-app
 `;
 
 const rawArg = process.argv[2];

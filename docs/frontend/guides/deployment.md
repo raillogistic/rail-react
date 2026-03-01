@@ -3,6 +3,9 @@
 This guide explains how to use `rail-react/deploy/deploy.sh` for Docker-based
 frontend deployment, including attached mode with `--no-detach`.
 
+The repository also includes `deploy_full/` for alternate packaging workflows.
+Use this guide for the standard `deploy/` script path.
+
 ## Default deployment (detached)
 
 Use this mode for normal server deployments where the container runs in the

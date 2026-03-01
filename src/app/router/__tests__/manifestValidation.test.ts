@@ -156,14 +156,14 @@ describe("manifestValidation", () => {
       navigation: [],
     });
     const second = createManifest({
-      projectId: "billing",
+      projectId: "sample",
       defaultRoute: "/dashboard",
       routes: [
         {
-          id: "billing-dashboard",
+          id: "sample-dashboard",
           path: "/dashboard",
           guard: "protected",
-          projectId: "billing",
+          projectId: "sample",
         },
       ],
       navigation: [],
