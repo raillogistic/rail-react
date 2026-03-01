@@ -23,6 +23,7 @@ NO_CACHE=false
 PULL_BASE=true
 BUILD_ONLY=false
 SKIP_HEALTHCHECK=false
+DETACH=true
 
 log() {
   printf '[deploy] %s\n' "$1"
@@ -54,6 +55,7 @@ Options:
   --no-cache                  Build image without Docker cache
   --no-pull                   Do not pull base images
   --build-only                Build image only (do not run container)
+  --no-detach                Run container in attached mode (foreground)
   --skip-healthcheck          Skip post-deploy health check wait
   -h, --help                  Show this help
 EOF
@@ -149,6 +151,10 @@ while (($# > 0)); do
       BUILD_ONLY=true
       shift
       ;;
+    --no-detach)
+      DETACH=false
+      shift
+      ;;
     --skip-healthcheck)
       SKIP_HEALTHCHECK=true
       shift
@@ -222,8 +228,21 @@ if [[ -n "$BIND_ADDRESS" && "$BIND_ADDRESS" != "0.0.0.0" ]]; then
 fi
 
 log "Starting container ${CONTAINER_NAME}"
-container_id="$(
-  docker run -d \
+if $DETACH; then
+  container_id="$(
+    docker run -d \
+      --name "$CONTAINER_NAME" \
+      --restart unless-stopped \
+      -e "TLS_DOMAIN=${TLS_DOMAIN}" \
+      -e "TLS_CERT_DAYS=${TLS_CERT_DAYS}" \
+      -p "$HTTP_BINDING" \
+      -p "$HTTPS_BINDING" \
+      "$FULL_IMAGE"
+  )"
+  [[ -n "$container_id" ]] || fail "Container failed to start"
+else
+  log "Running in attached mode; press Ctrl+C to stop the container."
+  exec docker run \
     --name "$CONTAINER_NAME" \
     --restart unless-stopped \
     -e "TLS_DOMAIN=${TLS_DOMAIN}" \
@@ -231,8 +250,7 @@ container_id="$(
     -p "$HTTP_BINDING" \
     -p "$HTTPS_BINDING" \
     "$FULL_IMAGE"
-)"
-[[ -n "$container_id" ]] || fail "Container failed to start"
+fi
 
 if $SKIP_HEALTHCHECK; then
   log "Deployment successful (healthcheck skipped)."

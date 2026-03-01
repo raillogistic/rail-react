@@ -10,6 +10,7 @@ development commands.
 
 - [Project structure and usage](./project-structure-and-usage.md)
 - [Testing guide](./guides/testing.md)
+- [Deployment guide](./guides/deployment.md)
 
 ## Frontend libraries
 
