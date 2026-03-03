@@ -12,7 +12,7 @@ import type { AppManifest } from "@/app/router/contracts";
 import { defineProjectManifest, navGroup } from "@/app/router/manifestFactory";
 import { ROUTES } from "@/shared/routing/routes";
 import ExampleDetailsPage from "@/widgets/model-details/example/ExampleDetailsPage";
-import DashboardPage from "@/projects/core/pages/dashboard/DashboardPage";
+import DashboardPage from "./pages/dashboard/DashboardPage";
 
 const routeFallback = (
   <div className="rounded-md border p-3 text-sm text-muted-foreground">
@@ -51,20 +51,6 @@ const ForgotPasswordPage = lazy(() =>
 const ResetPasswordPage = lazy(() =>
   import("@/projects/core/pages/auth/ResetPasswordPage").then((module) => ({
     default: module.ResetPasswordPage,
-  })),
-);
-
-const DynamicModelTable = lazy(() =>
-  import("@/widgets/model-table/components/DynamicModelTable").then(
-    (module) => ({
-      default: module.DynamicModelTable,
-    }),
-  ),
-);
-
-const StoreOrderUpdateModelFormExample = lazy(() =>
-  import("@/widgets/model-form/examples").then((module) => ({
-    default: module.StoreOrderUpdateModelFormExample,
   })),
 );
 
@@ -165,7 +151,16 @@ export const CORE_MANIFEST: AppManifest = defineProjectManifest({
       title: "Root",
       element: <Navigate to={ROUTES.LOGIN} replace />,
     },
-
+    {
+      id: "core:dashboard",
+      path: ROUTES.DASHBOARD,
+      guard: "protected",
+      projectId: "core",
+      title: "Tableau de bord",
+      description: "Vue synthese des indicateurs",
+      icon: LayoutDashboard,
+      element: <>dsmqlkdqslmkdmqsldkqsmldk</>,
+    },
     {
       id: "core:model-import",
       path: ROUTES.MODEL_IMPORT,

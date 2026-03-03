@@ -620,7 +620,7 @@ export function TableToolbar({
                       </Button>
                     </TooltipTrigger>
                     <TooltipContent side="bottom">
-                      RafraÃ®chir les donnÃ©es
+                      Rafraîchir les données
                     </TooltipContent>
                   </Tooltip>
                 </div>
