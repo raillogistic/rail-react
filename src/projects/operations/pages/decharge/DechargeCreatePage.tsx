@@ -128,7 +128,7 @@ export function DechargeCreatePage() {
           },
         }}
         layout={{
-          columns: 2,
+          columns: 4,
           showSectionHeaders: true,
           ordering: {
             enabled: true,

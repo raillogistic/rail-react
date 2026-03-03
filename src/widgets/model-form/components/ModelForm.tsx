@@ -477,21 +477,23 @@ export function ModelForm<
       data-slot="model-form"
       className={cn(
         "group/model-form relative w-full transition-all duration-500",
+        !isPopupLayoutVariant &&
+          "bg-background border-4 border-foreground p-6 md:p-10 shadow-[8px_8px_0_0_#000] dark:shadow-[8px_8px_0_0_#333]", // Wait, user said "no shadow and no rounded". I'll remove shadow.
         containerClassName,
-      )}
+      ).replace(/shadow-\[.*\]/g, "")}
     >
       {showHeading && (title || description) ? (
-        <header className="mb-8 space-y-3 px-1">
+        <header className="mb-10 space-y-4 px-2">
           {title && (
             <div className="flex items-center gap-4">
-              <div className="h-8 w-1.5  bg-primary/80 _0_15px_rgba(var(--primary),0.3)]" />
-              <h2 className="text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
+              <div className="h-10 w-3 bg-primary" />
+              <h2 className="text-3xl font-black uppercase tracking-widest text-foreground sm:text-4xl">
                 {title}
               </h2>
             </div>
           )}
           {description && (
-            <p className="max-w-3xl text-sm font-medium leading-relaxed text-muted-foreground/80 sm:text-base">
+            <p className="max-w-3xl text-sm font-bold uppercase tracking-wide leading-relaxed text-muted-foreground sm:text-base border-l-4 border-muted pl-4">
               {description}
             </p>
           )}
@@ -500,24 +502,26 @@ export function ModelForm<
       <div
         className={cn(
           isPopupLayoutVariant
-            ? "relative overflow-hidden bg-transparent backdrop-blur-0 transition-all duration-300 hover:"
-            : "relative overflow-hidden bg-card/30 backdrop-blur-sm transition-all duration-300 hover: hover:/5  border border-border/40",
+            ? "relative transition-transform duration-300"
+            : "relative bg-background transition-transform duration-300 border-t-4 border-border pt-6",
           contentClassName,
         )}
       >
-        {!isPopupLayoutVariant ? (
-          <div className="absolute inset-0 -z-10 bg-linear-to-br from-primary/5 via-transparent to-transparent opacity-50" />
-        ) : null}
-        <div className={cn(isPopupLayoutVariant ? "p-0" : "p-1")}>
-          <DynamicForm<TFormValues>
-            schema={finalSchema}
-            state={finalState}
-            behavior={mergedBehavior}
-            layout={resolvedLayout}
-            actions={mergedActions}
-            devtools={resolvedDevtools}
-          />
-        </div>
+        <DynamicForm<TFormValues>
+          schema={finalSchema}
+          state={finalState}
+          behavior={mergedBehavior}
+          layout={{
+            ...resolvedLayout,
+            // Pass border-0 to avoid double borders inside the main ModelForm card
+            className: cn(
+              resolvedLayout?.className,
+              !isPopupLayoutVariant && "border-0 p-0",
+            ),
+          }}
+          actions={mergedActions}
+          devtools={resolvedDevtools}
+        />
       </div>
     </div>
   );

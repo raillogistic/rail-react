@@ -46,7 +46,7 @@ export type ModelTableDetailPresentation = "drawer" | "modal" | "link";
  * Drawer direction options for update overlays.
  */
 export type ModelTableUpdateDrawerDirection =
-| "left"
+ | "left"
  | "right"
  | "top"
  | "bottom";
@@ -55,25 +55,25 @@ export type ModelTableUpdateDrawerDirection =
  * Drawer direction options for create overlays.
  */
 export type ModelTableCreateDrawerDirection =
-| "left"
-| "right"
-| "top"
-| "bottom";
+ | "left"
+ | "right"
+ | "top"
+ | "bottom";
 
 /**
  * Drawer direction options for detail overlays.
  */
 export type ModelTableDetailDrawerDirection =
-| "left"
-| "right"
-| "top"
-| "bottom";
+ | "left"
+ | "right"
+ | "top"
+ | "bottom";
 
 /**
  * Runtime context supplied to update configuration callbacks.
  */
 export type ModelTableUpdateContext = {
-app: string;
+ app: string;
  model: string;
  row: Record<string, unknown>;
  rowId: string;
@@ -84,11 +84,11 @@ app: string;
  * Runtime context supplied to create configuration callbacks.
  */
 export type ModelTableCreateContext = {
-app: string;
-model: string;
-metadata?: ModelSchema;
-selectedRows: Record<string, unknown>[];
-selectionState: Record<string, boolean>;
+ app: string;
+ model: string;
+ metadata?: ModelSchema;
+ selectedRows: Record<string, unknown>[];
+ selectionState: Record<string, boolean>;
 };
 
 /**
@@ -106,7 +106,7 @@ export type ModelTableDetailContext = {
  * ModelForm override surface accepted by table row update popups.
  */
 export type ModelTableUpdateFormOverrides = Omit<
-ModelFormProps<Record<string, unknown>>,
+ ModelFormProps<Record<string, unknown>>,
  "app" | "model" | "mode" | "objectId"
 >;
 
@@ -114,8 +114,8 @@ ModelFormProps<Record<string, unknown>>,
  * ModelForm override surface accepted by table create popups.
  */
 export type ModelTableCreateFormOverrides = Omit<
-ModelFormProps<Record<string, unknown>>,
-"app" | "model" | "mode" | "objectId"
+ ModelFormProps<Record<string, unknown>>,
+ "app" | "model" | "mode" | "objectId"
 >;
 
 /**
@@ -239,7 +239,7 @@ export type ModelTableCreateConfig = {
  * Refetch table data automatically after successful create submit.
  * Defaults to true.
  */
-refetchOnSuccess?: boolean;
+ refetchOnSuccess?: boolean;
 };
 
 /**
@@ -475,14 +475,14 @@ export interface BaseModelTableProps {
 }
 
 export interface ModelTableV2Props {
-app: string;
-model: string;
-filterPanel?: ModelTableFilterPanelProps;
-create?: ModelTableCreateConfig;
-update?: ModelTableUpdateConfig;
+ app: string;
+ model: string;
+ filterPanel?: ModelTableFilterPanelProps;
+ create?: ModelTableCreateConfig;
+ update?: ModelTableUpdateConfig;
  detail?: ModelTableDetailConfig;
-baseTable?: Omit<BaseModelTableProps, "app" | "model" | "children">;
-/**
+ baseTable?: Omit<BaseModelTableProps, "app" | "model" | "children">;
+ /**
  * Enables simple runtime diagnostics for table bootstrap timings.
  */
  devtools?: boolean | DynamicModelTableDevtoolsConfig;

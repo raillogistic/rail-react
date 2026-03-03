@@ -6,5 +6,5 @@ export function buildResponsiveGridClass(columns: number) {
  if (normalized >= 4) classes.push("lg:grid-cols-4");
  if (normalized >= 5) classes.push("xl:grid-cols-5");
  if (normalized >= 6) classes.push("2xl:grid-cols-6");
- return classes.join("");
+ return classes.join(" ");
 }
