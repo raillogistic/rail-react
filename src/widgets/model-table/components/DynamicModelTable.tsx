@@ -1376,7 +1376,10 @@ function DynamicBaseTableContent({
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div className="relative flex h-full w-full max-w-full min-w-0 flex-col overflow-hidden animate-in fade-in duration-500 p-1 sm:p-2">
+      <div
+        className="relative flex h-full w-full max-w-full min-w-0 flex-col overflow-hidden animate-in fade-in duration-500 p-1 sm:p-2"
+        data-model-table-persistence-key={effectiveKey}
+      >
         {devtoolsEnabled && <TableDevtoolsPanel timings={timings} />}
         {sectionController.metadata && (
           <div className="flex-none">
@@ -1444,9 +1447,9 @@ function DynamicBaseTableContent({
               features={features}
               layout={{
                 containerClassName:
-                  "group/frame relative flex h-full flex-col overflow-hidden rounded-[1.25rem] border border-border/40 bg-card/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-xl transition-all duration-500 hover:shadow-[0_8px_40px_rgb(0,0,0,0.08)] hover:border-border/60",
+                  "group/frame relative flex h-full flex-col overflow-hidden border border-border/40 bg-card/60 shadow-[0_8px_30px_rgb(0,0,0,0.04)] backdrop-blur-xl transition-all duration-500 hover:shadow-[0_8px_40px_rgb(0,0,0,0.08)] hover:border-border/60",
                 actions: {
-                  headerLabel: tableConfig?.actionsLabel ?? "Actions",
+                  headerLabel: tableConfig?.actionsLabel ?? "",
                   sticky: true,
                   size: 140,
                   renderCell: ({ row }) => (

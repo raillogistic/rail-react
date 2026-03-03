@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useMutation } from "@apollo/client";
 import {
   Download,
   Filter,
@@ -71,6 +72,15 @@ import {
 } from "./toolbar";
 import type { ColumnsMenuOption } from "./toolbar/ColumnsMenu";
 import { useIsMobile } from "@/shared/hooks/legacy-hooks/use-mobile";
+import {
+  UPSERT_USER_TABLE_CONFIG_MUTATION_RESOLVED,
+  type UpsertUserTableConfigResponse,
+  type UpsertUserTableConfigVariables,
+} from "@/shared/api/graphql/legacy/mutations";
+import {
+  clearPersistedMetadataStore,
+  getActiveMetadataUserKey,
+} from "@/shared/api/graphql/graphql/metadata/persisted-cache";
 
 type TableToolbarProps = {
   filterPanel?: ModelTableFilterPanelProps;
@@ -98,6 +108,7 @@ export function TableToolbar({
   fields,
   extraActions,
 }: TableToolbarProps) {
+  const toolbarRootRef = useRef<HTMLDivElement>(null);
   const isMobile = useIsMobile();
   const { app, model, metadata, ensureCapabilitiesLoaded } = useMetadata();
   const {
@@ -117,6 +128,13 @@ export function TableToolbar({
     loading,
     refresh,
   } = useTable();
+  const [hardRefreshing, setHardRefreshing] = useState(false);
+  const [resetUserTableConfig] = useMutation<
+    UpsertUserTableConfigResponse,
+    UpsertUserTableConfigVariables
+  >(UPSERT_USER_TABLE_CONFIG_MUTATION_RESOLVED, {
+    ignoreResults: true,
+  });
   const {
     quickSearch: quickSearchValue,
     setQuickSearch,
@@ -132,6 +150,54 @@ export function TableToolbar({
   );
   const [columnSearch, setColumnSearch] = useState("");
   const [searchFocused, setSearchFocused] = useState(false);
+
+  const resolvePersistenceKey = useCallback(() => {
+    const defaultPath =
+      typeof window !== "undefined" ? window.location.pathname : "";
+    const fallbackKey = `${app}-${model}-${defaultPath}`;
+    const keyFromScope = toolbarRootRef.current
+      ?.closest("[data-model-table-persistence-key]")
+      ?.getAttribute("data-model-table-persistence-key");
+    return keyFromScope || fallbackKey;
+  }, [app, model]);
+
+  const handleHardRefresh = useCallback(async () => {
+    if (hardRefreshing) {
+      return;
+    }
+    setHardRefreshing(true);
+
+    const persistenceKey = resolvePersistenceKey();
+    const storageKey = `rail-table-v2:${persistenceKey}`;
+    const metadataUserKey = getActiveMetadataUserKey();
+
+    if (typeof window !== "undefined") {
+      try {
+        window.localStorage.removeItem(storageKey);
+      } catch {
+        // Ignore storage errors and continue hard-refresh flow.
+      }
+    }
+
+    if (metadataUserKey) {
+      clearPersistedMetadataStore(metadataUserKey);
+    }
+
+    try {
+      await resetUserTableConfig({
+        variables: {
+          key: persistenceKey,
+          tableConfig: {},
+        },
+      });
+    } catch {
+      // Ignore mutation errors; local reset + reload still provide a hard refresh.
+    }
+
+    if (typeof window !== "undefined") {
+      window.location.reload();
+    }
+  }, [hardRefreshing, resetUserTableConfig, resolvePersistenceKey]);
 
   const supportsQuick = !!metadata?.filterConfig?.supportsQuick;
   const activeAdvancedFilterCount = activeFilterStats.activeCount;
@@ -261,7 +327,7 @@ export function TableToolbar({
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div className="relative z-20 mb-4 flex flex-col gap-3">
+      <div ref={toolbarRootRef} className="relative z-20 mb-4 flex flex-col gap-3">
         {/* Main Toolbar Container */}
         <div
           data-slot="table-toolbar"
@@ -338,7 +404,6 @@ export function TableToolbar({
                   {extraActions}
                 </div>
               )}
-
               {/* Tools Cluster */}
               <div className="flex items-center gap-0.5 rounded-xl bg-muted/20 p-1 transition-all">
                 {!isMobile ? (
@@ -483,7 +548,6 @@ export function TableToolbar({
                   </DropdownMenu>
                 )}
               </div>
-
               {/* Filters & Export Cluster */}
               <div className="flex items-center gap-1.5">
                 {panelConfig.mode === "modal" ? (
@@ -605,24 +669,48 @@ export function TableToolbar({
                       </Button>
                     }
                   />
-                  <Tooltip>
-                    <TooltipTrigger asChild>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
                       <Button
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8 rounded-xl text-muted-foreground hover:bg-background hover:text-primary transition-all active:scale-90"
-                        onClick={() => refresh()}
-                        disabled={loading}
+                        disabled={loading || hardRefreshing}
                       >
                         <RefreshCw
-                          className={cn("h-4 w-4", loading && "animate-spin")}
+                          className={cn(
+                            "h-4 w-4",
+                            (loading || hardRefreshing) && "animate-spin",
+                          )}
                         />
                       </Button>
-                    </TooltipTrigger>
-                    <TooltipContent side="bottom">
-                      Rafraîchir les données
-                    </TooltipContent>
-                  </Tooltip>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align="end"
+                      className="w-56 rounded-2xl border-none shadow-xl backdrop-blur-xl"
+                    >
+                      <DropdownMenuLabel className="px-3 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                        Rafraichissement
+                      </DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        onClick={() => refresh()}
+                        disabled={loading || hardRefreshing}
+                      >
+                        <RefreshCw className="mr-2 h-4 w-4" />
+                        Simple refresh
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          void handleHardRefresh();
+                        }}
+                        disabled={hardRefreshing}
+                      >
+                        <RefreshCw className="mr-2 h-4 w-4" />
+                        Hard refresh
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
             </div>
@@ -664,3 +752,4 @@ export function TableToolbar({
     </TooltipProvider>
   );
 }
+

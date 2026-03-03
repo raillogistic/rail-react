@@ -8,7 +8,7 @@ export const ROUTES = {
   AUTH_ENDPOINT_CONFIG: "/auth/endpoint-config",
   FORGOT_PASSWORD: "/forgot-password",
   RESET_PASSWORD: "/reset-password",
-  DASHBOARD: "/dashboard",
+  // DASHBOARD: "/dashboard",
   MODEL_IMPORT: "/model-import",
   NOT_FOUND: "/404",
   SETTINGS_ACCOUNT: "/settings/account",

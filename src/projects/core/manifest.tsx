@@ -100,8 +100,8 @@ const MFASetupPage = lazy(() =>
 
 export const CORE_MANIFEST: AppManifest = defineProjectManifest({
   projectId: "core",
-  order: 2,
-  defaultRoute: "/dashboard",
+  order: 99,
+  defaultRoute: ROUTES.SETTINGS_ACCOUNT,
   routes: [
     {
       id: "core:login",
@@ -151,16 +151,16 @@ export const CORE_MANIFEST: AppManifest = defineProjectManifest({
       title: "Root",
       element: <Navigate to={ROUTES.LOGIN} replace />,
     },
-    {
-      id: "core:dashboard",
-      path: ROUTES.DASHBOARD,
-      guard: "protected",
-      projectId: "core",
-      title: "Tableau de bord",
-      description: "Vue synthese des indicateurs",
-      icon: LayoutDashboard,
-      element: <>dsmqlkdqslmkdmqsldkqsmldk</>,
-    },
+    // {
+    //   id: "core:dashboard",
+    //   path: ROUTES.DASHBOARD,
+    //   guard: "protected",
+    //   projectId: "core",
+    //   title: "Tableau de bord",
+    //   description: "Vue synthese des indicateurs",
+    //   icon: LayoutDashboard,
+    //   element: <>dsmqlkdqslmkdmqsldkqsmldk</>,
+    // },
     {
       id: "core:model-import",
       path: ROUTES.MODEL_IMPORT,
@@ -170,20 +170,6 @@ export const CORE_MANIFEST: AppManifest = defineProjectManifest({
       hidden: true,
       element: withRouteSuspense(<ModelImportPage />),
     },
-    {
-      id: "core:form-test",
-      path: "/form",
-      guard: "protected",
-      projectId: "core",
-      title: "Details",
-      description: "dd",
-      element: withRouteSuspense(
-        <div>
-          <ExampleDetailsPage />
-        </div>,
-      ),
-    },
-
     {
       id: "core:settings-account",
       path: ROUTES.SETTINGS_ACCOUNT,
@@ -247,20 +233,28 @@ export const CORE_MANIFEST: AppManifest = defineProjectManifest({
     },
   ],
   navigation: [
+    // navGroup("core", {
+    //   id: "home",
+    //   label: "Table",
+    //   order: 4,
+    //   entries: [
+    //     // {
+    //     //   id: "core:dashboard",
+    //     //   routeId: "core:dashboard",
+    //     //   title: "Tableau de bord",
+    //     //   path: ROUTES.DASHBOARD,
+    //     //   icon: LayoutDashboard,
+    //     //   guard: "protected",
+    //     //   description: "Vue synthese des indicateurs",
+    //     // },
+
+    //   ],
+    // }),
     navGroup("core", {
-      id: "home",
-      label: "Table",
-      order: 4,
+      id: "parametre",
+      label: "parametre",
+      order: 99,
       entries: [
-        {
-          id: "core:dashboard",
-          routeId: "core:dashboard",
-          title: "Tableau de bord",
-          path: ROUTES.DASHBOARD,
-          icon: LayoutDashboard,
-          guard: "protected",
-          description: "Vue synthese des indicateurs",
-        },
         {
           id: "core:model-import",
           routeId: "core:model-import",
@@ -269,13 +263,6 @@ export const CORE_MANIFEST: AppManifest = defineProjectManifest({
           guard: "protected",
           hidden: true,
         },
-      ],
-    }),
-    navGroup("core", {
-      id: "parametre",
-      label: "parametre",
-      order: 10,
-      entries: [
         {
           id: "core:settings",
           title: "parametre",
