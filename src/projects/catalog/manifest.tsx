@@ -92,7 +92,7 @@ const CategorieArticleMetadataChampDetailPage = lazy(() =>
 
 export const CATALOG_MANIFEST: AppManifest = defineProjectManifest({
   projectId: "catalog",
-  order: 20,
+  order: 2,
   defaultRoute: ROUTES.ARTICLE_LIST,
   routes: [
     protectedRoute("catalog", {
@@ -180,7 +180,7 @@ export const CATALOG_MANIFEST: AppManifest = defineProjectManifest({
     navGroup("catalog", {
       id: "catalog",
       label: "Catalog",
-      order: 0,
+      order: 1,
       entries: [
         {
           id: "catalog:article:list",
@@ -190,6 +190,32 @@ export const CATALOG_MANIFEST: AppManifest = defineProjectManifest({
           guard: "protected",
           icon: BookOpen,
           description: "Gestion des articles",
+          children: [
+            {
+              id: "catalog:article:create",
+              routeId: "catalog:article:create",
+              title: "Creer un article",
+              path: ROUTES.ARTICLE_CREATE,
+              guard: "protected",
+              hidden: true,
+            },
+            {
+              id: "catalog:article:edit",
+              routeId: "catalog:article:edit",
+              title: "Modifier un article",
+              path: ROUTES.ARTICLE_EDIT,
+              guard: "protected",
+              hidden: true,
+            },
+            {
+              id: "catalog:article:detail",
+              routeId: "catalog:article:detail",
+              title: "Detail article",
+              path: ROUTES.ARTICLE_DETAIL,
+              guard: "protected",
+              hidden: true,
+            },
+          ],
         },
         {
           id: "catalog:categorie-article:list",
@@ -208,6 +234,32 @@ export const CATALOG_MANIFEST: AppManifest = defineProjectManifest({
           guard: "protected",
           icon: Database,
           description: "Definition des champs de metadonnees",
+          children: [
+            {
+              id: "catalog:categorie-article-metadata-champ:create",
+              routeId: "catalog:categorie-article-metadata-champ:create",
+              title: "Creer un champ de metadonnee",
+              path: ROUTES.CATEGORIE_ARTICLE_METADATA_CHAMP_CREATE,
+              guard: "protected",
+              hidden: true,
+            },
+            {
+              id: "catalog:categorie-article-metadata-champ:edit",
+              routeId: "catalog:categorie-article-metadata-champ:edit",
+              title: "Modifier un champ de metadonnee",
+              path: ROUTES.CATEGORIE_ARTICLE_METADATA_CHAMP_EDIT,
+              guard: "protected",
+              hidden: true,
+            },
+            {
+              id: "catalog:categorie-article-metadata-champ:detail",
+              routeId: "catalog:categorie-article-metadata-champ:detail",
+              title: "Detail champ de metadonnee",
+              path: ROUTES.CATEGORIE_ARTICLE_METADATA_CHAMP_DETAIL,
+              guard: "protected",
+              hidden: true,
+            },
+          ],
         },
         {
           id: "catalog:article-metadata-valeur:list",

@@ -928,6 +928,7 @@ export function useGeneratedModelForm(options: UseGeneratedModelFormOptions) {
 
           const outcome: ModelFormMutationOutcome = {
             ok,
+            object: asRecord(payload.object) ?? null,
             errors: normalizedErrors,
             conflict,
             formErrorKey: resolveCanonicalFormErrorKey(

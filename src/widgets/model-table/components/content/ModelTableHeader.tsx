@@ -12,72 +12,91 @@ type ModelTableHeaderProps = ModelTableHeaderSlotProps;
 
 /**
  * Renders the default table header with breadcrumb, title, counts, and actions.
- * Premium design with gradient icon, animated badges, and subtle status indicators.
+ * Redesigned for optimal space management and modern ERP aesthetics.
  */
 export function ModelTableHeader({
   controller,
   TopActionsComponent,
 }: ModelTableHeaderProps) {
   return (
-    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 px-1 py-4">
-      <div className="flex items-start gap-4">
-        {/* Icon */}
-        <div className="hidden sm:flex size-12 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-primary/15 to-primary/5 text-primary shadow-sm ring-1 ring-primary/10">
-          <Box className="size-6" />
+    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 px-4 py-3 border-b border-border/40 bg-background/50 backdrop-blur-sm">
+      <div className="flex items-center gap-3">
+        {/* Subtle Icon */}
+        <div className="hidden sm:flex size-10 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 text-primary border border-primary/20 shadow-sm">
+          <Box className="size-5" />
         </div>
 
-        <div className="flex flex-col gap-1.5">
-          {/* Breadcrumb */}
-          <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground/50">
-            <Database className="size-3" />
-            <span>{controller.app}</span>
-            <ChevronRight className="size-2.5" />
-            <span className="text-primary/60">{controller.model}</span>
-          </div>
-
-          {/* Title + Badges */}
-          <div className="flex items-center gap-3.5">
-            <h1 className="text-3xl font-extrabold tracking-tight text-foreground/90">
+        <div className="flex flex-col justify-center gap-1.5">
+          {/* Title & Badges */}
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-lg md:text-xl font-bold text-foreground/90 tracking-tight leading-none">
               {controller.resolvedTitle}
             </h1>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1.5">
               <Badge
                 variant="secondary"
-                className="h-7 rounded-full px-3.5 bg-primary text-primary-foreground border-none font-bold text-xs shadow-md shadow-primary/15 tabular-nums"
+                className="h-6 px-2.5 rounded-md bg-secondary/80 text-secondary-foreground hover:bg-secondary/60 border-none text-[11px] font-bold tabular-nums transition-colors"
+                title="Nombre total d'éléments"
               >
                 {controller.totalCount}
               </Badge>
               {controller.hasSelection && (
-                <Badge className="h-7 rounded-full px-3.5 bg-secondary text-secondary-foreground border-none font-bold text-xs shadow-md animate-in zoom-in-95 duration-200 tabular-nums">
-                  {controller.selectedCount} sélectionnés
+                <Badge
+                  className="h-6 px-2.5 rounded-md bg-primary text-primary-foreground border-none text-[11px] font-bold shadow-sm animate-in zoom-in-95 duration-200 tabular-nums"
+                  title={`${controller.selectedCount} éléments sélectionnés`}
+                >
+                  {controller.selectedCount} sél.
                 </Badge>
               )}
             </div>
           </div>
 
-          {/* Status bar */}
-          <div className="flex items-center gap-3 text-[10px] font-medium text-muted-foreground/50">
-            <div className="flex items-center gap-1.5">
-              <RefreshCw
-                className={cn(
-                  "size-3",
-                  controller.loading && "animate-spin text-primary",
-                )}
-              />
-              <span>Mis à jour {controller.timeAgo}</span>
-            </div>
-            <Separator orientation="vertical" className="h-3" />
-            <button
-              onClick={controller.triggerRefresh}
-              className="hover:text-primary transition-colors uppercase tracking-widest"
-            >
-              Rafraîchir
-            </button>
+          {/* Breadcrumb & Status */}
+          <div className="flex items-center text-[10px] font-semibold text-muted-foreground uppercase tracking-wider leading-none">
+            <Database className="size-3 mr-1.5 opacity-70" />
+            <span>{controller.app}</span>
+            <ChevronRight className="size-3 mx-1 opacity-40" />
+            <span className="text-primary/80">{controller.model}</span>
+            <Separator
+              orientation="vertical"
+              className="h-3 mx-2.5 opacity-50"
+            />
+            <span className="normal-case tracking-normal opacity-70">
+              Mis à jour :{" "}
+              <span className="font-semibold text-foreground/80">
+                {controller.timeAgo}
+              </span>
+            </span>
           </div>
         </div>
       </div>
 
-      <TopActionsComponent controller={controller} />
+      <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+        <button
+          onClick={controller.triggerRefresh}
+          disabled={controller.loading}
+          className={cn(
+            "flex size-9 items-center justify-center rounded-md border shadow-sm transition-all focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+            controller.loading
+              ? "opacity-50 cursor-not-allowed bg-muted text-muted-foreground"
+              : "bg-background hover:bg-accent hover:text-accent-foreground active:scale-95 text-foreground",
+          )}
+          title="Rafraîchir les données"
+        >
+          <RefreshCw
+            className={cn(
+              "size-4",
+              controller.loading && "animate-spin text-primary",
+            )}
+          />
+          <span className="sr-only">Rafraîchir</span>
+        </button>
+        <Separator
+          orientation="vertical"
+          className="h-6 hidden sm:block opacity-50 mx-1"
+        />
+        <TopActionsComponent controller={controller} />
+      </div>
     </div>
   );
 }

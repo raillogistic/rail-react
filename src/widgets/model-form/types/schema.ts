@@ -10,6 +10,7 @@ import type React from "react";
 import type { DocumentNode } from "graphql";
 import type { FetchPolicy } from "@apollo/client";
 import type { UseFormReturn } from "@tanstack/react-form";
+import type { ModelFormProps } from "../types.model";
 
 // ─── Input Types ─────────────────────────────────────────────────────────────
 
@@ -190,7 +191,7 @@ export interface QueryChoiceInlineCreateConfig {
   modelName?: string;
   permissionModelName?: string;
   title?: string;
-  formProps?: Record<string, any>;
+  formProps?: Partial<ModelFormProps<Record<string, any>>>;
   mapCreatedOption?: (
     payload: any,
     ctx: { valueKey?: string; labelKey?: string; descriptionKey?: string },

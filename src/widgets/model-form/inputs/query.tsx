@@ -3,7 +3,15 @@ import { useApolloClient } from "@apollo/client";
 import { useStore } from "@tanstack/react-form";
 import type { UseFormReturn } from "@tanstack/react-form";
 import { parse, type DocumentNode } from "graphql";
-import { Loader2, Plus, Search, Check, ChevronDown, X, Database } from "lucide-react";
+import {
+  Loader2,
+  Plus,
+  Search,
+  Check,
+  ChevronDown,
+  X,
+  Database,
+} from "lucide-react";
 import { Button } from "@/shared/ui/kit/button";
 import { Input } from "@/shared/ui/kit/input";
 import {
@@ -26,6 +34,8 @@ import {
 } from "./common";
 import { cn } from "@/shared/utils";
 import { useModelPermissions } from "@/features/auth/lib-auth/hooks/useModelPermissions";
+import type { ModelFormMutationOutcome } from "../types/generatedContract";
+import type { ModelFormProps } from "../types.model";
 import type {
   FieldComponentProps,
   QueryChoiceFieldConfig,
@@ -39,7 +49,7 @@ export type { ChoiceOption } from "./types";
 
 type Props = FieldComponentProps<QueryChoiceFieldConfig>;
 
-const LazyModelForm: React.FC<Record<string, any>> = () => null;
+const LazyModelForm = React.lazy(() => import("../components/ModelForm"));
 
 const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
   const meta = field.state.meta;
@@ -100,11 +110,20 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
   );
 
   const inlineCreationEnabled = inlineCreateConfig?.enabled ?? true;
+  const inlineModelFormOverrides = React.useMemo(
+    () =>
+      (inlineCreateConfig?.formProps ?? {}) as Partial<
+        ModelFormProps<Record<string, any>>
+      >,
+    [inlineCreateConfig?.formProps],
+  );
   const formMeta = (form?.options as any)?.meta as
     | { appName?: string; modelName?: string }
     | undefined;
-  const inlineAppName = inlineModelInfo.appName ?? formMeta?.appName ?? null;
-  const inlineModelNameRaw = inlineModelInfo.modelName ?? null;
+  const inlineAppName =
+    inlineModelFormOverrides.app ?? inlineModelInfo.appName ?? formMeta?.appName ?? null;
+  const inlineModelNameRaw =
+    inlineModelFormOverrides.model ?? inlineModelInfo.modelName ?? null;
   const inlineModelName = normalizeInlineModelName(inlineModelNameRaw);
   const permissionTarget =
     inlineCreateConfig?.permissionModelName ??
@@ -144,9 +163,6 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
     React.useState<ChoiceOption[]>(prefilledOptions);
   const [loading, setLoading] = React.useState(false);
   const [inlineFormOpen, setInlineFormOpen] = React.useState(false);
-  const inlineFormRef = React.useRef<UseFormReturn<Record<string, any>> | null>(
-    null,
-  );
   const [search, setSearch] = React.useState("");
   const [highlightedIndex, setHighlightedIndex] = React.useState<number>(-1);
   const formValuesRef = React.useRef(form.state.values);
@@ -367,7 +383,7 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
         setOptions((prev) => mergeChoiceOptions(prev, [normalizedOption]));
       }
       const nextValue = config.multiple
-        ? Array.from(new Set([...selectedValues, value]))
+        ? dedupeChoiceValues([...selectedValues, value])
         : value;
       field.handleChange(nextValue as any);
       void load("");
@@ -442,77 +458,51 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
     }
   };
 
-  const inlineFormProps = React.useMemo(() => {
-    const rawOverrides = (inlineCreateConfig?.formProps ?? {}) as Record<
-      string,
-      any
-    >;
-    const {
-      onCompleted: userOnCompleted,
-      state: overrideState,
-      layout: overrideLayout,
-      onFormReady: _legacyOnFormReady,
-      inPopup: _legacyInPopup,
-      showSectionHeaders: _legacyShowSectionHeaders,
-      ...restOverrides
-    } = rawOverrides;
-    void _legacyOnFormReady;
-    void _legacyInPopup;
-    void _legacyShowSectionHeaders;
+  const inlineFormProps = React.useMemo<
+    Partial<ModelFormProps<Record<string, any>>>
+  >(() => {
+    const rawOverrides = inlineModelFormOverrides;
+    const { mode: _ignoredMode, ...restOverrides } = rawOverrides;
+    void _ignoredMode;
+    const overrideState = rawOverrides.state;
+    const overrideLayout = rawOverrides.layout;
+    const userOnSubmitResult = rawOverrides.onSubmitResult;
     const onReady =
       typeof overrideState?.onReady === "function"
         ? overrideState.onReady
         : undefined;
     return {
       ...restOverrides,
-      app: inlineAppName ?? undefined,
-      model: inlineModelName ?? undefined,
-      mode: "CREATE",
+      app: rawOverrides.app ?? inlineAppName ?? undefined,
+      model: rawOverrides.model ?? inlineModelName ?? undefined,
+      mode: "CREATE" as const,
+      onlyRequired: rawOverrides.onlyRequired ?? true,
       layout: {
+        variant: "popup",
+        showSectionHeaders: false,
         ...(overrideLayout ?? {}),
-        variant: overrideLayout?.variant ?? "popup",
-        showSectionHeaders: overrideLayout?.showSectionHeaders ?? false,
       },
       state: {
         ...(overrideState ?? {}),
         onReady: (readyForm: UseFormReturn<Record<string, any>>) => {
-          inlineFormRef.current = readyForm;
           onReady?.(readyForm);
         },
       },
-      onCompleted: (payload: any) => {
-        if (payload?.ok === false) {
-          const errors = payload?.errors ?? [];
-          if (Array.isArray(errors) && inlineFormRef.current) {
-            errors.forEach((error: any) => {
-              if (!error?.field) return;
-              inlineFormRef.current?.setFieldMeta(error.field, (prev) => ({
-                ...prev,
-                isTouched: true,
-                isValid: false,
-                errors: [error.message].filter(Boolean),
-                errorMap: {
-                  ...(prev?.errorMap ?? {}),
-                  onSubmit: error.message,
-                },
-              }));
-            });
-          }
+      onSubmitResult: (result: ModelFormMutationOutcome) => {
+        userOnSubmitResult?.(result);
+        if (!result?.ok) {
           setInlineFormOpen(true);
           return;
         }
-        if (typeof userOnCompleted === "function") {
-          userOnCompleted(payload);
-        }
-        handleInlineCreated(payload);
+        handleInlineCreated(result);
         setInlineFormOpen(false);
       },
     };
   }, [
     handleInlineCreated,
     inlineAppName,
+    inlineModelFormOverrides,
     inlineModelName,
-    inlineCreateConfig?.formProps,
   ]);
 
   const selectedOptions = React.useMemo(
@@ -522,6 +512,26 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
       ),
     [options, selectedValues],
   );
+  const hasInlineModelTarget = Boolean(inlineAppName && inlineModelName);
+  const inlineButtonVisible =
+    inlineCreationEnabled &&
+    hasInlineModelTarget &&
+    (inlinePermissions.loading || inlinePermissions.canCreate);
+  const canOpenInlineForm =
+    inlineCreationEnabled &&
+    hasInlineModelTarget &&
+    inlinePermissions.canCreate &&
+    !inlinePermissions.loading;
+  const inlineButtonDisabled =
+    inlinePermissions.loading ||
+    !inlinePermissions.canCreate ||
+    !hasInlineModelTarget;
+
+  React.useEffect(() => {
+    if (inlineFormOpen && !canOpenInlineForm) {
+      setInlineFormOpen(false);
+    }
+  }, [canOpenInlineForm, inlineFormOpen]);
 
   const inlineTriggerLabel = inlineCreateConfig?.title ?? "Ajouter";
 
@@ -627,9 +637,7 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
                       <span className="absolute left-3 flex size-4 items-center justify-center">
                         {selectedValues.some((value) =>
                           areChoiceValuesEqual(value, option.value),
-                        ) && (
-                          <Check className="size-3.5 stroke-[3]" />
-                        )}
+                        ) && <Check className="size-3.5 stroke-[3]" />}
                       </span>
                       <div className="flex flex-col gap-0.5">
                         <span className="text-sm leading-none">
@@ -645,13 +653,18 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
                   ))
                 )}
               </div>
-              {inlineCreationEnabled && (
+              {inlineButtonVisible && (
                 <div className="border-t border-border/40 p-1.5 bg-muted/5">
                   <Button
                     variant="ghost"
                     size="sm"
                     className="w-full justify-start text-primary hover:bg-primary/5 hover:text-primary font-bold text-[10px] uppercase tracking-wider"
-                    onClick={() => setInlineFormOpen(true)}
+                    onClick={() => {
+                      if (canOpenInlineForm) {
+                        setInlineFormOpen(true);
+                      }
+                    }}
+                    disabled={inlineButtonDisabled}
                   >
                     <Plus className="mr-2 size-3.5 stroke-[3]" />
                     {inlineTriggerLabel}
@@ -683,7 +696,6 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
               {inlineFormOpen && (
                 <LazyModelForm
                   {...inlineFormProps}
-                  onError={() => setInlineFormOpen(true)}
                 />
               )}
             </React.Suspense>
@@ -894,6 +906,14 @@ function areChoiceValuesEqual(
   right: ChoiceOption["value"],
 ): boolean {
   return toChoiceValueKey(left) === toChoiceValueKey(right);
+}
+
+function dedupeChoiceValues(values: Array<string | number>) {
+  const map = new Map<string, string | number>();
+  values.forEach((value) => {
+    map.set(toChoiceValueKey(value), value);
+  });
+  return Array.from(map.values());
 }
 
 type GraphQLRecipe = {

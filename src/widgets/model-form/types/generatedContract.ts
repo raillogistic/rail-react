@@ -194,6 +194,7 @@ export type NormalizedModelFormError = {
 
 export type ModelFormMutationOutcome = {
   ok: boolean;
+  object?: Record<string, unknown> | null;
   errors: NormalizedModelFormError[];
   conflict: boolean;
   formErrorKey: string;
