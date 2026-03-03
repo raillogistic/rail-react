@@ -327,7 +327,10 @@ export function TableToolbar({
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div ref={toolbarRootRef} className="relative z-20 mb-4 flex flex-col gap-3">
+      <div
+        ref={toolbarRootRef}
+        className="relative z-20 mb-4 flex flex-col gap-3"
+      >
         {/* Main Toolbar Container */}
         <div
           data-slot="table-toolbar"
@@ -752,4 +755,3 @@ export function TableToolbar({
     </TooltipProvider>
   );
 }
-
