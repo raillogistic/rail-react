@@ -1,6 +1,7 @@
 import type React from "react";
 import type { DynamicTableExpandConfig } from "@/widgets/dynamic-table";
 import type { ModelFormProps } from "@/widgets/model-form/types.model";
+import type { ModelDynamicDetailConfig } from "@/widgets/model-details/config/types";
 import type {
  BaseModelTableColumnActionsInput,
  BaseModelTableColumnOrderingConfig,
@@ -288,11 +289,21 @@ export type ModelTableDetailConfig = {
  */
  form?: ModelTableDetailFormOverrides;
  /**
- * Row-specific ModelForm override resolver.
- */
+  * Row-specific ModelForm override resolver.
+  */
  resolveFormProps?: (
- ctx: ModelTableDetailContext,
- ) => ModelTableDetailFormOverrides | undefined;
+  ctx: ModelTableDetailContext,
+  ) => ModelTableDetailFormOverrides | undefined;
+ /**
+  * Global ModelDynamicDetail configuration overrides.
+  */
+ baseDetail?: ModelDynamicDetailConfig;
+ /**
+  * Row-specific ModelDynamicDetail configuration resolver.
+  */
+ resolveBaseDetail?: (
+  ctx: ModelTableDetailContext,
+ ) => ModelDynamicDetailConfig | undefined;
 };
 
 export type ModelTableV2TopAction = {

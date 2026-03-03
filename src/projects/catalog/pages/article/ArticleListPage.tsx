@@ -37,9 +37,12 @@ function ArticleTable() {
         type: "link",
         hrefTemplate: ROUTES.ARTICLE_EDIT,
       }}
+      // detail={{
+      //   type: "link",
+      //   hrefTemplate: ROUTES.ARTICLE_DETAIL,
+      // }}
       detail={{
-        type: "link",
-        hrefTemplate: ROUTES.ARTICLE_DETAIL,
+        type: "modal",
       }}
       baseTable={{
         tableConfig: {

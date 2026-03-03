@@ -49,6 +49,10 @@ import {
 } from "@/shared/ui/kit/tooltip";
 import { Badge } from "@/shared/ui/kit/badge";
 import { cn } from "@/shared/utils";
+import type {
+ ModelDynamicDetailConfig,
+ ModelDynamicDetailProps,
+} from "@/widgets/model-details/config/types";
 import type { ModelFormProps } from "@/widgets/model-form/types.model";
 import type { ModelFormMutationOutcome } from "@/widgets/model-form/types/generatedContract";
 import type {
@@ -109,6 +113,14 @@ const LazyModelForm = lazy(
  })),
 );
 
+const LazyModelDynamicDetail = lazy(
+ () =>
+ import("@/widgets/model-details").then((module) => ({
+ default:
+ module.ModelDynamicDetail as React.ComponentType<ModelDynamicDetailProps>,
+ })),
+);
+
 type MutationActionEntry = {
  mutation: MutationSchema;
  mode: MutationActionMode;
@@ -149,6 +161,7 @@ type ResolvedDetailConfig = {
  drawerDirection: "left" | "right" | "top" | "bottom";
  objectIdValue: string;
  hrefTemplate?: string;
+ baseDetail: ModelDynamicDetailConfig;
  formOverrides: ModelTableDetailFormOverrides;
 };
 
@@ -465,6 +478,80 @@ function mergeModelFormOverrides(
 }
 
 /**
+ * Merges two optional ModelDynamicDetail config records.
+ */
+function mergeModelDynamicDetailConfig(
+ base: ModelDynamicDetailConfig | undefined,
+ extra: ModelDynamicDetailConfig | undefined,
+): ModelDynamicDetailConfig {
+ const left = base ?? {};
+ const right = extra ?? {};
+
+ return {
+ ...left,
+ ...right,
+ header: {
+ ...(left.header ?? {}),
+ ...(right.header ?? {}),
+ frame: {
+ ...(left.header?.frame ?? {}),
+ ...(right.header?.frame ?? {}),
+ },
+ },
+ runtime: { ...(left.runtime ?? {}), ...(right.runtime ?? {}) },
+ view: { ...(left.view ?? {}), ...(right.view ?? {}) },
+ layout: {
+ ...(left.layout ?? {}),
+ ...(right.layout ?? {}),
+ fieldOverrides: {
+ ...(left.layout?.fieldOverrides ?? {}),
+ ...(right.layout?.fieldOverrides ?? {}),
+ },
+ },
+ nestedFields: { ...(left.nestedFields ?? {}), ...(right.nestedFields ?? {}) },
+ actions: {
+ ...(left.actions ?? {}),
+ ...(right.actions ?? {}),
+ permissions: {
+ ...(left.actions?.permissions ?? {}),
+ ...(right.actions?.permissions ?? {}),
+ },
+ updateForm: {
+ ...(left.actions?.updateForm ?? {}),
+ ...(right.actions?.updateForm ?? {}),
+ },
+ },
+ queryOptions: { ...(left.queryOptions ?? {}), ...(right.queryOptions ?? {}) },
+ };
+}
+
+/**
+ * Applies row-detail ModelForm overrides to ModelDynamicDetail update-form config.
+ */
+function applyDetailFormOverridesToBaseDetail(
+ baseDetail: ModelDynamicDetailConfig,
+ formOverrides: ModelTableDetailFormOverrides,
+): ModelDynamicDetailConfig {
+ const existingModelFormProps = (baseDetail.actions?.updateForm
+ ?.modelFormProps ?? {}) as ModelTableDetailFormOverrides;
+ const mergedModelFormProps = mergeModelFormOverrides(
+ existingModelFormProps,
+ formOverrides,
+ ) as ModelTableDetailFormOverrides;
+
+ return {
+ ...baseDetail,
+ actions: {
+ ...(baseDetail.actions ?? {}),
+ updateForm: {
+ ...(baseDetail.actions?.updateForm ?? {}),
+ modelFormProps: mergedModelFormProps,
+ },
+ },
+ };
+}
+
+/**
  * Resolves update overlay title from static text/callback with a safe fallback.
  */
 function resolveUpdateTitle(
@@ -628,31 +715,42 @@ export function RowActions({
  };
  }, [update, updateContext]);
 
- const resolvedDetailConfig = useMemo<ResolvedDetailConfig>(() => {
- const resolvedObjectId =
- detail?.resolveObjectId?.(detailContext) ?? detail?.objectId ?? rowId;
- const objectIdValue =
- resolvedObjectId === undefined || resolvedObjectId === null
- ? ""
- : String(resolvedObjectId);
- const globalOverrides = detail?.form;
- const perRowOverrides = detail?.resolveFormProps?.(detailContext);
- const mergedOverrides = mergeModelFormOverrides(
- globalOverrides,
- perRowOverrides,
- ) as ModelTableDetailFormOverrides;
+const resolvedDetailConfig = useMemo<ResolvedDetailConfig>(() => {
+const resolvedObjectId =
+detail?.resolveObjectId?.(detailContext) ?? detail?.objectId ?? rowId;
+const objectIdValue =
+resolvedObjectId === undefined || resolvedObjectId === null
+? ""
+: String(resolvedObjectId);
+const globalOverrides = detail?.form;
+const perRowOverrides = detail?.resolveFormProps?.(detailContext);
+const mergedOverrides = mergeModelFormOverrides(
+globalOverrides,
+perRowOverrides,
+) as ModelTableDetailFormOverrides;
+ const globalBaseDetail = detail?.baseDetail;
+ const perRowBaseDetail = detail?.resolveBaseDetail?.(detailContext);
+ const mergedBaseDetail = mergeModelDynamicDetailConfig(
+ globalBaseDetail,
+ perRowBaseDetail,
+ );
+ const mergedBaseDetailWithFormOverrides = applyDetailFormOverridesToBaseDetail(
+ mergedBaseDetail,
+ mergedOverrides,
+ );
 
- return {
- type: detail?.type ?? "drawer",
- title: resolveDetailTitle(detail?.title, detailContext),
- width: detail?.width,
+return {
+type: detail?.type ?? "drawer",
+title: resolveDetailTitle(detail?.title, detailContext),
+width: detail?.width,
  height: detail?.height,
- drawerDirection: detail?.drawerDirection ?? "right",
- objectIdValue,
- hrefTemplate: detail?.hrefTemplate,
- formOverrides: mergedOverrides,
- };
- }, [detail, detailContext]);
+drawerDirection: detail?.drawerDirection ?? "right",
+objectIdValue,
+hrefTemplate: detail?.hrefTemplate,
+ baseDetail: mergedBaseDetailWithFormOverrides,
+formOverrides: mergedOverrides,
+};
+}, [detail, detailContext]);
 
  const editDisabledReason = useMemo(() => {
  if (!canEdit) {
@@ -1146,38 +1244,15 @@ export function RowActions({
  resolvedUpdateConfig.objectIdValue,
  ]);
 
- const detailFormProps = useMemo<ModelFormProps<UpdateFormValues>>(() => {
- const overrides = resolvedDetailConfig.formOverrides;
- const formPropsLayout =
- (overrides.formProps?.layout as
- | Record<string, unknown>
- | undefined) ?? {};
-
- return {
+ const detailViewProps = useMemo<ModelDynamicDetailProps>(
+ () => ({
  app,
  model,
- mode: "view",
- objectId: resolvedDetailConfig.objectIdValue,
- showHeading: false,
- ...overrides,
- layout: {
- variant: "popup",
- ...(overrides.layout as Record<string, unknown> | undefined),
- },
- formProps: {
- ...(overrides.formProps ?? {}),
- layout: {
- variant: "popup",
- ...formPropsLayout,
- },
- },
- };
- }, [
- app,
- model,
- resolvedDetailConfig.formOverrides,
- resolvedDetailConfig.objectIdValue,
- ]);
+ id: resolvedDetailConfig.objectIdValue,
+ baseDetail: resolvedDetailConfig.baseDetail,
+ }),
+ [app, model, resolvedDetailConfig.baseDetail, resolvedDetailConfig.objectIdValue],
+ );
 
  if (!hasAnyActions) {
  return null;
@@ -1560,17 +1635,17 @@ export function RowActions({
  height={resolvedDetailConfig.height}
  drawerDirection={resolvedDetailConfig.drawerDirection}
  >
- <Suspense
- fallback={
- <div className="flex min-h-32 items-center justify-center text-muted-foreground">
- <Loader2 className="size-4 animate-spin" />
- </div>
- }
- >
- <LazyModelForm {...detailFormProps} />
- </Suspense>
- </FormOverlay>
- ) : null}
+<Suspense
+fallback={
+<div className="flex min-h-32 items-center justify-center text-muted-foreground">
+<Loader2 className="size-4 animate-spin" />
+</div>
+}
+>
+<LazyModelDynamicDetail {...detailViewProps} />
+</Suspense>
+</FormOverlay>
+) : null}
  <Suspense fallback={null}>
  <ActionDialog
  open={mutationDialogOpen && Boolean(activeMutationAction)}

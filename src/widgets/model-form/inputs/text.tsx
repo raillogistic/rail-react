@@ -95,10 +95,9 @@ const TextInput: React.FC<Props> = ({ config, field, form }) => {
               accept={config.accept}
               multiple={Boolean(config.multiple)}
               className={cn(
-                "h-9 cursor-pointer border-border/40 bg-muted/20 px-3 py-2 text-sm transition-all duration-300  ",
-                "hover:bg-muted/40 hover:border-border/60",
-                "focus:border-primary/50 focus:bg-background focus:ring-4 focus:ring-primary/10",
-                "file:mr-4 file:h-8 file:border-0 file:bg-primary/10 file:px-3 file:py-0 file:text-[11px] file:font-semibold file:uppercase file:tracking-wider file:text-primary file: hover:file:bg-primary/20",
+                "flex h-9 w-full cursor-pointer file:cursor-pointer items-center border-2 border-border bg-background p-0 text-sm transition-all duration-300",
+                "hover:bg-muted/30 focus-within:border-primary",
+                "file:h-full file:border-0 file:border-r-2 file:border-border file:bg-muted file:px-3 file:py-0 file:text-[11px] file:font-black file:uppercase file:tracking-widest file:text-foreground file:hover:bg-foreground file:hover:text-background file:transition-colors file:mr-3",
               )}
               onChange={(event) => {
                 const list = event.target.files;
@@ -120,17 +119,19 @@ const TextInput: React.FC<Props> = ({ config, field, form }) => {
               {fileList.map((file, idx) => (
                 <div
                   key={`${file.name}-${idx}`}
-                  className="flex items-center gap-2 border border-border/40 bg-background px-3 py-2 text-[12px] font-medium  "
+                  className="relative flex items-center gap-3 border-2 border-foreground bg-primary/10 pl-2 pr-8 py-1 transition-all hover:-translate-y-0.5 hover:translate-x-0.5"
                 >
-                  <File className="size-4 text-primary" />
-                  <span className="max-w-[200px] truncate">{file.name}</span>
-                  <span className="text-[11px] text-muted-foreground/70">
-                    ({(file.size / 1024).toFixed(1)} KB)
+                  <File className="size-4 text-foreground" />
+                  <span className="max-w-[150px] truncate text-xs font-black tracking-wide text-foreground">
+                    {file.name}
+                  </span>
+                  <span className="flex items-center justify-center border-2 border-foreground bg-background px-1.5 py-0.5 text-[10px] font-bold text-foreground">
+                    {(file.size / 1024).toFixed(1)} KB
                   </span>
                   {!config.disabled && !config.readOnly && (
                     <button
                       type="button"
-                      className="ml-1 text-muted-foreground hover:text-destructive transition-colors"
+                      className="absolute right-0 top-0 bottom-0 flex w-7 items-center justify-center border-l-2 border-foreground bg-destructive text-destructive-foreground hover:bg-red-600 transition-colors"
                       onClick={() => {
                         if (config.multiple) {
                           field.handleChange(

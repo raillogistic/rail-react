@@ -1,6 +1,7 @@
 import React from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import type { ModelDynamicDetailProps } from "@/widgets/model-details/config/types";
 import type { ModelFormProps } from "@/widgets/model-form/types.model";
 import { RowActions } from "../row/RowActions";
 
@@ -8,6 +9,7 @@ const mockUseMetadata = vi.fn();
 const mockUseTable = vi.fn();
 const mockNavigate = vi.fn();
 const modelFormSpy = vi.hoisted(() => vi.fn());
+const modelDetailSpy = vi.hoisted(() => vi.fn());
 const executeTemplateForRowsMock = vi.hoisted(() => vi.fn());
 const toastMock = vi.hoisted(() => ({
  success: vi.fn(),
@@ -192,6 +194,13 @@ vi.mock("@/widgets/model-form", () => ({
  },
 }));
 
+vi.mock("@/widgets/model-details", () => ({
+ ModelDynamicDetail: (props: ModelDynamicDetailProps) => {
+ modelDetailSpy(props);
+ return <div data-testid="model-dynamic-detail">{String(props.id)}</div>;
+ },
+}));
+
 describe("RowActions update integration", () => {
  beforeEach(() => {
  vi.clearAllMocks();
@@ -260,7 +269,7 @@ describe("RowActions update integration", () => {
     expect(screen.queryByTestId("update-overlay-modal")).not.toBeInTheDocument();
   });
 
-  it("opens detail popup in view mode and resolves title/object id overrides", async () => {
+  it("opens detail popup and renders ModelDynamicDetail with resolved overrides", async () => {
     render(
       <RowActions
         row={{ id: 42, externalId: "row-42" }}
@@ -269,6 +278,10 @@ describe("RowActions update integration", () => {
           type: "modal",
           title: ({ rowId }) => `Details ${rowId}`,
           resolveObjectId: ({ row }) => String(row.externalId ?? ""),
+          form: { title: "Inline edit" },
+          resolveBaseDetail: ({ rowId }) => ({
+            className: `detail-${rowId}`,
+          }),
         }}
       />,
     );
@@ -277,15 +290,17 @@ describe("RowActions update integration", () => {
 
     await waitFor(() => {
       expect(screen.getByText("Details 42")).toBeInTheDocument();
-      expect(modelFormSpy).toHaveBeenCalled();
+      expect(modelDetailSpy).toHaveBeenCalled();
     });
 
-    const latestProps = modelFormSpy.mock.calls.at(-1)?.[0] as ModelFormProps<
-      Record<string, unknown>
-    >;
-    expect(latestProps.mode).toBe("view");
-    expect(latestProps.objectId).toBe("row-42");
-    expect(latestProps.layout?.variant).toBe("popup");
+    const latestProps = modelDetailSpy.mock.calls.at(-1)?.[0] as ModelDynamicDetailProps;
+    expect(latestProps.app).toBe("store");
+    expect(latestProps.model).toBe("Order");
+    expect(latestProps.id).toBe("row-42");
+    expect(latestProps.baseDetail?.className).toBe("detail-42");
+    expect(
+      latestProps.baseDetail?.actions?.updateForm?.modelFormProps?.title,
+    ).toBe("Inline edit");
   });
 
   it("navigates using href template when detail type is link", async () => {
