@@ -35,7 +35,10 @@ const renderIcon = (Icon: any, className: string) => {
       className: cn(className, (Icon.props as any)?.className),
     });
   }
-  if (typeof Icon === "function" || (typeof Icon === "object" && (Icon as any).$$typeof)) {
+  if (
+    typeof Icon === "function" ||
+    (typeof Icon === "object" && (Icon as any).$$typeof)
+  ) {
     return <Icon className={className} />;
   }
   return null;
@@ -120,7 +123,7 @@ export const SectionRenderer = <TValues extends Record<string, any>>({
       {section.title ? (
         <div className="flex items-center gap-2.5">
           {section.icon && (
-            <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <div className="flex size-8 items-center justify-center bg-primary/10 text-primary">
               {renderIcon(section.icon, "size-4")}
             </div>
           )}
@@ -164,7 +167,7 @@ export const SectionRenderer = <TValues extends Record<string, any>>({
   return (
     <div
       className={cn(
-        "group overflow-hidden rounded-xl border border-border/60 bg-card/30 transition-all duration-300 hover:border-border",
+        "group overflow-hidden border border-border/60 bg-card/30 transition-all duration-300 hover:border-border",
         accordionOpen && "bg-card shadow-sm",
         ui.className,
       )}
@@ -186,7 +189,7 @@ export const SectionRenderer = <TValues extends Record<string, any>>({
               {section.icon && (
                 <div
                   className={cn(
-                    "flex size-8 items-center justify-center rounded-lg transition-colors",
+                    "flex size-8 items-center justify-center transition-colors",
                     accordionOpen
                       ? "bg-primary text-primary-foreground"
                       : "bg-primary/10 text-primary",
@@ -208,7 +211,7 @@ export const SectionRenderer = <TValues extends Record<string, any>>({
             </div>
             <div
               className={cn(
-                "flex size-6 items-center justify-center rounded-full transition-all duration-300",
+                "flex size-6 items-center justify-center transition-all duration-300",
                 accordionOpen
                   ? "bg-primary/10 text-primary rotate-180"
                   : "bg-muted text-muted-foreground rotate-0",

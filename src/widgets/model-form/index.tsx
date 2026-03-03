@@ -35,13 +35,13 @@ export * from "./utils/resolveSubmitIdentifier";
 export * from "./utils/submitPerformance";
 
 export function resolveModelFormSchema(options: {
-  generatedEnabled: boolean;
-  contract?: ModelFormContract | null;
-  generatedSchema?: FormSchema<Record<string, any>> | null;
-  legacySchema?: FormSchema<Record<string, any>> | null;
+ generatedEnabled: boolean;
+ contract?: ModelFormContract | null;
+ generatedSchema?: FormSchema<Record<string, any>> | null;
+ legacySchema?: FormSchema<Record<string, any>> | null;
 }): FormSchema<Record<string, any>> | null {
-  if (options.generatedEnabled && options.contract && options.generatedSchema) {
-    return options.generatedSchema;
-  }
-  return options.legacySchema ?? null;
+ if (options.generatedEnabled && options.contract && options.generatedSchema) {
+ return options.generatedSchema;
+ }
+ return options.legacySchema ?? null;
 }

@@ -6,20 +6,20 @@ import type { FormSchema } from "../types/schema";
 import { sampleModelFormContract } from "./fixtures/modelFormContract";
 
 describe("generated-form compatibility fallback", () => {
-  it("uses legacy schema when generated opt-in is disabled", () => {
-    const legacySchema: FormSchema<Record<string, any>> = {
-      fields: [{ name: "legacyName", type: "text", label: "Legacy Name" }],
-    };
+ it("uses legacy schema when generated opt-in is disabled", () => {
+ const legacySchema: FormSchema<Record<string, any>> = {
+ fields: [{ name: "legacyName", type: "text", label: "Legacy Name" }],
+ };
 
-    const { result } = renderHook(() =>
-      useGeneratedModelForm({
-        generatedEnabled: false,
-        contract: sampleModelFormContract,
-        legacySchema,
-      }),
-    );
+ const { result } = renderHook(() =>
+ useGeneratedModelForm({
+ generatedEnabled: false,
+ contract: sampleModelFormContract,
+ legacySchema,
+ }),
+ );
 
-    expect(result.current.usingGenerated).toBe(false);
-    expect(result.current.schema.fields?.[0]?.name).toBe("legacyName");
-  });
+ expect(result.current.usingGenerated).toBe(false);
+ expect(result.current.schema.fields?.[0]?.name).toBe("legacyName");
+ });
 });

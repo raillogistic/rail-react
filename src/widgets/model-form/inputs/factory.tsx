@@ -12,37 +12,37 @@ import RichTextInput from "./rich-text";
 type Registry = Partial<Record<FormInputType, FieldRendererComponent>>;
 
 const registry: Registry = {
-  text: TextInput,
-  textarea: TextInput,
-  email: TextInput,
-  password: TextInput,
-  color: TextInput,
-  json: TextInput,
-  file: TextInput,
-  "rich-text": RichTextInput,
-  number: NumberInput,
-  decimal: NumberInput,
-  slider: NumberInput,
-  range: NumberInput,
-  select: ChoiceInput,
-  radio: ChoiceInput,
-  checkbox: BooleanInput,
-  switch: BooleanInput,
-  date: DateInput,
-  "datetime-local": DateTimeInput,
-  time: TimeInput,
-  "select-query": QueryChoiceInput,
+ text: TextInput,
+ textarea: TextInput,
+ email: TextInput,
+ password: TextInput,
+ color: TextInput,
+ json: TextInput,
+ file: TextInput,
+ "rich-text": RichTextInput,
+ number: NumberInput,
+ decimal: NumberInput,
+ slider: NumberInput,
+ range: NumberInput,
+ select: ChoiceInput,
+ radio: ChoiceInput,
+ checkbox: BooleanInput,
+ switch: BooleanInput,
+ date: DateInput,
+ "datetime-local": DateTimeInput,
+ time: TimeInput,
+ "select-query": QueryChoiceInput,
 };
 
 export function registerInputRenderer(
-  type: FormInputType,
-  component: FieldRendererComponent,
+ type: FormInputType,
+ component: FieldRendererComponent,
 ) {
-  registry[type] = component;
+ registry[type] = component;
 }
 
 export function resolveInputComponent(
-  type: FormInputType,
+ type: FormInputType,
 ): FieldRendererComponent | undefined {
-  return registry[type];
+ return registry[type];
 }

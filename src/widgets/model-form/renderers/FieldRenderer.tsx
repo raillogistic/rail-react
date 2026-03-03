@@ -70,7 +70,7 @@ export const FieldRenderer = <TValues extends Record<string, any>>({
     );
     return (
       <div
-        className="group/object relative overflow-hidden rounded-2xl border border-border/40 bg-card/20 p-4 transition-all duration-300 hover:border-border/80 hover:bg-card/40 hover:shadow-lg hover:shadow-black/5"
+        className="group/object relative overflow-hidden border border-border/40 bg-card/20 p-4 transition-all duration-300 hover:border-border/80 hover:bg-card/40 hover:shadow-lg hover:shadow-black/5"
         style={
           colSpan
             ? { gridColumn: `span ${colSpan} / span ${colSpan}` }
@@ -78,19 +78,19 @@ export const FieldRenderer = <TValues extends Record<string, any>>({
         }
       >
         <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-primary/20 via-primary/5 to-transparent opacity-0 transition-opacity group-hover/object:opacity-100" />
-        
+
         {config.label ? (
           <div className="mb-4 flex items-center justify-between border-b border-border/20 pb-2">
             <div className="flex items-center gap-2">
-              <div className="size-1.5 rounded-full bg-primary/60" />
+              <div className="size-1.5 bg-primary/60" />
               <span className="text-xs font-extrabold uppercase tracking-[0.2em] text-muted-foreground/60 transition-colors group-hover/object:text-primary/80">
                 {config.label}
               </span>
             </div>
             {config.collapsible && (
-               <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/30">
-                 Détails
-               </div>
+              <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/30">
+                Détails
+              </div>
             )}
           </div>
         ) : null}
@@ -169,10 +169,7 @@ export const FieldRenderer = <TValues extends Record<string, any>>({
   }, [normalizedConfig, globalReadOnly, globalDisabled]);
 
   return (
-    <form.Field
-      name={path as any}
-      validators={validators}
-    >
+    <form.Field name={path as any} validators={validators}>
       {(fieldApi) => {
         const refreshInstruction = resolveConflictRefreshInstruction(
           fieldApi.state.meta,
@@ -283,11 +280,7 @@ export function createValidators<TValues>(
 }
 
 function getValidatorValue(payload: unknown) {
-  if (
-    payload &&
-    typeof payload === "object" &&
-    "value" in (payload as any)
-  ) {
+  if (payload && typeof payload === "object" && "value" in (payload as any)) {
     return (payload as { value?: unknown }).value;
   }
   return payload;
@@ -301,8 +294,11 @@ function isPromise<T = unknown>(value: unknown): value is Promise<T> {
   );
 }
 
-export function resolveConflictRefreshInstruction(meta: unknown): string | null {
-  const errorMap = (meta as { errorMap?: Record<string, unknown> } | undefined)?.errorMap;
+export function resolveConflictRefreshInstruction(
+  meta: unknown,
+): string | null {
+  const errorMap = (meta as { errorMap?: Record<string, unknown> } | undefined)
+    ?.errorMap;
   const hint = errorMap?.onSubmitConflictInstruction;
   if (typeof hint === "string" && hint.trim()) {
     return hint;

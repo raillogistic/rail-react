@@ -37,7 +37,10 @@ const renderIcon = (Icon: any, className: string) => {
       className: cn(className, (Icon.props as any)?.className),
     });
   }
-  if (typeof Icon === "function" || (typeof Icon === "object" && (Icon as any).$$typeof)) {
+  if (
+    typeof Icon === "function" ||
+    (typeof Icon === "object" && (Icon as any).$$typeof)
+  ) {
     return <Icon className={className} />;
   }
   return null;
@@ -105,8 +108,8 @@ export const AccordionMode = <TValues extends Record<string, any>>({
           <div
             key={sectionId}
             className={cn(
-              "group overflow-hidden rounded-xl border border-border/60 bg-card/30 transition-all duration-300 hover:border-border",
-              isOpen && "bg-card shadow-sm border-border"
+              "group overflow-hidden border border-border/60 bg-card/30 transition-all duration-300 hover:border-border",
+              isOpen && "bg-card shadow-sm border-border",
             )}
           >
             <Collapsible
@@ -119,20 +122,26 @@ export const AccordionMode = <TValues extends Record<string, any>>({
                   className={cn(
                     "flex w-full items-center justify-between px-6 py-4 text-left outline-none transition-colors",
                     "hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-primary/20",
-                    isOpen && "border-b bg-muted/20"
+                    isOpen && "border-b bg-muted/20",
                   )}
                 >
                   <div className="flex items-center gap-3">
                     {section.icon && (
-                      <div className={cn(
-                        "flex size-8 items-center justify-center rounded-lg transition-colors",
-                        isOpen ? "bg-primary text-primary-foreground" : "bg-primary/10 text-primary"
-                      )}>
+                      <div
+                        className={cn(
+                          "flex size-8 items-center justify-center transition-colors",
+                          isOpen
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-primary/10 text-primary",
+                        )}
+                      >
                         {renderIcon(section.icon, "size-4")}
                       </div>
                     )}
                     <div className="flex flex-col">
-                      <span className="text-base font-bold tracking-tight">{title}</span>
+                      <span className="text-base font-bold tracking-tight">
+                        {title}
+                      </span>
                       {section.description && !isOpen && (
                         <span className="text-xs text-muted-foreground line-clamp-1">
                           {section.description}
@@ -140,20 +149,25 @@ export const AccordionMode = <TValues extends Record<string, any>>({
                       )}
                     </div>
                   </div>
-                  <div className={cn(
-                    "flex size-6 items-center justify-center rounded-full transition-all duration-300",
-                    isOpen ? "bg-primary/10 text-primary rotate-180" : "bg-muted text-muted-foreground rotate-0"
-                  )}>
+                  <div
+                    className={cn(
+                      "flex size-6 items-center justify-center transition-all duration-300",
+                      isOpen
+                        ? "bg-primary/10 text-primary rotate-180"
+                        : "bg-muted text-muted-foreground rotate-0",
+                    )}
+                  >
                     <ChevronDown className="size-4" />
                   </div>
                 </button>
               </CollapsibleTrigger>
-              <CollapsibleContent
-                className="overflow-hidden transition-all data-[state=closed]:animate-collapse-up data-[state=open]:animate-collapse-down"
-              >
+              <CollapsibleContent className="overflow-hidden transition-all data-[state=closed]:animate-collapse-up data-[state=open]:animate-collapse-down">
                 <div className="p-6">
                   <SectionRenderer
-                    section={{ ...section, ui: { ...section.ui, accordion: false, card: false } }}
+                    section={{
+                      ...section,
+                      ui: { ...section.ui, accordion: false, card: false },
+                    }}
                     form={form}
                     columns={section.columns ?? columns}
                     showHeaders={true}

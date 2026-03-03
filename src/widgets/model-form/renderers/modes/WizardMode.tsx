@@ -65,7 +65,7 @@ export const WizardMode = <TValues extends Record<string, any>>({
   }, [sections, hiddenSections, values, config]);
 
   const [stepIndex, setStepIndex] = React.useState(0);
-  
+
   // Clamp step if sections shrink
   React.useEffect(() => {
     if (stepIndex >= visibleSections.length && visibleSections.length > 0) {
@@ -92,8 +92,10 @@ export const WizardMode = <TValues extends Record<string, any>>({
 
   if (!visibleSections.length) {
     return (
-      <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border/60 py-20 px-4 text-center">
-        <p className="text-sm font-medium text-muted-foreground/60">Aucune étape définie.</p>
+      <div className="flex flex-col items-center justify-center border border-dashed border-border/60 py-20 px-4 text-center">
+        <p className="text-sm font-medium text-muted-foreground/60">
+          Aucune étape définie.
+        </p>
       </div>
     );
   }
@@ -103,19 +105,24 @@ export const WizardMode = <TValues extends Record<string, any>>({
       {config.showProgress !== false ? (
         <div className="relative flex flex-col gap-4">
           <div className="flex items-center justify-between gap-4">
-             <div className="flex items-center gap-2">
-                <span className="text-sm font-bold tracking-tight">Étape {stepIndex + 1} sur {totalSteps}</span>
-             </div>
-             <Badge variant="secondary" className="bg-primary/5 text-primary border-primary/20 font-bold px-2 py-0.5 text-[10px] uppercase tracking-wider">
-               {Math.round(((stepIndex + 1) / totalSteps) * 100)}% complété
-             </Badge>
+            <div className="flex items-center gap-2">
+              <span className="text-sm font-bold tracking-tight">
+                Étape {stepIndex + 1} sur {totalSteps}
+              </span>
+            </div>
+            <Badge
+              variant="secondary"
+              className="bg-primary/5 text-primary border-primary/20 font-bold px-2 py-0.5 text-[10px] uppercase tracking-wider"
+            >
+              {Math.round(((stepIndex + 1) / totalSteps) * 100)}% complété
+            </Badge>
           </div>
 
           <div className="flex items-center gap-2 px-1">
             {visibleSections.map((section, index) => {
               const isActive = index === stepIndex;
               const isCompleted = index < stepIndex;
-              
+
               return (
                 <React.Fragment key={section.id ?? index}>
                   <div className="relative flex flex-1 flex-col gap-2">
@@ -128,18 +135,32 @@ export const WizardMode = <TValues extends Record<string, any>>({
                       }}
                       disabled={!config.allowSkip && index > stepIndex}
                       className={cn(
-                        "group relative h-1.5 w-full overflow-hidden rounded-full transition-all duration-300",
-                        isActive ? "bg-primary" : isCompleted ? "bg-primary/40" : "bg-muted hover:bg-muted/80"
+                        "group relative h-1.5 w-full overflow-hidden transition-all duration-300",
+                        isActive
+                          ? "bg-primary"
+                          : isCompleted
+                            ? "bg-primary/40"
+                            : "bg-muted hover:bg-muted/80",
                       )}
-                      title={section.step?.label ?? section.title ?? `Étape ${index + 1}`}
+                      title={
+                        section.step?.label ??
+                        section.title ??
+                        `Étape ${index + 1}`
+                      }
                     >
-                       {isActive && <div className="absolute inset-0 bg-white/20 animate-pulse" />}
+                      {isActive && (
+                        <div className="absolute inset-0 bg-white/20 animate-pulse" />
+                      )}
                     </button>
-                    <span className={cn(
-                      "hidden sm:block text-[10px] font-bold uppercase tracking-tight transition-colors truncate px-0.5",
-                      isActive ? "text-primary" : "text-muted-foreground/60"
-                    )}>
-                       {section.step?.label ?? section.title ?? `Étape ${index + 1}`}
+                    <span
+                      className={cn(
+                        "hidden sm:block text-[10px] font-bold uppercase tracking-tight transition-colors truncate px-0.5",
+                        isActive ? "text-primary" : "text-muted-foreground/60",
+                      )}
+                    >
+                      {section.step?.label ??
+                        section.title ??
+                        `Étape ${index + 1}`}
                     </span>
                   </div>
                 </React.Fragment>

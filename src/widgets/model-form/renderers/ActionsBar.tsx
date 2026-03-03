@@ -18,7 +18,15 @@ import {
   DialogTitle,
 } from "@/shared/ui/kit/dialog";
 import { cn } from "@/shared/utils";
-import { Save, RotateCcw, CheckCircle2, AlertTriangle, Loader2, Undo, Redo } from "lucide-react";
+import {
+  Save,
+  RotateCcw,
+  CheckCircle2,
+  AlertTriangle,
+  Loader2,
+  Undo,
+  Redo,
+} from "lucide-react";
 import type { FormActionsConfig } from "../types/actions";
 
 export type ActionsBarProps<TValues> = {
@@ -72,7 +80,7 @@ export const ActionsBar = <TValues extends Record<string, any>>({
     "transition-all duration-300 ease-in-out",
     isPopup
       ? "mt-4 border-t border-border/20 bg-transparent shadow-none backdrop-blur-0"
-      : "sticky bottom-0 mt-6 -mx-4 border-t bg-background/80 backdrop-blur-md shadow-[0_-4px_12px_rgba(0,0,0,0.03)]"
+      : "sticky bottom-0 mt-6 -mx-4 border-t bg-background/80 backdrop-blur-md shadow-[0_-4px_12px_rgba(0,0,0,0.03)]",
   );
 
   const handleSubmitClick = () => {
@@ -93,7 +101,8 @@ export const ActionsBar = <TValues extends Record<string, any>>({
         })
       : extra;
 
-  const showUndoRedo = undoRedo?.enabled && undoRedo?.showInActionBar !== false && history;
+  const showUndoRedo =
+    undoRedo?.enabled && undoRedo?.showInActionBar !== false && history;
 
   return (
     <>
@@ -108,7 +117,7 @@ export const ActionsBar = <TValues extends Record<string, any>>({
               Modifications non enregistrées
             </Badge>
           ) : (
-             <div className="w-1" />
+            <div className="w-1" />
           )}
         </div>
 

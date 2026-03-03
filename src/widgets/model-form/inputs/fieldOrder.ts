@@ -18,7 +18,7 @@ export type NormalizeFieldOrderOptions = {
 
 /**
  * Normalizes field order recursively using:
- * 1) intrinsic `order` hints
+ * 1) intrinsic`order` hints
  * 2) optional layout ordering rules
  */
 export function normalizeFieldOrder(
@@ -203,18 +203,16 @@ function clampIndex(value: number | undefined, length: number): number {
   if (typeof value !== "number" || !Number.isFinite(value)) {
     return length;
   }
-  const rounded = Math.trunc(value);
-  if (rounded < 0) return 0;
-  if (rounded > length) return length;
-  return rounded;
+  const a = Math.trunc(value);
+  if (a < 0) return 0;
+  if (a > length) return length;
+  return a;
 }
 
 /**
- * Sorts fields using explicit `order`, then keeps stable relative fallback.
+ * Sorts fields using explicit`order`, then keeps stable relative fallback.
  */
-function sortFieldsByOrderHint(
-  fields: FormFieldConfig[],
-): FormFieldConfig[] {
+function sortFieldsByOrderHint(fields: FormFieldConfig[]): FormFieldConfig[] {
   if (fields.length < 2) return fields;
   return fields
     .map((field, index) => ({ field, index }))
@@ -223,7 +221,7 @@ function sortFieldsByOrderHint(
 }
 
 /**
- * Compares two fields by `order` hint then by name for deterministic ties.
+ * Compares two fields by`order` hint then by name for deterministic ties.
  */
 function compareFieldOrder(
   a: FormFieldConfig,

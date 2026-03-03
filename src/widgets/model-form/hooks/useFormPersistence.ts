@@ -9,47 +9,47 @@ import type { UseFormReturn } from "@tanstack/react-form";
  * @param enabled - Whether persistence is enabled
  */
 export const useFormPersistence = <TValues extends Record<string, any>>(
-  form: UseFormReturn<TValues>,
-  key?: string,
-  enabled: boolean = true,
+ form: UseFormReturn<TValues>,
+ key?: string,
+ enabled: boolean = true,
 ) => {
-  // Load initial values on mount
-  React.useEffect(() => {
-    if (!enabled || !key) return;
+ // Load initial values on mount
+ React.useEffect(() => {
+ if (!enabled || !key) return;
 
-    try {
-      const stored = localStorage.getItem(key);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        // We defer the update slightly to ensure form is ready
-        setTimeout(() => {
-          form.baseStore.setState((s) => ({
-            ...s,
-            values: {
-              ...s.values,
-              ...parsed,
-            },
-          }));
-        }, 0);
-      }
-    } catch (error) {
-      console.warn(`[DynamicForm] Failed to load persisted values for key "${key}"`, error);
-    }
-  }, [key, enabled, form]);
+ try {
+ const stored = localStorage.getItem(key);
+ if (stored) {
+ const parsed = JSON.parse(stored);
+ // We defer the update slightly to ensure form is ready
+ setTimeout(() => {
+ form.baseStore.setState((s) => ({
+ ...s,
+ values: {
+ ...s.values,
+ ...parsed,
+ },
+ }));
+ }, 0);
+ }
+ } catch (error) {
+ console.warn(`[DynamicForm] Failed to load persisted values for key "${key}"`, error);
+ }
+ }, [key, enabled, form]);
 
-  // Save values on change
-  React.useEffect(() => {
-    if (!enabled || !key) return;
+ // Save values on change
+ React.useEffect(() => {
+ if (!enabled || !key) return;
 
-    const unsubscribe = form.store.subscribe(() => {
-      const values = form.store.state.values;
-      try {
-        localStorage.setItem(key, JSON.stringify(values));
-      } catch (error) {
-        console.warn(`[DynamicForm] Failed to save values for key "${key}"`, error);
-      }
-    });
+ const unsubscribe = form.store.subscribe(() => {
+ const values = form.store.state.values;
+ try {
+ localStorage.setItem(key, JSON.stringify(values));
+ } catch (error) {
+ console.warn(`[DynamicForm] Failed to save values for key "${key}"`, error);
+ }
+ });
 
-    return () => unsubscribe();
-  }, [key, enabled, form]);
+ return () => unsubscribe();
+ }, [key, enabled, form]);
 };

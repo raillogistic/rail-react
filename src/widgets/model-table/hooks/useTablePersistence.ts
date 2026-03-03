@@ -271,6 +271,10 @@ export function useTablePersistence(key: string) {
  const hasAppliedPersistedStateRef = useRef(false);
  const tableConfigsRef = useRef<TableConfigs | null>(null);
  const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+ const backendRetryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+ const backendRetryAttemptRef = useRef(0);
+ const pendingBackendStateRef = useRef<PersistedTableState | null>(null);
+ const backendSaveInFlightRef = useRef(false);
  const lastRemoteFetchKeyRef = useRef<string | null>(null);
  const [hydrated, setHydrated] = useState(false);
   const [remoteSyncSettled, setRemoteSyncSettled] = useState(false);
@@ -374,6 +378,12 @@ export function useTablePersistence(key: string) {
  lastRemoteFetchKeyRef.current = null;
  setHydrated(false);
   setRemoteSyncSettled(false);
+  pendingBackendStateRef.current = null;
+  backendRetryAttemptRef.current = 0;
+  if (backendRetryTimerRef.current) {
+    clearTimeout(backendRetryTimerRef.current);
+    backendRetryTimerRef.current = null;
+  }
  }
 
  if (hasHydratedRef.current) return;
@@ -486,7 +496,6 @@ export function useTablePersistence(key: string) {
 
  const saveToBackend = useCallback(
  async (stateToSave: PersistedTableState) => {
- try {
  const response = await upsertUserTableConfig({
  variables: {
  key,
@@ -494,9 +503,16 @@ export function useTablePersistence(key: string) {
  },
  });
 
- const returnedConfigs = decodeTableConfigs(
- response.data?.upsert_user_table_config?.table_configs,
- );
+ const payload = response.data?.upsert_user_table_config;
+ if (!payload?.ok) {
+ const reasons =
+ payload?.errors && payload.errors.length > 0
+ ? payload.errors.join(", ")
+ : "unknown backend rejection";
+ throw new Error(`Table config save rejected: ${reasons}`);
+ }
+
+ const returnedConfigs = decodeTableConfigs(payload.table_configs);
  if (returnedConfigs) {
  tableConfigsRef.current = returnedConfigs;
  return;
@@ -507,12 +523,73 @@ export function useTablePersistence(key: string) {
  ...currentConfigs,
  [key]: stateToSave,
  };
- } catch (e) {
- console.warn("Failed to save table state to backend", e);
- }
  },
  [key, upsertUserTableConfig],
  );
+
+ const flushPendingBackendSave = useCallback(async () => {
+ if (backendSaveInFlightRef.current) {
+ return;
+ }
+ if (!user?.id || !remoteSyncSettled) {
+ return;
+ }
+ const pending = pendingBackendStateRef.current;
+ if (!pending) {
+ return;
+ }
+
+ backendSaveInFlightRef.current = true;
+ try {
+ await saveToBackend(pending);
+ if (
+ pendingBackendStateRef.current &&
+ pendingBackendStateRef.current === pending
+ ) {
+ pendingBackendStateRef.current = null;
+ }
+ backendRetryAttemptRef.current = 0;
+ if (backendRetryTimerRef.current) {
+ clearTimeout(backendRetryTimerRef.current);
+ backendRetryTimerRef.current = null;
+ }
+ } catch (e) {
+ const nextAttempt = backendRetryAttemptRef.current + 1;
+ backendRetryAttemptRef.current = nextAttempt;
+ const retryDelayMs = Math.min(30000, 1000 * 2 ** (nextAttempt - 1));
+ console.warn(
+ `Failed to save table state to backend (attempt ${nextAttempt}). Retrying in ${retryDelayMs}ms.`,
+ e,
+ );
+ if (backendRetryTimerRef.current) {
+ clearTimeout(backendRetryTimerRef.current);
+ }
+ backendRetryTimerRef.current = setTimeout(() => {
+ backendRetryTimerRef.current = null;
+ void flushPendingBackendSave();
+ }, retryDelayMs);
+ } finally {
+ backendSaveInFlightRef.current = false;
+ if (
+ pendingBackendStateRef.current &&
+ pendingBackendStateRef.current !== pending &&
+ user?.id &&
+ remoteSyncSettled
+ ) {
+ void flushPendingBackendSave();
+ }
+ }
+ }, [remoteSyncSettled, saveToBackend, user?.id]);
+
+ useEffect(() => {
+ if (!user?.id || !remoteSyncSettled) {
+ return;
+ }
+ if (!pendingBackendStateRef.current) {
+ return;
+ }
+ void flushPendingBackendSave();
+ }, [flushPendingBackendSave, remoteSyncSettled, user?.id]);
 
  useEffect(() => {
  if (!hasHydratedRef.current) return;
@@ -542,7 +619,8 @@ export function useTablePersistence(key: string) {
  if (!remoteSyncSettled) {
  return;
  }
- void saveToBackend(stateToSave);
+ pendingBackendStateRef.current = stateToSave;
+ void flushPendingBackendSave();
  }
  }, 500);
 
@@ -561,8 +639,16 @@ export function useTablePersistence(key: string) {
  wrapCells,
  user?.id,
  remoteSyncSettled,
- saveToBackend,
+ flushPendingBackendSave,
  ]);
+
+ useEffect(() => {
+ return () => {
+ if (backendRetryTimerRef.current) {
+ clearTimeout(backendRetryTimerRef.current);
+ }
+ };
+ }, []);
 
  const hasPersistedState = useCallback(() => {
  if (getConfigForKey(key, readTableConfigsFromSettings())) {

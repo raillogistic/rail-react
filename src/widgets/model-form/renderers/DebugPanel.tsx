@@ -8,12 +8,7 @@ import type { UseFormReturn } from "@tanstack/react-form";
 import { useStore } from "@tanstack/react-form";
 import { Card } from "@/shared/ui/kit/card";
 import { Button } from "@/shared/ui/kit/button";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/shared/ui/kit/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/kit/tabs";
 import type { ChangeRecord } from "../types/schema";
 import type { FormDevtoolsConfig } from "../types/props";
 
@@ -41,7 +36,10 @@ function cloneRecord(value: Record<string, unknown>) {
   }
 }
 
-function getValueAtPath(source: Record<string, unknown>, path: string): unknown {
+function getValueAtPath(
+  source: Record<string, unknown>,
+  path: string,
+): unknown {
   const segments = path.split(".").filter(Boolean);
   let current: unknown = source;
   for (const segment of segments) {
@@ -113,7 +111,7 @@ function stringifyJsonValuesForGraphiql(
 }
 
 function toGraphQLLiteral(value: unknown, indentLevel = 0): string {
-  const indent = "  ".repeat(indentLevel);
+  const indent = " ".repeat(indentLevel);
 
   if (value === null || value === undefined) return "null";
   if (typeof value === "string") return JSON.stringify(value);
@@ -123,8 +121,9 @@ function toGraphQLLiteral(value: unknown, indentLevel = 0): string {
 
   if (Array.isArray(value)) {
     if (value.length === 0) return "[]";
-    const lines = value.map((item) =>
-      `${"  ".repeat(indentLevel + 1)}${toGraphQLLiteral(item, indentLevel + 1)}`,
+    const lines = value.map(
+      (item) =>
+        `${" ".repeat(indentLevel + 1)}${toGraphQLLiteral(item, indentLevel + 1)}`,
     );
     return `[\n${lines.join("\n")}\n${indent}]`;
   }
@@ -138,7 +137,7 @@ function toGraphQLLiteral(value: unknown, indentLevel = 0): string {
 
   const lines = entries.map(
     ([key, nested]) =>
-      `${"  ".repeat(indentLevel + 1)}${key}: ${toGraphQLLiteral(
+      `${" ".repeat(indentLevel + 1)}${key}: ${toGraphQLLiteral(
         nested,
         indentLevel + 1,
       )}`,
@@ -168,21 +167,18 @@ function buildMutationRequestGraphiqlText(
   const entries = Object.entries(graphiqlVariables);
   const callHeader =
     entries.length === 0
-      ? `  ${operationName} {`
-      : `  ${operationName}(\n${entries
-          .map(
-            ([key, value]) =>
-              `    ${key}: ${toGraphQLLiteral(value, 2)}`,
-          )
-          .join("\n")}\n  ) {`;
+      ? ` ${operationName} {`
+      : ` ${operationName}(\n${entries
+          .map(([key, value]) => ` ${key}: ${toGraphQLLiteral(value, 2)}`)
+          .join("\n")}\n ) {`;
 
   return [
     "mutation {",
     callHeader,
-    "    ok",
-    "    object { id }",
-    "    errors { field message code severity details }",
-    "  }",
+    " ok",
+    " object { id }",
+    " errors { field message code severity details }",
+    " }",
     "}",
   ].join("\n");
 }
@@ -208,7 +204,11 @@ export const DebugPanel = <TValues extends Record<string, any>>({
     : formValues;
 
   const modelFormDebugPayload = React.useMemo(() => {
-    if (!displayValues || typeof displayValues !== "object" || Array.isArray(displayValues)) {
+    if (
+      !displayValues ||
+      typeof displayValues !== "object" ||
+      Array.isArray(displayValues)
+    ) {
       return null;
     }
 
@@ -225,19 +225,18 @@ export const DebugPanel = <TValues extends Record<string, any>>({
 
     return {
       formValues: payload.formValues,
-      mutationRequest:
-        payload.mutationRequest ?? {
-          error: payload.mutationRequestError ?? "Unavailable",
-        },
+      mutationRequest: payload.mutationRequest ?? {
+        error: payload.mutationRequestError ?? "Unavailable",
+      },
       mutationRequestHints: isPlainRecord(payload.mutationRequestHints)
         ? (payload.mutationRequestHints as MutationRequestHints)
         : null,
     };
   }, [displayValues]);
 
-  const [debugTab, setDebugTab] = React.useState<"formValues" | "mutationRequest">(
-    "formValues",
-  );
+  const [debugTab, setDebugTab] = React.useState<
+    "formValues" | "mutationRequest"
+  >("formValues");
   const mutationRequestGraphiqlText = React.useMemo(
     () =>
       modelFormDebugPayload
@@ -248,7 +247,8 @@ export const DebugPanel = <TValues extends Record<string, any>>({
         : null,
     [modelFormDebugPayload],
   );
-  const [copiedMutationRequest, setCopiedMutationRequest] = React.useState(false);
+  const [copiedMutationRequest, setCopiedMutationRequest] =
+    React.useState(false);
 
   React.useEffect(() => {
     if (!copiedMutationRequest) return;
@@ -298,9 +298,7 @@ export const DebugPanel = <TValues extends Record<string, any>>({
         ([, meta]) =>
           meta &&
           meta.isValid === false &&
-          (meta.isBlurred ||
-            meta.isDirty ||
-            (meta as any)?.errorMap?.onSubmit),
+          (meta.isBlurred || meta.isDirty || (meta as any)?.errorMap?.onSubmit),
       )
       .map(([name, meta]) => ({
         name,
@@ -308,7 +306,8 @@ export const DebugPanel = <TValues extends Record<string, any>>({
       }));
 
     const reasons: string[] = [];
-    if (shouldSurface && !canSubmit) reasons.push("formulaire invalide ou non modifié");
+    if (shouldSurface && !canSubmit)
+      reasons.push("formulaire invalide ou non modifié");
     if (isSubmitting) reasons.push("formulaire en cours de soumission");
     if (isLoading) reasons.push("indicateur de chargement externe");
 
@@ -321,7 +320,9 @@ export const DebugPanel = <TValues extends Record<string, any>>({
         <Tabs
           value={debugTab}
           onValueChange={(value) =>
-            setDebugTab(value === "mutationRequest" ? "mutationRequest" : "formValues")
+            setDebugTab(
+              value === "mutationRequest" ? "mutationRequest" : "formValues",
+            )
           }
           className="space-y-2"
         >
@@ -361,9 +362,7 @@ export const DebugPanel = <TValues extends Record<string, any>>({
           </TabsContent>
         </Tabs>
       ) : (
-        <pre className="text-xs">
-          {JSON.stringify(displayValues, null, 2)}
-        </pre>
+        <pre className="text-xs">{JSON.stringify(displayValues, null, 2)}</pre>
       )}
       {config.showFieldMeta ? (
         <pre className="text-[11px] text-muted-foreground">

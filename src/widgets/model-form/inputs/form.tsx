@@ -136,7 +136,10 @@ function collectRenderableFieldPaths(
   return paths;
 }
 
-function isRenderableFieldPath(path: string, renderableFieldPaths: Set<string>) {
+function isRenderableFieldPath(
+  path: string,
+  renderableFieldPaths: Set<string>,
+) {
   if (renderableFieldPaths.has(path)) {
     return true;
   }
@@ -296,10 +299,14 @@ const DynamicForm = <TValues extends Record<string, any> = Record<string, any>>(
 
   // ─── Store subscriptions ─────────────────────────────────────────────
 
-  const formValues = useStore(form.store, (state: any) => state.values) as TValues;
+  const formValues = useStore(
+    form.store,
+    (state: any) => state.values,
+  ) as TValues;
   const fieldMeta = useStore(
     form.store,
-    (state) => (state as { fieldMeta?: Record<string, unknown> }).fieldMeta ?? {},
+    (state) =>
+      (state as { fieldMeta?: Record<string, unknown> }).fieldMeta ?? {},
   );
 
   // ─── Persistence ─────────────────────────────────────────────────────
@@ -313,7 +320,7 @@ const DynamicForm = <TValues extends Record<string, any> = Record<string, any>>(
       ? schema.sections.flatMap(
           (section) => section.fields as FormFieldConfig[],
         )
-      : (schema.fields as FormFieldConfig[] | undefined) ?? [];
+      : ((schema.fields as FormFieldConfig[] | undefined) ?? []);
     return countFieldNodes(rootFields);
   }, [schema.fields, schema.sections]);
 
@@ -439,7 +446,7 @@ const DynamicForm = <TValues extends Record<string, any> = Record<string, any>>(
     "relative flex flex-col w-full transition-all duration-300",
     isPopup
       ? "gap-3 border-0 bg-transparent p-0 shadow-none backdrop-blur-0"
-      : "h-full rounded-2xl bg-card/10 p-6 border border-border/40 shadow-sm",
+      : "h-full bg-card/10 p-6 border border-border/40 shadow-sm",
     layoutClassName,
   );
 
@@ -510,7 +517,7 @@ const DynamicForm = <TValues extends Record<string, any> = Record<string, any>>(
           <div
             data-testid="dynamic-form-global-errors"
             role="alert"
-            className="mx-1 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs text-destructive"
+            className="mx-1 border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs text-destructive"
           >
             {globalSubmitErrors.map((message, index) => (
               <p key={`global-submit-error-${index}`}>{message}</p>
@@ -529,8 +536,8 @@ const DynamicForm = <TValues extends Record<string, any> = Record<string, any>>(
         ) : null}
 
         {isLoading && (
-          <div className="absolute inset-0 z-[100] flex items-center justify-center rounded-2xl bg-background/60 backdrop-blur-[2px] animate-in fade-in duration-300">
-            <div className="flex flex-col items-center gap-3 rounded-xl border bg-background p-6 shadow-2xl">
+          <div className="absolute inset-0 z-[100] flex items-center justify-center bg-background/60 backdrop-blur-[2px] animate-in fade-in duration-300">
+            <div className="flex flex-col items-center gap-3 border bg-background p-6 shadow-2xl">
               <Loader2 className="size-8 animate-spin text-primary" />
               <p className="text-sm font-bold tracking-tight text-muted-foreground">
                 Chargement...
