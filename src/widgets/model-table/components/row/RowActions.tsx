@@ -652,6 +652,17 @@ export function RowActions({
  }, [metadata?.mutations, rowId]);
 
  const hasTemplateActions = templateEntries.length > 0;
+ const singleTemplate = templateEntries.length === 1 ? templateEntries[0] : null;
+ const singleTemplateDisabledReason = singleTemplate
+ ? singleTemplate.allowed === false
+ ? singleTemplate.denialReason || "Accès refusé"
+ : !rowId
+ ? "ID manquant"
+ : null
+ : null;
+ const singleTemplateLabel = singleTemplate
+ ? singleTemplate.title || singleTemplate.key || "Template"
+ : "Template";
  const hasBuiltinActions = canEdit || canDelete;
  const hasMetadataMutationActions = metadataMutationActions.length > 0;
  const hasCustomActions = customActions.length > 0;
@@ -1102,6 +1113,27 @@ export function RowActions({
  ) : null}
 
  {hasTemplateActions ? (
+ singleTemplate ? (
+ <Tooltip>
+ <TooltipTrigger asChild>
+ <Button
+ size="icon"
+ variant="ghost"
+ aria-label={`Template: ${singleTemplateLabel}`}
+ className="size-7 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 transition-all hover:bg-emerald-500 hover:text-white active:scale-95"
+ disabled={Boolean(singleTemplateDisabledReason)}
+ onClick={() => {
+ handleTemplateAction(singleTemplate);
+ }}
+ >
+ <Printer className="h-4 w-4" />
+ </Button>
+ </TooltipTrigger>
+ <TooltipContent className="bg-emerald-600 text-white font-bold uppercase text-[9px] tracking-widest">
+ {singleTemplateDisabledReason ?? singleTemplateLabel}
+ </TooltipContent>
+ </Tooltip>
+ ) : (
  <DropdownMenu modal={false}>
  <Tooltip>
  <TooltipTrigger asChild>
@@ -1143,6 +1175,7 @@ export function RowActions({
  </div>
  </DropdownMenuContent>
  </DropdownMenu>
+ )
  ) : null}
 
  {hasCustomActions || hasMetadataMutationActions ? (

@@ -8,6 +8,7 @@ const mockUseMetadata = vi.fn();
 const mockUseTable = vi.fn();
 const mockNavigate = vi.fn();
 const modelFormSpy = vi.hoisted(() => vi.fn());
+const executeTemplateForRowsMock = vi.hoisted(() => vi.fn());
 const toastMock = vi.hoisted(() => ({
  success: vi.fn(),
  error: vi.fn(),
@@ -47,6 +48,16 @@ vi.mock("react-router-dom", async () => {
 vi.mock("sonner", () => ({
  toast: toastMock,
 }));
+
+vi.mock("../../utils/templateExecution", async () => {
+ const actual = await vi.importActual<typeof import("../../utils/templateExecution")>(
+ "../../utils/templateExecution",
+ );
+ return {
+ ...actual,
+ executeTemplateForRows: executeTemplateForRowsMock,
+ };
+});
 
 vi.mock("@/shared/ui/kit/tooltip", () => ({
  TooltipProvider: ({ children }: { children: React.ReactNode }) => (
@@ -184,6 +195,7 @@ vi.mock("@/widgets/model-form", () => ({
 describe("RowActions update integration", () => {
  beforeEach(() => {
  vi.clearAllMocks();
+ executeTemplateForRowsMock.mockResolvedValue({ templateType: "pdf", count: 1 });
  mockUseMetadata.mockReturnValue({
  app: "store",
  model: "Order",
@@ -216,7 +228,9 @@ describe("RowActions update integration", () => {
  expect(screen.getByTestId("update-overlay-drawer")).toBeInTheDocument();
  });
 
+ await waitFor(() => {
  expect(modelFormSpy).toHaveBeenCalled();
+ });
  const latestProps = modelFormSpy.mock.calls.at(-1)?.[0] as ModelFormProps<
  Record<string, unknown>
  >;
@@ -272,5 +286,81 @@ describe("RowActions update integration", () => {
  screen.queryByTestId("update-overlay-modal"),
  ).not.toBeInTheDocument();
  });
+ });
+
+ it("renders a direct printer button when exactly one template is available", async () => {
+ mockUseMetadata.mockReturnValue({
+ app: "store",
+ model: "Order",
+ metadata: {
+ model: "Order",
+ verboseName: "Commande",
+ mutations: [{ name: "updateOrder", operation: "update", allowed: true }],
+ templates: [
+ {
+ key: "invoice_pdf",
+ title: "Invoice",
+ endpoint: "/api/templates/store/order/invoice_pdf/<pk>/",
+ templateType: "pdf",
+ allowed: true,
+ },
+ ],
+ },
+ });
+
+ render(
+ <RowActions
+ row={{ id: 12 }}
+ data={[{ id: 12 }]}
+ />,
+ );
+
+ fireEvent.click(screen.getByRole("button", { name: "Template: Invoice" }));
+
+ await waitFor(() => {
+ expect(executeTemplateForRowsMock).toHaveBeenCalledWith(
+ expect.objectContaining({ key: "invoice_pdf" }),
+ ["12"],
+ {},
+ );
+ });
+ expect(screen.queryByText("Extractions")).not.toBeInTheDocument();
+ });
+
+ it("keeps template dropdown when multiple templates are available", () => {
+ mockUseMetadata.mockReturnValue({
+ app: "store",
+ model: "Order",
+ metadata: {
+ model: "Order",
+ verboseName: "Commande",
+ mutations: [{ name: "updateOrder", operation: "update", allowed: true }],
+ templates: [
+ {
+ key: "invoice_pdf",
+ title: "Invoice",
+ endpoint: "/api/templates/store/order/invoice_pdf/<pk>/",
+ templateType: "pdf",
+ allowed: true,
+ },
+ {
+ key: "invoice_excel",
+ title: "Invoice XLSX",
+ endpoint: "/api/templates/store/order/invoice_excel/<pk>/",
+ templateType: "excel",
+ allowed: true,
+ },
+ ],
+ },
+ });
+
+ render(
+ <RowActions
+ row={{ id: 12 }}
+ data={[{ id: 12 }]}
+ />,
+ );
+
+ expect(screen.getByText("Extractions")).toBeInTheDocument();
  });
 });
