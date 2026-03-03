@@ -76,10 +76,10 @@ export const ActionsBar = <TValues extends Record<string, any>>({
   const isPopup = variant === "popup" || variant === "compact";
 
   const actionsClass = cn(
-    "z-50 flex flex-wrap items-center justify-between gap-4 p-4",
+    "z-50 flex flex-wrap items-center justify-between px-6 py-4",
     "transition-all duration-300 ease-in-out",
     isPopup
-      ? "mt-4 border-t border-border/20 bg-transparent shadow-none backdrop-blur-0"
+      ? "mt-4 border-t border-border/40 bg-accent/30 rounded-xl"
       : "sticky bottom-0 mt-6 -mx-4 border-t bg-background/80 backdrop-blur-md shadow-[0_-4px_12px_rgba(0,0,0,0.03)]",
   );
 
@@ -110,10 +110,10 @@ export const ActionsBar = <TValues extends Record<string, any>>({
         <div className="flex items-center gap-3">
           {showDirtyIndicator && isDirty ? (
             <Badge
-              variant="outline"
-              className="bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800 animate-in fade-in slide-in-from-left-2"
+              variant="secondary"
+              className="bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800 animate-in fade-in slide-in-from-left-2 rounded-full px-2"
             >
-              <CheckCircle2 className="mr-1.5 size-3.5" />
+              <Check className="mr-1.5 size-3.5" />
               Modifications non enregistrées
             </Badge>
           ) : (
@@ -157,7 +157,7 @@ export const ActionsBar = <TValues extends Record<string, any>>({
             size="sm"
             onClick={() => form.reset()}
             disabled={isSubmitting || !isDirty}
-            className="text-muted-foreground hover:text-foreground"
+            className="text-muted-foreground hover:text-foreground rounded-md"
           >
             <RotateCcw className="mr-2 size-4" />
             {resetLabel}
@@ -222,6 +222,7 @@ export const ActionsBar = <TValues extends Record<string, any>>({
                 type="button"
                 variant="outline"
                 onClick={() => setConfirmOpen(false)}
+                className="rounded-md"
               >
                 Annuler
               </Button>

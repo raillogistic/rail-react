@@ -64,7 +64,7 @@ export const GroupFieldRenderer = <TValues extends Record<string, any>>({
     return (
       <Card
         className={cn(
-          "overflow-hidden border-border/40 shadow-sm transition-all hover:shadow-md",
+          "overflow-hidden rounded-xl border-border/40 shadow-sm transition-all hover:shadow-md",
           config.ui?.className,
         )}
         style={
@@ -124,7 +124,10 @@ export const GroupFieldRenderer = <TValues extends Record<string, any>>({
   if (variant === "fieldset") {
     return (
       <fieldset
-        className={cn(" border border-border/60 p-4", config.ui?.className)}
+        className={cn(
+          "rounded-lg border border-border/60 p-4",
+          config.ui?.className,
+        )}
         style={
           colSpan
             ? { gridColumn: `span ${colSpan} / span ${colSpan}` }

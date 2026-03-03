@@ -445,8 +445,8 @@ const DynamicForm = <TValues extends Record<string, any> = Record<string, any>>(
   const formWrapperClass = cn(
     "relative flex flex-col w-full transition-all duration-300",
     isPopup
-      ? "gap-3 border-0 bg-transparent p-0 shadow-none backdrop-blur-0"
-      : "h-full bg-card/10 p-6 border border-border/40 shadow-sm",
+      ? "gap-3 border-0 bg-transparent p-0 shadow-none backdrop-blur-0 rounded-none"
+      : "h-full bg-card/10 p-6 border border-border/40 shadow-sm rounded-xl",
     layoutClassName,
   );
 
@@ -517,7 +517,7 @@ const DynamicForm = <TValues extends Record<string, any> = Record<string, any>>(
           <div
             data-testid="dynamic-form-global-errors"
             role="alert"
-            className="mx-1 border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs text-destructive"
+            className="mx-1 border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs text-destructive rounded-md"
           >
             {globalSubmitErrors.map((message, index) => (
               <p key={`global-submit-error-${index}`}>{message}</p>
@@ -537,7 +537,7 @@ const DynamicForm = <TValues extends Record<string, any> = Record<string, any>>(
 
         {isLoading && (
           <div className="absolute inset-0 z-[100] flex items-center justify-center bg-background/60 backdrop-blur-[2px] animate-in fade-in duration-300">
-            <div className="flex flex-col items-center gap-3 border bg-background p-6 shadow-2xl">
+            <div className="flex flex-col items-center gap-3 border bg-background p-6 shadow-2xl rounded-2xl">
               <Loader2 className="size-8 animate-spin text-primary" />
               <p className="text-sm font-bold tracking-tight text-muted-foreground">
                 Chargement...

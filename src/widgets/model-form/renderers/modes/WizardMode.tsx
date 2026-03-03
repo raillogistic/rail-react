@@ -112,7 +112,7 @@ export const WizardMode = <TValues extends Record<string, any>>({
             </div>
             <Badge
               variant="secondary"
-              className="bg-primary/5 text-primary border-primary/20 font-bold px-2 py-0.5 text-[10px] uppercase tracking-wider"
+              className="bg-primary/5 text-primary border-primary/20 font-bold px-2 py-0.5 text-[10px] uppercase tracking-wider rounded-md"
             >
               {Math.round(((stepIndex + 1) / totalSteps) * 100)}% complété
             </Badge>
@@ -122,20 +122,26 @@ export const WizardMode = <TValues extends Record<string, any>>({
             {visibleSections.map((section, index) => {
               const isActive = index === stepIndex;
               const isCompleted = index < stepIndex;
+              const isClickable = config.allowSkip || index < stepIndex; // Determine if the step is clickable
 
               return (
                 <React.Fragment key={section.id ?? index}>
-                  <div className="relative flex flex-1 flex-col gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (config.allowSkip || index < stepIndex) {
-                          setStepIndex(index);
-                        }
-                      }}
-                      disabled={!config.allowSkip && index > stepIndex}
+                  <button
+                    type="button"
+                    disabled={!isClickable} // Use isClickable for disabled state
+                    onClick={() => {
+                      if (isClickable) {
+                        setStepIndex(index);
+                      }
+                    }}
+                    className={cn(
+                      "group relative flex w-full flex-col gap-2 rounded-lg p-2 transition-all duration-300",
+                      isClickable && "cursor-pointer hover:bg-muted/50",
+                    )}
+                  >
+                    <div
                       className={cn(
-                        "group relative h-1.5 w-full overflow-hidden transition-all duration-300",
+                        "relative h-1.5 w-full overflow-hidden transition-all duration-300 rounded-full", // Added rounded-full here
                         isActive
                           ? "bg-primary"
                           : isCompleted
@@ -151,7 +157,7 @@ export const WizardMode = <TValues extends Record<string, any>>({
                       {isActive && (
                         <div className="absolute inset-0 bg-white/20 animate-pulse" />
                       )}
-                    </button>
+                    </div>
                     <span
                       className={cn(
                         "hidden sm:block text-[10px] font-bold uppercase tracking-tight transition-colors truncate px-0.5",
@@ -162,7 +168,7 @@ export const WizardMode = <TValues extends Record<string, any>>({
                         section.title ??
                         `Étape ${index + 1}`}
                     </span>
-                  </div>
+                  </button>
                 </React.Fragment>
               );
             })}
@@ -193,7 +199,7 @@ export const WizardMode = <TValues extends Record<string, any>>({
           type="button"
           variant="outline"
           size="sm"
-          className="min-w-[100px] border-border/60 hover:bg-muted/50"
+          className="min-w-[100px] border-border/60 hover:bg-muted/50 rounded-md"
           disabled={stepIndex === 0}
           onClick={handlePrev}
         >
@@ -206,7 +212,7 @@ export const WizardMode = <TValues extends Record<string, any>>({
             <Button
               type="submit"
               size="sm"
-              className="min-w-[120px] shadow-lg shadow-primary/20"
+              className="min-w-[120px] shadow-lg shadow-primary/20 rounded-md"
               onClick={(e) => {
                 e.preventDefault();
                 onFinalSubmit?.();
@@ -219,7 +225,7 @@ export const WizardMode = <TValues extends Record<string, any>>({
             <Button
               type="button"
               size="sm"
-              className="min-w-[120px] shadow-lg shadow-primary/10"
+              className="min-w-[120px] shadow-lg shadow-primary/10 rounded-md"
               onClick={handleNext}
             >
               Continuer

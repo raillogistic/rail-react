@@ -70,7 +70,7 @@ export const FieldRenderer = <TValues extends Record<string, any>>({
     );
     return (
       <div
-        className="group/object relative overflow-hidden border border-border/40 bg-card/20 p-4 transition-all duration-300 hover:border-border/80 hover:bg-card/40 hover:shadow-lg hover:shadow-black/5"
+        className="group/object overflow-hidden rounded-xl border border-border/40 bg-card/20 p-4 transition-all duration-300 hover:border-border/80 hover:bg-card/40 hover:shadow-lg hover:shadow-black/5"
         style={
           colSpan
             ? { gridColumn: `span ${colSpan} / span ${colSpan}` }
@@ -82,8 +82,8 @@ export const FieldRenderer = <TValues extends Record<string, any>>({
         {config.label ? (
           <div className="mb-4 flex items-center justify-between border-b border-border/20 pb-2">
             <div className="flex items-center gap-2">
-              <div className="size-1.5 bg-primary/60" />
-              <span className="text-xs font-extrabold uppercase tracking-[0.2em] text-muted-foreground/60 transition-colors group-hover/object:text-primary/80">
+              <div className="size-1.5 rounded-full bg-primary/60" />
+              <span className="text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground/80 transition-colors group-hover/object:text-primary">
                 {config.label}
               </span>
             </div>
@@ -94,6 +94,13 @@ export const FieldRenderer = <TValues extends Record<string, any>>({
             )}
           </div>
         ) : null}
+        {config.description && (
+          <div className="mb-5 border-l-2 border-primary/20 bg-primary/5 p-3 rounded-r-md">
+            <p className="text-[13px] leading-relaxed text-muted-foreground">
+              {config.description}
+            </p>
+          </div>
+        )}
         <div className={nestedGridClass}>
           {config.fields.map((child) => (
             <FieldRenderer
