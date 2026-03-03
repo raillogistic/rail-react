@@ -393,6 +393,38 @@ describe("DynamicForm", () => {
     ).toBeInTheDocument();
     expect(screen.getByTestId("dynamic-form-global-errors")).toBeInTheDocument();
   });
+
+  it("submits after confirmation when actions.confirmSubmit is enabled", async () => {
+    const onSubmit = vi.fn(async () => {});
+
+    render(
+      <DynamicForm
+        schema={textSchema}
+        behavior={{ onSubmit }}
+        actions={{
+          confirmSubmit: {
+            enabled: true,
+            title: "Confirmer la creation",
+            message: "Voulez-vous enregistrer cette decharge et ses lignes ?",
+          },
+        }}
+      />,
+    );
+
+    fireEvent.change(screen.getAllByRole("textbox")[0], {
+      target: { value: "Alice" },
+    });
+    fireEvent.click(screen.getByText("Enregistrer"));
+
+    expect(onSubmit).toHaveBeenCalledTimes(0);
+    expect(screen.getByText("Confirmer la creation")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByText("Confirmer"));
+
+    await waitFor(() => {
+      expect(onSubmit).toHaveBeenCalledTimes(1);
+    });
+  });
 });
 
 describe("DynamicForm - conditions", () => {

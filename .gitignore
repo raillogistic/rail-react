@@ -1,5 +1,6 @@
 # Dependencies
 node_modules
+
 .pnp
 .pnp.js
 yarn.lock
@@ -37,6 +38,8 @@ src/schema.ts
 # App/domain-specific pages (local-only)
 src/apps/**
 !src/apps/README.md
+src/project/**
+src/projects/**
 
 # Logs
 npm-debug.log*

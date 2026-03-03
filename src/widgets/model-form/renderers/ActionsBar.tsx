@@ -80,7 +80,7 @@ export const ActionsBar = <TValues extends Record<string, any>>({
       setConfirmOpen(true);
       return;
     }
-    form.handleSubmit();
+    void form.handleSubmit();
   };
 
   const renderedExtra =
@@ -155,16 +155,11 @@ export const ActionsBar = <TValues extends Record<string, any>>({
           </Button>
 
           <Button
-            type="submit"
+            type={confirmSubmit?.enabled ? "button" : "submit"}
             size="sm"
             disabled={isSubmitting || isLoading || (!isDirty && !canSubmit)}
             className="shadow-sm shadow-primary/20 min-w-[120px]"
-            onClick={(e) => {
-              if (confirmSubmit?.enabled) {
-                e.preventDefault();
-                handleSubmitClick();
-              }
-            }}
+            onClick={confirmSubmit?.enabled ? handleSubmitClick : undefined}
           >
             {isSubmitting ? (
               <>
@@ -215,15 +210,17 @@ export const ActionsBar = <TValues extends Record<string, any>>({
             </DialogHeader>
             <DialogFooter className="mt-4 gap-2">
               <Button
+                type="button"
                 variant="outline"
                 onClick={() => setConfirmOpen(false)}
               >
                 Annuler
               </Button>
               <Button
+                type="button"
                 onClick={() => {
                   setConfirmOpen(false);
-                  form.handleSubmit();
+                  void form.handleSubmit();
                 }}
               >
                 Confirmer

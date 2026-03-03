@@ -55,19 +55,23 @@ describe("manifestRegistry", () => {
     }
   });
 
-  it("includes only core project manifests by default", () => {
+  it("includes project manifests discovered from src/projects", () => {
     const routes = getAllRoutes();
     const navigationGroups = getNavigationGroups();
 
     const routeProjectIds = Array.from(
       new Set(routes.map((route) => route.projectId)),
     );
-    expect(routeProjectIds).toEqual(["core"]);
+    expect(routeProjectIds).toEqual(
+      expect.arrayContaining(["catalog", "core", "operations"]),
+    );
 
     const navigationProjectIds = Array.from(
       new Set(navigationGroups.map((group) => group.projectId)),
     );
-    expect(navigationProjectIds).toEqual(["core"]);
+    expect(navigationProjectIds).toEqual(
+      expect.arrayContaining(["catalog", "core", "operations"]),
+    );
   });
 
   it("maps navigation links to protected pages", () => {
