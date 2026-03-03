@@ -165,16 +165,7 @@ export const CORE_MANIFEST: AppManifest = defineProjectManifest({
       title: "Root",
       element: <Navigate to={ROUTES.LOGIN} replace />,
     },
-    {
-      id: "core:dashboard",
-      path: ROUTES.DASHBOARD,
-      guard: "protected",
-      projectId: "core",
-      title: "Tableau de bord",
-      description: "Vue synthese des indicateurs",
-      icon: LayoutDashboard,
-      element: <DashboardPage />,
-    },
+
     {
       id: "core:model-import",
       path: ROUTES.MODEL_IMPORT,
@@ -183,41 +174,6 @@ export const CORE_MANIFEST: AppManifest = defineProjectManifest({
       title: "Import",
       hidden: true,
       element: withRouteSuspense(<ModelImportPage />),
-    },
-    {
-      id: "core:orders-table-v2",
-      path: "/orders-table-v2",
-      guard: "protected",
-      projectId: "core",
-      title: "Factures",
-      description: "Progress view for DynamicModelTable (store.Order)",
-      icon: LayoutDashboard,
-      element: withRouteSuspense(
-        <DynamicModelTable
-          app="store"
-          model="Product"
-          baseTable={{}}
-          devtools={{ enabled: true }}
-          create={{ form: { onlyRequired: true } }}
-          update={{ drawerDirection: "left", form: { onlyRequired: true } }}
-        />,
-      ),
-    },
-    {
-      id: "core:orders-table-v",
-      path: "/orders-table-",
-      guard: "protected",
-      projectId: "core",
-      title: "Base Table",
-      description: "Progress view for DynamicModelTable (store.Order)",
-      icon: LayoutDashboard,
-      element: withRouteSuspense(
-        <DynamicModelTable
-          app="store"
-          model="Product"
-          baseTable={{ tableConfig: { title: "Liste des produits" } }}
-        />,
-      ),
     },
     {
       id: "core:form-test",
@@ -232,17 +188,7 @@ export const CORE_MANIFEST: AppManifest = defineProjectManifest({
         </div>,
       ),
     },
-    {
-      id: "core:old-form-test",
-      path: "/formold",
-      guard: "protected",
-      projectId: "core",
-      title: "Old Form",
-      description: "old form",
-      element: withRouteSuspense(
-        <StoreOrderUpdateModelFormExample objectId={"10"} />,
-      ),
-    },
+
     {
       id: "core:settings-account",
       path: ROUTES.SETTINGS_ACCOUNT,
