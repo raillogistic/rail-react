@@ -87,8 +87,35 @@ function parsePersistedTableStateInput(
 
  const next: PersistedTableStateInput = {};
 
- if (Array.isArray(parsed.columnOrder)) {
- const columnOrder = parsed.columnOrder.filter(
+ const coercePositiveNumber = (input: unknown): number | null => {
+ if (typeof input === "number" && Number.isFinite(input) && input > 0) {
+ return input;
+ }
+ if (typeof input === "string") {
+ const numeric = Number(input.trim());
+ if (Number.isFinite(numeric) && numeric > 0) {
+ return numeric;
+ }
+ }
+ return null;
+ };
+ const coerceNonNegativeNumber = (input: unknown): number | null => {
+ if (typeof input === "number" && Number.isFinite(input) && input >= 0) {
+ return input;
+ }
+ if (typeof input === "string") {
+ const numeric = Number(input.trim());
+ if (Number.isFinite(numeric) && numeric >= 0) {
+ return numeric;
+ }
+ }
+ return null;
+ };
+
+ const rawColumnOrder =
+ parsed.columnOrder ?? parsed.column_order ?? parsed.columnorder;
+ if (Array.isArray(rawColumnOrder)) {
+ const columnOrder = rawColumnOrder.filter(
  (entry): entry is string => typeof entry === "string",
  );
  if (columnOrder.length > 0) {
@@ -96,9 +123,13 @@ function parsePersistedTableStateInput(
  }
  }
 
- if (typeof parsed.columnVisibility === "object" && parsed.columnVisibility) {
+ const rawColumnVisibility =
+ parsed.columnVisibility ??
+ parsed.column_visibility ??
+ parsed.columnvisibility;
+ if (typeof rawColumnVisibility === "object" && rawColumnVisibility) {
  const visibility: ColumnVisibilityState = {};
- Object.entries(parsed.columnVisibility as Record<string, unknown>).forEach(
+ Object.entries(rawColumnVisibility as Record<string, unknown>).forEach(
  ([columnId, visible]) => {
  if (typeof visible === "boolean") {
  visibility[columnId] = visible;
@@ -110,12 +141,15 @@ function parsePersistedTableStateInput(
  }
  }
 
- if (typeof parsed.columnWidths === "object" && parsed.columnWidths) {
+ const rawColumnWidths =
+ parsed.columnWidths ?? parsed.column_widths ?? parsed.columnwidths;
+ if (typeof rawColumnWidths === "object" && rawColumnWidths) {
  const widths: ColumnWidthState = {};
- Object.entries(parsed.columnWidths as Record<string, unknown>).forEach(
+ Object.entries(rawColumnWidths as Record<string, unknown>).forEach(
  ([columnId, width]) => {
- if (typeof width === "number" && Number.isFinite(width) && width > 0) {
- widths[columnId] = width;
+ const numericWidth = coercePositiveNumber(width);
+ if (numericWidth !== null) {
+ widths[columnId] = numericWidth;
  }
  },
  );
@@ -124,8 +158,11 @@ function parsePersistedTableStateInput(
  }
  }
 
- if (typeof parsed.perPage === "number" && Number.isFinite(parsed.perPage)) {
- next.perPage = parsed.perPage;
+ const parsedPerPage = coercePositiveNumber(
+ parsed.perPage ?? parsed.per_page ?? parsed.page_size,
+ );
+ if (parsedPerPage !== null) {
+ next.perPage = Math.floor(parsedPerPage);
  }
 
  if (
@@ -136,14 +173,17 @@ function parsePersistedTableStateInput(
  next.density = parsed.density;
  }
 
- if (typeof parsed.wrapCells === "boolean") {
- next.wrapCells = parsed.wrapCells;
+ const rawWrapCells = parsed.wrapCells ?? parsed.wrap_cells;
+ if (typeof rawWrapCells === "boolean") {
+ next.wrapCells = rawWrapCells;
  }
+ const parsedVisibilityVersion = coerceNonNegativeNumber(
+ parsed.visibilityVersion ?? parsed.visibility_version,
+ );
  if (
- typeof parsed.visibilityVersion === "number" &&
- Number.isFinite(parsed.visibilityVersion)
+ parsedVisibilityVersion !== null
  ) {
- next.visibilityVersion = parsed.visibilityVersion;
+ next.visibilityVersion = Math.floor(parsedVisibilityVersion);
  }
 
  if (!Object.keys(next).length) {
@@ -180,7 +220,32 @@ function getConfigForKey(
 ): PersistedTableStateInput | null {
  const configs = decodeTableConfigs(configsValue);
  if (!configs) return null;
- return parsePersistedTableStateInput(configs[key]);
+ const directConfig = parsePersistedTableStateInput(configs[key]);
+ if (directConfig) {
+ return directConfig;
+ }
+
+ const normalizedVariants = new Set<string>([key]);
+ if (key.endsWith("/")) {
+ const withoutSlash = key.replace(/\/+$/, "");
+ if (withoutSlash) {
+ normalizedVariants.add(withoutSlash);
+ }
+ } else {
+ normalizedVariants.add(`${key}/`);
+ }
+
+ for (const candidateKey of normalizedVariants) {
+ if (candidateKey === key) {
+ continue;
+ }
+ const candidateConfig = parsePersistedTableStateInput(configs[candidateKey]);
+ if (candidateConfig) {
+ return candidateConfig;
+ }
+ }
+
+ return null;
 }
 
 function areStringArraysEqual(left: string[], right: string[]): boolean {
@@ -215,6 +280,21 @@ function areNumberMapsEqual(
  if (left[key] !== right[key]) return false;
  }
  return true;
+}
+
+function arePersistedStatesEqual(
+ left: PersistedTableState,
+ right: PersistedTableState,
+): boolean {
+ return (
+ areStringArraysEqual(left.columnOrder, right.columnOrder) &&
+ areBooleanMapsEqual(left.columnVisibility, right.columnVisibility) &&
+ areNumberMapsEqual(left.columnWidths ?? {}, right.columnWidths ?? {}) &&
+ left.perPage === right.perPage &&
+ left.density === right.density &&
+ left.wrapCells === right.wrapCells &&
+ (left.visibilityVersion ?? 0) === (right.visibilityVersion ?? 0)
+ );
 }
 
 /**
@@ -274,7 +354,9 @@ export function useTablePersistence(key: string) {
  const backendRetryTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
  const backendRetryAttemptRef = useRef(0);
  const pendingBackendStateRef = useRef<PersistedTableState | null>(null);
+ const backendBootstrapStateRef = useRef<PersistedTableState | null>(null);
  const backendSaveInFlightRef = useRef(false);
+ const remoteFetchInFlightRef = useRef(false);
  const lastRemoteFetchKeyRef = useRef<string | null>(null);
  const [hydrated, setHydrated] = useState(false);
   const [remoteSyncSettled, setRemoteSyncSettled] = useState(false);
@@ -374,11 +456,13 @@ export function useTablePersistence(key: string) {
  if (initialKeyRef.current !== key) {
  initialKeyRef.current = key;
  hasHydratedRef.current = false;
- hasAppliedPersistedStateRef.current = false;
- lastRemoteFetchKeyRef.current = null;
- setHydrated(false);
+  hasAppliedPersistedStateRef.current = false;
+  lastRemoteFetchKeyRef.current = null;
+  remoteFetchInFlightRef.current = false;
+  setHydrated(false);
   setRemoteSyncSettled(false);
   pendingBackendStateRef.current = null;
+  backendBootstrapStateRef.current = null;
   backendRetryAttemptRef.current = 0;
   if (backendRetryTimerRef.current) {
     clearTimeout(backendRetryTimerRef.current);
@@ -433,11 +517,13 @@ export function useTablePersistence(key: string) {
  setRemoteSyncSettled(false);
 
  const remoteFetchKey =`${userId}|${key}`;
- if (lastRemoteFetchKeyRef.current === remoteFetchKey) {
+ if (
+ lastRemoteFetchKeyRef.current === remoteFetchKey &&
+ !remoteFetchInFlightRef.current
+ ) {
  setRemoteSyncSettled(true);
  return;
  }
- lastRemoteFetchKeyRef.current = remoteFetchKey;
 
  const settingsConfigsRaw = readTableConfigsFromSettings();
  const settingsConfigs = decodeTableConfigs(settingsConfigsRaw);
@@ -451,6 +537,7 @@ export function useTablePersistence(key: string) {
  }
 
  let cancelled = false;
+ remoteFetchInFlightRef.current = true;
 
  const fetchTableConfigs = async () => {
  try {
@@ -461,6 +548,7 @@ export function useTablePersistence(key: string) {
  });
 
  if (cancelled) return;
+ lastRemoteFetchKeyRef.current = remoteFetchKey;
 
  const serverConfigs = decodeTableConfigs(data?.me?.settings?.tableConfigs);
  if (!serverConfigs) return;
@@ -475,6 +563,7 @@ export function useTablePersistence(key: string) {
  } catch {
  // Silently fail, localStorage fallback is already applied.
  } finally {
+ remoteFetchInFlightRef.current = false;
  if (!cancelled) {
  setRemoteSyncSettled(true);
  }
@@ -485,6 +574,7 @@ export function useTablePersistence(key: string) {
 
  return () => {
  cancelled = true;
+ remoteFetchInFlightRef.current = false;
  };
  }, [
  apolloClient,
@@ -583,10 +673,25 @@ export function useTablePersistence(key: string) {
 
  useEffect(() => {
  if (!user?.id || !remoteSyncSettled) {
- return;
+  return;
+ }
+ backendBootstrapStateRef.current = {
+  columnOrder: currentStateRef.current.columnOrder,
+  columnVisibility: currentStateRef.current.columnVisibility,
+  columnWidths: currentStateRef.current.columnWidths,
+  perPage: currentStateRef.current.perPage,
+  density: currentStateRef.current.density,
+  wrapCells: currentStateRef.current.wrapCells,
+  visibilityVersion: VISIBILITY_SCHEMA_VERSION,
+ };
+ }, [key, remoteSyncSettled, user?.id]);
+
+ useEffect(() => {
+ if (!user?.id || !remoteSyncSettled) {
+  return;
  }
  if (!pendingBackendStateRef.current) {
- return;
+  return;
  }
  void flushPendingBackendSave();
  }, [flushPendingBackendSave, remoteSyncSettled, user?.id]);
@@ -618,6 +723,10 @@ export function useTablePersistence(key: string) {
  if (user?.id) {
  if (!remoteSyncSettled) {
  return;
+ }
+ const bootstrapState = backendBootstrapStateRef.current;
+ if (bootstrapState && arePersistedStatesEqual(stateToSave, bootstrapState)) {
+  return;
  }
  pendingBackendStateRef.current = stateToSave;
  void flushPendingBackendSave();
