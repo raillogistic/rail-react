@@ -32,15 +32,16 @@ const DECHARGE_NESTED_CONFIG: NonNullable<
     ],
     customOrder: [
       "article",
-      "qte_sortie",
-      "etat_sortie",
+      "qteSortie",
+      "etatSortie",
       "serial",
-      "metadata_snapshot",
+      "metadataSnapshot",
     ],
     fieldsOrder: "custom",
-    columns: 2,
-    minItems: 1,
+    columns: 4,
+
     collapsible: true,
+
     addButton: {
       enabled: true,
       label: "Ajouter une ligne",

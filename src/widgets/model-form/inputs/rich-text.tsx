@@ -105,7 +105,7 @@ const RichTextInput: React.FC<Props> = ({ config, field, form }) => {
     <FieldWrapper config={config} fieldId={fieldId} error={error} dirty={dirty}>
       <div
         className={cn(
-          "flex flex-col overflow-hidden border border-border/60 bg-background/50 transition-all focus-within:border-primary/50 focus-within:ring-4 focus-within:ring-primary/5 rounded-md",
+          "flex flex-col overflow-hidden border border-border/60 bg-background/50 transition-all focus-within:border-primary/50 focus-within:ring-4 focus-within:ring-primary/5 ",
           showError && "border-destructive/50 ring-4 ring-destructive/5",
           config.disabled && "opacity-60 cursor-not-allowed",
         )}
@@ -288,7 +288,7 @@ const RichTextInput: React.FC<Props> = ({ config, field, form }) => {
         <EditorContent
           editor={editor}
           className={cn(
-            "prose prose-sm prose-stone dark:prose-invert max-w-none p-3 outline-none min-h-[120px]",
+            "prose prose-sm prose-stone dark:prose-invert max-w-none p-3 outline-none min-h-24",
             "prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-ol:my-1",
             "[&_.is-editor-empty]:before:text-muted-foreground/50 [&_.is-editor-empty]:before:content-[attr(data-placeholder)] [&_.is-editor-empty]:before:float-left [&_.is-editor-empty]:before:pointer-events-none",
           )}

@@ -445,15 +445,15 @@ const DynamicForm = <TValues extends Record<string, any> = Record<string, any>>(
   const formWrapperClass = cn(
     "relative flex flex-col w-full transition-all duration-300",
     isPopup
-      ? "gap-3 border-0 bg-transparent p-0 shadow-none backdrop-blur-0 rounded-none"
-      : "h-full bg-card/10 p-6 border border-border/40 shadow-sm rounded-xl",
+      ? "gap-3 border-0 bg-transparent p-0"
+      : "h-full bg-background border-2 border-border p-8",
     layoutClassName,
   );
 
   const formBodyClass = cn(
-    "flex-1 overflow-y-auto overflow-x-hidden px-1 scroll-smooth",
-    "scrollbar-thin scroll-track-transparent scrollbar-thumb-muted-foreground/20 hover:scrollbar-thumb-muted-foreground/30",
-    isPopup ? "space-y-4" : "space-y-8 pr-2",
+    "flex-1 overflow-y-auto px-2 pt-2 scroll-smooth",
+    "scrollbar-thin scroll-track-transparent scrollbar-thumb-foreground/20 hover:scrollbar-thumb-foreground/40",
+    isPopup ? "space-y-6" : "space-y-10 pr-4",
   );
 
   // ─── Mode rendering ─────────────────────────────────────────────────
@@ -517,7 +517,7 @@ const DynamicForm = <TValues extends Record<string, any> = Record<string, any>>(
           <div
             data-testid="dynamic-form-global-errors"
             role="alert"
-            className="mx-1 border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs text-destructive rounded-md"
+            className="mb-4 mx-1 border-2 border-destructive bg-destructive/10 px-3 py-2 text-sm font-bold text-destructive"
           >
             {globalSubmitErrors.map((message, index) => (
               <p key={`global-submit-error-${index}`}>{message}</p>
@@ -536,10 +536,10 @@ const DynamicForm = <TValues extends Record<string, any> = Record<string, any>>(
         ) : null}
 
         {isLoading && (
-          <div className="absolute inset-0 z-[100] flex items-center justify-center bg-background/60 backdrop-blur-[2px] animate-in fade-in duration-300">
-            <div className="flex flex-col items-center gap-3 border bg-background p-6 shadow-2xl rounded-2xl">
-              <Loader2 className="size-8 animate-spin text-primary" />
-              <p className="text-sm font-bold tracking-tight text-muted-foreground">
+          <div className="absolute inset-0 z-[100] flex items-center justify-center bg-background/80 backdrop-blur-sm animate-in fade-in duration-300">
+            <div className="flex flex-col items-center gap-3 bg-background border-2 border-primary p-8">
+              <Loader2 className="size-10 animate-spin text-primary" />
+              <p className="text-sm font-black tracking-widest uppercase text-primary">
                 Chargement...
               </p>
             </div>

@@ -53,7 +53,7 @@ export const MasterDetailMode = <TValues extends Record<string, any>>({
  >
  <div className="flex flex-col gap-6">
  {config.renderToolbar && (
- <div className="flex items-center justify-between border border-border/40 bg-muted/20 px-4 py-2 shadow-sm">
+ <div className="flex items-center justify-between border border-border/40 bg-muted/20 px-4 py-2 ">
  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-muted-foreground">
  <LayoutPanelLeft className="size-4" />
  Édition
@@ -82,7 +82,7 @@ export const MasterDetailMode = <TValues extends Record<string, any>>({
  Aperçu en direct
  </div>
  <Card className={cn(
- "overflow-hidden border-border/40 bg-background/50 shadow-xl backdrop-blur-sm transition-all duration-300",
+ "overflow-hidden border-border/40 bg-background/50  backdrop-blur-sm transition-all duration-300",
  config.previewClassName
  )}>
  <div className="p-6">

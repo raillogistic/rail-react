@@ -38,10 +38,15 @@ export type ModelTableUpdatePresentation = "drawer" | "modal" | "link";
 export type ModelTableCreatePresentation = "drawer" | "modal" | "link";
 
 /**
+ * Supported detail-action presentation modes.
+ */
+export type ModelTableDetailPresentation = "drawer" | "modal" | "link";
+
+/**
  * Drawer direction options for update overlays.
  */
 export type ModelTableUpdateDrawerDirection =
- | "left"
+| "left"
  | "right"
  | "top"
  | "bottom";
@@ -50,16 +55,25 @@ export type ModelTableUpdateDrawerDirection =
  * Drawer direction options for create overlays.
  */
 export type ModelTableCreateDrawerDirection =
- | "left"
- | "right"
- | "top"
- | "bottom";
+| "left"
+| "right"
+| "top"
+| "bottom";
+
+/**
+ * Drawer direction options for detail overlays.
+ */
+export type ModelTableDetailDrawerDirection =
+| "left"
+| "right"
+| "top"
+| "bottom";
 
 /**
  * Runtime context supplied to update configuration callbacks.
  */
 export type ModelTableUpdateContext = {
- app: string;
+app: string;
  model: string;
  row: Record<string, unknown>;
  rowId: string;
@@ -70,18 +84,29 @@ export type ModelTableUpdateContext = {
  * Runtime context supplied to create configuration callbacks.
  */
 export type ModelTableCreateContext = {
+app: string;
+model: string;
+metadata?: ModelSchema;
+selectedRows: Record<string, unknown>[];
+selectionState: Record<string, boolean>;
+};
+
+/**
+ * Runtime context supplied to detail configuration callbacks.
+ */
+export type ModelTableDetailContext = {
  app: string;
  model: string;
+ row: Record<string, unknown>;
+ rowId: string;
  metadata?: ModelSchema;
- selectedRows: Record<string, unknown>[];
- selectionState: Record<string, boolean>;
 };
 
 /**
  * ModelForm override surface accepted by table row update popups.
  */
 export type ModelTableUpdateFormOverrides = Omit<
- ModelFormProps<Record<string, unknown>>,
+ModelFormProps<Record<string, unknown>>,
  "app" | "model" | "mode" | "objectId"
 >;
 
@@ -89,6 +114,14 @@ export type ModelTableUpdateFormOverrides = Omit<
  * ModelForm override surface accepted by table create popups.
  */
 export type ModelTableCreateFormOverrides = Omit<
+ModelFormProps<Record<string, unknown>>,
+"app" | "model" | "mode" | "objectId"
+>;
+
+/**
+ * ModelForm override surface accepted by table row detail popups.
+ */
+export type ModelTableDetailFormOverrides = Omit<
  ModelFormProps<Record<string, unknown>>,
  "app" | "model" | "mode" | "objectId"
 >;
@@ -206,13 +239,66 @@ export type ModelTableCreateConfig = {
  * Refetch table data automatically after successful create submit.
  * Defaults to true.
  */
- refetchOnSuccess?: boolean;
+refetchOnSuccess?: boolean;
+};
+
+/**
+ * Detail-action configuration used by DynamicModelTable row view behavior.
+ */
+export type ModelTableDetailConfig = {
+ /**
+ * Overlay type for detail action.
+ * - "drawer" (default)
+ * - "modal"
+ * - "link"
+ */
+ type?: ModelTableDetailPresentation;
+ /**
+ * Popup title or title resolver.
+ */
+ title?: React.ReactNode | ((ctx: ModelTableDetailContext) => React.ReactNode);
+ /**
+ * Overlay width CSS value (e.g. "50vw", "900px", "min(90vw, 960px)").
+ */
+ width?: string;
+ /**
+ * Overlay height CSS value.
+ */
+ height?: string;
+ /**
+ * Drawer direction when`type` is "drawer".
+ */
+ drawerDirection?: ModelTableDetailDrawerDirection;
+ /**
+ * Link template for`type: "link"` (e.g. "/orders/:id").
+ */
+ hrefTemplate?: string;
+ /**
+ * Static object id override passed to ModelForm view mode.
+ */
+ objectId?: string | number | null;
+ /**
+ * Row-aware object id resolver passed to ModelForm view mode.
+ */
+ resolveObjectId?: (
+ ctx: ModelTableDetailContext,
+ ) => string | number | null | undefined;
+ /**
+ * Global ModelForm overrides for popup detail mode.
+ */
+ form?: ModelTableDetailFormOverrides;
+ /**
+ * Row-specific ModelForm override resolver.
+ */
+ resolveFormProps?: (
+ ctx: ModelTableDetailContext,
+ ) => ModelTableDetailFormOverrides | undefined;
 };
 
 export type ModelTableV2TopAction = {
- key: string;
- label: string;
- icon?: React.ReactNode;
+key: string;
+label: string;
+icon?: React.ReactNode;
  variant?: "default" | "outline" | "destructive";
  size?: "sm" | "md" | "lg" | "icon";
  order?: number;
@@ -389,13 +475,14 @@ export interface BaseModelTableProps {
 }
 
 export interface ModelTableV2Props {
- app: string;
- model: string;
- filterPanel?: ModelTableFilterPanelProps;
- create?: ModelTableCreateConfig;
- update?: ModelTableUpdateConfig;
- baseTable?: Omit<BaseModelTableProps, "app" | "model" | "children">;
- /**
+app: string;
+model: string;
+filterPanel?: ModelTableFilterPanelProps;
+create?: ModelTableCreateConfig;
+update?: ModelTableUpdateConfig;
+ detail?: ModelTableDetailConfig;
+baseTable?: Omit<BaseModelTableProps, "app" | "model" | "children">;
+/**
  * Enables simple runtime diagnostics for table bootstrap timings.
  */
  devtools?: boolean | DynamicModelTableDevtoolsConfig;

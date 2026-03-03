@@ -108,8 +108,8 @@ export const AccordionMode = <TValues extends Record<string, any>>({
           <div
             key={sectionId}
             className={cn(
-              "group overflow-hidden rounded-xl border border-border/60 bg-card/30 transition-all duration-300 hover:border-border",
-              isOpen && "bg-card shadow-sm border-border",
+              "group overflow-hidden  border border-border/60 bg-card/30 transition-all duration-300 hover:border-border",
+              isOpen && "bg-card  border-border",
             )}
           >
             <Collapsible
@@ -129,7 +129,7 @@ export const AccordionMode = <TValues extends Record<string, any>>({
                     {section.icon && (
                       <div
                         className={cn(
-                          "flex size-8 items-center justify-center rounded-lg transition-colors",
+                          "flex size-8 items-center justify-center  transition-colors",
                           isOpen
                             ? "bg-primary text-primary-foreground"
                             : "bg-primary/10 text-primary",
@@ -151,7 +151,7 @@ export const AccordionMode = <TValues extends Record<string, any>>({
                   </div>
                   <div
                     className={cn(
-                      "flex size-6 items-center justify-center rounded-full transition-all duration-300",
+                      "flex size-6 items-center justify-center  transition-all duration-300",
                       isOpen
                         ? "bg-primary/10 text-primary rotate-180"
                         : "bg-muted text-muted-foreground rotate-0",

@@ -64,7 +64,7 @@ export const GroupFieldRenderer = <TValues extends Record<string, any>>({
     return (
       <Card
         className={cn(
-          "overflow-hidden rounded-xl border-border/40 shadow-sm transition-all hover:shadow-md",
+          "overflow-hidden  border-border/40  transition-all hover:",
           config.ui?.className,
         )}
         style={
@@ -125,7 +125,7 @@ export const GroupFieldRenderer = <TValues extends Record<string, any>>({
     return (
       <fieldset
         className={cn(
-          "rounded-lg border border-border/60 p-4",
+          " border border-border/60 p-4",
           config.ui?.className,
         )}
         style={

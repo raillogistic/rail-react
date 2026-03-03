@@ -46,7 +46,7 @@ const NumberInput: React.FC<Props> = ({ config, field, form }) => {
   return (
     <FieldWrapper config={config} fieldId={fieldId} error={error} dirty={dirty}>
       <div className="relative group/number">
-        <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/50 transition-colors group-focus-within/number:text-primary/70">
+        <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50 transition-colors group-focus-within/number:text-primary/70">
           <Hash className="size-4" />
         </div>
         <Input
@@ -61,15 +61,15 @@ const NumberInput: React.FC<Props> = ({ config, field, form }) => {
           onBlur={field.handleBlur}
           disabled={config.disabled}
           className={cn(
-            "h-10 border-border/60 bg-background/50 pl-9 pr-4 transition-all focus:border-primary/50 focus:bg-background focus:ring-4 focus:ring-primary/5 focus-visible:ring-0 rounded-md",
+            "h-9 border-border/40 bg-muted/20 pl-11 pr-4 text-sm transition-all duration-300   hover:border-border/60 hover:bg-muted/40 focus:border-primary/50 focus:bg-background focus:ring-4 focus:ring-primary/10 focus-visible:ring-0",
             (config.type === "slider" || config.type === "range") &&
-              "h-8 px-0 border-none bg-transparent focus:ring-0",
+              "h-8 px-0 border-none bg-transparent focus:ring-0 ",
           )}
         />
 
         {config.format && typeof value === "number" && (
           <div className="absolute right-3 top-1/2 -translate-y-1/2 animate-in fade-in slide-in-from-right-1">
-            <span className="bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold text-primary rounded-sm">
+            <span className="bg-primary/10 px-2 py-0.5 text-[11px] font-bold tracking-wider text-primary ">
               {config.format(value)}
             </span>
           </div>

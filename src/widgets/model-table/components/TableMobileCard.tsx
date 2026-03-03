@@ -26,7 +26,10 @@ import type {
  BaseModelTableRefetch,
  RowMutationPermissions,
 } from "../types";
-import type { ModelTableUpdateConfig } from "../config/types";
+import type {
+ ModelTableDetailConfig,
+ ModelTableUpdateConfig,
+} from "../config/types";
 import { cn } from "@/shared/utils";
 import { RowActions } from "./row/RowActions";
 
@@ -40,6 +43,7 @@ type TableMobileCardProps = {
  refetch?: BaseModelTableRefetch;
  columnActions?: BaseModelTableColumnActionsInput;
  update?: ModelTableUpdateConfig;
+ detail?: ModelTableDetailConfig;
 };
 
 export function TableMobileCard({
@@ -47,6 +51,7 @@ export function TableMobileCard({
  refetch,
  columnActions,
  update,
+ detail,
 }: TableMobileCardProps) {
  const { metadata } = useMetadata();
  const {
@@ -260,14 +265,15 @@ export function TableMobileCard({
  ) : null}
  </div>
  <div className="shrink-0">
- <RowActions
- row={row}
- data={data}
- refetch={refetch}
- permissions={rowPermissions}
- columnActions={columnActions}
- update={update}
- />
+     <RowActions
+      row={row}
+      data={data}
+      refetch={refetch}
+      permissions={rowPermissions}
+      columnActions={columnActions}
+      update={update}
+      detail={detail}
+     />
  </div>
  </div>
  </CardHeader>

@@ -112,7 +112,7 @@ export const WizardMode = <TValues extends Record<string, any>>({
             </div>
             <Badge
               variant="secondary"
-              className="bg-primary/5 text-primary border-primary/20 font-bold px-2 py-0.5 text-[10px] uppercase tracking-wider rounded-md"
+              className="bg-primary/5 text-primary border-primary/20 font-bold px-2 py-0.5 text-[10px] uppercase tracking-wider "
             >
               {Math.round(((stepIndex + 1) / totalSteps) * 100)}% complété
             </Badge>
@@ -135,13 +135,13 @@ export const WizardMode = <TValues extends Record<string, any>>({
                       }
                     }}
                     className={cn(
-                      "group relative flex w-full flex-col gap-2 rounded-lg p-2 transition-all duration-300",
+                      "group relative flex w-full flex-col gap-2  p-2 transition-all duration-300",
                       isClickable && "cursor-pointer hover:bg-muted/50",
                     )}
                   >
                     <div
                       className={cn(
-                        "relative h-1.5 w-full overflow-hidden transition-all duration-300 rounded-full", // Added rounded-full here
+                        "relative h-1.5 w-full overflow-hidden transition-all duration-300 ", // Added  here
                         isActive
                           ? "bg-primary"
                           : isCompleted
@@ -199,7 +199,7 @@ export const WizardMode = <TValues extends Record<string, any>>({
           type="button"
           variant="outline"
           size="sm"
-          className="min-w-[100px] border-border/60 hover:bg-muted/50 rounded-md"
+          className="min-w-[100px] border-border/60 hover:bg-muted/50 "
           disabled={stepIndex === 0}
           onClick={handlePrev}
         >
@@ -212,7 +212,7 @@ export const WizardMode = <TValues extends Record<string, any>>({
             <Button
               type="submit"
               size="sm"
-              className="min-w-[120px] shadow-lg shadow-primary/20 rounded-md"
+              className="min-w-[120px]  /20 "
               onClick={(e) => {
                 e.preventDefault();
                 onFinalSubmit?.();
@@ -225,7 +225,7 @@ export const WizardMode = <TValues extends Record<string, any>>({
             <Button
               type="button"
               size="sm"
-              className="min-w-[120px] shadow-lg shadow-primary/10 rounded-md"
+              className="min-w-[120px]  /10 "
               onClick={handleNext}
             >
               Continuer

@@ -26,6 +26,7 @@ import {
   Loader2,
   Undo,
   Redo,
+  Check,
 } from "lucide-react";
 import type { FormActionsConfig } from "../types/actions";
 
@@ -79,8 +80,8 @@ export const ActionsBar = <TValues extends Record<string, any>>({
     "z-50 flex flex-wrap items-center justify-between px-6 py-4",
     "transition-all duration-300 ease-in-out",
     isPopup
-      ? "mt-4 border-t border-border/40 bg-accent/30 rounded-xl"
-      : "sticky bottom-0 mt-6 -mx-4 border-t bg-background/80 backdrop-blur-md shadow-[0_-4px_12px_rgba(0,0,0,0.03)]",
+      ? "mt-4 border-t border-border/40 bg-accent/30 "
+      : "sticky bottom-0 mt-6 -mx-4 border-t bg-background/80 backdrop-blur-md _-4px_12px_rgba(0,0,0,0.03)]",
   );
 
   const handleSubmitClick = () => {
@@ -111,7 +112,7 @@ export const ActionsBar = <TValues extends Record<string, any>>({
           {showDirtyIndicator && isDirty ? (
             <Badge
               variant="secondary"
-              className="bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800 animate-in fade-in slide-in-from-left-2 rounded-full px-2"
+              className="bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800 animate-in fade-in slide-in-from-left-2  px-2"
             >
               <Check className="mr-1.5 size-3.5" />
               Modifications non enregistrées
@@ -157,7 +158,7 @@ export const ActionsBar = <TValues extends Record<string, any>>({
             size="sm"
             onClick={() => form.reset()}
             disabled={isSubmitting || !isDirty}
-            className="text-muted-foreground hover:text-foreground rounded-md"
+            className="text-muted-foreground hover:text-foreground "
           >
             <RotateCcw className="mr-2 size-4" />
             {resetLabel}
@@ -167,7 +168,7 @@ export const ActionsBar = <TValues extends Record<string, any>>({
             type={confirmSubmit?.enabled ? "button" : "submit"}
             size="sm"
             disabled={isSubmitting || isLoading || (!isDirty && !canSubmit)}
-            className="shadow-sm shadow-primary/20 min-w-[120px]"
+            className=" /20 min-w-[120px]"
             onClick={confirmSubmit?.enabled ? handleSubmitClick : undefined}
           >
             {isSubmitting ? (
@@ -222,7 +223,7 @@ export const ActionsBar = <TValues extends Record<string, any>>({
                 type="button"
                 variant="outline"
                 onClick={() => setConfirmOpen(false)}
-                className="rounded-md"
+                className=""
               >
                 Annuler
               </Button>

@@ -44,6 +44,7 @@ import type {
  DynamicModelTableProps,
  DynamicModelTableSnapshot,
  ModelTableCreateConfig,
+ ModelTableDetailConfig,
  ModelTableFilterPanelProps,
  ModelTableUpdateConfig,
  ModelTableV2ExpandConfig,
@@ -105,6 +106,7 @@ type DynamicBaseTableContentProps = {
  filterPanel?: ModelTableFilterPanelProps;
  create?: ModelTableCreateConfig;
  update?: ModelTableUpdateConfig;
+ detail?: ModelTableDetailConfig;
  tableConfig?: ModelTableV2TableConfig;
  view?: ModelTableV2ViewOptions;
  performance?: ModelTableV2PerformanceOptions;
@@ -504,6 +506,7 @@ function DynamicBaseTableContent({
  filterPanel,
  create,
  update,
+ detail,
  tableConfig,
  quickSearch,
  topActions,
@@ -1412,14 +1415,15 @@ function DynamicBaseTableContent({
 
  {hideTableOnMobile && (
  <div className="flex-1 min-h-0 min-w-0 my-2 md:hidden">
- <TableMobileCard
- emptyState={tableConfig?.emptyState}
- refetch={refetch}
- columnActions={columnActions}
- update={update}
- />
- </div>
- )}
+        <TableMobileCard
+         emptyState={tableConfig?.emptyState}
+         refetch={refetch}
+         columnActions={columnActions}
+         update={update}
+         detail={detail}
+        />
+       </div>
+      )}
 
  <div
  className={cn(
@@ -1457,15 +1461,16 @@ function DynamicBaseTableContent({
  row={row}
  data={data}
  refetch={refetch}
- permissions={
- row.rowPermissions as RowMutationPermissions | undefined
- }
- columnActions={columnActions}
- update={update}
- />
- ),
- },
- }}
+              permissions={
+               row.rowPermissions as RowMutationPermissions | undefined
+              }
+              columnActions={columnActions}
+              update={update}
+              detail={detail}
+             />
+            ),
+           },
+          }}
  totalRows={pagination.totalKnown ? pagination.total : undefined}
  pageCount={
  pagination.totalKnown ? pagination.numPages : undefined
@@ -1509,16 +1514,17 @@ export const DynamicModelTable = forwardRef<
  DynamicModelTableHandle,
  DynamicModelTableProps
 >(function DynamicModelTable(
- {
- app,
- model,
- filterPanel,
- create,
- update,
- baseTable,
- devtools,
- initVariables,
- }: DynamicModelTableProps,
+  {
+   app,
+   model,
+   filterPanel,
+   create,
+   update,
+   detail,
+   baseTable,
+   devtools,
+   initVariables,
+  }: DynamicModelTableProps,
  ref,
 ) {
  const tableInstanceKey =`${app}:${model}`;
@@ -1631,13 +1637,14 @@ export const DynamicModelTable = forwardRef<
  filterVariables: initialTableState.filterVariables,
  }}
  >
- <DynamicBaseTableContent
- persistenceKey={baseTable?.persistenceKey}
- filterPanel={resolvedFilterPanel}
- create={create}
- update={update}
- tableConfig={baseTable?.tableConfig}
- view={baseTable?.view}
+      <DynamicBaseTableContent
+       persistenceKey={baseTable?.persistenceKey}
+       filterPanel={resolvedFilterPanel}
+       create={create}
+       update={update}
+       detail={detail}
+       tableConfig={baseTable?.tableConfig}
+       view={baseTable?.view}
  performance={baseTable?.performance}
  quickSearch={baseTable?.quickSearch ?? true}
  topActions={baseTable?.topActions}

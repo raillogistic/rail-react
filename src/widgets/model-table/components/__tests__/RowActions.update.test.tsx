@@ -239,10 +239,10 @@ describe("RowActions update integration", () => {
  expect(latestProps.layout?.variant).toBe("popup");
  });
 
- it("navigates using href template when update type is link", async () => {
- render(
- <RowActions
- row={{ id: 77 }}
+  it("navigates using href template when update type is link", async () => {
+    render(
+      <RowActions
+        row={{ id: 77 }}
  data={[{ id: 77 }]}
  update={{
  type: "link",
@@ -256,12 +256,59 @@ describe("RowActions update integration", () => {
  await waitFor(() => {
  expect(mockNavigate).toHaveBeenCalledWith("/orders/77/edit");
  });
- expect(screen.queryByTestId("update-overlay-drawer")).not.toBeInTheDocument();
- expect(screen.queryByTestId("update-overlay-modal")).not.toBeInTheDocument();
- });
+    expect(screen.queryByTestId("update-overlay-drawer")).not.toBeInTheDocument();
+    expect(screen.queryByTestId("update-overlay-modal")).not.toBeInTheDocument();
+  });
 
- it("closes popup and refetches table after successful update submit", async () => {
- const refetch = vi.fn().mockResolvedValue(undefined);
+  it("opens detail popup in view mode and resolves title/object id overrides", async () => {
+    render(
+      <RowActions
+        row={{ id: 42, externalId: "row-42" }}
+        data={[{ id: 42, externalId: "row-42" }]}
+        detail={{
+          type: "modal",
+          title: ({ rowId }) => `Details ${rowId}`,
+          resolveObjectId: ({ row }) => String(row.externalId ?? ""),
+        }}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Details" }));
+
+    await waitFor(() => {
+      expect(screen.getByText("Details 42")).toBeInTheDocument();
+      expect(modelFormSpy).toHaveBeenCalled();
+    });
+
+    const latestProps = modelFormSpy.mock.calls.at(-1)?.[0] as ModelFormProps<
+      Record<string, unknown>
+    >;
+    expect(latestProps.mode).toBe("view");
+    expect(latestProps.objectId).toBe("row-42");
+    expect(latestProps.layout?.variant).toBe("popup");
+  });
+
+  it("navigates using href template when detail type is link", async () => {
+    render(
+      <RowActions
+        row={{ id: 105 }}
+        data={[{ id: 105 }]}
+        detail={{
+          type: "link",
+          hrefTemplate: "/orders/:id",
+        }}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Details" }));
+
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith("/orders/105");
+    });
+  });
+
+  it("closes popup and refetches table after successful update submit", async () => {
+    const refetch = vi.fn().mockResolvedValue(undefined);
 
  render(
  <RowActions

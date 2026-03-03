@@ -546,8 +546,10 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
                 variant="outline"
                 data-slot="button"
                 className={cn(
-                  "h-auto min-h-10 w-full justify-between border-border/60 bg-background/50 px-3 py-2 text-left font-normal transition-all hover:border-primary/50 hover:bg-background rounded-md",
-                  selectedValues.length > 0 ? "border-primary/30" : "",
+                  "h-auto min-h-9 w-full justify-between border-border/40 bg-muted/20 px-3 py-2 text-left text-sm font-normal transition-all duration-300 hover:border-border/60 hover:bg-muted/40   focus:border-primary/50 focus:bg-background focus:ring-4 focus:ring-primary/10",
+                  selectedValues.length > 0
+                    ? "border-primary/40 bg-background"
+                    : "",
                 )}
               >
                 <div className="flex flex-wrap gap-1.5 pr-4">
@@ -556,7 +558,7 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
                       <Badge
                         key={opt.value}
                         variant="secondary"
-                        className="bg-primary/10 text-primary border-none px-1.5 py-0 text-[10px] font-bold uppercase tracking-wider rounded-sm"
+                        className="bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary transition-colors border-none px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider "
                       >
                         {opt.label}
                         {config.multiple && (
@@ -585,7 +587,7 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
                 </div>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-80 p-0 shadow-2xl border-border/40 bg-background/95 backdrop-blur-sm overflow-hidden rounded-xl">
+            <DropdownMenuContent className="w-80 p-0  border-border/30 bg-background/95 backdrop-blur-md overflow-hidden ">
               <div className="flex items-center border-b border-border/40 bg-muted/20 px-3 py-2">
                 <Search className="mr-2 size-4 text-muted-foreground/60" />
                 <Input
@@ -617,8 +619,8 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
                     <DropdownMenuCheckboxItem
                       key={option.value}
                       className={cn(
-                        "relative flex cursor-pointer select-none items-center py-2.5 pl-9 pr-3 outline-none transition-colors rounded-md",
-                        "hover:bg-primary/5 hover:text-primary focus:bg-primary/5 focus:text-primary",
+                        "relative flex cursor-pointer select-none items-center py-2 pl-10 pr-4 outline-none transition-colors duration-200 ",
+                        "hover:bg-muted/30 hover:text-foreground focus:bg-primary/5 focus:text-primary",
                         index === highlightedIndex
                           ? "bg-primary/5 text-primary"
                           : "",
@@ -677,10 +679,10 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
         </div>
       </div>
       <Dialog open={inlineFormOpen} onOpenChange={setInlineFormOpen}>
-        <DialogContent className="sm:max-w-3xl overflow-hidden p-0 border-border/40 shadow-2xl rounded-2xl">
+        <DialogContent className="sm:max-w-3xl overflow-hidden p-0 border-border/30   bg-background/95 backdrop-blur-md">
           <DialogHeader className="px-6 pt-6 pb-2">
             <DialogTitle className="flex items-center gap-2 text-xl font-bold tracking-tight">
-              <div className="flex size-8 items-center justify-center bg-primary/10 text-primary rounded-lg">
+              <div className="flex size-8 items-center justify-center bg-primary/10 text-primary ">
                 <Plus className="size-5" />
               </div>
               {inlineTriggerLabel}

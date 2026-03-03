@@ -10,6 +10,7 @@ import { useNavigate } from "react-router-dom";
 import {
  FileSpreadsheet,
  FileText,
+ Info,
  Loader2,
  MoreHorizontal,
  Pencil,
@@ -57,6 +58,9 @@ import type {
 import { useMetadata } from "../../context/MetadataContext";
 import { useTable } from "../../context/TableContext";
 import type {
+ ModelTableDetailConfig,
+ ModelTableDetailContext,
+ ModelTableDetailFormOverrides,
  ModelTableUpdateConfig,
  ModelTableUpdateContext,
  ModelTableUpdateFormOverrides,
@@ -132,6 +136,20 @@ type ResolvedUpdateConfig = {
  closeOnSuccess: boolean;
  refetchOnSuccess: boolean;
  formOverrides: ModelTableUpdateFormOverrides;
+};
+
+/**
+ * Normalized detail-action configuration resolved per row instance.
+ */
+type ResolvedDetailConfig = {
+ type: "drawer" | "modal" | "link";
+ title: React.ReactNode;
+ width?: string;
+ height?: string;
+ drawerDirection: "left" | "right" | "top" | "bottom";
+ objectIdValue: string;
+ hrefTemplate?: string;
+ formOverrides: ModelTableDetailFormOverrides;
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -401,10 +419,14 @@ function extractGraphqlErrors(payload: unknown): Array<{ message?: string }> {
 /**
  * Merges two optional ModelForm override records.
  */
+type RowActionFormOverrides =
+ | ModelTableUpdateFormOverrides
+ | ModelTableDetailFormOverrides;
+
 function mergeModelFormOverrides(
- base: ModelTableUpdateFormOverrides | undefined,
- extra: ModelTableUpdateFormOverrides | undefined,
-): ModelTableUpdateFormOverrides {
+ base: RowActionFormOverrides | undefined,
+ extra: RowActionFormOverrides | undefined,
+): RowActionFormOverrides {
  const left = base ?? {};
  const right = extra ?? {};
  const leftFormProps = left.formProps ?? {};
@@ -459,9 +481,25 @@ function resolveUpdateTitle(
 }
 
 /**
+ * Resolves detail overlay title from static text/callback with a safe fallback.
+ */
+function resolveDetailTitle(
+ title: ModelTableDetailConfig["title"],
+ context: ModelTableDetailContext,
+): React.ReactNode {
+ if (typeof title === "function") {
+ return title(context);
+ }
+ if (title !== undefined && title !== null) {
+ return title;
+ }
+ return`Details ${context.metadata?.verboseName ?? context.model}`;
+}
+
+/**
  * Replaces`:id` placeholders in link templates with encoded row identifiers.
  */
-function buildUpdateHrefFromTemplate(
+function buildHrefFromTemplate(
  template: string,
  rowId: string,
 ): string {
@@ -475,6 +513,7 @@ type RowActionsProps = {
  permissions?: RowMutationPermissions | null;
  columnActions?: BaseModelTableColumnActionsInput;
  update?: ModelTableUpdateConfig;
+ detail?: ModelTableDetailConfig;
 };
 
 export function RowActions({
@@ -484,6 +523,7 @@ export function RowActions({
  permissions,
  columnActions,
  update,
+ detail,
 }: RowActionsProps) {
  const { app, model, metadata } = useMetadata();
  const { refresh } = useTable();
@@ -498,6 +538,7 @@ export function RowActions({
  const [mutationDialogOpen, setMutationDialogOpen] = useState(false);
  const [executingMutationAction, setExecutingMutationAction] = useState(false);
  const [updateDialogOpen, setUpdateDialogOpen] = useState(false);
+ const [detailDialogOpen, setDetailDialogOpen] = useState(false);
 
  const rowIdValue = row.id;
  const rowId =
@@ -536,8 +577,20 @@ export function RowActions({
  (permissions?.canDelete ?? true);
  const canEdit =
  !!baseUpdateMutation?.allowed && (permissions?.canUpdate ?? true);
+ const canDetail = !!rowId && (metadata?.permissions?.canRetrieve ?? true);
 
  const updateContext = useMemo<ModelTableUpdateContext>(
+ () => ({
+ app,
+ model,
+ row,
+ rowId,
+ metadata: metadata ?? undefined,
+ }),
+ [app, metadata, model, row, rowId],
+ );
+
+ const detailContext = useMemo<ModelTableDetailContext>(
  () => ({
  app,
  model,
@@ -557,7 +610,10 @@ export function RowActions({
  : String(resolvedObjectId);
  const globalOverrides = update?.form;
  const perRowOverrides = update?.resolveFormProps?.(updateContext);
- const mergedOverrides = mergeModelFormOverrides(globalOverrides, perRowOverrides);
+ const mergedOverrides = mergeModelFormOverrides(
+ globalOverrides,
+ perRowOverrides,
+ ) as ModelTableUpdateFormOverrides;
  return {
  type: update?.type ?? "drawer",
  title: resolveUpdateTitle(update?.title, updateContext),
@@ -571,6 +627,32 @@ export function RowActions({
  formOverrides: mergedOverrides,
  };
  }, [update, updateContext]);
+
+ const resolvedDetailConfig = useMemo<ResolvedDetailConfig>(() => {
+ const resolvedObjectId =
+ detail?.resolveObjectId?.(detailContext) ?? detail?.objectId ?? rowId;
+ const objectIdValue =
+ resolvedObjectId === undefined || resolvedObjectId === null
+ ? ""
+ : String(resolvedObjectId);
+ const globalOverrides = detail?.form;
+ const perRowOverrides = detail?.resolveFormProps?.(detailContext);
+ const mergedOverrides = mergeModelFormOverrides(
+ globalOverrides,
+ perRowOverrides,
+ ) as ModelTableDetailFormOverrides;
+
+ return {
+ type: detail?.type ?? "drawer",
+ title: resolveDetailTitle(detail?.title, detailContext),
+ width: detail?.width,
+ height: detail?.height,
+ drawerDirection: detail?.drawerDirection ?? "right",
+ objectIdValue,
+ hrefTemplate: detail?.hrefTemplate,
+ formOverrides: mergedOverrides,
+ };
+ }, [detail, detailContext]);
 
  const editDisabledReason = useMemo(() => {
  if (!canEdit) {
@@ -591,6 +673,27 @@ export function RowActions({
  resolvedUpdateConfig.hrefTemplate,
  resolvedUpdateConfig.objectIdValue,
  resolvedUpdateConfig.type,
+ ]);
+
+ const detailDisabledReason = useMemo(() => {
+ if (!canDetail) {
+ return "Permission de consultation indisponible.";
+ }
+ if (!resolvedDetailConfig.objectIdValue) {
+ return "Cette ligne ne possede pas d'identifiant valide.";
+ }
+ if (
+ resolvedDetailConfig.type === "link" &&
+ !resolvedDetailConfig.hrefTemplate
+ ) {
+ return "Configuration detail.link manquante (hrefTemplate).";
+ }
+ return null;
+ }, [
+ canDetail,
+ resolvedDetailConfig.hrefTemplate,
+ resolvedDetailConfig.objectIdValue,
+ resolvedDetailConfig.type,
  ]);
 
  const actionContext = useMemo<BaseModelTableColumnActionContext>(
@@ -663,7 +766,7 @@ export function RowActions({
  const singleTemplateLabel = singleTemplate
  ? singleTemplate.title || singleTemplate.key || "Template"
  : "Template";
- const hasBuiltinActions = canEdit || canDelete;
+ const hasBuiltinActions = canDetail || canEdit || canDelete;
  const hasMetadataMutationActions = metadataMutationActions.length > 0;
  const hasCustomActions = customActions.length > 0;
  const hasAnyActions =
@@ -736,7 +839,7 @@ export function RowActions({
 
  if (resolvedUpdateConfig.type === "link") {
  const template = resolvedUpdateConfig.hrefTemplate ?? "";
- const href = buildUpdateHrefFromTemplate(
+ const href = buildHrefFromTemplate(
  template,
  resolvedUpdateConfig.objectIdValue,
  );
@@ -751,6 +854,34 @@ export function RowActions({
  resolvedUpdateConfig.hrefTemplate,
  resolvedUpdateConfig.type,
  resolvedUpdateConfig.objectIdValue,
+ ]);
+
+ /**
+ * Executes detail action according to configured presentation mode.
+ */
+ const handleDetail = useCallback(() => {
+ if (detailDisabledReason) {
+ toast.error(detailDisabledReason);
+ return;
+ }
+
+ if (resolvedDetailConfig.type === "link") {
+ const template = resolvedDetailConfig.hrefTemplate ?? "";
+ const href = buildHrefFromTemplate(
+ template,
+ resolvedDetailConfig.objectIdValue,
+ );
+ navigate(href);
+ return;
+ }
+
+ setDetailDialogOpen(true);
+ }, [
+ detailDisabledReason,
+ navigate,
+ resolvedDetailConfig.hrefTemplate,
+ resolvedDetailConfig.objectIdValue,
+ resolvedDetailConfig.type,
  ]);
 
  /**
@@ -1015,6 +1146,39 @@ export function RowActions({
  resolvedUpdateConfig.objectIdValue,
  ]);
 
+ const detailFormProps = useMemo<ModelFormProps<UpdateFormValues>>(() => {
+ const overrides = resolvedDetailConfig.formOverrides;
+ const formPropsLayout =
+ (overrides.formProps?.layout as
+ | Record<string, unknown>
+ | undefined) ?? {};
+
+ return {
+ app,
+ model,
+ mode: "view",
+ objectId: resolvedDetailConfig.objectIdValue,
+ showHeading: false,
+ ...overrides,
+ layout: {
+ variant: "popup",
+ ...(overrides.layout as Record<string, unknown> | undefined),
+ },
+ formProps: {
+ ...(overrides.formProps ?? {}),
+ layout: {
+ variant: "popup",
+ ...formPropsLayout,
+ },
+ },
+ };
+ }, [
+ app,
+ model,
+ resolvedDetailConfig.formOverrides,
+ resolvedDetailConfig.objectIdValue,
+ ]);
+
  if (!hasAnyActions) {
  return null;
  }
@@ -1085,6 +1249,26 @@ export function RowActions({
  </TooltipTrigger>
  <TooltipContent className="bg-blue-600 text-white font-bold uppercase text-[9px] tracking-widest">
  {editDisabledReason ?? "Modifier"}
+ </TooltipContent>
+ </Tooltip>
+ ) : null}
+
+ {canDetail ? (
+ <Tooltip>
+ <TooltipTrigger asChild>
+ <Button
+ size="icon"
+ variant="ghost"
+ aria-label="Details"
+ className="size-7 bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 transition-all hover:bg-cyan-500 hover:text-white active:scale-95"
+ onClick={handleDetail}
+ disabled={Boolean(detailDisabledReason)}
+ >
+ <Info className="h-4 w-4" />
+ </Button>
+ </TooltipTrigger>
+ <TooltipContent className="bg-cyan-600 text-white font-bold uppercase text-[9px] tracking-widest">
+ {detailDisabledReason ?? "Details"}
  </TooltipContent>
  </Tooltip>
  ) : null}
@@ -1363,6 +1547,27 @@ export function RowActions({
  }
  >
  <LazyModelForm {...updateFormProps} />
+ </Suspense>
+ </FormOverlay>
+ ) : null}
+ {resolvedDetailConfig.type !== "link" ? (
+ <FormOverlay
+ mode={resolvedDetailConfig.type === "modal" ? "modal" : "drawer"}
+ open={detailDialogOpen}
+ onOpenChange={setDetailDialogOpen}
+ title={resolvedDetailConfig.title}
+ width={resolvedDetailConfig.width}
+ height={resolvedDetailConfig.height}
+ drawerDirection={resolvedDetailConfig.drawerDirection}
+ >
+ <Suspense
+ fallback={
+ <div className="flex min-h-32 items-center justify-center text-muted-foreground">
+ <Loader2 className="size-4 animate-spin" />
+ </div>
+ }
+ >
+ <LazyModelForm {...detailFormProps} />
  </Suspense>
  </FormOverlay>
  ) : null}

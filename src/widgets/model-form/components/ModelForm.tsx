@@ -484,7 +484,7 @@ export function ModelForm<
         <header className="mb-8 space-y-3 px-1">
           {title && (
             <div className="flex items-center gap-4">
-              <div className="h-8 w-1.5 rounded-full bg-primary/80 shadow-[0_0_15px_rgba(var(--primary),0.3)]" />
+              <div className="h-8 w-1.5  bg-primary/80 _0_15px_rgba(var(--primary),0.3)]" />
               <h2 className="text-2xl font-extrabold tracking-tight text-foreground sm:text-3xl">
                 {title}
               </h2>
@@ -500,8 +500,8 @@ export function ModelForm<
       <div
         className={cn(
           isPopupLayoutVariant
-            ? "relative overflow-hidden bg-transparent backdrop-blur-0 transition-all duration-300 hover:shadow-none"
-            : "relative overflow-hidden bg-card/30 backdrop-blur-sm transition-all duration-300 hover:shadow-2xl hover:shadow-black/5 rounded-xl border border-border/40",
+            ? "relative overflow-hidden bg-transparent backdrop-blur-0 transition-all duration-300 hover:"
+            : "relative overflow-hidden bg-card/30 backdrop-blur-sm transition-all duration-300 hover: hover:/5  border border-border/40",
           contentClassName,
         )}
       >

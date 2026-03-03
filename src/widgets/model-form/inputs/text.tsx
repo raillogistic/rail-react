@@ -57,7 +57,9 @@ const TextInput: React.FC<Props> = ({ config, field, form }) => {
           id={fieldId}
           data-slot="textarea"
           className={cn(
-            "min-h-[100px] w-full resize-y border-border/60 bg-background/50 px-4 py-3 text-sm transition-all focus:border-primary/50 focus:bg-background focus:ring-4 focus:ring-primary/5 focus-visible:ring-0 rounded-md",
+            "min-h-24 w-full resize-y border-border/40 bg-muted/20 px-3 py-2 text-sm transition-all duration-300  ",
+            "hover:bg-muted/40 hover:border-border/60",
+            "focus:border-primary/50 focus:bg-background focus:ring-4 focus:ring-primary/10 focus-visible:ring-0",
             config.readOnly && "cursor-default bg-muted/50",
             config.disabled && "cursor-not-allowed opacity-50",
           )}
@@ -92,7 +94,12 @@ const TextInput: React.FC<Props> = ({ config, field, form }) => {
               type="file"
               accept={config.accept}
               multiple={Boolean(config.multiple)}
-              className="cursor-pointer file:mr-4 file:border-0 file:bg-primary/10 file:px-4 file:py-1 file:text-xs file:font-bold file:text-primary file:rounded-md hover:file:bg-primary/20"
+              className={cn(
+                "h-9 cursor-pointer border-border/40 bg-muted/20 px-3 py-2 text-sm transition-all duration-300  ",
+                "hover:bg-muted/40 hover:border-border/60",
+                "focus:border-primary/50 focus:bg-background focus:ring-4 focus:ring-primary/10",
+                "file:mr-4 file:h-8 file:border-0 file:bg-primary/10 file:px-3 file:py-0 file:text-[11px] file:font-semibold file:uppercase file:tracking-wider file:text-primary file: hover:file:bg-primary/20",
+              )}
               onChange={(event) => {
                 const list = event.target.files;
                 if (!list) {
@@ -113,11 +120,11 @@ const TextInput: React.FC<Props> = ({ config, field, form }) => {
               {fileList.map((file, idx) => (
                 <div
                   key={`${file.name}-${idx}`}
-                  className="flex items-center gap-2 border border-border/50 bg-muted/30 px-2 py-1.5 text-[11px] font-medium rounded-md"
+                  className="flex items-center gap-2 border border-border/40 bg-background px-3 py-2 text-[12px] font-medium  "
                 >
-                  <File className="size-3.5 text-primary" />
-                  <span className="max-w-[150px] truncate">{file.name}</span>
-                  <span className="text-[10px] text-muted-foreground">
+                  <File className="size-4 text-primary" />
+                  <span className="max-w-[200px] truncate">{file.name}</span>
+                  <span className="text-[11px] text-muted-foreground/70">
                     ({(file.size / 1024).toFixed(1)} KB)
                   </span>
                   {!config.disabled && !config.readOnly && (
@@ -158,9 +165,9 @@ const TextInput: React.FC<Props> = ({ config, field, form }) => {
         error={error}
         dirty={dirty}
       >
-        <div className="group/json relative overflow-hidden border border-border/60 transition-all focus-within:border-primary/50 focus-within:ring-4 focus-within:ring-primary/5 rounded-md">
-          <div className="flex items-center justify-between bg-muted/20 px-3 py-1.5 border-b border-border/30">
-            <div className="flex items-center gap-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+        <div className="group/json overflow-hidden border border-border/40 transition-all duration-300 focus-within:border-primary/50 focus-within:ring-4 focus-within:ring-primary/10   hover:border-border/60">
+          <div className="flex items-center justify-between bg-muted/30 px-3 py-2 border-b border-border/30">
+            <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-widest text-muted-foreground">
               <FileJson className="size-3.5" />
               Éditeur JSON
             </div>
@@ -168,7 +175,7 @@ const TextInput: React.FC<Props> = ({ config, field, form }) => {
           <textarea
             id={fieldId}
             data-slot="textarea"
-            className="font-mono min-h-[160px] w-full resize-y bg-background/50 p-4 text-[13px] leading-relaxed outline-none transition-colors focus:bg-background"
+            className="font-mono min-h-32 w-full resize-y bg-muted/10 p-5 text-[14px] leading-relaxed outline-none transition-colors focus:bg-background"
             value={value}
             onChange={(event) => field.handleChange(event.target.value)}
             onBlur={field.handleBlur}
@@ -208,7 +215,9 @@ const TextInput: React.FC<Props> = ({ config, field, form }) => {
         readOnly={config.readOnly}
         disabled={config.disabled}
         className={cn(
-          "h-10 border-border/60 bg-background/50 px-4 transition-all focus:border-primary/50 focus:bg-background focus:ring-4 focus:ring-primary/5 focus-visible:ring-0 rounded-md",
+          "h-9 border-border/40 bg-muted/20 px-3 text-sm transition-all duration-300  ",
+          "hover:bg-muted/40 hover:border-border/60",
+          "focus:border-primary/50 focus:bg-background focus:ring-4 focus:ring-primary/10 focus-visible:ring-0",
           safeInputProps?.className,
         )}
         {...safeInputProps}

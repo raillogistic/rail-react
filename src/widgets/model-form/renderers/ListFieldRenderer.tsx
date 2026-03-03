@@ -464,7 +464,7 @@ const ListFieldItems = <TValues extends Record<string, any>>({
 
   return (
     <div
-      className="group/list-container relative flex flex-col gap-3 rounded-xl border border-border/40 bg-muted/5 p-1 transition-all duration-500"
+      className="group/list-container relative flex flex-col gap-3  border border-border/40 bg-muted/5 p-1 transition-all duration-500"
       style={
         colSpan
           ? { gridColumn: `span ${colSpan} / span ${colSpan}` }
@@ -474,7 +474,7 @@ const ListFieldItems = <TValues extends Record<string, any>>({
       {/* List Header */}
       <div className="flex items-center justify-between px-4 py-2.5">
         <div className="flex items-center gap-3">
-          <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary shadow-inner">
+          <div className="flex size-8 items-center justify-center  bg-primary/10 text-primary ">
             <Layers className="size-4" />
           </div>
           <div className="flex flex-col">
@@ -495,7 +495,7 @@ const ListFieldItems = <TValues extends Record<string, any>>({
             size="sm"
             onClick={handleAdd}
             disabled={!canAdd || globalDisabled}
-            className="h-8 rounded-md px-3 text-xs font-bold shadow-lg shadow-primary/10 transition-all hover:scale-[1.02] active:scale-[0.98]"
+            className="h-8  px-3 text-xs font-bold  /10 transition-all hover:scale-[1.02] active:scale-[0.98]"
           >
             <Plus className="mr-1.5 size-3.5 stroke-[3px]" />
             {config.addLabel ?? "Ajouter"}
@@ -519,7 +519,7 @@ const ListFieldItems = <TValues extends Record<string, any>>({
       {/* Items Grid */}
       <div className="flex flex-col gap-1 px-1 pb-1">
         {items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center rounded-lg border border-dashed border-border/40 bg-background/20 py-10 text-center">
+          <div className="flex flex-col items-center justify-center  border border-dashed border-border/40 bg-background/20 py-10 text-center">
             <Layers className="mb-2 size-6 text-muted-foreground/20" />
             <p className="text-[11px] font-bold text-muted-foreground/40">
               Liste vide
@@ -663,15 +663,15 @@ const SortableListItem = <TValues extends Record<string, any>>({
       style={style}
       className={cn(
         "group/item relative transition-all duration-300",
-        isDragging && "scale-[1.01] shadow-xl",
+        isDragging && "scale-[1.01] ",
       )}
     >
       <div
         className={cn(
-          "overflow-hidden rounded-lg border border-border/40 bg-card/50 transition-all duration-300",
-          "hover:border-border/80 hover:bg-card hover:shadow-sm",
+          "overflow-hidden  border border-border/40 bg-card/50 transition-all duration-300",
+          "hover:border-border/80 hover:bg-card hover:",
           isDragging &&
-            "border-primary/50 ring-1 ring-primary/20 bg-card shadow-2xl",
+            "border-primary/50 ring-1 ring-primary/20 bg-card ",
         )}
       >
         {/* Item Minimal Header Bar */}
@@ -687,7 +687,7 @@ const SortableListItem = <TValues extends Record<string, any>>({
                 <GripVertical className="size-3.5" />
               </button>
             )}
-            <div className="flex h-4 min-w-[1.25rem] items-center justify-center rounded bg-background px-1 font-mono text-[9px] font-black text-muted-foreground/60 shadow-xs">
+            <div className="flex h-4 min-w-[1.25rem] items-center justify-center rounded bg-background px-1 font-mono text-[9px] font-black text-muted-foreground/60 ">
               {String(index + 1).padStart(2, "0")}
             </div>
             <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/40">
@@ -736,7 +736,7 @@ const SortableListItem = <TValues extends Record<string, any>>({
                   type="button"
                   size="icon"
                   variant="ghost"
-                  className="size-6 rounded-full text-muted-foreground/30 hover:bg-destructive/10 hover:text-destructive"
+                  className="size-6  text-muted-foreground/30 hover:bg-destructive/10 hover:text-destructive"
                   onClick={onRemove}
                   disabled={
                     !!globalDisabled || !!deletePending || !!deleteBlocked

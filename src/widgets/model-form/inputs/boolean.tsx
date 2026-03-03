@@ -44,9 +44,11 @@ const BooleanInput: React.FC<Props> = ({ config, field, form }) => {
       >
         <div
           className={cn(
-            "flex items-center gap-4 border border-border/40 bg-background/50 p-3 transition-all duration-200 rounded-lg",
-            "hover:border-border/80 hover:bg-background",
-            value ? "border-primary/20 bg-primary/5" : "",
+            "flex items-center gap-3 border border-border/30 bg-muted/10 p-3 transition-all duration-300  ",
+            "hover:border-border/60 hover:bg-muted/20 hover: hover:-translate-y-0.5",
+            value
+              ? "border-primary/50 bg-primary/5 ring-2 ring-primary/20 "
+              : "",
           )}
         >
           <Switch
@@ -69,7 +71,7 @@ const BooleanInput: React.FC<Props> = ({ config, field, form }) => {
           <Button
             variant="ghost"
             size="sm"
-            className="ml-auto h-7 px-2 text-[10px] font-bold uppercase tracking-wider text-muted-foreground transition-all hover:bg-primary/10 hover:text-primary rounded-md"
+            className="ml-auto h-8 px-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground transition-all hover:bg-primary/20 hover:text-primary  border border-transparent hover:border-primary/30"
             onClick={() => field.handleChange(!value)}
             type="button"
             disabled={config.disabled}
@@ -85,9 +87,11 @@ const BooleanInput: React.FC<Props> = ({ config, field, form }) => {
     <FieldWrapper config={config} fieldId={fieldId} error={error} dirty={dirty}>
       <div
         className={cn(
-          "flex items-center gap-3 border border-border/40 bg-background/50 px-4 py-3 transition-all duration-200 rounded-lg",
-          "hover:border-border/80 hover:bg-background",
-          value ? "border-primary/20 bg-primary/5 shadow-sm" : "",
+          "flex cursor-pointer items-center gap-3 border border-border/30 bg-muted/10 px-5 py-2 transition-all duration-300  ",
+          "hover:border-primary/30 hover:bg-muted/20 hover: hover:-translate-y-0.5",
+          value
+            ? "border-primary/50 bg-primary/5 ring-2 ring-primary/20 "
+            : "",
         )}
         onClick={() => !config.disabled && field.handleChange(!value)}
       >
@@ -98,7 +102,7 @@ const BooleanInput: React.FC<Props> = ({ config, field, form }) => {
           onCheckedChange={(checked) => field.handleChange(Boolean(checked))}
           onBlur={field.handleBlur}
           disabled={config.disabled}
-          className="size-5 rounded-[4px]"
+          className="size-5 "
           onClick={(e) => e.stopPropagation()}
         />
         <div className="flex flex-col cursor-pointer select-none">

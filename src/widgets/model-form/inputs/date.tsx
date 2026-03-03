@@ -83,8 +83,8 @@ const DateInput: React.FC<Props> = ({ config, field, form }) => {
             variant="outline"
             data-slot="input"
             className={cn(
-              "h-10 w-full justify-start border-border/60 bg-background/50 px-4 text-left font-normal transition-all rounded-md",
-              "hover:border-primary/50 hover:bg-background focus:border-primary/50 focus:bg-background focus:ring-4 focus:ring-primary/5",
+              "h-9 w-full justify-start border-border/40 bg-muted/20 px-3 text-left text-sm font-normal transition-all duration-300  ",
+              "hover:border-border/60 hover:bg-muted/40 focus:border-primary/50 focus:bg-background focus:ring-4 focus:ring-primary/10",
               !parsedValue && "text-muted-foreground",
               parsedValue && "border-primary/30 font-medium text-foreground",
               config.disabled && "cursor-not-allowed opacity-60",
@@ -101,7 +101,7 @@ const DateInput: React.FC<Props> = ({ config, field, form }) => {
           </Button>
         </PopoverTrigger>
         <PopoverContent
-          className="w-auto p-0 border-border/40 shadow-xl bg-background/95 backdrop-blur-sm rounded-xl"
+          className="w-auto p-0 border-border/30  bg-background/95 backdrop-blur-md "
           align="start"
         >
           <CalendarComponent

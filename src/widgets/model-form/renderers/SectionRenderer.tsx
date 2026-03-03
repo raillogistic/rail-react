@@ -63,7 +63,7 @@ export const SectionRenderer = <TValues extends Record<string, any>>({
   const cardEnabled = ui.card ?? false;
   const Wrapper = cardEnabled ? Card : "div";
   const wrapperClass = cardEnabled
-    ? "overflow-hidden rounded-xl border-border/50 shadow-sm"
+    ? "overflow-hidden  border-border/50 "
     : "space-y-4";
   const isPopup = variant === "popup" || variant === "compact";
 
@@ -123,7 +123,7 @@ export const SectionRenderer = <TValues extends Record<string, any>>({
       {section.title ? (
         <div className="flex items-center gap-2.5">
           {section.icon && (
-            <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
+            <div className="flex size-8 items-center justify-center  bg-primary/10 text-primary">
               {renderIcon(section.icon, "size-4")}
             </div>
           )}
@@ -146,7 +146,7 @@ export const SectionRenderer = <TValues extends Record<string, any>>({
       <Wrapper
         className={cn(
           wrapperClass,
-          !cardEnabled && "border-0 shadow-none bg-transparent p-0",
+          !cardEnabled && "border-0  bg-transparent p-0",
           ui.className,
           isPopup ? "p-0" : null,
         )}
@@ -167,8 +167,8 @@ export const SectionRenderer = <TValues extends Record<string, any>>({
   return (
     <div
       className={cn(
-        "group overflow-hidden rounded-xl border border-border/60 bg-card/30 transition-all duration-300 hover:border-border",
-        accordionOpen && "bg-card shadow-sm",
+        "group overflow-hidden  border border-border/60 bg-card/30 transition-all duration-300 hover:border-border",
+        accordionOpen && "bg-card ",
         ui.className,
       )}
     >
@@ -189,7 +189,7 @@ export const SectionRenderer = <TValues extends Record<string, any>>({
               {section.icon && (
                 <div
                   className={cn(
-                    "flex size-8 items-center justify-center rounded-lg transition-colors",
+                    "flex size-8 items-center justify-center  transition-colors",
                     accordionOpen
                       ? "bg-primary text-primary-foreground"
                       : "bg-primary/10 text-primary",
@@ -211,7 +211,7 @@ export const SectionRenderer = <TValues extends Record<string, any>>({
             </div>
             <div
               className={cn(
-                "flex size-6 items-center justify-center rounded-full transition-all duration-300",
+                "flex size-6 items-center justify-center  transition-all duration-300",
                 accordionOpen
                   ? "bg-primary/10 text-primary rotate-180"
                   : "bg-muted text-muted-foreground rotate-0",
