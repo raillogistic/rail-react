@@ -6,289 +6,289 @@ import { FilterFormState } from "@/widgets/model-table/filtering/types";
 // ============================================================================
 
 export interface Choice {
-  value: string;
-  label: string;
-  group?: string;
-  disabled?: boolean;
+ value: string;
+ label: string;
+ group?: string;
+ disabled?: boolean;
 }
 
 export interface ValidatorInfo {
-  type: string;
-  params?: string; // JSON string
-  message?: string;
+ type: string;
+ params?: string; // JSON string
+ message?: string;
 }
 
 export interface FSMTransition {
-  name: string;
-  source: string[];
-  target: string;
-  label?: string;
-  description?: string;
-  permission?: string;
-  allowed: boolean;
+ name: string;
+ source: string[];
+ target: string;
+ label?: string;
+ description?: string;
+ permission?: string;
+ allowed: boolean;
 }
 
 export interface FieldSchema {
-  // Identity
-  name: string;
-  fieldName: string;
-  verboseName: string;
-  helpText?: string;
+ // Identity
+ name: string;
+ fieldName: string;
+ verboseName: string;
+ helpText?: string;
 
-  // Type info
-  fieldType: string; // e.g. "String", "Date", "Boolean"
-  graphqlType: string;
-  pythonType?: string;
+ // Type info
+ fieldType: string; // e.g. "String", "Date", "Boolean"
+ graphqlType: string;
+ pythonType?: string;
 
-  // Constraints
-  required: boolean;
-  nullable: boolean;
-  blank: boolean;
-  editable: boolean;
-  unique: boolean;
+ // Constraints
+ required: boolean;
+ nullable: boolean;
+ blank: boolean;
+ editable: boolean;
+ unique: boolean;
 
-  // Value constraints
-  maxLength?: number;
-  minLength?: number;
-  maxValue?: number;
-  minValue?: number;
-  decimalPlaces?: number;
-  maxDigits?: number;
+ // Value constraints
+ maxLength?: number;
+ minLength?: number;
+ maxValue?: number;
+ minValue?: number;
+ decimalPlaces?: number;
+ maxDigits?: number;
 
-  // Choices
-  choices?: Choice[];
+ // Choices
+ choices?: Choice[];
 
-  // Default
-  defaultValue?: string; // JSON string
-  hasDefault: boolean;
-  autoNow: boolean;
-  autoNowAdd: boolean;
+ // Default
+ defaultValue?: string; // JSON string
+ hasDefault: boolean;
+ autoNow: boolean;
+ autoNowAdd: boolean;
 
-  // Validators
-  validators?: ValidatorInfo[];
-  regexPattern?: string;
+ // Validators
+ validators?: ValidatorInfo[];
+ regexPattern?: string;
 
-  // Permissions
-  readable: boolean;
-  writable: boolean;
-  visibility: string;
+ // Permissions
+ readable: boolean;
+ writable: boolean;
+ visibility: string;
 
-  // Classification flags
-  isPrimaryKey: boolean;
-  isIndexed: boolean;
-  isRelation: boolean;
-  isComputed: boolean;
-  isFile: boolean;
-  isImage: boolean;
-  isJson: boolean;
-  isDate: boolean;
-  isDatetime: boolean;
-  isNumeric: boolean;
-  isBoolean: boolean;
-  isText: boolean;
-  isRichText: boolean;
-  isFsmField: boolean;
+ // Classification flags
+ isPrimaryKey: boolean;
+ isIndexed: boolean;
+ isRelation: boolean;
+ isComputed: boolean;
+ isFile: boolean;
+ isImage: boolean;
+ isJson: boolean;
+ isDate: boolean;
+ isDatetime: boolean;
+ isNumeric: boolean;
+ isBoolean: boolean;
+ isText: boolean;
+ isRichText: boolean;
+ isFsmField: boolean;
 
-  // Relation hints (for relationship fields synthesized in the client)
-  relationLookupField?: string;
+ // Relation hints (for relationship fields synthesized in the client)
+ relationLookupField?: string;
 
-  // FSM
-  fsmTransitions?: FSMTransition[];
+ // FSM
+ fsmTransitions?: FSMTransition[];
 
-  // Custom metadata
-  customMetadata?: string; // JSON string
+ // Custom metadata
+ customMetadata?: string; // JSON string
 }
 
 export interface RelationshipSchema {
-  name: string;
-  fieldName: string;
-  verboseName: string;
-  helpText?: string;
+ name: string;
+ fieldName: string;
+ verboseName: string;
+ helpText?: string;
 
-  // Related model
-  relatedApp: string;
-  relatedModel: string;
-  relatedModelVerbose: string;
+ // Related model
+ relatedApp: string;
+ relatedModel: string;
+ relatedModelVerbose: string;
 
-  // Relationship type
-  relationType: string;
-  isReverse: boolean;
-  isToOne: boolean;
-  isToMany: boolean;
+ // Relationship type
+ relationType: string;
+ isReverse: boolean;
+ isToOne: boolean;
+ isToMany: boolean;
 
-  // Config
-  onDelete?: string;
-  relatedName?: string;
-  throughModel?: string;
+ // Config
+ onDelete?: string;
+ relatedName?: string;
+ throughModel?: string;
 
-  // Constraints
-  required: boolean;
-  nullable: boolean;
-  editable: boolean;
+ // Constraints
+ required: boolean;
+ nullable: boolean;
+ editable: boolean;
 
-  // Lookup
-  lookupField: string;
-  searchFields?: string[];
+ // Lookup
+ lookupField: string;
+ searchFields?: string[];
 
-  // Permissions
-  readable: boolean;
-  writable: boolean;
-  canCreateInline: boolean;
+ // Permissions
+ readable: boolean;
+ writable: boolean;
+ canCreateInline: boolean;
 
-  // Nested operations metadata (JSON string)
-  relationOperations?: string;
+ // Nested operations metadata (JSON string)
+ relationOperations?: string;
 
-  // Custom
-  customMetadata?: string; // JSON string
+ // Custom
+ customMetadata?: string; // JSON string
 }
 
 export interface FilterOptionSchema {
-  name: string;
-  lookup: string;
-  label: string;
-  helpText?: string;
-  choices?: Choice[];
-  graphqlType?: string;
-  isList?: boolean;
+ name: string;
+ lookup: string;
+ label: string;
+ helpText?: string;
+ choices?: Choice[];
+ graphqlType?: string;
+ isList?: boolean;
 }
 
 export interface FilterSchema {
-  name: string;
-  fieldName: string;
-  fieldLabel: string;
-  baseType?: string;
-  isNested: boolean;
-  relatedModel?: string;
-  options: FilterOptionSchema[];
+ name: string;
+ fieldName: string;
+ fieldLabel: string;
+ baseType?: string;
+ isNested: boolean;
+ relatedModel?: string;
+ options: FilterOptionSchema[];
 
-  // Nested filter style
-  filterInputType?: string;
-  availableOperators?: string[];
+ // Nested filter style
+ filterInputType?: string;
+ availableOperators?: string[];
 }
 
 export interface FilterConfig {
-  style: "flat" | "nested";
-  argumentName: string;
-  inputTypeName: string;
-  supportsAnd: boolean;
-  supportsOr: boolean;
-  supportsNot: boolean;
-  supportsQuick?: boolean;
-  dualModeEnabled: boolean;
-  supportsFts: boolean;
-  supportsAggregation: boolean;
-  presets?: unknown[]; // Defined more specifically if needed
-  computedFilters?: unknown[];
+ style: "flat" | "nested";
+ argumentName: string;
+ inputTypeName: string;
+ supportsAnd: boolean;
+ supportsOr: boolean;
+ supportsNot: boolean;
+ supportsQuick?: boolean;
+ dualModeEnabled: boolean;
+ supportsFts: boolean;
+ supportsAggregation: boolean;
+ presets?: unknown[]; // Defined more specifically if needed
+ computedFilters?: unknown[];
 }
 
 export interface MutationInputFieldSchema {
-  name: string;
-  fieldName?: string;
-  fieldType?: string;
-  graphqlType?: string;
-  required?: boolean;
-  defaultValue?: unknown;
-  description?: string;
-  choices?: Choice[];
-  relatedModel?: string;
+ name: string;
+ fieldName?: string;
+ fieldType?: string;
+ graphqlType?: string;
+ required?: boolean;
+ defaultValue?: unknown;
+ description?: string;
+ choices?: Choice[];
+ relatedModel?: string;
 }
 
 export interface MutationSchema {
-  name: string;
-  operation: string;
-  description?: string;
-  methodName?: string | null;
-  inputFields?: MutationInputFieldSchema[];
-  inputType?: string | null;
-  returnType?: string | null;
-  allowed: boolean;
-  requiredPermissions?: string[];
-  reason?: string | null;
-  mutationType?: string | null;
-  modelName?: string | null;
-  formConfig?: string | Record<string, unknown> | null;
-  successMessage?: string | null;
-  errorMessages?: string | Record<string, unknown> | null;
-  action?: string | Record<string, unknown> | null;
-  requiresAuthentication?: boolean | null;
+ name: string;
+ operation: string;
+ description?: string;
+ methodName?: string | null;
+ inputFields?: MutationInputFieldSchema[];
+ inputType?: string | null;
+ returnType?: string | null;
+ allowed: boolean;
+ requiredPermissions?: string[];
+ reason?: string | null;
+ mutationType?: string | null;
+ modelName?: string | null;
+ formConfig?: string | Record<string, unknown> | null;
+ successMessage?: string | null;
+ errorMessages?: string | Record<string, unknown> | null;
+ action?: string | Record<string, unknown> | null;
+ requiresAuthentication?: boolean | null;
 }
 
 export interface RowMutationPermissions {
-  canUpdate?: boolean | null;
-  canDelete?: boolean | null;
-  updateReason?: string | null;
-  deleteReason?: string | null;
+ canUpdate?: boolean | null;
+ canDelete?: boolean | null;
+ updateReason?: string | null;
+ deleteReason?: string | null;
 }
 
 export interface ModelPermissions {
-  canList: boolean;
-  canRetrieve: boolean;
-  canCreate: boolean;
-  canUpdate: boolean;
-  canDelete: boolean;
-  canBulkCreate: boolean;
-  canBulkUpdate: boolean;
-  canBulkDelete: boolean;
-  canExport: boolean;
-  denialReasons?: string; // JSON string
+ canList: boolean;
+ canRetrieve: boolean;
+ canCreate: boolean;
+ canUpdate: boolean;
+ canDelete: boolean;
+ canBulkCreate: boolean;
+ canBulkUpdate: boolean;
+ canBulkDelete: boolean;
+ canExport: boolean;
+ denialReasons?: string; // JSON string
 }
 
 export interface TemplateClientField {
-  name: string;
-  type?: string | null;
+ name: string;
+ type?: string | null;
 }
 
 export interface TemplateInfo {
-  key: string;
-  templateType?: string;
-  title: string;
-  endpoint: string;
-  urlPath?: string;
-  guard?: string | null;
-  requireAuthentication?: boolean;
-  roles?: string[];
-  permissions?: string[];
-  allowed?: boolean;
-  denialReason?: string | null;
-  allowClientData?: boolean;
-  clientDataFields?: string[];
-  clientDataSchema?: string | TemplateClientField[] | null;
+ key: string;
+ templateType?: string;
+ title: string;
+ endpoint: string;
+ urlPath?: string;
+ guard?: string | null;
+ requireAuthentication?: boolean;
+ roles?: string[];
+ permissions?: string[];
+ allowed?: boolean;
+ denialReason?: string | null;
+ allowClientData?: boolean;
+ clientDataFields?: string[];
+ clientDataSchema?: string | TemplateClientField[] | null;
 }
 
 export interface ModelSchema {
-  // Identity
-  app: string;
-  model: string;
-  verboseName: string;
-  verboseNamePlural: string;
+ // Identity
+ app: string;
+ model: string;
+ verboseName: string;
+ verboseNamePlural: string;
 
-  // Structure
-  primaryKey: string;
-  ordering?: string[];
-  uniqueTogether?: string[][];
+ // Structure
+ primaryKey: string;
+ ordering?: string[];
+ uniqueTogether?: string[][];
 
-  // Fields
-  fields: FieldSchema[];
-  relationships: RelationshipSchema[];
+ // Fields
+ fields: FieldSchema[];
+ relationships: RelationshipSchema[];
 
-  // Filters
-  filters: FilterSchema[];
-  filterConfig?: FilterConfig;
-  relationFilters?: unknown[]; // Define recursively if needed
+ // Filters
+ filters: FilterSchema[];
+ filterConfig?: FilterConfig;
+ relationFilters?: unknown[]; // Define recursively if needed
 
-  // Mutations
-  mutations: MutationSchema[];
+ // Mutations
+ mutations: MutationSchema[];
 
-  // Permissions
-  permissions: ModelPermissions;
+ // Permissions
+ permissions: ModelPermissions;
 
-  // Hints
-  fieldGroups?: unknown[];
-  templates?: TemplateInfo[];
+ // Hints
+ fieldGroups?: unknown[];
+ templates?: TemplateInfo[];
 
-  // Cache
-  metadataVersion: string;
-  customMetadata?: string; // JSON string
+ // Cache
+ metadataVersion: string;
+ customMetadata?: string; // JSON string
 }
 
 // ============================================================================
@@ -296,26 +296,26 @@ export interface ModelSchema {
 // ============================================================================
 
 export interface PaginationState {
-  page: number;
-  perPage: number;
-  total: number;
-  numPages: number;
-  totalKnown: boolean;
-  hasNextPage: boolean;
-  hasPreviousPage: boolean;
+ page: number;
+ perPage: number;
+ total: number;
+ numPages: number;
+ totalKnown: boolean;
+ hasNextPage: boolean;
+ hasPreviousPage: boolean;
 }
 
 export interface QueryPageInfo {
-  totalCount?: number | null;
-  pageCount?: number | null;
-  hasNextPage?: boolean | null;
-  hasPreviousPage?: boolean | null;
+ totalCount?: number | null;
+ pageCount?: number | null;
+ hasNextPage?: boolean | null;
+ hasPreviousPage?: boolean | null;
 }
 
 export interface QueryPageData {
-  pageInfo?: QueryPageInfo | null;
-  items?: Record<string, unknown>[] | null;
-  [key: string]: unknown;
+ pageInfo?: QueryPageInfo | null;
+ items?: Record<string, unknown>[] | null;
+ [key: string]: unknown;
 }
 
 export type TableDensity = "compact" | "comfortable" | "spacious";
@@ -324,78 +324,78 @@ export type ColumnOrderingMode = "persisted" | "config";
 export type ColumnOrderingAppend = "start" | "end";
 
 export interface BaseModelTableColumnOrderingConfig {
-  order?: string[]; // preferred column order (by column id)
-  mode?: ColumnOrderingMode; // persisted (default) or config-first
-  append?: ColumnOrderingAppend; // where to place unspecified columns
-  draggable?: boolean; // allow drag-and-drop reordering
-  locked?: string[]; // columns that cannot be dragged
+ order?: string[]; // preferred column order (by column id)
+ mode?: ColumnOrderingMode; // persisted (default) or config-first
+ append?: ColumnOrderingAppend; // where to place unspecified columns
+ draggable?: boolean; // allow drag-and-drop reordering
+ locked?: string[]; // columns that cannot be dragged
 }
 
 export interface ColumnVisibilityState {
-  [columnId: string]: boolean;
+ [columnId: string]: boolean;
 }
 
 export interface ColumnWidthState {
-  [columnId: string]: number;
+ [columnId: string]: number;
 }
 
 export interface TableContextState {
-  // Data
-  data: Record<string, unknown>[];
-  queryPage?: QueryPageData | null;
-  loading: boolean;
-  error?: Error | null;
+ // Data
+ data: Record<string, unknown>[];
+ queryPage?: QueryPageData | null;
+ loading: boolean;
+ error?: Error | null;
 
-  // Metadata
-  metadata?: ModelSchema | null;
-  metadataLoading: boolean;
-  metadataError?: Error | null;
+ // Metadata
+ metadata?: ModelSchema | null;
+ metadataLoading: boolean;
+ metadataError?: Error | null;
 
-  // State
-  pagination: PaginationState;
-  columnVisibility: ColumnVisibilityState;
-  columnWidths: ColumnWidthState;
-  columnOrder: string[];
-  rowSelection: Record<string, boolean>;
-  groupingField: string | null;
-  groupCollapsed: Record<string, boolean>;
-  activeColumnFilter: string | null;
-  dragModeEnabled: boolean;
-  density: TableDensity;
-  wrapCells: boolean;
-  refreshKey: number;
+ // State
+ pagination: PaginationState;
+ columnVisibility: ColumnVisibilityState;
+ columnWidths: ColumnWidthState;
+ columnOrder: string[];
+ rowSelection: Record<string, boolean>;
+ groupingField: string | null;
+ groupCollapsed: Record<string, boolean>;
+ activeColumnFilter: string | null;
+ dragModeEnabled: boolean;
+ density: TableDensity;
+ wrapCells: boolean;
+ refreshKey: number;
 
-  // Filters
-  quickSearch: string;
-  advancedFilters: FilterFormState;
-  filterVariables?: Record<string, unknown>; // FilterQueryVariables
+ // Filters
+ quickSearch: string;
+ advancedFilters: FilterFormState;
+ filterVariables?: Record<string, unknown>; // FilterQueryVariables
 
-  // Actions
-  setPage: (page: number) => void;
-  setPerPage: (perPage: number) => void;
-  setColumnVisibility: (visibility: ColumnVisibilityState) => void;
-  setColumnWidths: (widths: ColumnWidthState) => void;
-  setColumnOrder: (order: string[]) => void;
-  setRowSelection: (selection: Record<string, boolean>) => void;
-  setGroupingField: (field: string | null) => void;
-  setGroupCollapsed: (collapsed: Record<string, boolean>) => void;
-  setActiveColumnFilter: (columnId: string | null) => void;
-  setDragModeEnabled: (enabled: boolean) => void;
-  setDensity: (density: TableDensity) => void;
-  setWrapCells: (wrap: boolean) => void;
-  setQuickSearch: (term: string) => void;
-  setAdvancedFilters: (filters: FilterFormState, variables?: Record<string, unknown>) => void;
-  refresh: () => void;
+ // Actions
+ setPage: (page: number) => void;
+ setPerPage: (perPage: number) => void;
+ setColumnVisibility: (visibility: ColumnVisibilityState) => void;
+ setColumnWidths: (widths: ColumnWidthState) => void;
+ setColumnOrder: (order: string[]) => void;
+ setRowSelection: (selection: Record<string, boolean>) => void;
+ setGroupingField: (field: string | null) => void;
+ setGroupCollapsed: (collapsed: Record<string, boolean>) => void;
+ setActiveColumnFilter: (columnId: string | null) => void;
+ setDragModeEnabled: (enabled: boolean) => void;
+ setDensity: (density: TableDensity) => void;
+ setWrapCells: (wrap: boolean) => void;
+ setQuickSearch: (term: string) => void;
+ setAdvancedFilters: (filters: FilterFormState, variables?: Record<string, unknown>) => void;
+ refresh: () => void;
 
-  // Internal Data Fetching Hooks
-  _setPageInfo: (info: {
-    totalCount?: number | null;
-    pageCount?: number | null;
-    hasNextPage?: boolean | null;
-    hasPreviousPage?: boolean | null;
-  }) => void;
-  _setQueryPage: (queryPage: QueryPageData | null) => void;
-  _setData: (data: Record<string, unknown>[], loading: boolean, error?: Error) => void;
+ // Internal Data Fetching Hooks
+ _setPageInfo: (info: {
+ totalCount?: number | null;
+ pageCount?: number | null;
+ hasNextPage?: boolean | null;
+ hasPreviousPage?: boolean | null;
+ }) => void;
+ _setQueryPage: (queryPage: QueryPageData | null) => void;
+ _setData: (data: Record<string, unknown>[], loading: boolean, error?: Error) => void;
 }
 
 // ============================================================================
@@ -403,128 +403,128 @@ export interface TableContextState {
 // ============================================================================
 
 export type BaseModelTableRefetch = (
-  variables?: Record<string, unknown>,
+ variables?: Record<string, unknown>,
 ) => Promise<unknown>;
 
 export type BaseModelTableColumnActionContext = {
-  row: Record<string, unknown>;
-  data: Record<string, unknown>[];
-  refetch?: BaseModelTableRefetch;
+ row: Record<string, unknown>;
+ data: Record<string, unknown>[];
+ refetch?: BaseModelTableRefetch;
 };
 
 type BaseModelTableColumnActionBase = {
-  key?: string;
-  icon?: ReactNode;
-  variant?: "default" | "destructive";
-  className?: string;
-  disabled?: boolean;
+ key?: string;
+ icon?: ReactNode;
+ variant?: "default" | "destructive";
+ className?: string;
+ disabled?: boolean;
 };
 
 export type BaseModelTableColumnActionRender =
-  BaseModelTableColumnActionBase & {
-    render: (context: BaseModelTableColumnActionContext) => ReactNode;
-  };
+ BaseModelTableColumnActionBase & {
+ render: (context: BaseModelTableColumnActionContext) => ReactNode;
+ };
 
 export type BaseModelTableColumnActionClick =
-  BaseModelTableColumnActionBase & {
-    label: string;
-    onClick: (
-      context: BaseModelTableColumnActionContext,
-    ) => void | Promise<void>;
-  };
+ BaseModelTableColumnActionBase & {
+ label: string;
+ onClick: (
+ context: BaseModelTableColumnActionContext,
+ ) => void | Promise<void>;
+ };
 
 export type BaseModelTableColumnAction =
-  | BaseModelTableColumnActionRender
-  | BaseModelTableColumnActionClick;
+ | BaseModelTableColumnActionRender
+ | BaseModelTableColumnActionClick;
 
 export type BaseModelTableColumnActionsInput =
-  | BaseModelTableColumnAction[]
-  | ((context: BaseModelTableColumnActionContext) =>
-      | BaseModelTableColumnAction[]
-      | undefined);
+ | BaseModelTableColumnAction[]
+ | ((context: BaseModelTableColumnActionContext) =>
+ | BaseModelTableColumnAction[]
+ | undefined);
 
 export type BaseModelTableRenderContext = {
-  accessor: string;
-  columnId: string;
-  data: Record<string, unknown>[];
-  refetch?: BaseModelTableRefetch;
+ accessor: string;
+ columnId: string;
+ data: Record<string, unknown>[];
+ refetch?: BaseModelTableRefetch;
 };
 
 export type BaseModelTableFieldRender = (
-  value: unknown,
-  row: Record<string, unknown>,
-  context: BaseModelTableRenderContext,
+ value: unknown,
+ row: Record<string, unknown>,
+ context: BaseModelTableRenderContext,
 ) => ReactNode;
 
 export type BaseModelTableFieldRenderMap = Record<
-  string,
-  (
-    value: unknown,
-    row: Record<string, unknown>,
-    data: Record<string, unknown>[],
-    refetch?: BaseModelTableRefetch,
-  ) => ReactNode
+ string,
+ (
+ value: unknown,
+ row: Record<string, unknown>,
+ data: Record<string, unknown>[],
+ refetch?: BaseModelTableRefetch,
+ ) => ReactNode
 >;
 
 export type BaseModelTableField =
-  | string
-  | {
-      accessor: string;
-      title?: string;
-      render?: BaseModelTableFieldRender;
-    };
+ | string
+ | {
+ accessor: string;
+ title?: string;
+ render?: BaseModelTableFieldRender;
+ };
 
 export type BaseModelTableFieldAddOrder =
-  | number
-  | {
-      after?: string;
-      before?: string;
-    };
+ | number
+ | {
+ after?: string;
+ before?: string;
+ };
 
 export type BaseModelTableFieldAdd = {
-  accessor: string;
-  title?: string;
-  order?: BaseModelTableFieldAddOrder;
+ accessor: string;
+ title?: string;
+ order?: BaseModelTableFieldAddOrder;
 };
 
 export type BaseModelTableFieldsConfig = {
-  include?: BaseModelTableField[];
-  add?: BaseModelTableFieldAdd[];
-  exclude?: string[];
-  render?: BaseModelTableFieldRenderMap;
+ include?: BaseModelTableField[];
+ add?: BaseModelTableFieldAdd[];
+ exclude?: string[];
+ render?: BaseModelTableFieldRenderMap;
 };
 
 export type BaseModelTableFieldsInput =
-  | BaseModelTableField[]
-  | BaseModelTableFieldsConfig;
+ | BaseModelTableField[]
+ | BaseModelTableFieldsConfig;
 
 export type BaseModelTableRelationConfig = {
-  fields?: string[];
-  display?: string;
+ fields?: string[];
+ display?: string;
 };
 
 export type BaseModelTableRelationStatsOverrideData = {
-  row: Record<string, unknown>;
-  relationName: string;
-  loading: boolean;
-  error: string | null;
-  stats: Record<string, unknown> | null;
+ row: Record<string, unknown>;
+ relationName: string;
+ loading: boolean;
+ error: string | null;
+ stats: Record<string, unknown> | null;
 };
 
 export type BaseModelTableRelationStatsOverride = (
-  data: BaseModelTableRelationStatsOverrideData,
+ data: BaseModelTableRelationStatsOverrideData,
 ) => ReactElement;
 
 export type BaseModelTableRelationStatsConfig = {
-  enabled?: boolean;
-  include?: string[];
-  exclude?: string[];
-  overrides?: Record<string, BaseModelTableRelationStatsOverride>;
+ enabled?: boolean;
+ include?: string[];
+ exclude?: string[];
+ overrides?: Record<string, BaseModelTableRelationStatsOverride>;
 };
 
 export type BaseModelTableColumnDef = {
-  id: string;
-  accessor: string;
-  title: string;
-  render?: BaseModelTableFieldRender;
+ id: string;
+ accessor: string;
+ title: string;
+ render?: BaseModelTableFieldRender;
 };

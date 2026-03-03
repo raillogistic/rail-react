@@ -2,29 +2,29 @@ import { ChevronDown, ChevronRight } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/shared/ui/kit/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
+ Card,
+ CardContent,
+ CardDescription,
+ CardHeader,
+ CardTitle,
 } from "@/shared/ui/kit/card";
 import { Skeleton } from "@/shared/ui/kit/skeleton";
 import { useTable } from "../context/TableContext";
 import { useMetadata } from "../context/MetadataContext";
 import {
-  formatCellValue,
-  resolveColumnVisibility,
-  resolveFieldValue,
-  resolveGroupingKey,
-  resolveGroupingLabel,
-  toCamelCase,
-  toGraphqlFieldName,
-  toSnakeCase,
+ formatCellValue,
+ resolveColumnVisibility,
+ resolveFieldValue,
+ resolveGroupingKey,
+ resolveGroupingLabel,
+ toCamelCase,
+ toGraphqlFieldName,
+ toSnakeCase,
 } from "../utils";
 import type {
-  BaseModelTableColumnActionsInput,
-  BaseModelTableRefetch,
-  RowMutationPermissions,
+ BaseModelTableColumnActionsInput,
+ BaseModelTableRefetch,
+ RowMutationPermissions,
 } from "../types";
 import type { ModelTableUpdateConfig } from "../config/types";
 import { cn } from "@/shared/utils";
@@ -36,339 +36,339 @@ const MOBILE_BATCH_SIZE = 24;
  * Props for mobile-card rendering of table rows.
  */
 type TableMobileCardProps = {
-  emptyState?: string;
-  refetch?: BaseModelTableRefetch;
-  columnActions?: BaseModelTableColumnActionsInput;
-  update?: ModelTableUpdateConfig;
+ emptyState?: string;
+ refetch?: BaseModelTableRefetch;
+ columnActions?: BaseModelTableColumnActionsInput;
+ update?: ModelTableUpdateConfig;
 };
 
 export function TableMobileCard({
-  emptyState,
-  refetch,
-  columnActions,
-  update,
+ emptyState,
+ refetch,
+ columnActions,
+ update,
 }: TableMobileCardProps) {
-  const { metadata } = useMetadata();
-  const {
-    data,
-    loading,
-    columnOrder,
-    columnVisibility,
-    density,
-    wrapCells,
-    groupingField,
-    groupCollapsed,
-    setGroupCollapsed,
-  } = useTable();
-  const [visibleCount, setVisibleCount] = useState(MOBILE_BATCH_SIZE);
+ const { metadata } = useMetadata();
+ const {
+ data,
+ loading,
+ columnOrder,
+ columnVisibility,
+ density,
+ wrapCells,
+ groupingField,
+ groupCollapsed,
+ setGroupCollapsed,
+ } = useTable();
+ const [visibleCount, setVisibleCount] = useState(MOBILE_BATCH_SIZE);
 
-  useEffect(() => {
-    setVisibleCount(MOBILE_BATCH_SIZE);
-  }, [data.length]);
+ useEffect(() => {
+ setVisibleCount(MOBILE_BATCH_SIZE);
+ }, [data.length]);
 
-  if (!metadata) return null;
+ if (!metadata) return null;
 
-  const byName = useMemo(
-    () => new Map(metadata.fields.map((field) => [field.name, field])),
-    [metadata.fields],
-  );
-  const byFieldName = useMemo(
-    () =>
-      new Map(
-        metadata.fields.map((field) => [field.name || field.fieldName, field]),
-      ),
-    [metadata.fields],
-  );
+ const byName = useMemo(
+ () => new Map(metadata.fields.map((field) => [field.name, field])),
+ [metadata.fields],
+ );
+ const byFieldName = useMemo(
+ () =>
+ new Map(
+ metadata.fields.map((field) => [field.name || field.fieldName, field]),
+ ),
+ [metadata.fields],
+ );
 
-  const orderedColumns = useMemo(
-    () =>
-      columnOrder
-        .map((columnId) => byName.get(columnId) || byFieldName.get(columnId))
-        .filter((field): field is (typeof metadata.fields)[number] => !!field),
-    [byFieldName, byName, columnOrder, metadata.fields],
-  );
+ const orderedColumns = useMemo(
+ () =>
+ columnOrder
+ .map((columnId) => byName.get(columnId) || byFieldName.get(columnId))
+ .filter((field): field is (typeof metadata.fields)[number] => !!field),
+ [byFieldName, byName, columnOrder, metadata.fields],
+ );
 
-  const mergedColumns = useMemo(() => {
-    const seenColumns = new Set<string>();
-    return [...orderedColumns, ...metadata.fields].filter((field) => {
-      if (seenColumns.has(field.name)) return false;
-      seenColumns.add(field.name);
-      return true;
-    });
-  }, [metadata.fields, orderedColumns]);
+ const mergedColumns = useMemo(() => {
+ const seenColumns = new Set<string>();
+ return [...orderedColumns, ...metadata.fields].filter((field) => {
+ if (seenColumns.has(field.name)) return false;
+ seenColumns.add(field.name);
+ return true;
+ });
+ }, [metadata.fields, orderedColumns]);
 
-  const visibleColumns = useMemo(
-    () =>
-      mergedColumns.filter((field) => {
-        if (field.visibility === "hidden") return false;
-        return resolveColumnVisibility(columnVisibility, [
-          field.name,
-          field.fieldName,
-        ]);
-      }),
-    [columnVisibility, mergedColumns],
-  );
+ const visibleColumns = useMemo(
+ () =>
+ mergedColumns.filter((field) => {
+ if (field.visibility === "hidden") return false;
+ return resolveColumnVisibility(columnVisibility, [
+ field.name,
+ field.fieldName,
+ ]);
+ }),
+ [columnVisibility, mergedColumns],
+ );
 
-  const showIdDescription =
-    visibleColumns.length === 0 ||
-    visibleColumns.some((field) => {
-      const id = field.name || field.fieldName;
-      return id === "id";
-    });
+ const showIdDescription =
+ visibleColumns.length === 0 ||
+ visibleColumns.some((field) => {
+ const id = field.name || field.fieldName;
+ return id === "id";
+ });
 
-  const groupingFieldMeta = useMemo(() => {
-    if (!groupingField) return undefined;
-    const root = groupingField.replace(/__/g, ".").split(".")[0];
-    const candidates = [
-      groupingField,
-      toGraphqlFieldName(groupingField),
-      toCamelCase(groupingField),
-      toSnakeCase(groupingField),
-      root,
-      toGraphqlFieldName(root),
-      toCamelCase(root),
-      toSnakeCase(root),
-    ];
+ const groupingFieldMeta = useMemo(() => {
+ if (!groupingField) return undefined;
+ const root = groupingField.replace(/__/g, ".").split(".")[0];
+ const candidates = [
+ groupingField,
+ toGraphqlFieldName(groupingField),
+ toCamelCase(groupingField),
+ toSnakeCase(groupingField),
+ root,
+ toGraphqlFieldName(root),
+ toCamelCase(root),
+ toSnakeCase(root),
+ ];
 
-    for (const candidate of candidates) {
-      if (!candidate) continue;
-      const field = byName.get(candidate) || byFieldName.get(candidate);
-      if (field) return field;
-    }
+ for (const candidate of candidates) {
+ if (!candidate) continue;
+ const field = byName.get(candidate) || byFieldName.get(candidate);
+ if (field) return field;
+ }
 
-    return undefined;
-  }, [byFieldName, byName, groupingField]);
+ return undefined;
+ }, [byFieldName, byName, groupingField]);
 
-  const groupingFieldLabel = useMemo(() => {
-    if (!groupingField) return undefined;
-    if (groupingFieldMeta?.verboseName) return groupingFieldMeta.verboseName;
-    const root = groupingField.replace(/__/g, ".").split(".")[0];
-    return root || groupingField;
-  }, [groupingField, groupingFieldMeta?.verboseName]);
+ const groupingFieldLabel = useMemo(() => {
+ if (!groupingField) return undefined;
+ if (groupingFieldMeta?.verboseName) return groupingFieldMeta.verboseName;
+ const root = groupingField.replace(/__/g, ".").split(".")[0];
+ return root || groupingField;
+ }, [groupingField, groupingFieldMeta?.verboseName]);
 
-  const groupedData = useMemo(() => {
-    if (!groupingField) return null;
+ const groupedData = useMemo(() => {
+ if (!groupingField) return null;
 
-    const groups = new Map<
-      string,
-      {
-        key: string;
-        label: string;
-        rows: Record<string, unknown>[];
-      }
-    >();
+ const groups = new Map<
+ string,
+ {
+ key: string;
+ label: string;
+ rows: Record<string, unknown>[];
+ }
+ >();
 
-    data.forEach((row) => {
-      const key = resolveGroupingKey(row, groupingField);
-      const existing = groups.get(key);
-      if (existing) {
-        existing.rows.push(row);
-        return;
-      }
+ data.forEach((row) => {
+ const key = resolveGroupingKey(row, groupingField);
+ const existing = groups.get(key);
+ if (existing) {
+ existing.rows.push(row);
+ return;
+ }
 
-      groups.set(key, {
-        key,
-        label: resolveGroupingLabel(row, groupingField, {
-          fieldLabel: groupingFieldLabel,
-          isBoolean: groupingFieldMeta?.isBoolean,
-        }),
-        rows: [row],
-      });
-    });
+ groups.set(key, {
+ key,
+ label: resolveGroupingLabel(row, groupingField, {
+ fieldLabel: groupingFieldLabel,
+ isBoolean: groupingFieldMeta?.isBoolean,
+ }),
+ rows: [row],
+ });
+ });
 
-    return Array.from(groups.values());
-  }, [data, groupingField, groupingFieldLabel, groupingFieldMeta?.isBoolean]);
+ return Array.from(groups.values());
+ }, [data, groupingField, groupingFieldLabel, groupingFieldMeta?.isBoolean]);
 
-  const displayedRows = data.slice(0, visibleCount);
-  const displayedGroups = useMemo(() => {
-    if (!groupedData) return null;
+ const displayedRows = data.slice(0, visibleCount);
+ const displayedGroups = useMemo(() => {
+ if (!groupedData) return null;
 
-    let remaining = visibleCount;
-    const groups: Array<{
-      key: string;
-      label: string;
-      rows: Record<string, unknown>[];
-    }> = [];
+ let remaining = visibleCount;
+ const groups: Array<{
+ key: string;
+ label: string;
+ rows: Record<string, unknown>[];
+ }> = [];
 
-    groupedData.forEach((group) => {
-      if (remaining <= 0) return;
-      const rows = group.rows.slice(0, remaining);
-      remaining -= rows.length;
-      if (rows.length > 0) {
-        groups.push({ ...group, rows });
-      }
-    });
+ groupedData.forEach((group) => {
+ if (remaining <= 0) return;
+ const rows = group.rows.slice(0, remaining);
+ remaining -= rows.length;
+ if (rows.length > 0) {
+ groups.push({ ...group, rows });
+ }
+ });
 
-    return groups;
-  }, [groupedData, visibleCount]);
+ return groups;
+ }, [groupedData, visibleCount]);
 
-  const hasMore = visibleCount < data.length;
-  const titleField = visibleColumns[0];
-  const otherFields = visibleColumns.slice(1);
-  const rowSpacingClass =
-    density === "compact"
-      ? "gap-1 py-1"
-      : density === "spacious"
-        ? "gap-3 py-2"
-        : "gap-2 py-1.5";
-  const valueClass = wrapCells
-    ? "text-right break-words"
-    : "max-w-[200px] truncate text-right";
+ const hasMore = visibleCount < data.length;
+ const titleField = visibleColumns[0];
+ const otherFields = visibleColumns.slice(1);
+ const rowSpacingClass =
+ density === "compact"
+ ? "gap-1 py-1"
+ : density === "spacious"
+ ? "gap-3 py-2"
+ : "gap-2 py-1.5";
+ const valueClass = wrapCells
+ ? "text-right break-words"
+ : "max-w-[200px] truncate text-right";
 
-  const toggleGroup = (groupKey: string) => {
-    setGroupCollapsed({
-      ...groupCollapsed,
-      [groupKey]: !groupCollapsed[groupKey],
-    });
-  };
+ const toggleGroup = (groupKey: string) => {
+ setGroupCollapsed({
+ ...groupCollapsed,
+ [groupKey]: !groupCollapsed[groupKey],
+ });
+ };
 
-  const renderCardRow = (
-    row: Record<string, unknown>,
-    index: number,
-    keyPrefix?: string,
-  ) => {
-    const rowId = String(row.id);
-    const rowPermissions = row.rowPermissions as
-      | RowMutationPermissions
-      | undefined;
+ const renderCardRow = (
+ row: Record<string, unknown>,
+ index: number,
+ keyPrefix?: string,
+ ) => {
+ const rowId = String(row.id);
+ const rowPermissions = row.rowPermissions as
+ | RowMutationPermissions
+ | undefined;
 
-    return (
-      <Card
-        key={`${keyPrefix ?? "row"}:${rowId || index}`}
-        className="overflow-hidden rounded-xl border-border/20 shadow-sm hover:shadow-md transition-shadow"
-      >
-        <CardHeader className="pb-2 px-4 pt-4">
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
-              <CardTitle
-                className={cn(
-                  "text-sm font-semibold",
-                  wrapCells ? "" : "truncate",
-                )}
-              >
-                {titleField
-                  ? formatCellValue(
-                      resolveFieldValue(row, titleField),
-                      titleField,
-                    )
-                  : metadata?.verboseName || "Element"}
-              </CardTitle>
-              {showIdDescription ? (
-                <CardDescription className="text-[10px] font-mono text-muted-foreground/50 mt-0.5">
-                  ID: {rowId}
-                </CardDescription>
-              ) : null}
-            </div>
-            <div className="shrink-0">
-              <RowActions
-                row={row}
-                data={data}
-                refetch={refetch}
-                permissions={rowPermissions}
-                columnActions={columnActions}
-                update={update}
-              />
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className={`grid text-xs px-4 pb-4 ${rowSpacingClass}`}>
-          {otherFields.map((field) => (
-            <div
-              key={field.name}
-              className="flex items-start justify-between gap-3 border-b border-border/10 pb-1.5 last:border-0 last:pb-0"
-            >
-              <span className="font-medium text-muted-foreground/70 text-[11px]">
-                {field.verboseName}
-              </span>
-              <span className={cn(valueClass, "text-foreground/80")}>
-                {formatCellValue(resolveFieldValue(row, field), field)}
-              </span>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
-    );
-  };
+ return (
+ <Card
+ key={`${keyPrefix ?? "row"}:${rowId || index}`}
+ className="overflow-hidden border-border/20 shadow-sm hover:shadow-md transition-shadow"
+ >
+ <CardHeader className="pb-2 px-4 pt-4">
+ <div className="flex items-start justify-between gap-2">
+ <div className="min-w-0">
+ <CardTitle
+ className={cn(
+ "text-sm font-semibold",
+ wrapCells ? "" : "truncate",
+ )}
+ >
+ {titleField
+ ? formatCellValue(
+ resolveFieldValue(row, titleField),
+ titleField,
+ )
+ : metadata?.verboseName || "Element"}
+ </CardTitle>
+ {showIdDescription ? (
+ <CardDescription className="text-[10px] font-mono text-muted-foreground/50 mt-0.5">
+ ID: {rowId}
+ </CardDescription>
+ ) : null}
+ </div>
+ <div className="shrink-0">
+ <RowActions
+ row={row}
+ data={data}
+ refetch={refetch}
+ permissions={rowPermissions}
+ columnActions={columnActions}
+ update={update}
+ />
+ </div>
+ </div>
+ </CardHeader>
+ <CardContent className={`grid text-xs px-4 pb-4 ${rowSpacingClass}`}>
+ {otherFields.map((field) => (
+ <div
+ key={field.name}
+ className="flex items-start justify-between gap-3 border-b border-border/10 pb-1.5 last:border-0 last:pb-0"
+ >
+ <span className="font-medium text-muted-foreground/70 text-[11px]">
+ {field.verboseName}
+ </span>
+ <span className={cn(valueClass, "text-foreground/80")}>
+ {formatCellValue(resolveFieldValue(row, field), field)}
+ </span>
+ </div>
+ ))}
+ </CardContent>
+ </Card>
+ );
+ };
 
-  if (loading && data.length === 0) {
-    return (
-      <div className="space-y-2.5 md:hidden">
-        {[1, 2, 3].map((i) => (
-          <Card key={i} className="rounded-xl border-border/20">
-            <CardHeader className="px-4 pt-4 pb-2">
-              <Skeleton className="h-4 w-[160px] rounded-lg" />
-              <Skeleton className="h-3 w-[100px] rounded-lg mt-1" />
-            </CardHeader>
-            <CardContent className="space-y-2 px-4 pb-4">
-              <Skeleton className="h-3.5 w-full rounded-lg" />
-              <Skeleton className="h-3.5 w-full rounded-lg" />
-              <Skeleton className="h-3.5 w-3/4 rounded-lg" />
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    );
-  }
+ if (loading && data.length === 0) {
+ return (
+ <div className="space-y-2.5 md:hidden">
+ {[1, 2, 3].map((i) => (
+ <Card key={i} className="border-border/20">
+ <CardHeader className="px-4 pt-4 pb-2">
+ <Skeleton className="h-4 w-[160px] " />
+ <Skeleton className="h-3 w-[100px] mt-1" />
+ </CardHeader>
+ <CardContent className="space-y-2 px-4 pb-4">
+ <Skeleton className="h-3.5 w-full " />
+ <Skeleton className="h-3.5 w-full " />
+ <Skeleton className="h-3.5 w-3/4 " />
+ </CardContent>
+ </Card>
+ ))}
+ </div>
+ );
+ }
 
-  if (data.length === 0) {
-    return (
-      <div className="rounded-xl border border-border/20 bg-muted/20 p-8 text-center md:hidden">
-        <p className="text-sm font-medium text-muted-foreground/60">
-          {emptyState ?? "Aucun r\u00e9sultat trouv\u00e9"}
-        </p>
-      </div>
-    );
-  }
+ if (data.length === 0) {
+ return (
+ <div className="border border-border/20 bg-muted/20 p-8 text-center md:hidden">
+ <p className="text-sm font-medium text-muted-foreground/60">
+ {emptyState ?? "Aucun r\u00e9sultat trouv\u00e9"}
+ </p>
+ </div>
+ );
+ }
 
-  return (
-    <div className="space-y-3 md:hidden">
-      {displayedGroups
-        ? displayedGroups.map((group) => {
-            const collapsed = !!groupCollapsed[group.key];
-            return (
-              <div key={`group:${group.key}`} className="space-y-2">
-                <button
-                  type="button"
-                  onClick={() => toggleGroup(group.key)}
-                  className="flex w-full items-center justify-between rounded-lg border bg-muted/30 px-3 py-2 text-left"
-                >
-                  <div className="flex items-center gap-2">
-                    {collapsed ? (
-                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                    ) : (
-                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
-                    )}
-                    <span className="text-sm font-semibold text-foreground/90">
-                      {group.label}
-                    </span>
-                  </div>
-                  <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
-                    {group.rows.length}
-                  </span>
-                </button>
-                {!collapsed
-                  ? group.rows.map((row, index) =>
-                      renderCardRow(row, index, group.key),
-                    )
-                  : null}
-              </div>
-            );
-          })
-        : displayedRows.map((row, index) => renderCardRow(row, index))}
+ return (
+ <div className="space-y-3 md:hidden">
+ {displayedGroups
+ ? displayedGroups.map((group) => {
+ const collapsed = !!groupCollapsed[group.key];
+ return (
+ <div key={`group:${group.key}`} className="space-y-2">
+ <button
+ type="button"
+ onClick={() => toggleGroup(group.key)}
+ className="flex w-full items-center justify-between border bg-muted/30 px-3 py-2 text-left"
+ >
+ <div className="flex items-center gap-2">
+ {collapsed ? (
+ <ChevronRight className="h-4 w-4 text-muted-foreground" />
+ ) : (
+ <ChevronDown className="h-4 w-4 text-muted-foreground" />
+ )}
+ <span className="text-sm font-semibold text-foreground/90">
+ {group.label}
+ </span>
+ </div>
+ <span className="bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">
+ {group.rows.length}
+ </span>
+ </button>
+ {!collapsed
+ ? group.rows.map((row, index) =>
+ renderCardRow(row, index, group.key),
+ )
+ : null}
+ </div>
+ );
+ })
+ : displayedRows.map((row, index) => renderCardRow(row, index))}
 
-      {hasMore ? (
-        <Button
-          variant="outline"
-          className="w-full rounded-xl border-border/20 text-xs font-semibold h-9"
-          onClick={() =>
-            setVisibleCount((current) =>
-              Math.min(current + MOBILE_BATCH_SIZE, data.length),
-            )
-          }
-        >
-          Afficher plus ({data.length - visibleCount} restants)
-        </Button>
-      ) : null}
-    </div>
-  );
+ {hasMore ? (
+ <Button
+ variant="outline"
+ className="w-full border-border/20 text-xs font-semibold h-9"
+ onClick={() =>
+ setVisibleCount((current) =>
+ Math.min(current + MOBILE_BATCH_SIZE, data.length),
+ )
+ }
+ >
+ Afficher plus ({data.length - visibleCount} restants)
+ </Button>
+ ) : null}
+ </div>
+ );
 }
