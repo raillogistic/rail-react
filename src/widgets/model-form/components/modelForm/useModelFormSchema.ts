@@ -50,21 +50,124 @@ function collectEditableFieldPaths(schema: FormSchema<any>): string[] {
   return Array.from(paths);
 }
 
-function sanitizeValuesByFieldPaths(
+function stripNonEditableField(
+  field: FormFieldConfig,
+): FormFieldConfig | null {
+  const name = String(field.name ?? "").trim();
+  if (!name || field.readOnly) {
+    return null;
+  }
+
+  if (
+    field.type === "object" ||
+    field.type === "list" ||
+    field.type === "group"
+  ) {
+    const nestedFields = (field as { fields?: FormFieldConfig[] }).fields ?? [];
+    const nextNestedFields = nestedFields
+      .map((nestedField) => stripNonEditableField(nestedField))
+      .filter((nestedField): nestedField is FormFieldConfig =>
+        Boolean(nestedField),
+      );
+    if (!nextNestedFields.length) {
+      return null;
+    }
+    return {
+      ...field,
+      fields: nextNestedFields,
+    } as FormFieldConfig;
+  }
+
+  return field;
+}
+
+function stripNonEditableFields<TValues extends Record<string, unknown>>(
+  schema: FormSchema<TValues>,
+): FormSchema<TValues> {
+  const nextSections = (schema.sections ?? [])
+    .map((section) => ({
+      ...section,
+      fields: section.fields
+        .map((field) => stripNonEditableField(field))
+        .filter((field): field is FormFieldConfig => Boolean(field)),
+    }))
+    .filter((section) => section.fields.length > 0);
+
+  const nextFields = (schema.fields ?? [])
+    .map((field) => stripNonEditableField(field))
+    .filter((field): field is FormFieldConfig => Boolean(field));
+
+  return {
+    ...schema,
+    sections: schema.sections ? nextSections : undefined,
+    fields: schema.fields ? nextFields : undefined,
+  };
+}
+
+function sanitizeRecordByFieldConfigs(
   values: Record<string, unknown>,
-  editableFieldPaths: string[],
+  fields: FormFieldConfig[],
 ): Record<string, unknown> {
-  if (!editableFieldPaths.length) {
+  return fields.reduce<Record<string, unknown>>((acc, field) => {
+    const path = String(field.name ?? "").trim();
+    if (!path || field.readOnly) return acc;
+    const resolved = getValueByPath(values, path);
+    const sanitized = sanitizeFieldValueByConfig(resolved, field);
+    if (sanitized === undefined) return acc;
+    return setValueByPath(acc, path, sanitized);
+  }, {});
+}
+
+function sanitizeFieldValueByConfig(
+  value: unknown,
+  field: FormFieldConfig,
+): unknown {
+  if (value === undefined || field.readOnly) {
+    return undefined;
+  }
+
+  if (field.type === "object" || field.type === "group") {
+    if (value === null) return null;
+    if (!isRecord(value)) return undefined;
+    const nestedFields = (field as { fields?: FormFieldConfig[] }).fields ?? [];
+    return sanitizeRecordByFieldConfigs(
+      value as Record<string, unknown>,
+      nestedFields,
+    );
+  }
+
+  if (field.type === "list") {
+    if (value === null) return null;
+    if (!Array.isArray(value)) return undefined;
+    const nestedFields = (field as { fields?: FormFieldConfig[] }).fields ?? [];
+    return value.map((item) => {
+      if (item === undefined || item === null) return item;
+      if (!isRecord(item)) return item;
+      return sanitizeRecordByFieldConfigs(
+        item as Record<string, unknown>,
+        nestedFields,
+      );
+    });
+  }
+
+  return value;
+}
+
+function sanitizeValuesBySchema(
+  values: Record<string, unknown>,
+  schema: FormSchema<any>,
+): Record<string, unknown> {
+  const sections = schema.sections?.length
+    ? schema.sections
+    : schema.fields
+      ? [{ fields: schema.fields }]
+      : [];
+  const rootFields = sections.flatMap((section) => section.fields);
+  if (!rootFields.length) {
     return {};
   }
 
-  return editableFieldPaths.reduce<Record<string, unknown>>((acc, path) => {
-    const resolved = getValueByPath(values, path);
-    if (resolved === undefined) {
-      return acc;
-    }
-    return setValueByPath(acc, path, resolved);
-  }, {});
+  return sanitizeRecordByFieldConfigs(values, rootFields);
 }
 
 export function useModelFormSchema<TFormValues extends Record<string, unknown>>(
@@ -146,29 +249,34 @@ export function useModelFormSchema<TFormValues extends Record<string, unknown>>(
     contract,
   ]);
 
-  const editableFieldPaths = React.useMemo(
-    () => collectEditableFieldPaths(controlledSchema),
+  const editableSchema = React.useMemo(
+    () => stripNonEditableFields(controlledSchema),
     [controlledSchema],
+  );
+
+  const editableFieldPaths = React.useMemo(
+    () => collectEditableFieldPaths(editableSchema),
+    [editableSchema],
   );
 
   const sanitizeValuesForControlledSchema = React.useCallback(
     (values: Record<string, unknown>) =>
-      sanitizeValuesByFieldPaths(values, editableFieldPaths),
-    [editableFieldPaths],
+      sanitizeValuesBySchema(values, editableSchema),
+    [editableSchema],
   );
 
   const finalSchema = React.useMemo(() => {
-    if (!isRecord(controlledSchema.initialValues)) {
-      return controlledSchema;
+    if (!isRecord(editableSchema.initialValues)) {
+      return editableSchema;
     }
 
     return {
-      ...controlledSchema,
+      ...editableSchema,
       initialValues: sanitizeValuesForControlledSchema(
-        controlledSchema.initialValues as Record<string, unknown>,
+        editableSchema.initialValues as Record<string, unknown>,
       ) as Partial<TFormValues>,
     };
-  }, [controlledSchema, sanitizeValuesForControlledSchema]);
+  }, [editableSchema, sanitizeValuesForControlledSchema]);
 
   return {
     finalSchema,

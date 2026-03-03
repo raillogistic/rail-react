@@ -539,7 +539,7 @@ describe("ModelForm", () => {
     });
   });
 
-  it("keeps required relation fields in onlyRequired mode when relation fields are synthesized", async () => {
+  it("omits non-editable required relation fields in onlyRequired mode", async () => {
     const contract: ModelFormContract = {
       ...sampleModelFormContract,
       appLabel: "store",
@@ -612,17 +612,10 @@ describe("ModelForm", () => {
       mocks,
     );
 
-    const payload = await getRenderedSchema();
-    const fieldNames = payload.sections[0].fields.map(
-      (field: { name: string }) => field.name,
-    );
-    expect(fieldNames).toEqual(["category"]);
-
-    const categoryField = payload.sections[0].fields.find(
-      (field: { name: string }) => field.name === "category",
-    ) as { required?: boolean; readOnly?: boolean } | undefined;
-    expect(categoryField?.required).toBe(true);
-    expect(categoryField?.readOnly).toBe(true);
+    expect(
+      await screen.findByText("Aucun champ n'est disponible pour ce formulaire."),
+    ).toBeInTheDocument();
+    expect(screen.queryByTestId("model-form-schema")).toBeNull();
   });
 
   it("serializes runtime override values as JSONString variables", async () => {
