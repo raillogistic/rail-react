@@ -42,6 +42,32 @@ const buildLegacyStore = () => ({
   recent: {},
 });
 
+const buildPartialFilterConfigStore = () => ({
+  version: 1,
+  entries: {
+    "operations.Decharge": {
+      table: {
+        data: {
+          modelSchema: {
+            app: "operations",
+            model: "Decharge",
+            fields: [],
+            relationships: [],
+            filters: [],
+            filterConfig: {
+              __typename: "FilterConfigType",
+              inputTypeName: "DechargeWhereInput",
+              supportsQuick: true,
+            },
+          },
+        },
+        updatedAt: Date.now(),
+      },
+    },
+  },
+  recent: {},
+});
+
 describe("hydrateMetadataCache", () => {
   let userKey = "";
 
@@ -76,5 +102,41 @@ describe("hydrateMetadataCache", () => {
       expect(Array.isArray(schema.relationFilters)).toBe(true);
       expect(Array.isArray(schema.fieldGroups)).toBe(true);
     }
+  });
+
+  it("fills missing filterConfig fields from bootstrap-only persisted metadata", () => {
+    userKey = `metadata-filter-config-test-${Date.now()}`;
+    const storageKey = `${STORAGE_PREFIX}:${userKey}`;
+    window.localStorage.setItem(
+      storageKey,
+      JSON.stringify(buildPartialFilterConfigStore()),
+    );
+
+    const writeQuery = vi.fn();
+    const cache = { writeQuery } as unknown as InMemoryCache;
+
+    const result = hydrateMetadataCache(cache, userKey);
+
+    expect(result.hydrated).toBe(true);
+    expect(result.entries).toBe(1);
+    expect(writeQuery).toHaveBeenCalledTimes(1);
+
+    const filterConfig = writeQuery.mock.calls[0]?.[0]?.data?.modelSchema
+      ?.filterConfig as Record<string, unknown>;
+
+    expect(filterConfig).toBeTruthy();
+    expect(filterConfig.__typename).toBe("FilterConfigType");
+    expect(filterConfig.style).toBe("nested");
+    expect(filterConfig.argumentName).toBe("where");
+    expect(filterConfig.inputTypeName).toBe("DechargeWhereInput");
+    expect(filterConfig.supportsAnd).toBe(true);
+    expect(filterConfig.supportsOr).toBe(true);
+    expect(filterConfig.supportsNot).toBe(true);
+    expect(filterConfig.dualModeEnabled).toBe(false);
+    expect(filterConfig.supportsQuick).toBe(true);
+    expect(filterConfig.supportsFts).toBe(false);
+    expect(filterConfig.supportsAggregation).toBe(false);
+    expect(filterConfig.presets).toEqual([]);
+    expect(filterConfig.computedFilters).toEqual([]);
   });
 });

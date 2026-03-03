@@ -54,12 +54,62 @@ const DENIED_PERMISSIONS = {
   denialReasons: JSON.stringify(["Persisted metadata strips permission overlays"]),
 };
 
+const FALLBACK_WHERE_INPUT_SUFFIX = "WhereInput";
+
+const toBoolean = (value: unknown, fallback: boolean): boolean =>
+  typeof value === "boolean" ? value : fallback;
+
+const toStringOr = (value: unknown, fallback: string): string =>
+  typeof value === "string" && value.trim().length > 0 ? value : fallback;
+
+function sanitizePersistedFilterConfig(
+  value: unknown,
+  modelName?: string,
+): Record<string, unknown> | null | undefined {
+  if (value === null) {
+    return null;
+  }
+  if (!value || typeof value !== "object") {
+    return undefined;
+  }
+
+  const source = value as Record<string, unknown>;
+  const defaultInputTypeName = modelName
+    ? `${modelName}${FALLBACK_WHERE_INPUT_SUFFIX}`
+    : FALLBACK_WHERE_INPUT_SUFFIX;
+
+  const presets = Array.isArray(source.presets) ? source.presets : [];
+  const computedFilters = Array.isArray(source.computedFilters)
+    ? source.computedFilters
+    : [];
+
+  return {
+    ...source,
+    style: toStringOr(source.style, "nested"),
+    argumentName: toStringOr(source.argumentName, "where"),
+    inputTypeName: toStringOr(source.inputTypeName, defaultInputTypeName),
+    supportsAnd: toBoolean(source.supportsAnd, true),
+    supportsOr: toBoolean(source.supportsOr, true),
+    supportsNot: toBoolean(source.supportsNot, true),
+    dualModeEnabled: toBoolean(source.dualModeEnabled, false),
+    supportsQuick: toBoolean(source.supportsQuick, false),
+    supportsFts: toBoolean(source.supportsFts, false),
+    supportsAggregation: toBoolean(source.supportsAggregation, false),
+    presets,
+    computedFilters,
+  };
+}
+
 function sanitizePersistedModelSchema<T>(schema: T): T {
   if (!schema || typeof schema !== "object") {
     return schema;
   }
 
   const source = schema as Record<string, unknown>;
+  const hasFilterConfig = Object.prototype.hasOwnProperty.call(
+    source,
+    "filterConfig",
+  );
   const fields = Array.isArray(source.fields)
     ? source.fields.map((field) =>
         field && typeof field === "object"
@@ -87,11 +137,18 @@ function sanitizePersistedModelSchema<T>(schema: T): T {
   const fieldGroups = Array.isArray(source.fieldGroups)
     ? source.fieldGroups
     : [];
+  const filterConfig = hasFilterConfig
+    ? sanitizePersistedFilterConfig(
+        source.filterConfig,
+        typeof source.model === "string" ? source.model : undefined,
+      )
+    : source.filterConfig;
 
   return {
     ...source,
     fields,
     relationships,
+    filterConfig,
     relationFilters,
     fieldGroups,
     permissions: DENIED_PERMISSIONS,
