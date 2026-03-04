@@ -478,7 +478,7 @@ export function ModelForm<
       className={cn(
         "group/model-form relative w-full transition-all duration-500",
         !isPopupLayoutVariant &&
-          "bg-background border-4 border-foreground p-6 md:p-10 shadow-[8px_8px_0_0_#000] dark:shadow-[8px_8px_0_0_#333]", // Wait, user said "no shadow and no rounded". I'll remove shadow.
+          "bg-background shadow-sm border-foreground p-6 md:p-10  dark:shadow-[8px_8px_0_0_#333]", // Wait, user said "no shadow and no rounded". I'll remove shadow.
         containerClassName,
       ).replace(/shadow-\[.*\]/g, "")}
     >

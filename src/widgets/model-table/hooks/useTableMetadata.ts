@@ -18,6 +18,7 @@ export interface UseTableMetadataResult {
  error?: Error;
  capabilitiesLoading: boolean;
  capabilitiesLoaded: boolean;
+ capabilitiesError?: Error;
  ensureCapabilitiesLoaded: () => Promise<void>;
  scheduleCapabilitiesPrefetch: () => void;
 }
@@ -302,6 +303,7 @@ export function useTableMetadata(
  capabilitiesLoading: capabilitiesState.loading,
  capabilitiesLoaded:
  capabilitiesState.called && !capabilitiesState.loading && !capabilitiesState.error,
+ capabilitiesError: capabilitiesState.error as Error | undefined,
  ensureCapabilitiesLoaded,
  scheduleCapabilitiesPrefetch,
  };

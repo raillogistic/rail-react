@@ -220,8 +220,12 @@ export function useModelTableContentController({
  const hasSelection = selectedCount > 0;
 
  const createMutation = findMutation(metadata?.mutations, "create");
- const canCreate = Boolean(createMutation?.allowed);
- const createCapabilitiesPending = !capabilitiesLoaded && !canCreate;
+ const canCreate =
+ createMutation?.allowed ?? metadata?.permissions?.canCreate ?? false;
+ const createCapabilitiesPending =
+ !capabilitiesLoaded &&
+ createMutation?.allowed === undefined &&
+ metadata?.permissions?.canCreate === undefined;
 
  const createContext = useMemo<ModelTableCreateContext>(
  () => ({

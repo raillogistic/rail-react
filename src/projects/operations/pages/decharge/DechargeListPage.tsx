@@ -18,7 +18,18 @@ export function DechargeListPage() {
         type: "link",
         hrefTemplate: ROUTES.DECHARGE_DETAIL,
       }}
+      devtools={{
+        enabled: true,
+      }}
       baseTable={{
+        fields: [
+          "numero",
+          "beneficiaire",
+          "date_decharge",
+          "site",
+          "commentaire",
+          "statut",
+        ],
         tableConfig: {
           title: "Decharges",
         },

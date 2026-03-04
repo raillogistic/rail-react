@@ -536,7 +536,7 @@ function DynamicBaseTableContent({
     model,
     capabilitiesLoading,
     capabilitiesLoaded,
-    ensureCapabilitiesLoaded,
+    scheduleCapabilitiesPrefetch,
   } = useMetadata();
   const {
     columnVisibility,
@@ -783,36 +783,30 @@ function DynamicBaseTableContent({
     };
   }, [onRefetchResolved, refetch]);
 
-  const hasRequestedPostBootstrapCapabilitiesRef = useRef(false);
+  const hasScheduledCapabilitiesRef = useRef(false);
   useEffect(() => {
-    if (hasRequestedPostBootstrapCapabilitiesRef.current) {
+    if (hasScheduledCapabilitiesRef.current) {
       return;
     }
     if (!persistenceHydrated || metadataLoading || !metadata) {
       return;
     }
     if (capabilitiesLoaded || capabilitiesLoading) {
-      hasRequestedPostBootstrapCapabilitiesRef.current = true;
+      hasScheduledCapabilitiesRef.current = true;
       return;
     }
 
-    const dataBootstrapSettled = Boolean(queryPage) || Boolean(dataError);
-    if (!dataBootstrapSettled || tableLoading) {
-      return;
-    }
-
-    hasRequestedPostBootstrapCapabilitiesRef.current = true;
-    void ensureCapabilitiesLoaded();
+    // Prefetch capabilities in idle time so first paint/data query are not
+    // contending with heavier capability metadata work.
+    hasScheduledCapabilitiesRef.current = true;
+    scheduleCapabilitiesPrefetch();
   }, [
     capabilitiesLoaded,
     capabilitiesLoading,
-    dataError,
-    ensureCapabilitiesLoaded,
     metadata,
     metadataLoading,
     persistenceHydrated,
-    queryPage,
-    tableLoading,
+    scheduleCapabilitiesPrefetch,
   ]);
 
   const { allowColumnDrag, lockedColumns } = useTableLayout({
@@ -823,16 +817,12 @@ function DynamicBaseTableContent({
   });
 
   const resolvedEnableSelection = useMemo(() => {
-    if (enableSelection) {
-      return true;
+    // Keep selection behavior deterministic to avoid late UI column toggles.
+    if (typeof enableSelection === "boolean") {
+      return enableSelection;
     }
-    if ((metadata?.templates ?? []).length > 0) {
-      return true;
-    }
-    // Keep selection column visible while capabilities are unresolved to avoid
-    // late layout shifts when template capabilities arrive.
-    return !capabilitiesLoaded;
-  }, [capabilitiesLoaded, enableSelection, metadata?.templates]);
+    return true;
+  }, [enableSelection]);
   const rowDetailExpandEnabled = useMemo(() => {
     const requested = expand?.enabled ?? Boolean(expand?.renderRow);
     return requested && Boolean(expand?.renderRow);

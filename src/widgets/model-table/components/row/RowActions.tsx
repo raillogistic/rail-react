@@ -658,13 +658,21 @@ export function RowActions({
  const baseMutations = metadata?.mutations ?? [];
  const baseDeleteMutation = findMutation(baseMutations, "delete");
  const baseUpdateMutation = findMutation(baseMutations, "update");
+ const modelPermissions = metadata?.permissions;
+ const canDeleteByMutation = baseDeleteMutation?.allowed;
+ const canUpdateByMutation = baseUpdateMutation?.allowed;
  const canDelete =
  !!rowId &&
- !!baseDeleteMutation?.allowed &&
- (permissions?.canDelete ?? true);
+ (permissions?.canDelete ??
+ canDeleteByMutation ??
+ modelPermissions?.canDelete ??
+ true);
  const canEdit =
- !!baseUpdateMutation?.allowed && (permissions?.canUpdate ?? true);
- const canDetail = !!rowId && (metadata?.permissions?.canRetrieve ?? true);
+ (permissions?.canUpdate ??
+ canUpdateByMutation ??
+ modelPermissions?.canUpdate ??
+ true);
+ const canDetail = !!rowId && (modelPermissions?.canRetrieve ?? true);
 
  const updateContext = useMemo<ModelTableUpdateContext>(
  () => ({

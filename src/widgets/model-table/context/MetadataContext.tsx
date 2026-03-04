@@ -14,6 +14,7 @@ interface MetadataContextValue {
  model: string;
  capabilitiesLoading: boolean;
  capabilitiesLoaded: boolean;
+ capabilitiesError?: Error;
  ensureCapabilitiesLoaded: () => Promise<void>;
  scheduleCapabilitiesPrefetch: () => void;
 }
@@ -39,6 +40,7 @@ export function MetadataProvider({
  error,
  capabilitiesLoading,
  capabilitiesLoaded,
+ capabilitiesError,
  ensureCapabilitiesLoaded,
  scheduleCapabilitiesPrefetch,
  } = useTableMetadata(app, model);
@@ -60,6 +62,7 @@ export function MetadataProvider({
  model,
  capabilitiesLoading,
  capabilitiesLoaded,
+ capabilitiesError,
  ensureCapabilitiesLoaded,
  scheduleCapabilitiesPrefetch,
  }}

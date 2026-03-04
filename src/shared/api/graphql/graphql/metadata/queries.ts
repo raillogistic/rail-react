@@ -115,37 +115,25 @@ export const TABLE_BOOTSTRAP_METADATA_QUERY = gql`
         helpText
         fieldType
         graphqlType
-        required
-        nullable
-        blank
+        readable
         editable
-        unique
+        writable
         choices {
           value
           label
           group
           disabled
         }
-        defaultValue
-        hasDefault
-        autoNow
-        autoNowAdd
-        readable
-        writable
         visibility
         isPrimaryKey
         isIndexed
         isRelation
         isComputed
-        isFile
-        isImage
         isJson
         isDate
         isDatetime
         isNumeric
         isBoolean
-        isText
-        isRichText
         customMetadata
       }
       relationships {
@@ -155,14 +143,10 @@ export const TABLE_BOOTSTRAP_METADATA_QUERY = gql`
         helpText
         relatedApp
         relatedModel
-        relatedModelVerbose
         relationType
         isReverse
         isToOne
         isToMany
-        required
-        nullable
-        editable
         lookupField
         searchFields
         readable
@@ -173,6 +157,18 @@ export const TABLE_BOOTSTRAP_METADATA_QUERY = gql`
       filterConfig {
         inputTypeName
         supportsQuick
+      }
+      permissions {
+        canList
+        canRetrieve
+        canCreate
+        canUpdate
+        canDelete
+        canBulkCreate
+        canBulkUpdate
+        canBulkDelete
+        canExport
+        denialReasons
       }
       metadataVersion
       customMetadata
@@ -267,36 +263,14 @@ export const TABLE_CAPABILITIES_METADATA_QUERY = gql`
           relatedModel
         }
         inputType
-        returnType
         allowed
         requiredPermissions
         reason
         mutationType
         modelName
-        formConfig
         successMessage
         errorMessages
         action
-        requiresAuthentication
-      }
-      permissions {
-        canList
-        canRetrieve
-        canCreate
-        canUpdate
-        canDelete
-        canBulkCreate
-        canBulkUpdate
-        canBulkDelete
-        canExport
-        denialReasons
-      }
-      fieldGroups {
-        key
-        label
-        description
-        fields
-        collapsed
       }
       templates {
         key

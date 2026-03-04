@@ -66,24 +66,35 @@ const getDefaultServerUrl = (): string => {
   return getRuntimeBackendConfig().backendUrl;
 };
 
+const HEALTH_CHECK_PATHS = ["/healthz/", "/healthz", "/health", "/readyz/", "/readyz"];
+
 export const testServerConnectivity = async (serverUrl?: string): Promise<boolean> => {
   const baseUrl = serverUrl ?? getDefaultServerUrl();
-  try {
+  const normalizedBaseUrl = String(baseUrl).replace(/\/+$/, "");
+
+  for (const path of HEALTH_CHECK_PATHS) {
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
-    
-    const response = await fetch(`${baseUrl}/health`, {
-      method: 'GET',
-      signal: controller.signal,
-      cache: 'no-cache',
-    });
-    
-    clearTimeout(timeoutId);
-    return response.ok;
-  } catch (error) {
-    console.warn('Server connectivity test failed:', error);
-    return false;
+
+    try {
+      const response = await fetch(`${normalizedBaseUrl}${path}`, {
+        method: "GET",
+        signal: controller.signal,
+        cache: "no-cache",
+      });
+
+      if (response.ok) {
+        return true;
+      }
+    } catch {
+      // Try the next candidate health endpoint.
+    } finally {
+      clearTimeout(timeoutId);
+    }
   }
+
+  console.warn("Server connectivity test failed for all health endpoints:", HEALTH_CHECK_PATHS);
+  return false;
 };
 
 /**
