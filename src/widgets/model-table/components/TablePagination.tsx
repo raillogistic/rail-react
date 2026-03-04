@@ -4,7 +4,6 @@ import {
   ChevronRight,
   ChevronsLeft,
   ChevronsRight,
-  RefreshCw,
   ArrowRight,
 } from "lucide-react";
 import { Button } from "@/shared/ui/kit/button";
@@ -49,7 +48,6 @@ export function TablePagination({
     pagination: {
       page,
       perPage,
-      total,
       numPages,
       totalKnown,
       hasNextPage,
@@ -58,9 +56,7 @@ export function TablePagination({
     setPage,
     setPerPage,
     rowSelection,
-    data,
     loading,
-    refresh,
   } = useTable();
 
   const [pageInput, setPageInput] = useState(String(page));
@@ -81,9 +77,6 @@ export function TablePagination({
   useEffect(() => {
     setPageInput(String(page));
   }, [page]);
-
-  const rangeStart = Math.min((page - 1) * perPage + 1, total);
-  const rangeEnd = Math.min(page * perPage, total);
 
   const commitPageInput = () => {
     const parsed = Number(pageInput);
@@ -107,7 +100,7 @@ export function TablePagination({
 
   return (
     <TooltipProvider delayDuration={300}>
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-5 py-3.5 bg-background/60 backdrop-blur-xl border border-border/30 shadow-sm mt-3 animate-in slide-in-from-bottom-1 duration-300">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 bg-transparent">
         {/* Left Section: Selection & Summary */}
         <div className="flex items-center gap-4 w-full sm:w-auto">
           {enableSelection && selectedCount > 0 ? (

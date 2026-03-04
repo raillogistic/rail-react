@@ -1,6 +1,6 @@
 /**
  * Authentication guard utilities for verifying user authentication status
- * 
+ *
  * Purpose: Centralized authentication verification and route protection logic
  * Args: Token and route information for validation
  * Returns: Boolean authentication status or redirect information
@@ -8,14 +8,17 @@
  * Example: const canAccess = checkAuthStatus()
  */
 
-import { isTokenValid, getUserFromToken, hasPermission } from './token';
-import { tokenStorage } from '@/shared/api/auth/token-storage';
+import { isTokenValid, getUserFromToken, hasPermission } from "./token";
+import { tokenStorage } from "@/shared/api/auth/token-storage";
 import { PUBLIC_ROUTE_PATHS, ROUTES } from "@/shared/routing/routes";
 
 export class AuthenticationError extends Error {
-  constructor(message: string, public code: string = 'AUTH_ERROR') {
+  constructor(
+    message: string,
+    public code: string = "AUTH_ERROR",
+  ) {
     super(message);
-    this.name = 'AuthenticationError';
+    this.name = "AuthenticationError";
   }
 }
 
@@ -60,7 +63,7 @@ export const checkAuthStatus = (currentPath: string): AuthGuardResult => {
       isAuthenticated: false,
       shouldRedirect: true,
       redirectTo: ROUTES.LOGIN,
-      error: 'Authentication required',
+      error: "Authentication required",
     };
   }
 
@@ -69,7 +72,7 @@ export const checkAuthStatus = (currentPath: string): AuthGuardResult => {
     return {
       isAuthenticated: true,
       shouldRedirect: true,
-      redirectTo: ROUTES.DASHBOARD,
+      redirectTo: "/dashboard",
       user: getUserFromToken(token),
     };
   }
@@ -95,7 +98,10 @@ export const checkAuthStatus = (currentPath: string): AuthGuardResult => {
  */
 export const checkPermission = (permission: string): boolean => {
   if (!isAuthenticated()) {
-    throw new AuthenticationError('User not authenticated', 'NOT_AUTHENTICATED');
+    throw new AuthenticationError(
+      "User not authenticated",
+      "NOT_AUTHENTICATED",
+    );
   }
 
   return hasPermission(permission);
@@ -106,7 +112,7 @@ export const checkPermission = (permission: string): boolean => {
  */
 export const requireAuth = (): void => {
   if (!isAuthenticated()) {
-    throw new AuthenticationError('Authentication required', 'AUTH_REQUIRED');
+    throw new AuthenticationError("Authentication required", "AUTH_REQUIRED");
   }
 };
 
@@ -119,7 +125,7 @@ export const requirePermission = (permission: string): void => {
   if (!checkPermission(permission)) {
     throw new AuthenticationError(
       `Permission '${permission}' required`,
-      'INSUFFICIENT_PERMISSIONS'
+      "INSUFFICIENT_PERMISSIONS",
     );
   }
 };
@@ -140,4 +146,3 @@ export const isSessionExpiringSoon = (): boolean => {
   // Return true if token expires within 5 minutes (300 seconds)
   return timeUntilExpiry <= 300 && timeUntilExpiry > 0;
 };
-
