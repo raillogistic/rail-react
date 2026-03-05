@@ -490,6 +490,60 @@ describe("useGeneratedModelForm adapter", () => {
  expect(categoryField?.readOnly).toBe(true);
  });
 
+ it("marks generated relation fields read-only when relation.readOnly is true", () => {
+ const contract: ModelFormContract = {
+ ...sampleModelFormContract,
+ fields: [
+ {
+ ...sampleModelFormContract.fields[0],
+ name: "name",
+ path: "name",
+ fieldName: "name",
+ label: "Name",
+ },
+ ],
+ sections: [
+ {
+ ...sampleModelFormContract.sections[0],
+ fieldPaths: ["name", "category"],
+ },
+ ],
+ relations: [
+ {
+ name: "category",
+ path: "category",
+ label: "Category",
+ relationType: "FOREIGN_KEY",
+ toMany: false,
+ readOnly: true,
+ relatedAppLabel: "store",
+ relatedModelName: "Category",
+ readable: true,
+ writable: true,
+ policy: {
+ path: "category",
+ allowedActions: ["CONNECT", "SET"],
+ blockedActions: [],
+ nestedEnabled: false,
+ },
+ nestedForm: null,
+ },
+ ],
+ };
+
+ const { result } = renderHook(() =>
+ useGeneratedModelForm({
+ generatedEnabled: true,
+ contract,
+ }),
+ );
+
+ const categoryField = result.current.schema.sections?.[0]?.fields.find(
+ (field) => field.name === "category",
+ );
+ expect(categoryField?.readOnly).toBe(true);
+ });
+
  it("injects non-section contract fields when section paths are incomplete", () => {
  const contract: ModelFormContract = {
  ...sampleModelFormContract,

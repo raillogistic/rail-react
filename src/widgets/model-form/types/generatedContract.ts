@@ -86,6 +86,7 @@ export type ModelFormContractRelation = {
  toMany: boolean;
  required?: boolean;
  nullable?: boolean;
+ readOnly?: boolean;
  relatedAppLabel: string;
  relatedModelName: string;
  policy: ModelFormRelationActionPolicy;

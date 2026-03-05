@@ -53,6 +53,7 @@ const MODEL_FORM_CONTRACT_FIELDS_SELECTION = `
         toMany
         required
         nullable
+        readOnly
         relatedAppLabel
         relatedModelName
         readable

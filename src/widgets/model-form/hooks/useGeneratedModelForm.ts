@@ -334,9 +334,13 @@ function isRelationReadable(relation: {
 }
 
 function isRelationWritable(relation: {
+ readOnly?: boolean;
  writable?: boolean;
  policy?: { allowedActions?: string[] | null } | null;
 }): boolean {
+ if (relation.readOnly === true) {
+ return false;
+ }
  if (typeof relation.writable === "boolean") {
  return relation.writable;
  }
