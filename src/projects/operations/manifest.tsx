@@ -66,6 +66,23 @@ const RestitutionDetailPage = lazy(() =>
   })),
 );
 
+const BeneficiaireListPage = lazy(() =>
+  import("./pages/beneficiaire/BeneficiaireListPage").then((module) => ({
+    default: module.BeneficiaireListPage,
+  })),
+);
+
+const BeneficiaireFormPage = lazy(() =>
+  import("./pages/beneficiaire/BeneficiaireFormPage").then((module) => ({
+    default: module.BeneficiaireFormPage,
+  })),
+);
+
+const BeneficiaireDetailPage = lazy(() =>
+  import("./pages/beneficiaire/BeneficiaireDetailPage").then((module) => ({
+    default: module.BeneficiaireDetailPage,
+  })),
+);
 export const OPERATIONS_MANIFEST: AppManifest = defineProjectManifest({
   projectId: "operations",
   order: 2,
@@ -135,14 +152,83 @@ export const OPERATIONS_MANIFEST: AppManifest = defineProjectManifest({
       icon: FileText,
       element: withRouteSuspense(<RestitutionDetailPage />),
     }),
-  ],
+  
+    protectedRoute("operations", {
+      id: "operations:beneficiaire:list",
+      path: ROUTES.BENEFICIAIRE_LIST,
+      title: "Bénéficiaire",
+      description: "Manage Beneficiaire records",
+      icon: FileText,
+      element: withRouteSuspense(<BeneficiaireListPage />),
+    }),
+    protectedRoute("operations", {
+      id: "operations:beneficiaire:create",
+      path: ROUTES.BENEFICIAIRE_CREATE,
+      title: "Create Beneficiaire",
+      hidden: true,
+      icon: FileText,
+      element: withRouteSuspense(<BeneficiaireFormPage />),
+    }),
+    protectedRoute("operations", {
+      id: "operations:beneficiaire:edit",
+      path: ROUTES.BENEFICIAIRE_EDIT,
+      title: "Edit Beneficiaire",
+      hidden: true,
+      icon: FileText,
+      element: withRouteSuspense(<BeneficiaireFormPage />),
+    }),
+    protectedRoute("operations", {
+      id: "operations:beneficiaire:detail",
+      path: ROUTES.BENEFICIAIRE_DETAIL,
+      title: "Beneficiaire details",
+      hidden: true,
+      icon: FileText,
+      element: withRouteSuspense(<BeneficiaireDetailPage />),
+    }),
+],
   navigation: [
     navGroup("operations", {
       id: "operations",
       label: "Operations",
       order: 2,
       entries: [
+        
         {
+          id: "operations:beneficiaire:list",
+          routeId: "operations:beneficiaire:list",
+          title: "Bénéficiaire",
+          path: ROUTES.BENEFICIAIRE_LIST,
+          guard: "protected",
+          icon: FileText,
+          description: "Manage Beneficiaire records",
+          children: [
+            {
+              id: "operations:beneficiaire:create",
+              routeId: "operations:beneficiaire:create",
+              title: "Create Beneficiaire",
+              path: ROUTES.BENEFICIAIRE_CREATE,
+              guard: "protected",
+              hidden: true,
+            },
+            {
+              id: "operations:beneficiaire:edit",
+              routeId: "operations:beneficiaire:edit",
+              title: "Edit Beneficiaire",
+              path: ROUTES.BENEFICIAIRE_EDIT,
+              guard: "protected",
+              hidden: true,
+            },
+            {
+              id: "operations:beneficiaire:detail",
+              routeId: "operations:beneficiaire:detail",
+              title: "Beneficiaire details",
+              path: ROUTES.BENEFICIAIRE_DETAIL,
+              guard: "protected",
+              hidden: true,
+            },
+          ],
+        },
+{
           id: "operations:decharge:list",
           routeId: "operations:decharge:list",
           title: "Decharges",

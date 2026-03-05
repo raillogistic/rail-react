@@ -7,4 +7,8 @@ export const ROUTES = {
   RESTITUTION_CREATE: "/operations/restitution/create",
   RESTITUTION_EDIT: "/operations/restitution/:id/edit",
   RESTITUTION_DETAIL: "/operations/restitution/:id",
+  BENEFICIAIRE_LIST: "/operations/beneficiaire",
+  BENEFICIAIRE_CREATE: "/operations/beneficiaire/create",
+  BENEFICIAIRE_EDIT: "/operations/beneficiaire/:id/edit",
+  BENEFICIAIRE_DETAIL: "/operations/beneficiaire/:id",
 } as const;
