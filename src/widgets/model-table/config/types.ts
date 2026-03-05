@@ -1,5 +1,5 @@
 import type React from "react";
-import type { DynamicTableExpandConfig } from "@/widgets/dynamic-table";
+import type { DynamicTableExpandConfig } from "../dynamic-table";
 import type { ModelFormProps } from "@/widgets/model-form/types.model";
 import type { ModelDynamicDetailConfig } from "@/widgets/model-details/config/types";
 import type {

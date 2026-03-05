@@ -28,4 +28,4 @@ export * from "./components/content/useModelTableContentController";
 
 export * from "./builders";
 export * from "./utils";
-export * from "../dynamic-table";
+export * from "./dynamic-table";

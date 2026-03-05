@@ -1,7 +1,7 @@
 import { useParams } from "react-router-dom";
 import { ModelForm } from "@/widgets/model-form";
 
-export function BeneficiaireFormPage() {
+export function AffectationHistoriqueFormPage() {
   const { id = "" } = useParams();
   const isUpdate = Boolean(id);
 
@@ -9,12 +9,12 @@ export function BeneficiaireFormPage() {
     <section className="space-y-4">
       <header>
         <h1 className="text-2xl font-semibold tracking-tight">
-          {isUpdate ? "Edit Beneficiaire" : "Create Beneficiaire"}
+          {isUpdate ? "Edit Affectation Historique" : "Create Affectation Historique"}
         </h1>
       </header>
       <ModelForm
         app="operations"
-        model="Beneficiaire"
+        model="AffectationHistorique"
         mode={isUpdate ? "UPDATE" : "CREATE"}
         objectId={isUpdate ? id : undefined}
       />
@@ -22,4 +22,4 @@ export function BeneficiaireFormPage() {
   );
 }
 
-export default BeneficiaireFormPage;
+export default AffectationHistoriqueFormPage;

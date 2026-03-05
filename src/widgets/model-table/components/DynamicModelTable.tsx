@@ -19,9 +19,9 @@ import {
   DynamicTable,
   DYNAMIC_TABLE_SELECTION_COLUMN_ID,
   type DynamicTableColumnInput,
-} from "@/widgets/dynamic-table";
+} from "../dynamic-table";
 import { createInitialFilterState } from "@/widgets/model-table/filtering/state";
-import type { DynamicTableFeatureFlags } from "@/widgets/dynamic-table";
+import type { DynamicTableFeatureFlags } from "../dynamic-table";
 import { TooltipProvider } from "@/shared/ui/kit/tooltip";
 import { cn } from "@/shared/utils";
 import { MetadataProvider, useMetadata } from "../context/MetadataContext";

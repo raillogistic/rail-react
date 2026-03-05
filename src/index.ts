@@ -15,7 +15,7 @@ export type {
 export * as auth from "./features/auth";
 export * as modelImport from "./features/model-import";
 
-export * as dynamicTable from "./widgets/dynamic-table";
+export * as dynamicTable from "./widgets/model-table/dynamic-table";
 export * as modelDetails from "./widgets/model-details";
 export * as modelForm from "./widgets/model-form";
 export * as modelTable from "./widgets/model-table";

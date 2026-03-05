@@ -1,30 +1,30 @@
 import { ROUTES } from "@/projects/operations/config/routes";
 import { DynamicModelTable } from "@/widgets/model-table";
 
-export function BeneficiaireListPage() {
+export function AffectationHistoriqueListPage() {
   return (
     <DynamicModelTable
       app="operations"
-      model="Beneficiaire"
+      model="AffectationHistorique"
       create={{
         type: "link",
-        hrefTemplate: ROUTES.BENEFICIAIRE_CREATE,
+        hrefTemplate: ROUTES.AFFECTATION_HISTORIQUE_CREATE,
       }}
       update={{
         type: "link",
-        hrefTemplate: ROUTES.BENEFICIAIRE_DETAIL,
+        hrefTemplate: ROUTES.AFFECTATION_HISTORIQUE_EDIT,
       }}
       detail={{
         type: "link",
-        hrefTemplate: ROUTES.BENEFICIAIRE_DETAIL,
+        hrefTemplate: ROUTES.AFFECTATION_HISTORIQUE_DETAIL,
       }}
       baseTable={{
         tableConfig: {
-          title: "Bénéficiaire",
+          title: "Historique",
         },
       }}
     />
   );
 }
 
-export default BeneficiaireListPage;
+export default AffectationHistoriqueListPage;

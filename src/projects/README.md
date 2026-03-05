@@ -1,4 +1,4 @@
-# Project generator commands
+﻿# Project generator commands
 
 This directory stores project manifests and project pages. Use the commands
 below from the `rail-react/` root to scaffold project structure and register
@@ -77,6 +77,45 @@ When registration succeeds, the command:
 - `--permission <perm>`: Optional `requiredPermission` for generated routes.
 - `--dry-run`: Preview file changes without writing files.
 - `--force`: Overwrite generated files and conflicting route constants.
+
+## Use `unregister` to remove a model from an existing project
+
+Use `unregister` to remove routes, sidebar navigation, and generated model page
+files for a previously registered model.
+
+```bash
+npm run unregister -- --model <app.model> --project <project-id> [options]
+```
+
+Minimum example:
+
+```bash
+npm run unregister -- --model catalog.article --project catalog
+```
+
+Preview changes example:
+
+```bash
+npm run unregister -- --model operations.restitution --project operations --dry-run
+```
+
+When unregistration succeeds, the command:
+
+- removes model route constants from `src/projects/<project-id>/config/routes.ts`
+- removes list/create/edit/detail route entries from the project manifest
+- removes the sidebar navigation entry for the model list
+- removes generated files from `src/projects/<project-id>/pages/<model-slug>/`
+
+## `unregister` options
+
+- `--model <app.model>`: Required model reference, for example
+  `catalog.article`.
+- `--project <project-id>`: Required target project under `src/projects/`.
+- `--app <app>`: Optional app when `--model` does not include app prefix.
+- `--slug <slug>`: Optional route segment and folder override.
+- `--keep-files`: Keep generated model pages on disk.
+- `--dry-run`: Preview file changes without writing files.
+- `--force`: Continue even if some entries are missing.
 
 ## Generated files for each model
 

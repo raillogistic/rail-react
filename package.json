@@ -24,7 +24,8 @@
     "schema": "node scripts/generate-schema-types.mjs",
     "getModels": "node scripts/getModels.mjs",
     "startapp": "node scripts/startapp.mjs",
-    "register": "node scripts/register.mjs"
+    "register": "node scripts/register.mjs",
+    "unregister": "node scripts/unregister.mjs"
   },
   "dependencies": {
     "@apollo/client": "^3.8.10",
