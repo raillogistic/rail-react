@@ -661,6 +661,7 @@ export function RowActions({
  const modelPermissions = metadata?.permissions;
  const canDeleteByMutation = baseDeleteMutation?.allowed;
  const canUpdateByMutation = baseUpdateMutation?.allowed;
+ const detailUsesUpdateLink = (update?.type ?? "drawer") === "link";
  const canDelete =
  !!rowId &&
  (permissions?.canDelete ??
@@ -672,7 +673,10 @@ export function RowActions({
  canUpdateByMutation ??
  modelPermissions?.canUpdate ??
  true);
- const canDetail = !!rowId && (modelPermissions?.canRetrieve ?? true);
+ const canDetail = !!rowId &&
+ (detailUsesUpdateLink
+ ? canEdit
+ : (modelPermissions?.canRetrieve ?? true));
 
  const updateContext = useMemo<ModelTableUpdateContext>(
  () => ({
@@ -760,6 +764,10 @@ formOverrides: mergedOverrides,
 };
 }, [detail, detailContext]);
 
+ const detailLinkTemplate = detailUsesUpdateLink
+ ? resolvedUpdateConfig.hrefTemplate
+ : resolvedDetailConfig.hrefTemplate;
+
  const editDisabledReason = useMemo(() => {
  if (!canEdit) {
  return "Permission de mise a jour indisponible.";
@@ -788,18 +796,15 @@ formOverrides: mergedOverrides,
  if (!resolvedDetailConfig.objectIdValue) {
  return "Cette ligne ne possede pas d'identifiant valide.";
  }
- if (
- resolvedDetailConfig.type === "link" &&
- !resolvedDetailConfig.hrefTemplate
- ) {
- return "Configuration detail.link manquante (hrefTemplate).";
+ if (detailUsesUpdateLink && !detailLinkTemplate) {
+ return "Configuration update.link manquante (hrefTemplate).";
  }
  return null;
  }, [
  canDetail,
- resolvedDetailConfig.hrefTemplate,
+ detailLinkTemplate,
+ detailUsesUpdateLink,
  resolvedDetailConfig.objectIdValue,
- resolvedDetailConfig.type,
  ]);
 
  const actionContext = useMemo<BaseModelTableColumnActionContext>(
@@ -971,11 +976,11 @@ formOverrides: mergedOverrides,
  return;
  }
 
- if (resolvedDetailConfig.type === "link") {
- const template = resolvedDetailConfig.hrefTemplate ?? "";
+ if (detailUsesUpdateLink) {
+ const template = detailLinkTemplate ?? "";
  const href = buildHrefFromTemplate(
  template,
- resolvedDetailConfig.objectIdValue,
+ resolvedUpdateConfig.objectIdValue,
  );
  navigate(href);
  return;
@@ -984,10 +989,10 @@ formOverrides: mergedOverrides,
  setDetailDialogOpen(true);
  }, [
  detailDisabledReason,
+ detailLinkTemplate,
+ detailUsesUpdateLink,
  navigate,
- resolvedDetailConfig.hrefTemplate,
- resolvedDetailConfig.objectIdValue,
- resolvedDetailConfig.type,
+ resolvedUpdateConfig.objectIdValue,
  ]);
 
  /**
@@ -1316,26 +1321,6 @@ formOverrides: mergedOverrides,
  return (
  <TooltipProvider delayDuration={300}>
  <div className="group/actions flex items-center justify-end gap-1 opacity-50 transition-opacity duration-200 group-hover/row:opacity-100">
- {canEdit ? (
- <Tooltip>
- <TooltipTrigger asChild>
- <Button
- size="icon"
- variant="ghost"
- aria-label="Modifier"
- className="size-7 bg-blue-500/10 text-blue-600 dark:text-blue-400 transition-all hover:bg-blue-500 hover:text-white active:scale-95"
- onClick={handleEdit}
- disabled={Boolean(editDisabledReason)}
- >
- <Pencil className="h-4 w-4" />
- </Button>
- </TooltipTrigger>
- <TooltipContent className="bg-blue-600 text-white font-bold uppercase text-[9px] tracking-widest">
- {editDisabledReason ?? "Modifier"}
- </TooltipContent>
- </Tooltip>
- ) : null}
-
  {canDetail ? (
  <Tooltip>
  <TooltipTrigger asChild>
@@ -1352,6 +1337,26 @@ formOverrides: mergedOverrides,
  </TooltipTrigger>
  <TooltipContent className="bg-cyan-600 text-white font-bold uppercase text-[9px] tracking-widest">
  {detailDisabledReason ?? "Details"}
+ </TooltipContent>
+ </Tooltip>
+ ) : null}
+
+ {canEdit ? (
+ <Tooltip>
+ <TooltipTrigger asChild>
+ <Button
+ size="icon"
+ variant="ghost"
+ aria-label="Modifier"
+ className="size-7 bg-blue-500/10 text-blue-600 dark:text-blue-400 transition-all hover:bg-blue-500 hover:text-white active:scale-95"
+ onClick={handleEdit}
+ disabled={Boolean(editDisabledReason)}
+ >
+ <Pencil className="h-4 w-4" />
+ </Button>
+ </TooltipTrigger>
+ <TooltipContent className="bg-blue-600 text-white font-bold uppercase text-[9px] tracking-widest">
+ {editDisabledReason ?? "Modifier"}
  </TooltipContent>
  </Tooltip>
  ) : null}

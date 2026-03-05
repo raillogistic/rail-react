@@ -265,8 +265,66 @@ describe("RowActions update integration", () => {
  await waitFor(() => {
  expect(mockNavigate).toHaveBeenCalledWith("/orders/77/edit");
  });
-    expect(screen.queryByTestId("update-overlay-drawer")).not.toBeInTheDocument();
-    expect(screen.queryByTestId("update-overlay-modal")).not.toBeInTheDocument();
+  expect(screen.queryByTestId("update-overlay-drawer")).not.toBeInTheDocument();
+  expect(screen.queryByTestId("update-overlay-modal")).not.toBeInTheDocument();
+  });
+
+  it("renders detail action before update action in the row toolbar", () => {
+    render(
+      <RowActions
+        row={{ id: 19 }}
+        data={[{ id: 19 }]}
+      />,
+    );
+
+    const detailButton = screen.getByRole("button", { name: "Details" });
+    const updateButton = screen.getByRole("button", { name: "Modifier" });
+    const order = detailButton.compareDocumentPosition(updateButton);
+
+    expect(order & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("keeps detail action visible when retrieve is denied but update link mode is enabled", async () => {
+    mockUseMetadata.mockReturnValue({
+      app: "store",
+      model: "Order",
+      metadata: {
+        model: "Order",
+        verboseName: "Commande",
+        mutations: [
+          { name: "updateOrder", operation: "update", allowed: true },
+        ],
+        templates: [],
+        permissions: {
+          canList: true,
+          canRetrieve: false,
+          canCreate: true,
+          canUpdate: true,
+          canDelete: false,
+          canBulkCreate: false,
+          canBulkUpdate: false,
+          canBulkDelete: false,
+          canExport: false,
+        },
+      },
+    });
+
+    render(
+      <RowActions
+        row={{ id: 106 }}
+        data={[{ id: 106 }]}
+        update={{
+          type: "link",
+          hrefTemplate: "/orders/:id/edit",
+        }}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Details" }));
+
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith("/orders/106/edit");
+    });
   });
 
   it("opens detail popup and renders ModelDynamicDetail with resolved overrides", async () => {
@@ -303,11 +361,15 @@ describe("RowActions update integration", () => {
     ).toBe("Inline edit");
   });
 
-  it("navigates using href template when detail type is link", async () => {
+  it("uses update link navigation when clicking detail and update.type is link", async () => {
     render(
       <RowActions
         row={{ id: 105 }}
         data={[{ id: 105 }]}
+        update={{
+          type: "link",
+          hrefTemplate: "/orders/:id/edit",
+        }}
         detail={{
           type: "link",
           hrefTemplate: "/orders/:id",
@@ -318,7 +380,7 @@ describe("RowActions update integration", () => {
     fireEvent.click(screen.getByRole("button", { name: "Details" }));
 
     await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith("/orders/105");
+      expect(mockNavigate).toHaveBeenCalledWith("/orders/105/edit");
     });
   });
 

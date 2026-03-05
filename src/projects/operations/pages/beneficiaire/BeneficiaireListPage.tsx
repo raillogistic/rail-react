@@ -12,7 +12,7 @@ export function BeneficiaireListPage() {
       }}
       update={{
         type: "link",
-        hrefTemplate: ROUTES.BENEFICIAIRE_EDIT,
+        hrefTemplate: ROUTES.BENEFICIAIRE_DETAIL,
       }}
       detail={{
         type: "link",
