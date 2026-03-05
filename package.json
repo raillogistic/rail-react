@@ -23,7 +23,8 @@
     "preview": "vite preview",
     "schema": "node scripts/generate-schema-types.mjs",
     "getModels": "node scripts/getModels.mjs",
-    "startapp": "node scripts/startapp.mjs"
+    "startapp": "node scripts/startapp.mjs",
+    "register": "node scripts/register.mjs"
   },
   "dependencies": {
     "@apollo/client": "^3.8.10",

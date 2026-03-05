@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import { useLazyQuery, useQuery } from "@apollo/client";
 import {
+ TABLE_ACTIONS_BOOTSTRAP_METADATA_QUERY,
+ TABLE_ACTION_DETAILS_METADATA_QUERY,
  TABLE_BOOTSTRAP_METADATA_QUERY,
  TABLE_CAPABILITIES_METADATA_QUERY,
 } from "@/shared/api/graphql/graphql/metadata/queries";
@@ -16,10 +18,17 @@ export interface UseTableMetadataResult {
  metadata?: ModelSchema;
  loading: boolean;
  error?: Error;
+ actionBootstrapLoading: boolean;
+ actionBootstrapLoaded: boolean;
+ actionDetailsLoading: boolean;
+ actionDetailsLoaded: boolean;
+ actionDetailsError?: Error;
  capabilitiesLoading: boolean;
  capabilitiesLoaded: boolean;
  capabilitiesError?: Error;
+ ensureActionDetailsLoaded: () => Promise<void>;
  ensureCapabilitiesLoaded: () => Promise<void>;
+ scheduleActionDetailsPrefetch: () => void;
  scheduleCapabilitiesPrefetch: () => void;
 }
 
@@ -99,7 +108,11 @@ function normalizeModelSchema(
 }
 
 /**
- * Resolve table metadata via bootstrap query + lazy capabilities query.
+ * Resolve table metadata via:
+ * - bootstrap query (columns/layout),
+ * - lightweight actions bootstrap (permissions + built-in mutations),
+ * - lazy filter capabilities query,
+ * - lazy action-details query (templates + full mutation metadata).
  */
 export function useTableMetadata(
  app: string,
@@ -118,11 +131,32 @@ export function useTableMetadata(
  notifyOnNetworkStatusChange: true,
  });
 
+ const {
+ data: actionBootstrapQueryData,
+ loading: actionBootstrapLoading,
+ } = useQuery<ModelSchemaQueryData>(TABLE_ACTIONS_BOOTSTRAP_METADATA_QUERY, {
+ variables: { app, model },
+ skip: !app || !model,
+ fetchPolicy: "cache-first",
+ nextFetchPolicy: "cache-first",
+ returnPartialData: true,
+ notifyOnNetworkStatusChange: false,
+ });
+
  const [loadCapabilities, capabilitiesState] =
  useLazyQuery<ModelSchemaQueryData>(TABLE_CAPABILITIES_METADATA_QUERY, {
- // Capabilities payload is intentionally partial. Keep it out of Apollo
+ // Filter capabilities payload is intentionally partial. Keep it out of Apollo
  // cache so it cannot overwrite bootstrap modelSchema slices (fields /
  // relationships), which would retrigger bootstrap + table-data queries.
+ fetchPolicy: "no-cache",
+ nextFetchPolicy: "no-cache",
+ returnPartialData: false,
+ notifyOnNetworkStatusChange: false,
+ });
+
+ const [loadActionDetails, actionDetailsState] =
+ useLazyQuery<ModelSchemaQueryData>(TABLE_ACTION_DETAILS_METADATA_QUERY, {
+ // Action-details payload is intentionally partial and loaded lazily.
  fetchPolicy: "no-cache",
  nextFetchPolicy: "no-cache",
  returnPartialData: false,
@@ -141,6 +175,15 @@ export function useTableMetadata(
  [bootstrapQueryData],
  );
 
+ const actionBootstrapMetadata = useMemo(
+ () =>
+ (actionBootstrapQueryData?.modelSchema as
+ | Partial<ModelSchema>
+ | null
+ | undefined) ?? null,
+ [actionBootstrapQueryData],
+ );
+
  const capabilitiesMetadata = useMemo(
  () =>
  (capabilitiesState.data?.modelSchema as
@@ -150,9 +193,18 @@ export function useTableMetadata(
  [capabilitiesState.data],
  );
 
+ const actionDetailsMetadata = useMemo(
+ () =>
+ (actionDetailsState.data?.modelSchema as
+ | Partial<ModelSchema>
+ | null
+ | undefined) ?? null,
+ [actionDetailsState.data],
+ );
+
  const stableMetadataCacheRef = useRef<StableMetadataCache | null>(null);
  const mergedMetadata = useMemo(() => {
- if (!bootstrapMetadata && !persistedMetadata && !capabilitiesMetadata) {
+ if (!bootstrapMetadata && !persistedMetadata) {
  return undefined;
  }
 
@@ -165,7 +217,9 @@ export function useTableMetadata(
  const merged = {
  ...(persistedMetadata ?? {}),
  ...(bootstrapMetadata ?? {}),
+ ...(actionBootstrapMetadata ?? {}),
  ...(capabilitiesMetadata ?? {}),
+ ...(actionDetailsMetadata ?? {}),
  filterConfig:
  Object.keys(mergedFilterConfig).length > 0
  ? mergedFilterConfig
@@ -185,7 +239,15 @@ export function useTableMetadata(
  value: normalized,
  };
  return normalized;
- }, [app, model, bootstrapMetadata, capabilitiesMetadata, persistedMetadata]);
+ }, [
+ app,
+ model,
+ actionBootstrapMetadata,
+ actionDetailsMetadata,
+ bootstrapMetadata,
+ capabilitiesMetadata,
+ persistedMetadata,
+ ]);
 
  useEffect(() => {
  if (!app || !model) return;
@@ -194,13 +256,34 @@ export function useTableMetadata(
 
  useEffect(() => {
  if (!app || !model || !mergedMetadata) return;
- if (!bootstrapMetadata && !capabilitiesMetadata) return;
+ if (!bootstrapMetadata && !persistedMetadata) {
+ return;
+ }
+ if (
+ !bootstrapMetadata &&
+ !actionBootstrapMetadata &&
+ !capabilitiesMetadata &&
+ !actionDetailsMetadata
+ ) {
+ return;
+ }
  persistTableMetadata(app, model, { modelSchema: mergedMetadata });
- }, [app, model, mergedMetadata, bootstrapMetadata, capabilitiesMetadata]);
+ }, [
+ app,
+ model,
+ mergedMetadata,
+ actionBootstrapMetadata,
+ actionDetailsMetadata,
+ bootstrapMetadata,
+ capabilitiesMetadata,
+ persistedMetadata,
+ ]);
 
  const capabilitiesRequestedRef = useRef(false);
+ const actionDetailsRequestedRef = useRef(false);
  useEffect(() => {
  capabilitiesRequestedRef.current = false;
+ actionDetailsRequestedRef.current = false;
  }, [app, model]);
 
  const ensureCapabilitiesLoaded = useCallback(async () => {
@@ -227,6 +310,30 @@ export function useTableMetadata(
  capabilitiesState.loading,
  ]);
 
+ const ensureActionDetailsLoaded = useCallback(async () => {
+ if (!app || !model) return;
+ if (
+ actionDetailsRequestedRef.current ||
+ actionDetailsState.called ||
+ actionDetailsState.loading
+ ) {
+ return;
+ }
+ actionDetailsRequestedRef.current = true;
+ await loadActionDetails({
+ variables: { app, model },
+ }).catch(() => {
+ actionDetailsRequestedRef.current = false;
+ return undefined;
+ });
+ }, [
+ app,
+ model,
+ actionDetailsState.called,
+ actionDetailsState.loading,
+ loadActionDetails,
+ ]);
+
  const idleTaskIdRef = useRef<ScheduledTaskId | null>(null);
  const idleTaskKindRef = useRef<IdleTaskKind | null>(null);
 
@@ -251,15 +358,15 @@ export function useTableMetadata(
  idleTaskKindRef.current = null;
  }, []);
 
- const scheduleCapabilitiesPrefetch = useCallback(() => {
- if (capabilitiesState.called || capabilitiesState.loading) return;
+ const scheduleActionDetailsPrefetch = useCallback(() => {
+ if (actionDetailsState.called || actionDetailsState.loading) return;
  if (!app || !model) return;
  if (idleTaskIdRef.current !== null) return;
 
  const runPrefetch = () => {
  idleTaskIdRef.current = null;
  idleTaskKindRef.current = null;
- void ensureCapabilitiesLoaded();
+ void ensureActionDetailsLoaded();
  };
 
  if (typeof window === "undefined") {
@@ -282,7 +389,13 @@ export function useTableMetadata(
 
  idleTaskKindRef.current = "timeout";
  idleTaskIdRef.current = globalThis.setTimeout(runPrefetch, 80);
- }, [app, model, capabilitiesState.called, capabilitiesState.loading, ensureCapabilitiesLoaded]);
+ }, [
+ app,
+ model,
+ actionDetailsState.called,
+ actionDetailsState.loading,
+ ensureActionDetailsLoaded,
+ ]);
 
  useEffect(() => {
  return () => {
@@ -290,9 +403,9 @@ export function useTableMetadata(
  };
  }, [clearScheduledPrefetch]);
 
- const loading = !mergedMetadata && bootstrapLoading;
+ const loading = !bootstrapMetadata && !persistedMetadata && bootstrapLoading;
  const error =
- !mergedMetadata && bootstrapError
+ !bootstrapMetadata && !persistedMetadata && bootstrapError
  ? (bootstrapError as Error)
  : undefined;
 
@@ -300,11 +413,21 @@ export function useTableMetadata(
  metadata: mergedMetadata,
  loading,
  error,
+ actionBootstrapLoading,
+ actionBootstrapLoaded: !actionBootstrapLoading && (Boolean(app) && Boolean(model)),
+ actionDetailsLoading: actionDetailsState.loading,
+ actionDetailsLoaded:
+ actionDetailsState.called &&
+ !actionDetailsState.loading &&
+ !actionDetailsState.error,
+ actionDetailsError: actionDetailsState.error as Error | undefined,
  capabilitiesLoading: capabilitiesState.loading,
  capabilitiesLoaded:
  capabilitiesState.called && !capabilitiesState.loading && !capabilitiesState.error,
  capabilitiesError: capabilitiesState.error as Error | undefined,
+ ensureActionDetailsLoaded,
  ensureCapabilitiesLoaded,
- scheduleCapabilitiesPrefetch,
+ scheduleActionDetailsPrefetch,
+ scheduleCapabilitiesPrefetch: scheduleActionDetailsPrefetch,
  };
 }

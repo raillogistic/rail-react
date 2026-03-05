@@ -176,8 +176,42 @@ export const TABLE_BOOTSTRAP_METADATA_QUERY = gql`
   }
 `;
 
+export const TABLE_ACTIONS_BOOTSTRAP_METADATA_QUERY = gql`
+  query TableActionsBootstrapModelMetadata(
+    $app: String!
+    $model: String!
+    $objectId: ID
+  ) {
+    modelSchema(app: $app, model: $model, objectId: $objectId) {
+      app
+      model
+      permissions {
+        canList
+        canRetrieve
+        canCreate
+        canUpdate
+        canDelete
+        canBulkCreate
+        canBulkUpdate
+        canBulkDelete
+        canExport
+        denialReasons
+      }
+      mutations {
+        name
+        operation
+        methodName
+        allowed
+        reason
+        mutationType
+        modelName
+      }
+    }
+  }
+`;
+
 export const TABLE_CAPABILITIES_METADATA_QUERY = gql`
-  query TableCapabilitiesModelMetadata(
+  query TableFilterCapabilitiesModelMetadata(
     $app: String!
     $model: String!
     $objectId: ID
@@ -243,6 +277,19 @@ export const TABLE_CAPABILITIES_METADATA_QUERY = gql`
         supportsCount
         nestedFilterType
       }
+    }
+  }
+`;
+
+export const TABLE_ACTION_DETAILS_METADATA_QUERY = gql`
+  query TableActionDetailsModelMetadata(
+    $app: String!
+    $model: String!
+    $objectId: ID
+  ) {
+    modelSchema(app: $app, model: $model, objectId: $objectId) {
+      app
+      model
       mutations {
         name
         operation

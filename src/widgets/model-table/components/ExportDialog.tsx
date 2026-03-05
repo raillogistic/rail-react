@@ -136,8 +136,7 @@ export function ModelTableExportDialog({
  };
  trigger?: React.ReactNode;
 }) {
- const { metadata, capabilitiesLoaded, ensureCapabilitiesLoaded } =
- useMetadata();
+ const { metadata, actionBootstrapLoading } = useMetadata();
  const { columnOrder, columnVisibility, filterVariables, groupingField } =
  useTable();
  const filterPayload = filterVariables as FilterQueryVariables | undefined;
@@ -156,9 +155,10 @@ export function ModelTableExportDialog({
 
  const canExport = metadata?.permissions?.canExport === true;
  const canOpenDialog = Boolean(metadata) && canExport;
- const capabilitiesPending = !capabilitiesLoaded && !canExport;
+ const exportPermissionPending =
+ actionBootstrapLoading && metadata?.permissions?.canExport === undefined;
  const triggerDisabled = !canOpenDialog;
- const triggerDisabledReason = capabilitiesPending
+ const triggerDisabledReason = exportPermissionPending
  ? "Chargement des capacités d'export..."
  : "Export non autorisé.";
 
@@ -172,11 +172,6 @@ export function ModelTableExportDialog({
  );
  setExportFilename(metadata.verboseNamePlural || metadata.model || "export");
  }, [open, metadata, columnOrder, columnVisibility]);
-
- useEffect(() => {
- if (!open) return;
- void ensureCapabilitiesLoaded();
- }, [ensureCapabilitiesLoaded, open]);
 
  useEffect(() => {
  if (open && !canOpenDialog) {
@@ -380,14 +375,11 @@ export function ModelTableExportDialog({
  return;
  }
  if (!canOpenDialog) {
- if (capabilitiesPending) {
- void ensureCapabilitiesLoaded();
- }
  return;
  }
  setOpen(true);
  },
- [canOpenDialog, capabilitiesPending, ensureCapabilitiesLoaded],
+ [canOpenDialog],
  );
 
  const resolvedTrigger = useMemo(() => {

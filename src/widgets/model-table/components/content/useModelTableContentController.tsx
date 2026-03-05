@@ -167,7 +167,15 @@ export function useModelTableContentController({
  fields,
  topActions,
 }: UseModelTableContentControllerInput): ModelTableContentControllerState {
- const { metadata, app, model, capabilitiesLoaded } = useMetadata();
+ const {
+ metadata,
+ app,
+ model,
+ actionBootstrapLoading,
+ actionDetailsLoading,
+ actionDetailsLoaded,
+ ensureActionDetailsLoaded,
+ } = useMetadata();
  const tableState = useTable();
  const data = tableState.data ?? [];
  const queryPage = tableState.queryPage;
@@ -223,7 +231,7 @@ export function useModelTableContentController({
  const canCreate =
  createMutation?.allowed ?? metadata?.permissions?.canCreate ?? false;
  const createCapabilitiesPending =
- !capabilitiesLoaded &&
+ actionBootstrapLoading &&
  createMutation?.allowed === undefined &&
  metadata?.permissions?.canCreate === undefined;
 
@@ -329,6 +337,7 @@ export function useModelTableContentController({
  key: "add",
  label: tableConfig?.addLabel ?? "Ajouter",
  icon: <PlusCircle className="mr-2 h-4 w-4" />,
+ loading: createCapabilitiesPending,
  variant: "default",
  size: "sm",
  order: -1,
@@ -454,8 +463,22 @@ export function useModelTableContentController({
  ),
  [metadata?.templates],
  );
+
+ useEffect(() => {
+ if (!hasSelection) return;
+ if (templateEntries.length > 0) return;
+ if (actionDetailsLoaded || actionDetailsLoading) return;
+ void ensureActionDetailsLoaded();
+ }, [
+ actionDetailsLoaded,
+ actionDetailsLoading,
+ ensureActionDetailsLoaded,
+ hasSelection,
+ templateEntries.length,
+ ]);
+
  const templateCapabilitiesPending =
- !capabilitiesLoaded && templateEntries.length === 0;
+ actionDetailsLoading && templateEntries.length === 0;
 
  const pdfTemplates = useMemo(
  () => templateEntries.filter((template) => normalizeTemplateType(template) === "pdf"),
@@ -494,6 +517,7 @@ export function useModelTableContentController({
  ...action,
  disabled:
  Boolean(action.disabled) ||
+ Boolean(action.loading) ||
  (action.show_when === "has_selection" && !hasSelection),
  }))
  .sort((left, right) => (left.order ?? 0) - (right.order ?? 0));
@@ -567,7 +591,7 @@ export function useModelTableContentController({
  app,
  model,
  metadata,
- capabilitiesLoaded,
+ capabilitiesLoaded: actionDetailsLoaded,
  templateCapabilitiesPending,
  filterPanel,
  tableConfig,

@@ -310,6 +310,7 @@ export type ModelTableV2TopAction = {
 key: string;
 label: string;
 icon?: React.ReactNode;
+ loading?: boolean;
  variant?: "default" | "outline" | "destructive";
  size?: "sm" | "md" | "lg" | "icon";
  order?: number;

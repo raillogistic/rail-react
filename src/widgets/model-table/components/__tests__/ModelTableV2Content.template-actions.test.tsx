@@ -178,6 +178,10 @@ describe("Dynamic section composition template actions", () => {
  mockUseMetadata.mockReturnValue({
  app: "store",
  model: "Order",
+ actionBootstrapLoading: false,
+ actionDetailsLoading: false,
+ actionDetailsLoaded: true,
+ ensureActionDetailsLoaded: vi.fn(),
  metadata: {
  model: "Order",
  verboseNamePlural: "Orders",
@@ -243,6 +247,10 @@ describe("Dynamic section composition template actions", () => {
  mockUseMetadata.mockReturnValue({
  app: "store",
  model: "Order",
+ actionBootstrapLoading: false,
+ actionDetailsLoading: false,
+ actionDetailsLoaded: true,
+ ensureActionDetailsLoaded: vi.fn(),
  metadata: {
  model: "Order",
  verboseNamePlural: "Orders",
@@ -297,6 +305,10 @@ describe("Dynamic section composition template actions", () => {
  mockUseMetadata.mockReturnValue({
  app: "store",
  model: "Order",
+ actionBootstrapLoading: false,
+ actionDetailsLoading: false,
+ actionDetailsLoaded: true,
+ ensureActionDetailsLoaded: vi.fn(),
  metadata: {
  model: "Order",
  verboseNamePlural: "Orders",
@@ -336,6 +348,10 @@ describe("Dynamic section composition template actions", () => {
  mockUseMetadata.mockReturnValue({
  app: "store",
  model: "Product",
+ actionBootstrapLoading: false,
+ actionDetailsLoading: false,
+ actionDetailsLoaded: true,
+ ensureActionDetailsLoaded: vi.fn(),
  metadata: {
  model: "Product",
  verboseNamePlural: "Products",

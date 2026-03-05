@@ -18,6 +18,8 @@ export type ModelTableContentTopAction = {
  label: string;
  /** Optional icon node. */
  icon?: React.ReactNode;
+ /** Loading flag for action-specific async/pending states. */
+ loading?: boolean;
  /** Visual intent variant. */
  variant?: "default" | "outline" | "destructive";
  /** Optional button sizing token. */

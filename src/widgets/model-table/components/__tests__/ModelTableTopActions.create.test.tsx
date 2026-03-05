@@ -128,6 +128,10 @@ describe("ModelTable top-action create flow", () => {
  mockUseMetadata.mockReturnValue({
  app: "store",
  model: "Order",
+ actionBootstrapLoading: false,
+ actionDetailsLoading: false,
+ actionDetailsLoaded: true,
+ ensureActionDetailsLoaded: vi.fn(),
  capabilitiesLoaded: true,
  metadata: {
  model: "Order",
@@ -224,6 +228,10 @@ describe("ModelTable top-action create flow", () => {
  mockUseMetadata.mockReturnValue({
  app: "store",
  model: "Order",
+ actionBootstrapLoading: false,
+ actionDetailsLoading: false,
+ actionDetailsLoaded: true,
+ ensureActionDetailsLoaded: vi.fn(),
  capabilitiesLoaded: true,
  metadata: {
  model: "Order",
@@ -243,6 +251,10 @@ describe("ModelTable top-action create flow", () => {
  mockUseMetadata.mockReturnValue({
  app: "store",
  model: "Order",
+ actionBootstrapLoading: true,
+ actionDetailsLoading: false,
+ actionDetailsLoaded: false,
+ ensureActionDetailsLoaded: vi.fn(),
  capabilitiesLoaded: false,
  metadata: {
  model: "Order",

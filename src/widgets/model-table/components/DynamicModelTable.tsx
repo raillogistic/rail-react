@@ -534,8 +534,8 @@ function DynamicBaseTableContent({
     error: metadataError,
     app,
     model,
-    capabilitiesLoading,
-    capabilitiesLoaded,
+    actionDetailsLoading,
+    actionDetailsLoaded,
     scheduleCapabilitiesPrefetch,
   } = useMetadata();
   const {
@@ -791,18 +791,18 @@ function DynamicBaseTableContent({
     if (!persistenceHydrated || metadataLoading || !metadata) {
       return;
     }
-    if (capabilitiesLoaded || capabilitiesLoading) {
+    if (actionDetailsLoaded || actionDetailsLoading) {
       hasScheduledCapabilitiesRef.current = true;
       return;
     }
 
-    // Prefetch capabilities in idle time so first paint/data query are not
-    // contending with heavier capability metadata work.
+    // Prefetch action details in idle time so first paint/data query are not
+    // contending with heavier mutation/template metadata work.
     hasScheduledCapabilitiesRef.current = true;
     scheduleCapabilitiesPrefetch();
   }, [
-    capabilitiesLoaded,
-    capabilitiesLoading,
+    actionDetailsLoaded,
+    actionDetailsLoading,
     metadata,
     metadataLoading,
     persistenceHydrated,

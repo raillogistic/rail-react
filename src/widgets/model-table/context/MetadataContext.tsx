@@ -12,10 +12,17 @@ interface MetadataContextValue {
  error?: Error;
  app: string;
  model: string;
+ actionBootstrapLoading: boolean;
+ actionBootstrapLoaded: boolean;
+ actionDetailsLoading: boolean;
+ actionDetailsLoaded: boolean;
+ actionDetailsError?: Error;
  capabilitiesLoading: boolean;
  capabilitiesLoaded: boolean;
  capabilitiesError?: Error;
+ ensureActionDetailsLoaded: () => Promise<void>;
  ensureCapabilitiesLoaded: () => Promise<void>;
+ scheduleActionDetailsPrefetch: () => void;
  scheduleCapabilitiesPrefetch: () => void;
 }
 
@@ -38,10 +45,17 @@ export function MetadataProvider({
  metadata,
  loading,
  error,
+ actionBootstrapLoading,
+ actionBootstrapLoaded,
+ actionDetailsLoading,
+ actionDetailsLoaded,
+ actionDetailsError,
  capabilitiesLoading,
  capabilitiesLoaded,
  capabilitiesError,
+ ensureActionDetailsLoaded,
  ensureCapabilitiesLoaded,
+ scheduleActionDetailsPrefetch,
  scheduleCapabilitiesPrefetch,
  } = useTableMetadata(app, model);
  const mergedMetadata = useMemo(
@@ -60,10 +74,17 @@ export function MetadataProvider({
  error,
  app,
  model,
+ actionBootstrapLoading,
+ actionBootstrapLoaded,
+ actionDetailsLoading,
+ actionDetailsLoaded,
+ actionDetailsError,
  capabilitiesLoading,
  capabilitiesLoaded,
  capabilitiesError,
+ ensureActionDetailsLoaded,
  ensureCapabilitiesLoaded,
+ scheduleActionDetailsPrefetch,
  scheduleCapabilitiesPrefetch,
  }}
  >

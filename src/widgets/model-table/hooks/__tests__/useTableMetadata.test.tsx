@@ -1,7 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { renderHook } from "@testing-library/react";
 import { useTableMetadata } from "../useTableMetadata";
-import { TABLE_BOOTSTRAP_METADATA_QUERY } from "@/shared/api/graphql/graphql/metadata/queries";
+import {
+ TABLE_ACTIONS_BOOTSTRAP_METADATA_QUERY,
+ TABLE_BOOTSTRAP_METADATA_QUERY,
+} from "@/shared/api/graphql/graphql/metadata/queries";
 
 const mockUseQuery = vi.fn();
 const mockUseLazyQuery = vi.fn();
@@ -30,7 +33,29 @@ describe("useTableMetadata", () => {
  beforeEach(() => {
  vi.clearAllMocks();
 
- mockUseLazyQuery.mockReturnValue([
+ mockUseQuery.mockImplementation((query: unknown) => {
+ if (query === TABLE_BOOTSTRAP_METADATA_QUERY) {
+ return {
+ data: { modelSchema: null },
+ loading: false,
+ error: undefined,
+ };
+ }
+ if (query === TABLE_ACTIONS_BOOTSTRAP_METADATA_QUERY) {
+ return {
+ data: { modelSchema: null },
+ loading: false,
+ error: undefined,
+ };
+ }
+ return {
+ data: { modelSchema: null },
+ loading: false,
+ error: undefined,
+ };
+ });
+
+ mockUseLazyQuery.mockImplementation(() => [
  vi.fn().mockResolvedValue(undefined),
  {
  data: undefined,
