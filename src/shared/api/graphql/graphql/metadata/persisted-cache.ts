@@ -62,6 +62,88 @@ const toBoolean = (value: unknown, fallback: boolean): boolean =>
 const toStringOr = (value: unknown, fallback: string): string =>
   typeof value === "string" && value.trim().length > 0 ? value : fallback;
 
+const hasOwn = (source: Record<string, unknown>, key: string): boolean =>
+  Object.prototype.hasOwnProperty.call(source, key);
+
+function sanitizePersistedField(
+  value: unknown,
+): Record<string, unknown> | unknown {
+  if (!value || typeof value !== "object") {
+    return value;
+  }
+
+  const source = value as Record<string, unknown>;
+
+  return {
+    ...source,
+    required: hasOwn(source, "required")
+      ? source.required
+      : false,
+    nullable: hasOwn(source, "nullable")
+      ? source.nullable
+      : false,
+    blank: hasOwn(source, "blank")
+      ? source.blank
+      : false,
+    unique: hasOwn(source, "unique")
+      ? source.unique
+      : false,
+    defaultValue: hasOwn(source, "defaultValue")
+      ? source.defaultValue
+      : null,
+    hasDefault: hasOwn(source, "hasDefault")
+      ? source.hasDefault
+      : false,
+    autoNow: hasOwn(source, "autoNow")
+      ? source.autoNow
+      : false,
+    autoNowAdd: hasOwn(source, "autoNowAdd")
+      ? source.autoNowAdd
+      : false,
+    isFile: hasOwn(source, "isFile")
+      ? source.isFile
+      : false,
+    isImage: hasOwn(source, "isImage")
+      ? source.isImage
+      : false,
+    isText: hasOwn(source, "isText")
+      ? source.isText
+      : false,
+    isRichText: hasOwn(source, "isRichText")
+      ? source.isRichText
+      : false,
+    writable: false,
+  };
+}
+
+function sanitizePersistedRelationship(
+  value: unknown,
+): Record<string, unknown> | unknown {
+  if (!value || typeof value !== "object") {
+    return value;
+  }
+
+  const source = value as Record<string, unknown>;
+
+  return {
+    ...source,
+    relatedModelVerbose: hasOwn(source, "relatedModelVerbose")
+      ? source.relatedModelVerbose
+      : "",
+    required: hasOwn(source, "required")
+      ? source.required
+      : false,
+    nullable: hasOwn(source, "nullable")
+      ? source.nullable
+      : false,
+    editable: hasOwn(source, "editable")
+      ? source.editable
+      : false,
+    writable: false,
+    canCreateInline: false,
+  };
+}
+
 function sanitizePersistedFilterConfig(
   value: unknown,
   modelName?: string,
@@ -111,22 +193,12 @@ function sanitizePersistedModelSchema<T>(schema: T): T {
     "filterConfig",
   );
   const fields = Array.isArray(source.fields)
-    ? source.fields.map((field) =>
-        field && typeof field === "object"
-          ? { ...(field as Record<string, unknown>), writable: false }
-          : field,
-      )
+    ? source.fields.map((field) => sanitizePersistedField(field))
     : source.fields;
 
   const relationships = Array.isArray(source.relationships)
     ? source.relationships.map((relation) =>
-        relation && typeof relation === "object"
-          ? {
-              ...(relation as Record<string, unknown>),
-              writable: false,
-              canCreateInline: false,
-            }
-          : relation,
+        sanitizePersistedRelationship(relation),
       )
     : source.relationships;
 

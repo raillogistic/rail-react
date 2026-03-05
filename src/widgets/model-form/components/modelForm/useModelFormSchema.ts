@@ -55,8 +55,6 @@ function collectEditableFieldPaths(schema: FormSchema<any>): string[] {
 
 function stripNonEditableField(field: FormFieldConfig): FormFieldConfig | null {
   const name = String(field.name ?? "").trim();
-  console.log(field);
-
   if (!name || field.readOnly) {
     return null;
   }

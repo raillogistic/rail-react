@@ -68,6 +68,51 @@ const buildPartialFilterConfigStore = () => ({
   recent: {},
 });
 
+const buildLegacyFieldSchemaStore = () => ({
+  version: 1,
+  entries: {
+    "catalog.Article": {
+      table: {
+        data: {
+          modelSchema: {
+            app: "catalog",
+            model: "Article",
+            fields: [
+              {
+                __typename: "FieldSchemaType",
+                name: "code",
+                fieldName: "code",
+                verboseName: "Code article",
+                helpText: "",
+                fieldType: "CharField",
+                graphqlType: "String",
+                editable: true,
+                readable: true,
+                writable: true,
+                visibility: "visible",
+                isPrimaryKey: false,
+                isIndexed: true,
+                isRelation: false,
+                isComputed: false,
+                isJson: false,
+                isDate: false,
+                isDatetime: false,
+                isNumeric: false,
+                isBoolean: false,
+              },
+            ],
+            relationships: [],
+            filters: [],
+            filterConfig: null,
+          },
+        },
+        updatedAt: Date.now(),
+      },
+    },
+  },
+  recent: {},
+});
+
 describe("hydrateMetadataCache", () => {
   let userKey = "";
 
@@ -138,5 +183,40 @@ describe("hydrateMetadataCache", () => {
     expect(filterConfig.supportsAggregation).toBe(false);
     expect(filterConfig.presets).toEqual([]);
     expect(filterConfig.computedFilters).toEqual([]);
+  });
+
+  it("fills missing field schema flags from legacy persisted metadata", () => {
+    userKey = `metadata-field-schema-test-${Date.now()}`;
+    const storageKey = `${STORAGE_PREFIX}:${userKey}`;
+    window.localStorage.setItem(
+      storageKey,
+      JSON.stringify(buildLegacyFieldSchemaStore()),
+    );
+
+    const writeQuery = vi.fn();
+    const cache = { writeQuery } as unknown as InMemoryCache;
+
+    const result = hydrateMetadataCache(cache, userKey);
+
+    expect(result.hydrated).toBe(true);
+    expect(result.entries).toBe(1);
+    expect(writeQuery).toHaveBeenCalledTimes(1);
+
+    const field = writeQuery.mock.calls[0]?.[0]?.data?.modelSchema
+      ?.fields?.[0] as Record<string, unknown>;
+
+    expect(field).toBeTruthy();
+    expect(field.required).toBe(false);
+    expect(field.nullable).toBe(false);
+    expect(field.blank).toBe(false);
+    expect(field.unique).toBe(false);
+    expect(field.defaultValue).toBeNull();
+    expect(field.hasDefault).toBe(false);
+    expect(field.autoNow).toBe(false);
+    expect(field.autoNowAdd).toBe(false);
+    expect(field.isFile).toBe(false);
+    expect(field.isImage).toBe(false);
+    expect(field.isText).toBe(false);
+    expect(field.isRichText).toBe(false);
   });
 });
