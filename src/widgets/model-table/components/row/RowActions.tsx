@@ -764,9 +764,7 @@ formOverrides: mergedOverrides,
 };
 }, [detail, detailContext]);
 
- const detailLinkTemplate = detailUsesUpdateLink
- ? resolvedUpdateConfig.hrefTemplate
- : resolvedDetailConfig.hrefTemplate;
+ const detailLinkTemplate = resolvedDetailConfig.hrefTemplate;
 
  const editDisabledReason = useMemo(() => {
  if (!canEdit) {
@@ -797,7 +795,7 @@ formOverrides: mergedOverrides,
  return "Cette ligne ne possede pas d'identifiant valide.";
  }
  if (detailUsesUpdateLink && !detailLinkTemplate) {
- return "Configuration update.link manquante (hrefTemplate).";
+ return "Configuration detail.link manquante (hrefTemplate).";
  }
  return null;
  }, [
@@ -980,7 +978,7 @@ formOverrides: mergedOverrides,
  const template = detailLinkTemplate ?? "";
  const href = buildHrefFromTemplate(
  template,
- resolvedUpdateConfig.objectIdValue,
+ resolvedDetailConfig.objectIdValue,
  );
  navigate(href);
  return;
@@ -992,7 +990,7 @@ formOverrides: mergedOverrides,
  detailLinkTemplate,
  detailUsesUpdateLink,
  navigate,
- resolvedUpdateConfig.objectIdValue,
+ resolvedDetailConfig.objectIdValue,
  ]);
 
  /**

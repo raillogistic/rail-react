@@ -317,13 +317,16 @@ describe("RowActions update integration", () => {
           type: "link",
           hrefTemplate: "/orders/:id/edit",
         }}
+        detail={{
+          hrefTemplate: "/orders/:id",
+        }}
       />,
     );
 
     fireEvent.click(screen.getByRole("button", { name: "Details" }));
 
     await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith("/orders/106/edit");
+      expect(mockNavigate).toHaveBeenCalledWith("/orders/106");
     });
   });
 
@@ -361,7 +364,7 @@ describe("RowActions update integration", () => {
     ).toBe("Inline edit");
   });
 
-  it("uses update link navigation when clicking detail and update.type is link", async () => {
+  it("uses detail link navigation when clicking detail and update.type is link", async () => {
     render(
       <RowActions
         row={{ id: 105 }}
@@ -380,7 +383,7 @@ describe("RowActions update integration", () => {
     fireEvent.click(screen.getByRole("button", { name: "Details" }));
 
     await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith("/orders/105/edit");
+      expect(mockNavigate).toHaveBeenCalledWith("/orders/105");
     });
   });
 
