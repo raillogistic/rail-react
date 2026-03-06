@@ -7,10 +7,9 @@ import {
  IconSparkles,
 } from "@tabler/icons-react";
 import {
- DEFAULT_APP_ROUTE,
- NAVIGATION_LINKS,
  type NavigationSection,
 } from "@/app/router/navigation";
+import { useRouteAccess } from "@/app/router/routeAccess";
 import { BRANDING } from "@/shared/config/branding";
 import { UserNav } from "@/widgets/navigation/nav-user-menu";
 import Logo from "@/shared/assets/legacy-assets/logos/logo.png";
@@ -98,15 +97,17 @@ const getSectionEntries = (section: NavigationSection): NavigationMenuEntry[] =>
 const AppNavMenu = ({
  layout,
  location,
+ navigationLinks,
  className,
 }: {
  layout: string;
  location: Location;
+ navigationLinks: NavigationSection[];
  className?: string;
 }) => (
  <NavigationMenu viewport={false} className={cn("max-w-full", className)}>
  <NavigationMenuList className="gap-1">
- {NAVIGATION_LINKS.map((section) => {
+ {navigationLinks.map((section) => {
  const sectionEntries = getSectionEntries(section);
  const isActive = section.items.some(
  (item) =>
@@ -220,6 +221,7 @@ export function AppNavbar() {
  const location = useLocation();
  const { layout } = useTheme();
  const { user, logout } = useAuthContext();
+ const { defaultRoute, navigationLinks } = useRouteAccess();
  const [scrolled, setScrolled] = React.useState(false);
 
  React.useEffect(() => {
@@ -275,6 +277,7 @@ export function AppNavbar() {
  <AppNavMenu
  layout={layout}
  location={location}
+ navigationLinks={navigationLinks}
  className="justify-start"
  />
  </div>
@@ -289,6 +292,7 @@ export function AppNavbar() {
  <AppNavMenu
  layout={layout}
  location={location}
+ navigationLinks={navigationLinks}
  className="justify-center"
  />
  </div>
@@ -298,14 +302,14 @@ export function AppNavbar() {
  <div className="flex items-center gap-3 ml-auto">
  <div className="hidden md:flex">
  <CommandMenu
- navigationLinks={NAVIGATION_LINKS}
- defaultPath={DEFAULT_APP_ROUTE}
+ navigationLinks={navigationLinks}
+ defaultPath={defaultRoute}
  />
  </div>
 
  <div className="flex items-center gap-2">
  <div className="lg:hidden">
- <MobileNav />
+ <MobileNav navigationLinks={navigationLinks} />
  </div>
  <Separator
  orientation="vertical"
@@ -370,7 +374,7 @@ const ListItem = React.forwardRef<
 });
 ListItem.displayName = "ListItem";
 
-function MobileNav() {
+function MobileNav({ navigationLinks }: { navigationLinks: NavigationSection[] }) {
  const location = useLocation();
 
  return (
@@ -403,7 +407,7 @@ function MobileNav() {
  </SheetHeader>
 
  <nav className="flex flex-col px-4 pb-10">
- {NAVIGATION_LINKS.map((section) => {
+ {navigationLinks.map((section) => {
  const sectionEntries = getSectionEntries(section);
 
  return (

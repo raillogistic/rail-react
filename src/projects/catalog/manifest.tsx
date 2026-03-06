@@ -71,6 +71,7 @@ export const CATALOG_MANIFEST: AppManifest = defineProjectManifest({
   projectId: "catalog",
   order: 2,
   defaultRoute: ROUTES.ARTICLE_LIST,
+
   routes: [
     protectedRoute("catalog", {
       id: "catalog:categorie-article:list",

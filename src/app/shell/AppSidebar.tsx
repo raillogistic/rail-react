@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import { NavMain } from "@/widgets/navigation/nav-main";
 import { NavUser } from "@/widgets/navigation/nav-user";
-import { NAVIGATION_LINKS } from "@/app/router/navigation";
+import { useRouteAccess } from "@/app/router/routeAccess";
 import {
  Sidebar,
  SidebarContent,
@@ -37,6 +37,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
  const { layout } = useTheme();
  const { state } = useSidebar();
  const { user, logout } = useAuthContext();
+ const { navigationLinks } = useRouteAccess();
  const isCollapsed = state === "collapsed";
  const sidebarRef = useRef<HTMLDivElement>(null);
  const [mousePos, setMousePos] = useState<MousePosition>({ x: 0, y: 0 });
@@ -164,7 +165,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
  </SidebarHeader>
 
  <SidebarContent className="relative z-10 custom-scrollbar px-3 py-2 space-y-6">
- <NavMain navigationLinks={NAVIGATION_LINKS} />
+ <NavMain navigationLinks={navigationLinks} />
  </SidebarContent>
 
  <SidebarFooter className="relative z-10 p-4">

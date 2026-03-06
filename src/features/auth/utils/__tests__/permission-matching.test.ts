@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { userHasPermission } from "../permission-matching";
+import {
+  userHasPermission,
+  userHasRole,
+  userMeetsRouteAccessRequirement,
+} from "../permission-matching";
 
 describe("userHasPermission", () => {
   it("matches direct string permissions", () => {
@@ -47,6 +51,73 @@ describe("userHasPermission", () => {
           roles: ["manager"],
         },
         "store.change_order",
+      ),
+    ).toBe(true);
+  });
+
+  it("treats superusers as authorized for all permissions", () => {
+    expect(
+      userHasPermission(
+        {
+          is_superuser: true,
+          permissions: [],
+          roles: [],
+        },
+        "store.change_order",
+      ),
+    ).toBe(true);
+  });
+});
+
+describe("userHasRole", () => {
+  it("matches role names from detailed role objects", () => {
+    expect(
+      userHasRole(
+        {
+          roles: [{ name: "ops_manager" }],
+        },
+        "ops_manager",
+      ),
+    ).toBe(true);
+  });
+
+  it("treats superusers as superadmin", () => {
+    expect(
+      userHasRole(
+        {
+          is_superuser: true,
+          roles: [],
+        },
+        "superadmin",
+      ),
+    ).toBe(true);
+  });
+});
+
+describe("userMeetsRouteAccessRequirement", () => {
+  it("requires authentication by default", () => {
+    expect(
+      userMeetsRouteAccessRequirement(
+        null,
+        {
+          allPermissions: ["store.view_order"],
+        },
+        { isAuthenticated: false },
+      ),
+    ).toBe(false);
+  });
+
+  it("supports public routes with role requirements", () => {
+    expect(
+      userMeetsRouteAccessRequirement(
+        {
+          roles: ["ops_manager"],
+        },
+        {
+          requireAuthentication: false,
+          anyRoles: ["ops_manager"],
+        },
+        { isAuthenticated: true },
       ),
     ).toBe(true);
   });

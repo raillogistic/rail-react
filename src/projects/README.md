@@ -78,6 +78,130 @@ When registration succeeds, the command:
 - `--dry-run`: Preview file changes without writing files.
 - `--force`: Overwrite generated files and conflicting route constants.
 
+## Control page access with access rules
+
+Project manifests now support a structured `access` object on routes,
+navigation groups, and navigation entries. Use it when one page or one section
+of the app must only be visible to users with specific roles or permissions.
+The existing `requiredPermission` field still works for simple cases and is
+merged as an extra `allPermissions` check.
+
+The `register` command still writes only `requiredPermission` when you use
+`--permission`. After generation, edit the manifest manually when you need
+role checks, multiple permissions, or group-level access rules.
+
+Add `access` in the place that matches the scope you want:
+
+- Route `access`: restrict one page.
+- Navigation group `access`: restrict every page referenced by the group.
+- Navigation entry `access`: restrict one menu item and its child pages.
+
+Use these fields inside `access`:
+
+- `requireAuthentication`: Set to `false` if the rule can apply to anonymous
+  users.
+- `anyPermissions`: Match when the user has at least one listed permission.
+- `allPermissions`: Match when the user has every listed permission.
+- `anyRoles`: Match when the user has at least one listed role.
+- `allRoles`: Match when the user has every listed role.
+
+This example shows the three supported manifest scopes in one project:
+
+```tsx
+routes: [
+  protectedRoute("operations", {
+    id: "operations.orders.list",
+    path: OPERATIONS_ROUTES.ORDERS_LIST,
+    title: "Orders",
+    access: {
+      anyRoles: ["ops_manager", "ops_agent"],
+    },
+    element: <OrdersListPage />,
+  }),
+  protectedRoute("operations", {
+    id: "operations.shipments.detail",
+    path: OPERATIONS_ROUTES.SHIPMENT_DETAIL,
+    title: "Shipment detail",
+    requiredPermission: "operations.view_shipment",
+    access: {
+      allRoles: ["ops_manager"],
+    },
+    element: <ShipmentDetailPage />,
+  }),
+],
+navigation: [
+  navGroup("operations", {
+    id: "operations-control",
+    label: "Operations",
+    access: {
+      anyRoles: ["ops_manager"],
+    },
+    entries: [
+      {
+        id: "orders",
+        title: "Orders",
+        path: OPERATIONS_ROUTES.ORDERS_LIST,
+        guard: "protected",
+        routeId: "operations.orders.list",
+      },
+      {
+        id: "shipments",
+        title: "Shipments",
+        path: OPERATIONS_ROUTES.SHIPMENTS_LIST,
+        guard: "protected",
+        access: {
+          allPermissions: ["operations.view_shipment"],
+        },
+        children: [
+          {
+            id: "shipment-detail",
+            title: "Shipment detail",
+            path: OPERATIONS_ROUTES.SHIPMENT_DETAIL,
+            guard: "protected",
+            routeId: "operations.shipments.detail",
+            hidden: true,
+          },
+        ],
+      },
+    ],
+  }),
+],
+```
+
+If you use the updated `rail-django` backend, `rail-react` also fetches
+`frontendRouteAccess` metadata and combines those rules with the inline
+manifest rules. Inline and backend rules both must pass before a page is shown
+in navigation or rendered after a direct URL hit.
+
+Add backend-managed rules in `meta.yaml` like this:
+
+```yaml
+frontend_route_access:
+  - targetType: navigation-group
+    target: operations-control
+    anyRoles:
+      - ops_manager
+  - targetType: route
+    target: /operations/orders
+    allPermissions:
+      - operations.view_orders
+  - targetType: navigation-entry
+    target: shipments
+    allPermissions:
+      - operations.view_shipment
+```
+
+Use these backend targets:
+
+- `project`: every route inside one project manifest.
+- `route`: one route id or route path.
+- `navigation-group`: every route reachable from one navigation group id.
+- `navigation-entry`: one navigation entry id and its child routes.
+
+After you edit access rules, run `npm run check:manifests`. If you also use
+backend-managed rules, verify the matching `frontend_route_access` entries in
+`rail-django` before you test the final role matrix.
+
 ## Use `unregister` to remove a model from an existing project
 
 Use `unregister` to remove routes, sidebar navigation, and generated model page

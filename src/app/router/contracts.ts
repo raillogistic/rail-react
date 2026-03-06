@@ -1,4 +1,5 @@
 import type { ComponentType, ReactNode } from "react";
+import type { RouteAccessRequirement } from "@/shared/routing/access";
 
 export type RouteGuard = "public" | "protected";
 
@@ -8,6 +9,7 @@ export interface AppRouteConfig {
   guard: RouteGuard;
   projectId: string;
   requiredPermission?: string;
+  access?: RouteAccessRequirement;
   title?: string;
   description?: string;
   hidden?: boolean;
@@ -21,6 +23,7 @@ export interface NavigationEntry {
   path: string;
   guard: RouteGuard;
   requiredPermission?: string;
+  access?: RouteAccessRequirement;
   hidden?: boolean;
   description?: string;
   icon?: ComponentType<{ className?: string }>;
@@ -33,6 +36,7 @@ export interface NavigationGroup {
   label: string;
   projectId: string;
   order?: number;
+  access?: RouteAccessRequirement;
   entries: NavigationEntry[];
 }
 

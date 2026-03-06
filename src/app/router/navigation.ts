@@ -16,7 +16,7 @@ export type {
   NavigationSection,
 } from "@/shared/routing/navigation";
 
-const toNavigationSections = (
+export const toNavigationSections = (
   groups: NavigationGroup[],
 ): NavigationSection[] => {
   const routeById = new Map(getAllRoutes().map((route) => [route.id, route]));
@@ -66,8 +66,10 @@ export const NAVIGATION_LINKS: NavigationSection[] = toNavigationSections(
 
 export const DEFAULT_APP_ROUTE = getDefaultRoute();
 
-export const flattenNavigationPages = (): NavigationPage[] =>
-  NAVIGATION_LINKS.flatMap((section) =>
+export const flattenNavigationPages = (
+  navigationLinks: NavigationSection[] = NAVIGATION_LINKS,
+): NavigationPage[] =>
+  navigationLinks.flatMap((section) =>
     section.items.flatMap((item) => [
       ...(item.component
         ? [
@@ -89,6 +91,7 @@ export const flattenNavigationPages = (): NavigationPage[] =>
 
 export const findNavigationByPath = (
   pathname: string,
+  navigationLinks: NavigationSection[] = NAVIGATION_LINKS,
 ):
   | {
       section: NavigationSection;
@@ -98,7 +101,7 @@ export const findNavigationByPath = (
   | undefined => {
   const normalized = normalizePath(pathname);
 
-  for (const section of NAVIGATION_LINKS) {
+  for (const section of navigationLinks) {
     for (const item of section.items) {
       if (normalizePath(item.path) === normalized && item.component) {
         return { section, item, page: { ...item, component: item.component } };

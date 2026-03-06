@@ -1,5 +1,24 @@
 import { gql } from "@apollo/client";
 
+export const FRONTEND_ROUTE_ACCESS_QUERY = gql`
+  query FrontendRouteAccess {
+    frontendRouteAccess {
+      version
+      rules {
+        targetType
+        target
+        requireAuthentication
+        anyPermissions
+        allPermissions
+        anyRoles
+        allRoles
+        allowed
+        denialReason
+      }
+    }
+  }
+`;
+
 export const FILTER_METADATA_QUERY = gql`
   query FilterMetadata($app: String!, $model: String!) {
     modelSchema(app: $app, model: $model) {

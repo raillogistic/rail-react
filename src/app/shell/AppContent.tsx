@@ -1,11 +1,10 @@
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import {
- DEFAULT_APP_ROUTE,
- NAVIGATION_LINKS,
  findNavigationByPath,
- flattenNavigationPages,
 } from "@/app/router/navigation";
 import { ProtectedRoute } from "@/app/router/ProtectedRoute";
+import { useRouteAccess } from "@/app/router/routeAccess";
+import { getAllRoutes } from "@/app/router/manifestRegistry";
 import { SiteHeader } from "@/widgets/components/site-header";
 import { SidebarInset } from "@/shared/ui/kit/sidebar";
 
@@ -13,27 +12,41 @@ import { SidebarInset } from "@/shared/ui/kit/sidebar";
  * Maps navigation definitions into <Route /> elements.
  */
 export const AppRoutes = () => {
- const pages = flattenNavigationPages();
+ const { defaultRoute, isLoading } = useRouteAccess();
+ const routes = getAllRoutes().filter((route) => !!route.element);
+
+ if (isLoading) {
+ return (
+ <div className="flex min-h-[320px] items-center justify-center rounded-md border border-border/40 bg-card/40">
+ <div className="flex flex-col items-center gap-3">
+ <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary" />
+ <p className="text-sm text-muted-foreground">
+ Chargement des acces...
+ </p>
+ </div>
+ </div>
+ );
+ }
 
  return (
  <Routes>
- <Route path="/" element={<Navigate to={DEFAULT_APP_ROUTE} replace />} />
- {pages.map((page) => (
+ <Route path="/" element={<Navigate to={defaultRoute} replace />} />
+ {routes.map((route) => (
  <Route
- key={page.path}
- path={page.path}
+ key={route.id}
+ path={route.path}
  element={
- page.requiresAuth ? (
- <ProtectedRoute requiredPermission={page.requiredPermission}>
- {page.component}
+ route.guard === "protected" ? (
+ <ProtectedRoute route={route}>
+ {route.element}
  </ProtectedRoute>
  ) : (
- page.component
+ route.element
  )
  }
  />
  ))}
- <Route path="*" element={<Navigate to={DEFAULT_APP_ROUTE} replace />} />
+ <Route path="*" element={<Navigate to={defaultRoute} replace />} />
  </Routes>
  );
 };
@@ -43,7 +56,8 @@ export const AppRoutes = () => {
  */
 export default function AppContent() {
  const location = useLocation();
- const currentNavigation = findNavigationByPath(location.pathname);
+ const { defaultRoute, navigationLinks } = useRouteAccess();
+ const currentNavigation = findNavigationByPath(location.pathname, navigationLinks);
 
  return (
  <SidebarInset className="bg-background md:!m-0 md:!ml-0 md:! md:!shadow-none">
@@ -51,8 +65,8 @@ export default function AppContent() {
  title={currentNavigation?.page.title ?? "Navigation"}
  description={currentNavigation?.page.description}
  sectionLabel={currentNavigation?.section.label}
- navigationLinks={NAVIGATION_LINKS}
- defaultPath={DEFAULT_APP_ROUTE}
+ navigationLinks={navigationLinks}
+ defaultPath={defaultRoute}
  />
  <div className="flex min-w-0 flex-1 flex-col">
  <div className="@container/main flex min-w-0 flex-1 flex-col gap-3">

@@ -2,6 +2,7 @@ import React from "react";
 import { Routes, Route } from "react-router-dom";
 import { ProtectedRoute } from "./ProtectedRoute";
 import { PublicRoute } from "./PublicRoute";
+import { RouteAccessProvider } from "./routeAccess";
 import { MainApp } from "@/app/shell/MainApp";
 import { getAllRoutes } from "./manifestRegistry";
 
@@ -26,7 +27,9 @@ export const RouteBuilder: React.FC = () => {
         path="/*"
         element={
           <ProtectedRoute>
-            <MainApp />
+            <RouteAccessProvider>
+              <MainApp />
+            </RouteAccessProvider>
           </ProtectedRoute>
         }
       />
