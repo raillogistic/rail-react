@@ -10,7 +10,7 @@ mutation IntegrationLogin($username: String!, $password: String!) {
 
 export const INTEGRATION_VIEWER_QUERY = `
 query IntegrationViewer {
-  viewer {
+  viewer: me {
     id
     username
   }

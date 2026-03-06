@@ -217,6 +217,7 @@ export function TemplateDownloadCard({ template, loading }: TemplateDownloadCard
           ...(authorizationHeader ? { Authorization: authorizationHeader } : {}),
           ...getSecureHeaders(),
         },
+        credentials: "include",
       });
 
       if (!response.ok) {

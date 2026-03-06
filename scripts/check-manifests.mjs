@@ -14,6 +14,20 @@ const routeConstants = Object.fromEntries(
   routeConstantEntries.map((match) => [match[1], match[2]]),
 );
 
+const parseRouteConstantsFromFile = (filePath) => {
+  if (!fs.existsSync(filePath)) {
+    return {};
+  }
+
+  const entries = [
+    ...fs
+      .readFileSync(filePath, "utf8")
+      .matchAll(/([A-Z0-9_]+):\s*["'`]([^"'`]+)["'`]/g),
+  ];
+
+  return Object.fromEntries(entries.map((match) => [match[1], match[2]]));
+};
+
 const manifestFiles = fs
   .readdirSync(projectsRoot, { withFileTypes: true })
   .filter((entry) => entry.isDirectory())
@@ -28,7 +42,7 @@ if (manifestFiles.length === 0) {
 const allRoutePaths = new Map();
 const errors = [];
 
-const resolvePathExpression = (rawExpression) => {
+const resolvePathExpression = (rawExpression, scopedRouteConstants = routeConstants) => {
   const expression = rawExpression.trim();
 
   const literalMatch = expression.match(/^["'`]([^"'`]+)["'`]$/);
@@ -38,7 +52,7 @@ const resolvePathExpression = (rawExpression) => {
 
   const routeConstantMatch = expression.match(/^ROUTES\.([A-Z0-9_]+)$/);
   if (routeConstantMatch) {
-    return routeConstants[routeConstantMatch[1]] ?? null;
+    return scopedRouteConstants[routeConstantMatch[1]] ?? null;
   }
 
   return null;
@@ -58,13 +72,25 @@ const readSection = (source, startPattern, endPattern) => {
   return rest.slice(0, endMatch.index);
 };
 
+const stripComments = (source) =>
+  source
+    .replace(/\/\*[\s\S]*?\*\//g, "")
+    .replace(/^\s*\/\/.*$/gm, "");
+
 for (const manifestFile of manifestFiles) {
-  const source = fs.readFileSync(manifestFile, "utf8");
+  const source = stripComments(fs.readFileSync(manifestFile, "utf8"));
   const projectName = path.basename(path.dirname(manifestFile));
+  const projectRouteConstants = parseRouteConstantsFromFile(
+    path.join(path.dirname(manifestFile), "config", "routes.ts"),
+  );
+  const scopedRouteConstants = {
+    ...routeConstants,
+    ...projectRouteConstants,
+  };
 
   const defaultRouteExpressionMatch = source.match(/defaultRoute:\s*([^,\n]+)/);
   const defaultRoute = defaultRouteExpressionMatch
-    ? resolvePathExpression(defaultRouteExpressionMatch[1])
+    ? resolvePathExpression(defaultRouteExpressionMatch[1], scopedRouteConstants)
     : null;
   if (!defaultRoute) {
     errors.push(`${projectName}: missing defaultRoute.`);
@@ -77,10 +103,10 @@ for (const manifestFile of manifestFiles) {
     (match) => match[1],
   );
   const routePaths = [...routesBlock.matchAll(/path:\s*([^,\n]+)/g)]
-    .map((match) => resolvePathExpression(match[1]))
+    .map((match) => resolvePathExpression(match[1], scopedRouteConstants))
     .filter((routePath) => !!routePath);
   const navPaths = [...navigationBlock.matchAll(/path:\s*([^,\n]+)/g)]
-    .map((match) => resolvePathExpression(match[1]))
+    .map((match) => resolvePathExpression(match[1], scopedRouteConstants))
     .filter((routePath) => !!routePath)
     .filter((routePath) => routePath !== "/");
 

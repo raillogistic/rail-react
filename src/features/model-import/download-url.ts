@@ -1,5 +1,6 @@
 const ABSOLUTE_URL_PATTERN = /^[a-zA-Z][a-zA-Z\d+\-.]*:/;
-const LEGACY_TEMPLATE_PATH_PATTERN = /^\/api\/excel\/[^/]+\/[^/]+\/template\/?$/i;
+const LEGACY_TEMPLATE_PATH_PATTERN =
+  /^\/api(?:\/v1)?\/excel\/[^/]+\/[^/]+\/template\/?$/i;
 const IMPORT_TEMPLATE_PATH_PATTERN = /^\/api\/v1\/import\/templates\/[^/]+\/[^/]+\/?$/i;
 import { getRuntimeBackendConfig } from "@/shared/config/backend-endpoint";
 

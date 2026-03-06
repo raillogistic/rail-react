@@ -60,8 +60,9 @@ describe('AuditService', () => {
     // Allow promises to resolve
     await new Promise(resolve => setTimeout(resolve, 0));
 
-    expect(fetchMock).toHaveBeenCalledWith('/api/audit-log/', expect.objectContaining({
+    expect(fetchMock).toHaveBeenCalledWith(expect.stringContaining('/api/v1/audit/'), expect.objectContaining({
       method: 'POST',
+      credentials: 'include',
       body: expect.stringContaining('"event":"auth:login_success"'),
     }));
   });

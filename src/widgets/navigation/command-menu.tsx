@@ -27,7 +27,6 @@ import { Button } from "@/shared/ui/kit/button";
 import { cn } from "@/shared/utils";
 import { Badge } from "@/shared/ui/kit/badge";
 import type { NavigationSection } from "@/shared/routing/navigation";
-import { ROUTES as DeshboardRoute } from "@/projects/dashboard/config/routes";
 import { ROUTES } from "@/shared/routing/routes";
 
 type IconComponent = React.ComponentType<{ className?: string }>;
@@ -95,7 +94,7 @@ function buildCommandLinks(
  */
 export function CommandMenu({
   navigationLinks = [],
-  defaultPath = DeshboardRoute.OVERVIEW,
+  defaultPath = ROUTES.LOGIN,
 }: CommandMenuProps = {}) {
   const [open, setOpen] = React.useState(false);
   const navigate = useNavigate();

@@ -80,7 +80,9 @@ const parsePositiveIntegerOption = (value, flagName) => {
 
   const number = Number(value);
   if (!Number.isInteger(number) || number < 1) {
-    throw new Error(`Invalid ${flagName} value "${value}". Use an integer >= 1.`);
+    throw new Error(
+      `Invalid ${flagName} value "${value}". Use an integer >= 1.`,
+    );
   }
 
   return number;
@@ -99,7 +101,10 @@ const capitalizeWord = (value) =>
 
 const toPascalCase = (value) => splitWords(value).map(capitalizeWord).join("");
 
-const toKebabCase = (value) => splitWords(value).map((word) => word.toLowerCase()).join("-");
+const toKebabCase = (value) =>
+  splitWords(value)
+    .map((word) => word.toLowerCase())
+    .join("-");
 
 const toConstantCase = (value) =>
   splitWords(value)
@@ -380,7 +385,12 @@ const listTopLevelObjectStarts = (source, arrayOpenIndex, arrayCloseIndex) => {
       continue;
     }
 
-    if (char === "}" && bracketDepth === 0 && parenDepth === 0 && braceDepth > 0) {
+    if (
+      char === "}" &&
+      bracketDepth === 0 &&
+      parenDepth === 0 &&
+      braceDepth > 0
+    ) {
       braceDepth -= 1;
     }
   }
@@ -507,7 +517,8 @@ const upsertRouteConstants = (source, routeEntries, force) => {
   return { source: next, added, replaced, unchanged };
 };
 
-const quote = (value) => String(value).replace(/\\/g, "\\\\").replace(/"/g, '\\"');
+const quote = (value) =>
+  String(value).replace(/\\/g, "\\\\").replace(/"/g, '\\"');
 
 const buildListPageContent = ({
   listComponentName,
@@ -589,12 +600,8 @@ export function ${formComponentName}() {
 
   return (
     <section className="space-y-4">
-      <header>
-        <h1 className="text-2xl font-semibold tracking-tight">
-          {isUpdate ? "Edit ${quote(formTitle)}" : "Create ${quote(formTitle)}"}
-        </h1>
-      </header>
       <ModelForm
+        title={isUpdate ? "Modifier ${quote(formTitle)}" : "Créer ${quote(formTitle)}"}
         app="${quote(appName)}"
         model="${quote(modelName)}"
         mode={isUpdate ? "UPDATE" : "CREATE"}
@@ -627,26 +634,27 @@ const buildLazyBlock = ({
   listComponentName,
   formComponentName,
   detailComponentName,
-}) => [
-  `const ${listComponentName} = lazy(() =>`,
-  `  import("./pages/${modelSlug}/${listComponentName}").then((module) => ({`,
-  `    default: module.${listComponentName},`,
-  `  })),`,
-  `);`,
-  "",
-  `const ${formComponentName} = lazy(() =>`,
-  `  import("./pages/${modelSlug}/${formComponentName}").then((module) => ({`,
-  `    default: module.${formComponentName},`,
-  `  })),`,
-  `);`,
-  "",
-  `const ${detailComponentName} = lazy(() =>`,
-  `  import("./pages/${modelSlug}/${detailComponentName}").then((module) => ({`,
-  `    default: module.${detailComponentName},`,
-  `  })),`,
-  `);`,
-  "",
-].join("\n");
+}) =>
+  [
+    `const ${listComponentName} = lazy(() =>`,
+    `  import("./pages/${modelSlug}/${listComponentName}").then((module) => ({`,
+    `    default: module.${listComponentName},`,
+    `  })),`,
+    `);`,
+    "",
+    `const ${formComponentName} = lazy(() =>`,
+    `  import("./pages/${modelSlug}/${formComponentName}").then((module) => ({`,
+    `    default: module.${formComponentName},`,
+    `  })),`,
+    `);`,
+    "",
+    `const ${detailComponentName} = lazy(() =>`,
+    `  import("./pages/${modelSlug}/${detailComponentName}").then((module) => ({`,
+    `    default: module.${detailComponentName},`,
+    `  })),`,
+    `);`,
+    "",
+  ].join("\n");
 
 const buildRoutesBlock = ({
   projectId,
@@ -798,11 +806,19 @@ const updateManifestSource = (source, config) => {
   result.insertedLazy = true;
 
   const routesBounds = locateArrayByKey(next, "routes:");
-  next = insertBeforeIndex(next, routesBounds.closeIndex, buildRoutesBlock(config));
+  next = insertBeforeIndex(
+    next,
+    routesBounds.closeIndex,
+    buildRoutesBlock(config),
+  );
   result.insertedRoutes = true;
 
   const navigationBounds = locateArrayByKey(next, "navigation:");
-  const entriesBounds = locateArrayByKey(next, "entries:", navigationBounds.openIndex);
+  const entriesBounds = locateArrayByKey(
+    next,
+    "entries:",
+    navigationBounds.openIndex,
+  );
   let navigationInsertIndex = entriesBounds.closeIndex;
 
   if (config.navigationOrder !== null) {
@@ -844,7 +860,9 @@ const run = async () => {
     .trim()
     .toLowerCase();
   if (type !== "pages" && type !== "inline") {
-    throw new Error(`Invalid value for --type: "${type}". Use "pages" or "inline".`);
+    throw new Error(
+      `Invalid value for --type: "${type}". Use "pages" or "inline".`,
+    );
   }
 
   const resolvedModel = resolveModelReference(options.model, options.app);
@@ -869,17 +887,26 @@ const run = async () => {
     throw new Error("Invalid model slug. Use --slug to override.");
   }
   if (!/^[A-Za-z][A-Za-z0-9]*$/.test(iconName)) {
-    throw new Error(`Invalid icon name "${iconName}". Use a Lucide export like "FileText".`);
+    throw new Error(
+      `Invalid icon name "${iconName}". Use a Lucide export like "FileText".`,
+    );
   }
 
   const routeBase =
     normalizeRouteBase(options["route-base"]) || `/${projectId}/${modelSlug}`;
-  const listTitle = String(options.title ?? toTitleCase(resolvedModel.modelName)).trim();
-  const formTitle = String(options["form-title"] ?? toTitleCase(resolvedModel.modelName)).trim();
-  const description = String(
-    options.description ?? `Manage ${toTitleCase(resolvedModel.modelName)} records`,
+  const listTitle = String(
+    options.title ?? toTitleCase(resolvedModel.modelName),
   ).trim();
-  const permission = options.permission ? String(options.permission).trim() : "";
+  const formTitle = String(
+    options["form-title"] ?? toTitleCase(resolvedModel.modelName),
+  ).trim();
+  const description = String(
+    options.description ??
+      `Manage ${toTitleCase(resolvedModel.modelName)} records`,
+  ).trim();
+  const permission = options.permission
+    ? String(options.permission).trim()
+    : "";
   const navigationOrder = parsePositiveIntegerOption(options.order, "--order");
   const force = Boolean(options.force);
   const dryRun = Boolean(options["dry-run"]);
@@ -973,11 +1000,19 @@ const run = async () => {
   const fileWrites = [];
 
   if (updatedRoutes.source !== routesSource) {
-    fileWrites.push({ path: routesPath, content: updatedRoutes.source, action: "update" });
+    fileWrites.push({
+      path: routesPath,
+      content: updatedRoutes.source,
+      action: "update",
+    });
   }
 
   if (updatedManifest.source !== manifestSource) {
-    fileWrites.push({ path: manifestPath, content: updatedManifest.source, action: "update" });
+    fileWrites.push({
+      path: manifestPath,
+      content: updatedManifest.source,
+      action: "update",
+    });
   }
 
   for (const pageFile of generatedPages) {
@@ -1005,7 +1040,9 @@ const run = async () => {
   if (dryRun) {
     console.log("Dry run only. Planned changes:");
     for (const entry of fileWrites) {
-      console.log(`- ${entry.action.toUpperCase()}: ${path.relative(root, entry.path)}`);
+      console.log(
+        `- ${entry.action.toUpperCase()}: ${path.relative(root, entry.path)}`,
+      );
     }
     return;
   }
@@ -1016,8 +1053,12 @@ const run = async () => {
     await writeFile(entry.path, entry.content, "utf8");
   }
 
-  console.log(`Registered ${appName}.${modelPascal} in project "${projectId}".`);
-  console.log(`Generated pages under src/projects/${projectId}/pages/${modelSlug}.`);
+  console.log(
+    `Registered ${appName}.${modelPascal} in project "${projectId}".`,
+  );
+  console.log(
+    `Generated pages under src/projects/${projectId}/pages/${modelSlug}.`,
+  );
   console.log("Run `npm run check:manifests` to validate route wiring.");
 };
 

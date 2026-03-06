@@ -12,6 +12,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Wifi, WifiOff, X, RefreshCw } from 'lucide-react';
 import { Alert, AlertTitle, AlertDescription } from '@/shared/ui/kit/alert';
 import { Button } from '@/shared/ui/kit/button';
+import { testServerConnectivity } from '@/shared/utils/legacy-utils/offline-detector';
 
 interface OfflineAlertProps {
   isVisible: boolean;
@@ -148,20 +149,15 @@ export function useOfflineAlert() {
   }, []);
 
   const retryConnection = useCallback(async () => {
-    // Simple connectivity test
     try {
-      const response = await fetch('/api/health', { 
-        method: 'HEAD',
-        cache: 'no-cache',
-        signal: AbortSignal.timeout(5000)
-      });
-      
-      if (response.ok) {
+      const isReachable = await testServerConnectivity();
+
+      if (isReachable) {
         hideOfflineAlert();
         return true;
-      } else {
-        throw new Error('Server not responding');
       }
+
+      throw new Error('Server not responding');
     } catch (error) {
       console.error('Retry connection failed:', error);
       return false;

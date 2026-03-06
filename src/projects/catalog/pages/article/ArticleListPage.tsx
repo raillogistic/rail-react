@@ -1,7 +1,6 @@
 import { CategorieArticleListPage } from "@/projects/catalog/pages/categorie-article/CategorieArticleListPage";
 import { DynamicModelTable } from "@/widgets/model-table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/kit/tabs";
-import { ROUTES } from "@/projects/catalog/config/routes";
 
 export function ArticleListPage() {
   return (
@@ -29,21 +28,21 @@ function ArticleTable() {
     <DynamicModelTable
       app="catalog"
       model="Article"
-      create={{
-        type: "link",
-        hrefTemplate: ROUTES.ARTICLE_CREATE,
-      }}
-      update={{
-        type: "link",
-        hrefTemplate: ROUTES.ARTICLE_EDIT,
-      }}
+      // create={{
+      //   type: "link",
+      //   hrefTemplate: ROUTES.ARTICLE_CREATE,
+      // }}
+      // update={{
+      //   type: "link",
+      //   hrefTemplate: ROUTES.ARTICLE_EDIT,
+      // }}
       // detail={{
       //   type: "link",
       //   hrefTemplate: ROUTES.ARTICLE_DETAIL,
       // }}
-      detail={{
-        type: "modal",
-      }}
+      // detail={{
+      //   type: "modal",
+      // }}
       baseTable={{
         tableConfig: {
           title: "Articles",

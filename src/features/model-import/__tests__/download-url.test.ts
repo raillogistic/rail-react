@@ -39,6 +39,16 @@ describe("import download url helpers", () => {
     expect(url).toContain("/api/v1/import/templates/store/product/?format=xlsx");
   });
 
+  it("rewrites versioned excel template endpoint to v1 import endpoint", () => {
+    const url = resolveModelImportTemplateDownloadUrl({
+      appLabel: "store",
+      modelName: "Product",
+      downloadUrl: "/api/v1/excel/store/product/template/",
+      format: "xlsx",
+    });
+    expect(url).toContain("/api/v1/import/templates/store/product/?format=xlsx");
+  });
+
   it("overrides format when backend url already targets import template endpoint", () => {
     const url = resolveModelImportTemplateDownloadUrl({
       appLabel: "store",

@@ -1,5 +1,10 @@
 import { EventBus } from '../core/EventBus';
 import type { AuthEventType } from '../types';
+import {
+  getAuthorizationHeader,
+  getSecureHeaders,
+} from '@/shared/api/auth/token-storage';
+import { getRuntimeBackendConfig } from '@/shared/config/backend-endpoint';
 
 const AUDIT_EVENTS: AuthEventType[] = [
   'auth:login_success',
@@ -12,6 +17,13 @@ const AUDIT_EVENTS: AuthEventType[] = [
   'auth:session_expired',
   'auth:security_violation'
 ];
+
+const AUDIT_ENDPOINT_PATH = '/api/v1/audit/';
+
+const getAuditEndpoint = (): string => {
+  const { backendUrl } = getRuntimeBackendConfig();
+  return new URL(AUDIT_ENDPOINT_PATH, `${backendUrl}/`).toString();
+};
 
 export class AuditService {
   private eventBus: EventBus;
@@ -52,12 +64,15 @@ export class AuditService {
 
   private async sendToBackend(entry: any): Promise<void> {
     try {
-      // Use the same base URL logic as the rest of the app if possible,
-      // or a specific audit endpoint.
-      // Assuming a relative path for now which will be proxied or handled by the same origin.
-      await fetch('/api/audit-log/', {
+      const authorizationHeader = getAuthorizationHeader();
+      await fetch(getAuditEndpoint(), {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(authorizationHeader ? { Authorization: authorizationHeader } : {}),
+          ...getSecureHeaders(),
+        },
+        credentials: 'include',
         body: JSON.stringify(entry)
       });
     } catch (e) {
