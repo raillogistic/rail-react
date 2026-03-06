@@ -36,14 +36,20 @@ export function NavMain({ navigationLinks }: NavMainProps) {
  const location = useLocation();
  const { state } = useSidebar();
  const isCollapsed = state === "collapsed";
- 
+
  const [expandedItems, setExpandedItems] = useState<Record<string, boolean>>({});
+
+ const matchesPath = (targetPath: string): boolean => {
+ if (location.pathname === targetPath) {
+ return true;
+ }
+
+ return location.pathname.startsWith(`${targetPath}/`);
+ };
 
  useEffect(() => {
  setExpandedItems((prev) => {
  let next = prev;
- const isExactPath = (targetPath: string): boolean =>
- location.pathname === targetPath;
 
  for (const section of navigationLinks) {
  for (const item of section.items) {
@@ -52,9 +58,9 @@ export function NavMain({ navigationLinks }: NavMainProps) {
  }
 
  const hasActiveChild = item.children.some((child) =>
- isExactPath(child.path)
+ matchesPath(child.path)
  );
- const isItemActive = isExactPath(item.path);
+ const isItemActive = matchesPath(item.path);
 
  if ((hasActiveChild || isItemActive) && !prev[item.id]) {
  next = { ...next, [item.id]: true };
@@ -100,9 +106,9 @@ export function NavMain({ navigationLinks }: NavMainProps) {
  );
  const hasChildren = Boolean(visibleChildren?.length);
  const isItemActive =
- location.pathname === item.path ||
+ matchesPath(item.path) ||
  visibleChildren?.some((child) =>
- location.pathname === child.path
+ matchesPath(child.path)
  );
  const isOpen = hasChildren && Boolean(expandedItems[item.id]);
 
@@ -208,7 +214,7 @@ export function NavMain({ navigationLinks }: NavMainProps) {
  <SidebarMenuSub className="mt-1 ml-4 gap-1 border-l border-primary/10 pl-2">
  {visibleChildren?.map((child) => {
  const isChildActive =
- location.pathname === child.path;
+ matchesPath(child.path);
  return (
  <SidebarMenuSubItem
  key={child.path}
