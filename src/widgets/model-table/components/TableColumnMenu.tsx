@@ -56,7 +56,12 @@ export function TableColumnMenu({
 }: TableColumnMenuProps) {
   const triggerTitle = typeof title === "string" ? title : "Options de colonne";
 
-  const { metadata, ensureCapabilitiesLoaded } = useMetadata();
+  const {
+    metadata,
+    ensureCapabilitiesLoaded,
+    capabilitiesLoaded,
+    capabilitiesLoading,
+  } = useMetadata();
   const {
     columnVisibility,
     setColumnVisibility,
@@ -72,14 +77,22 @@ export function TableColumnMenu({
   const { advancedFilters, filterVariables, setAdvancedFilters } =
     useTableFilters();
   const metadataFilters = metadata?.filters ?? [];
+  const columnRoot = useMemo(() => {
+    const [root] = columnId.replace(/__/g, ".").split(".").filter(Boolean);
+    return root || columnId;
+  }, [columnId]);
 
   const resolvedField = useMemo(() => {
     if (field) return field;
     if (!metadata) return undefined;
     return metadata.fields.find(
-      (f) => f.name === columnId || f.fieldName === columnId,
+      (f) =>
+        f.name === columnId ||
+        f.fieldName === columnId ||
+        f.name === columnRoot ||
+        f.fieldName === columnRoot,
     );
-  }, [field, metadata, columnId]);
+  }, [field, metadata, columnId, columnRoot]);
 
   const normalizeSortKey = (value: string) =>
     value.replace(/^-/, "").replace(/\./g, "__");
@@ -159,15 +172,29 @@ export function TableColumnMenu({
 
   const filterSchema = useMemo(() => {
     if (!metadata) return null;
+    const candidates = new Set<string>([
+      columnId,
+      columnId.replace(/\./g, "__"),
+      columnId.replace(/__/g, "."),
+      columnRoot,
+      columnRoot.replace(/\./g, "__"),
+      columnRoot.replace(/__/g, "."),
+    ]);
+    if (resolvedField?.name) {
+      candidates.add(resolvedField.name);
+      candidates.add(resolvedField.name.replace(/\./g, "__"));
+      candidates.add(resolvedField.name.replace(/__/g, "."));
+    }
+    if (resolvedField?.fieldName) {
+      candidates.add(resolvedField.fieldName);
+      candidates.add(resolvedField.fieldName.replace(/\./g, "__"));
+      candidates.add(resolvedField.fieldName.replace(/__/g, "."));
+    }
 
     return metadataFilters.find(
-      (f) =>
-        f.fieldName === resolvedField?.fieldName ||
-        f.name === resolvedField?.name ||
-        f.fieldName === columnId ||
-        f.name === columnId,
+      (f) => candidates.has(f.fieldName) || candidates.has(f.name),
     );
-  }, [metadata, metadataFilters, resolvedField, columnId]);
+  }, [metadata, metadataFilters, resolvedField, columnId, columnRoot]);
 
   const handleOpenFilter = () => {
     setActiveColumnFilter(columnId);
@@ -211,10 +238,10 @@ export function TableColumnMenu({
   const handleMenuOpenChange = useCallback(
     (nextOpen: boolean) => {
       if (!nextOpen) return;
-      if (metadata?.filters) return;
+      if (capabilitiesLoaded || capabilitiesLoading) return;
       void ensureCapabilitiesLoaded();
     },
-    [ensureCapabilitiesLoaded, metadata?.filters],
+    [capabilitiesLoaded, capabilitiesLoading, ensureCapabilitiesLoaded],
   );
 
   return (

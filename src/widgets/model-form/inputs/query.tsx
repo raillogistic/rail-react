@@ -792,8 +792,8 @@ function resolveCreatedOption(
           value,
           label:
             (createdRecord?.desc as string | undefined) ??
-            (createdRecord?.name as string | undefined) ??
             (createdRecord?.label as string | undefined) ??
+            (createdRecord?.name as string | undefined) ??
             String(value),
           description:
             createdRecord?.description !== undefined
@@ -975,7 +975,9 @@ function buildGraphQLRecipe(config?: QueryChoiceGraphQLConfig): GraphQLRecipe {
       config.labelField ?? "desc",
       config.descriptionField,
       ...(config.extraFields ?? []),
-    ].filter(Boolean) as string[],
+    ]
+      .filter(Boolean)
+      .map((selection) => normalizeSelectionField(selection as string)) as string[],
   );
   if (selections.length === 0) {
     selections.push("id: pk");
@@ -1028,6 +1030,24 @@ ${selections.map((line) => ` ${line}`).join("\n")}
   };
 }
 
+function normalizeSelectionField(selection: string): string {
+  const trimmed = selection.trim();
+  if (!trimmed) return trimmed;
+  if (trimmed === "name") return "desc";
+
+  const aliasNameMatch = trimmed.match(
+    /^([_A-Za-z][_0-9A-Za-z]*)\s*:\s*name(\s|$)/,
+  );
+  if (aliasNameMatch) {
+    return trimmed.replace(
+      /^([_A-Za-z][_0-9A-Za-z]*)\s*:\s*name(\s|$)/,
+      "$1: desc$2",
+    );
+  }
+
+  return trimmed;
+}
+
 function ensureDocumentNode(input: DocumentNode | string): DocumentNode {
   return typeof input === "string" ? parse(input) : input;
 }
@@ -1064,8 +1084,8 @@ function defaultMapRecord(
   const label =
     getValue(record, labelKey) ??
     getValue(record, "label") ??
-    getValue(record, "name") ??
     getValue(record, "desc") ??
+    getValue(record, "name") ??
     String(value);
   const option: ChoiceOption = {
     value,
