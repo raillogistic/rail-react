@@ -15,4 +15,5 @@ export const ROUTES = {
   DECHARGE_LIGNE_CREATE: "/operations/decharge-ligne/create",
   DECHARGE_LIGNE_EDIT: "/operations/decharge-ligne/:id/edit",
   DECHARGE_LIGNE_DETAIL: "/operations/decharge-ligne/:id",
+  RESTITUTION_LIGNE_LIST: "/operations/restitution-ligne",
 } as const;

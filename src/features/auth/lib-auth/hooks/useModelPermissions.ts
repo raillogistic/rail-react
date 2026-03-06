@@ -33,7 +33,7 @@ export type UseModelPermissionsOptions = {
 
 export function useModelPermissions(
   modelName: string,
-  options?: UseModelPermissionsOptions
+  options?: UseModelPermissionsOptions,
 ): ModelPermissions {
   const shouldSkip = options?.skip ?? false;
 
@@ -66,7 +66,7 @@ export function useModelPermissions(
         can_delete: boolean;
         can_list: boolean;
         can_history: boolean;
-      }) => p.modelName.toLowerCase() === modelName.toLowerCase()
+      }) => p.modelName.toLowerCase() === modelName.toLowerCase(),
     );
 
     if (!perm) {

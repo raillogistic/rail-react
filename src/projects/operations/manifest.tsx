@@ -20,7 +20,7 @@ const withRouteSuspense = (component: ReactNode) => (
 
 const DechargeListPage = lazy(() =>
   import("./pages/decharge/DechargeListPage").then((module) => ({
-    default: module.DechargeListPage,
+    default: module.DechargeListPageTabs,
   })),
 );
 
@@ -44,7 +44,7 @@ const DechargeDetailPage = lazy(() =>
 
 const RestitutionListPage = lazy(() =>
   import("./pages/restitution/RestitutionListPage").then((module) => ({
-    default: module.RestitutionListPage,
+    default: module.RestitutionListPageTabs,
   })),
 );
 
@@ -82,6 +82,13 @@ const DechargeLigneDetailPage = lazy(() =>
   import("./pages/decharge-ligne/DechargeLigneDetailPage").then((module) => ({
     default: module.DechargeLigneDetailPage,
   })),
+);
+const RestitutionLigneListPage = lazy(() =>
+  import("./pages/restitution-ligne/RestitutionLigneListPage").then(
+    (module) => ({
+      default: module.RestitutionLigneListPage,
+    }),
+  ),
 );
 export const OPERATIONS_MANIFEST: AppManifest = defineProjectManifest({
   projectId: "operations",
@@ -152,11 +159,12 @@ export const OPERATIONS_MANIFEST: AppManifest = defineProjectManifest({
       icon: FileText,
       element: withRouteSuspense(<RestitutionDetailPage />),
     }),
-  
+
     protectedRoute("operations", {
       id: "operations:decharge-ligne:list",
       path: ROUTES.DECHARGE_LIGNE_LIST,
       title: "Détail des décharges",
+      hidden: true,
       description: "Manage Decharge Ligne records",
       icon: FileText,
       element: withRouteSuspense(<DechargeLigneListPage />),
@@ -185,7 +193,17 @@ export const OPERATIONS_MANIFEST: AppManifest = defineProjectManifest({
       icon: FileText,
       element: withRouteSuspense(<DechargeLigneDetailPage />),
     }),
-],
+
+    protectedRoute("operations", {
+      id: "operations:restitution-ligne:list",
+      path: ROUTES.RESTITUTION_LIGNE_LIST,
+      title: "Détail des réstitution",
+      description: "Manage Restitution Ligne records",
+      icon: FileText,
+      element: withRouteSuspense(<RestitutionLigneListPage />),
+      hidden: true,
+    }),
+  ],
   navigation: [
     navGroup("operations", {
       id: "operations",
@@ -227,12 +245,13 @@ export const OPERATIONS_MANIFEST: AppManifest = defineProjectManifest({
             },
           ],
         },
-        
+
         {
           id: "operations:decharge-ligne:list",
           routeId: "operations:decharge-ligne:list",
           title: "Détail des décharges",
           path: ROUTES.DECHARGE_LIGNE_LIST,
+          hidden: true,
           guard: "protected",
           icon: FileText,
           description: "Manage Decharge Ligne records",
@@ -263,7 +282,7 @@ export const OPERATIONS_MANIFEST: AppManifest = defineProjectManifest({
             },
           ],
         },
-{
+        {
           id: "operations:restitution:list",
           routeId: "operations:restitution:list",
           title: "Restitutions",
@@ -297,6 +316,17 @@ export const OPERATIONS_MANIFEST: AppManifest = defineProjectManifest({
               hidden: true,
             },
           ],
+        },
+
+        {
+          id: "operations:restitution-ligne:list",
+          routeId: "operations:restitution-ligne:list",
+          title: "Détail des réstitution",
+          hidden: true,
+          path: ROUTES.RESTITUTION_LIGNE_LIST,
+          guard: "protected",
+          icon: FileText,
+          description: "Manage Restitution Ligne records",
         },
       ],
     }),

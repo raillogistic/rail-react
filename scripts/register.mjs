@@ -630,12 +630,24 @@ export default ${detailComponentName};
 `;
 
 const buildLazyBlock = ({
+  listType,
   modelSlug,
   listComponentName,
   formComponentName,
   detailComponentName,
-}) =>
-  [
+}) => {
+  if (listType === "inline") {
+    return [
+      `const ${listComponentName} = lazy(() =>`,
+      `  import("./pages/${modelSlug}/${listComponentName}").then((module) => ({`,
+      `    default: module.${listComponentName},`,
+      `  })),`,
+      `);`,
+      "",
+    ].join("\n");
+  }
+
+  return [
     `const ${listComponentName} = lazy(() =>`,
     `  import("./pages/${modelSlug}/${listComponentName}").then((module) => ({`,
     `    default: module.${listComponentName},`,
@@ -655,8 +667,10 @@ const buildLazyBlock = ({
     `);`,
     "",
   ].join("\n");
+};
 
 const buildRoutesBlock = ({
+  listType,
   projectId,
   routeIds,
   routeConstants,
@@ -672,6 +686,22 @@ const buildRoutesBlock = ({
   const permissionLine = permission
     ? `      requiredPermission: "${quote(permission)}",\n`
     : "";
+
+  if (listType === "inline") {
+    return [
+      `    protectedRoute("${quote(projectId)}", {`,
+      `      id: "${quote(routeIds.list)}",`,
+      `      path: ROUTES.${routeConstants.list},`,
+      `      title: "${quote(listTitle)}",`,
+      `      description: "${quote(description)}",`,
+      permissionLine ? permissionLine.trimEnd() : null,
+      `      icon: ${iconName},`,
+      `      element: withRouteSuspense(<${listComponentName} />),`,
+      `    }),`,
+    ]
+      .filter(Boolean)
+      .join("\n");
+  }
 
   return [
     `    protectedRoute("${quote(projectId)}", {`,
@@ -719,14 +749,29 @@ const buildRoutesBlock = ({
 };
 
 const buildNavigationEntryBlock = ({
+  listType,
   routeIds,
   routeConstants,
   listTitle,
   formTitle,
   description,
   iconName,
-}) =>
-  [
+}) => {
+  if (listType === "inline") {
+    return [
+      "        {",
+      `          id: "${quote(routeIds.list)}",`,
+      `          routeId: "${quote(routeIds.list)}",`,
+      `          title: "${quote(listTitle)}",`,
+      `          path: ROUTES.${routeConstants.list},`,
+      '          guard: "protected",',
+      `          icon: ${iconName},`,
+      `          description: "${quote(description)}",`,
+      "        },",
+    ].join("\n");
+  }
+
+  return [
     "        {",
     `          id: "${quote(routeIds.list)}",`,
     `          routeId: "${quote(routeIds.list)}",`,
@@ -763,6 +808,7 @@ const buildNavigationEntryBlock = ({
     "          ],",
     "        },",
   ].join("\n");
+};
 
 const updateManifestSource = (source, config) => {
   let next = source;
@@ -914,22 +960,28 @@ const run = async () => {
   const constantBase = toConstantCase(modelSlug);
   const routeConstants = {
     list: `${constantBase}_LIST`,
-    create: `${constantBase}_CREATE`,
-    edit: `${constantBase}_EDIT`,
-    detail: `${constantBase}_DETAIL`,
   };
+  if (type !== "inline") {
+    routeConstants.create = `${constantBase}_CREATE`;
+    routeConstants.edit = `${constantBase}_EDIT`;
+    routeConstants.detail = `${constantBase}_DETAIL`;
+  }
   const routeValues = new Map([
     [routeConstants.list, routeBase],
-    [routeConstants.create, `${routeBase}/create`],
-    [routeConstants.edit, `${routeBase}/:id/edit`],
-    [routeConstants.detail, `${routeBase}/:id`],
   ]);
+  if (type !== "inline") {
+    routeValues.set(routeConstants.create, `${routeBase}/create`);
+    routeValues.set(routeConstants.edit, `${routeBase}/:id/edit`);
+    routeValues.set(routeConstants.detail, `${routeBase}/:id`);
+  }
   const routeIds = {
     list: `${projectId}:${modelSlug}:list`,
-    create: `${projectId}:${modelSlug}:create`,
-    edit: `${projectId}:${modelSlug}:edit`,
-    detail: `${projectId}:${modelSlug}:detail`,
   };
+  if (type !== "inline") {
+    routeIds.create = `${projectId}:${modelSlug}:create`;
+    routeIds.edit = `${projectId}:${modelSlug}:edit`;
+    routeIds.detail = `${projectId}:${modelSlug}:detail`;
+  }
 
   const listComponentName = `${modelPascal}ListPage`;
   const formComponentName = `${modelPascal}FormPage`;
@@ -950,6 +1002,7 @@ const run = async () => {
 
   const updatedRoutes = upsertRouteConstants(routesSource, routeValues, force);
   const updatedManifest = updateManifestSource(manifestSource, {
+    listType: type,
     projectId,
     modelSlug,
     routeIds,
@@ -978,24 +1031,28 @@ const run = async () => {
         routeConstants,
       }),
     },
-    {
-      path: path.join(modelPagesDir, `${formComponentName}.tsx`),
-      content: buildFormPageContent({
-        formComponentName,
-        appName,
-        modelName: modelPascal,
-        formTitle,
-      }),
-    },
-    {
-      path: path.join(modelPagesDir, `${detailComponentName}.tsx`),
-      content: buildDetailPageContent({
-        detailComponentName,
-        appName,
-        modelName: modelPascal,
-      }),
-    },
   ];
+  if (type !== "inline") {
+    generatedPages.push(
+      {
+        path: path.join(modelPagesDir, `${formComponentName}.tsx`),
+        content: buildFormPageContent({
+          formComponentName,
+          appName,
+          modelName: modelPascal,
+          formTitle,
+        }),
+      },
+      {
+        path: path.join(modelPagesDir, `${detailComponentName}.tsx`),
+        content: buildDetailPageContent({
+          detailComponentName,
+          appName,
+          modelName: modelPascal,
+        }),
+      },
+    );
+  }
 
   const fileWrites = [];
 
