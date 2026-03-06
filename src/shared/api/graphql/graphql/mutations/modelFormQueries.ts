@@ -11,6 +11,7 @@ const MUTATION_MODEL_FORM_CONTRACT_FIELDS_SELECTION = `
       version
       configVersion
       generatedAt
+      order
       fields {
         name
         path
@@ -50,6 +51,9 @@ const MUTATION_MODEL_FORM_CONTRACT_FIELDS_SELECTION = `
         path
         label
         toMany
+        required
+        nullable
+        readOnly
         relatedAppLabel
         relatedModelName
         readable
@@ -132,6 +136,34 @@ export const MODEL_FORM_CONTRACT_QUERY = gql`
       includeNested: $includeNested
     ) {
 ${MUTATION_MODEL_FORM_CONTRACT_FIELDS_SELECTION}
+    }
+  }
+`;
+
+/**
+ * GraphQL document for paginated model-form contract resolution.
+ */
+export const MODEL_FORM_CONTRACT_PAGES_QUERY = gql`
+  query ModelFormContractPages(
+    $page: Int = 1
+    $perPage: Int = 50
+    $models: [ModelRefInput!]
+    $mode: ModelFormMode = CREATE
+    $includeNested: Boolean = false
+  ) {
+    modelFormContractPages(
+      page: $page
+      perPage: $perPage
+      models: $models
+      mode: $mode
+      includeNested: $includeNested
+    ) {
+      page
+      perPage
+      total
+      results {
+${MUTATION_MODEL_FORM_CONTRACT_FIELDS_SELECTION}
+      }
     }
   }
 `;

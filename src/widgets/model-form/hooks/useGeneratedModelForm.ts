@@ -501,6 +501,43 @@ function isGeneratedIdentifierField(field: {
 export function buildSchemaFromContract(
  contract: ModelFormContract,
 ): FormSchema<Record<string, any>> {
+ const orderRank = new Map<string, number>();
+ (Array.isArray(contract.order) ? contract.order : []).forEach((path, index) => {
+ const normalized = String(path ?? "").trim();
+ if (!normalized || orderRank.has(normalized)) return;
+ orderRank.set(normalized, index);
+ });
+
+ const resolveOrderRankFromCandidates = (candidates: Array<string | undefined>) => {
+ for (const candidate of candidates) {
+ const normalized = String(candidate ?? "").trim();
+ if (!normalized) continue;
+ const rank = orderRank.get(normalized);
+ if (typeof rank === "number") {
+ return rank;
+ }
+ }
+ return undefined;
+ };
+
+ const orderFieldsByContractOrder = (fields: FormFieldConfig[]) => {
+ if (orderRank.size === 0 || fields.length < 2) return fields;
+ return fields
+ .map((field, index) => ({
+ field,
+ index,
+ rank:
+ typeof field.order === "number" ? field.order : Number.MAX_SAFE_INTEGER,
+ }))
+ .sort((left, right) => {
+ if (left.rank === right.rank) {
+ return left.index - right.index;
+ }
+ return left.rank - right.rank;
+ })
+ .map((entry) => entry.field);
+ };
+
  const fieldsByPath = new Map<string, FormFieldConfig>();
  const relationFieldInfoByPath = new Map<
  string,
@@ -539,6 +576,10 @@ export function buildSchemaFromContract(
  const relatedModel = [relation.relatedAppLabel, relation.relatedModelName]
  .filter(Boolean)
  .join(".");
+ const relationOrder = resolveOrderRankFromCandidates([
+ relationFieldName,
+ relation.path,
+ ]);
  return {
  name: relationFieldName,
  type: "select-query",
@@ -571,6 +612,7 @@ export function buildSchemaFromContract(
  blockedActions: relation.policy?.blockedActions ?? [],
  },
  },
+ ...(typeof relationOrder === "number" ? { order: relationOrder } : {}),
  } as FormFieldConfig;
  };
 
@@ -609,6 +651,9 @@ export function buildSchemaFromContract(
  if (!contractFieldName) continue;
  const type = mapKindToInputType(field.kind);
  const uiConfig = asRecord(field.ui);
+ const fieldOrder = resolveOrderRankFromCandidates(
+ contractFieldCandidates(field),
+ );
  const baseConfig: FormFieldConfig = {
  name: contractFieldName,
  type,
@@ -625,6 +670,7 @@ export function buildSchemaFromContract(
  writable,
  visibility,
  },
+ ...(typeof fieldOrder === "number" ? { order: fieldOrder } : {}),
  } as FormFieldConfig;
 
  if (type === "select") {
@@ -659,8 +705,26 @@ export function buildSchemaFromContract(
  }
 
  const assignedPaths = new Set<string>();
- const sections: FormSectionConfig[] = (contract.sections ?? [])
- .filter((section) => section.visible)
+ const orderedVisibleSections = (contract.sections ?? [])
+ .map((section, index) => ({ section, index }))
+ .filter(({ section }) => section.visible)
+ .sort((left, right) => {
+ const leftOrder =
+ typeof left.section.order === "number"
+ ? left.section.order
+ : Number.MAX_SAFE_INTEGER;
+ const rightOrder =
+ typeof right.section.order === "number"
+ ? right.section.order
+ : Number.MAX_SAFE_INTEGER;
+ if (leftOrder === rightOrder) {
+ return left.index - right.index;
+ }
+ return leftOrder - rightOrder;
+ })
+ .map(({ section }) => section);
+
+ const sections: FormSectionConfig[] = orderedVisibleSections
  .map((section) => {
  const sectionFields = section.fieldPaths
  .map((path) => {
@@ -671,11 +735,12 @@ export function buildSchemaFromContract(
  return field;
  })
  .filter(Boolean) as FormFieldConfig[];
+ const orderedSectionFields = orderFieldsByContractOrder(sectionFields);
  return {
  id: section.id,
  title: section.title ?? undefined,
  description: section.description ?? undefined,
- fields: sectionFields,
+ fields: orderedSectionFields,
  };
  })
  .filter((section) => section.fields.length > 0);
@@ -691,15 +756,16 @@ export function buildSchemaFromContract(
  seen.add(field.name);
  return true;
  });
+ const orderedDeduped = orderFieldsByContractOrder(deduped);
  if (sections.length > 0) {
  sections[0] = {
  ...sections[0],
- fields: [...sections[0].fields, ...deduped],
+ fields: [...sections[0].fields, ...orderedDeduped],
  };
  } else {
  sections.push({
  id: "default",
- fields: deduped,
+ fields: orderedDeduped,
  });
  }
  }

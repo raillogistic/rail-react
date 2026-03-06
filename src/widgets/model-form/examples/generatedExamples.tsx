@@ -9,7 +9,7 @@ import React from "react";
 import {
  MODEL_FORM_CONTRACT_QUERY,
  MODEL_FORM_INITIAL_DATA_QUERY,
-} from "@/shared/api/graphql/legacy/modelFormContract";
+} from "@/shared/api/graphql/graphql/mutations/modelFormQueries";
 import {
  DynamicForm,
  ModelForm,

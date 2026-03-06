@@ -12,6 +12,7 @@ const MODEL_FORM_CONTRACT_FIELDS_SELECTION = `
       version
       configVersion
       generatedAt
+      order
       fields {
         name
         path

@@ -664,6 +664,106 @@ describe("useGeneratedModelForm adapter", () => {
  expect(fieldNames).toEqual(["name", "orderItems", "price"]);
  });
 
+ it("uses contract section order to build default field order", () => {
+ const contract: ModelFormContract = {
+ ...sampleModelFormContract,
+ fields: [
+ {
+ ...sampleModelFormContract.fields[0],
+ name: "name",
+ path: "name",
+ fieldName: "name",
+ label: "Name",
+ },
+ {
+ ...sampleModelFormContract.fields[1],
+ name: "price",
+ path: "price",
+ fieldName: "price",
+ label: "Price",
+ },
+ ],
+ sections: [
+ {
+ id: "second",
+ title: "Second",
+ description: null,
+ fieldPaths: ["price"],
+ order: 2,
+ layout: null,
+ visible: true,
+ },
+ {
+ id: "first",
+ title: "First",
+ description: null,
+ fieldPaths: ["name"],
+ order: 1,
+ layout: null,
+ visible: true,
+ },
+ ],
+ };
+
+ const { result } = renderHook(() =>
+ useGeneratedModelForm({
+ generatedEnabled: true,
+ contract,
+ }),
+ );
+
+ expect(result.current.schema.sections?.map((section) => section.id)).toEqual([
+ "first",
+ "second",
+ ]);
+ expect(
+ result.current.schema.sections?.flatMap((section) =>
+ section.fields.map((field) => field.name),
+ ),
+ ).toEqual(["name", "price"]);
+ });
+
+ it("uses contract root order to sequence section fields", () => {
+ const contract: ModelFormContract = {
+ ...sampleModelFormContract,
+ order: ["price", "name"],
+ fields: [
+ {
+ ...sampleModelFormContract.fields[0],
+ name: "name",
+ path: "name",
+ fieldName: "name",
+ label: "Name",
+ },
+ {
+ ...sampleModelFormContract.fields[1],
+ name: "price",
+ path: "price",
+ fieldName: "price",
+ label: "Price",
+ },
+ ],
+ sections: [
+ {
+ ...sampleModelFormContract.sections[0],
+ fieldPaths: ["name", "price"],
+ order: 0,
+ },
+ ],
+ };
+
+ const { result } = renderHook(() =>
+ useGeneratedModelForm({
+ generatedEnabled: true,
+ contract,
+ }),
+ );
+
+ expect(
+ result.current.schema.sections?.[0]?.fields.map((field) => field.name),
+ ).toEqual(["price", "name"]);
+ });
+
  it("disables generated submit when contract operation permission is denied", async () => {
  const executeMutation = vi.fn();
  const contract: ModelFormContract = {

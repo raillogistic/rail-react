@@ -26,6 +26,7 @@ const contractFixture = {
   version: "1",
   configVersion: "1",
   generatedAt: "2026-02-21T00:00:00Z",
+  order: [],
   fields: [
     {
       name: "id",
@@ -357,6 +358,116 @@ describe("generated graphql mutation hooks", () => {
     expect(result.current.permissions?.canUpdate).toBe(true);
     expect(result.current.initialValues?.name).toBe("Desk");
     expect(result.current.readonlyValues?.id).toBe("42");
+  });
+
+  it("orders returned fields by contract root order", async () => {
+    const orderedContractFixture = {
+      ...contractFixture,
+      order: ["name", "status", "price"],
+      fields: [
+        {
+          ...contractFixture.fields[0],
+          name: "name",
+          path: "name",
+          fieldName: "name",
+          label: "Name",
+          readOnly: false,
+          required: false,
+          nullable: true,
+        },
+        {
+          ...contractFixture.fields[1],
+          name: "status",
+          path: "status",
+          fieldName: "status",
+          label: "Status",
+        },
+        {
+          ...contractFixture.fields[1],
+          name: "price",
+          path: "price",
+          fieldName: "price",
+          label: "Price",
+        },
+      ],
+      sections: [
+        {
+          id: "secondary",
+          title: "Secondary",
+          description: null,
+          fieldPaths: ["price"],
+          order: 0,
+          layout: null,
+          visible: true,
+        },
+        {
+          id: "primary",
+          title: "Primary",
+          description: null,
+          fieldPaths: ["name", "status"],
+          order: 0,
+          layout: null,
+          visible: true,
+        },
+      ],
+    };
+    const mocks = [
+      {
+        request: {
+          query: MODEL_FORM_CONTRACT_QUERY,
+          variables: {
+            appLabel: "inventory",
+            modelName: "Product",
+            mode: "UPDATE",
+            includeNested: false,
+          },
+        },
+        result: {
+          data: {
+            modelFormContract: orderedContractFixture,
+          },
+        },
+      },
+      {
+        request: {
+          query: MODEL_FORM_INITIAL_DATA_QUERY,
+          variables: {
+            appLabel: "inventory",
+            modelName: "Product",
+            objectId: "42",
+            includeNested: false,
+          },
+        },
+        result: {
+          data: {
+            modelFormInitialData: initialDataFixture,
+          },
+        },
+      },
+    ];
+
+    const wrapper = ({ children }: { children: React.ReactNode }) => (
+      <MockedProvider mocks={mocks}>{children}</MockedProvider>
+    );
+
+    const { result } = renderHook(
+      () =>
+        useModelUpdateMutation({
+          app: "inventory",
+          model: "Product",
+          modelFormOptions: {
+            objectId: "42",
+          },
+        }),
+      { wrapper },
+    );
+
+    await waitFor(() => expect(result.current.formLoading).toBe(false));
+    expect(result.current.fields.map((field) => field.name)).toEqual([
+      "name",
+      "status",
+      "price",
+    ]);
   });
 
   it("parses JSON-string initial values for update hooks", async () => {

@@ -14,7 +14,7 @@ import defaultApolloClient from "@/shared/api/apollo/client";
 import {
   MODEL_FORM_CONTRACT_QUERY,
   MODEL_FORM_INITIAL_DATA_QUERY,
-} from "@/shared/api/graphql/legacy/modelFormContract";
+} from "@/shared/api/graphql/graphql/mutations/modelFormQueries";
 import { TABLE_MODEL_METADATA_QUERY } from "@/shared/api/graphql/graphql/metadata/queries";
 import type {
   ModelMetadata,
@@ -1256,5 +1256,3 @@ export function createModelSection(
 }
 
 export default createModelSection;
-
-

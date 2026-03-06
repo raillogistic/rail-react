@@ -159,6 +159,7 @@ export type ModelFormContract = {
  version: string;
  configVersion: string;
  generatedAt: string;
+ order?: string[] | null;
  fields: ModelFormContractField[];
  sections: ModelFormContractSection[];
  relations: ModelFormContractRelation[];

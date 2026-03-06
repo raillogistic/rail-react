@@ -1,4 +1,4 @@
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { useQuery, type OperationVariables } from "@apollo/client";
 import {
   MODEL_FORM_CONTRACT_QUERY,
@@ -153,6 +153,84 @@ function toRecord(value: unknown): Record<string, unknown> | null {
   return value as Record<string, unknown>;
 }
 
+function resolveContractFieldIdentity(field: {
+  name?: string | null;
+  path?: string | null;
+  fieldName?: string | null;
+}): string {
+  const name = String(field.name ?? "").trim();
+  if (name) return name;
+  const path = String(field.path ?? "").trim();
+  if (path) return path;
+  return String(field.fieldName ?? "").trim();
+}
+
+function resolveOrderedContractFields(
+  contract: ModelFormContract | null,
+): ModelFormContract["fields"] {
+  if (!contract?.fields?.length) return [];
+
+  const fields = contract.fields;
+  const byPath = new Map<string, ModelFormContract["fields"][number]>();
+  fields.forEach((field) => {
+    const aliases = [
+      String(field.path ?? "").trim(),
+      String(field.name ?? "").trim(),
+      String(field.fieldName ?? "").trim(),
+    ].filter(Boolean);
+    aliases.forEach((alias) => {
+      if (!byPath.has(alias)) {
+        byPath.set(alias, field);
+      }
+    });
+  });
+
+  const seen = new Set<string>();
+  const ordered: ModelFormContract["fields"] = [];
+  const pushOrderedField = (fieldPath: unknown) => {
+    const normalizedPath = String(fieldPath ?? "").trim();
+    if (!normalizedPath) return;
+    const field = byPath.get(normalizedPath);
+    if (!field) return;
+    const identity = resolveContractFieldIdentity(field);
+    if (!identity || seen.has(identity)) return;
+    seen.add(identity);
+    ordered.push(field);
+  };
+
+  const rootOrder = Array.isArray(contract.order) ? contract.order : [];
+  rootOrder.forEach((fieldPath) => pushOrderedField(fieldPath));
+
+  const sections = contract.sections ?? [];
+  const orderedSections = sections
+    .map((section, index) => ({ section, index }))
+    .sort((left, right) => {
+      const leftOrder =
+        typeof left.section.order === "number"
+          ? left.section.order
+          : Number.MAX_SAFE_INTEGER;
+      const rightOrder =
+        typeof right.section.order === "number"
+          ? right.section.order
+          : Number.MAX_SAFE_INTEGER;
+      if (leftOrder === rightOrder) return left.index - right.index;
+      return leftOrder - rightOrder;
+    });
+
+  orderedSections.forEach(({ section }) => {
+    (section.fieldPaths ?? []).forEach((fieldPath) => pushOrderedField(fieldPath));
+  });
+
+  fields.forEach((field) => {
+    const identity = resolveContractFieldIdentity(field);
+    if (!identity || seen.has(identity)) return;
+    seen.add(identity);
+    ordered.push(field);
+  });
+
+  return ordered;
+}
+
 /**
  * Resolves model-form contract and initial-data state for mutation hooks.
  */
@@ -161,7 +239,8 @@ export function useModelMutationModelForm(
 ): UseModelMutationModelFormResult {
   const appLabel = String(options.app ?? "").trim();
   const modelName = String(options.model ?? "").trim();
-  const contractMode = options.contractMode ?? resolveDefaultContractMode(options.mode);
+  const contractMode =
+    options.contractMode ?? resolveDefaultContractMode(options.mode);
   const includeNested = options.includeNested === true;
   const normalizedObjectId = normalizeObjectId(options.objectId);
   const explicitContract = options.contract ?? null;
@@ -200,7 +279,12 @@ export function useModelMutationModelForm(
     },
   );
 
-  const contract = explicitContract ?? contractQuery.data?.modelFormContract ?? null;
+  const contract =
+    explicitContract ?? contractQuery.data?.modelFormContract ?? null;
+  const orderedContractFields = useMemo(
+    () => resolveOrderedContractFields(contract),
+    [contract],
+  );
 
   const supportsInitialData = !isCreateLikeMode(options.mode);
   const missingObjectIdError =
@@ -224,28 +308,28 @@ export function useModelMutationModelForm(
     !modelName ||
     !normalizedObjectId;
 
-  const initialDataQuery = useQuery<InitialDataQueryData, InitialDataQueryVariables>(
-    MODEL_FORM_INITIAL_DATA_QUERY,
-    {
-      ...(options.initialDataQueryOptions as Record<string, unknown>),
-      variables: {
-        appLabel,
-        modelName,
-        objectId: normalizedObjectId,
-        includeNested,
-        ...(Array.isArray(options.initialDataNestedFields)
-          ? { nestedFields: options.initialDataNestedFields }
-          : {}),
-        ...(Array.isArray(options.runtimeOverrides)
-          ? { runtimeOverrides: options.runtimeOverrides }
-          : {}),
-      } as InitialDataQueryVariables,
-      skip: shouldSkipInitialDataQuery,
-      fetchPolicy: "network-only",
-      nextFetchPolicy: "cache-first",
-      notifyOnNetworkStatusChange: true,
-    },
-  );
+  const initialDataQuery = useQuery<
+    InitialDataQueryData,
+    InitialDataQueryVariables
+  >(MODEL_FORM_INITIAL_DATA_QUERY, {
+    ...(options.initialDataQueryOptions as Record<string, unknown>),
+    variables: {
+      appLabel,
+      modelName,
+      objectId: normalizedObjectId,
+      includeNested,
+      ...(Array.isArray(options.initialDataNestedFields)
+        ? { nestedFields: options.initialDataNestedFields }
+        : {}),
+      ...(Array.isArray(options.runtimeOverrides)
+        ? { runtimeOverrides: options.runtimeOverrides }
+        : {}),
+    } as InitialDataQueryVariables,
+    skip: shouldSkipInitialDataQuery,
+    fetchPolicy: "network-only",
+    nextFetchPolicy: "cache-first",
+    notifyOnNetworkStatusChange: true,
+  });
 
   const initialData =
     explicitInitialData ?? initialDataQuery.data?.modelFormInitialData ?? null;
@@ -264,34 +348,32 @@ export function useModelMutationModelForm(
     explicitInitialData || shouldSkipInitialDataQuery
       ? undefined
       : (initialDataQuery.error as Error | undefined);
-  const formError =
-    (missingObjectIdError || contractError || initialDataError) as
-      | Error
-      | undefined;
+  const formError = (missingObjectIdError ||
+    contractError ||
+    initialDataError) as Error | undefined;
 
-  const refetchContract = useCallback(async (): Promise<ModelFormContract | null> => {
-    if (explicitContract) return explicitContract;
-    if (shouldSkipContract) return null;
-    const result = await contractQuery.refetch(
-      contractQuery.variables as OperationVariables,
-    );
-    return result.data?.modelFormContract ?? null;
-  }, [contractQuery, explicitContract, shouldSkipContract]);
+  const refetchContract =
+    useCallback(async (): Promise<ModelFormContract | null> => {
+      if (explicitContract) return explicitContract;
+      if (shouldSkipContract) return null;
+      const result = await contractQuery.refetch(
+        contractQuery.variables as OperationVariables,
+      );
+      return result.data?.modelFormContract ?? null;
+    }, [contractQuery, explicitContract, shouldSkipContract]);
 
-  const refetchInitialData = useCallback(
-    async (): Promise<ModelFormInitialData | null> => {
+  const refetchInitialData =
+    useCallback(async (): Promise<ModelFormInitialData | null> => {
       if (explicitInitialData) return explicitInitialData;
       if (shouldSkipInitialDataQuery) return null;
       const result = await initialDataQuery.refetch(
         initialDataQuery.variables as OperationVariables,
       );
       return result.data?.modelFormInitialData ?? null;
-    },
-    [explicitInitialData, initialDataQuery, shouldSkipInitialDataQuery],
-  );
+    }, [explicitInitialData, initialDataQuery, shouldSkipInitialDataQuery]);
 
   return {
-    fields: contract?.fields ?? [],
+    fields: orderedContractFields,
     permissions: contract?.permissions ?? null,
     mutationBindings: contract?.mutationBindings ?? null,
     errorPolicy: contract?.errorPolicy ?? null,
