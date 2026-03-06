@@ -7,6 +7,7 @@
 import React from "react";
 import { useForm, type UseFormReturn, useStore } from "@tanstack/react-form";
 import { cn } from "@/shared/utils";
+import { useIsMobile } from "@/shared/hooks/legacy-hooks/use-mobile";
 import { Loader2 } from "lucide-react";
 import type { DynamicFormProps } from "../types/props";
 import type { FormFieldConfig, FormSectionConfig } from "../types/schema";
@@ -225,6 +226,8 @@ const DynamicForm = <TValues extends Record<string, any> = Record<string, any>>(
   const autosave = behaviorConfig?.autosave;
 
   const layoutColumns = layoutConfig?.columns ?? DEFAULT_COLUMNS;
+  const isMobile = useIsMobile();
+  const resolvedColumns = isMobile ? 1 : layoutColumns;
   const layoutVariant = layoutConfig?.variant ?? "default";
   const showSectionHeaders = layoutConfig?.showSectionHeaders ?? true;
   const layoutMode = layoutConfig?.mode ?? { type: "standard" };
@@ -461,7 +464,7 @@ const DynamicForm = <TValues extends Record<string, any> = Record<string, any>>(
   const modeProps = {
     sections,
     form,
-    columns: layoutColumns,
+    columns: resolvedColumns,
     variant: layoutVariant,
     hiddenFields,
     hiddenSections,
