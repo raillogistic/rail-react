@@ -25,7 +25,6 @@ export function ModelTableHeader({
         <div className="hidden sm:flex size-11 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary ring-1 ring-primary/20 shadow-inner">
           <Database className="size-5" />
         </div>
-
         <div className="flex flex-col justify-center gap-1.5">
           {/* Title & Badges */}
           <div className="flex items-center gap-3">
@@ -70,7 +69,6 @@ export function ModelTableHeader({
           </div>
         </div>
       </div>
-
       <div className="flex items-center gap-3 shrink-0">
         <button
           onClick={controller.triggerRefresh}
