@@ -50,30 +50,13 @@ const ArticleDetailPage = lazy(() =>
   })),
 );
 
-const BeneficiaireListPage = lazy(() =>
-  import("./pages/beneficiaire/BeneficiaireListPage").then((module) => ({
-    default: module.BeneficiaireListPage,
-  })),
-);
-
-const BeneficiaireFormPage = lazy(() =>
-  import("./pages/beneficiaire/BeneficiaireFormPage").then((module) => ({
-    default: module.BeneficiaireFormPage,
-  })),
-);
-
-const BeneficiaireDetailPage = lazy(() =>
-  import("./pages/beneficiaire/BeneficiaireDetailPage").then((module) => ({
-    default: module.BeneficiaireDetailPage,
-  })),
-);
 export const CATALOG_MANIFEST: AppManifest = defineProjectManifest({
   projectId: "catalog",
   order: 2,
   defaultRoute: ROUTES.ARTICLE_LIST,
 
   routes: [
-    protectedRoute("catalog", {
+protectedRoute("catalog", {
       id: "catalog:categorie-article:list",
       path: ROUTES.CATEGORIE_ARTICLE_LIST,
       title: "Categories d'article",
@@ -82,7 +65,7 @@ export const CATALOG_MANIFEST: AppManifest = defineProjectManifest({
       icon: Tag,
       element: withRouteSuspense(<CategorieArticleListPage />),
     }),
-    protectedRoute("catalog", {
+protectedRoute("catalog", {
       id: "catalog:article:list",
       path: ROUTES.ARTICLE_LIST,
       title: "Articles",
@@ -90,7 +73,7 @@ export const CATALOG_MANIFEST: AppManifest = defineProjectManifest({
       icon: BookOpen,
       element: withRouteSuspense(<ArticleListPage />),
     }),
-    protectedRoute("catalog", {
+protectedRoute("catalog", {
       id: "catalog:article:create",
       path: ROUTES.ARTICLE_CREATE,
       title: "Creer un article",
@@ -98,7 +81,7 @@ export const CATALOG_MANIFEST: AppManifest = defineProjectManifest({
       icon: BookOpen,
       element: withRouteSuspense(<ArticleCreatePage />),
     }),
-    protectedRoute("catalog", {
+protectedRoute("catalog", {
       id: "catalog:article:edit",
       path: ROUTES.ARTICLE_EDIT,
       title: "Modifier un article",
@@ -106,54 +89,22 @@ export const CATALOG_MANIFEST: AppManifest = defineProjectManifest({
       icon: BookOpen,
       element: withRouteSuspense(<ArticleEditPage />),
     }),
-    protectedRoute("catalog", {
+protectedRoute("catalog", {
       id: "catalog:article:detail",
       path: ROUTES.ARTICLE_DETAIL,
       title: "Detail article",
       hidden: true,
       icon: BookOpen,
       element: withRouteSuspense(<ArticleDetailPage />),
-    }),
-    protectedRoute("catalog", {
-      id: "catalog:beneficiaire:list",
-      path: ROUTES.BENEFICIAIRE_LIST,
-      title: "Beneficiaire",
-      description: "Manage Beneficiaire records",
-      icon: FileText,
-      element: withRouteSuspense(<BeneficiaireListPage />),
-    }),
-    protectedRoute("catalog", {
-      id: "catalog:beneficiaire:create",
-      path: ROUTES.BENEFICIAIRE_CREATE,
-      title: "Create Beneficiaire",
-      hidden: true,
-      icon: FileText,
-      element: withRouteSuspense(<BeneficiaireFormPage />),
-    }),
-    protectedRoute("catalog", {
-      id: "catalog:beneficiaire:edit",
-      path: ROUTES.BENEFICIAIRE_EDIT,
-      title: "Edit Beneficiaire",
-      hidden: true,
-      icon: FileText,
-      element: withRouteSuspense(<BeneficiaireFormPage />),
-    }),
-    protectedRoute("catalog", {
-      id: "catalog:beneficiaire:detail",
-      path: ROUTES.BENEFICIAIRE_DETAIL,
-      title: "Beneficiaire details",
-      hidden: true,
-      icon: FileText,
-      element: withRouteSuspense(<BeneficiaireDetailPage />),
-    }),
-  ],
+    })
+],
   navigation: [
     navGroup("catalog", {
       id: "catalog",
       label: "Catalog",
       order: 1,
       entries: [
-        {
+{
           id: "catalog:article:list",
           routeId: "catalog:article:list",
           title: "Articles",
@@ -187,43 +138,8 @@ export const CATALOG_MANIFEST: AppManifest = defineProjectManifest({
               hidden: true,
             },
           ],
-        },
-        {
-          id: "catalog:beneficiaire:list",
-          routeId: "catalog:beneficiaire:list",
-          title: "Beneficiaire",
-          path: ROUTES.BENEFICIAIRE_LIST,
-          guard: "protected",
-          icon: FileText,
-          description: "Manage Beneficiaire records",
-          children: [
-            {
-              id: "catalog:beneficiaire:create",
-              routeId: "catalog:beneficiaire:create",
-              title: "Create Beneficiaire",
-              path: ROUTES.BENEFICIAIRE_CREATE,
-              guard: "protected",
-              hidden: true,
-            },
-            {
-              id: "catalog:beneficiaire:edit",
-              routeId: "catalog:beneficiaire:edit",
-              title: "Edit Beneficiaire",
-              path: ROUTES.BENEFICIAIRE_EDIT,
-              guard: "protected",
-              hidden: true,
-            },
-            {
-              id: "catalog:beneficiaire:detail",
-              routeId: "catalog:beneficiaire:detail",
-              title: "Beneficiaire details",
-              path: ROUTES.BENEFICIAIRE_DETAIL,
-              guard: "protected",
-              hidden: true,
-            },
-          ],
-        },
-      ],
+        }
+],
     }),
   ],
 });
