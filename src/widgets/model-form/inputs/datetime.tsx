@@ -1,3 +1,11 @@
+/**
+ * DateTime picker input combining a calendar and time selector.
+ *
+ * Stores the selected datetime as a `yyyy-MM-dd'T'HH:mm` string and renders
+ * a localized French display label via date-fns.
+ *
+ * @module form/inputs/datetime
+ */
 import React from "react";
 import { useStore } from "@tanstack/react-form";
 import { format, parseISO } from "date-fns";
@@ -21,6 +29,7 @@ import type { DateFieldConfig, FieldComponentProps } from "./types";
 
 type Props = FieldComponentProps<DateFieldConfig, string>;
 
+/** Renders a combined date + time picker. */
 const DateTimeInput: React.FC<Props> = ({ config, field, form }) => {
   const meta = field.state.meta;
   const dirty = meta.isDirty;
@@ -41,6 +50,7 @@ const DateTimeInput: React.FC<Props> = ({ config, field, form }) => {
   const dateValue = value ? new Date(value) : undefined;
   const isValidDate = dateValue && !isNaN(dateValue.getTime());
 
+  /** Handles date selection from the calendar, preserving existing time. */
   const handleDateSelect = (selectedDate: Date | undefined) => {
     if (!selectedDate) {
       field.handleChange("");
@@ -63,6 +73,7 @@ const DateTimeInput: React.FC<Props> = ({ config, field, form }) => {
     field.handleChange(isoString);
   };
 
+  /** Handles time change from the time input, preserving existing date. */
   const handleTimeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const timeStr = event.target.value;
     if (!timeStr) return;
@@ -88,10 +99,11 @@ const DateTimeInput: React.FC<Props> = ({ config, field, form }) => {
             variant="outline"
             data-slot="input"
             className={cn(
-              "h-9 w-full justify-start border-border/40 bg-muted/20 px-3 text-left text-sm font-normal transition-all duration-300  ",
-              "hover:border-border/60 hover:bg-muted/40 focus:border-primary/50 focus:bg-background focus:ring-4 focus:ring-primary/10",
+              "h-10 w-full justify-start rounded-md border border-input bg-background px-3 text-left text-sm font-normal transition-all duration-200",
+              "hover:border-border hover:bg-accent/30",
+              "focus:border-primary focus:ring-2 focus:ring-primary/20",
               !value && "text-muted-foreground",
-              isValidDate && "border-primary/30 font-medium text-foreground",
+              isValidDate && "text-foreground font-medium",
               config.disabled && "cursor-not-allowed opacity-60",
             )}
             disabled={config.disabled}
@@ -99,7 +111,7 @@ const DateTimeInput: React.FC<Props> = ({ config, field, form }) => {
             <CalendarDays
               className={cn(
                 "mr-2.5 size-4 transition-colors",
-                isValidDate ? "text-primary" : "text-muted-foreground/60",
+                isValidDate ? "text-primary" : "text-muted-foreground/40",
               )}
             />
             <span className="truncate">
@@ -112,7 +124,7 @@ const DateTimeInput: React.FC<Props> = ({ config, field, form }) => {
           </Button>
         </PopoverTrigger>
         <PopoverContent
-          className="w-auto p-0 border-border/30  bg-background/95 backdrop-blur-md "
+          className="w-auto rounded-lg border border-border/50 bg-popover p-0 shadow-lg"
           align="start"
         >
           <CalendarComponent
@@ -123,12 +135,12 @@ const DateTimeInput: React.FC<Props> = ({ config, field, form }) => {
             locale={fr}
             className="p-3"
           />
-          <div className="flex items-center gap-3 border-t border-border/40 bg-muted/20 p-3">
+          <div className="flex items-center gap-3 border-t border-border/40 bg-muted/20 rounded-b-lg p-3">
             <Clock className="size-4 text-primary" />
             <div className="flex-1">
               <Input
                 type="time"
-                className="h-10 border-border/40 bg-background transition-all focus:border-primary/50 focus:ring-4 focus:ring-primary/10  "
+                className="h-9 rounded-md border border-input bg-background transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20"
                 value={isValidDate ? format(dateValue, "HH:mm") : ""}
                 onChange={handleTimeChange}
               />

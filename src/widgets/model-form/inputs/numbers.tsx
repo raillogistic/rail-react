@@ -1,3 +1,11 @@
+/**
+ * Numeric form inputs: number, decimal, slider, and range.
+ *
+ * Renders a numeric input with a left-aligned hash icon indicator
+ * and an optional formatted display badge on the right.
+ *
+ * @module form/inputs/numbers
+ */
 import React from "react";
 import { useStore } from "@tanstack/react-form";
 import { Input } from "@/shared/ui/kit/input";
@@ -12,6 +20,7 @@ import type { FieldComponentProps, NumberFieldConfig } from "./types";
 
 type Props = FieldComponentProps<NumberFieldConfig, number | string>;
 
+/** Renders a numeric input with optional formatting badge. */
 const NumberInput: React.FC<Props> = ({ config, field, form }) => {
   const meta = field.state.meta;
   const dirty = meta.isDirty;
@@ -32,6 +41,7 @@ const NumberInput: React.FC<Props> = ({ config, field, form }) => {
   const typeAttr =
     config.type === "slider" || config.type === "range" ? "range" : "number";
 
+  /** Parses and normalizes the input value. */
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const raw = event.target.value;
     if (raw === "") {
@@ -46,7 +56,7 @@ const NumberInput: React.FC<Props> = ({ config, field, form }) => {
   return (
     <FieldWrapper config={config} fieldId={fieldId} error={error} dirty={dirty}>
       <div className="relative group/number">
-        <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/50 transition-colors group-focus-within/number:text-primary/70">
+        <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/40 transition-colors group-focus-within/number:text-primary/60">
           <Hash className="size-4" />
         </div>
         <Input
@@ -61,15 +71,17 @@ const NumberInput: React.FC<Props> = ({ config, field, form }) => {
           onBlur={field.handleBlur}
           disabled={config.disabled}
           className={cn(
-            "h-9 border-border/40 bg-muted/20 pl-11 pr-4 text-sm transition-all duration-300   hover:border-border/60 hover:bg-muted/40 focus:border-primary/50 focus:bg-background focus:ring-4 focus:ring-primary/10 focus-visible:ring-0",
+            "h-10 rounded-md border border-input bg-background pl-10 pr-4 text-sm transition-all duration-200",
+            "hover:border-border",
+            "focus:border-primary focus:ring-2 focus:ring-primary/20 focus-visible:ring-0",
             (config.type === "slider" || config.type === "range") &&
-              "h-8 px-0 border-none bg-transparent focus:ring-0 ",
+              "h-8 px-0 border-none bg-transparent focus:ring-0",
           )}
         />
 
         {config.format && typeof value === "number" && (
           <div className="absolute right-3 top-1/2 -translate-y-1/2 animate-in fade-in slide-in-from-right-1">
-            <span className="bg-primary/10 px-2 py-0.5 text-[11px] font-bold tracking-wider text-primary ">
+            <span className="rounded-md bg-primary/8 px-2 py-0.5 text-[11px] font-medium text-primary">
               {config.format(value)}
             </span>
           </div>

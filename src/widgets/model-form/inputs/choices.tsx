@@ -1,3 +1,11 @@
+/**
+ * Choice-based form inputs: select dropdown, multi-select, and radio group.
+ *
+ * Uses shadcn/ui Select for single choice, DropdownMenu for multi-select,
+ * and custom radio cards for radio groups.
+ *
+ * @module form/inputs/choices
+ */
 import React from "react";
 import { useStore } from "@tanstack/react-form";
 import {
@@ -31,6 +39,7 @@ import type {
 
 type Props = FieldComponentProps<ChoiceFieldConfig>;
 
+/** Renders a choice input based on configuration (select | multi | radio). */
 const ChoiceInput: React.FC<Props> = ({ config, field, form }) => {
   const meta = field.state.meta;
   const dirty = meta.isDirty;
@@ -46,6 +55,7 @@ const ChoiceInput: React.FC<Props> = ({ config, field, form }) => {
   const error =
     fieldErrors ?? resolveRequiredError(config, field.state.value, showError);
 
+  // ── Multi-select (dropdown with checkboxes) ──────────────────────────
   if (config.multiple) {
     const selectedValues = Array.isArray(field.state.value)
       ? (field.state.value as Array<string | number>)
@@ -77,9 +87,11 @@ const ChoiceInput: React.FC<Props> = ({ config, field, form }) => {
               variant="outline"
               data-slot="select-trigger"
               className={cn(
-                "h-auto min-h-9 w-full justify-between border-border/40 bg-muted/20 px-3 py-2 text-left text-sm font-normal transition-all duration-300   hover:border-border/60 hover:bg-muted/40 focus:border-primary/50 focus:bg-background focus:ring-4 focus:ring-primary/10",
+                "h-auto min-h-10 w-full justify-between rounded-md border border-input bg-background px-3 py-2 text-left text-sm font-normal transition-all duration-200",
+                "hover:border-border hover:bg-accent/30",
+                "focus:border-primary focus:ring-2 focus:ring-primary/20",
                 selectedValues.length > 0
-                  ? "border-primary/40 bg-background"
+                  ? "border-primary/30"
                   : "",
               )}
             >
@@ -89,11 +101,11 @@ const ChoiceInput: React.FC<Props> = ({ config, field, form }) => {
                     <Badge
                       key={opt.value}
                       variant="secondary"
-                      className="bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary transition-colors border-none px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider "
+                      className="rounded-full bg-primary/10 text-primary hover:bg-primary/15 transition-colors border-none px-2.5 py-0.5 text-[11px] font-medium"
                     >
                       {opt.label}
                       <X
-                        className="ml-1 size-3 cursor-pointer opacity-60 hover:opacity-100"
+                        className="ml-1.5 size-3 cursor-pointer opacity-50 hover:opacity-100"
                         onClick={(e) => {
                           e.stopPropagation();
                           toggleValue(opt.value);
@@ -107,30 +119,31 @@ const ChoiceInput: React.FC<Props> = ({ config, field, form }) => {
                   </span>
                 )}
               </div>
-              <ChevronDown className="size-4 shrink-0 opacity-50" />
+              <ChevronDown className="size-4 shrink-0 text-muted-foreground/50" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-80 p-2  border-border/30 bg-background/95 backdrop-blur-md ">
-            <div className="max-h-64 overflow-y-auto space-y-1">
+          <DropdownMenuContent className="w-80 rounded-lg border border-border/50 bg-popover p-1.5 shadow-lg">
+            <div className="max-h-64 overflow-y-auto space-y-0.5">
               {config.options.map((option) => (
                 <DropdownMenuCheckboxItem
                   key={option.value}
                   className={cn(
-                    "px-3 py-2 transition-colors duration-200 focus:bg-primary/5 focus:text-primary  cursor-pointer",
+                    "rounded-md px-3 py-2 transition-colors duration-150 cursor-pointer",
+                    "focus:bg-accent focus:text-accent-foreground",
                     selectedValues.includes(option.value)
                       ? "bg-primary/5 text-primary"
-                      : "text-foreground/80 hover:bg-muted/30",
+                      : "text-foreground/80 hover:bg-accent/50",
                   )}
                   checked={selectedValues.includes(option.value)}
                   onCheckedChange={() => toggleValue(option.value)}
                   disabled={option.disabled}
                 >
                   <div className="flex flex-col gap-0.5">
-                    <span className="text-sm font-semibold leading-none">
+                    <span className="text-sm font-medium leading-none">
                       {option.label}
                     </span>
                     {option.description ? (
-                      <span className="text-[10px] text-muted-foreground/70 leading-tight">
+                      <span className="text-[10px] text-muted-foreground/60 leading-tight">
                         {option.description}
                       </span>
                     ) : null}
@@ -144,47 +157,48 @@ const ChoiceInput: React.FC<Props> = ({ config, field, form }) => {
     );
   }
 
+  // ── Radio group ──────────────────────────────────────────────────────
   if (config.type === "radio") {
     const value = field.state.value ?? "";
     return (
       <FieldWrapper config={config} error={error} dirty={dirty}>
-        <div className="flex flex-col gap-2 pt-1">
+        <div className="flex flex-col gap-2 pt-0.5">
           {config.options.map((option) => (
             <label
               key={option.value}
               className={cn(
-                "group relative flex w-full cursor-pointer items-center gap-3 border border-border/30 bg-muted/10 px-5 py-2 transition-all duration-300  ",
-                "hover:border-primary/30 hover:bg-background hover: hover:-translate-y-0.5",
+                "group relative flex w-full cursor-pointer items-center gap-3 rounded-lg border border-border/50 bg-background px-4 py-2.5 transition-all duration-200",
+                "hover:border-border hover:bg-accent/30",
                 value === option.value
-                  ? "border-primary/50 bg-primary/5 ring-2 ring-primary/20 "
+                  ? "border-primary/40 bg-primary/5 ring-1 ring-primary/10"
                   : "",
               )}
             >
               <div
                 className={cn(
-                  "flex size-5 shrink-0 items-center justify-center border border-border/60 transition-all ",
+                  "flex size-4.5 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-200",
                   value === option.value
-                    ? "border-primary bg-primary scale-110  /20"
-                    : "group-hover:border-primary/50",
+                    ? "border-primary bg-primary"
+                    : "border-muted-foreground/30 group-hover:border-muted-foreground/50",
                 )}
               >
                 {value === option.value && (
-                  <div className="size-2 bg-primary-foreground " />
+                  <div className="size-1.5 rounded-full bg-primary-foreground" />
                 )}
               </div>
               <div className="flex flex-col gap-0.5">
                 <span
                   className={cn(
-                    "text-sm font-semibold transition-colors",
+                    "text-sm font-medium transition-colors",
                     value === option.value
-                      ? "text-primary"
-                      : "text-foreground/80",
+                      ? "text-foreground"
+                      : "text-foreground/70",
                   )}
                 >
                   {option.label}
                 </span>
                 {option.description && (
-                  <span className="text-[11px] text-muted-foreground/70 leading-tight">
+                  <span className="text-[11px] text-muted-foreground/60 leading-tight">
                     {option.description}
                   </span>
                 )}
@@ -203,6 +217,7 @@ const ChoiceInput: React.FC<Props> = ({ config, field, form }) => {
     );
   }
 
+  // ── Single select ────────────────────────────────────────────────────
   const selectedValue =
     field.state.value ??
     (config.required ? (config.options[0]?.value ?? "") : "");
@@ -223,24 +238,24 @@ const ChoiceInput: React.FC<Props> = ({ config, field, form }) => {
           <SelectTrigger
             id={field.name}
             data-slot="select-trigger"
-            className="h-9 w-full border-border/40 bg-muted/20 px-3 text-sm transition-all duration-300 hover:border-border/60 hover:bg-muted/40 focus:border-primary/50 focus:bg-background focus:ring-4 focus:ring-primary/10 focus-visible:ring-0  "
+            className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm transition-all duration-200 hover:border-border focus:border-primary focus:ring-2 focus:ring-primary/20 focus-visible:ring-0"
           >
             <SelectValue
               placeholder={config.placeholder ?? "Choisir une option"}
             />
           </SelectTrigger>
-          <SelectContent className="border-border/30  bg-background/95 backdrop-blur-md  p-1.5">
+          <SelectContent className="rounded-lg border border-border/50 bg-popover shadow-lg p-1">
             {config.options.map((option) => (
               <SelectItem
                 key={option.value}
                 value={String(option.value)}
                 disabled={option.disabled}
-                className="py-2 px-3 transition-colors duration-200 focus:bg-primary/5 focus:text-primary  cursor-pointer hover:bg-muted/30"
+                className="rounded-md py-2 px-3 transition-colors duration-150 cursor-pointer focus:bg-accent focus:text-accent-foreground hover:bg-accent/50"
               >
                 <div className="flex flex-col gap-0.5">
-                  <span className="text-sm font-semibold">{option.label}</span>
+                  <span className="text-sm font-medium">{option.label}</span>
                   {option.description && (
-                    <span className="text-[10px] text-muted-foreground/70">
+                    <span className="text-[10px] text-muted-foreground/60">
                       {option.description}
                     </span>
                   )}

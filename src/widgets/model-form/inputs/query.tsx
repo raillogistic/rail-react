@@ -546,9 +546,9 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
                 variant="outline"
                 data-slot="button"
                 className={cn(
-                  "h-auto min-h-9 w-full justify-between border-border/40 bg-muted/20 px-3 py-2 text-left text-sm font-normal transition-all duration-300 hover:border-border/60 hover:bg-muted/40   focus:border-primary/50 focus:bg-background focus:ring-4 focus:ring-primary/10",
+                  "h-auto min-h-10 w-full justify-between rounded-md border border-input bg-background px-3 py-2 text-left text-sm font-normal transition-all duration-200 hover:border-border hover:bg-accent/30 focus:border-primary focus:ring-2 focus:ring-primary/20",
                   selectedValues.length > 0
-                    ? "border-primary/40 bg-background"
+                    ? "border-primary/30"
                     : "",
                 )}
               >
@@ -558,7 +558,7 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
                       <Badge
                         key={opt.value}
                         variant="secondary"
-                        className="bg-primary/10 text-primary hover:bg-primary/20 hover:text-primary transition-colors border-none px-2 py-0.5 text-[11px] font-bold uppercase tracking-wider "
+                        className="rounded-full bg-primary/10 text-primary hover:bg-primary/15 transition-colors border-none px-2.5 py-0.5 text-[11px] font-medium"
                       >
                         {opt.label}
                         {config.multiple && (
@@ -587,11 +587,11 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
                 </div>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-80 p-0  border-border/30 bg-background/95 backdrop-blur-md overflow-hidden ">
-              <div className="flex items-center border-b border-border/40 bg-muted/20 px-3 py-2">
-                <Search className="mr-2 size-4 text-muted-foreground/60" />
+            <DropdownMenuContent className="w-80 rounded-lg border border-border/50 bg-popover p-0 shadow-lg overflow-hidden">
+              <div className="flex items-center border-b border-border/40 bg-muted/20 px-3 py-2.5">
+                <Search className="mr-2 size-4 text-muted-foreground/40" />
                 <Input
-                  className="h-8 border-none bg-transparent p-0 text-sm focus-visible:ring-0"
+                  className="h-8 border-none bg-transparent p-0 text-sm shadow-none focus-visible:ring-0"
                   placeholder="Rechercher..."
                   value={search}
                   onChange={(event) => {
@@ -619,8 +619,8 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
                     <DropdownMenuCheckboxItem
                       key={option.value}
                       className={cn(
-                        "relative flex cursor-pointer select-none items-center py-2 pl-10 pr-4 outline-none transition-colors duration-200 ",
-                        "hover:bg-muted/30 hover:text-foreground focus:bg-primary/5 focus:text-primary",
+                        "relative flex cursor-pointer select-none items-center rounded-md py-2 pl-10 pr-4 outline-none transition-colors duration-150",
+                        "hover:bg-accent/50 hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
                         index === highlightedIndex
                           ? "bg-primary/5 text-primary"
                           : "",
@@ -640,7 +640,7 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
                       <span className="absolute left-3 flex size-4 items-center justify-center">
                         {selectedValues.some((value) =>
                           areChoiceValuesEqual(value, option.value),
-                        ) && <Check className="size-3.5 stroke-[3]" />}
+                        ) && <Check className="size-3.5 stroke-[2.5]" />}
                       </span>
                       <div className="flex flex-col gap-0.5">
                         <span className="text-sm leading-none">
@@ -657,11 +657,11 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
                 )}
               </div>
               {inlineButtonVisible && (
-                <div className="border-t border-border/40 p-1.5 bg-muted/5">
+                <div className="border-t border-border/40 p-1.5 bg-muted/10">
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="w-full justify-start text-primary hover:bg-primary/5 hover:text-primary font-bold text-[10px] uppercase tracking-wider"
+                    className="w-full justify-start rounded-md text-primary hover:bg-primary/5 hover:text-primary font-medium text-xs"
                     onClick={() => {
                       if (canOpenInlineForm) {
                         setInlineFormOpen(true);
@@ -669,7 +669,7 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
                     }}
                     disabled={inlineButtonDisabled}
                   >
-                    <Plus className="mr-2 size-3.5 stroke-[3]" />
+                    <Plus className="mr-2 size-3.5 stroke-[2.5]" />
                     {inlineTriggerLabel}
                   </Button>
                 </div>
@@ -679,10 +679,10 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
         </div>
       </div>
       <Dialog open={inlineFormOpen} onOpenChange={setInlineFormOpen}>
-        <DialogContent className="sm:max-w-3xl overflow-hidden p-0 border-border/30   bg-background/95 backdrop-blur-md">
+        <DialogContent className="sm:max-w-3xl overflow-hidden rounded-xl border border-border/50 bg-background p-0 shadow-xl">
           <DialogHeader className="px-6 pt-6 pb-2">
             <DialogTitle className="flex items-center gap-2 text-xl font-bold tracking-tight">
-              <div className="flex size-8 items-center justify-center bg-primary/10 text-primary ">
+              <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
                 <Plus className="size-5" />
               </div>
               {inlineTriggerLabel}

@@ -1,6 +1,8 @@
 /**
  * Renders a single form section with grid layout, optional card wrapper,
  * and accordion support.
+ *
+ * @module form/renderers/SectionRenderer
  */
 import React from "react";
 import type { UseFormReturn } from "@tanstack/react-form";
@@ -17,6 +19,7 @@ import type { FormSectionConfig } from "../types/schema";
 import { FieldRenderer } from "./FieldRenderer";
 import { buildResponsiveGridClass } from "./utils";
 
+/** Props for the SectionRenderer component. */
 export type SectionRendererProps<TValues> = {
   section: FormSectionConfig;
   form: UseFormReturn<TValues>;
@@ -28,6 +31,10 @@ export type SectionRendererProps<TValues> = {
   globalDisabled?: boolean;
 };
 
+/**
+ * Safely renders an icon component (element, component, or forwardRef).
+ * Returns `null` when Icon is falsy.
+ */
 const renderIcon = (Icon: any, className: string) => {
   if (!Icon) return null;
   if (React.isValidElement(Icon)) {
@@ -44,6 +51,10 @@ const renderIcon = (Icon: any, className: string) => {
   return null;
 };
 
+/**
+ * Renders a section: an optional header (title + description),
+ * a responsive field grid, with optional card or accordion wrapping.
+ */
 export const SectionRenderer = <TValues extends Record<string, any>>({
   section,
   form,
@@ -63,8 +74,8 @@ export const SectionRenderer = <TValues extends Record<string, any>>({
   const cardEnabled = ui.card ?? false;
   const Wrapper = cardEnabled ? Card : "div";
   const wrapperClass = cardEnabled
-    ? "overflow-hidden  border-border/50 "
-    : "space-y-4";
+    ? "overflow-hidden rounded-xl border border-border/40 shadow-sm"
+    : "space-y-3";
   const isPopup = variant === "popup" || variant === "compact";
 
   const accordionEnabled = Boolean(ui.accordion);
@@ -123,38 +134,41 @@ export const SectionRenderer = <TValues extends Record<string, any>>({
       {section.title ? (
         <div className="flex items-center gap-2.5">
           {section.icon && (
-            <div className="flex size-8 items-center justify-center  bg-primary/10 text-primary">
-              {renderIcon(section.icon, "size-4")}
+            <div className="flex size-7 items-center justify-center rounded-lg bg-primary/10 text-primary">
+              {renderIcon(section.icon, "size-3.5")}
             </div>
           )}
-          <h3 className="text-lg font-bold tracking-tight text-foreground">
+          <h3 className="text-base font-semibold tracking-tight text-foreground">
             {section.title}
           </h3>
         </div>
       ) : null}
       {section.description ? (
-        <p className="text-sm text-muted-foreground/80 pl-[calc(2rem+0.625rem)]">
+        <p className="text-sm text-muted-foreground/70 pl-[calc(1.75rem+0.625rem)]">
           {section.description}
         </p>
       ) : null}
-      {!cardEnabled && <Separator className="mt-2 opacity-50" />}
+      {!cardEnabled && <Separator className="mt-2 opacity-30" />}
     </div>
   ) : null;
 
+  // ── Non-accordion layout ─────────────────────────────────────────────
   if (!accordionEnabled) {
     return (
       <Wrapper
         className={cn(
           wrapperClass,
-          !cardEnabled && "border-0  bg-transparent p-0",
+          !cardEnabled && "border-0 bg-transparent p-0",
           ui.className,
           isPopup ? "p-0" : null,
         )}
       >
         {cardEnabled && headerContent && (
-          <div className="border-b bg-muted/30 px-6 py-4">{headerContent}</div>
+          <div className="border-b border-border/30 bg-muted/20 px-5 py-3.5">
+            {headerContent}
+          </div>
         )}
-        <div className={cn(cardEnabled ? "p-6" : "pt-2")}>
+        <div className={cn(cardEnabled ? "p-5" : "pt-1")}>
           {!cardEnabled && headerContent}
           {fieldsGrid}
         </div>
@@ -162,13 +176,14 @@ export const SectionRenderer = <TValues extends Record<string, any>>({
     );
   }
 
+  // ── Accordion layout ─────────────────────────────────────────────────
   const accordionTitle = section.title ?? section.id ?? "Section";
 
   return (
     <div
       className={cn(
-        "group overflow-hidden  border border-border/60 bg-card/30 transition-all duration-300 hover:border-border",
-        accordionOpen && "bg-card ",
+        "group overflow-hidden rounded-xl border border-border/40 bg-card/30 transition-all duration-200 hover:border-border/60",
+        accordionOpen && "bg-card shadow-sm",
         ui.className,
       )}
     >
@@ -180,30 +195,30 @@ export const SectionRenderer = <TValues extends Record<string, any>>({
           <button
             type="button"
             className={cn(
-              "flex w-full items-center justify-between px-6 py-4 text-left outline-none transition-colors",
-              "hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-primary/20",
-              accordionOpen && "border-b bg-muted/20",
+              "flex w-full items-center justify-between px-5 py-3.5 text-left outline-none transition-colors",
+              "hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-inset",
+              accordionOpen && "border-b border-border/30 bg-muted/15",
             )}
           >
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2.5">
               {section.icon && (
                 <div
                   className={cn(
-                    "flex size-8 items-center justify-center  transition-colors",
+                    "flex size-7 items-center justify-center rounded-lg transition-colors",
                     accordionOpen
                       ? "bg-primary text-primary-foreground"
                       : "bg-primary/10 text-primary",
                   )}
                 >
-                  {renderIcon(section.icon, "size-4")}
+                  {renderIcon(section.icon, "size-3.5")}
                 </div>
               )}
               <div className="flex flex-col">
-                <span className="text-base font-bold tracking-tight">
+                <span className="text-sm font-semibold tracking-tight">
                   {accordionTitle}
                 </span>
                 {section.description && !accordionOpen && (
-                  <span className="text-xs text-muted-foreground line-clamp-1">
+                  <span className="text-xs text-muted-foreground/60 line-clamp-1">
                     {section.description}
                   </span>
                 )}
@@ -211,13 +226,13 @@ export const SectionRenderer = <TValues extends Record<string, any>>({
             </div>
             <div
               className={cn(
-                "flex size-6 items-center justify-center  transition-all duration-300",
+                "flex size-6 items-center justify-center rounded-md transition-all duration-200",
                 accordionOpen
                   ? "bg-primary/10 text-primary rotate-180"
-                  : "bg-muted text-muted-foreground rotate-0",
+                  : "bg-muted/50 text-muted-foreground rotate-0",
               )}
             >
-              <ChevronDown className="size-4" />
+              <ChevronDown className="size-3.5" />
             </div>
           </button>
         </CollapsibleTrigger>
@@ -226,9 +241,9 @@ export const SectionRenderer = <TValues extends Record<string, any>>({
             "overflow-hidden transition-all data-[state=closed]:animate-collapse-up data-[state=open]:animate-collapse-down",
           )}
         >
-          <div className="p-6">
+          <div className="p-5">
             {section.description && (
-              <p className="mb-6 text-sm text-muted-foreground/80">
+              <p className="mb-5 text-sm text-muted-foreground/70">
                 {section.description}
               </p>
             )}

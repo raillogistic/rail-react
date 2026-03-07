@@ -1,8 +1,15 @@
+/**
+ * Boolean form inputs: checkbox and switch toggles.
+ *
+ * Renders a clickable card with either a Checkbox or Switch component
+ * and a label that reflects the current boolean state.
+ *
+ * @module form/inputs/boolean
+ */
 import React from "react";
 import { useStore } from "@tanstack/react-form";
 import { Checkbox } from "@/shared/ui/kit/checkbox";
 import { Switch } from "@/shared/ui/kit/switch";
-import { Button } from "@/shared/ui/kit/button";
 import { cn } from "@/shared/utils";
 import {
   FieldWrapper,
@@ -13,6 +20,7 @@ import type { BooleanFieldConfig, FieldComponentProps } from "./types";
 
 type Props = FieldComponentProps<BooleanFieldConfig, boolean>;
 
+/** Renders a boolean field as either a switch or checkbox card. */
 const BooleanInput: React.FC<Props> = ({ config, field, form }) => {
   const meta = field.state.meta;
   const dirty = meta.isDirty;
@@ -34,6 +42,7 @@ const BooleanInput: React.FC<Props> = ({ config, field, form }) => {
     ? (config.trueLabel ?? "Oui")
     : (config.falseLabel ?? "Non");
 
+  // ── Switch variant ───────────────────────────────────────────────────
   if (config.type === "switch") {
     return (
       <FieldWrapper
@@ -44,10 +53,10 @@ const BooleanInput: React.FC<Props> = ({ config, field, form }) => {
       >
         <div
           className={cn(
-            "flex items-center gap-3 border border-border/30 bg-muted/10 p-3 transition-all duration-300  ",
-            "hover:border-border/60 hover:bg-muted/20 hover: hover:-translate-y-0.5",
+            "flex items-center gap-3 rounded-lg border border-border/50 bg-background p-3 transition-all duration-200",
+            "hover:border-border hover:bg-accent/30",
             value
-              ? "border-primary/50 bg-primary/5 ring-2 ring-primary/20 "
+              ? "border-primary/30 bg-primary/5 ring-1 ring-primary/10"
               : "",
           )}
         >
@@ -58,39 +67,30 @@ const BooleanInput: React.FC<Props> = ({ config, field, form }) => {
             onCheckedChange={(checked) => field.handleChange(Boolean(checked))}
             disabled={config.disabled}
           />
-          <div className="flex flex-col">
+          <div className="flex flex-1 flex-col">
             <span
               className={cn(
                 "text-sm font-medium transition-colors",
-                value ? "text-primary" : "text-foreground/70",
+                value ? "text-foreground" : "text-foreground/60",
               )}
             >
               {label}
             </span>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            className="ml-auto h-8 px-3 text-[11px] font-bold uppercase tracking-wider text-muted-foreground transition-all hover:bg-primary/20 hover:text-primary  border border-transparent hover:border-primary/30"
-            onClick={() => field.handleChange(!value)}
-            type="button"
-            disabled={config.disabled}
-          >
-            {value ? "Désactiver" : "Activer"}
-          </Button>
         </div>
       </FieldWrapper>
     );
   }
 
+  // ── Checkbox variant (default) ───────────────────────────────────────
   return (
     <FieldWrapper config={config} fieldId={fieldId} error={error} dirty={dirty}>
       <div
         className={cn(
-          "flex cursor-pointer items-center gap-3 border border-border/30 bg-muted/10 px-5 py-2 transition-all duration-300  ",
-          "hover:border-primary/30 hover:bg-muted/20 hover: hover:-translate-y-0.5",
+          "flex cursor-pointer items-center gap-3 rounded-lg border border-border/50 bg-background px-4 py-2.5 transition-all duration-200",
+          "hover:border-border hover:bg-accent/30",
           value
-            ? "border-primary/50 bg-primary/5 ring-2 ring-primary/20 "
+            ? "border-primary/30 bg-primary/5 ring-1 ring-primary/10"
             : "",
         )}
         onClick={() => !config.disabled && field.handleChange(!value)}
@@ -102,14 +102,14 @@ const BooleanInput: React.FC<Props> = ({ config, field, form }) => {
           onCheckedChange={(checked) => field.handleChange(Boolean(checked))}
           onBlur={field.handleBlur}
           disabled={config.disabled}
-          className="size-5 "
+          className="size-4.5 rounded"
           onClick={(e) => e.stopPropagation()}
         />
         <div className="flex flex-col cursor-pointer select-none">
           <span
             className={cn(
-              "text-sm font-semibold transition-colors",
-              value ? "text-primary" : "text-foreground/80",
+              "text-sm font-medium transition-colors",
+              value ? "text-foreground" : "text-foreground/60",
             )}
           >
             {label}

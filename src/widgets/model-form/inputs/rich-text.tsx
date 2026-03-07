@@ -1,3 +1,11 @@
+/**
+ * Rich text editor input powered by TipTap (ProseMirror).
+ *
+ * Provides a toolbar with common formatting actions and a WYSIWYG editing
+ * area, all wrapped inside the shared FieldWrapper.
+ *
+ * @module form/inputs/rich-text
+ */
 import React from "react";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
@@ -28,6 +36,7 @@ import { useStore } from "@tanstack/react-form";
 
 type Props = FieldComponentProps<RichTextFieldConfig>;
 
+/** Renders a rich text editor with a formatting toolbar. */
 const RichTextInput: React.FC<Props> = ({ config, field, form }) => {
   const meta = field.state.meta;
   const dirty = meta.isDirty;
@@ -59,7 +68,6 @@ const RichTextInput: React.FC<Props> = ({ config, field, form }) => {
     editable: !config.disabled && !config.readOnly,
     onUpdate: ({ editor }) => {
       const html = editor.getHTML();
-      // If empty (just <p></p>), set to empty string for validation
       const isEmpty = editor.isEmpty;
       field.handleChange(isEmpty ? "" : html);
     },
@@ -68,12 +76,9 @@ const RichTextInput: React.FC<Props> = ({ config, field, form }) => {
     },
   });
 
-  // Sync external value changes (e.g. reset)
+  // Sync external value changes (e.g. form reset)
   React.useEffect(() => {
     if (editor && field.state.value !== editor.getHTML()) {
-      // Only update if content is different to avoid cursor jumps
-      // But checking HTML equality is tricky.
-      // A simple check: if editor is empty and value is not, or vice versa
       if (field.state.value === "" && !editor.isEmpty) {
         editor.commands.clearContent();
       } else if (
@@ -101,24 +106,29 @@ const RichTextInput: React.FC<Props> = ({ config, field, form }) => {
     "quote",
   ];
 
+  /** Shared toggle button className for all toolbar items. */
+  const toggleClass =
+    "size-8 rounded-md p-0 transition-colors data-[state=on]:bg-primary/10 data-[state=on]:text-primary hover:bg-accent/50";
+
   return (
     <FieldWrapper config={config} fieldId={fieldId} error={error} dirty={dirty}>
       <div
         className={cn(
-          "flex flex-col overflow-hidden border border-border/60 bg-background/50 transition-all focus-within:border-primary/50 focus-within:ring-4 focus-within:ring-primary/5 ",
-          showError && "border-destructive/50 ring-4 ring-destructive/5",
+          "flex flex-col overflow-hidden rounded-lg border border-input bg-background transition-all duration-200",
+          "focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20",
+          showError && "border-destructive/50 ring-1 ring-destructive/10",
           config.disabled && "opacity-60 cursor-not-allowed",
         )}
       >
-        {/* Toolbar */}
+        {/* ── Toolbar ─────────────────────────────────────────────── */}
         {!config.readOnly && !config.disabled && (
-          <div className="flex flex-wrap items-center gap-1 border-b border-border/30 bg-muted/20 p-1.5">
+          <div className="flex flex-wrap items-center gap-0.5 border-b border-border/40 bg-muted/20 p-1.5">
             {toolbarButtons.map((btn, i) => {
               if (btn === "separator") {
                 return (
                   <div
                     key={`sep-${i}`}
-                    className="mx-1 h-5 w-px bg-border/40"
+                    className="mx-1.5 h-5 w-px bg-border/40"
                   />
                 );
               }
@@ -132,7 +142,7 @@ const RichTextInput: React.FC<Props> = ({ config, field, form }) => {
                     onPressedChange={() =>
                       editor.chain().focus().toggleBold().run()
                     }
-                    className="size-7 p-0 data-[state=on]:bg-primary/10 data-[state=on]:text-primary"
+                    className={toggleClass}
                   >
                     <Bold className="size-3.5" />
                   </Toggle>
@@ -148,7 +158,7 @@ const RichTextInput: React.FC<Props> = ({ config, field, form }) => {
                     onPressedChange={() =>
                       editor.chain().focus().toggleItalic().run()
                     }
-                    className="size-7 p-0 data-[state=on]:bg-primary/10 data-[state=on]:text-primary"
+                    className={toggleClass}
                   >
                     <Italic className="size-3.5" />
                   </Toggle>
@@ -164,7 +174,7 @@ const RichTextInput: React.FC<Props> = ({ config, field, form }) => {
                     onPressedChange={() =>
                       editor.chain().focus().toggleStrike().run()
                     }
-                    className="size-7 p-0 data-[state=on]:bg-primary/10 data-[state=on]:text-primary"
+                    className={toggleClass}
                   >
                     <Strikethrough className="size-3.5" />
                   </Toggle>
@@ -180,7 +190,7 @@ const RichTextInput: React.FC<Props> = ({ config, field, form }) => {
                     onPressedChange={() =>
                       editor.chain().focus().toggleCode().run()
                     }
-                    className="size-7 p-0 data-[state=on]:bg-primary/10 data-[state=on]:text-primary"
+                    className={toggleClass}
                   >
                     <Code className="size-3.5" />
                   </Toggle>
@@ -196,7 +206,7 @@ const RichTextInput: React.FC<Props> = ({ config, field, form }) => {
                     onPressedChange={() =>
                       editor.chain().focus().toggleHeading({ level: 2 }).run()
                     }
-                    className="size-7 p-0 data-[state=on]:bg-primary/10 data-[state=on]:text-primary"
+                    className={toggleClass}
                   >
                     <Heading1 className="size-3.5" />
                   </Toggle>
@@ -212,7 +222,7 @@ const RichTextInput: React.FC<Props> = ({ config, field, form }) => {
                       onPressedChange={() =>
                         editor.chain().focus().toggleBulletList().run()
                       }
-                      className="size-7 p-0 data-[state=on]:bg-primary/10 data-[state=on]:text-primary"
+                      className={toggleClass}
                     >
                       <List className="size-3.5" />
                     </Toggle>
@@ -222,7 +232,7 @@ const RichTextInput: React.FC<Props> = ({ config, field, form }) => {
                       onPressedChange={() =>
                         editor.chain().focus().toggleOrderedList().run()
                       }
-                      className="size-7 p-0 data-[state=on]:bg-primary/10 data-[state=on]:text-primary"
+                      className={toggleClass}
                     >
                       <ListOrdered className="size-3.5" />
                     </Toggle>
@@ -239,7 +249,7 @@ const RichTextInput: React.FC<Props> = ({ config, field, form }) => {
                     onPressedChange={() =>
                       editor.chain().focus().toggleBlockquote().run()
                     }
-                    className="size-7 p-0 data-[state=on]:bg-primary/10 data-[state=on]:text-primary"
+                    className={toggleClass}
                   >
                     <Quote className="size-3.5" />
                   </Toggle>
@@ -255,7 +265,7 @@ const RichTextInput: React.FC<Props> = ({ config, field, form }) => {
                     onPressedChange={() => {
                       const previousUrl = editor.getAttributes("link").href;
                       const url = window.prompt("URL", previousUrl);
-                      if (url === null) return; // cancelled
+                      if (url === null) return;
                       if (url === "") {
                         editor
                           .chain()
@@ -272,7 +282,7 @@ const RichTextInput: React.FC<Props> = ({ config, field, form }) => {
                         .setLink({ href: url })
                         .run();
                     }}
-                    className="size-7 p-0 data-[state=on]:bg-primary/10 data-[state=on]:text-primary"
+                    className={toggleClass}
                   >
                     <LinkIcon className="size-3.5" />
                   </Toggle>
@@ -284,13 +294,13 @@ const RichTextInput: React.FC<Props> = ({ config, field, form }) => {
           </div>
         )}
 
-        {/* Editor Area */}
+        {/* ── Editor area ─────────────────────────────────────────── */}
         <EditorContent
           editor={editor}
           className={cn(
-            "prose prose-sm prose-stone dark:prose-invert max-w-none p-3 outline-none min-h-24",
+            "prose prose-sm prose-stone dark:prose-invert max-w-none p-4 outline-none min-h-24",
             "prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-ol:my-1",
-            "[&_.is-editor-empty]:before:text-muted-foreground/50 [&_.is-editor-empty]:before:content-[attr(data-placeholder)] [&_.is-editor-empty]:before:float-left [&_.is-editor-empty]:before:pointer-events-none",
+            "[&_.is-editor-empty]:before:text-muted-foreground/40 [&_.is-editor-empty]:before:content-[attr(data-placeholder)] [&_.is-editor-empty]:before:float-left [&_.is-editor-empty]:before:pointer-events-none",
           )}
           style={{
             minHeight: config.minHeight,

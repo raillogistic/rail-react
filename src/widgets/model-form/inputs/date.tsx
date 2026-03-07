@@ -1,3 +1,11 @@
+/**
+ * Date picker input using a pop-over calendar.
+ *
+ * Stores the selected date as an ISO `yyyy-MM-dd` string and renders a
+ * localized French display label via date-fns.
+ *
+ * @module form/inputs/date
+ */
 import * as React from "react";
 import { useStore } from "@tanstack/react-form";
 import { Calendar, CalendarDays } from "lucide-react";
@@ -21,9 +29,12 @@ import type { DateFieldConfig, FieldComponentProps } from "./types";
 
 type Props = FieldComponentProps<DateFieldConfig, string>;
 
+/** Human-readable display format. */
 const DISPLAY_FORMAT = "PPP";
+/** ISO date format for storage. */
 const STORAGE_FORMAT = "yyyy-MM-dd";
 
+/** Renders a date picker with pop-over calendar. */
 const DateInput: React.FC<Props> = ({ config, field, form }) => {
   const meta = field.state.meta;
   const dirty = meta.isDirty;
@@ -83,10 +94,11 @@ const DateInput: React.FC<Props> = ({ config, field, form }) => {
             variant="outline"
             data-slot="input"
             className={cn(
-              "h-9 w-full justify-start border-border/40 bg-muted/20 px-3 text-left text-sm font-normal transition-all duration-300  ",
-              "hover:border-border/60 hover:bg-muted/40 focus:border-primary/50 focus:bg-background focus:ring-4 focus:ring-primary/10",
+              "h-10 w-full justify-start rounded-md border border-input bg-background px-3 text-left text-sm font-normal transition-all duration-200",
+              "hover:border-border hover:bg-accent/30",
+              "focus:border-primary focus:ring-2 focus:ring-primary/20",
               !parsedValue && "text-muted-foreground",
-              parsedValue && "border-primary/30 font-medium text-foreground",
+              parsedValue && "text-foreground font-medium",
               config.disabled && "cursor-not-allowed opacity-60",
             )}
             disabled={config.disabled}
@@ -94,14 +106,14 @@ const DateInput: React.FC<Props> = ({ config, field, form }) => {
             <CalendarDays
               className={cn(
                 "mr-2.5 size-4 transition-colors",
-                parsedValue ? "text-primary" : "text-muted-foreground/60",
+                parsedValue ? "text-primary" : "text-muted-foreground/40",
               )}
             />
             <span className="truncate">{buttonLabel}</span>
           </Button>
         </PopoverTrigger>
         <PopoverContent
-          className="w-auto p-0 border-border/30  bg-background/95 backdrop-blur-md "
+          className="w-auto rounded-lg border border-border/50 bg-popover p-0 shadow-lg"
           align="start"
         >
           <CalendarComponent
@@ -121,6 +133,7 @@ const DateInput: React.FC<Props> = ({ config, field, form }) => {
   );
 };
 
+/** Safely parses a date string or Date instance. */
 function parseDateValue(value?: string | Date | null): Date | undefined {
   if (!value) return undefined;
   if (value instanceof Date) {
@@ -134,6 +147,7 @@ function parseDateValue(value?: string | Date | null): Date | undefined {
   }
 }
 
+/** Type-guard: checks whether a Date is valid. */
 function isValidDate(value?: Date): value is Date {
   return Boolean(value && !Number.isNaN(value.getTime()));
 }

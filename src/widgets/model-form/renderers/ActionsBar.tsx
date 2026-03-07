@@ -3,6 +3,8 @@
  *
  * Renders submit/reset buttons, extra action slots, dirty indicator,
  * and optional submit confirmation dialog.
+ *
+ * @module form/renderers/ActionsBar
  */
 import React from "react";
 import type { UseFormReturn } from "@tanstack/react-form";
@@ -27,9 +29,11 @@ import {
   Undo,
   Redo,
   Check,
+  Circle,
 } from "lucide-react";
 import type { FormActionsConfig } from "../types/actions";
 
+/** Props for the ActionsBar component. */
 export type ActionsBarProps<TValues> = {
   form: UseFormReturn<TValues>;
   config?: FormActionsConfig<TValues>;
@@ -43,6 +47,10 @@ export type ActionsBarProps<TValues> = {
   };
 };
 
+/**
+ * Renders the form action bar with submit, reset, undo/redo,
+ * dirty indicator, and optional confirm dialog.
+ */
 export const ActionsBar = <TValues extends Record<string, any>>({
   form,
   config,
@@ -77,13 +85,14 @@ export const ActionsBar = <TValues extends Record<string, any>>({
   const isPopup = variant === "popup" || variant === "compact";
 
   const actionsClass = cn(
-    "z-50 flex flex-wrap items-center justify-between px-6 py-4",
-    "transition-all duration-300 ease-in-out",
+    "z-50 flex flex-wrap items-center justify-between px-4 py-3",
+    "transition-all duration-200 ease-in-out",
     isPopup
-      ? "mt-4 border-t border-border/40 bg-accent/30 "
-      : "sticky bottom-0 mt-6 -mx-4 border-t bg-background/80 backdrop-blur-md _-4px_12px_rgba(0,0,0,0.03)]",
+      ? "mt-3 rounded-lg border border-border/30 bg-muted/20"
+      : "sticky bottom-0 mt-4 -mx-2 rounded-lg border border-border/30 bg-background/90 backdrop-blur-md shadow-sm",
   );
 
+  /** Handles submit click, optionally opening the confirmation dialog. */
   const handleSubmitClick = () => {
     if (confirmSubmit?.enabled) {
       setConfirmOpen(true);
@@ -108,13 +117,13 @@ export const ActionsBar = <TValues extends Record<string, any>>({
   return (
     <>
       <div className={actionsClass}>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           {showDirtyIndicator && isDirty ? (
             <Badge
               variant="secondary"
-              className="bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/30 dark:text-emerald-400 dark:border-emerald-800 animate-in fade-in slide-in-from-left-2  px-2"
+              className="rounded-full border-none bg-emerald-500/10 text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-400 animate-in fade-in slide-in-from-left-2 px-2.5 py-0.5 text-[11px] font-medium"
             >
-              <Check className="mr-1.5 size-3.5" />
+              <Circle className="mr-1.5 size-2 fill-current" />
               Modifications non enregistrées
             </Badge>
           ) : (
@@ -122,16 +131,16 @@ export const ActionsBar = <TValues extends Record<string, any>>({
           )}
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           {renderedExtra}
 
           {showUndoRedo && history ? (
-            <div className="flex items-center gap-1 border-r border-border/40 pr-3 mr-1">
+            <div className="flex items-center gap-0.5 border-r border-border/40 pr-2.5 mr-0.5">
               <Button
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="size-8 text-muted-foreground"
+                className="size-8 rounded-md text-muted-foreground hover:text-foreground"
                 onClick={history.undo}
                 disabled={!history.canUndo || isSubmitting}
                 title="Annuler"
@@ -142,7 +151,7 @@ export const ActionsBar = <TValues extends Record<string, any>>({
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="size-8 text-muted-foreground"
+                className="size-8 rounded-md text-muted-foreground hover:text-foreground"
                 onClick={history.redo}
                 disabled={!history.canRedo || isSubmitting}
                 title="Rétablir"
@@ -158,9 +167,9 @@ export const ActionsBar = <TValues extends Record<string, any>>({
             size="sm"
             onClick={() => form.reset()}
             disabled={isSubmitting || !isDirty}
-            className="text-muted-foreground hover:text-foreground "
+            className="rounded-md text-muted-foreground hover:text-foreground"
           >
-            <RotateCcw className="mr-2 size-4" />
+            <RotateCcw className="mr-1.5 size-3.5" />
             {resetLabel}
           </Button>
 
@@ -168,17 +177,17 @@ export const ActionsBar = <TValues extends Record<string, any>>({
             type={confirmSubmit?.enabled ? "button" : "submit"}
             size="sm"
             disabled={isSubmitting || isLoading || (!isDirty && !canSubmit)}
-            className=" /20 min-w-[120px]"
+            className="min-w-[120px] rounded-md"
             onClick={confirmSubmit?.enabled ? handleSubmitClick : undefined}
           >
             {isSubmitting ? (
               <>
-                <Loader2 className="mr-2 size-4 animate-spin" />
+                <Loader2 className="mr-1.5 size-3.5 animate-spin" />
                 Enregistrement...
               </>
             ) : (
               <>
-                <Save className="mr-2 size-4" />
+                <Save className="mr-1.5 size-3.5" />
                 {submitLabel}
               </>
             )}
@@ -207,10 +216,10 @@ export const ActionsBar = <TValues extends Record<string, any>>({
 
       {confirmSubmit?.enabled ? (
         <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-          <DialogContent className="sm:max-w-[425px]">
+          <DialogContent className="sm:max-w-[425px] rounded-xl">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
-                <AlertTriangle className="size-5 text-warning text-amber-500" />
+                <AlertTriangle className="size-5 text-amber-500" />
                 {confirmSubmit.title ?? "Confirmer la soumission"}
               </DialogTitle>
               <DialogDescription className="pt-2">
@@ -223,12 +232,13 @@ export const ActionsBar = <TValues extends Record<string, any>>({
                 type="button"
                 variant="outline"
                 onClick={() => setConfirmOpen(false)}
-                className=""
+                className="rounded-md"
               >
                 Annuler
               </Button>
               <Button
                 type="button"
+                className="rounded-md"
                 onClick={() => {
                   setConfirmOpen(false);
                   void form.handleSubmit();
