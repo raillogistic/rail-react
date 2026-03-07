@@ -13,6 +13,8 @@ import {
 } from "./schemaTransforms";
 import { EMPTY_PATHS, isRecord } from "./modelFormUtils";
 
+const NESTED_IDENTITY_KEYS = ["id", "pk", "objectId", "object_id"] as const;
+
 export type UseModelFormSchemaOptions<
   TFormValues extends Record<string, unknown>,
 > = Pick<
@@ -105,18 +107,39 @@ function stripNonEditableFields<TValues extends Record<string, unknown>>(
   };
 }
 
+function preserveNestedIdentityValues(
+  values: Record<string, unknown>,
+  target: Record<string, unknown>,
+): Record<string, unknown> {
+  const nextTarget = { ...target };
+  for (const key of NESTED_IDENTITY_KEYS) {
+    const candidate = values[key];
+    if (candidate !== undefined) {
+      nextTarget[key] = candidate;
+    }
+  }
+  return nextTarget;
+}
+
 function sanitizeRecordByFieldConfigs(
   values: Record<string, unknown>,
   fields: FormFieldConfig[],
+  options?: { preserveIdentityKeys?: boolean },
 ): Record<string, unknown> {
-  return fields.reduce<Record<string, unknown>>((acc, field) => {
+  const sanitized = fields.reduce<Record<string, unknown>>((acc, field) => {
     const path = String(field.name ?? "").trim();
     if (!path || field.readOnly) return acc;
     const resolved = getValueByPath(values, path);
-    const sanitized = sanitizeFieldValueByConfig(resolved, field);
-    if (sanitized === undefined) return acc;
-    return setValueByPath(acc, path, sanitized);
+    const nextValue = sanitizeFieldValueByConfig(resolved, field);
+    if (nextValue === undefined) return acc;
+    return setValueByPath(acc, path, nextValue);
   }, {});
+
+  if (options?.preserveIdentityKeys) {
+    return preserveNestedIdentityValues(values, sanitized);
+  }
+
+  return sanitized;
 }
 
 function sanitizeFieldValueByConfig(
@@ -134,6 +157,7 @@ function sanitizeFieldValueByConfig(
     return sanitizeRecordByFieldConfigs(
       value as Record<string, unknown>,
       nestedFields,
+      { preserveIdentityKeys: true },
     );
   }
 
@@ -147,6 +171,7 @@ function sanitizeFieldValueByConfig(
       return sanitizeRecordByFieldConfigs(
         item as Record<string, unknown>,
         nestedFields,
+        { preserveIdentityKeys: true },
       );
     });
   }
