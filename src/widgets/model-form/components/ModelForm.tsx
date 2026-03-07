@@ -481,24 +481,20 @@ export function ModelForm<
     <div
       data-slot="model-form"
       className={cn(
-        "group/model-form relative w-full transition-all duration-500",
-        !isPopupLayoutVariant &&
-          "bg-background shadow-sm border-foreground p-6 md:p-10  dark:shadow-[8px_8px_0_0_#333]", // Wait, user said "no shadow and no rounded". I'll remove shadow.
+        "group/model-form relative w-full transition-all duration-300",
+        !isPopupLayoutVariant && "bg-background shadow-sm border border-border/40 rounded-xl p-6 md:p-8",
         containerClassName,
-      ).replace(/shadow-\[.*\]/g, "")}
+      )}
     >
       {showHeading && (title || description) ? (
-        <header className="mb-10 space-y-4 px-2">
+        <header className="mb-8 space-y-1.5 px-1">
           {title && (
-            <div className="flex items-center gap-4">
-              <div className="h-10 w-3 bg-primary" />
-              <h2 className="text-3xl font-black uppercase tracking-widest text-foreground sm:text-4xl">
-                {title}
-              </h2>
-            </div>
+            <h2 className="text-xl font-semibold tracking-tight text-foreground">
+              {title}
+            </h2>
           )}
           {description && (
-            <p className="max-w-3xl text-sm font-bold uppercase tracking-wide leading-relaxed text-muted-foreground sm:text-base border-l-4 border-muted pl-4">
+            <p className="max-w-2xl text-[13.5px] leading-relaxed text-muted-foreground/80">
               {description}
             </p>
           )}
@@ -506,9 +502,8 @@ export function ModelForm<
       ) : null}
       <div
         className={cn(
-          isPopupLayoutVariant
-            ? "relative transition-transform duration-300"
-            : "relative bg-background transition-transform duration-300 border-t-4 border-border pt-6",
+          "relative transition-all duration-300",
+          !isPopupLayoutVariant && "pt-6 border-t border-border/40",
           contentClassName,
         )}
       >

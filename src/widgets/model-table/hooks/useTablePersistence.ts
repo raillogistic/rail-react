@@ -10,6 +10,7 @@ import {
 } from "@/shared/api/graphql/legacy/mutations";
 
 const STORAGE_PREFIX = "rail-table-v2";
+const RESET_MARKER_PREFIX = `${STORAGE_PREFIX}:hard-reset`;
 const VISIBILITY_SCHEMA_VERSION = 3;
 
 export interface PersistedTableState {
@@ -32,6 +33,75 @@ type CurrentTableStateSnapshot = {
  density: TableDensity;
  wrapCells: boolean;
 };
+
+function buildStorageKey(key: string): string {
+ return `${STORAGE_PREFIX}:${key}`;
+}
+
+function buildResetMarkerKey(key: string): string {
+ return `${RESET_MARKER_PREFIX}:${key}`;
+}
+
+export function getNormalizedTablePersistenceKeys(key: string): string[] {
+ const trimmedKey = key.trim();
+ if (!trimmedKey) {
+ return [];
+ }
+
+ const variants = new Set<string>([trimmedKey]);
+ if (trimmedKey.endsWith("/")) {
+ const withoutTrailingSlash = trimmedKey.replace(/\/+$/, "");
+ if (withoutTrailingSlash) {
+ variants.add(withoutTrailingSlash);
+ }
+ } else {
+ variants.add(`${trimmedKey}/`);
+ }
+
+ return Array.from(variants);
+}
+
+function hasPendingTablePersistenceReset(key: string): boolean {
+ if (typeof window === "undefined") {
+ return false;
+ }
+
+ try {
+ return getNormalizedTablePersistenceKeys(key).some((candidateKey) =>
+ localStorage.getItem(buildResetMarkerKey(candidateKey)) === "1",
+ );
+ } catch {
+ return false;
+ }
+}
+
+export function markPendingTablePersistenceReset(key: string): void {
+ if (typeof window === "undefined") {
+ return;
+ }
+
+ try {
+ getNormalizedTablePersistenceKeys(key).forEach((candidateKey) => {
+ localStorage.setItem(buildResetMarkerKey(candidateKey), "1");
+ });
+ } catch {
+ // Ignore storage errors and continue the hard-refresh flow.
+ }
+}
+
+export function clearPendingTablePersistenceReset(key: string): void {
+ if (typeof window === "undefined") {
+ return;
+ }
+
+ try {
+ getNormalizedTablePersistenceKeys(key).forEach((candidateKey) => {
+ localStorage.removeItem(buildResetMarkerKey(candidateKey));
+ });
+ } catch {
+ // Ignore storage errors; the marker is best-effort only.
+ }
+}
 
 const GET_USER_TABLE_CONFIGS = gql`
  query GetUserTableConfigs {
@@ -309,6 +379,9 @@ export function loadPersistedTableState(
  },
 ): PersistedTableState | null {
  const allowLocalFallback = options?.allowLocalFallback ?? true;
+ if (hasPendingTablePersistenceReset(key)) {
+ return null;
+ }
  const userConfig = getConfigForKey(key, userTableConfigs);
  if (userConfig) {
  return parsePersistedTableState(userConfig);
@@ -316,7 +389,7 @@ export function loadPersistedTableState(
  if (!allowLocalFallback) return null;
 
  if (typeof window === "undefined") return null;
- const storageKey =`${STORAGE_PREFIX}:${key}`;
+ const storageKey = buildStorageKey(key);
  try {
  const stored = localStorage.getItem(storageKey);
  if (!stored) return null;
@@ -345,7 +418,7 @@ export function useTablePersistence(key: string) {
  setWrapCells,
  } = useTable();
 
- const storageKey =`${STORAGE_PREFIX}:${key}`;
+ const storageKey = buildStorageKey(key);
  const initialKeyRef = useRef(key);
  const hasHydratedRef = useRef(false);
  const hasAppliedPersistedStateRef = useRef(false);
@@ -472,7 +545,10 @@ export function useTablePersistence(key: string) {
 
  if (hasHydratedRef.current) return;
 
- const userConfig = getConfigForKey(key, readTableConfigsFromSettings());
+ const pendingReset = hasPendingTablePersistenceReset(key);
+ const userConfig = pendingReset
+ ? null
+ : getConfigForKey(key, readTableConfigsFromSettings());
  if (userConfig) {
  applyParsedState(userConfig);
  hasAppliedPersistedStateRef.current = true;
@@ -483,6 +559,7 @@ export function useTablePersistence(key: string) {
 
  const isAuthenticated = !!user?.id;
  if (!isAuthenticated) {
+ if (!pendingReset) {
  try {
  const stored = localStorage.getItem(storageKey);
  if (stored) {
@@ -495,6 +572,8 @@ export function useTablePersistence(key: string) {
  } catch (e) {
  console.warn("Failed to load table state from localStorage", e);
  }
+ }
+ clearPendingTablePersistenceReset(key);
  }
 
  hasHydratedRef.current = true;
@@ -527,9 +606,10 @@ export function useTablePersistence(key: string) {
 
  const settingsConfigsRaw = readTableConfigsFromSettings();
  const settingsConfigs = decodeTableConfigs(settingsConfigsRaw);
+ const pendingReset = hasPendingTablePersistenceReset(key);
  if (settingsConfigs) {
  tableConfigsRef.current = settingsConfigs;
- const config = getConfigForKey(key, settingsConfigs);
+ const config = pendingReset ? null : getConfigForKey(key, settingsConfigs);
  if (config) {
  applyParsedState(config);
  hasAppliedPersistedStateRef.current = true;
@@ -554,11 +634,14 @@ export function useTablePersistence(key: string) {
  if (!serverConfigs) return;
 
  tableConfigsRef.current = serverConfigs;
- const config = getConfigForKey(key, serverConfigs);
+ const config = pendingReset ? null : getConfigForKey(key, serverConfigs);
  if (config) {
  // Server value is authoritative and must override local fallback values.
  applyParsedState(config);
  hasAppliedPersistedStateRef.current = true;
+ }
+ if (pendingReset && !getConfigForKey(key, serverConfigs)) {
+ clearPendingTablePersistenceReset(key);
  }
  } catch {
  // Silently fail, localStorage fallback is already applied.

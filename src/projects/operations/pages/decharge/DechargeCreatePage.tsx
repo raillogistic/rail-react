@@ -21,20 +21,26 @@ export const DECHARGE_NESTED_CONFIG: NonNullable<
       "qteSortie",
       "etatSortie",
       "serial",
+      "codeInventaire",
+      "garder",
+
       // "metadata_snapshot",
     ],
     customOrder: [
+      "codeInventaire",
       "libelle",
       "qteSortie",
       "etatSortie",
       "serial",
-      "metadataSnapshot",
+      "garder",
     ],
     fieldsOrder: "custom",
-    columns: 4,
+    columns: 5,
 
     collapsible: true,
-
+    fieldOverrides: {
+      libelle: { colSpan: 5 },
+    },
     addButton: {
       enabled: true,
       label: "Ajouter une ligne",
@@ -72,7 +78,13 @@ export function DechargeCreatePage() {
         state={{
           defaultValues: {
             site: "dmlskqdqs",
-            lignes: [{ qteSortie: 1, serial: "dsmlkdqmslk", libelle: "Ordinateur portable" }],
+            lignes: [
+              {
+                qteSortie: 1,
+                serial: "dsmlkdqmslk",
+                libelle: "Ordinateur portable",
+              },
+            ],
           },
           // persistKey: "operations.decharge.create.draft",
         }}

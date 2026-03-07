@@ -81,6 +81,11 @@ import {
   clearPersistedMetadataStore,
   getActiveMetadataUserKey,
 } from "@/shared/api/graphql/graphql/metadata/persisted-cache";
+import {
+  clearPendingTablePersistenceReset,
+  getNormalizedTablePersistenceKeys,
+  markPendingTablePersistenceReset,
+} from "../hooks/useTablePersistence";
 
 type TableToolbarProps = {
   filterPanel?: ModelTableFilterPanelProps;
@@ -168,15 +173,19 @@ export function TableToolbar({
     setHardRefreshing(true);
 
     const persistenceKey = resolvePersistenceKey();
-    const storageKey = `rail-table-v2:${persistenceKey}`;
+    const persistenceKeys = getNormalizedTablePersistenceKeys(persistenceKey);
     const metadataUserKey = getActiveMetadataUserKey();
 
+    markPendingTablePersistenceReset(persistenceKey);
+
     if (typeof window !== "undefined") {
-      try {
-        window.localStorage.removeItem(storageKey);
-      } catch {
-        // Ignore storage errors and continue hard-refresh flow.
-      }
+      persistenceKeys.forEach((candidateKey) => {
+        try {
+          window.localStorage.removeItem(`rail-table-v2:${candidateKey}`);
+        } catch {
+          // Ignore storage errors and continue hard-refresh flow.
+        }
+      });
     }
 
     if (metadataUserKey) {
@@ -184,19 +193,25 @@ export function TableToolbar({
     }
 
     try {
-      await resetUserTableConfig({
-        variables: {
-          key: persistenceKey,
-          tableConfig: {},
-        },
-      });
+      await Promise.all(
+        persistenceKeys.map((candidateKey) =>
+          resetUserTableConfig({
+            variables: {
+              key: candidateKey,
+              tableConfig: {},
+            },
+          }),
+        ),
+      );
     } catch {
       // Ignore mutation errors; local reset + reload still provide a hard refresh.
     }
 
     if (typeof window !== "undefined") {
       window.location.reload();
+      return;
     }
+    clearPendingTablePersistenceReset(persistenceKey);
   }, [hardRefreshing, resetUserTableConfig, resolvePersistenceKey]);
 
   const supportsQuick = !!metadata?.filterConfig?.supportsQuick;

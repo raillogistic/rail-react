@@ -26,6 +26,7 @@ export function DechargeEditPage() {
           // "pieceJointeUrl",
           "lignes",
         ]}
+        devtools={{ enabled: true }}
         layout={{
           columns: 2,
           ordering: {
