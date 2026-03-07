@@ -2,8 +2,8 @@ import { ModelForm, type ModelFormProps } from "@/widgets/model-form";
 
 type DechargeCreateValues = {
   lignes?: Array<{
-    article?: string;
     qteSortie?: number | string;
+    libelle?: string;
     etatSortie?: string;
     serial?: string;
   }>;
@@ -14,10 +14,9 @@ export const DECHARGE_NESTED_CONFIG: NonNullable<
 > = {
   lignes: {
     title: "Lignes de decharge",
-    description: "Ajoutez au moins une ligne article + quantite + etat.",
+    description: "Ajoutez au moins une ligne avec libelle, quantite et etat.",
     itemLabel: "Ligne",
     onlyFields: [
-      // "article",
       "libelle",
       "qteSortie",
       "etatSortie",
@@ -25,7 +24,7 @@ export const DECHARGE_NESTED_CONFIG: NonNullable<
       // "metadata_snapshot",
     ],
     customOrder: [
-      // "article",
+      "libelle",
       "qteSortie",
       "etatSortie",
       "serial",
@@ -54,7 +53,7 @@ export function DechargeCreatePage() {
         app="operations"
         model="Decharge"
         mode="CREATE"
-        description="Saisissez les informations de la decharge puis ajoutez les lignes d'articles."
+        description="Saisissez les informations de la decharge puis ajoutez les lignes a remettre."
         onlyFields={[
           "beneficiaire",
           "dateDecharge",
@@ -73,7 +72,7 @@ export function DechargeCreatePage() {
         state={{
           defaultValues: {
             site: "dmlskqdqs",
-            lignes: [{ qteSortie: 1, serial: "dsmlkdqmslk", article: "2" }],
+            lignes: [{ qteSortie: 1, serial: "dsmlkdqmslk", libelle: "Ordinateur portable" }],
           },
           // persistKey: "operations.decharge.create.draft",
         }}

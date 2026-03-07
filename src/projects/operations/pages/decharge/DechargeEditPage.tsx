@@ -26,6 +26,13 @@ export function DechargeEditPage() {
           // "pieceJointeUrl",
           "lignes",
         ]}
+        layout={{
+          columns: 2,
+          ordering: {
+            enabled: true,
+            tailing: ["lignes"],
+          },
+        }}
         // nested={["lignes"]}
         nested={DECHARGE_NESTED_CONFIG}
       />

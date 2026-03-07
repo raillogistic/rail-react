@@ -507,7 +507,7 @@ describe("ModelForm", () => {
  customer: {
  phone: "222222222",
  },
- },
+ } as Record<string, unknown>,
  }}
  />,
  mocks,

@@ -1,4 +1,8 @@
 export const ROUTES = {
+  AFFECTATION_HISTORIQUE_LIST: "/operations/affectation-historique",
+  AFFECTATION_HISTORIQUE_CREATE: "/operations/affectation-historique/create",
+  AFFECTATION_HISTORIQUE_EDIT: "/operations/affectation-historique/:id/edit",
+  AFFECTATION_HISTORIQUE_DETAIL: "/operations/affectation-historique/:id",
   DECHARGE_LIST: "/operations/decharge",
   DECHARGE_CREATE: "/operations/decharge/create",
   DECHARGE_EDIT: "/operations/decharge/:id/edit",
