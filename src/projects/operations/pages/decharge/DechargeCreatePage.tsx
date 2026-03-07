@@ -1,7 +1,12 @@
 import { ModelForm, type ModelFormProps } from "@/widgets/model-form";
 
 type DechargeCreateValues = {
-  lignes?: Array<Record<string, unknown>>;
+  lignes?: Array<{
+    article?: string;
+    qteSortie?: number | string;
+    etatSortie?: string;
+    serial?: string;
+  }>;
 };
 
 const DECHARGE_NESTED_CONFIG: NonNullable<
@@ -12,7 +17,8 @@ const DECHARGE_NESTED_CONFIG: NonNullable<
     description: "Ajoutez au moins une ligne article + quantite + etat.",
     itemLabel: "Ligne",
     onlyFields: [
-      "article",
+      // "article",
+      "libelle",
       "qteSortie",
       "etatSortie",
       "serial",
@@ -44,7 +50,7 @@ const DECHARGE_NESTED_CONFIG: NonNullable<
 export function DechargeCreatePage() {
   return (
     <>
-      <ModelForm
+      <ModelForm<any>
         app="operations"
         model="Decharge"
         mode="CREATE"
@@ -58,8 +64,17 @@ export function DechargeCreatePage() {
           "lignes",
         ]}
         nested={DECHARGE_NESTED_CONFIG}
+        fieldOverrides={{
+          commentaire: {
+            colSpan: 2,
+          },
+        }}
         state={{
-          persistKey: "operations.decharge.create.draft",
+          defaultValues: {
+            site: "dmlskqdqs",
+            lignes: [{ qteSortie: 1, serial: "dsmlkdqmslk", article: "2" }],
+          },
+          // persistKey: "operations.decharge.create.draft",
         }}
         behavior={{
           validate: (values) => {

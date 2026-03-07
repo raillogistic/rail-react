@@ -13,6 +13,61 @@ import type { FormBehaviorConfig } from "./behavior";
 import type { FormLayoutConfig } from "./layout";
 import type { FormActionsConfig } from "./actions";
 
+type PrimitiveFormValue =
+ | string
+ | number
+ | boolean
+ | bigint
+ | symbol
+ | null
+ | undefined
+ | Date
+ | File
+ | Blob;
+
+type NonTraversableFormValue = PrimitiveFormValue | ((...args: any[]) => unknown);
+
+type FormObjectValue<T> = T extends NonTraversableFormValue
+ ? never
+ : T extends readonly any[]
+   ? never
+   : T extends object
+     ? T
+     : never;
+
+export type DeepPartialFormValue<T> = T extends NonTraversableFormValue
+ ? T
+ : T extends Array<infer TValue>
+   ? Array<DeepPartialFormValue<TValue>>
+   : T extends ReadonlyArray<infer TValue>
+     ? ReadonlyArray<DeepPartialFormValue<TValue>>
+     : T extends object
+       ? { [K in keyof T]?: DeepPartialFormValue<T[K]> }
+       : T;
+
+export type FormFieldPath<T> = T extends object
+ ? {
+     [K in Extract<keyof T, string>]: FormObjectValue<NonNullable<T[K]>> extends never
+       ? K
+       : K | `${K}.${FormFieldPath<FormObjectValue<NonNullable<T[K]>>>}`;
+   }[Extract<keyof T, string>]
+ : never;
+
+export type FormFieldPathValue<T, TPath extends string> =
+ TPath extends `${infer THead}.${infer TRest}`
+ ? THead extends keyof T
+   ? FormFieldPathValue<NonNullable<T[THead]>, TRest>
+   : never
+ : TPath extends keyof T
+   ? T[TPath]
+   : never;
+
+export type FormDefaultValues<TValues extends Record<string, any>> =
+ DeepPartialFormValue<TValues> &
+ Partial<{
+   [TPath in FormFieldPath<TValues>]: FormFieldPathValue<TValues, TPath>;
+ }>;
+
 type DisallowedLegacyDynamicFormProps = {
  defaultValues?: never;
  disableAutoReset?: never;
@@ -41,8 +96,8 @@ type DisallowedLegacyDynamicFormProps = {
 export interface FormStateConfig<TValues> {
  /** External TanStack form instance (for shared state across components) */
  form?: UseFormReturn<TValues>;
- /** Runtime defaults merged over schema defaults */
- defaultValues?: Partial<TValues>;
+ /** Runtime defaults merged over schema defaults; supports nested objects and dotted field paths */
+ defaultValues?: FormDefaultValues<TValues>;
  /** Skip automatic form resets when defaults change */
  disableAutoReset?: boolean;
  /** Global read-only mode - all fields become non-editable */

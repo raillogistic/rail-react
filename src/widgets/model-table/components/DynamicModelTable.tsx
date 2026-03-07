@@ -7,6 +7,7 @@
   useRef,
   useState,
 } from "react";
+import { RotateCw } from "lucide-react";
 import type {
   ColumnSizingState,
   ExpandedState,
@@ -23,6 +24,14 @@ import {
 import { createInitialFilterState } from "@/widgets/model-table/filtering/state";
 import type { DynamicTableFeatureFlags } from "../dynamic-table";
 import { TooltipProvider } from "@/shared/ui/kit/tooltip";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/shared/ui/kit/dialog";
+import { Button } from "@/shared/ui/kit/button";
 import { cn } from "@/shared/utils";
 import { MetadataProvider, useMetadata } from "../context/MetadataContext";
 import { TableProvider, useTable } from "../context/TableContext";
@@ -58,6 +67,7 @@ import {
   type PersistedTableState,
   useTablePersistence,
 } from "../hooks/useTablePersistence";
+import type { TemplatePdfPreviewPayload } from "../utils/templateExecution";
 import { useTableColumns } from "../hooks/useTableColumns";
 import { useTableData } from "../hooks/useTableData";
 import { useTableLayout } from "../hooks/useTableLayout";
@@ -483,6 +493,48 @@ function formatFallbackCellValue(value: unknown): string {
   return String(value);
 }
 
+function normalizePdfUrl(value: unknown): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  return /\.pdf(?:[?#].*)?$/i.test(trimmed) ? trimmed : null;
+}
+
+function getPdfLabel(pdfUrl: string): string {
+  const normalizedPath = pdfUrl.split("#")[0]?.split("?")[0] ?? pdfUrl;
+  const segments = normalizedPath.split("/").filter(Boolean);
+  return segments[segments.length - 1] || "Preview PDF";
+}
+
+function resolvePdfPreviewSrc(pdfUrl: string, reloadKey: number): string {
+  if (!pdfUrl || reloadKey <= 0 || pdfUrl.startsWith("blob:")) {
+    return pdfUrl;
+  }
+
+  try {
+    const base =
+      typeof window !== "undefined"
+        ? window.location.origin
+        : "http://localhost";
+    const parsed = new URL(pdfUrl, base);
+    parsed.searchParams.set("_pdf_refresh", String(reloadKey));
+    const isAbsolute = /^[a-zA-Z][a-zA-Z\d+\-.]*:/.test(pdfUrl);
+    if (isAbsolute) {
+      return parsed.toString();
+    }
+    return `${parsed.pathname}${parsed.search}${parsed.hash}`;
+  } catch {
+    const separator = pdfUrl.includes("?") ? "&" : "?";
+    return `${pdfUrl}${separator}_pdf_refresh=${reloadKey}`;
+  }
+}
+
 /**
  * Resolves one row id from primary key metadata with safe fallback.
  */
@@ -567,7 +619,13 @@ function DynamicBaseTableContent({
     useTableFilters();
 
   const [dynamicExpanded, setDynamicExpanded] = useState<ExpandedState>({});
+  const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
+  const [pdfPreviewTitle, setPdfPreviewTitle] = useState<string>("");
+  const [pdfPreviewReloadKey, setPdfPreviewReloadKey] = useState(0);
   const tableScrollRef = useRef<HTMLDivElement>(null);
+  const pdfPreviewObjectUrlRef = useRef<string | null>(null);
+  const pdfPreviewConfig = tableConfig?.pdfPreview;
+  const pdfPreviewEnabled = pdfPreviewConfig?.enabled ?? false;
   const isInfiniteMode = performance?.dataMode === "infinite";
   const [timings, setTimings] = useState<TableDevtoolsTimings>({
     metadataFetchMs: null,
@@ -577,6 +635,56 @@ function DynamicBaseTableContent({
   const metadataFetchStartedAtRef = useRef<number | null>(null);
   const dataFetchStartedAtRef = useRef<number | null>(null);
   const buildFrameRequestRef = useRef<number | null>(null);
+
+  const openPdfPreview = useCallback(
+    (pdfUrl: string, fallbackTitle?: string) => {
+      if (
+        pdfPreviewObjectUrlRef.current &&
+        pdfPreviewObjectUrlRef.current !== pdfUrl
+      ) {
+        window.URL.revokeObjectURL(pdfPreviewObjectUrlRef.current);
+        pdfPreviewObjectUrlRef.current = null;
+      }
+      setPdfPreviewUrl(pdfUrl);
+      setPdfPreviewReloadKey(0);
+      setPdfPreviewTitle(
+        fallbackTitle || pdfPreviewConfig?.title || getPdfLabel(pdfUrl),
+      );
+    },
+    [pdfPreviewConfig?.title],
+  );
+
+  const handleTemplatePdfPreview = useCallback(
+    ({ blob, filename }: TemplatePdfPreviewPayload) => {
+      if (pdfPreviewObjectUrlRef.current) {
+        window.URL.revokeObjectURL(pdfPreviewObjectUrlRef.current);
+      }
+      const objectUrl = window.URL.createObjectURL(blob);
+      pdfPreviewObjectUrlRef.current = objectUrl;
+      openPdfPreview(objectUrl, filename);
+    },
+    [openPdfPreview],
+  );
+
+  const closePdfPreview = useCallback(() => {
+    if (pdfPreviewObjectUrlRef.current) {
+      window.URL.revokeObjectURL(pdfPreviewObjectUrlRef.current);
+      pdfPreviewObjectUrlRef.current = null;
+    }
+    setPdfPreviewUrl(null);
+    setPdfPreviewTitle("");
+    setPdfPreviewReloadKey(0);
+  }, []);
+
+  useEffect(() => () => closePdfPreview(), [closePdfPreview]);
+
+  const pdfPreviewSrc = useMemo(
+    () =>
+      pdfPreviewUrl
+        ? resolvePdfPreviewSrc(pdfPreviewUrl, pdfPreviewReloadKey)
+        : null,
+    [pdfPreviewReloadKey, pdfPreviewUrl],
+  );
 
   const scheduleBuildMeasure = useCallback(() => {
     if (!devtoolsEnabled) {
@@ -1050,6 +1158,7 @@ function DynamicBaseTableContent({
           </div>
         ),
         cell: ({ row, value }) => {
+          const pdfUrl = pdfPreviewEnabled ? normalizePdfUrl(value) : null;
           const renderedValue = column.render
             ? column.render(value, row, {
                 accessor: column.accessor,
@@ -1066,9 +1175,22 @@ function DynamicBaseTableContent({
                 return formatFallbackCellValue(value);
               })();
 
+          const displayValue =
+            pdfUrl && typeof renderedValue === "string" ? (
+              <button
+                type="button"
+                className="max-w-full truncate text-left text-primary underline underline-offset-4 transition-colors hover:text-primary/80"
+                onClick={() => openPdfPreview(pdfUrl, renderedValue)}
+              >
+                {renderedValue}
+              </button>
+            ) : (
+              renderedValue
+            );
+
           const statsRelation = resolveStatsRelation(column);
           if (!statsRelation) {
-            return renderedValue;
+            return displayValue;
           }
 
           const overrideRenderer = resolveStatsOverride(
@@ -1086,7 +1208,7 @@ function DynamicBaseTableContent({
               overrideRenderer={overrideRenderer}
             >
               <span className="cursor-pointer hover:text-primary transition-colors underline-offset-4 decoration-primary/30 hover:underline">
-                {renderedValue}
+                {displayValue}
               </span>
             </RelationStatsHover>
           );
@@ -1101,7 +1223,9 @@ function DynamicBaseTableContent({
     disableSorting,
     fieldLookup,
     metadata?.model,
+    openPdfPreview,
     primaryKey,
+    pdfPreviewEnabled,
     queryManager,
     refetch,
     resolveStatsOverride,
@@ -1342,6 +1466,9 @@ function DynamicBaseTableContent({
     quickSearch,
     fields,
     topActions,
+    onTemplatePdfPreview: pdfPreviewEnabled
+      ? handleTemplatePdfPreview
+      : undefined,
   };
   const sectionController = useModelTableContentController(
     sectionControllerInput,
@@ -1415,6 +1542,10 @@ function DynamicBaseTableContent({
               columnActions={columnActions}
               update={update}
               detail={detail}
+              pdfPreview={tableConfig?.pdfPreview}
+              onTemplatePdfPreview={
+                pdfPreviewEnabled ? handleTemplatePdfPreview : undefined
+              }
             />
           </div>
         )}
@@ -1464,6 +1595,9 @@ function DynamicBaseTableContent({
                       columnActions={columnActions}
                       update={update}
                       detail={detail}
+                      onTemplatePdfPreview={
+                        pdfPreviewEnabled ? handleTemplatePdfPreview : undefined
+                      }
                     />
                   ),
                 },
@@ -1498,6 +1632,49 @@ function DynamicBaseTableContent({
         )}
 
         {dataError && <DataErrorDisplay error={dataError} />}
+        {pdfPreviewEnabled && pdfPreviewUrl ? (
+          <Dialog open onOpenChange={closePdfPreview}>
+            <DialogContent className="flex h-[92vh] max-w-6xl flex-col gap-0 overflow-hidden border-border/30 bg-background/95 p-0 shadow-2xl backdrop-blur-xl">
+              <DialogHeader className="border-b border-border/20 px-6 py-4">
+                <DialogTitle>{pdfPreviewTitle || "PDF preview"}</DialogTitle>
+                <DialogDescription>
+                  {pdfPreviewConfig?.description ||
+                    "Preview the PDF without leaving the current page."}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="flex min-h-0 flex-1 flex-col gap-3 p-4">
+                <div className="flex flex-wrap items-center gap-3">
+                  <a
+                    href={pdfPreviewSrc ?? pdfPreviewUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="w-fit text-sm text-primary underline underline-offset-4"
+                  >
+                    {pdfPreviewConfig?.openInNewTabLabel || "Open in a new tab"}
+                  </a>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
+                    onClick={() =>
+                      setPdfPreviewReloadKey((current) => current + 1)
+                    }
+                  >
+                    <RotateCw className="h-3.5 w-3.5" />
+                    Refresh
+                  </Button>
+                </div>
+                <iframe
+                  key={pdfPreviewSrc ?? pdfPreviewUrl}
+                  src={pdfPreviewSrc ?? pdfPreviewUrl}
+                  title={pdfPreviewTitle || "PDF preview"}
+                  className="min-h-0 flex-1 rounded-md border border-border/20 bg-background"
+                />
+              </div>
+            </DialogContent>
+          </Dialog>
+        ) : null}
         {sectionController.metadata && sectionVisibility.dialogs && (
           <DialogsSlot controller={sectionController} />
         )}

@@ -63,6 +63,10 @@ export type { FormActionsConfig } from "./actions";
 // Props types
 export type {
  FormStateConfig,
+ FormDefaultValues,
+ DeepPartialFormValue,
+ FormFieldPath,
+ FormFieldPathValue,
  FormDevtoolsConfig,
  DynamicFormProps,
 } from "./props";

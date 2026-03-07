@@ -13,6 +13,7 @@ import type {
  ListFieldConfig,
  FormInputType,
 } from "../types/schema";
+import type { FormDefaultValues } from "../types/props";
 
 type PrimitiveField = Exclude<
  FormFieldConfig,
@@ -21,14 +22,14 @@ type PrimitiveField = Exclude<
 
 export function useFormDefaults<TValues extends Record<string, any>>(
  schema: FormSchema<TValues>,
- defaultValues?: Partial<TValues>,
+ defaultValues?: FormDefaultValues<TValues>,
 ): TValues {
  return React.useMemo(
  () =>
  deepMergeDefaults(
  buildDefaultsFromSchema(schema),
- schema.initialValues ?? {},
- defaultValues ?? {},
+  schema.initialValues ?? {},
+ normalizeDefaultValuesInput(defaultValues) ?? {},
  ) as TValues,
  [schema, defaultValues],
  );
@@ -125,6 +126,65 @@ export function setValue(
  return;
  }
  current[segment] = current[segment] ?? {};
+ current = current[segment];
+ });
+}
+
+export function normalizeDefaultValuesInput<TValues extends Record<string, any>>(
+ defaultValues?: FormDefaultValues<TValues>,
+): Record<string, any> | undefined {
+ if (!isPlainObject(defaultValues)) {
+ return undefined;
+ }
+
+ return normalizeDefaultValueRecord(defaultValues);
+}
+
+function normalizeDefaultValueRecord(
+ source: Record<string, any>,
+): Record<string, any> {
+ const result: Record<string, any> = {};
+
+ Object.entries(source).forEach(([path, value]) => {
+ if (!path) return;
+ mergeValueAtPath(result, path, normalizeDefaultValueValue(value));
+ });
+
+ return result;
+}
+
+function normalizeDefaultValueValue(value: any): any {
+ if (Array.isArray(value)) {
+ return value.map((item) => normalizeDefaultValueValue(item));
+ }
+
+ if (isPlainObject(value)) {
+ return normalizeDefaultValueRecord(value);
+ }
+
+ return value;
+}
+
+function mergeValueAtPath(
+ target: Record<string, any>,
+ path: string,
+ value: any,
+) {
+ const segments = path.split(".");
+ let current = target;
+
+ segments.forEach((segment, index) => {
+ if (index === segments.length - 1) {
+ const existingValue = current[segment];
+ if (isPlainObject(existingValue) && isPlainObject(value)) {
+ current[segment] = deepMergeDefaults(existingValue, value);
+ return;
+ }
+ current[segment] = value;
+ return;
+ }
+
+ current[segment] = isPlainObject(current[segment]) ? current[segment] : {};
  current = current[segment];
  });
 }

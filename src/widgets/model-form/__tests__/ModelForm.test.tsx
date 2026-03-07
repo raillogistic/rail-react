@@ -413,6 +413,114 @@ describe("ModelForm", () => {
  expect(schema.initialValues).toEqual({ name: "Starter" });
  });
 
+ it("merges state.defaultValues over hydrated defaults for direct and nested fields", async () => {
+ const nestedContract: ModelFormContract = {
+ ...sampleModelFormContract,
+ appLabel: "store",
+ modelName: "Order",
+ mode: "UPDATE",
+ fields: [
+ ...sampleModelFormContract.fields,
+ {
+ ...sampleModelFormContract.fields[0],
+ name: "customer.email",
+ path: "customer.email",
+ fieldName: "email",
+ label: "Customer Email",
+ },
+ {
+ ...sampleModelFormContract.fields[0],
+ name: "customer.phone",
+ path: "customer.phone",
+ fieldName: "phone",
+ label: "Customer Phone",
+ },
+ ],
+ sections: [
+ {
+ ...sampleModelFormContract.sections[0],
+ fieldPaths: ["name", "price", "customer.email", "customer.phone"],
+ },
+ ],
+ };
+
+ const mocks = [
+ {
+ request: {
+ query: MODEL_FORM_CONTRACT_QUERY,
+ variables: {
+ appLabel: "store",
+ modelName: "Order",
+ mode: "UPDATE",
+ includeNested: true,
+ },
+ },
+ result: {
+ data: {
+ modelFormContract: nestedContract,
+ },
+ },
+ },
+ {
+ request: {
+ query: MODEL_FORM_INITIAL_DATA_QUERY,
+ variables: {
+ appLabel: "store",
+ modelName: "Order",
+ objectId: "42",
+ includeNested: true,
+ runtimeOverrides: [],
+ },
+ },
+ result: {
+ data: {
+ modelFormInitialData: {
+ appLabel: "store",
+ modelName: "Order",
+ objectId: "42",
+ values: JSON.stringify({
+ name: "Hydrated Name",
+ customer: {
+ email: "hydrated@example.com",
+ phone: "111111111",
+ },
+ }),
+ readonlyValues: null,
+ loadedAt: "2026-02-12T12:00:00Z",
+ },
+ },
+ },
+ },
+ ];
+
+ renderWithMocks(
+ <ModelForm
+ app="store"
+ model="Order"
+ mode="UPDATE"
+ objectId="42"
+ includeNested
+ state={{
+ defaultValues: {
+ name: "Override Name",
+ "customer.email": "override@example.com",
+ customer: {
+ phone: "222222222",
+ },
+ },
+ }}
+ />,
+ mocks,
+ );
+
+ const config = await getRenderedConfig();
+ expect(config.state?.defaultValues?.name).toBe("Override Name");
+ expect(config.state?.defaultValues?.customer?.email).toBe(
+ "override@example.com",
+ );
+ expect(config.state?.defaultValues?.customer?.phone).toBe("222222222");
+ });
+
  it("renders and submits only required fields when onlyRequired is enabled", async () => {
  const contract: ModelFormContract = {
  ...sampleModelFormContract,

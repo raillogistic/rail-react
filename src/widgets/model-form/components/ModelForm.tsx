@@ -5,6 +5,7 @@ import { cn } from "@/shared/utils";
 import DynamicForm from "../inputs/form";
 import { useGeneratedModelForm } from "../hooks/useGeneratedModelForm";
 import { useGeneratedValidators } from "../hooks/useGeneratedValidators";
+import { normalizeDefaultValuesInput } from "../hooks/useFormDefaults";
 import { buildGeneratedMutationDocument } from "../mutations";
 import type { FormFieldConfig, FormSchema } from "../types";
 import type {
@@ -385,13 +386,17 @@ export function ModelForm<
 
   const finalState = React.useMemo(() => {
     const baseState = { ...(mergedState ?? {}) };
-    const mergedDefaultValues = deepMergeRecords(
+    const normalizedBaseDefaultValues = normalizeDefaultValuesInput(
       isRecord(baseState.defaultValues)
         ? (baseState.defaultValues as any)
         : undefined,
-      isRecord(hydratedDefaultValues)
-        ? (hydratedDefaultValues as any)
-        : undefined,
+    );
+    const normalizedHydratedDefaultValues = isRecord(hydratedDefaultValues)
+      ? (hydratedDefaultValues as any)
+      : undefined;
+    const mergedDefaultValues = deepMergeRecords(
+      normalizedHydratedDefaultValues,
+      normalizedBaseDefaultValues,
     );
     if (mergedDefaultValues)
       baseState.defaultValues = sanitizeValuesForControlledSchema(
