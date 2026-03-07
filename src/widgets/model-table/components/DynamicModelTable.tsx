@@ -622,8 +622,12 @@ function DynamicBaseTableContent({
   const [pdfPreviewUrl, setPdfPreviewUrl] = useState<string | null>(null);
   const [pdfPreviewTitle, setPdfPreviewTitle] = useState<string>("");
   const [pdfPreviewReloadKey, setPdfPreviewReloadKey] = useState(0);
+  const [pdfPreviewRefreshing, setPdfPreviewRefreshing] = useState(false);
   const tableScrollRef = useRef<HTMLDivElement>(null);
   const pdfPreviewObjectUrlRef = useRef<string | null>(null);
+  const pdfPreviewRefreshRef = useRef<
+    (() => Promise<void>) | (() => void) | null
+  >(null);
   const pdfPreviewConfig = tableConfig?.pdfPreview;
   const pdfPreviewEnabled = pdfPreviewConfig?.enabled ?? false;
   const isInfiniteMode = performance?.dataMode === "infinite";
@@ -647,6 +651,10 @@ function DynamicBaseTableContent({
       }
       setPdfPreviewUrl(pdfUrl);
       setPdfPreviewReloadKey(0);
+      setPdfPreviewRefreshing(false);
+      if (!pdfUrl.startsWith("blob:")) {
+        pdfPreviewRefreshRef.current = null;
+      }
       setPdfPreviewTitle(
         fallbackTitle || pdfPreviewConfig?.title || getPdfLabel(pdfUrl),
       );
@@ -655,12 +663,13 @@ function DynamicBaseTableContent({
   );
 
   const handleTemplatePdfPreview = useCallback(
-    ({ blob, filename }: TemplatePdfPreviewPayload) => {
+    ({ blob, filename, onRefresh }: TemplatePdfPreviewPayload) => {
       if (pdfPreviewObjectUrlRef.current) {
         window.URL.revokeObjectURL(pdfPreviewObjectUrlRef.current);
       }
       const objectUrl = window.URL.createObjectURL(blob);
       pdfPreviewObjectUrlRef.current = objectUrl;
+      pdfPreviewRefreshRef.current = onRefresh ?? null;
       openPdfPreview(objectUrl, filename);
     },
     [openPdfPreview],
@@ -674,6 +683,8 @@ function DynamicBaseTableContent({
     setPdfPreviewUrl(null);
     setPdfPreviewTitle("");
     setPdfPreviewReloadKey(0);
+    setPdfPreviewRefreshing(false);
+    pdfPreviewRefreshRef.current = null;
   }, []);
 
   useEffect(() => () => closePdfPreview(), [closePdfPreview]);
@@ -685,6 +696,19 @@ function DynamicBaseTableContent({
         : null,
     [pdfPreviewReloadKey, pdfPreviewUrl],
   );
+
+  const refreshPdfPreview = useCallback(async () => {
+    if (pdfPreviewRefreshRef.current) {
+      setPdfPreviewRefreshing(true);
+      try {
+        await pdfPreviewRefreshRef.current();
+      } finally {
+        setPdfPreviewRefreshing(false);
+      }
+      return;
+    }
+    setPdfPreviewReloadKey((current) => current + 1);
+  }, []);
 
   const scheduleBuildMeasure = useCallback(() => {
     if (!devtoolsEnabled) {
@@ -1657,12 +1681,16 @@ function DynamicBaseTableContent({
                     variant="outline"
                     size="sm"
                     className="gap-2"
-                    onClick={() =>
-                      setPdfPreviewReloadKey((current) => current + 1)
-                    }
+                    onClick={() => void refreshPdfPreview()}
+                    disabled={pdfPreviewRefreshing}
                   >
-                    <RotateCw className="h-3.5 w-3.5" />
-                    Refresh
+                    <RotateCw
+                      className={cn(
+                        "h-3.5 w-3.5",
+                        pdfPreviewRefreshing && "animate-spin",
+                      )}
+                    />
+                    {pdfPreviewRefreshing ? "Refreshing..." : "Refresh"}
                   </Button>
                 </div>
                 <iframe

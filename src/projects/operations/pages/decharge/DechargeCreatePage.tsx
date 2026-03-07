@@ -9,7 +9,7 @@ type DechargeCreateValues = {
   }>;
 };
 
-const DECHARGE_NESTED_CONFIG: NonNullable<
+export const DECHARGE_NESTED_CONFIG: NonNullable<
   ModelFormProps<DechargeCreateValues>["nested"]
 > = {
   lignes: {
@@ -25,7 +25,7 @@ const DECHARGE_NESTED_CONFIG: NonNullable<
       // "metadata_snapshot",
     ],
     customOrder: [
-      "article",
+      // "article",
       "qteSortie",
       "etatSortie",
       "serial",
@@ -59,6 +59,7 @@ export function DechargeCreatePage() {
           "beneficiaire",
           "dateDecharge",
           "site",
+          "garder",
           "commentaire",
           // "pieceJointeUrl",
           "lignes",

@@ -428,7 +428,13 @@ export function useModelTableContentController({
         rowIds,
         clientData,
         {
-          onPdfPreview: onTemplatePdfPreview,
+          onPdfPreview: onTemplatePdfPreview
+            ? (payload) =>
+                onTemplatePdfPreview({
+                  ...payload,
+                  onRefresh: () => runTemplate(template, rowIds, clientData),
+                })
+            : undefined,
         },
       );
       toast.success(

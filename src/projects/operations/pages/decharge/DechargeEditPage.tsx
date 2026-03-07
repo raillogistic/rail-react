@@ -1,5 +1,6 @@
 import { useParams } from "react-router-dom";
 import { ModelForm } from "@/widgets/model-form";
+import { DECHARGE_NESTED_CONFIG } from "./DechargeCreatePage";
 
 export function DechargeEditPage() {
   const { id = "" } = useParams();
@@ -11,7 +12,23 @@ export function DechargeEditPage() {
           Modifier une decharge
         </h1>
       </header>
-      <ModelForm app="operations" model="Decharge" mode="UPDATE" objectId={id} />
+      <ModelForm
+        app="operations"
+        model="Decharge"
+        mode="UPDATE"
+        objectId={id}
+        onlyFields={[
+          "beneficiaire",
+          "dateDecharge",
+          "site",
+          "garder",
+          "commentaire",
+          // "pieceJointeUrl",
+          "lignes",
+        ]}
+        // nested={["lignes"]}
+        nested={DECHARGE_NESTED_CONFIG}
+      />
     </section>
   );
 }

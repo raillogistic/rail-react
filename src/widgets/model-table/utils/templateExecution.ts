@@ -16,6 +16,7 @@ type TemplateFormFieldType = "text" | "number" | "checkbox" | "date";
 export type TemplatePdfPreviewPayload = {
   blob: Blob;
   filename: string;
+  onRefresh?: (() => Promise<void>) | (() => void);
 };
 
 function getBackendBaseUrl(): string | null {

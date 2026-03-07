@@ -1047,7 +1047,13 @@ export function RowActions({
     }
 
     const result = await executeTemplateForRows(template, [rowId], clientData, {
-      onPdfPreview: onTemplatePdfPreview,
+      onPdfPreview: onTemplatePdfPreview
+        ? (payload) =>
+            onTemplatePdfPreview({
+              ...payload,
+              onRefresh: () => runTemplate(template, clientData),
+            })
+        : undefined,
     });
     if (result.templateType === "pdf") {
       toast.success(`Template "${template.title}" généré.`);
