@@ -232,9 +232,9 @@ function resolveFeatures(
  * Resolves fully-defaulted layout options.
  */
 function resolveLayout<TRow extends Record<string, unknown>>(
- input?: DynamicTableProps<TRow>["layout"],
+  input?: DynamicTableProps<TRow>["layout"],
 ): DynamicTableResolvedLayout<TRow> {
- return {
+  return {
  density: input?.density ?? "comfortable",
  wrapCells: input?.wrapCells ?? false,
  containerClassName: input?.containerClassName,
@@ -242,9 +242,9 @@ function resolveLayout<TRow extends Record<string, unknown>>(
  headerClassName: input?.headerClassName,
  rowClassName: input?.rowClassName,
  cellClassName: input?.cellClassName,
- stickySelectionColumn: input?.stickySelectionColumn ?? true,
- actions: input?.actions,
- };
+    stickySelectionColumn: input?.stickySelectionColumn ?? false,
+    actions: input?.actions,
+  };
 }
 
 /**
@@ -443,12 +443,12 @@ function buildExpandColumnDef<TRow extends Record<string, unknown>>(
  * Creates the optional built-in actions column definition.
  */
 function buildActionsColumnDef<TRow extends Record<string, unknown>>(
- layout: DynamicTableResolvedLayout<TRow>,
+  layout: DynamicTableResolvedLayout<TRow>,
 ): ColumnDef<TRow, unknown> {
- const size = layout.actions?.size ?? 148;
+  const size = layout.actions?.size;
 
- return {
- id: DYNAMIC_TABLE_ACTIONS_COLUMN_ID,
+  return {
+    id: DYNAMIC_TABLE_ACTIONS_COLUMN_ID,
  header: () => null,
  cell: (context) => {
  if (!layout.actions) {
@@ -459,10 +459,14 @@ function buildActionsColumnDef<TRow extends Record<string, unknown>>(
  rowIndex: context.row.index,
  });
  },
- size,
- minSize: size,
- maxSize: size,
- enableHiding: false,
+    ...(typeof size === "number"
+      ? {
+          size,
+          minSize: size,
+          maxSize: size,
+        }
+      : {}),
+    enableHiding: false,
  enableSorting: false,
  enableGrouping: false,
  enableResizing: false,

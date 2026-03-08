@@ -1802,10 +1802,12 @@ function DynamicBaseTableContent({
               layout={{
                 containerClassName:
                   "group/frame relative flex h-full flex-col overflow-hidden bg-transparent transition-all duration-500",
+                stickySelectionColumn: false,
                 actions: {
                   headerLabel: tableConfig?.actionsLabel ?? "",
                   sticky: true,
-                  size: 140,
+                  headerClassName: "w-[1%] whitespace-nowrap pr-3",
+                  cellClassName: "w-[1%] whitespace-nowrap pr-3",
                   renderCell: ({ row }) => (
                     <RowActions
                       row={row}

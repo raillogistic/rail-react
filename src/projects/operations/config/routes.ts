@@ -15,9 +15,4 @@ export const ROUTES = {
   BENEFICIAIRE_CREATE: "/operations/beneficiaire/create",
   BENEFICIAIRE_EDIT: "/operations/beneficiaire/:id/edit",
   BENEFICIAIRE_DETAIL: "/operations/beneficiaire/:id",
-  DECHARGE_LIGNE_LIST: "/operations/decharge-ligne",
-  DECHARGE_LIGNE_CREATE: "/operations/decharge-ligne/create",
-  DECHARGE_LIGNE_EDIT: "/operations/decharge-ligne/:id/edit",
-  DECHARGE_LIGNE_DETAIL: "/operations/decharge-ligne/:id",
-  RESTITUTION_LIGNE_LIST: "/operations/restitution-ligne",
 } as const;

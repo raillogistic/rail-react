@@ -289,6 +289,7 @@ function DraggableHeaderCell<TRow extends Record<string, unknown>>({
   children,
   draggable,
   resizable,
+  fitContent = false,
   stickyClassName,
   stickyStyle,
 }: {
@@ -300,6 +301,8 @@ function DraggableHeaderCell<TRow extends Record<string, unknown>>({
   draggable: boolean;
   /** Enables resize affordance on this header. */
   resizable: boolean;
+  /** Lets the browser size the cell based on its content. */
+  fitContent?: boolean;
   /** Optional sticky positioning className. */
   stickyClassName?: string;
   /** Optional sticky positioning style. */
@@ -320,7 +323,7 @@ function DraggableHeaderCell<TRow extends Record<string, unknown>>({
   const style = {
     transform: CSS.Translate.toString(transform),
     transition,
-    ...resolveHeaderStyle(header),
+    ...(fitContent ? {} : resolveHeaderStyle(header)),
     ...stickyStyle,
   };
 
@@ -333,6 +336,7 @@ function DraggableHeaderCell<TRow extends Record<string, unknown>>({
         "group/header relative border-b border-border/30 bg-muted/30 p-0 align-middle",
         "text-[11px] font-medium tracking-wide text-muted-foreground",
         stickyClassName,
+        fitContent && "w-[1%] whitespace-nowrap",
         isDragging && "z-40 opacity-75 ring-1 ring-primary/30 shadow-lg",
       )}
     >
@@ -413,6 +417,8 @@ export function DynamicTableHeader<TRow extends Record<string, unknown>>({
             const isExpand = header.column.id === expandColumnId;
             const isSelection = header.column.id === selectionColumnId;
             const isActions = header.column.id === actionsColumnId;
+            const autoSizeActionsHeader =
+              isActions && typeof layout.actions?.size !== "number";
 
             const draggable =
               isLeafHeader &&
@@ -467,6 +473,7 @@ export function DynamicTableHeader<TRow extends Record<string, unknown>>({
                   header={header}
                   draggable={false}
                   resizable={false}
+                  fitContent={autoSizeActionsHeader}
                   stickyClassName={stickyClassName}
                   stickyStyle={stickyStyle}
                 >
@@ -535,6 +542,7 @@ export function DynamicTableHeader<TRow extends Record<string, unknown>>({
                 header={header}
                 draggable={draggable}
                 resizable={resizable}
+                fitContent={autoSizeActionsHeader}
                 stickyClassName={stickyClassName}
                 stickyStyle={stickyStyle}
               >

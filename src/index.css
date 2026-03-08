@@ -149,6 +149,7 @@
 .table-sticky-cell {
   isolation: isolate;
   background-color: var(--row-bg, inherit);
+  background-clip: padding-box;
   z-index: 1;
 }
 
@@ -157,7 +158,20 @@
   position: absolute;
   inset: 0;
   background-color: inherit;
+  pointer-events: none;
   z-index: -1;
+}
+
+.table-first-column {
+  box-shadow:
+    1px 0 0 color-mix(in srgb, var(--border) 45%, transparent),
+    14px 0 20px -20px rgb(15 23 42 / 0.28);
+}
+
+.table-last-column {
+  box-shadow:
+    -1px 0 0 color-mix(in srgb, var(--border) 45%, transparent),
+    -14px 0 20px -20px rgb(15 23 42 / 0.28);
 }
 
 tr[data-row-stripe="even"] {

@@ -243,4 +243,65 @@ describe("DynamicTable behaviors", () => {
  "2",
  );
  });
+
+ it("renders sticky action cells with opaque row-backed classes", () => {
+ const { container } = render(
+ <DynamicTable
+ rows={[
+ { id: "1", name: "Ada" },
+ { id: "2", name: "Grace" },
+ ]}
+ columns={[
+ {
+ id: "name",
+ accessorKey: "name",
+ title: "Name",
+ },
+ ]}
+ layout={{
+ actions: {
+ headerLabel: "Actions",
+ sticky: true,
+ renderCell: ({ row }) => <span>Menu {String(row.id)}</span>,
+ },
+ }}
+ />,
+ );
+
+ const firstActionCell = screen.getByText("Menu 1").closest("td");
+ const firstRow = screen.getByText("Ada").closest("tr");
+
+ expect(firstActionCell).toHaveClass("table-sticky-cell");
+ expect(firstActionCell).toHaveClass("table-last-column");
+ expect((firstActionCell as HTMLTableCellElement).style.width).toBe("");
+ expect(firstRow).toHaveAttribute("data-row-stripe", "even");
+ expect(container.querySelector("tr[data-row-stripe=\"odd\"]")).not.toBeNull();
+ });
+
+ it("does not pin the selection column by default", () => {
+ render(
+ <DynamicTable
+ rows={[
+ { id: "1", name: "Ada" },
+ { id: "2", name: "Grace" },
+ ]}
+ columns={[
+ {
+ id: "name",
+ accessorKey: "name",
+ title: "Name",
+ },
+ ]}
+ features={{ enableSelection: true }}
+ />,
+ );
+
+ const selectionCell = screen.getByLabelText("Select row 1").closest("td");
+ const selectionHeaderCell = screen
+ .getByLabelText("Select all rows")
+ .closest("th");
+
+ expect(selectionCell).not.toHaveClass("sticky");
+ expect(selectionHeaderCell).not.toHaveClass("sticky");
+ });
 });

@@ -11,7 +11,28 @@ export function RestitutionEditPage() {
           Modifier une restitution
         </h1>
       </header>
-      <ModelForm app="operations" model="Restitution" mode="UPDATE" objectId={id} />
+      <ModelForm
+        app="operations"
+        model="Restitution"
+        mode="UPDATE"
+        objectId={id}
+        onlyFields={[
+          "origine",
+          "decharge",
+          "legacySource",
+          "dateRestitution",
+          "recuPar",
+          "etatRetour",
+          "serialRetour",
+          "observation",
+          "commentaire",
+        ]}
+        fieldOverrides={{
+          observation: { colSpan: 3 },
+          commentaire: { colSpan: 3 },
+        }}
+        layout={{ columns: 3 }}
+      />
     </section>
   );
 }

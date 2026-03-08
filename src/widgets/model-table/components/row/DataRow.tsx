@@ -82,6 +82,7 @@ export function DataRow({
  return (
  <ShadcnTableRow
  key={rowId}
+ data-row-stripe={isEven ? "even" : "odd"}
  data-state={isSelected ? "selected" : undefined}
  className={cn(
  "group/row relative border-b border-border/15 transition-colors duration-200",
@@ -243,8 +244,7 @@ export function DataRow({
  "w-[140px] shrink-0 px-3 text-right",
  "sticky right-0 z-10",
  "table-last-column table-sticky-cell",
- "bg-background/90 backdrop-blur-md border-l border-border/15",
- "group-hover/row:bg-muted/40 transition-colors",
+ "border-l border-border/15 backdrop-blur-md transition-colors",
  )}
  >
  <RowActions

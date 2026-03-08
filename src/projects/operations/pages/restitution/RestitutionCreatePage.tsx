@@ -12,6 +12,21 @@ export function RestitutionCreatePage() {
         app="operations"
         model="Restitution"
         mode="CREATE"
+        onlyFields={[
+          "origine",
+          "decharge",
+          "legacySource",
+          "dateRestitution",
+          "recuPar",
+          "etatRetour",
+          "serialRetour",
+          "observation",
+          "commentaire",
+        ]}
+        fieldOverrides={{
+          observation: { colSpan: 3 },
+          commentaire: { colSpan: 3 },
+        }}
         layout={{ columns: 3 }}
       />
     </section>

@@ -1,6 +1,5 @@
 import { useParams } from "react-router-dom";
 import { ModelForm } from "@/widgets/model-form";
-import { DECHARGE_NESTED_CONFIG } from "./DechargeCreatePage";
 
 export function DechargeEditPage() {
   const { id = "" } = useParams();
@@ -21,21 +20,18 @@ export function DechargeEditPage() {
           "beneficiaire",
           "dateDecharge",
           "site",
-          "garder",
+          "libelle",
+          "etatSortie",
+          "serial",
+          "codeInventaire",
           "commentaire",
-          // "pieceJointeUrl",
-          "lignes",
+          "garder",
         ]}
-        devtools={{ enabled: true }}
-        layout={{
-          columns: 2,
-          ordering: {
-            enabled: true,
-            tailing: ["lignes"],
-          },
+        fieldOverrides={{
+          libelle: { colSpan: 2 },
+          commentaire: { colSpan: 2 },
         }}
-        // nested={["lignes"]}
-        nested={DECHARGE_NESTED_CONFIG}
+        layout={{ columns: 2 }}
       />
     </section>
   );

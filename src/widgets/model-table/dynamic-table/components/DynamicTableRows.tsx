@@ -98,6 +98,17 @@ function resolveCellTextClasses(
 }
 
 /**
+ * Returns true when the built-in actions column should size to content.
+ */
+function shouldAutoSizeActionsColumn<TRow extends Record<string, unknown>>(
+ layout: DynamicTableResolvedLayout<TRow>,
+ columnId: string,
+ actionsColumnId: string,
+): boolean {
+ return columnId === actionsColumnId && typeof layout.actions?.size !== "number";
+}
+
+/**
  * Renders grouped-row value cell using TanStack grouping metadata.
  * Premium styled group header with chevron animation and count badge.
  */
@@ -177,7 +188,7 @@ export function DynamicTableRows<TRow extends Record<string, unknown>>({
  ): { className?: string; style?: CSSProperties } => {
  if (columnId === expandColumnId && expandColumnSticky) {
  return {
- className: "sticky z-20 bg-inherit",
+ className: "sticky z-20 table-first-column table-sticky-cell",
  style: { left: 0 },
  };
  }
@@ -189,14 +200,14 @@ export function DynamicTableRows<TRow extends Record<string, unknown>>({
  return {
  className:
  leftOffset > 0
- ? "sticky z-20 bg-inherit"
- : "sticky left-0 z-20 bg-inherit",
+ ? "sticky z-20 table-sticky-cell"
+ : "sticky left-0 z-20 table-first-column table-sticky-cell",
  style: leftOffset > 0 ? { left: leftOffset } : undefined,
  };
  }
  if (columnId === actionsColumnId && layout.actions?.sticky !== false) {
  return {
- className: "sticky right-0 z-20 bg-inherit",
+ className: "sticky right-0 z-20 table-last-column table-sticky-cell",
  };
  }
  return {};
@@ -248,6 +259,7 @@ export function DynamicTableRows<TRow extends Record<string, unknown>>({
  const baseRow = (
  <TableRow
  key={row.id}
+ data-row-stripe={rowIndex % 2 === 0 ? "even" : "odd"}
  data-state={row.getIsSelected() ? "selected" : undefined}
  className={cn(
  "transition-colors duration-150",
@@ -274,6 +286,11 @@ export function DynamicTableRows<TRow extends Record<string, unknown>>({
  columnId: cell.column.id,
  value: cell.getValue(),
  });
+ const autoSizeActionsCell = shouldAutoSizeActionsColumn(
+ layout,
+ cell.column.id,
+ actionsColumnId,
+ );
 
  let content = fallbackRendered;
  if (cell.getIsGrouped()) {
@@ -287,15 +304,20 @@ export function DynamicTableRows<TRow extends Record<string, unknown>>({
  return (
  <TableCell
  key={cell.id}
- style={{
+ style={
+ autoSizeActionsCell
+ ? { ...(sticky.style ?? {}) }
+ : {
  width: cell.column.getSize(),
  minWidth: cell.column.getSize(),
  maxWidth: cell.column.getSize(),
  ...(sticky.style ?? {}),
- }}
+ }
+ }
  className={cn(
  "border-b border-border/20 align-middle text-foreground/80",
  cellTextClasses,
+ autoSizeActionsCell && "w-[1%] whitespace-nowrap",
  sticky.className,
  metaClass,
  userCellClass,
