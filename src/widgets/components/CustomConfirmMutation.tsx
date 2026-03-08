@@ -189,7 +189,6 @@ export function CustomConfirmMutation({
       nextFetchPolicy: queryOptions?.nextFetchPolicy,
     },
   );
-  console.log(queryData);
 
   const mutationMetadata = queryData?.customMutation ?? null;
 
