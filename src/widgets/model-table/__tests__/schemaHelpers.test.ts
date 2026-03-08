@@ -79,6 +79,70 @@ function createMetadata(): ModelSchema {
         isRichText: false,
         isFsmField: false,
       },
+      {
+        name: "createdAt",
+        fieldName: "created_at",
+        verboseName: "Created at",
+        fieldType: "DateTimeField",
+        graphqlType: "DateTime",
+        required: false,
+        nullable: true,
+        blank: true,
+        editable: false,
+        unique: false,
+        hasDefault: false,
+        autoNow: false,
+        autoNowAdd: true,
+        readable: true,
+        writable: false,
+        visibility: "list",
+        isPrimaryKey: false,
+        isIndexed: false,
+        isRelation: false,
+        isComputed: false,
+        isFile: false,
+        isImage: false,
+        isJson: false,
+        isDate: false,
+        isDatetime: true,
+        isNumeric: false,
+        isBoolean: false,
+        isText: false,
+        isRichText: false,
+        isFsmField: false,
+      },
+      {
+        name: "updatedAt",
+        fieldName: "updated_at",
+        verboseName: "Updated at",
+        fieldType: "DateTimeField",
+        graphqlType: "DateTime",
+        required: false,
+        nullable: true,
+        blank: true,
+        editable: false,
+        unique: false,
+        hasDefault: false,
+        autoNow: true,
+        autoNowAdd: false,
+        readable: true,
+        writable: false,
+        visibility: "list",
+        isPrimaryKey: false,
+        isIndexed: false,
+        isRelation: false,
+        isComputed: false,
+        isFile: false,
+        isImage: false,
+        isJson: false,
+        isDate: false,
+        isDatetime: true,
+        isNumeric: false,
+        isBoolean: false,
+        isText: false,
+        isRichText: false,
+        isFsmField: false,
+      },
     ],
     relationships: [
       {
@@ -142,14 +206,18 @@ describe("schema helper exposure controls", () => {
 
   it("implicitly excludes reverse relation and count fields unless requested", () => {
     const exclusions = getImplicitModelTableFieldExclusions(metadata);
+    expect(exclusions).toContain("createdAt");
+    expect(exclusions).toContain("updatedAt");
     expect(exclusions).toContain("orders");
     expect(exclusions).toContain("ordersCount");
     expect(exclusions).toContain("tagsCount");
     expect(exclusions).not.toContain("tags");
 
     const explicit = getImplicitModelTableFieldExclusions(metadata, {
-      explicitAccessors: ["orders", "tagsCount"],
+      explicitAccessors: ["orders", "tagsCount", "createdAt"],
     });
+    expect(explicit).not.toContain("createdAt");
+    expect(explicit).toContain("updatedAt");
     expect(explicit).not.toContain("orders");
     expect(explicit).toContain("ordersCount");
     expect(explicit).not.toContain("tagsCount");
@@ -157,6 +225,8 @@ describe("schema helper exposure controls", () => {
 
   it("respects showReversed and showCount when resolving default hidden columns", () => {
     const hiddenByDefault = getDefaultHiddenColumnIds(metadata);
+    expect(hiddenByDefault).toContain("createdAt");
+    expect(hiddenByDefault).toContain("updatedAt");
     expect(hiddenByDefault).toContain("orders");
     expect(hiddenByDefault).toContain("ordersCount");
     expect(hiddenByDefault).toContain("tags");

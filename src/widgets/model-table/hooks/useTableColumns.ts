@@ -84,9 +84,7 @@ export function useTableColumns({
  });
 
  const canonicalizeRoot = (root: string) =>
- relationCanonicalByKey.get(root) ??
- fieldCanonicalByKey.get(root) ??
- toGraphqlFieldName(root);
+ relationCanonicalByKey.get(root) ?? fieldCanonicalByKey.get(root) ?? "";
 
  const canonicalizeAccessor = (accessor: string) => {
  const parts = accessor.replace(/__/g, ".").split(".").filter(Boolean);

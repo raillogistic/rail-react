@@ -202,5 +202,17 @@ describe("buildModelQuerySelection", () => {
     expect(selection).toContain("slug");
     expect(selection).not.toMatch(/\bname\b/);
   });
+
+  it("drops unknown field roots when metadata is present", () => {
+    const metadata = createSelectionMetadataFixture();
+    const selection = buildModelQuerySelection({
+      metadata,
+      fields: ["username", "departement"],
+      includeRowPermissions: false,
+    });
+
+    expect(selection).toContain("username");
+    expect(selection).not.toContain("departement");
+  });
 });
 

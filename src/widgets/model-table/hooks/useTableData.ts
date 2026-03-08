@@ -55,8 +55,40 @@ function toStringArray(value: unknown): string[] | undefined {
 /**
  * Resolve orderBy query input with a deterministic descending-id fallback.
  */
-function resolveOrderBy(value: unknown): string[] {
- return toStringArray(value) ?? [...DEFAULT_BACKEND_ORDER_BY];
+function resolveOrderBy(
+ value: unknown,
+ metadata?: ModelMetadata | null,
+): string[] {
+ const rawEntries = toStringArray(value);
+ if (!rawEntries?.length) {
+ return [...DEFAULT_BACKEND_ORDER_BY];
+ }
+
+ if (!metadata) {
+ return rawEntries;
+ }
+
+ const knownRoots = new Set<string>();
+ (metadata.fields || []).forEach((field) => {
+ const canonical = String(field.name || field.fieldName || "").trim();
+ if (canonical) {
+ knownRoots.add(canonical);
+ }
+ });
+ (metadata.relationships || []).forEach((relation) => {
+ const canonical = String(relation.name || relation.fieldName || "").trim();
+ if (canonical) {
+ knownRoots.add(canonical);
+ }
+ });
+
+ const sanitized = rawEntries.filter((entry) => {
+ const normalized = entry.replace(/^-/, "").replace(/__/g, ".");
+ const [root] = normalized.split(".").filter(Boolean);
+ return !!root && knownRoots.has(root);
+ });
+
+ return sanitized.length > 0 ? sanitized : [...DEFAULT_BACKEND_ORDER_BY];
 }
 
 /**
@@ -138,7 +170,7 @@ export function useTableData(config?: TableDataConfig) {
  where: filters?.where,
  presets: toStringArray(filters?.presets),
  distinctOn: toStringArray(filters?.distinctOn),
- orderBy: resolveOrderBy(filters?.orderBy),
+ orderBy: resolveOrderBy(filters?.orderBy, metadata as ModelMetadata | null),
  skipCount: config?.skipCount ?? false,
  };
  }, [

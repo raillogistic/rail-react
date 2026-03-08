@@ -959,7 +959,6 @@ export function RowActions({
           </DropdownMenu>
         ) : null}
       </div>
-
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent className="max-w-[400px] border-border/30 shadow-2xl overflow-hidden p-0 bg-background/95 backdrop-blur-xl">
           {/* Accent strip */}

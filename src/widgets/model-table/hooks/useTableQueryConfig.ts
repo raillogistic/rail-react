@@ -91,6 +91,39 @@ export function useTableQueryConfig({
  const metadataFields = metadata?.fields;
  const metadataRelationships = metadata?.relationships;
  const metadataPrimaryKey = metadata?.primaryKey;
+ const knownAccessorRoots = useMemo(() => {
+ const roots = new Set<string>();
+ metadataFields?.forEach((field) => {
+ const canonical = toGraphqlFieldName(field.name || field.fieldName);
+ if (canonical) {
+ roots.add(canonical);
+ }
+ });
+ metadataRelationships?.forEach((relation) => {
+ const canonical = toGraphqlFieldName(relation.name || relation.fieldName);
+ if (canonical) {
+ roots.add(canonical);
+ }
+ });
+ return roots;
+ }, [metadataFields, metadataRelationships]);
+
+ const normalizedGroupingField = useMemo(() => {
+ if (!groupingField) {
+ return null;
+ }
+ const parts = groupingField.replace(/__/g, ".").split(".").filter(Boolean);
+ if (parts.length === 0) {
+ return null;
+ }
+ const [root, ...rest] = parts;
+ const normalizedRoot = toGraphqlFieldName(root);
+ if (!normalizedRoot || !knownAccessorRoots.has(normalizedRoot)) {
+ return null;
+ }
+ const normalizedRest = rest.map((segment) => toGraphqlFieldName(segment));
+ return [normalizedRoot, ...normalizedRest.filter(Boolean)].join(".");
+ }, [groupingField, knownAccessorRoots]);
 
  const rawQueryVisibleAccessors = useMemo(() => {
  if (!metadataFields || !metadataRelationships) return undefined;
@@ -124,9 +157,7 @@ export function useTableQueryConfig({
  });
 
  const canonicalizeRoot = (root: string) =>
- relationCanonicalByKey.get(root) ??
- fieldCanonicalByKey.get(root) ??
- toGraphqlFieldName(root);
+ relationCanonicalByKey.get(root) ?? fieldCanonicalByKey.get(root) ?? "";
 
  const canonicalizeAccessor = (accessor: string) => {
  const parts = accessor.replace(/__/g, ".").split(".").filter(Boolean);
@@ -206,8 +237,8 @@ export function useTableQueryConfig({
  toGraphqlFieldName(metadataPrimaryKey || "id") || "id";
  required.add(primaryKeyAccessor);
 
- if (groupingField) {
- required.add(groupingField);
+ if (normalizedGroupingField) {
+ required.add(normalizedGroupingField);
  }
 
  if (!metadataFields || !queryVisibleAccessors?.length) {
@@ -217,7 +248,7 @@ export function useTableQueryConfig({
  const visibleRoots = new Set(
  queryVisibleAccessors.map((accessor) => accessor.split(".")[0]),
  );
- const groupedRoot = groupingField?.split(".")[0] ?? null;
+ const groupedRoot = normalizedGroupingField?.split(".")[0] ?? null;
 
  metadataFields.forEach((field) => {
  const source = getSyntheticRelationCountSource(field);
@@ -234,7 +265,7 @@ export function useTableQueryConfig({
 
  return Array.from(required);
  }, [
- groupingField,
+ normalizedGroupingField,
  metadataFields,
  metadataPrimaryKey,
  queryVisibleAccessors,

@@ -63,10 +63,16 @@ import type {
   ModelTableV2ViewOptions,
 } from "../config/types";
 import {
+  getNormalizedTablePersistenceKeys,
   loadPersistedTableState,
+  markPendingTablePersistenceReset,
   type PersistedTableState,
   useTablePersistence,
 } from "../hooks/useTablePersistence";
+import {
+  clearPersistedMetadataStore,
+  getActiveMetadataUserKey,
+} from "@/shared/api/graphql/graphql/metadata/persisted-cache";
 import type { TemplatePdfPreviewPayload } from "../utils/templateExecution";
 import { useTableColumns } from "../hooks/useTableColumns";
 import { useTableData } from "../hooks/useTableData";
@@ -271,6 +277,64 @@ function mergeManagedFieldExclusions(
   };
 }
 
+const SCHEMA_DRIFT_RECOVERY_PREFIX = "rail-table-schema-drift";
+
+type GraphqlLikeError = {
+  message?: string | null;
+  graphQLErrors?: Array<{ message?: string | null }> | null;
+  errors?: Array<{ message?: string | null }> | null;
+  networkError?: {
+    statusCode?: number | null;
+    result?: {
+      errors?: Array<{ message?: string | null }>;
+    } | null;
+  } | null;
+};
+
+function extractGraphqlMessages(error: unknown): string[] {
+  const candidate = error as GraphqlLikeError | null | undefined;
+  const messages = new Set<string>();
+
+  const append = (value?: string | null) => {
+    const trimmed = String(value || "").trim();
+    if (trimmed) {
+      messages.add(trimmed);
+    }
+  };
+
+  append(candidate?.message);
+  candidate?.graphQLErrors?.forEach((entry) => append(entry?.message));
+  candidate?.errors?.forEach((entry) => append(entry?.message));
+  candidate?.networkError?.result?.errors?.forEach((entry) =>
+    append(entry?.message),
+  );
+
+  return Array.from(messages);
+}
+
+function extractMissingGraphqlField(error: unknown): string | null {
+  for (const message of extractGraphqlMessages(error)) {
+    const match = message.match(
+      /Cannot query field ['"]?([A-Za-z0-9_]+)['"]?\s+on type/i,
+    );
+    if (match?.[1]) {
+      return match[1];
+    }
+  }
+  return null;
+}
+
+function hasRecoverableTableBadRequest(error: unknown): boolean {
+  const candidate = error as GraphqlLikeError | null | undefined;
+  if (candidate?.networkError?.statusCode === 400) {
+    return true;
+  }
+
+  return extractGraphqlMessages(error).some((message) =>
+    message.includes("Response not successful: Received status code 400"),
+  );
+}
+
 /**
  * Extracts a backend permission codename from GraphQL errors.
  */
@@ -283,10 +347,20 @@ function extractPermissionCodeFromMessage(message: string): string | null {
  * Localizes technical GraphQL errors into user-facing French text.
  */
 function localizeTableErrorMessage(error: Error): string {
-  const rawMessage = error.message || "Une erreur est survenue.";
-  const permissionCode = extractPermissionCodeFromMessage(rawMessage);
-  if (permissionCode) {
-    return `Acces refuse : permission requise (${permissionCode}).`;
+  const graphqlMessages = extractGraphqlMessages(error);
+  const rawMessage =
+    graphqlMessages.find(
+      (message) =>
+        !message.includes("Response not successful: Received status code 400"),
+    ) ??
+    error.message ??
+    "Une erreur est survenue.";
+
+  for (const message of graphqlMessages) {
+    const permissionCode = extractPermissionCodeFromMessage(message);
+    if (permissionCode) {
+      return `Acces refuse : permission requise (${permissionCode}).`;
+    }
   }
   return rawMessage;
 }
@@ -987,6 +1061,54 @@ function DynamicBaseTableContent({
       onRefetchResolved?.(undefined);
     };
   }, [onRefetchResolved, refetch]);
+
+  useEffect(() => {
+    const missingField = extractMissingGraphqlField(dataError);
+    const shouldRecover = Boolean(missingField) || hasRecoverableTableBadRequest(dataError);
+    if (!shouldRecover || typeof window === "undefined") {
+      return;
+    }
+
+    const recoveryKey =
+      `${SCHEMA_DRIFT_RECOVERY_PREFIX}:${effectiveKey}:${missingField ?? "http-400"}`;
+    if (window.sessionStorage.getItem(recoveryKey) === "1") {
+      return;
+    }
+
+    window.sessionStorage.setItem(recoveryKey, "1");
+    markPendingTablePersistenceReset(effectiveKey);
+
+    getNormalizedTablePersistenceKeys(effectiveKey).forEach((candidateKey) => {
+      try {
+        window.localStorage.removeItem(`rail-table-v2:${candidateKey}`);
+      } catch {
+        // Ignore storage errors during schema-drift recovery.
+      }
+    });
+
+    const metadataUserKey = getActiveMetadataUserKey();
+    if (metadataUserKey) {
+      clearPersistedMetadataStore(metadataUserKey);
+    }
+
+    window.location.reload();
+  }, [dataError, effectiveKey]);
+
+  useEffect(() => {
+    if (dataError || typeof window === "undefined") {
+      return;
+    }
+
+    const markerPrefix = `${SCHEMA_DRIFT_RECOVERY_PREFIX}:${effectiveKey}:`;
+    const keysToRemove: string[] = [];
+    for (let index = 0; index < window.sessionStorage.length; index += 1) {
+      const key = window.sessionStorage.key(index);
+      if (key?.startsWith(markerPrefix)) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach((key) => window.sessionStorage.removeItem(key));
+  }, [dataError, effectiveKey]);
 
   const hasScheduledCapabilitiesRef = useRef(false);
   useEffect(() => {

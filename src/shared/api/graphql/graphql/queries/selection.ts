@@ -106,7 +106,7 @@ function canonicalizeAccessor(
   const canonicalRoot =
     relationCanonicalByKey.get(root) ??
     fieldCanonicalByKey.get(root) ??
-    toGraphqlFieldName(root);
+    (metadata ? "" : toGraphqlFieldName(root));
   if (!canonicalRoot) return "";
 
   const canonicalRest = rest
