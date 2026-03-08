@@ -28,6 +28,12 @@ import {
 import type { DateFieldConfig, FieldComponentProps } from "./types";
 
 type Props = FieldComponentProps<DateFieldConfig, string>;
+const STORAGE_FORMAT = "yyyy-MM-dd'T'HH:mm";
+
+/** Returns the current local date and time in the storage format used by the input. */
+export function now(): string {
+  return format(new Date(), STORAGE_FORMAT);
+}
 
 /** Renders a combined date + time picker. */
 const DateTimeInput: React.FC<Props> = ({ config, field, form }) => {
@@ -69,7 +75,7 @@ const DateTimeInput: React.FC<Props> = ({ config, field, form }) => {
     newDate.setMilliseconds(0);
 
     // Format to YYYY-MM-DDThh:mm (local time)
-    const isoString = format(newDate, "yyyy-MM-dd'T'HH:mm");
+    const isoString = format(newDate, STORAGE_FORMAT);
     field.handleChange(isoString);
   };
 
@@ -87,7 +93,7 @@ const DateTimeInput: React.FC<Props> = ({ config, field, form }) => {
     newDate.setSeconds(0);
     newDate.setMilliseconds(0);
 
-    const isoString = format(newDate, "yyyy-MM-dd'T'HH:mm");
+    const isoString = format(newDate, STORAGE_FORMAT);
     field.handleChange(isoString);
   };
 

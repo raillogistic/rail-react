@@ -34,6 +34,11 @@ const DISPLAY_FORMAT = "PPP";
 /** ISO date format for storage. */
 const STORAGE_FORMAT = "yyyy-MM-dd";
 
+/** Returns today's date in the storage format used by the input. */
+export function today(): string {
+  return format(new Date(), STORAGE_FORMAT);
+}
+
 /** Renders a date picker with pop-over calendar. */
 const DateInput: React.FC<Props> = ({ config, field, form }) => {
   const meta = field.state.meta;

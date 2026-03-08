@@ -172,6 +172,7 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
   const requestRef = React.useRef(0);
   const debounceRef = React.useRef<ReturnType<typeof setTimeout> | null>(null);
   const optionsListRef = React.useRef<HTMLDivElement | null>(null);
+  const searchInputRef = React.useRef<HTMLInputElement | null>(null);
 
   React.useEffect(() => {
     formValuesRef.current = form.state.values;
@@ -442,6 +443,8 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
   }, [highlightedIndex]);
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    event.stopPropagation();
+
     if (event.key === "ArrowDown" || event.key === "ArrowUp") {
       event.preventDefault();
       const direction = event.key === "ArrowDown" ? 1 : -1;
@@ -587,10 +590,19 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
                 </div>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent className="w-80 rounded-lg border border-border/50 bg-popover p-0 shadow-lg overflow-hidden">
+            <DropdownMenuContent
+              className="w-80 rounded-lg border border-border/50 bg-popover p-0 shadow-lg overflow-hidden"
+              onOpenAutoFocus={(event) => {
+                event.preventDefault();
+                requestAnimationFrame(() => {
+                  searchInputRef.current?.focus();
+                });
+              }}
+            >
               <div className="flex items-center border-b border-border/40 bg-muted/20 px-3 py-2.5">
                 <Search className="mr-2 size-4 text-muted-foreground/40" />
                 <Input
+                  ref={searchInputRef}
                   className="h-8 border-none bg-transparent p-0 text-sm shadow-none focus-visible:ring-0"
                   placeholder="Rechercher..."
                   value={search}
