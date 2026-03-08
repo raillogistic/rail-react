@@ -359,6 +359,53 @@ export const TABLE_ACTION_DETAILS_METADATA_QUERY = gql`
   }
 `;
 
+export const CUSTOM_MUTATION_METADATA_QUERY = gql`
+  query CustomMutationMetadata(
+    $app: String!
+    $model: String!
+    $functionName: String!
+    $objectId: ID
+  ) {
+    customMutation(
+      app: $app
+      model: $model
+      functionName: $functionName
+      objectId: $objectId
+    ) {
+      name
+      operation
+      description
+      methodName
+      inputFields {
+        name
+        fieldName
+        fieldType
+        graphqlType
+        required
+        defaultValue
+        description
+        choices {
+          value
+          label
+        }
+        relatedModel
+      }
+      inputType
+      returnType
+      allowed
+      requiredPermissions
+      reason
+      mutationType
+      modelName
+      formConfig
+      successMessage
+      errorMessages
+      action
+      requiresAuthentication
+    }
+  }
+`;
+
 export const TABLE_MODEL_METADATA_QUERY = gql`
   query TableModelMetadata($app: String!, $model: String!, $objectId: ID) {
     modelSchema(app: $app, model: $model, objectId: $objectId) {

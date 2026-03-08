@@ -26,6 +26,13 @@ export const DECHARGE_NESTED_CONFIG: NonNullable<
 
       // "metadata_snapshot",
     ],
+    removeOperation: "delete",
+    deleteMutation: {
+      enabled: true,
+      modelName: "DechargeLigne",
+      operationName: "deleteDechargeLigne",
+      idPath: "id",
+    },
     customOrder: [
       "codeInventaire",
       "libelle",
