@@ -10,7 +10,9 @@ const mockUseTable = vi.fn();
 const mockNavigate = vi.fn();
 const modelFormSpy = vi.hoisted(() => vi.fn());
 const modelDetailSpy = vi.hoisted(() => vi.fn());
-const executeTemplateForRowsMock = vi.hoisted(() => vi.fn());
+const customMutationsDropdownSpy = vi.hoisted(() => vi.fn());
+const modelTemplateActionSpy = vi.hoisted(() => vi.fn());
+const modelTemplatesDropdownSpy = vi.hoisted(() => vi.fn());
 const toastMock = vi.hoisted(() => ({
  success: vi.fn(),
  error: vi.fn(),
@@ -31,9 +33,6 @@ vi.mock("@apollo/client", () => ({
  (acc, chunk, index) =>`${acc}${chunk}${String(values[index] ?? "")}`,
  "",
  ),
- useApolloClient: () => ({
- mutate: vi.fn(),
- }),
  useMutation: () => [vi.fn(), { loading: false }],
 }));
 
@@ -50,16 +49,6 @@ vi.mock("react-router-dom", async () => {
 vi.mock("sonner", () => ({
  toast: toastMock,
 }));
-
-vi.mock("../../utils/templateExecution", async () => {
- const actual = await vi.importActual<typeof import("../../utils/templateExecution")>(
- "../../utils/templateExecution",
- );
- return {
- ...actual,
- executeTemplateForRows: executeTemplateForRowsMock,
- };
-});
 
 vi.mock("@/shared/ui/kit/tooltip", () => ({
  TooltipProvider: ({ children }: { children: React.ReactNode }) => (
@@ -201,10 +190,30 @@ vi.mock("@/widgets/model-details", () => ({
  },
 }));
 
+vi.mock("@/widgets/components/CustomMutationsDropdown", () => ({
+  CustomMutationsDropdown: (props: Record<string, unknown>) => {
+    customMutationsDropdownSpy(props);
+    return <div data-testid="custom-mutations-dropdown" />;
+  },
+}));
+
+vi.mock("@/widgets/components/ModelTemplateAction", () => ({
+  ModelTemplateAction: (props: Record<string, unknown>) => {
+    modelTemplateActionSpy(props);
+    return <div data-testid="model-template-action" />;
+  },
+}));
+
+vi.mock("@/widgets/components/ModelTemplatesDropdown", () => ({
+  ModelTemplatesDropdown: (props: Record<string, unknown>) => {
+    modelTemplatesDropdownSpy(props);
+    return <div data-testid="model-templates-dropdown" />;
+  },
+}));
+
 describe("RowActions update integration", () => {
  beforeEach(() => {
  vi.clearAllMocks();
- executeTemplateForRowsMock.mockResolvedValue({ templateType: "pdf", count: 1 });
  mockUseMetadata.mockReturnValue({
  app: "store",
  model: "Order",
@@ -282,6 +291,40 @@ describe("RowActions update integration", () => {
     const order = detailButton.compareDocumentPosition(updateButton);
 
     expect(order & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+  });
+
+  it("wires row-scoped metadata dropdown through CustomMutationsDropdown", () => {
+    mockUseMetadata.mockReturnValue({
+      app: "store",
+      model: "Order",
+      metadata: {
+        model: "Order",
+        verboseName: "Commande",
+        mutations: [
+          { name: "archiveOrder", operation: "custom", allowed: true },
+        ],
+        templates: [],
+      },
+    });
+
+    render(
+      <RowActions
+        row={{ id: 55 }}
+        data={[{ id: 55 }]}
+      />,
+    );
+
+    expect(screen.getByTestId("custom-mutations-dropdown")).toBeInTheDocument();
+    const latestProps = customMutationsDropdownSpy.mock.calls.at(-1)?.[0] as
+      | {
+          data?: { app?: string; model?: string; objectId?: string };
+        }
+      | undefined;
+    expect(latestProps?.data).toEqual({
+      app: "store",
+      model: "Order",
+      objectId: "55",
+    });
   });
 
   it("keeps detail action visible when retrieve is denied but update link mode is enabled", async () => {
@@ -415,7 +458,7 @@ describe("RowActions update integration", () => {
  });
  });
 
- it("renders a direct printer button when exactly one template is available", async () => {
+ it("wires a single row template through ModelTemplateAction", () => {
  mockUseMetadata.mockReturnValue({
  app: "store",
  model: "Order",
@@ -442,19 +485,28 @@ describe("RowActions update integration", () => {
  />,
  );
 
- fireEvent.click(screen.getByRole("button", { name: "Template: Invoice" }));
-
- await waitFor(() => {
- expect(executeTemplateForRowsMock).toHaveBeenCalledWith(
- expect.objectContaining({ key: "invoice_pdf" }),
- ["12"],
- {},
- );
+ expect(screen.getByTestId("model-template-action")).toBeInTheDocument();
+ const latestProps = modelTemplateActionSpy.mock.calls.at(-1)?.[0] as
+   | {
+       data?: {
+         app?: string;
+         model?: string;
+         funcName?: string;
+         objectId?: string;
+       };
+       onPdfPreview?: unknown;
+     }
+   | undefined;
+ expect(latestProps?.data).toEqual({
+   app: "store",
+   model: "Order",
+   funcName: "invoice_pdf",
+   objectId: "12",
  });
- expect(screen.queryByText("Extractions")).not.toBeInTheDocument();
+ expect(latestProps?.onPdfPreview).toBeUndefined();
  });
 
- it("keeps template dropdown when multiple templates are available", () => {
+ it("wires multiple row templates through ModelTemplatesDropdown", () => {
  mockUseMetadata.mockReturnValue({
  app: "store",
  model: "Order",
@@ -488,6 +540,22 @@ describe("RowActions update integration", () => {
  />,
  );
 
- expect(screen.getByText("Extractions")).toBeInTheDocument();
+ expect(screen.getByTestId("model-templates-dropdown")).toBeInTheDocument();
+ const latestProps = modelTemplatesDropdownSpy.mock.calls.at(-1)?.[0] as
+   | {
+       data?: {
+         app?: string;
+         model?: string;
+         objectId?: string;
+       };
+       onPdfPreview?: unknown;
+     }
+   | undefined;
+ expect(latestProps?.data).toEqual({
+   app: "store",
+   model: "Order",
+   objectId: "12",
+ });
+ expect(latestProps?.onPdfPreview).toBeUndefined();
  });
 });

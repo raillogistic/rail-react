@@ -447,6 +447,64 @@ export const CUSTOM_MUTATIONS_METADATA_QUERY = gql`
   }
 `;
 
+export const MODEL_TEMPLATE_METADATA_QUERY = gql`
+  query ModelTemplateMetadata(
+    $app: String!
+    $model: String!
+    $functionName: String!
+    $objectId: ID
+  ) {
+    modelTemplate(
+      app: $app
+      model: $model
+      functionName: $functionName
+      objectId: $objectId
+    ) {
+      key
+      templateType
+      title
+      description
+      endpoint
+      urlPath
+      guard
+      requireAuthentication
+      roles
+      permissions
+      allowed
+      denialReason
+      allowClientData
+      clientDataFields
+      clientDataSchema
+    }
+  }
+`;
+
+export const MODEL_TEMPLATES_METADATA_QUERY = gql`
+  query ModelTemplatesMetadata(
+    $app: String!
+    $model: String!
+    $objectId: ID
+  ) {
+    modelTemplates(app: $app, model: $model, objectId: $objectId) {
+      key
+      templateType
+      title
+      description
+      endpoint
+      urlPath
+      guard
+      requireAuthentication
+      roles
+      permissions
+      allowed
+      denialReason
+      allowClientData
+      clientDataFields
+      clientDataSchema
+    }
+  }
+`;
+
 export const TABLE_MODEL_METADATA_QUERY = gql`
   query TableModelMetadata($app: String!, $model: String!, $objectId: ID) {
     modelSchema(app: $app, model: $model, objectId: $objectId) {
