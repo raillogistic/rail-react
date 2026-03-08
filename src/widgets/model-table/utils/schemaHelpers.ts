@@ -35,6 +35,82 @@ export function getSyntheticRelationCountSource(
   return metadata.relation;
 }
 
+type DefaultFieldExposureOptions = {
+  showReversed?: boolean;
+  showCount?: boolean;
+  explicitAccessors?: Iterable<string>;
+};
+
+function addAccessorVariants(target: Set<string>, value?: string): void {
+  if (!value) return;
+  const trimmed = value.trim();
+  if (!trimmed) return;
+
+  target.add(trimmed);
+  target.add(toGraphqlFieldName(trimmed));
+  target.add(toSnakeCase(trimmed));
+  target.add(toCamelCase(trimmed));
+
+  const root = trimmed.replace(/__/g, ".").split(".")[0]?.trim();
+  if (!root || root === trimmed) return;
+  target.add(root);
+  target.add(toGraphqlFieldName(root));
+  target.add(toSnakeCase(root));
+  target.add(toCamelCase(root));
+}
+
+function buildExplicitAccessorLookup(
+  explicitAccessors?: Iterable<string>,
+): Set<string> {
+  const lookup = new Set<string>();
+  if (!explicitAccessors) return lookup;
+  for (const accessor of explicitAccessors) {
+    addAccessorVariants(lookup, accessor);
+  }
+  return lookup;
+}
+
+function resolveFieldRelation(
+  field: Pick<FieldSchema, "name" | "fieldName">,
+  relationLookup: Map<string, RelationshipSchema>,
+): RelationshipSchema | null {
+  return (
+    relationLookup.get(field.name) ??
+    relationLookup.get(field.fieldName || "") ??
+    null
+  );
+}
+
+function isReverseRelation(
+  relation: RelationshipSchema | null,
+): boolean {
+  if (!relation) return false;
+  const relationType = String(relation.relationType || "").toLowerCase();
+  return relation.isReverse || relationType.includes("reverse");
+}
+
+function collectFieldAccessors(
+  field: Pick<FieldSchema, "name" | "fieldName">,
+): Set<string> {
+  const accessors = new Set<string>();
+  addAccessorVariants(accessors, field.name);
+  addAccessorVariants(accessors, field.fieldName);
+  return accessors;
+}
+
+function isFieldExplicitlyRequested(
+  field: Pick<FieldSchema, "name" | "fieldName">,
+  explicitAccessors: Set<string>,
+): boolean {
+  if (explicitAccessors.size === 0) return false;
+  for (const accessor of collectFieldAccessors(field)) {
+    if (explicitAccessors.has(accessor)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 function resolveRelationCountSource(
   accessor: string,
   field: FieldSchema,
@@ -55,8 +131,27 @@ function resolveRelationCountSource(
   return null;
 }
 
+function normalizeFieldKey(value: string): string {
+  return value.replace(/[_-]/g, "").toLowerCase();
+}
+
+function isDefaultTimestampField(
+  field: Pick<FieldSchema, "name" | "fieldName">,
+): boolean {
+  const accessor = field.name || field.fieldName || "";
+  const normalized = normalizeFieldKey(accessor);
+  return (
+    normalized === "createdat" ||
+    normalized === "createdby" ||
+    normalized === "updatedat" ||
+    normalized === "updatedby" ||
+    normalized === "updateat"
+  );
+}
+
 export function getDefaultHiddenColumnIds(
   metadata?: ModelSchema | null,
+  options: Omit<DefaultFieldExposureOptions, "explicitAccessors"> = {},
 ): Set<string> {
   const hidden = new Set<string>();
   if (!metadata?.fields) return hidden;
@@ -67,40 +162,32 @@ export function getDefaultHiddenColumnIds(
     if (relation.fieldName) relationLookup.set(relation.fieldName, relation);
   });
 
-  const normalizeKey = (value: string) =>
-    value.replace(/[_-]/g, "").toLowerCase();
-
   metadata.fields.forEach((field) => {
     const accessor = field.name || field.fieldName;
-    const normalized = normalizeKey(accessor);
-    const relation =
-      relationLookup.get(field.name) ??
-      relationLookup.get(field.fieldName || "");
+    const normalized = normalizeFieldKey(accessor);
+    const relation = resolveFieldRelation(field, relationLookup);
     const relationType = relation?.relationType?.toLowerCase() || "";
     const isRelationCount = !!resolveRelationCountSource(
       accessor,
       field,
       relationLookup,
     );
-    const isTimestamp =
-      normalized === "createdat" ||
-      normalized === "createdby" ||
-      normalized === "updatedat" ||
-      normalized === "updatedby" ||
-      normalized === "updateat";
+    const reverseRelation = isReverseRelation(relation);
+    const forwardToManyRelation =
+      !!relation &&
+      !reverseRelation &&
+      (relation.isToMany ||
+        relationType.includes("many_to_many") ||
+        relationType.includes("manytomany"));
     const hideByDefault =
       field.isPrimaryKey ||
       normalized === "id" ||
       field.isJson ||
       field.fieldType === "TextField" ||
-      isTimestamp ||
-      isRelationCount ||
-      (!!relation &&
-        (relation.isToMany ||
-          relation.isReverse ||
-          relationType.includes("many_to_many") ||
-          relationType.includes("manytomany") ||
-          relationType.includes("reverse_fk")));
+      isDefaultTimestampField(field) ||
+      (isRelationCount && !options.showCount) ||
+      (reverseRelation && !options.showReversed) ||
+      forwardToManyRelation;
 
     if (!hideByDefault) return;
     hidden.add(accessor);
@@ -112,6 +199,48 @@ export function getDefaultHiddenColumnIds(
   });
 
   return hidden;
+}
+
+export function getImplicitModelTableFieldExclusions(
+  metadata?: ModelSchema | null,
+  options: DefaultFieldExposureOptions = {},
+): Set<string> {
+  const exclusions = new Set<string>();
+  if (!metadata?.fields?.length) return exclusions;
+
+  const relationLookup = new Map<string, RelationshipSchema>();
+  metadata.relationships?.forEach((relation) => {
+    if (relation.name) relationLookup.set(relation.name, relation);
+    if (relation.fieldName) relationLookup.set(relation.fieldName, relation);
+  });
+
+  const explicitAccessors = buildExplicitAccessorLookup(
+    options.explicitAccessors,
+  );
+
+  metadata.fields.forEach((field) => {
+    const accessor = field.name || field.fieldName;
+    if (!accessor) return;
+
+    const relation = resolveFieldRelation(field, relationLookup);
+    const shouldExcludeCount =
+      !!resolveRelationCountSource(accessor, field, relationLookup) &&
+      !options.showCount;
+    const shouldExcludeReverse =
+      isReverseRelation(relation) && !options.showReversed;
+    const shouldExcludeTimestamp = isDefaultTimestampField(field);
+
+    if (!shouldExcludeCount && !shouldExcludeReverse && !shouldExcludeTimestamp) {
+      return;
+    }
+    if (isFieldExplicitlyRequested(field, explicitAccessors)) {
+      return;
+    }
+
+    collectFieldAccessors(field).forEach((entry) => exclusions.add(entry));
+  });
+
+  return exclusions;
 }
 
 function buildRelationshipField(relation: RelationshipSchema): FieldSchema {

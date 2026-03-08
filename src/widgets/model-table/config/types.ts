@@ -496,6 +496,8 @@ export interface BaseModelTableProps {
   performance?: ModelTableV2PerformanceOptions;
   hideTableOnMobile?: boolean;
   fields?: BaseModelTableFieldsInput;
+  showReversed?: boolean;
+  showCount?: boolean;
   relations?: Record<string, BaseModelTableRelationConfig>;
   relationStats?: BaseModelTableRelationStatsConfig;
   queryManager?: string;

@@ -9,10 +9,12 @@ import {
   CardTitle,
 } from "@/shared/ui/kit/card";
 import { Skeleton } from "@/shared/ui/kit/skeleton";
+import { buildColumnDefinitions } from "../builders/columnDefinitions";
 import { useTable } from "../context/TableContext";
 import { useMetadata } from "../context/MetadataContext";
 import {
   formatCellValue,
+  normalizeBaseModelTableFieldsInput,
   resolveColumnVisibility,
   resolveFieldValue,
   resolveGroupingKey,
@@ -23,6 +25,7 @@ import {
 } from "../utils";
 import type {
   BaseModelTableColumnActionsInput,
+  BaseModelTableFieldsInput,
   BaseModelTableRefetch,
   RowMutationPermissions,
 } from "../types";
@@ -50,6 +53,7 @@ const MOBILE_BATCH_SIZE = 24;
 type TableMobileCardProps = {
   emptyState?: string;
   refetch?: BaseModelTableRefetch;
+  fields?: BaseModelTableFieldsInput;
   columnActions?: BaseModelTableColumnActionsInput;
   update?: ModelTableUpdateConfig;
   detail?: ModelTableDetailConfig;
@@ -79,6 +83,7 @@ function getPdfLabel(pdfUrl: string): string {
 export function TableMobileCard({
   emptyState,
   refetch,
+  fields,
   columnActions,
   update,
   detail,
@@ -107,6 +112,20 @@ export function TableMobileCard({
 
   if (!metadata) return null;
 
+  const normalizedFieldsConfig = useMemo(
+    () => normalizeBaseModelTableFieldsInput(fields),
+    [fields],
+  );
+  const allowedFieldIds = useMemo(
+    () =>
+      new Set(
+        buildColumnDefinitions(metadata, normalizedFieldsConfig).map(
+          (column) => column.id.split(".")[0],
+        ),
+      ),
+    [metadata, normalizedFieldsConfig],
+  );
+
   const byName = useMemo(
     () => new Map(metadata.fields.map((field) => [field.name, field])),
     [metadata.fields],
@@ -123,18 +142,26 @@ export function TableMobileCard({
     () =>
       columnOrder
         .map((columnId) => byName.get(columnId) || byFieldName.get(columnId))
-        .filter((field): field is (typeof metadata.fields)[number] => !!field),
-    [byFieldName, byName, columnOrder, metadata.fields],
+        .filter(
+          (field): field is (typeof metadata.fields)[number] =>
+            !!field &&
+            allowedFieldIds.has(toGraphqlFieldName(field.name || field.fieldName)),
+        ),
+    [allowedFieldIds, byFieldName, byName, columnOrder, metadata.fields],
   );
 
   const mergedColumns = useMemo(() => {
     const seenColumns = new Set<string>();
     return [...orderedColumns, ...metadata.fields].filter((field) => {
+      const canonicalFieldId = toGraphqlFieldName(field.name || field.fieldName);
+      if (!allowedFieldIds.has(canonicalFieldId)) {
+        return false;
+      }
       if (seenColumns.has(field.name)) return false;
       seenColumns.add(field.name);
       return true;
     });
-  }, [metadata.fields, orderedColumns]);
+  }, [allowedFieldIds, metadata.fields, orderedColumns]);
 
   const visibleColumns = useMemo(
     () =>

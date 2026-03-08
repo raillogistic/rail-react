@@ -63,6 +63,10 @@ export type ModelTableContentControllerState = {
  quickSearch?: boolean;
  /** Field configuration for toolbar column selector. */
  fields?: BaseModelTableFieldsInput;
+ /** Enables reverse relationship fields in default table surfaces. */
+ showReversed?: boolean;
+ /** Enables synthetic count fields in default table surfaces. */
+ showCount?: boolean;
  /** Data loading flag. */
  loading: boolean;
  /** Resolved display title. */

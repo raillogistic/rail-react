@@ -100,7 +100,9 @@ import { TablePagination } from "./TablePagination";
 import {
   formatCellValue,
   getDefaultHiddenColumnIds,
+  getImplicitModelTableFieldExclusions,
   getSyntheticRelationCountSource,
+  normalizeBaseModelTableFieldsInput,
   toGraphqlFieldName,
 } from "../utils";
 import {
@@ -125,6 +127,8 @@ type DynamicBaseTableContentProps = {
   content?: ModelTableContentConfig;
   hideTableOnMobile?: boolean;
   fields?: BaseModelTableFieldsInput;
+  showReversed?: boolean;
+  showCount?: boolean;
   relations?: Record<string, BaseModelTableRelationConfig>;
   relationStats?: BaseModelTableRelationStatsConfig;
   queryManager?: string;
@@ -223,6 +227,48 @@ const HiddenTopActions: (
  */
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function collectExplicitFieldAccessors(
+  fields: ReturnType<typeof normalizeBaseModelTableFieldsInput>,
+): string[] {
+  const explicit = new Set<string>();
+  (fields.include ?? []).forEach((entry) => {
+    const accessor = typeof entry === "string" ? entry : entry.accessor;
+    if (accessor) {
+      explicit.add(accessor);
+    }
+  });
+  fields.add.forEach((entry) => {
+    if (entry.accessor) {
+      explicit.add(entry.accessor);
+    }
+  });
+  return Array.from(explicit);
+}
+
+function mergeManagedFieldExclusions(
+  fields: BaseModelTableFieldsInput | undefined,
+  exclusions: Set<string>,
+): BaseModelTableFieldsInput | undefined {
+  if (exclusions.size === 0) {
+    return fields;
+  }
+
+  const nextExclude = Array.from(exclusions);
+  if (!fields) {
+    return { exclude: nextExclude };
+  }
+  if (Array.isArray(fields)) {
+    return {
+      include: fields,
+      exclude: nextExclude,
+    };
+  }
+  return {
+    ...fields,
+    exclude: Array.from(new Set([...(fields.exclude ?? []), ...nextExclude])),
+  };
 }
 
 /**
@@ -566,6 +612,8 @@ function DynamicBaseTableContent({
   performance,
   hideTableOnMobile,
   fields,
+  showReversed = false,
+  showCount = false,
   relations,
   relationStats,
   queryManager,
@@ -866,10 +914,32 @@ function DynamicBaseTableContent({
     return rawPersistedState;
   }, [rawPersistedState]);
 
+  const requestedFieldsConfig = useMemo(
+    () => normalizeBaseModelTableFieldsInput(fields),
+    [fields],
+  );
+  const explicitFieldAccessors = useMemo(
+    () => collectExplicitFieldAccessors(requestedFieldsConfig),
+    [requestedFieldsConfig],
+  );
+  const managedFieldExclusions = useMemo(
+    () =>
+      getImplicitModelTableFieldExclusions(metadata, {
+        showReversed,
+        showCount,
+        explicitAccessors: explicitFieldAccessors,
+      }),
+    [explicitFieldAccessors, metadata, showCount, showReversed],
+  );
+  const effectiveFields = useMemo(
+    () => mergeManagedFieldExclusions(fields, managedFieldExclusions),
+    [fields, managedFieldExclusions],
+  );
+
   const { columnDefs, normalizedFieldsConfig, excludedAccessors } =
     useTableColumns({
       metadata,
-      fields,
+      fields: effectiveFields,
       relations,
       columnVisibility,
       persistedVisibility: persistedState?.columnVisibility,
@@ -879,17 +949,20 @@ function DynamicBaseTableContent({
     if (normalizedFieldsConfig.include !== undefined) {
       return new Set<string>();
     }
-    const hidden = getDefaultHiddenColumnIds(metadata);
+    const hidden = getDefaultHiddenColumnIds(metadata, {
+      showReversed,
+      showCount,
+    });
     normalizedFieldsConfig.add.forEach((entry: { accessor: string }) => {
       const root = entry.accessor.split(".")[0].split("__")[0];
       hidden.delete(root);
       hidden.delete(entry.accessor);
     });
     return hidden;
-  }, [metadata, normalizedFieldsConfig]);
+  }, [metadata, normalizedFieldsConfig, showCount, showReversed]);
 
   const { queryConfig } = useTableQueryConfig({
-    fields,
+    fields: effectiveFields,
     relations,
     queryManager,
     skipCount,
@@ -1488,7 +1561,9 @@ function DynamicBaseTableContent({
     create,
     tableConfig,
     quickSearch,
-    fields,
+    fields: effectiveFields,
+    showReversed,
+    showCount,
     topActions,
     onTemplatePdfPreview: pdfPreviewEnabled
       ? handleTemplatePdfPreview
@@ -1563,6 +1638,7 @@ function DynamicBaseTableContent({
             <TableMobileCard
               emptyState={tableConfig?.emptyState}
               refetch={refetch}
+              fields={effectiveFields}
               columnActions={columnActions}
               update={update}
               detail={detail}
@@ -1855,6 +1931,8 @@ export const DynamicModelTable = forwardRef<
             content={baseTable?.content}
             hideTableOnMobile={baseTable?.hideTableOnMobile ?? true}
             fields={baseTable?.fields}
+            showReversed={baseTable?.showReversed}
+            showCount={baseTable?.showCount}
             relations={baseTable?.relations}
             relationStats={baseTable?.relationStats}
             queryManager={baseTable?.queryManager}

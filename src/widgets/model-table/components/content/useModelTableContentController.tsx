@@ -44,6 +44,10 @@ export type UseModelTableContentControllerInput = {
   quickSearch?: boolean;
   /** Optional field configuration for toolbar selectors. */
   fields?: import("../../types").BaseModelTableFieldsInput;
+  /** Enables reverse relationship fields in default table surfaces. */
+  showReversed?: boolean;
+  /** Enables synthetic count fields in default table surfaces. */
+  showCount?: boolean;
   /** Optional custom top-actions input. */
   topActions?: ModelTableV2TopActionsInput;
   /** Optional PDF preview hook for template-generated PDFs. */
@@ -171,6 +175,8 @@ export function useModelTableContentController({
   tableConfig,
   quickSearch,
   fields,
+  showReversed,
+  showCount,
   topActions,
   onTemplatePdfPreview,
 }: UseModelTableContentControllerInput): ModelTableContentControllerState {
@@ -623,6 +629,8 @@ export function useModelTableContentController({
     tableConfig,
     quickSearch,
     fields,
+    showReversed,
+    showCount,
     loading,
     resolvedTitle,
     totalCount,

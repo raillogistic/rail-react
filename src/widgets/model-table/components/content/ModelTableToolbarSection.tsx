@@ -23,6 +23,8 @@ export function ModelTableToolbarSection({
  tableConfig={controller.tableConfig as ModelTableV2TableConfig | undefined}
  quickSearch={controller.quickSearch}
  fields={controller.fields}
+ showReversed={controller.showReversed}
+ showCount={controller.showCount}
  />
  );
 }

@@ -50,14 +50,15 @@ function DechargeListPage() {
         enabled: true,
       }}
       baseTable={{
-        fields: [
-          "numero",
-          "beneficiaire",
-          "date_decharge",
-          "site",
-          "commentaire",
-          "statut",
-        ],
+        fields: { exclude: ["numero_annee", "numero_sequence"] },
+        // fields: [
+        //   "numero",
+        //   "beneficiaire",
+        //   "date_decharge",
+        //   "site",
+        //   "commentaire",
+        //   "statut",
+        // ],
         tableConfig: {
           title: "Decharges",
           pdfPreview: {

@@ -62,6 +62,7 @@ import {
   normalizeBaseModelTableFieldsInput,
   resolveColumnVisibility,
   resolveGroupingKey,
+  toGraphqlFieldName,
 } from "../utils";
 import { ModelTableExportDialog } from "./ExportDialog";
 import {
@@ -92,6 +93,8 @@ type TableToolbarProps = {
   tableConfig?: ModelTableV2TableConfig;
   quickSearch?: boolean;
   fields?: BaseModelTableFieldsInput;
+  showReversed?: boolean;
+  showCount?: boolean;
   extraActions?: React.ReactNode;
 };
 
@@ -111,6 +114,8 @@ export function TableToolbar({
   tableConfig,
   quickSearch,
   fields,
+  showReversed,
+  showCount,
   extraActions,
 }: TableToolbarProps) {
   const toolbarRootRef = useRef<HTMLDivElement>(null);
@@ -236,13 +241,25 @@ export function TableToolbar({
   }, [ensureCapabilitiesLoaded, filterOpen]);
 
   // Gestion des colonnes
+  const normalizedFieldsConfig = useMemo(
+    () => normalizeBaseModelTableFieldsInput(fields),
+    [fields],
+  );
+
+  const columnDefinitions = useMemo(
+    () =>
+      metadata ? buildColumnDefinitions(metadata, normalizedFieldsConfig) : [],
+    [metadata, normalizedFieldsConfig],
+  );
+
+  const allowedFieldIds = useMemo(
+    () => new Set(columnDefinitions.map((column) => column.id.split(".")[0])),
+    [columnDefinitions],
+  );
+
   const orderedColumns = useMemo<ColumnsMenuOption[]>(() => {
     if (!metadata) return [];
-    const normalizedFieldsConfig = normalizeBaseModelTableFieldsInput(fields);
-    const definitions = buildColumnDefinitions(
-      metadata,
-      normalizedFieldsConfig,
-    );
+    const definitions = columnDefinitions;
     const baseColumns = definitions.map((column) => {
       const rootKey = column.id.split(".")[0];
       return {
@@ -277,7 +294,7 @@ export function TableToolbar({
     });
 
     return ordered;
-  }, [columnOrder, fields, metadata]);
+  }, [columnDefinitions, columnOrder, metadata]);
 
   const visibleColumns = useMemo(
     () =>
@@ -299,6 +316,7 @@ export function TableToolbar({
     return metadata.fields
       .filter(
         (f) =>
+          allowedFieldIds.has(toGraphqlFieldName(f.name || f.fieldName)) &&
           f.visibility !== "hidden" &&
           !["DateField", "DateTimeField", "TimeField", "TextField"].includes(
             f.fieldType,
@@ -308,7 +326,7 @@ export function TableToolbar({
         value: f.name || f.fieldName,
         label: f.verboseName || f.name,
       }));
-  }, [metadata]);
+  }, [allowedFieldIds, metadata]);
 
   const toggleColumn = (column: ColumnsMenuOption, checked: boolean) => {
     const next = { ...columnVisibility };
@@ -475,7 +493,10 @@ export function TableToolbar({
                       }}
                       onApplyDefaultColumnsVisibility={() => {
                         if (!metadata) return;
-                        const defaults = getDefaultHiddenColumnIds(metadata);
+                        const defaults = getDefaultHiddenColumnIds(metadata, {
+                          showReversed,
+                          showCount,
+                        });
                         const next = { ...columnVisibility };
                         orderedColumns.forEach((c) => {
                           const rootKey = c.id.split(".")[0];
