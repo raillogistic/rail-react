@@ -27,9 +27,6 @@ export function DechargeListPageTabs() {
           title: "Decharges",
           pdfPreview: {
             enabled: true,
-            title: "PDF preview",
-            description: "Preview the PDF without leaving the current page.",
-            openInNewTabLabel: "Open in a new tab",
           },
         },
       }}

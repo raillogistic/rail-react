@@ -27,4 +27,19 @@ describe("form query recipe naming", () => {
  expect(print(recipe.document!)).toContain("categoryList");
  expect(print(recipe.document!)).not.toContain("categories");
  });
+
+ it("infers quick search variable from custom query documents", () => {
+ const recipe = buildGraphQLRecipe({
+ queryDocument: `
+ query CategoryLookup($quick: String, $limit: Int) {
+ categoryList(quick: $quick, limit: $limit) {
+ id: pk
+ desc
+ }
+ }
+ `,
+ });
+ expect(recipe.document).toBeTruthy();
+ expect(recipe.searchVariableName).toBe("quick");
+ });
 });

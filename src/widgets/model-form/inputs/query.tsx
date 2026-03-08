@@ -310,7 +310,17 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
           }
         }
         if (requestRef.current === requestId) {
-          setOptions((prev) => mergeChoiceOptions(prev, next));
+          setOptions((prev) => {
+            const selectedOptions = prev.filter((option) =>
+              selectedValues.some((value) =>
+                areChoiceValuesEqual(value, option.value),
+              ),
+            );
+            return mergeChoiceOptions(
+              mergeChoiceOptions(selectedOptions, prefilledOptions),
+              next,
+            );
+          });
         }
       } catch (err) {
         if (process.env.NODE_ENV !== "production") {
@@ -944,10 +954,13 @@ function buildGraphQLRecipe(config?: QueryChoiceGraphQLConfig): GraphQLRecipe {
     return { document: null };
   }
   if (config.queryDocument) {
+    const document = ensureDocumentNode(config.queryDocument);
     return {
-      document: ensureDocumentNode(config.queryDocument),
+      document,
       resultPath: config.resultPath,
-      searchVariableName: config.searchVariableName ?? null,
+      searchVariableName:
+        config.searchVariableName ??
+        inferSearchVariableName(document, ["quick", "keyword", "search"]),
       limitVariableName: config.limitVariableName ?? null,
       limitDefault: config.limit ?? 100,
       includeVariableName: config.includeVariableName ?? null,
@@ -1062,6 +1075,29 @@ function normalizeSelectionField(selection: string): string {
 
 function ensureDocumentNode(input: DocumentNode | string): DocumentNode {
   return typeof input === "string" ? parse(input) : input;
+}
+
+function inferSearchVariableName(
+  document: DocumentNode,
+  candidates: string[],
+): string | null {
+  for (const definition of document.definitions) {
+    if (definition.kind !== "OperationDefinition") {
+      continue;
+    }
+    const declaredVariables =
+      definition.variableDefinitions?.map(
+        (variableDefinition) => variableDefinition.variable.name.value,
+      ) ?? [];
+
+    for (const candidate of candidates) {
+      if (declaredVariables.includes(candidate)) {
+        return candidate;
+      }
+    }
+  }
+
+  return null;
 }
 
 function resolveRecords(
