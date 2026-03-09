@@ -12,4 +12,8 @@ export const ROUTES = {
   BENEFICIAIRE_CREATE: "/catalog/beneficiaire/create",
   BENEFICIAIRE_EDIT: "/catalog/beneficiaire/:id/edit",
   BENEFICIAIRE_DETAIL: "/catalog/beneficiaire/:id",
+  VEHICULE_ENTREPRISE_LIST: "/catalog/vehicule-entreprise",
+  VEHICULE_ENTREPRISE_CREATE: "/catalog/vehicule-entreprise/create",
+  VEHICULE_ENTREPRISE_EDIT: "/catalog/vehicule-entreprise/:id/edit",
+  VEHICULE_ENTREPRISE_DETAIL: "/catalog/vehicule-entreprise/:id",
 } as const;

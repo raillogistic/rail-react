@@ -43,6 +43,29 @@ const BeneficiaireDetailPage = lazy(() =>
     default: module.BeneficiaireDetailPage,
   })),
 );
+const VehiculeListPage = lazy(() =>
+  import("./pages/vehicule-entreprise/VehiculeEntrepriseListPage").then(
+    (module) => ({
+      default: module.VehiculeListPage,
+    }),
+  ),
+);
+
+const VehiculeFormPage = lazy(() =>
+  import("./pages/vehicule-entreprise/VehiculeEntrepriseFormPage").then(
+    (module) => ({
+      default: module.VehiculeFormPage,
+    }),
+  ),
+);
+
+const VehiculeDetailPage = lazy(() =>
+  import("./pages/vehicule-entreprise/VehiculeEntrepriseDetailPage").then(
+    (module) => ({
+      default: module.VehiculeDetailPage,
+    }),
+  ),
+);
 export const CATALOG_MANIFEST: AppManifest = defineProjectManifest({
   projectId: "catalog",
   order: 2,
@@ -90,6 +113,39 @@ export const CATALOG_MANIFEST: AppManifest = defineProjectManifest({
       icon: FileText,
       element: withRouteSuspense(<BeneficiaireDetailPage />),
     }),
+
+    protectedRoute("catalog", {
+      id: "catalog:vehicule-entreprise:list",
+      path: ROUTES.VEHICULE_ENTREPRISE_LIST,
+      title: "Véhicules",
+      description: "Manage Vehicule Entreprise records",
+      icon: FileText,
+      element: withRouteSuspense(<VehiculeListPage />),
+    }),
+    protectedRoute("catalog", {
+      id: "catalog:vehicule-entreprise:create",
+      path: ROUTES.VEHICULE_ENTREPRISE_CREATE,
+      title: "Create Vehicule Entreprise",
+      hidden: true,
+      icon: FileText,
+      element: withRouteSuspense(<VehiculeFormPage />),
+    }),
+    protectedRoute("catalog", {
+      id: "catalog:vehicule-entreprise:edit",
+      path: ROUTES.VEHICULE_ENTREPRISE_EDIT,
+      title: "Edit Vehicule Entreprise",
+      hidden: true,
+      icon: FileText,
+      element: withRouteSuspense(<VehiculeFormPage />),
+    }),
+    protectedRoute("catalog", {
+      id: "catalog:vehicule-entreprise:detail",
+      path: ROUTES.VEHICULE_ENTREPRISE_DETAIL,
+      title: "Vehicule Entreprise details",
+      hidden: true,
+      icon: FileText,
+      element: withRouteSuspense(<VehiculeDetailPage />),
+    }),
   ],
   navigation: [
     navGroup("catalog", {
@@ -127,6 +183,42 @@ export const CATALOG_MANIFEST: AppManifest = defineProjectManifest({
               routeId: "catalog:beneficiaire:detail",
               title: "Beneficiaire details",
               path: ROUTES.BENEFICIAIRE_DETAIL,
+              guard: "protected",
+              hidden: true,
+            },
+          ],
+        },
+
+        {
+          id: "catalog:vehicule-entreprise:list",
+          routeId: "catalog:vehicule-entreprise:list",
+          title: "Véhicules",
+          path: ROUTES.VEHICULE_ENTREPRISE_LIST,
+          guard: "protected",
+          icon: FileText,
+          description: "Manage Vehicule Entreprise records",
+          children: [
+            {
+              id: "catalog:vehicule-entreprise:create",
+              routeId: "catalog:vehicule-entreprise:create",
+              title: "Create Vehicule Entreprise",
+              path: ROUTES.VEHICULE_ENTREPRISE_CREATE,
+              guard: "protected",
+              hidden: true,
+            },
+            {
+              id: "catalog:vehicule-entreprise:edit",
+              routeId: "catalog:vehicule-entreprise:edit",
+              title: "Edit Vehicule Entreprise",
+              path: ROUTES.VEHICULE_ENTREPRISE_EDIT,
+              guard: "protected",
+              hidden: true,
+            },
+            {
+              id: "catalog:vehicule-entreprise:detail",
+              routeId: "catalog:vehicule-entreprise:detail",
+              title: "Vehicule Entreprise details",
+              path: ROUTES.VEHICULE_ENTREPRISE_DETAIL,
               guard: "protected",
               hidden: true,
             },

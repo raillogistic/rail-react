@@ -35,6 +35,23 @@ const OrdreMissionDetailPage = lazy(() =>
     default: module.OrdreMissionDetailPage,
   })),
 );
+const BaremePrimeMissionListPage = lazy(() =>
+  import("./pages/bareme-prime-mission/BaremePrimeMissionListPage").then((module) => ({
+    default: module.BaremePrimeMissionListPage,
+  })),
+);
+
+const BaremePrimeMissionFormPage = lazy(() =>
+  import("./pages/bareme-prime-mission/BaremePrimeMissionFormPage").then((module) => ({
+    default: module.BaremePrimeMissionFormPage,
+  })),
+);
+
+const BaremePrimeMissionDetailPage = lazy(() =>
+  import("./pages/bareme-prime-mission/BaremePrimeMissionDetailPage").then((module) => ({
+    default: module.BaremePrimeMissionDetailPage,
+  })),
+);
 export const MISSIONS_MANIFEST: AppManifest = defineProjectManifest({
   projectId: "missions",
   order: 4,
@@ -72,7 +89,40 @@ export const MISSIONS_MANIFEST: AppManifest = defineProjectManifest({
       icon: FileText,
       element: withRouteSuspense(<OrdreMissionDetailPage />),
     }),
-  ],
+  
+    protectedRoute("missions", {
+      id: "missions:bareme-prime-mission:list",
+      path: ROUTES.BAREME_PRIME_MISSION_LIST,
+      title: "Barèmes",
+      description: "Manage Bareme Prime Mission records",
+      icon: FileText,
+      element: withRouteSuspense(<BaremePrimeMissionListPage />),
+    }),
+    protectedRoute("missions", {
+      id: "missions:bareme-prime-mission:create",
+      path: ROUTES.BAREME_PRIME_MISSION_CREATE,
+      title: "Create Bareme Prime Mission",
+      hidden: true,
+      icon: FileText,
+      element: withRouteSuspense(<BaremePrimeMissionFormPage />),
+    }),
+    protectedRoute("missions", {
+      id: "missions:bareme-prime-mission:edit",
+      path: ROUTES.BAREME_PRIME_MISSION_EDIT,
+      title: "Edit Bareme Prime Mission",
+      hidden: true,
+      icon: FileText,
+      element: withRouteSuspense(<BaremePrimeMissionFormPage />),
+    }),
+    protectedRoute("missions", {
+      id: "missions:bareme-prime-mission:detail",
+      path: ROUTES.BAREME_PRIME_MISSION_DETAIL,
+      title: "Bareme Prime Mission details",
+      hidden: true,
+      icon: FileText,
+      element: withRouteSuspense(<BaremePrimeMissionDetailPage />),
+    }),
+],
   navigation: [
     navGroup("missions", {
       id: "missions",
@@ -114,7 +164,43 @@ export const MISSIONS_MANIFEST: AppManifest = defineProjectManifest({
             },
           ],
         },
-      ],
+      
+        {
+          id: "missions:bareme-prime-mission:list",
+          routeId: "missions:bareme-prime-mission:list",
+          title: "Barèmes",
+          path: ROUTES.BAREME_PRIME_MISSION_LIST,
+          guard: "protected",
+          icon: FileText,
+          description: "Manage Bareme Prime Mission records",
+          children: [
+            {
+              id: "missions:bareme-prime-mission:create",
+              routeId: "missions:bareme-prime-mission:create",
+              title: "Create Bareme Prime Mission",
+              path: ROUTES.BAREME_PRIME_MISSION_CREATE,
+              guard: "protected",
+              hidden: true,
+            },
+            {
+              id: "missions:bareme-prime-mission:edit",
+              routeId: "missions:bareme-prime-mission:edit",
+              title: "Edit Bareme Prime Mission",
+              path: ROUTES.BAREME_PRIME_MISSION_EDIT,
+              guard: "protected",
+              hidden: true,
+            },
+            {
+              id: "missions:bareme-prime-mission:detail",
+              routeId: "missions:bareme-prime-mission:detail",
+              title: "Bareme Prime Mission details",
+              path: ROUTES.BAREME_PRIME_MISSION_DETAIL,
+              guard: "protected",
+              hidden: true,
+            },
+          ],
+        },
+],
     }),
   ],
 });
