@@ -172,6 +172,80 @@ export function hasValueChangedSinceError(
  return !deepEqual(previous, current);
 }
 
+function normalizeMetaMessages(value: unknown): string[] {
+ const entries = Array.isArray(value) ? value : [value];
+ return Array.from(
+ new Set(
+ entries
+ .map((entry) => String(entry ?? "").trim())
+ .filter(Boolean),
+ ),
+ );
+}
+
+function collectErrorMapMessages(errorMap: Record<string, unknown>): string[] {
+ const messages: string[] = [];
+ for (const [key, value] of Object.entries(errorMap)) {
+ if (key === "onSubmitConflictInstruction") continue;
+ messages.push(...normalizeMetaMessages(value));
+ }
+ return Array.from(new Set(messages));
+}
+
+function clearSubmitErrorsFromMeta(meta: any) {
+ const errorMap =
+ meta && typeof meta === "object" && meta.errorMap && typeof meta.errorMap === "object"
+ ? { ...(meta.errorMap as Record<string, unknown>) }
+ : null;
+
+ if (!errorMap) return meta;
+
+ const hadSubmitError =
+ Object.prototype.hasOwnProperty.call(errorMap, "onSubmit") ||
+ Object.prototype.hasOwnProperty.call(errorMap, "onSubmitConflictInstruction");
+ if (!hadSubmitError) return meta;
+
+ delete errorMap.onSubmit;
+ delete errorMap.onSubmitConflictInstruction;
+
+ const nextErrors = collectErrorMapMessages(errorMap);
+ return {
+ ...meta,
+ isValid: nextErrors.length === 0,
+ errors: nextErrors,
+ errorMap,
+ };
+}
+
+export function clearSubmitErrorsForChanges(
+ form: FormInstance,
+ changedPaths: Iterable<string>,
+ _options: { formErrorKey?: string } = {},
+) {
+ const normalizedChangedPaths = Array.from(
+ new Set(
+ Array.from(changedPaths)
+ .map((path) => normalizeErrorFieldPath(path))
+ .filter(Boolean),
+ ),
+ ) as string[];
+
+ if (!normalizedChangedPaths.length) return;
+
+ const state =
+ typeof form.store.getState === "function"
+ ? form.store.getState()
+ : (form.store as any).state;
+ const fieldMeta: Record<string, any> = (state as any)?.fieldMeta ?? {};
+
+ Object.entries(fieldMeta).forEach(([fieldName, meta]) => {
+ const nextMeta = clearSubmitErrorsFromMeta(meta);
+ if (nextMeta === meta) return;
+
+ form.setFieldMeta(fieldName as any, () => nextMeta);
+ });
+}
+
 export function normalizeMutationErrors(
  errors: MutationError[] | null | undefined
 ): MutationError[] {

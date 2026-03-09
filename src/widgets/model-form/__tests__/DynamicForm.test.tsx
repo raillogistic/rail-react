@@ -10,6 +10,17 @@ globalThis.ResizeObserver ??= class ResizeObserver {
  unobserve() {}
  disconnect() {}
 } as any;
+
+window.matchMedia ??= ((query: string) => ({
+ matches: false,
+ media: query,
+ onchange: null,
+ addListener: vi.fn(),
+ removeListener: vi.fn(),
+ addEventListener: vi.fn(),
+ removeEventListener: vi.fn(),
+ dispatchEvent: vi.fn(),
+ })) as typeof window.matchMedia;
 import type { DynamicFormProps } from "../types/props";
 
 // Mock shadcn UI components
@@ -149,6 +160,9 @@ vi.mock("lucide-react", () => ({
  CheckCircle2: ({ className }: { className?: string }) => (
  <svg data-testid="check-circle-2-icon" className={className} />
  ),
+ AlertCircle: ({ className }: { className?: string }) => (
+ <svg data-testid="alert-circle-icon" className={className} />
+ ),
  AlertTriangle: ({ className }: { className?: string }) => (
  <svg data-testid="alert-triangle-icon" className={className} />
  ),
@@ -160,6 +174,12 @@ vi.mock("lucide-react", () => ({
  ),
  Redo: ({ className }: { className?: string }) => (
  <svg data-testid="redo-icon" className={className} />
+ ),
+ Circle: ({ className }: { className?: string }) => (
+ <svg data-testid="circle-icon" className={className} />
+ ),
+ CircleDot: ({ className }: { className?: string }) => (
+ <svg data-testid="circle-dot-icon" className={className} />
  ),
  Lock: ({ className }: { className?: string }) => (
  <svg data-testid="lock-icon" className={className} />
@@ -342,8 +362,8 @@ describe("DynamicForm", () => {
 
  const saveButton = screen.getByText("Enregistrer");
  const actionsBar = saveButton.closest("div.z-50");
- expect(actionsBar?.className).toContain("bg-transparent");
- expect(actionsBar?.className).not.toContain("bg-muted/30");
+ expect(actionsBar?.className).toContain("bg-muted/20");
+ expect(actionsBar?.className).not.toContain("bg-transparent");
  });
 
  it("applies custom className to form wrapper", () => {
@@ -392,6 +412,107 @@ describe("DynamicForm", () => {
  ),
  ).toBeInTheDocument();
  expect(screen.getByTestId("dynamic-form-global-errors")).toBeInTheDocument();
+ });
+
+ it("clears form-level submit errors after any value change", async () => {
+ const onSubmit = vi.fn(async (_values, ctx: { form: any }) => {
+ ctx.form.setFieldMeta("__all__", (prev: any) => ({
+ ...prev,
+ errorMap: {
+ ...(prev?.errorMap ?? {}),
+ onSubmit: "Save failed due to a server-side validation issue.",
+ },
+ }));
+ });
+
+ render(
+ <DynamicForm
+ schema={textSchema}
+ behavior={{
+ onSubmit,
+ }}
+ />,
+ );
+
+ const firstInput = screen.getAllByRole("textbox")[0];
+ const submitButton = screen.getByText("Enregistrer");
+
+ fireEvent.change(firstInput, {
+ target: { value: "Alice" },
+ });
+ fireEvent.click(submitButton);
+
+ expect(
+ await screen.findByText(
+ "Save failed due to a server-side validation issue.",
+ ),
+ ).toBeInTheDocument();
+
+ fireEvent.change(firstInput, {
+ target: { value: "Alicia" },
+ });
+
+ await waitFor(() => {
+ expect(
+ screen.queryByText(
+ "Save failed due to a server-side validation issue.",
+ ),
+ ).not.toBeInTheDocument();
+ });
+
+ fireEvent.click(submitButton);
+
+ await waitFor(() => {
+ expect(onSubmit).toHaveBeenCalledTimes(2);
+ });
+ });
+
+ it("clears submit validation errors after the user fixes the values", async () => {
+ const onSubmit = vi.fn(async () => {});
+
+ render(
+ <DynamicForm
+ schema={{
+ fields: [
+ { name: "start", type: "text", label: "Start" },
+ { name: "end", type: "text", label: "End" },
+ ],
+ }}
+ behavior={{
+ validate: (values) =>
+ values.start && values.end && values.end < values.start
+ ? { end: "End must be greater than or equal to start." }
+ : undefined,
+ onSubmit,
+ }}
+ />,
+ );
+
+ const [startInput, endInput] = screen.getAllByRole("textbox");
+ const submitButton = screen.getByText("Enregistrer");
+
+ fireEvent.change(startInput, { target: { value: "2026-03-10" } });
+ fireEvent.change(endInput, { target: { value: "2026-03-09" } });
+ fireEvent.click(submitButton);
+
+ expect(
+ await screen.findByText("End must be greater than or equal to start."),
+ ).toBeInTheDocument();
+ expect(onSubmit).not.toHaveBeenCalled();
+
+ fireEvent.change(endInput, { target: { value: "2026-03-10" } });
+
+ await waitFor(() => {
+ expect(
+ screen.queryByText("End must be greater than or equal to start."),
+ ).not.toBeInTheDocument();
+ });
+
+ fireEvent.click(submitButton);
+
+ await waitFor(() => {
+ expect(onSubmit).toHaveBeenCalledTimes(1);
+ });
  });
 
  it("submits after confirmation when actions.confirmSubmit is enabled", async () => {

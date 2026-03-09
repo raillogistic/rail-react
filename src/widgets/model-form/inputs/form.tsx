@@ -28,6 +28,7 @@ import { AccordionMode } from "../renderers/modes/AccordionMode";
 import { MasterDetailMode } from "../renderers/modes/MasterDetailMode";
 import { ReviewMode } from "../renderers/modes/ReviewMode";
 import { normalizeFieldOrder } from "./fieldOrder";
+import { clearSubmitErrorsForChanges } from "../utils/errors";
 
 const DEFAULT_COLUMNS = 2;
 const CANONICAL_FORM_ERROR_KEY = "__all__";
@@ -370,6 +371,13 @@ const DynamicForm = <TValues extends Record<string, any> = Record<string, any>>(
     formValues,
     form,
     computedDefaults,
+    onDetectedChanges: (changes, _values, currentForm) => {
+      clearSubmitErrorsForChanges(
+        currentForm as any,
+        changes.map((change) => change.name),
+        { formErrorKey: CANONICAL_FORM_ERROR_KEY },
+      );
+    },
     onChange: handleChange,
     debug,
     logChanges,

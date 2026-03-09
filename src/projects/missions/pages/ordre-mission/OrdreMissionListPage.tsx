@@ -19,8 +19,25 @@ export function OrdreMissionListPage() {
         hrefTemplate: ROUTES.ORDRE_MISSION_DETAIL,
       }}
       baseTable={{
+        fields: {
+          include: [
+            "beneficiaire",
+            "objet",
+            "destination",
+            "lieuDepart",
+            "valableEtranger",
+            "dateDepart",
+            "dateRetour",
+            "nombreJours",
+            "moyenTransport",
+            "vehicule",
+          ],
+        },
         tableConfig: {
           title: "Ordre",
+          pdfPreview: {
+            enabled: true,
+          },
         },
       }}
     />

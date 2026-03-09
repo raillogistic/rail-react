@@ -9,7 +9,9 @@ export function OrdreMissionFormPage() {
     <section className="space-y-4">
       <header>
         <h1 className="text-2xl font-semibold tracking-tight">
-          {isUpdate ? "Modifier un ordre de mission" : "Creer un ordre de mission"}
+          {isUpdate
+            ? "Modifier un ordre de mission"
+            : "Creer un ordre de mission"}
         </h1>
         <p className="text-sm text-muted-foreground">
           Le formulaire affiche les champs utiles selon le moyen de transport
@@ -26,6 +28,7 @@ export function OrdreMissionFormPage() {
         onlyFields={[
           "beneficiaire",
           "objet",
+          "valableEtranger",
           "destination",
           "lieuDepart",
           "dateDepart",
@@ -38,17 +41,19 @@ export function OrdreMissionFormPage() {
         fieldOverrides={{
           beneficiaire: { colSpan: 2 },
           objet: { colSpan: 2 },
-          destination: { colSpan: 2 },
-          lieuDepart: { colSpan: 2 },
+          destination: { colSpan: 1 },
+          lieuDepart: { colSpan: 1 },
           nombreJours: {
             helpText: "Saisie par tranche de 0.5 : 0.5, 1.0, 1.5, 2.0...",
           },
           vehicule: {
             colSpan: 2,
             placeholder: "Choisir un vehicule de l'entreprise",
-            helpText: "Champ visible et obligatoire uniquement pour un vehicule.",
+            helpText:
+              "Champ visible et obligatoire uniquement pour un vehicule.",
             visible: (values) => values.moyenTransport === "vehicule",
           },
+          valable_etranger: { colSpan: 2 },
           commentaire: { colSpan: 2 },
         }}
         layout={{
@@ -57,8 +62,9 @@ export function OrdreMissionFormPage() {
             order: [
               "beneficiaire",
               "objet",
-              "destination",
               "lieuDepart",
+              "destination",
+              "valableEtranger",
               "dateDepart",
               "dateRetour",
               "nombreJours",
@@ -79,6 +85,7 @@ export function OrdreMissionFormPage() {
             },
           },
         }}
+        devtools={{ enabled: true }}
         actions={{
           submitLabel: isUpdate
             ? "Enregistrer les modifications"

@@ -11,6 +11,11 @@ interface UseFormChangeTrackingOptions<TValues> {
  formValues: TValues;
  form: UseFormReturn<TValues>;
  computedDefaults: TValues;
+ onDetectedChanges?: (
+ changes: ChangeRecord[],
+ values: TValues,
+ form: UseFormReturn<TValues>,
+ ) => void;
  onChange?: (
  values: TValues,
  changes: ChangeRecord[],
@@ -23,19 +28,28 @@ interface UseFormChangeTrackingOptions<TValues> {
 export function useFormChangeTracking<
  TValues extends Record<string, any>,
 >(options: UseFormChangeTrackingOptions<TValues>) {
- const { formValues, form, computedDefaults, onChange, debug, logChanges } =
+ const {
+ formValues,
+ form,
+ computedDefaults,
+ onDetectedChanges,
+ onChange,
+ debug,
+ logChanges,
+ } =
  options;
  const [changeLog, setChangeLog] = React.useState<ChangeRecord[]>([]);
  const lastValuesRef = React.useRef<TValues>(computedDefaults);
 
  React.useEffect(() => {
- if (!onChange && !debug) {
+ if (!onDetectedChanges && !onChange && !debug) {
  lastValuesRef.current = formValues as TValues;
  return;
  }
  const diffs = diffValues(lastValuesRef.current, formValues as TValues);
  if (diffs.length > 0) {
  lastValuesRef.current = formValues as TValues;
+ onDetectedChanges?.(diffs, formValues as TValues, form);
  if (debug) {
  setChangeLog((prev) => [...prev, ...diffs].slice(-100));
  }
@@ -45,7 +59,7 @@ export function useFormChangeTracking<
  }
  onChange?.(formValues as TValues, diffs, form);
  }
- }, [formValues, form, onChange, debug, logChanges]);
+ }, [formValues, form, onDetectedChanges, onChange, debug, logChanges]);
 
  return { changeLog };
 }

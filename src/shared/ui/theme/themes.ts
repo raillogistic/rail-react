@@ -45,6 +45,8 @@ import { atlantisTheme } from "./themes/atlantis";
 import { kyotoTheme } from "./themes/kyoto";
 import { pulsarTheme } from "./themes/pulsar";
 import { obsidianTheme } from "./themes/obsidian";
+import { logisticTheme } from "./themes/logistic";
+import { transtevTheme } from "./themes/transtev";
 
 export const themes: Record<string, ThemeDefinition> = {
   default: defaultTheme,
@@ -88,6 +90,8 @@ export const themes: Record<string, ThemeDefinition> = {
   kyoto: kyotoTheme,
   pulsar: pulsarTheme,
   obsidian: obsidianTheme,
+  logistic: logisticTheme,
+  transtev: transtevTheme,
 };
 
 /**
