@@ -48,6 +48,18 @@ describe("nested mutation payload builder", () => {
  expect(payload.customer).toEqual({ connect: "Q3VzdG9tZXI6MQ==" });
  });
 
+ it("omits blank singular relation values instead of mapping them to empty connect payloads", () => {
+ const payload = buildNestedMutationPayload(
+ {
+ customer: "",
+ },
+ [singularCustomerRelation],
+ "CREATE",
+ );
+
+ expect(payload).not.toHaveProperty("customer");
+ });
+
  it("maps update to-many scalar list values to set", () => {
  const payload = buildNestedMutationPayload(
  {

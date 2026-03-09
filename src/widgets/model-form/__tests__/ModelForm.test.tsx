@@ -2053,6 +2053,94 @@ describe("ModelForm", () => {
  });
  });
 
+ it("omits blank direct relation mappings from generated submit payloads", async () => {
+ const contract: ModelFormContract = {
+ ...sampleModelFormContract,
+ appLabel: "store",
+ modelName: "Product",
+ mode: "CREATE",
+ relations: [singularCustomerRelation],
+ };
+
+ const createMutationSpy = vi.fn();
+ const createMutationDocument = gql(
+ buildGeneratedMutationDocument("create", "createProduct", "Product", "id"),
+ );
+
+ const mocks = [
+ {
+ request: {
+ query: MODEL_FORM_CONTRACT_QUERY,
+ variables: {
+ appLabel: "store",
+ modelName: "Product",
+ mode: "CREATE",
+ includeNested: false,
+ },
+ },
+ result: {
+ data: {
+ modelFormContract: contract,
+ },
+ },
+ },
+ {
+ request: {
+ query: createMutationDocument,
+ variables: {
+ input: {
+ name: "Widget",
+ },
+ },
+ },
+ result: () => {
+ createMutationSpy();
+ return {
+ data: {
+ createProduct: {
+ ok: true,
+ object: { id: "UHJvZHVjdDox" },
+ errors: [],
+ },
+ },
+ };
+ },
+ },
+ ];
+
+ renderWithMocks(
+ <ModelForm app="store" model="Product" mode="CREATE" />,
+ mocks,
+ );
+
+ await getRenderedSchema();
+
+ const onSubmit = latestDynamicFormProps?.behavior?.onSubmit as
+ | ((values: Record<string, unknown>, ctx: Record<string, unknown>) => Promise<void>)
+ | undefined;
+ expect(typeof onSubmit).toBe("function");
+
+ const { form } = createMockFormContext({
+ customer: {},
+ __all__: {},
+ });
+
+ await act(async () => {
+ await onSubmit?.(
+ {
+ name: "Widget",
+ status: "ACTIVE",
+ customer: "",
+ },
+ { form } as Record<string, unknown>,
+ );
+ });
+
+ await waitFor(() => {
+ expect(createMutationSpy).toHaveBeenCalledTimes(1);
+ });
+ });
+
  it("omits readonly and excluded fields from generated submit payload", async () => {
  const contract: ModelFormContract = {
  ...sampleModelFormContract,

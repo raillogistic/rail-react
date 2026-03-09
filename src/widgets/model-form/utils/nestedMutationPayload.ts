@@ -180,6 +180,11 @@ function isScalarValue(value: unknown) {
  );
 }
 
+function isOmittedRelationValue(value: unknown) {
+ if (value === undefined) return true;
+ return typeof value === "string" && value.trim().length === 0;
+}
+
 function isPresentIdentityValue(value: unknown): value is string | number {
  if (typeof value === "number") return Number.isFinite(value);
  if (typeof value !== "string") return false;
@@ -873,6 +878,10 @@ export function buildNestedMutationPayload(
 
  if (!relation) {
  payload[path] = value;
+ continue;
+ }
+
+ if (isOmittedRelationValue(value)) {
  continue;
  }
 
