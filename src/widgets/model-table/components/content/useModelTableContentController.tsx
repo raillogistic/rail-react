@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { PlusCircle, Sparkles, Upload } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { useModelBulkDeleteMutation } from "@/shared/api/graphql/graphql";
 import type { FormSchema } from "@/widgets/model-form/inputs/types";
 import type { ModelFormProps } from "@/widgets/model-form/types.model";
 import type { ModelFormMutationOutcome } from "@/widgets/model-form/types/generatedContract";
@@ -244,12 +245,43 @@ export function useModelTableContentController({
   const hasSelection = selectedCount > 0;
 
   const createMutation = findMutation(metadata?.mutations, "create");
+  const bulkDeleteMutationMetadata = findMutation(
+    metadata?.mutations,
+    "bulkDelete",
+  );
   const canCreate =
     createMutation?.allowed ?? metadata?.permissions?.canCreate ?? false;
+  const canBulkDelete =
+    bulkDeleteMutationMetadata?.allowed ??
+    metadata?.permissions?.canBulkDelete ??
+    false;
   const createCapabilitiesPending =
     actionBootstrapLoading &&
     createMutation?.allowed === undefined &&
     metadata?.permissions?.canCreate === undefined;
+  const bulkDeleteCapabilitiesPending =
+    actionBootstrapLoading &&
+    bulkDeleteMutationMetadata?.allowed === undefined &&
+    metadata?.permissions?.canBulkDelete === undefined;
+
+  const bulkDeleteMutation = useModelBulkDeleteMutation({
+    identity: {
+      app,
+      model,
+    },
+    selectionOptions: {
+      selection: "id",
+    },
+    executionOptions: {
+      mutationName: bulkDeleteMutationMetadata?.name || undefined,
+    },
+    modelFormOptions: {
+      skipModelForm: true,
+    },
+    apollo: {
+      errorPolicy: "all",
+    },
+  });
 
   const createContext = useMemo<ModelTableCreateContext>(
     () => ({
@@ -592,12 +624,57 @@ export function useModelTableContentController({
   /**
    * Handles current bulk-delete UX flow.
    */
-  const confirmBulkDelete = useCallback(() => {
-    console.info("Bulk delete confirmed", selectedRowIds);
-    setBulkDeleteDialogOpen(false);
-    clearSelection();
-    toast.success(`${selectedCount} elements supprimes.`);
-  }, [clearSelection, selectedCount, selectedRowIds]);
+  const confirmBulkDelete = useCallback(async () => {
+    if (selectedRowIds.length === 0) {
+      toast.error("Selectionnez au moins une ligne.");
+      return;
+    }
+
+    if (!canBulkDelete) {
+      toast.error("Suppression en masse non autorisee.");
+      return;
+    }
+
+    try {
+      const result = await bulkDeleteMutation.execute({
+        ids: selectedRowIds,
+      });
+      const response = result.data?.response as
+        | {
+            ok?: boolean | null;
+            errors?: Array<{ message?: string | null }> | null;
+          }
+        | undefined;
+
+      if (response?.ok) {
+        setBulkDeleteDialogOpen(false);
+        clearSelection();
+        refresh();
+        toast.success(`${selectedCount} elements supprimes.`);
+        return;
+      }
+
+      const message =
+        response?.errors
+          ?.map((error) => error?.message?.trim())
+          .filter(Boolean)
+          .join(", ") || "Echec de la suppression en masse.";
+      toast.error(message);
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Echec de la suppression en masse.";
+      toast.error(message);
+    }
+  }, [
+    bulkDeleteMutation,
+    canBulkDelete,
+    clearSelection,
+    refresh,
+    selectedCount,
+    selectedRowIds,
+  ]);
 
   /**
    * Submits print dialog payload and dispatches extraction.
@@ -643,6 +720,13 @@ export function useModelTableContentController({
     resolvedTopActions,
     pdfTemplates,
     excelTemplates,
+    canBulkDelete,
+    bulkDeleteDisabledReason: bulkDeleteCapabilitiesPending
+      ? "Chargement des capacites de suppression..."
+      : canBulkDelete
+        ? undefined
+        : "Suppression en masse non autorisee.",
+    bulkDeleteLoading: bulkDeleteMutation.loading,
     bulkDeleteDialogOpen,
     setBulkDeleteDialogOpen,
     printDialogOpen: Boolean(printTemplate && printTemplateSchema),

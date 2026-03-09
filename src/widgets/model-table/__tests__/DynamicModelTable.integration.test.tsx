@@ -5,6 +5,7 @@ import { gql } from "@apollo/client";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { MemoryRouter } from "react-router-dom";
 import { DynamicModelTable } from "../components/DynamicModelTable";
+import { buildModelMutationDocument } from "@/shared/api/graphql/graphql/mutations";
 import {
  TABLE_ACTION_DETAILS_METADATA_QUERY,
  TABLE_ACTIONS_BOOTSTRAP_METADATA_QUERY,
@@ -390,7 +391,11 @@ const DATA_MOCK_WITH_INIT_VARIABLES_MINIMAL = {
  },
 };
 
-function buildMetadataMock(templates: unknown[] = []) {
+function buildMetadataMock(
+ templates: unknown[] = [],
+ permissions = METADATA_BASE.permissions,
+ mutations: unknown[] = [],
+) {
  return {
  request: {
  query: GET_MODEL_SCHEMA,
@@ -400,6 +405,8 @@ function buildMetadataMock(templates: unknown[] = []) {
  data: {
  modelSchema: {
  ...METADATA_BASE,
+ permissions,
+ mutations,
  templates,
  },
  },
@@ -434,6 +441,7 @@ function buildCapabilitiesMock(templates: unknown[] = []) {
 
 function buildActionsBootstrapMock(
  mutations: unknown[] = [],
+ permissions = METADATA_BASE.permissions,
 ) {
  return {
  request: {
@@ -446,7 +454,7 @@ function buildActionsBootstrapMock(
  __typename: "ModelSchema",
  app: "auth",
  model: "User",
- permissions: METADATA_BASE.permissions,
+ permissions,
  mutations,
  },
  },
@@ -673,6 +681,92 @@ describe("DynamicModelTable integration", () => {
  expect(
  screen.getByText((content) => content.includes("2") && content.includes("total")),
  ).toBeInTheDocument();
+ });
+ });
+
+ it("executes bulk delete for selected rows", async () => {
+ const user = userEvent.setup();
+ const bulkDeletePermissions = {
+ ...METADATA_BASE.permissions,
+ canBulkDelete: true,
+ };
+ const bulkDeleteMutation = {
+ __typename: "MutationSchema",
+ name: "bulkDeleteUser",
+ operation: "bulkDelete",
+ allowed: true,
+ mutationType: "bulkDelete",
+ };
+ const bulkDeleteDocument = buildModelMutationDocument({
+ mode: "bulkDelete",
+ model: "User",
+ mutationName: "bulkDeleteUser",
+ selection: "id",
+ });
+
+ render(
+ <MockedProvider
+ mocks={[
+ buildMetadataMock([], bulkDeletePermissions, [bulkDeleteMutation]),
+ buildMetadataMock([], bulkDeletePermissions, [bulkDeleteMutation]),
+ buildActionsBootstrapMock([bulkDeleteMutation], bulkDeletePermissions),
+ DATA_MOCK,
+ DATA_MOCK,
+ DATA_MOCK,
+ DATA_MOCK_MINIMAL,
+ DATA_MOCK_MINIMAL,
+ buildCapabilitiesMock(),
+ buildActionDetailsMock(),
+ {
+ request: {
+ query: bulkDeleteDocument.mutationDocument,
+ variables: {
+ ids: ["1"],
+ },
+ },
+ result: {
+ data: {
+ response: {
+ ok: true,
+ objects: [{ id: "1" }],
+ errors: null,
+ },
+ },
+ },
+ },
+ ]}
+ >
+ <MemoryRouter>
+ <DynamicModelTable
+ app="auth"
+ model="User"
+ baseTable={{
+ enableSelection: true,
+ }}
+ />
+ </MemoryRouter>
+ </MockedProvider>,
+ );
+
+ await waitFor(() => {
+ expect(screen.getAllByText("Username").length).toBeGreaterThan(0);
+ }, { timeout: 4000 });
+
+ await user.click(
+ await screen.findByLabelText("Select row 1", {}, { timeout: 4000 }),
+ );
+ await user.click(screen.getByRole("button", { name: /suppression en masse/i }));
+
+ await waitFor(() => {
+ expect(screen.getByText("Action critique")).toBeInTheDocument();
+ });
+
+ await user.click(
+ screen.getByRole("button", { name: /confirmer la suppression/i }),
+ );
+
+ await waitFor(() => {
+ expect(screen.queryByText("Action critique")).not.toBeInTheDocument();
  });
  });
 });

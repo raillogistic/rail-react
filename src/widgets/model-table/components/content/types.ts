@@ -91,6 +91,12 @@ export type ModelTableContentControllerState = {
  pdfTemplates: TemplateInfo[];
  /** Excel template actions available on current model. */
  excelTemplates: TemplateInfo[];
+ /** Whether bulk delete is currently allowed. */
+ canBulkDelete: boolean;
+ /** Optional reason why bulk delete is unavailable. */
+ bulkDeleteDisabledReason?: string;
+ /** Whether bulk delete mutation is in flight. */
+ bulkDeleteLoading: boolean;
  /** Whether bulk delete confirmation dialog is open. */
  bulkDeleteDialogOpen: boolean;
  /** Updates bulk delete dialog open state. */
@@ -135,7 +141,7 @@ export type ModelTableContentControllerState = {
  /** Submits print/template dialog values. */
  submitPrintDialog: (values: Record<string, unknown>) => void;
  /** Confirms bulk-delete action in current UI flow. */
- confirmBulkDelete: () => void;
+ confirmBulkDelete: () => Promise<void>;
 };
 
 /**
