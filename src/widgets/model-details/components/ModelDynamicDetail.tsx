@@ -6,15 +6,7 @@
  */
 import * as React from "react";
 import { gql, useApolloClient } from "@apollo/client";
-import {
-  AlertTriangle,
-  ChevronDown,
-  Loader2,
-  Pencil,
-  Printer,
-  Trash2,
-  Zap,
-} from "lucide-react";
+import { AlertTriangle, Loader2, Pencil, Printer, Trash2, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "@/shared/utils";
 import { toGraphqlFieldName } from "@/shared/api/graphql/graphql/naming";
@@ -79,6 +71,10 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/shared/ui/kit/dropdown-menu";
+import {
+  CustomMutationsDropdown,
+} from "@/widgets/components/CustomMutationsDropdown";
+import { ModelTemplatesDropdown } from "@/widgets/components/ModelTemplatesDropdown";
 import DynamicDetail from "../DynamicDetail";
 import { createCustomSection } from "../builtInSections";
 import type {
@@ -258,6 +254,46 @@ function mergeModelFormLayoutConfig(
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value && typeof value === "object" && !Array.isArray(value));
+}
+
+function parseJsonObject(value: unknown): Record<string, unknown> | null {
+  if (!value) return null;
+  if (isRecord(value)) return value;
+  if (typeof value !== "string") return null;
+
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  try {
+    const parsed = JSON.parse(trimmed);
+    return isRecord(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function parseDefaultValue(value: unknown): unknown {
+  if (typeof value !== "string") return value;
+  const trimmed = value.trim();
+  if (!trimmed) return value;
+
+  if (
+    trimmed === "true" ||
+    trimmed === "false" ||
+    trimmed === "null" ||
+    /^-?\d+(?:\.\d+)?$/.test(trimmed) ||
+    (trimmed.startsWith("{") && trimmed.endsWith("}")) ||
+    (trimmed.startsWith("[") && trimmed.endsWith("]")) ||
+    (trimmed.startsWith('"') && trimmed.endsWith('"'))
+  ) {
+    try {
+      return JSON.parse(trimmed);
+    } catch {
+      return value;
+    }
+  }
+
+  return value;
 }
 
 function normalizePath(path: string | null | undefined): string {
@@ -504,45 +540,6 @@ function serializeSelectionTree(tree: SelectionTreeNode, indent = 0): string {
     .join("\n");
 }
 
-function parseJsonObject(value: unknown): Record<string, unknown> | null {
-  if (!value) return null;
-  if (isRecord(value)) return value;
-  if (typeof value !== "string") return null;
-
-  const trimmed = value.trim();
-  if (!trimmed) return null;
-
-  try {
-    const parsed = JSON.parse(trimmed);
-    return isRecord(parsed) ? parsed : null;
-  } catch {
-    return null;
-  }
-}
-function parseDefaultValue(value: unknown): unknown {
-  if (typeof value !== "string") return value;
-  const trimmed = value.trim();
-  if (!trimmed) return value;
-
-  if (
-    trimmed === "true" ||
-    trimmed === "false" ||
-    trimmed === "null" ||
-    /^-?\d+(?:\.\d+)?$/.test(trimmed) ||
-    (trimmed.startsWith("{") && trimmed.endsWith("}")) ||
-    (trimmed.startsWith("[") && trimmed.endsWith("]")) ||
-    (trimmed.startsWith('"') && trimmed.endsWith('"'))
-  ) {
-    try {
-      return JSON.parse(trimmed);
-    } catch {
-      return value;
-    }
-  }
-
-  return value;
-}
-
 function humanizeLabel(value: string): string {
   const withSpaces = value
     .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
@@ -787,7 +784,6 @@ function pickResponsePayload(rawData: unknown): MutationResponsePayload | null {
 
   return null;
 }
-
 function resolveFieldLookup(
   metadata: ModelMetadata | null | undefined,
 ): Map<string, FieldMetadata> {
@@ -1359,13 +1355,11 @@ export const ModelDynamicDetail = React.forwardRef<
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
   const [updateDialogOpen, setUpdateDialogOpen] = React.useState(false);
   const [deleted, setDeleted] = React.useState(false);
-
   const [printTemplate, setPrintTemplate] = React.useState<TemplateInfo | null>(
     null,
   );
   const [printTemplateSchema, setPrintTemplateSchema] =
     React.useState<FormSchema | null>(null);
-
   const [activeMutationAction, setActiveMutationAction] =
     React.useState<MutationActionEntry | null>(null);
   const [mutationDialogOpen, setMutationDialogOpen] = React.useState(false);
@@ -1374,6 +1368,9 @@ export const ModelDynamicDetail = React.forwardRef<
 
   const [nestedMetadataByRelation, setNestedMetadataByRelation] =
     React.useState<Record<string, ModelMetadata | null>>({});
+  const supportsSharedActionQueries =
+    typeof (apolloClient as { watchQuery?: unknown } | null)?.watchQuery ===
+    "function";
 
   const metadataState = useMetadata({
     app,
@@ -1672,7 +1669,31 @@ export const ModelDynamicDetail = React.forwardRef<
     [metadataState.metadata?.templates],
   ) as TemplateInfo[];
 
-  const customMutationEntries = React.useMemo<MutationActionEntry[]>(() => {
+  const templateItemOverrides = React.useMemo(() => {
+    const entries = templateEntries.flatMap((template) => {
+      const overrideAllowed = actionsConfig.permissions?.canRunTemplate
+        ? actionsConfig.permissions.canRunTemplate(template, actionContext)
+        : true;
+      const disabled = template.allowed === false || !overrideAllowed;
+      const override = { disabled };
+      const keys = [
+        template.key,
+        template.urlPath,
+        String(template.urlPath ?? "")
+          .split("/")
+          .filter(Boolean)
+          .at(-1),
+      ]
+        .map((value) => String(value ?? "").trim())
+        .filter(Boolean);
+
+      return keys.map((key) => [key, override] as const);
+    });
+
+    return Object.fromEntries(entries);
+  }, [actionContext, actionsConfig.permissions, templateEntries]);
+
+  const customMutationEntries = React.useMemo(() => {
     if (actionsConfig.showCustomMutations === false) return [];
 
     return (metadataState.metadata?.mutations ?? [])
@@ -1682,7 +1703,6 @@ export const ModelDynamicDetail = React.forwardRef<
         const mode = resolveMutationActionMode(mutation, fields);
         const schema = mode === "form" ? buildMutationSchema(fields) : null;
         const defaults = buildMutationDefaults(fields);
-
         const permissionAllowed =
           mutation.allowed !== false &&
           resolveRuntimeCan(toPermissionList(mutation.requiredPermissions), {
@@ -1728,6 +1748,21 @@ export const ModelDynamicDetail = React.forwardRef<
     metadataState.metadata?.mutations,
     record,
   ]);
+
+  const customMutationItemOverrides = React.useMemo(() => {
+    const entries = customMutationEntries.flatMap((entry) => {
+      const override = {
+        disabled: entry.disabled,
+      };
+      const keys = [entry.mutation.methodName, entry.mutation.name]
+        .map((value) => String(value ?? "").trim())
+        .filter(Boolean);
+
+      return keys.map((key) => [key, override] as const);
+    });
+
+    return Object.fromEntries(entries);
+  }, [customMutationEntries]);
 
   const updateFormProps = React.useMemo(
     () => actionsConfig.updateForm?.modelFormProps ?? {},
@@ -1781,7 +1816,7 @@ export const ModelDynamicDetail = React.forwardRef<
     ) => {
       await executeTemplateForRows(template as any, [idAsString], clientData);
       toast.success(
-        `Template \"${template.title || template.key}\" generated.`,
+        `Template "${template.title || template.key}" generated.`,
       );
     },
     [idAsString],
@@ -2186,23 +2221,52 @@ export const ModelDynamicDetail = React.forwardRef<
               id: "header-templates",
               label: "Templates",
               render: () => (
-                <>
+                supportsSharedActionQueries ? (
+                  <ModelTemplatesDropdown
+                    data={{
+                      app,
+                      model,
+                      objectId: idAsString,
+                    }}
+                    menu={{
+                      align: "end",
+                      contentClassName:
+                        "w-52 p-1.5 rounded-xl shadow-xl border-border/50",
+                    }}
+                    actions={{
+                      overrides: templateItemOverrides,
+                    }}
+                    renderTrigger={({ disabled, loading }) => (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 rounded-lg text-xs font-medium gap-1.5"
+                        disabled={disabled}
+                      >
+                        {loading ? (
+                          <Loader2 className="size-3.5 animate-spin" />
+                        ) : (
+                          <Printer className="size-3.5" />
+                        )}
+                      </Button>
+                    )}
+                  />
+                ) : (
                   <DropdownMenu>
-                    <DropdownMenuTrigger>
+                    <DropdownMenuTrigger asChild>
                       <Button
                         size="sm"
                         variant="outline"
                         className="h-8 rounded-lg text-xs font-medium gap-1.5"
                       >
                         <Printer className="size-3.5" />
-                        <ChevronDown className="size-3 opacity-60" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent
                       align="end"
                       className="w-52 p-1.5 rounded-xl shadow-xl border-border/50"
                     >
-                      <DropdownMenuLabel className="text-xs font-medium text-muted-foreground/60 px-2"></DropdownMenuLabel>
+                      <DropdownMenuLabel className="text-xs font-medium text-muted-foreground/60 px-2" />
                       <DropdownMenuSeparator />
                       {templateEntries.map((template) => (
                         <DropdownMenuItem
@@ -2215,7 +2279,7 @@ export const ModelDynamicDetail = React.forwardRef<
                       ))}
                     </DropdownMenuContent>
                   </DropdownMenu>
-                </>
+                )
               ),
               onClick: () => undefined,
             },
@@ -2227,42 +2291,72 @@ export const ModelDynamicDetail = React.forwardRef<
               id: "header-custom-mutations",
               label: "Actions",
               render: () => (
-                <DropdownMenu>
-                  <DropdownMenuTrigger>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-8 rounded-lg text-xs font-medium gap-1.5"
-                    >
-                      <Zap className="size-3.5" />
-
-                      <ChevronDown className="size-3 opacity-60" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    align="end"
-                    className="w-56 p-1.5 rounded-xl shadow-xl border-border/50"
-                  >
-                    <DropdownMenuLabel className="text-xs font-medium text-muted-foreground/60 px-2">
-                      Custom Mutations
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    {customMutationEntries.map((entry) => (
-                      <DropdownMenuItem
-                        key={entry.mutation.name}
-                        disabled={entry.disabled}
-                        title={entry.disabledReason}
-                        onClick={() => {
-                          setActiveMutationAction(entry);
-                          setMutationDialogOpen(true);
-                        }}
-                        className="rounded-md text-[13px] font-medium px-2.5 py-2 focus:bg-accent"
+                supportsSharedActionQueries ? (
+                  <CustomMutationsDropdown
+                    data={{
+                      app,
+                      model,
+                      objectId: idAsString,
+                    }}
+                    menu={{
+                      align: "end",
+                      contentClassName:
+                        "w-56 p-1.5 rounded-xl shadow-xl border-border/50",
+                    }}
+                    actions={{
+                      overrides: customMutationItemOverrides,
+                    }}
+                    renderTrigger={({ disabled, loading }) => (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 rounded-lg text-xs font-medium gap-1.5"
+                        disabled={disabled}
                       >
-                        {entry.label}
-                      </DropdownMenuItem>
-                    ))}
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                        {loading ? (
+                          <Loader2 className="size-3.5 animate-spin" />
+                        ) : (
+                          <Zap className="size-3.5" />
+                        )}
+                      </Button>
+                    )}
+                  />
+                ) : (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 rounded-lg text-xs font-medium gap-1.5"
+                      >
+                        <Zap className="size-3.5" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent
+                      align="end"
+                      className="w-56 p-1.5 rounded-xl shadow-xl border-border/50"
+                    >
+                      <DropdownMenuLabel className="text-xs font-medium text-muted-foreground/60 px-2">
+                        Custom Mutations
+                      </DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      {customMutationEntries.map((entry) => (
+                        <DropdownMenuItem
+                          key={entry.mutation.name}
+                          disabled={entry.disabled}
+                          title={entry.disabledReason}
+                          onClick={() => {
+                            setActiveMutationAction(entry);
+                            setMutationDialogOpen(true);
+                          }}
+                          className="rounded-md text-[13px] font-medium px-2.5 py-2 focus:bg-accent"
+                        >
+                          {entry.label}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )
               ),
               onClick: () => undefined,
             },
@@ -2546,8 +2640,8 @@ export const ModelDynamicDetail = React.forwardRef<
     customHeaderActionProps,
     customHeaderActions,
     customMutationEntries,
+    customMutationItemOverrides,
     deleting,
-    handleTemplateClick,
     handleUpdate,
     idAsString,
     layoutSectionsWithData,
@@ -2557,6 +2651,7 @@ export const ModelDynamicDetail = React.forwardRef<
     record,
     resolvedHeaderTitle,
     resolvedNestedWithData,
+    templateItemOverrides,
     templateEntries,
   ]);
 
@@ -2735,7 +2830,11 @@ export const ModelDynamicDetail = React.forwardRef<
       </AlertDialog>
 
       <ActionDialog
-        open={mutationDialogOpen && Boolean(activeMutationAction)}
+        open={
+          !supportsSharedActionQueries &&
+          mutationDialogOpen &&
+          Boolean(activeMutationAction)
+        }
         mode={activeMutationAction?.mode ?? null}
         actionMeta={
           activeMutationAction
@@ -2776,7 +2875,10 @@ export const ModelDynamicDetail = React.forwardRef<
       />
 
       <PrintDialog
-        open={Boolean(printTemplate && printTemplateSchema)}
+        open={
+          !supportsSharedActionQueries &&
+          Boolean(printTemplate && printTemplateSchema)
+        }
         title={printTemplate?.title ?? "Template parameters"}
         schema={printTemplateSchema ?? { fields: [] }}
         submitLabel="Generate"
