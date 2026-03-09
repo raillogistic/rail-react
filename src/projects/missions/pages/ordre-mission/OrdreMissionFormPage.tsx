@@ -34,7 +34,6 @@ export function OrdreMissionFormPage() {
           "moyenTransport",
           "vehicule",
           "commentaire",
-          "pieceJointeUrl",
         ]}
         fieldOverrides={{
           beneficiaire: { colSpan: 2 },
@@ -51,7 +50,6 @@ export function OrdreMissionFormPage() {
             visible: (values) => values.moyenTransport === "vehicule",
           },
           commentaire: { colSpan: 2 },
-          pieceJointeUrl: { colSpan: 2 },
         }}
         layout={{
           columns: 2,
@@ -67,7 +65,7 @@ export function OrdreMissionFormPage() {
               "moyenTransport",
               "vehicule",
             ],
-            tailing: ["commentaire", "pieceJointeUrl"],
+            tailing: ["commentaire"],
           },
         }}
         behavior={{

@@ -29,7 +29,8 @@ export function BaremePrimeMissionFormPage() {
         mode={isUpdate ? "UPDATE" : "CREATE"}
         objectId={isUpdate ? id : undefined}
         description="Un seul bareme peut etre actif. Chaque categorie doit apparaitre une seule fois dans ce bareme."
-        onlyFields={["libelle", "actif"]}
+        onlyFields={["libelle", "actif", "lignes"]}
+        devtools={{ enabled: true }}
         nested={{
           lignes: {
             title: "Lignes du bareme",

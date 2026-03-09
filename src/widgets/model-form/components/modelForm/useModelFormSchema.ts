@@ -176,6 +176,10 @@ function sanitizeFieldValueByConfig(
     });
   }
 
+  if (typeof field.transform === "function") {
+    return field.transform(value);
+  }
+
   return value;
 }
 

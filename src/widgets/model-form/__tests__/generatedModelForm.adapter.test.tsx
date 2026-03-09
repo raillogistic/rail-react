@@ -33,6 +33,55 @@ describe("useGeneratedModelForm adapter", () => {
  expect(result.current.initialValues.name).toBe("Starter");
  });
 
+ it("maps decimal metadata and normalizes decimal submission values as strings", () => {
+ const contract: ModelFormContract = {
+ ...sampleModelFormContract,
+ fields: [
+ sampleModelFormContract.fields[0],
+ {
+ ...sampleModelFormContract.fields[1],
+ constraints: {
+ min_value: 0,
+ decimal_places: 2,
+ max_digits: 12,
+ },
+ ui: { step: 0.01 },
+ },
+ ],
+ };
+
+ const { result } = renderHook(() =>
+ useGeneratedModelForm({
+ generatedEnabled: true,
+ contract,
+ initialData: {
+ appLabel: "test_app",
+ modelName: "Product",
+ objectId: "1",
+ values: { name: "Starter", price: 10.5 },
+ loadedAt: "2026-02-12T12:00:00Z",
+ },
+ }),
+ );
+
+ const priceField = result.current.schema.sections?.[0]?.fields.find(
+ (field) => field.name === "price",
+ ) as unknown as Record<string, unknown> | undefined;
+
+ expect(priceField?.type).toBe("decimal");
+ expect(priceField?.step).toBe(0.01);
+ expect(priceField?.precision).toBe(2);
+ expect((priceField?.meta as Record<string, unknown> | undefined)?.decimalPlaces).toBe(2);
+ expect((priceField?.meta as Record<string, unknown> | undefined)?.maxDigits).toBe(12);
+ expect(result.current.initialValues.price).toBe("10.5");
+ expect(
+ result.current.buildSubmissionValues({ name: "Starter", price: 8000 }),
+ ).toEqual({
+ name: "Starter",
+ price: "8000",
+ });
+ });
+
  it("applies runtime object-path overrides before submission", () => {
  const { result } = renderHook(() =>
  useGeneratedModelForm({

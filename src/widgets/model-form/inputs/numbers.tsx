@@ -1,5 +1,5 @@
 /**
- * Numeric form inputs: number, decimal, slider, and range.
+ * Numeric form inputs: number, slider, and range.
  *
  * Renders a numeric input with a left-aligned hash icon indicator
  * and an optional formatted display badge on the right.
@@ -48,8 +48,7 @@ const NumberInput: React.FC<Props> = ({ config, field, form }) => {
       field.handleChange("");
       return;
     }
-    const parsed =
-      config.type === "decimal" ? parseFloat(raw) : parseInt(raw, 10);
+    const parsed = parseInt(raw, 10);
     field.handleChange(Number.isNaN(parsed) ? "" : parsed);
   };
 
@@ -66,7 +65,7 @@ const NumberInput: React.FC<Props> = ({ config, field, form }) => {
           value={value as any}
           min={config.min}
           max={config.max}
-          step={config.step ?? (config.type === "decimal" ? 0.01 : 1)}
+          step={config.step ?? 1}
           onChange={handleChange}
           onBlur={field.handleBlur}
           disabled={config.disabled}

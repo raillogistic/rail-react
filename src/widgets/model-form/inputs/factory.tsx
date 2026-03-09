@@ -1,6 +1,7 @@
 import type { FieldRendererComponent, FormInputType } from "./types";
 import TextInput from "./text";
 import NumberInput from "./numbers";
+import DecimalInput from "./decimal";
 import ChoiceInput from "./choices";
 import BooleanInput from "./boolean";
 import DateInput from "./date";
@@ -21,7 +22,7 @@ const registry: Registry = {
  file: TextInput,
  "rich-text": RichTextInput,
  number: NumberInput,
- decimal: NumberInput,
+ decimal: DecimalInput,
  slider: NumberInput,
  range: NumberInput,
  select: ChoiceInput,

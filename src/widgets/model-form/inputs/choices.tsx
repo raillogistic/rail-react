@@ -39,6 +39,13 @@ import type {
 
 type Props = FieldComponentProps<ChoiceFieldConfig>;
 
+const choiceTriggerClassName =
+  "w-full rounded-md border border-input bg-background px-3 text-left text-sm font-normal transition-all duration-200 hover:border-border hover:bg-accent/30 focus:border-primary focus:ring-2 focus:ring-primary/20";
+
+const multiChoiceTriggerClassName = `${choiceTriggerClassName} h-auto min-h-10 justify-between py-2`;
+
+const singleChoiceTriggerClassName = `${choiceTriggerClassName} h-auto min-h-10`;
+
 /** Renders a choice input based on configuration (select | multi | radio). */
 const ChoiceInput: React.FC<Props> = ({ config, field, form }) => {
   const meta = field.state.meta;
@@ -87,9 +94,7 @@ const ChoiceInput: React.FC<Props> = ({ config, field, form }) => {
               variant="outline"
               data-slot="select-trigger"
               className={cn(
-                "h-auto min-h-10 w-full justify-between rounded-md border border-input bg-background px-3 py-2 text-left text-sm font-normal transition-all duration-200",
-                "hover:border-border hover:bg-accent/30",
-                "focus:border-primary focus:ring-2 focus:ring-primary/20",
+                multiChoiceTriggerClassName,
                 selectedValues.length > 0
                   ? "border-primary/30"
                   : "",
@@ -238,7 +243,10 @@ const ChoiceInput: React.FC<Props> = ({ config, field, form }) => {
           <SelectTrigger
             id={field.name}
             data-slot="select-trigger"
-            className="h-10 w-full rounded-md border border-input bg-background px-3 text-sm transition-all duration-200 hover:border-border focus:border-primary focus:ring-2 focus:ring-primary/20 focus-visible:ring-0"
+            className={cn(
+              singleChoiceTriggerClassName,
+              "focus-visible:ring-0",
+            )}
           >
             <SelectValue
               placeholder={config.placeholder ?? "Choisir une option"}

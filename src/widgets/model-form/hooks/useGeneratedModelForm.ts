@@ -92,6 +92,80 @@ type SubmitResult = {
  normalizationDurationMs: number;
 };
 
+function toOptionalNumber(value: unknown): number | undefined {
+ if (typeof value === "number") {
+ return Number.isFinite(value) ? value : undefined;
+ }
+ if (typeof value === "string") {
+ const normalized = value.trim();
+ if (!normalized) return undefined;
+ const parsed = Number(normalized);
+ return Number.isFinite(parsed) ? parsed : undefined;
+ }
+ return undefined;
+}
+
+function toOptionalInteger(value: unknown): number | undefined {
+ const parsed = toOptionalNumber(value);
+ if (parsed === undefined) return undefined;
+ return Number.isInteger(parsed) ? parsed : undefined;
+}
+
+function buildDecimalStep(precision: number | undefined): number | undefined {
+ if (precision === undefined || precision < 0) return undefined;
+ if (precision === 0) return 1;
+ return Number(`0.${"0".repeat(Math.max(precision - 1, 0))}1`);
+}
+
+function normalizeDecimalValue(value: unknown): unknown {
+ if (value === undefined || value === null || value === "") {
+ return value;
+ }
+
+ if (typeof value === "number") {
+ return Number.isFinite(value) ? String(value) : value;
+ }
+
+ if (typeof value !== "string") {
+ return value;
+ }
+
+ const normalized = value.trim().replace(",", ".");
+ if (!normalized) {
+ return "";
+ }
+ if (/^-?\d+\.$/.test(normalized)) {
+ return normalized.slice(0, -1);
+ }
+ return normalized;
+}
+
+function normalizeSubmissionValuesByContract(
+ values: Record<string, any>,
+ contract?: ModelFormContract | null,
+): Record<string, any> {
+ if (!contract) {
+ return { ...values };
+ }
+
+ let nextValues = { ...values };
+ let changed = false;
+
+ for (const field of contract.fields ?? []) {
+ if (field.kind !== "DECIMAL") continue;
+ const fieldName = resolveContractFieldName(field) || field.path;
+ if (!fieldName) continue;
+ const currentValue = getValueByPath(nextValues, fieldName);
+ if (currentValue === undefined) continue;
+ const normalizedValue = normalizeDecimalValue(currentValue);
+ if (normalizedValue === currentValue) continue;
+ nextValues = setValueByPath(nextValues, fieldName, normalizedValue);
+ changed = true;
+ }
+
+ return changed ? nextValues : values;
+}
+
 function mapKindToInputType(kind: string): FormFieldConfig["type"] {
  switch (kind) {
  case "TEXTAREA":
@@ -651,27 +725,65 @@ export function buildSchemaFromContract(
  if (!contractFieldName) continue;
  const type = mapKindToInputType(field.kind);
  const uiConfig = asRecord(field.ui);
+ const constraints = asRecord(field.constraints);
  const fieldOrder = resolveOrderRankFromCandidates(
  contractFieldCandidates(field),
  );
+ const min = toOptionalNumber(constraints?.min_value);
+ const max = toOptionalNumber(constraints?.max_value);
+ const precision =
+ type === "decimal"
+ ? toOptionalInteger(
+ constraints?.decimal_places ??
+ uiConfig?.decimalPlaces ??
+ uiConfig?.decimal_places ??
+ uiConfig?.precision,
+ )
+ : undefined;
+ const step =
+ type === "decimal"
+ ? toOptionalNumber(uiConfig?.step) ?? buildDecimalStep(precision)
+ : type === "number"
+ ? toOptionalNumber(uiConfig?.step)
+ : undefined;
+ const defaultValue = parseJsonValue(field.defaultValue);
  const baseConfig: FormFieldConfig = {
  name: contractFieldName,
  type,
  label: field.label,
  required: field.required,
  readOnly,
- defaultValue: parseJsonValue(field.defaultValue),
+ defaultValue:
+ type === "decimal" ? normalizeDecimalValue(defaultValue) : defaultValue,
  inputProps: (uiConfig as Record<string, any>) ?? undefined,
- meta: {
- graphqlType: field.graphqlType,
- pythonType: field.pythonType,
- fieldPath: field.path,
- readable,
- writable,
- visibility,
- },
- ...(typeof fieldOrder === "number" ? { order: fieldOrder } : {}),
+  meta: {
+   graphqlType: field.graphqlType,
+   pythonType: field.pythonType,
+   fieldPath: field.path,
+   readable,
+   writable,
+   visibility,
+   ...(type === "decimal"
+   ? {
+   decimalPlaces: precision,
+   maxDigits: toOptionalInteger(constraints?.max_digits),
+   }
+   : {}),
+  },
+  ...(typeof fieldOrder === "number" ? { order: fieldOrder } : {}),
  } as FormFieldConfig;
+
+ if (type === "number" || type === "decimal") {
+ (baseConfig as any).min = min;
+ (baseConfig as any).max = max;
+ if (step !== undefined) {
+ (baseConfig as any).step = step;
+ }
+ if (type === "decimal") {
+ (baseConfig as any).precision = precision;
+ (baseConfig as any).transform = normalizeDecimalValue;
+ }
+ }
 
  if (type === "select") {
  (baseConfig as any).options = resolveChoiceOptions(field);
@@ -865,7 +977,10 @@ export function useGeneratedModelForm(options: UseGeneratedModelFormOptions) {
  }
 
  return normalizeInitialValuesByContract(
+ normalizeSubmissionValuesByContract(
  parsedValues as Record<string, any>,
+ contract,
+ ),
  contract,
  );
  }, [initialData, contract]);
@@ -892,9 +1007,10 @@ export function useGeneratedModelForm(options: UseGeneratedModelFormOptions) {
 
  const buildSubmissionValues = React.useCallback(
  (values: Record<string, any>) => {
- return applyOverrides(values, runtimeOverrides);
+ const normalizedValues = normalizeSubmissionValuesByContract(values, contract);
+ return applyOverrides(normalizedValues, runtimeOverrides);
  },
- [runtimeOverrides],
+ [contract, runtimeOverrides],
  );
 
  const canSubmit = Boolean(

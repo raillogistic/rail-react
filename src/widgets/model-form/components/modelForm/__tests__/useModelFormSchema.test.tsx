@@ -91,4 +91,63 @@ describe("useModelFormSchema", () => {
       ],
     });
   });
+
+  it("applies primitive field transforms while sanitizing nested values", () => {
+    const generatedSchema: FormSchema<Record<string, unknown>> = {
+      id: "mission.BaremePrimeMission.CREATE",
+      sections: [
+        {
+          id: "default",
+          fields: [
+            {
+              name: "lignes",
+              type: "list",
+              label: "Lignes",
+              fields: [
+                {
+                  name: "montantRepas",
+                  type: "decimal",
+                  label: "Montant repas",
+                  transform: (value) =>
+                    typeof value === "number" ? String(value) : value,
+                },
+                {
+                  name: "montantHebergement",
+                  type: "decimal",
+                  label: "Montant hebergement",
+                  transform: (value) =>
+                    typeof value === "number" ? String(value) : value,
+                },
+              ],
+            },
+          ],
+        },
+      ],
+    };
+
+    const { result } = renderHook(() =>
+      useModelFormSchema({
+        onlyFields: undefined,
+        excludeFields: undefined,
+        onlyRequired: false,
+        fieldOverrides: undefined,
+        sectionOverrides: undefined,
+        generatedEnabled: false,
+        contract: null,
+        generatedSchema,
+        relatedContractsByModel: new Map(),
+        nestedControls: undefined,
+        resolvedOnlyRelationships: [],
+        resolvedExcludeRelationships: [],
+      }),
+    );
+
+    expect(
+      result.current.sanitizeValuesForControlledSchema({
+        lignes: [{ montantRepas: 8000, montantHebergement: 6000 }],
+      }),
+    ).toEqual({
+      lignes: [{ montantRepas: "8000", montantHebergement: "6000" }],
+    });
+  });
 });
