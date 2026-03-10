@@ -559,24 +559,26 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
                 variant="outline"
                 data-slot="button"
                 className={cn(
-                  "h-auto min-h-10 w-full justify-between rounded-md border border-input bg-background px-3 py-2 text-left text-sm font-normal transition-all duration-200 hover:border-border hover:bg-accent/30 focus:border-primary focus:ring-2 focus:ring-primary/20",
+                  "h-auto min-h-12 w-full justify-between rounded-xl border border-input/60 bg-background px-4 py-2.5 text-left text-[13.5px] font-medium transition-all duration-300 ease-out",
+                  "hover:border-primary/30 hover:bg-muted/3 hover:shadow-md hover:shadow-primary/1",
+                  "focus:border-primary focus:ring-4 focus:ring-primary/10 data-[state=open]:border-primary data-[state=open]:ring-4 data-[state=open]:ring-primary/10",
                   selectedValues.length > 0
-                    ? "border-primary/30"
+                    ? "border-primary/20 bg-primary/3"
                     : "",
                 )}
               >
-                <div className="flex flex-wrap gap-1.5 pr-4">
+                <div className="flex flex-wrap gap-2 pr-4">
                   {selectedOptions.length > 0 ? (
                     selectedOptions.map((opt) => (
                       <Badge
                         key={opt.value}
                         variant="secondary"
-                        className="rounded-full bg-primary/10 text-primary hover:bg-primary/15 transition-colors border-none px-2.5 py-0.5 text-[11px] font-medium"
+                        className="group/badge h-7 rounded-lg bg-primary/5 text-primary hover:bg-primary/10 transition-all border-none px-2.5 text-[11.5px] font-bold"
                       >
                         {opt.label}
                         {config.multiple && (
                           <X
-                            className="ml-1 size-3 cursor-pointer opacity-60 hover:opacity-100"
+                            className="ml-2 size-3 cursor-pointer opacity-40 group-hover/badge:opacity-100 transition-opacity"
                             onClick={(e) => {
                               e.stopPropagation();
                               toggle(opt.value);
@@ -586,8 +588,8 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
                       </Badge>
                     ))
                   ) : (
-                    <span className="text-muted-foreground">
-                      {config.placeholder ?? "Sélectionner..."}
+                    <span className="text-muted-foreground/60 font-medium">
+                      {config.placeholder ?? "Rechercher une relation..."}
                     </span>
                   )}
                 </div>
@@ -595,13 +597,15 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
                   {loading ? (
                     <Loader2 className="h-4 w-4 animate-spin text-primary" />
                   ) : (
-                    <ChevronDown className="size-4 opacity-50" />
+                    <ChevronDown className="size-4 opacity-30 transition-transform duration-300 group-data-[state=open]:rotate-180" />
                   )}
                 </div>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent
-              className="w-80 rounded-lg border border-border/50 bg-popover p-0 shadow-lg overflow-hidden"
+              className="w-96 rounded-2xl border border-border/50 bg-popover/95 backdrop-blur-xl p-0 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-300"
+              align="start"
+              // @ts-ignore
               onOpenAutoFocus={(event) => {
                 event.preventDefault();
                 requestAnimationFrame(() => {
@@ -609,12 +613,12 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
                 });
               }}
             >
-              <div className="flex items-center border-b border-border/40 bg-muted/20 px-3 py-2.5">
-                <Search className="mr-2 size-4 text-muted-foreground/40" />
+              <div className="flex items-center border-b border-border/30 bg-muted/3 px-4 py-3.5">
+                <Search className="mr-3 size-4.5 text-primary/40 transition-transform group-focus-within:scale-110" />
                 <Input
                   ref={searchInputRef}
-                  className="h-8 border-none bg-transparent p-0 text-sm shadow-none focus-visible:ring-0"
-                  placeholder="Rechercher..."
+                  className="h-6 border-none bg-transparent p-0 text-[14px] font-bold shadow-none focus-visible:ring-0 placeholder:text-muted-foreground/40"
+                  placeholder="Tapez pour rechercher..."
                   value={search}
                   onChange={(event) => {
                     const term = event.target.value;
@@ -626,14 +630,19 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
                 />
               </div>
               <div
-                className="max-h-72 overflow-y-auto p-1.5"
+                className="max-h-80 overflow-y-auto p-2 space-y-1 scrollbar-thin"
                 ref={optionsListRef}
               >
-                {options.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center py-8 text-center">
-                    <Database className="mb-2 size-8 text-muted-foreground/20" />
-                    <p className="text-xs font-medium text-muted-foreground/60">
-                      Aucun résultat
+                {options.length === 0 && !loading ? (
+                  <div className="flex flex-col items-center justify-center py-12 text-center">
+                    <div className="mb-4 flex size-14 items-center justify-center rounded-2xl bg-muted/30 text-muted-foreground/20">
+                      <Database className="size-7" />
+                    </div>
+                    <p className="text-[13px] font-bold text-muted-foreground/50">
+                      Aucun résultat trouvé
+                    </p>
+                    <p className="text-[11px] font-medium text-muted-foreground/30 px-6 mt-1">
+                      Essayez d'ajuster votre recherche ou d'ajouter une nouvelle entrée.
                     </p>
                   </div>
                 ) : (
@@ -641,16 +650,16 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
                     <DropdownMenuCheckboxItem
                       key={option.value}
                       className={cn(
-                        "relative flex cursor-pointer select-none items-center rounded-md py-2 pl-10 pr-4 outline-none transition-colors duration-150",
-                        "hover:bg-accent/50 hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground",
+                        "relative flex cursor-pointer select-none items-center rounded-xl py-3 pl-11 pr-4 outline-none transition-all duration-200",
+                        "hover:bg-primary/3 focus:bg-primary/5 focus:text-primary",
                         index === highlightedIndex
                           ? "bg-primary/5 text-primary"
                           : "",
                         selectedValues.some((value) =>
                           areChoiceValuesEqual(value, option.value),
                         )
-                          ? "bg-primary/5 font-medium text-primary"
-                          : "",
+                          ? "bg-primary/4 font-bold text-primary"
+                          : "text-foreground/70",
                       )}
                       checked={selectedValues.some((value) =>
                         areChoiceValuesEqual(value, option.value),
@@ -659,17 +668,23 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
                       disabled={option.disabled}
                       data-option-index={index}
                     >
-                      <span className="absolute left-3 flex size-4 items-center justify-center">
-                        {selectedValues.some((value) =>
+                      <span className="absolute left-3.5 flex size-5 items-center justify-center rounded-lg bg-primary/5 text-primary/40 group-hover:bg-primary/10 transition-colors">
+                        {loading && index === highlightedIndex ? (
+                          <Loader2 className="size-3 animate-spin" />
+                        ) : selectedValues.some((value) =>
                           areChoiceValuesEqual(value, option.value),
-                        ) && <Check className="size-3.5 stroke-[2.5]" />}
+                        ) ? (
+                            <Check className="size-3.5 stroke-[3]" />
+                        ) : (
+                            <div className="size-1.5 rounded-full bg-current opacity-20" />
+                        )}
                       </span>
                       <div className="flex flex-col gap-0.5">
-                        <span className="text-sm leading-none">
+                        <span className="text-[13.5px] leading-tight">
                           {option.label}
                         </span>
                         {option.description ? (
-                          <span className="text-[10px] text-muted-foreground/70 leading-tight">
+                          <span className="text-[10px] text-muted-foreground/50 font-medium leading-tight mt-0.5">
                             {option.description}
                           </span>
                         ) : null}
@@ -679,11 +694,11 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
                 )}
               </div>
               {inlineButtonVisible && (
-                <div className="border-t border-border/40 p-1.5 bg-muted/10">
+                <div className="border-t border-border/30 p-2 bg-primary/1">
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="w-full justify-start rounded-md text-primary hover:bg-primary/5 hover:text-primary font-medium text-xs"
+                    className="w-full justify-start rounded-xl text-primary font-bold text-[12px] hover:bg-primary/10 hover:text-primary transition-all active:scale-[0.98]"
                     onClick={() => {
                       if (canOpenInlineForm) {
                         setInlineFormOpen(true);
@@ -691,7 +706,7 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
                     }}
                     disabled={inlineButtonDisabled}
                   >
-                    <Plus className="mr-2 size-3.5 stroke-[2.5]" />
+                    <Plus className="mr-2.5 size-4 stroke-[2.5]" />
                     {inlineTriggerLabel}
                   </Button>
                 </div>
@@ -701,16 +716,19 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
         </div>
       </div>
       <Dialog open={inlineFormOpen} onOpenChange={setInlineFormOpen}>
-        <DialogContent className="sm:max-w-3xl overflow-hidden rounded-xl border border-border/50 bg-background p-0 shadow-xl">
-          <DialogHeader className="px-6 pt-6 pb-2">
-            <DialogTitle className="flex items-center gap-2 text-xl font-bold tracking-tight">
-              <div className="flex size-8 items-center justify-center rounded-lg bg-primary/10 text-primary">
-                <Plus className="size-5" />
+        <DialogContent className="sm:max-w-4xl overflow-hidden rounded-3xl border border-border/50 bg-background/95 backdrop-blur-xl p-0 shadow-[0_30px_80px_rgba(0,0,0,0.1)] dark:shadow-[0_30px_80px_rgba(0,0,0,0.4)]">
+          <DialogHeader className="px-8 pt-8 pb-4">
+            <DialogTitle className="flex items-center gap-4 text-2xl font-black tracking-tight text-foreground">
+              <div className="flex size-11 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-inner shadow-primary/10">
+                <Plus className="size-6 stroke-[2.5]" />
               </div>
-              {inlineTriggerLabel}
+              <div className="flex flex-col">
+                 <span>{inlineTriggerLabel}</span>
+                 <span className="text-xs font-bold text-muted-foreground/40 uppercase tracking-widest mt-0.5 tracking-tighter">Nouveau Enregistrement</span>
+              </div>
             </DialogTitle>
           </DialogHeader>
-          <div className="max-h-[70vh] overflow-y-auto px-6 pb-8">
+          <div className="max-h-[70vh] overflow-y-auto px-8 pb-10">
             <React.Suspense
               fallback={
                 <div className="flex items-center justify-center py-20">
@@ -1026,7 +1044,7 @@ function buildGraphQLRecipe(config?: QueryChoiceGraphQLConfig): GraphQLRecipe {
 
   const staticArgsEntries = Object.entries(config.staticArgs ?? {});
   staticArgsEntries.forEach(([name, value]) => {
-    fieldArguments.push(`${name}: ${formatGraphQLLiteral(value)}`);
+    fieldArguments.push(`${name}: ${formatGraphQLLiteral(value as any)}`);
   });
 
   const queryName = config.queryName ?? `${toPascalCase(listField)}QuickQuery`;

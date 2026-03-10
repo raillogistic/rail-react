@@ -105,32 +105,32 @@ const DateTimeInput: React.FC<Props> = ({ config, field, form }) => {
             variant="outline"
             data-slot="input"
             className={cn(
-              "h-10 w-full justify-start rounded-md border border-input bg-background px-3 text-left text-sm font-normal transition-all duration-200",
-              "hover:border-border hover:bg-accent/30",
-              "focus:border-primary focus:ring-2 focus:ring-primary/20",
-              !value && "text-muted-foreground",
-              isValidDate && "text-foreground font-medium",
-              config.disabled && "cursor-not-allowed opacity-60",
+              "h-12 w-full justify-start rounded-xl border border-input/60 bg-background px-4 text-left text-[13.5px] font-medium transition-all duration-300 ease-out",
+              "hover:border-primary/30 hover:bg-muted/[0.03] hover:shadow-md hover:shadow-primary/[0.01]",
+              "focus:border-primary focus:ring-4 focus:ring-primary/10 data-[state=open]:border-primary data-[state=open]:ring-4 data-[state=open]:ring-primary/10",
+              !value && "text-muted-foreground/60",
+              isValidDate && "text-foreground font-bold border-primary/20 bg-primary/[0.01]",
+              config.disabled && "cursor-not-allowed opacity-60 grayscale-[0.5]",
             )}
             disabled={config.disabled}
           >
             <CalendarDays
               className={cn(
-                "mr-2.5 size-4 transition-colors",
-                isValidDate ? "text-primary" : "text-muted-foreground/40",
+                "mr-3 size-4.5 transition-all duration-300",
+                isValidDate ? "text-primary scale-110" : "text-muted-foreground/40",
               )}
             />
             <span className="truncate">
               {isValidDate ? (
-                format(dateValue, "dd/MM/yyyy HH:mm", { locale: fr })
+                format(dateValue, "dd MMMM yyyy 'à' HH:mm", { locale: fr })
               ) : (
-                <span>Choisir date et heure</span>
+                <span>{config.placeholder ?? "Choisir date et heure"}</span>
               )}
             </span>
           </Button>
         </PopoverTrigger>
         <PopoverContent
-          className="w-auto rounded-lg border border-border/50 bg-popover p-0 shadow-lg"
+          className="w-auto overflow-hidden rounded-2xl border border-border/50 bg-popover/95 backdrop-blur-xl p-0 shadow-2xl animate-in fade-in zoom-in-95 duration-300"
           align="start"
         >
           <CalendarComponent
@@ -139,14 +139,16 @@ const DateTimeInput: React.FC<Props> = ({ config, field, form }) => {
             onSelect={handleDateSelect}
             initialFocus
             locale={fr}
-            className="p-3"
+            className="p-4"
           />
-          <div className="flex items-center gap-3 border-t border-border/40 bg-muted/20 rounded-b-lg p-3">
-            <Clock className="size-4 text-primary" />
+          <div className="flex items-center gap-4 border-t border-border/30 bg-muted/30 p-4">
+            <div className="flex size-9 items-center justify-center rounded-xl bg-primary/10 text-primary shadow-inner shadow-primary/5">
+              <Clock className="size-4.5 stroke-[2.5]" />
+            </div>
             <div className="flex-1">
               <Input
                 type="time"
-                className="h-9 rounded-md border border-input bg-background transition-all duration-200 focus:border-primary focus:ring-2 focus:ring-primary/20"
+                className="h-10 rounded-xl border border-input/60 bg-background px-3 font-bold transition-all duration-300 focus:border-primary focus:ring-4 focus:ring-primary/10"
                 value={isValidDate ? format(dateValue, "HH:mm") : ""}
                 onChange={handleTimeChange}
               />

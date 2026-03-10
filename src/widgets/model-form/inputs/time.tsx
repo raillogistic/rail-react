@@ -32,8 +32,8 @@ const TimeInput: React.FC<Props> = ({ config, field, form }) => {
   return (
     <FieldWrapper config={config} error={error} dirty={dirty}>
       <div className="relative group/time">
-        <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/40 transition-colors group-focus-within/time:text-primary/60">
-          <ClockIcon className="size-4" />
+        <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/30 transition-all duration-300 group-focus-within/time:text-primary/50 group-focus-within/time:scale-110">
+          <ClockIcon className="size-4.5 stroke-[2.5]" />
         </div>
         <Input
           data-slot="input"
@@ -44,7 +44,12 @@ const TimeInput: React.FC<Props> = ({ config, field, form }) => {
           onChange={(event) => field.handleChange(event.target.value)}
           onBlur={field.handleBlur}
           disabled={config.disabled}
-          className="h-10 rounded-md border border-input bg-background pl-9 pr-4 text-sm transition-all duration-200 hover:border-border focus:border-primary focus:ring-2 focus:ring-primary/20 focus-visible:ring-0"
+          className={cn(
+            "h-12 rounded-xl border border-input/60 bg-background pl-11 pr-4 text-[13.5px] font-bold transition-all duration-300 ease-out",
+            "hover:border-primary/30 hover:bg-muted/[0.03] hover:shadow-md hover:shadow-primary/[0.01]",
+            "focus:border-primary focus:ring-4 focus:ring-primary/10 focus-visible:ring-0",
+             config.disabled && "cursor-not-allowed opacity-60 grayscale-[0.5]",
+          )}
         />
       </div>
     </FieldWrapper>

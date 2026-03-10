@@ -17,6 +17,7 @@ import {
   resolveRequiredError,
 } from "./common";
 import type { BooleanFieldConfig, FieldComponentProps } from "./types";
+import { CheckCircle2, XCircle } from "lucide-react";
 
 type Props = FieldComponentProps<BooleanFieldConfig, boolean>;
 
@@ -53,12 +54,13 @@ const BooleanInput: React.FC<Props> = ({ config, field, form }) => {
       >
         <div
           className={cn(
-            "flex items-center gap-3 rounded-lg border border-border/50 bg-background p-3 transition-all duration-200",
-            "hover:border-border hover:bg-accent/30",
+            "group/bool relative flex items-center gap-4 rounded-xl border border-border/50 bg-background p-4 transition-all duration-500 ease-out",
+            "hover:border-primary/20 hover:bg-muted/[0.03] hover:shadow-md hover:shadow-primary/[0.02] cursor-pointer",
             value
-              ? "border-primary/30 bg-primary/5 ring-1 ring-primary/10"
-              : "",
+              ? "border-primary/40 bg-primary/[0.03] ring-1 ring-primary/10 shadow-sm"
+              : "hover:bg-muted/30",
           )}
+          onClick={() => !config.disabled && field.handleChange(!value)}
         >
           <Switch
             id={fieldId}
@@ -66,16 +68,21 @@ const BooleanInput: React.FC<Props> = ({ config, field, form }) => {
             checked={value}
             onCheckedChange={(checked) => field.handleChange(Boolean(checked))}
             disabled={config.disabled}
+            className="scale-110 data-[state=checked]:bg-primary transition-all duration-500"
+            onClick={(e) => e.stopPropagation()}
           />
-          <div className="flex flex-1 flex-col">
+          <div className="flex flex-1 flex-col gap-0.5">
             <span
               className={cn(
-                "text-sm font-medium transition-colors",
-                value ? "text-foreground" : "text-foreground/60",
+                "text-[13.5px] font-bold transition-all duration-300",
+                value ? "text-primary translate-x-0.5" : "text-foreground/50",
               )}
             >
               {label}
             </span>
+          </div>
+          <div className="flex items-center justify-center opacity-0 group-hover/bool:opacity-100 transition-opacity duration-500 pr-1">
+             {value ? <CheckCircle2 className="size-4 text-primary/40" /> : <XCircle className="size-4 text-muted-foreground/20" />}
           </div>
         </div>
       </FieldWrapper>
@@ -87,33 +94,41 @@ const BooleanInput: React.FC<Props> = ({ config, field, form }) => {
     <FieldWrapper config={config} fieldId={fieldId} error={error} dirty={dirty}>
       <div
         className={cn(
-          "flex cursor-pointer items-center gap-3 rounded-lg border border-border/50 bg-background px-4 py-2.5 transition-all duration-200",
-          "hover:border-border hover:bg-accent/30",
+          "group/bool relative flex cursor-pointer items-center gap-4 rounded-xl border border-border/50 bg-background px-5 py-4 transition-all duration-500 ease-out",
+          "hover:border-primary/20 hover:bg-muted/[0.03] hover:shadow-md hover:shadow-primary/[0.02]",
           value
-            ? "border-primary/30 bg-primary/5 ring-1 ring-primary/10"
-            : "",
+            ? "border-primary/40 bg-primary/[0.03] ring-1 ring-primary/10 shadow-sm"
+            : "hover:bg-muted/30",
         )}
         onClick={() => !config.disabled && field.handleChange(!value)}
       >
-        <Checkbox
-          id={fieldId}
-          data-slot="checkbox"
-          checked={value}
-          onCheckedChange={(checked) => field.handleChange(Boolean(checked))}
-          onBlur={field.handleBlur}
-          disabled={config.disabled}
-          className="size-4.5 rounded"
-          onClick={(e) => e.stopPropagation()}
-        />
-        <div className="flex flex-col cursor-pointer select-none">
+        <div className="relative flex size-5.5 items-center justify-center">
+            <Checkbox
+              id={fieldId}
+              data-slot="checkbox"
+              checked={value}
+              onCheckedChange={(checked) => field.handleChange(Boolean(checked))}
+              onBlur={field.handleBlur}
+              disabled={config.disabled}
+              className={cn(
+                "size-5.5 rounded-lg border-2 transition-all duration-500",
+                value ? "border-primary bg-primary scale-110 shadow-lg shadow-primary/20" : "border-muted-foreground/30",
+              )}
+              onClick={(e) => e.stopPropagation()}
+            />
+        </div>
+        <div className="flex flex-1 flex-col select-none gap-0.5">
           <span
             className={cn(
-              "text-sm font-medium transition-colors",
-              value ? "text-foreground" : "text-foreground/60",
+              "text-[13.5px] font-bold transition-all duration-300",
+              value ? "text-primary translate-x-0.5" : "text-foreground/50",
             )}
           >
             {label}
           </span>
+        </div>
+        <div className="flex items-center justify-center opacity-0 group-hover/bool:opacity-100 transition-opacity duration-500 pr-1">
+             {value ? <CheckCircle2 className="size-4 text-primary/40" /> : <XCircle className="size-4 text-muted-foreground/20" />}
         </div>
       </div>
     </FieldWrapper>

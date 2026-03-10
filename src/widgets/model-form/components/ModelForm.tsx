@@ -116,6 +116,11 @@ function normalizeMutationVariablesForGraphQL(
   return nextVariables;
 }
 
+/**
+ * Composant principal de formulaire généré à partir d'un modèle Django.
+ * 
+ * @param props Propriétés du formulaire
+ */
 export function ModelForm<
   TFormValues extends Record<string, unknown> = Record<string, unknown>,
 >(props: ModelFormProps<TFormValues>) {
@@ -483,20 +488,34 @@ export function ModelForm<
     <div
       data-slot="model-form"
       className={cn(
-        "group/model-form relative w-full transition-all duration-300",
-        !isPopupLayoutVariant && "bg-background shadow-sm border border-border/40 rounded-xl p-6 md:p-8",
+        "group/model-form relative w-full transition-all duration-500 ease-in-out",
+        !isPopupLayoutVariant && [
+          "bg-linear-to-br from-background via-background/98 to-primary/[0.02]",
+          "backdrop-blur-xl",
+          "shadow-[0_20px_50px_rgba(0,0,0,0.04)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.2)]",
+          "border border-border/50 rounded-2xl p-6 md:p-10",
+          "hover:shadow-[0_25px_60px_rgba(0,0,0,0.06)] dark:hover:shadow-[0_25px_60px_rgba(0,0,0,0.3)]",
+          "hover:border-border/80 transition-shadow duration-700",
+        ],
         containerClassName,
       )}
     >
+      {!isPopupLayoutVariant && (
+        <div className="absolute -top-[10%] -left-[5%] size-[40%] rounded-full bg-primary/5 blur-[100px] pointer-events-none opacity-0 group-hover/model-form:opacity-100 transition-opacity duration-1000" />
+      )}
+
       {showHeading && (title || description) ? (
-        <header className="mb-8 space-y-1.5 px-1">
+        <header className="mb-10 space-y-2 px-1 relative">
           {title && (
-            <h2 className="text-xl font-semibold tracking-tight text-foreground">
-              {title}
-            </h2>
+            <div className="flex items-center gap-3">
+              <div className="h-6 w-1 rounded-full bg-primary/40" />
+              <h2 className="text-2xl font-bold tracking-tight text-foreground bg-clip-text">
+                {title}
+              </h2>
+            </div>
           )}
           {description && (
-            <p className="max-w-2xl text-[13.5px] leading-relaxed text-muted-foreground/80">
+            <p className="max-w-2xl text-[14px] leading-relaxed text-muted-foreground/75 font-medium ml-4">
               {description}
             </p>
           )}
@@ -504,8 +523,8 @@ export function ModelForm<
       ) : null}
       <div
         className={cn(
-          "relative transition-all duration-300",
-          !isPopupLayoutVariant && "pt-6 border-t border-border/40",
+          "relative transition-all duration-500",
+          !isPopupLayoutVariant && "pt-8 border-t border-border/30",
           contentClassName,
         )}
       >

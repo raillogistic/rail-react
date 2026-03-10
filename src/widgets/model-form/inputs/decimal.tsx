@@ -66,8 +66,8 @@ const DecimalInput: React.FC<Props> = ({ config, field, form }) => {
  return (
  <FieldWrapper config={config} fieldId={fieldId} error={error} dirty={dirty}>
  <div className="relative group/decimal">
- <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/40 transition-colors group-focus-within/decimal:text-primary/60">
- <Hash className="size-4" />
+ <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/30 transition-all duration-300 group-focus-within/decimal:text-primary/50 group-focus-within/decimal:scale-110">
+ <Hash className="size-4.5 stroke-[2.5]" />
  </div>
  <Input
  id={fieldId}
@@ -82,15 +82,16 @@ const DecimalInput: React.FC<Props> = ({ config, field, form }) => {
  onBlur={handleBlur}
  disabled={config.disabled}
  className={cn(
- "h-10 rounded-md border border-input bg-background pl-10 pr-4 text-sm transition-all duration-200",
- "hover:border-border",
- "focus:border-primary focus:ring-2 focus:ring-primary/20 focus-visible:ring-0",
+ "h-12 rounded-xl border border-input/60 bg-background pl-11 pr-4 text-[13.5px] font-bold transition-all duration-300 ease-out",
+ "hover:border-primary/30 hover:bg-muted/[0.03] hover:shadow-md hover:shadow-primary/[0.01]",
+ "focus:border-primary focus:ring-4 focus:ring-primary/10 focus-visible:ring-0",
+ config.disabled && "cursor-not-allowed opacity-60 grayscale-[0.5]",
  )}
  />
 
  {config.format && canFormat ? (
- <div className="absolute right-3 top-1/2 -translate-y-1/2 animate-in fade-in slide-in-from-right-1">
- <span className="rounded-md bg-primary/8 px-2 py-0.5 text-[11px] font-medium text-primary">
+ <div className="absolute right-3 top-1/2 -translate-y-1/2 animate-in fade-in slide-in-from-right-2 duration-500">
+ <span className="rounded-lg bg-primary/10 px-2.5 py-1 text-[10.5px] font-black uppercase tracking-wider text-primary shadow-inner shadow-primary/10">
  {config.format(numericValue)}
  </span>
  </div>

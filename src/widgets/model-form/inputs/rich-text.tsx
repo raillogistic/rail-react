@@ -108,27 +108,27 @@ const RichTextInput: React.FC<Props> = ({ config, field, form }) => {
 
   /** Shared toggle button className for all toolbar items. */
   const toggleClass =
-    "size-8 rounded-md p-0 transition-colors data-[state=on]:bg-primary/10 data-[state=on]:text-primary hover:bg-accent/50";
+    "size-8 rounded-lg p-0 transition-all duration-200 data-[state=on]:bg-primary/10 data-[state=on]:text-primary hover:bg-muted/50 hover:scale-105 active:scale-95";
 
   return (
     <FieldWrapper config={config} fieldId={fieldId} error={error} dirty={dirty}>
       <div
         className={cn(
-          "flex flex-col overflow-hidden rounded-lg border border-input bg-background transition-all duration-200",
-          "focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20",
-          showError && "border-destructive/50 ring-1 ring-destructive/10",
-          config.disabled && "opacity-60 cursor-not-allowed",
+          "flex flex-col overflow-hidden rounded-2xl border border-input/60 bg-background transition-all duration-300 ease-out",
+          "focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10 focus-within:shadow-lg focus-within:shadow-primary/[0.02]",
+          showError && "border-destructive/40 ring-4 ring-destructive/5",
+          config.disabled && "opacity-60 cursor-not-allowed grayscale-[0.5]",
         )}
       >
         {/* ── Toolbar ─────────────────────────────────────────────── */}
         {!config.readOnly && !config.disabled && (
-          <div className="flex flex-wrap items-center gap-0.5 border-b border-border/40 bg-muted/20 p-1.5">
+          <div className="flex flex-wrap items-center gap-1 border-b border-border/30 bg-muted/20 backdrop-blur-md px-2 py-2">
             {toolbarButtons.map((btn, i) => {
               if (btn === "separator") {
                 return (
                   <div
                     key={`sep-${i}`}
-                    className="mx-1.5 h-5 w-px bg-border/40"
+                    className="mx-1 h-5 w-px bg-border/40"
                   />
                 );
               }
@@ -144,7 +144,7 @@ const RichTextInput: React.FC<Props> = ({ config, field, form }) => {
                     }
                     className={toggleClass}
                   >
-                    <Bold className="size-3.5" />
+                    <Bold className="size-3.5 stroke-[2.5]" />
                   </Toggle>
                 );
               }
@@ -160,7 +160,7 @@ const RichTextInput: React.FC<Props> = ({ config, field, form }) => {
                     }
                     className={toggleClass}
                   >
-                    <Italic className="size-3.5" />
+                    <Italic className="size-3.5 stroke-[2.5]" />
                   </Toggle>
                 );
               }
@@ -176,7 +176,7 @@ const RichTextInput: React.FC<Props> = ({ config, field, form }) => {
                     }
                     className={toggleClass}
                   >
-                    <Strikethrough className="size-3.5" />
+                    <Strikethrough className="size-3.5 stroke-[2.5]" />
                   </Toggle>
                 );
               }
@@ -192,7 +192,7 @@ const RichTextInput: React.FC<Props> = ({ config, field, form }) => {
                     }
                     className={toggleClass}
                   >
-                    <Code className="size-3.5" />
+                    <Code className="size-3.5 stroke-[2.5]" />
                   </Toggle>
                 );
               }
@@ -208,7 +208,7 @@ const RichTextInput: React.FC<Props> = ({ config, field, form }) => {
                     }
                     className={toggleClass}
                   >
-                    <Heading1 className="size-3.5" />
+                    <Heading1 className="size-3.5 stroke-[2.5]" />
                   </Toggle>
                 );
               }
@@ -224,7 +224,7 @@ const RichTextInput: React.FC<Props> = ({ config, field, form }) => {
                       }
                       className={toggleClass}
                     >
-                      <List className="size-3.5" />
+                      <List className="size-3.5 stroke-[2.5]" />
                     </Toggle>
                     <Toggle
                       size="sm"
@@ -234,7 +234,7 @@ const RichTextInput: React.FC<Props> = ({ config, field, form }) => {
                       }
                       className={toggleClass}
                     >
-                      <ListOrdered className="size-3.5" />
+                      <ListOrdered className="size-3.5 stroke-[2.5]" />
                     </Toggle>
                   </React.Fragment>
                 );
@@ -251,7 +251,7 @@ const RichTextInput: React.FC<Props> = ({ config, field, form }) => {
                     }
                     className={toggleClass}
                   >
-                    <Quote className="size-3.5" />
+                    <Quote className="size-3.5 stroke-[2.5]" />
                   </Toggle>
                 );
               }
@@ -284,7 +284,7 @@ const RichTextInput: React.FC<Props> = ({ config, field, form }) => {
                     }}
                     className={toggleClass}
                   >
-                    <LinkIcon className="size-3.5" />
+                    <LinkIcon className="size-3.5 stroke-[2.5]" />
                   </Toggle>
                 );
               }
@@ -298,9 +298,9 @@ const RichTextInput: React.FC<Props> = ({ config, field, form }) => {
         <EditorContent
           editor={editor}
           className={cn(
-            "prose prose-sm prose-stone dark:prose-invert max-w-none p-4 outline-none min-h-24",
+            "prose prose-sm prose-stone dark:prose-invert max-w-none p-5 outline-none min-h-32 transition-all duration-300",
             "prose-p:my-1 prose-headings:my-2 prose-ul:my-1 prose-ol:my-1",
-            "[&_.is-editor-empty]:before:text-muted-foreground/40 [&_.is-editor-empty]:before:content-[attr(data-placeholder)] [&_.is-editor-empty]:before:float-left [&_.is-editor-empty]:before:pointer-events-none",
+            "[&_.is-editor-empty]:before:text-muted-foreground/30 [&_.is-editor-empty]:before:content-[attr(data-placeholder)] [&_.is-editor-empty]:before:float-left [&_.is-editor-empty]:before:pointer-events-none [&_.is-editor-empty]:before:font-medium",
           )}
           style={{
             minHeight: config.minHeight,

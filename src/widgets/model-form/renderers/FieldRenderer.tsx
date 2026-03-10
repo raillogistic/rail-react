@@ -36,6 +36,9 @@ export type FieldRendererProps<TValues> = {
   hiddenFields?: Set<string>;
 };
 
+/**
+ * Composant de rendu de champ individuel.
+ */
 export const FieldRenderer = <TValues extends Record<string, any>>({
   config,
   path,
@@ -68,42 +71,58 @@ export const FieldRenderer = <TValues extends Record<string, any>>({
 
   if (config.type === "object") {
     const nestedGridClass = cn(
-      "grid gap-x-6 gap-y-3",
+      "grid gap-x-8 gap-y-5",
       buildResponsiveGridClass(config.columns ?? 1),
     );
     return (
       <div
-        className="group/object overflow-hidden  border border-border/40 bg-card/20 p-4 transition-all duration-300 hover:border-border/80 hover:bg-card/40 hover: hover:/5"
+        className={cn(
+          "group/object relative overflow-hidden transition-all duration-500 ease-in-out",
+          "rounded-2xl border border-border/30 bg-muted/20 p-6 md:p-8",
+          "hover:border-primary/20 hover:bg-muted/30 hover:shadow-lg hover:shadow-primary/[0.02]",
+        )}
         style={
           colSpan
             ? { gridColumn: `span ${colSpan} / span ${colSpan}` }
             : undefined
         }
       >
-        <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-primary/20 via-primary/5 to-transparent opacity-0 transition-opacity group-hover/object:opacity-100" />
+        {/* Animated left accent line */}
+        <div className="absolute left-0 top-0 bottom-0 w-1 bg-linear-to-b from-primary/40 via-primary/10 to-transparent opacity-50 transition-all duration-500 group-hover/object:w-1.5 group-hover/object:opacity-100" />
 
         {config.label ? (
-          <div className="mb-4 flex items-center justify-between border-b border-border/20 pb-2">
-            <div className="flex items-center gap-2">
-              <div className="size-1.5  bg-primary/60" />
-              <span className="text-xs font-semibold uppercase tracking-[0.1em] text-muted-foreground/80 transition-colors group-hover/object:text-primary">
-                {config.label}
-              </span>
+          <div className="mb-6 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="flex size-8 items-center justify-center rounded-lg bg-primary/5 text-primary/60 transition-colors group-hover/object:bg-primary/10 group-hover/object:text-primary">
+                <div className="size-1.5 rounded-full bg-current" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-sm font-bold tracking-tight text-foreground/80 transition-colors group-hover/object:text-primary">
+                  {config.label}
+                </span>
+                {config.description && (
+                  <span className="text-[11px] font-medium text-muted-foreground/60">
+                    Section groupée
+                  </span>
+                )}
+              </div>
             </div>
             {config.collapsible && (
-              <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/30">
+              <div className="rounded-full bg-primary/5 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider text-primary/60 group-hover/object:text-primary transition-colors cursor-pointer">
                 Détails
               </div>
             )}
           </div>
         ) : null}
+
         {config.description && (
-          <div className="mb-5 border-l-2 border-primary/20 bg-primary/5 p-3 ">
-            <p className="text-[13px] leading-relaxed text-muted-foreground">
+          <div className="mb-6 rounded-xl border border-primary/5 bg-primary/[0.03] p-4 backdrop-blur-sm">
+            <p className="text-[13px] leading-relaxed text-muted-foreground/80 font-medium italic">
               {config.description}
             </p>
           </div>
         )}
+
         <div className={nestedGridClass}>
           {config.fields.map((child) => (
             <FieldRenderer
@@ -144,7 +163,7 @@ export const FieldRenderer = <TValues extends Record<string, any>>({
       <form.Field name={path as any}>
         {(fieldApi) => (
           <div
-            className="animate-in fade-in slide-in-from-bottom-2 duration-300"
+            className="animate-in fade-in slide-in-from-bottom-2 duration-500 ease-out"
             style={
               colSpan
                 ? { gridColumn: `span ${colSpan} / span ${colSpan}` }
@@ -189,7 +208,7 @@ export const FieldRenderer = <TValues extends Record<string, any>>({
         );
         return (
           <div
-            className="animate-in fade-in slide-in-from-bottom-1 duration-200"
+            className="animate-in fade-in slide-in-from-bottom-3 duration-400 ease-out"
             style={
               colSpan
                 ? { gridColumn: `span ${colSpan} / span ${colSpan}` }
@@ -204,7 +223,8 @@ export const FieldRenderer = <TValues extends Record<string, any>>({
               />
             ) : null}
             {refreshInstruction ? (
-              <p className="mt-1 text-xs font-medium text-amber-700">
+              <p className="mt-2 text-[11px] font-semibold text-amber-600 dark:text-amber-400 flex items-center gap-1.5 animate-pulse">
+                <span className="size-1 rounded-full bg-current" />
                 {refreshInstruction}
               </p>
             ) : null}
@@ -248,7 +268,7 @@ export function createValidators<TValues>(
         value === null ||
         value === "" ||
         (Array.isArray(value) && value.length === 0);
-      return emptyValue ? "This field is required" : undefined;
+      return emptyValue ? "Ce champ est obligatoire" : undefined;
     });
   }
 

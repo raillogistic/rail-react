@@ -8,7 +8,7 @@
  */
 import * as React from "react";
 import { useStore } from "@tanstack/react-form";
-import { Calendar, CalendarDays } from "lucide-react";
+import { Calendar, CalendarDays, Sparkle } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -99,26 +99,27 @@ const DateInput: React.FC<Props> = ({ config, field, form }) => {
             variant="outline"
             data-slot="input"
             className={cn(
-              "h-10 w-full justify-start rounded-md border border-input bg-background px-3 text-left text-sm font-normal transition-all duration-200",
-              "hover:border-border hover:bg-accent/30",
-              "focus:border-primary focus:ring-2 focus:ring-primary/20",
-              !parsedValue && "text-muted-foreground",
-              parsedValue && "text-foreground font-medium",
-              config.disabled && "cursor-not-allowed opacity-60",
+              "h-11 w-full justify-start rounded-xl border border-input/60 bg-background px-4 text-left text-[13.5px] font-medium transition-all duration-300 ease-out",
+              "hover:border-primary/30 hover:bg-muted/[0.03] hover:shadow-md hover:shadow-primary/[0.01]",
+              "focus:border-primary focus:ring-4 focus:ring-primary/10",
+              !parsedValue && "text-muted-foreground/60",
+              parsedValue && "text-foreground font-bold border-primary/20 bg-primary/[0.01]",
+              config.disabled && "cursor-not-allowed opacity-50 grayscale",
             )}
             disabled={config.disabled}
           >
             <CalendarDays
               className={cn(
-                "mr-2.5 size-4 transition-colors",
-                parsedValue ? "text-primary" : "text-muted-foreground/40",
+                "mr-3 size-4.5 transition-all duration-300",
+                parsedValue ? "text-primary scale-110" : "text-muted-foreground/30",
               )}
             />
-            <span className="truncate">{buttonLabel}</span>
+            <span className="truncate flex-1">{buttonLabel}</span>
+            {parsedValue && <Sparkle className="size-3 text-primary/30 ml-2 animate-in fade-in zoom-in" />}
           </Button>
         </PopoverTrigger>
         <PopoverContent
-          className="w-auto rounded-lg border border-border/50 bg-popover p-0 shadow-lg"
+          className="w-auto rounded-2xl border border-border/50 bg-popover/95 backdrop-blur-xl p-2 shadow-2xl animate-in fade-in zoom-in-95 duration-300"
           align="start"
         >
           <CalendarComponent

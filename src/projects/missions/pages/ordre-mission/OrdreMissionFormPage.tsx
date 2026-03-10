@@ -25,7 +25,7 @@ export function OrdreMissionFormPage() {
 
   return (
     <section className="space-y-4">
-      <header>
+      {/* <header>
         <h1 className="text-2xl font-semibold tracking-tight">
           {isUpdate
             ? "Modifier un ordre de mission"
@@ -35,7 +35,7 @@ export function OrdreMissionFormPage() {
           Le formulaire affiche les champs utiles selon le moyen de transport
           choisi.
         </p>
-      </header>
+      </header> */}
       <ModelForm<OrdreMissionFormValues>
         title={isUpdate ? "Modifier Ordre Mission" : "Creer Ordre Mission"}
         app="mission"
@@ -43,22 +43,22 @@ export function OrdreMissionFormPage() {
         mode={isUpdate ? "UPDATE" : "CREATE"}
         objectId={isUpdate ? id : undefined}
         description="Selectionnez un vehicule ou un avion pour adapter la saisie."
-        onlyFields={[
-          "beneficiaire",
-          "objet",
-          "valableEtranger",
-          "destination",
-          "dateDepart",
-          "dateRetour",
-          "repas",
-          "hebergement",
-          "primeRepas",
-          "avancePrime",
-          "moyenTransport",
-          "vehicule",
-          "commentaire",
-          "adresseAdministrative",
-        ]}
+        // onlyFields={[
+        //   "beneficiaire",
+        //   "objet",
+        //   "valableEtranger",
+        //   "destination",
+        //   "dateDepart",
+        //   "dateRetour",
+        //   "repas",
+        //   "hebergement",
+        //   "primeRepas",
+        //   "avancePrime",
+        //   "moyenTransport",
+        //   "vehicule",
+        //   "commentaire",
+        //   "adresseAdministrative",
+        // ]}
         generatedSections={[
           {
             id: "general",
@@ -135,7 +135,8 @@ export function OrdreMissionFormPage() {
           },
         }}
         layout={{
-          mode: { type: "accordion" },
+          variant: "compact",
+          // mode: { type: "wizard" },
           columns: 6,
           defaultColSpan: 2,
           showSectionHeaders: true,
