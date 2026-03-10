@@ -519,7 +519,7 @@ const DynamicForm = <TValues extends Record<string, any> = Record<string, any>>(
 
   return (
     <div className="relative h-full w-full">
-      <form className={formWrapperClass} onSubmit={handleSubmit} noValidate>
+      <form className={cn("group/form", formWrapperClass)} onSubmit={handleSubmit} noValidate data-layout={layoutVariant}>
         <div className={formBodyClass}>
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 ease-out">
             {renderMode()}

@@ -107,10 +107,10 @@ export const SectionRenderer = <TValues extends Record<string, any>>({
   const fieldsGrid = (
     <div
       className={cn(
-        "grid gap-x-6 gap-y-2",
+        "grid gap-x-6",
         responsiveClasses,
         ui.bodyClassName,
-        isPopup ? "px-0" : null,
+        isPopup ? "gap-y-0 px-0" : "gap-y-2",
       )}
     >
       {visibleFields.map((field) => {

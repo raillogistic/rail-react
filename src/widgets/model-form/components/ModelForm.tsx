@@ -504,7 +504,7 @@ export function ModelForm<
       )}
 
       {showHeading && (title || description) ? (
-        <header className="mb-10 space-y-2 px-1 relative">
+        <header className={cn("space-y-2 px-1 relative", isPopupLayoutVariant ? "mb-4" : "mb-10")}>
           {title && (
             <div className="flex items-center gap-3">
               <div className="h-6 w-1 rounded-full bg-primary/40" />

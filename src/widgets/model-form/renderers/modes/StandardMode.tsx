@@ -5,6 +5,7 @@ import React from "react";
 import type { UseFormReturn } from "@tanstack/react-form";
 import type { FormSectionConfig } from "../../types/schema";
 import { SectionRenderer } from "../SectionRenderer";
+import { cn } from "@/shared/utils";
 
 export type StandardModeProps<TValues> = {
  sections: FormSectionConfig[];
@@ -31,8 +32,10 @@ export const StandardMode = <TValues extends Record<string, any>>({
  globalReadOnly,
  globalDisabled,
 }: StandardModeProps<TValues>) => {
+  const isCompact = variant === "compact" || variant === "popup";
+
  return (
- <div className="flex flex-col gap-8 animate-in fade-in duration-500">
+ <div className={cn("flex flex-col animate-in fade-in duration-500", isCompact ? "gap-4" : "gap-8")}>
  {sections.map((section, index) => {
  const sectionId = section.id ??`__section_${index}`;
  if (hiddenSections?.has(sectionId)) return null;
@@ -60,4 +63,3 @@ export const StandardMode = <TValues extends Record<string, any>>({
  </div>
  );
 };
-

@@ -58,8 +58,9 @@ export const FieldWrapper: React.FC<FieldWrapperProps> = ({
       data-dirty={dirty ? "true" : undefined}
       data-error={hasError ? "true" : undefined}
       className={cn(
-        "group/field flex flex-col gap-2 py-2.5",
-        "transition-all duration-500 ease-in-out",
+        "group/field flex flex-col transition-all duration-500 ease-in-out",
+        "gap-2 group-data-[layout=compact]/form:gap-1.5 group-data-[layout=popup]/form:gap-1.5",
+        "py-2.5 group-data-[layout=compact]/form:py-1 group-data-[layout=popup]/form:py-1",
         config.className,
       )}
     >

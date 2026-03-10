@@ -424,8 +424,26 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
       field.handleChange(next);
       return;
     }
+    if (
+      !config.required &&
+      selectedValues.some((item) => areChoiceValuesEqual(item, value))
+    ) {
+      field.handleChange(null);
+      return;
+    }
     field.handleChange(value);
   };
+
+  const canClearSelection = !config.required && selectedValues.length > 0;
+
+  const clearSelection = React.useCallback(
+    (event?: React.MouseEvent<HTMLElement>) => {
+      event?.preventDefault();
+      event?.stopPropagation();
+      field.handleChange(config.multiple ? [] : null);
+    },
+    [config.multiple, field],
+  );
 
   React.useEffect(() => {
     setHighlightedIndex((current) => {
@@ -555,57 +573,74 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
       <div className="flex items-start gap-2">
         <div className="flex-1">
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                data-slot="button"
-                className={cn(
-                  "h-auto min-h-12 w-full justify-between rounded-xl border border-input/70 bg-muted/5 px-4 py-2.5 text-left text-[13.5px] font-medium transition-all duration-300 ease-out",
-                  "hover:border-primary/40 hover:bg-muted/8 hover:shadow-inner hover:shadow-primary/1",
-                  "focus:border-primary focus:ring-4 focus:ring-primary/10 data-[state=open]:border-primary data-[state=open]:ring-4 data-[state=open]:ring-primary/10",
-                  selectedValues.length > 0
-                    ? "border-primary/20 bg-primary/3"
-                    : "",
-                )}
-              >
-                <div className="flex flex-wrap items-center gap-2 pr-4">
-                  {selectedOptions.length === 0 && (
-                     <Database className="mr-1 size-4 text-primary/40 shrink-0" />
+            <div className="relative">
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="outline"
+                  data-slot="button"
+                  className={cn(
+                    "h-auto min-h-12 w-full justify-between rounded-xl border border-input/70 bg-muted/5 px-4 py-2.5 text-left text-[13.5px] font-medium transition-all duration-300 ease-out",
+                    "hover:border-primary/40 hover:bg-muted/8 hover:shadow-inner hover:shadow-primary/1",
+                    "focus:border-primary focus:ring-4 focus:ring-primary/10 data-[state=open]:border-primary data-[state=open]:ring-4 data-[state=open]:ring-primary/10",
+                    canClearSelection ? "pr-12" : "",
+                    selectedValues.length > 0
+                      ? "border-primary/20 bg-primary/3"
+                      : "",
                   )}
-                  {selectedOptions.length > 0 ? (
-                    selectedOptions.map((opt) => (
-                      <Badge
-                        key={opt.value}
-                        variant="secondary"
-                        className="group/badge h-7 rounded-lg bg-primary/5 text-primary hover:bg-primary/10 transition-all border-none px-2.5 text-[11.5px] font-bold"
-                      >
-                        {opt.label}
-                        {config.multiple && (
-                          <X
-                            className="ml-2 size-3 cursor-pointer opacity-40 group-hover/badge:opacity-100 transition-opacity"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggle(opt.value);
-                            }}
-                          />
-                        )}
-                      </Badge>
-                    ))
-                  ) : (
-                    <span className="text-muted-foreground/60 font-medium">
-                      {config.placeholder ?? "Rechercher une relation..."}
-                    </span>
-                  )}
-                </div>
-                <div className="flex items-center gap-2">
-                  {loading ? (
-                    <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                  ) : (
-                    <ChevronDown className="size-4 opacity-30 transition-transform duration-300 group-data-[state=open]:rotate-180" />
-                  )}
-                </div>
-              </Button>
-            </DropdownMenuTrigger>
+                >
+                  <div className="flex flex-wrap items-center gap-2 pr-4">
+                    {selectedOptions.length === 0 && (
+                       <Database className="mr-1 size-4 text-primary/40 shrink-0" />
+                    )}
+                    {selectedOptions.length > 0 ? (
+                      selectedOptions.map((opt) => (
+                        <Badge
+                          key={opt.value}
+                          variant="secondary"
+                          className="group/badge h-7 rounded-lg bg-primary/5 text-primary hover:bg-primary/10 transition-all border-none px-2.5 text-[11.5px] font-bold"
+                        >
+                          {opt.label}
+                          {config.multiple && (
+                            <X
+                              className="ml-2 size-3 cursor-pointer opacity-40 group-hover/badge:opacity-100 transition-opacity"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toggle(opt.value);
+                              }}
+                            />
+                          )}
+                        </Badge>
+                      ))
+                    ) : (
+                      <span className="text-muted-foreground/60 font-medium">
+                        {config.placeholder ?? "Rechercher une relation..."}
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {loading ? (
+                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                    ) : (
+                      <ChevronDown className="size-4 opacity-30 transition-transform duration-300 group-data-[state=open]:rotate-180" />
+                    )}
+                  </div>
+                </Button>
+              </DropdownMenuTrigger>
+              {canClearSelection ? (
+                <button
+                  type="button"
+                  aria-label="Effacer la sélection"
+                  className="absolute right-8 top-1/2 z-10 inline-flex size-7 -translate-y-1/2 items-center justify-center rounded-lg text-muted-foreground/50 transition-colors hover:bg-muted/60 hover:text-foreground"
+                  onMouseDown={(event) => {
+                    event.preventDefault();
+                    event.stopPropagation();
+                  }}
+                  onClick={clearSelection}
+                >
+                  <X className="size-3.5" />
+                </button>
+              ) : null}
+            </div>
             <DropdownMenuContent
               className="w-96 rounded-2xl border border-border/50 bg-popover/95 backdrop-blur-xl p-0 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-300"
               align="start"

@@ -201,7 +201,7 @@ tr[data-row-stripe][data-state="selected"] {
   font-size: 14px;
 }
 :root[data-font-size="md"] {
-  font-size: 16px;
+  font-size: 15px;
 }
 :root[data-font-size="lg"] {
   font-size: 18px;
