@@ -89,15 +89,15 @@ export function NavMain({ navigationLinks }: NavMainProps) {
 
  return (
  <SidebarGroup className="py-0">
- <SidebarGroupContent className="flex flex-col gap-6">
+ <SidebarGroupContent className="flex flex-col gap-3">
  {visibleSections.map((section) => (
- <div key={section.id} className="space-y-2">
+ <div key={section.id} className="space-y-1">
  {!isCollapsed && (
- <SidebarGroupLabel className="px-2 text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground/50">
+ <SidebarGroupLabel className="px-2 py-2 text-[10px] font-bold uppercase tracking-[0.15em] text-muted-foreground/50">
  {section.label}
  </SidebarGroupLabel>
  )}
- <SidebarMenu className="gap-1">
+ <SidebarMenu className="gap-0.5">
  {section.items
  .filter((item) => !item.hidden)
  .map((item, index) => {
@@ -123,7 +123,7 @@ export function NavMain({ navigationLinks }: NavMainProps) {
  asChild
  tooltip={item.title}
  className={cn(
- "relative h-10 w-full transition-all duration-200 group/btn overflow-hidden ",
+ "relative h-9 w-full transition-all duration-200 group/btn overflow-hidden ",
  isItemActive
  ? "bg-primary/10 text-primary font-bold shadow-xs ring-1 ring-primary/20"
  : "text-muted-foreground/80 hover:bg-sidebar-accent/50 hover:text-foreground"
@@ -142,7 +142,7 @@ export function NavMain({ navigationLinks }: NavMainProps) {
  <div className="absolute inset-0 -z-10 scale-[2.5] bg-primary/20 blur-xl animate-pulse" />
  )}
  <item.icon className={cn(
- "size-4.5 shrink-0 transition-transform duration-300 group-hover/btn:scale-110 relative z-10",
+ "size-4 shrink-0 transition-transform duration-300 group-hover/btn:scale-110 relative z-10",
  isItemActive ? "text-primary drop-shadow-[0_0_8px_rgba(var(--primary),0.5)]" : "text-muted-foreground/60 group-hover/btn:text-foreground"
  )} />
  </div>
@@ -178,7 +178,7 @@ export function NavMain({ navigationLinks }: NavMainProps) {
  <SidebarMenuButton
  tooltip={item.title}
  className={cn(
- "h-10 transition-all duration-200 group/btn relative overflow-hidden",
+ "h-9 transition-all duration-200 group/btn relative overflow-hidden",
  isItemActive && !isOpen
  ? "bg-primary/10 text-primary font-bold shadow-xs ring-1 ring-primary/20"
  : "text-muted-foreground/80 hover:bg-sidebar-accent/50 hover:text-foreground"
@@ -193,7 +193,7 @@ export function NavMain({ navigationLinks }: NavMainProps) {
  <div className="absolute inset-0 -z-10 scale-[2.5] bg-primary/20 blur-xl animate-pulse" />
  )}
  <item.icon className={cn(
- "size-4.5 shrink-0 transition-transform duration-300 group-hover/btn:scale-110 relative z-10",
+ "size-4 shrink-0 transition-transform duration-300 group-hover/btn:scale-110 relative z-10",
  isItemActive ? "text-primary drop-shadow-[0_0_8px_rgba(var(--primary),0.5)]" : "text-muted-foreground/60 group-hover/btn:text-foreground"
  )} />
  </div>
@@ -222,7 +222,7 @@ export function NavMain({ navigationLinks }: NavMainProps) {
  <SidebarMenuSubButton
  asChild
  className={cn(
- "h-8 transition-all duration-200 ",
+ "h-7 transition-all duration-200 ",
  isChildActive
  ? "bg-primary/5 text-primary font-semibold"
  : "text-muted-foreground/70 hover:bg-sidebar-accent/30 hover:text-foreground"

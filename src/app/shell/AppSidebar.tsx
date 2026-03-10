@@ -92,7 +92,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
  }}
  />
 
- <SidebarHeader className="relative z-10 p-5">
+ <SidebarHeader className="relative z-10 p-3 pb-2">
  <div className="flex items-center justify-between gap-2">
  <Link
  to="/"
@@ -101,7 +101,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
  isCollapsed ? "w-10 justify-center" : "w-full",
  )}
  >
- <div className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden bg-gradient-to-br from-primary/20 to-primary/5 p-2 shadow-2xl ring-1 ring-primary/10 transition-all duration-500 group-hover:scale-110 group-hover:shadow-primary/20 group-hover:ring-primary/30 group-active:scale-95">
+ <div className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden bg-gradient-to-br from-primary/20 to-primary/5 p-2 shadow-2xl ring-1 ring-primary/10 transition-all duration-500 group-hover:scale-110 group-hover:shadow-primary/20 group-hover:ring-primary/30 group-active:scale-95">
  <img
  src={LogoMark}
  alt={BRANDING.logoAlt}
@@ -116,7 +116,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
  <span className="text-sm font-black tracking-tighter text-foreground leading-none">
  {BRANDING.productName}
  </span>
- <Badge className="h-3.5 px-1 py-0 text-[8px] font-black uppercase bg-primary/10 text-primary border-none">
+ <Badge className="h-4 px-1 py-0 text-[10px] font-black uppercase bg-primary/10 text-primary border-none">
  {BRANDING.editionLabel}
  </Badge>
  </div>
@@ -132,10 +132,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
  <TooltipProvider>
  <Tooltip delayDuration={0}>
  <TooltipTrigger asChild>
- <div className="flex h-8 w-8 cursor-help items-center justify-center border border-border/40 bg-background/40 backdrop-blur-md shadow-sm transition-all hover:bg-background/80 hover:border-primary/20 group/status">
- <div className="relative h-2 w-2">
+ <div className="flex h-7 w-7 cursor-help items-center justify-center border border-border/40 bg-background/40 backdrop-blur-md shadow-sm transition-all hover:bg-background/80 hover:border-primary/20 group/status">
+ <div className="relative h-1.5 w-1.5">
  <div className="absolute inset-0 animate-ping bg-emerald-500/40 opacity-75" />
- <div className="relative h-2 w-2 bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.6)] transition-all group-hover/status:scale-125" />
+ <div className="relative h-1.5 w-1.5 bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.6)] transition-all group-hover/status:scale-125" />
  </div>
  </div>
  </TooltipTrigger>
@@ -144,7 +144,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
  className="bg-background/95 backdrop-blur-2xl border-border/40 shadow-2xl p-3 "
  >
  <div className="flex items-center gap-3">
- <div className="h-8 w-8 bg-emerald-500/10 flex items-center justify-center">
+ <div className="h-7 w-7 bg-emerald-500/10 flex items-center justify-center">
  <Zap className="size-4 text-emerald-500" />
  </div>
  <div className="flex flex-col">
@@ -164,11 +164,11 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
  </div>
  </SidebarHeader>
 
- <SidebarContent className="relative z-10 custom-scrollbar px-3 py-2 space-y-6">
+ <SidebarContent className="relative z-10 custom-scrollbar px-2 py-1 space-y-3">
  <NavMain navigationLinks={navigationLinks} />
  </SidebarContent>
 
- <SidebarFooter className="relative z-10 p-4">
+ <SidebarFooter className="relative z-10 p-2">
  <div
  className={cn(
  " transition-all duration-500",
