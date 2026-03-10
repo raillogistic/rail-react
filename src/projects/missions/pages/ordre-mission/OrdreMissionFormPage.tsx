@@ -2,6 +2,23 @@ import { useParams } from "react-router-dom";
 import { ModelForm } from "@/widgets/model-form";
 import { today } from "@/widgets/model-form/inputs/date";
 
+type OrdreMissionFormValues = {
+  beneficiaire?: string;
+  objet?: string;
+  valableEtranger?: boolean;
+  destination?: string;
+  dateDepart?: string;
+  dateRetour?: string;
+  repas?: number;
+  hebergement?: number;
+  primeRepas?: number | string;
+  avancePrime?: number | string;
+  moyenTransport?: string;
+  vehicule?: string;
+  commentaire?: string;
+  adresseAdministrative?: string;
+};
+
 export function OrdreMissionFormPage() {
   const { id = "" } = useParams();
   const isUpdate = Boolean(id);
@@ -19,7 +36,7 @@ export function OrdreMissionFormPage() {
           choisi.
         </p>
       </header>
-      <ModelForm
+      <ModelForm<OrdreMissionFormValues>
         title={isUpdate ? "Modifier Ordre Mission" : "Creer Ordre Mission"}
         app="mission"
         model="OrdreMission"
@@ -42,7 +59,50 @@ export function OrdreMissionFormPage() {
           "commentaire",
           "adresseAdministrative",
         ]}
-        state={{ defaultValues: { dateDepart: today(), dateRetour: today() } }}
+        generatedSections={[
+          {
+            id: "general",
+            title: "Informations generales",
+            fields: [
+              "objet",
+              "beneficiaire",
+              "adresseAdministrative",
+              "destination",
+              "valableEtranger",
+            ],
+            columns: 6,
+          },
+          {
+            id: "dates",
+            title: "Dates de mission",
+            description: "Precisez la periode couverte par l'ordre de mission.",
+            fields: ["dateDepart", "dateRetour"],
+            columns: 6,
+          },
+          {
+            id: "primes",
+            title: "Primes et prise en charge",
+            fields: ["repas", "hebergement", "avancePrime"],
+            columns: 6,
+          },
+          {
+            id: "transport",
+            title: "Transport",
+            description:
+              "Selectionnez le moyen de transport et le vehicule si necessaire.",
+            fields: ["moyenTransport", "vehicule"],
+            columns: 6,
+          },
+          {
+            id: "notes",
+            title: "Commentaire",
+            fields: ["commentaire"],
+            columns: 6,
+          },
+        ]}
+        state={{
+          defaultValues: { dateDepart: today(), dateRetour: today() },
+        }}
         fieldOverrides={{
           avancePrime: {},
           repas: {
@@ -75,26 +135,10 @@ export function OrdreMissionFormPage() {
           },
         }}
         layout={{
+          mode: { type: "accordion" },
           columns: 6,
           defaultColSpan: 2,
-          ordering: {
-            order: [
-              "objet",
-              "beneficiaire",
-              "adresseAdministrative",
-              "destination",
-              "dateDepart",
-              "dateRetour",
-              "repas",
-              "hebergement",
-              "primeRepas",
-              "avancePrime",
-              "moyenTransport",
-              "vehicule",
-              "valableEtranger",
-            ],
-            tailing: ["commentaire"],
-          },
+          showSectionHeaders: true,
         }}
         behavior={{
           conditions: {

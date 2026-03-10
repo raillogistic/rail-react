@@ -528,8 +528,13 @@ export function applyGeneratedSectionLayout<
 ): FormSchema<TValues> {
  if (!generatedSections?.length) return schema;
 
+ const schemaFields = collectUniqueSchemaFields(schema);
+ if (schemaFields.length === 0) {
+ return schema;
+ }
+
  const availableFields = new Map(
- collectUniqueSchemaFields(schema).map((field) => [field.name, field] as const),
+ schemaFields.map((field) => [field.name, field] as const),
  );
  const assignedFields = new Set<string>();
  const assignedSectionIds = new Set<string>();
