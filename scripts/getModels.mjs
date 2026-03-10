@@ -5,7 +5,8 @@
  * Required env:
  *   - VITE_TEST_USERNAME
  *   - VITE_TEST_PASSWORD
- *   - VITE_TEST_GRAPHQL_ENDPOINT
+ *   - VITE_AUTH_ENDPOINT or VITE_TEST_GRAPHQL_ENDPOINT
+ *   - VITE_API_ENDPOINT or VITE_TEST_GRAPHQL_ENDPOINT
  * Optional env:
  *   - MODELS_APPS (comma-separated app labels allowlist)
  *   - MODELS_OUTPUT_PATH (default: src/models.ts)
@@ -144,6 +145,40 @@ function requireEnv(name) {
   return value;
 }
 
+function normalizeGraphQLEndpoint(endpoint) {
+  const trimmed = String(endpoint || "").trim();
+  if (!trimmed) {
+    return trimmed;
+  }
+
+  try {
+    const url = new URL(trimmed);
+    if (!url.pathname.endsWith("/")) {
+      url.pathname = `${url.pathname}/`;
+    }
+    return url.toString();
+  } catch {
+    return trimmed.endsWith("/") ? trimmed : `${trimmed}/`;
+  }
+}
+
+function resolveEndpoint(endpoint, baseUrl) {
+  const trimmed = String(endpoint || "").trim();
+  if (!trimmed) {
+    return trimmed;
+  }
+
+  try {
+    return new URL(trimmed).toString();
+  } catch {
+    const normalizedBase = String(baseUrl || "").trim();
+    if (!normalizedBase) {
+      return trimmed;
+    }
+    return new URL(trimmed, normalizedBase).toString();
+  }
+}
+
 function toPascalCase(value) {
   return String(value || "")
     .split(/[_\s-]+/)
@@ -194,10 +229,14 @@ async function postGraphQL(endpoint, query, variables = {}, token) {
     body: JSON.stringify({ query, variables }),
   });
 
-  const payload = await response.json().catch(() => ({}));
+  const rawBody = await response.text();
+  const payload = rawBody
+    ? await Promise.resolve().then(() => JSON.parse(rawBody)).catch(() => ({}))
+    : {};
   if (!response.ok) {
+    const details = rawBody || JSON.stringify(payload);
     throw new Error(
-      `GraphQL request failed (${response.status}): ${JSON.stringify(payload)}`,
+      `GraphQL request failed (${response.status}): ${details}`,
     );
   }
   if (payload.errors?.length) {
@@ -375,15 +414,49 @@ function buildOutput(modelSchemas) {
 }
 
 async function run() {
-  const endpoint = requireEnv("VITE_TEST_GRAPHQL_ENDPOINT");
+  const backendUrl = (process.env.VITE_BACKEND_URL || "").trim();
+  const rawLegacyEndpoint = (process.env.VITE_TEST_GRAPHQL_ENDPOINT || "").trim();
+  const rawAuthEndpoint =
+    (process.env.VITE_AUTH_ENDPOINT || "").trim() || rawLegacyEndpoint;
+  const rawApiEndpoint =
+    (process.env.VITE_API_ENDPOINT || "").trim() || rawLegacyEndpoint;
+  const authEndpoint = normalizeGraphQLEndpoint(
+    resolveEndpoint(rawAuthEndpoint, backendUrl),
+  );
+  const apiEndpoint = normalizeGraphQLEndpoint(
+    resolveEndpoint(rawApiEndpoint, backendUrl),
+  );
   const username = requireEnv("VITE_TEST_USERNAME");
   const password = requireEnv("VITE_TEST_PASSWORD");
 
-  console.log(`[getModels] Authenticating against ${endpoint}`);
-  const token = await login(endpoint, username, password);
+  if (!authEndpoint) {
+    throw new Error(
+      "Missing required environment variable: VITE_AUTH_ENDPOINT or VITE_TEST_GRAPHQL_ENDPOINT",
+    );
+  }
+  if (!apiEndpoint) {
+    throw new Error(
+      "Missing required environment variable: VITE_API_ENDPOINT or VITE_TEST_GRAPHQL_ENDPOINT",
+    );
+  }
 
-  console.log("[getModels] Fetching available models");
-  const available = await postGraphQL(endpoint, AVAILABLE_MODELS_QUERY, {}, token);
+  if (authEndpoint !== rawAuthEndpoint) {
+    console.log(`[getModels] Normalized auth endpoint to ${authEndpoint}`);
+  }
+  if (apiEndpoint !== rawApiEndpoint) {
+    console.log(`[getModels] Normalized API endpoint to ${apiEndpoint}`);
+  }
+
+  console.log(`[getModels] Authenticating against ${authEndpoint}`);
+  const token = await login(authEndpoint, username, password);
+
+  console.log(`[getModels] Fetching available models from ${apiEndpoint}`);
+  const available = await postGraphQL(
+    apiEndpoint,
+    AVAILABLE_MODELS_QUERY,
+    {},
+    token,
+  );
   const discoveredModels = Array.isArray(available.availableModels)
     ? available.availableModels
     : [];
@@ -408,14 +481,16 @@ async function run() {
     throw new Error("No models discovered for generation.");
   }
 
-  console.log(`[getModels] Fetching schemas for ${selectedModels.length} models`);
+  console.log(
+    `[getModels] Fetching schemas for ${selectedModels.length} models from ${apiEndpoint}`,
+  );
   const modelSchemas = [];
   const failures = [];
 
   for (const modelRef of selectedModels) {
     try {
       const payload = await postGraphQL(
-        endpoint,
+        apiEndpoint,
         MODEL_SCHEMA_QUERY,
         { app: modelRef.app, model: modelRef.model },
         token,

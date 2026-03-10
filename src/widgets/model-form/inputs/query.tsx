@@ -568,7 +568,10 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
                     : "",
                 )}
               >
-                <div className="flex flex-wrap gap-2 pr-4">
+                <div className="flex flex-wrap items-center gap-2 pr-4">
+                  {selectedOptions.length === 0 && (
+                     <Database className="mr-1 size-4 text-primary/40 shrink-0" />
+                  )}
                   {selectedOptions.length > 0 ? (
                     selectedOptions.map((opt) => (
                       <Badge

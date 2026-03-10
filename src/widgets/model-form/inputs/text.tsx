@@ -21,7 +21,7 @@ import type {
   TextFieldConfig,
 } from "./types";
 import { Textarea } from "@/shared/ui/kit/textarea";
-import { File, X, FileJson, CloudUpload } from "lucide-react";
+import { File, X, FileJson, CloudUpload, Type, Mail, Lock, Palette, AlignLeft } from "lucide-react";
 
 type Props = FieldComponentProps<TextFieldConfig | FileFieldConfig>;
 
@@ -57,6 +57,21 @@ const TextInput: React.FC<Props> = ({ config, field, form }) => {
     fieldErrors ?? resolveRequiredError(config, field.state.value, showError);
   const fieldId = field.name;
 
+  const Icon = React.useMemo(() => {
+    switch (config.type) {
+      case "email":
+        return Mail;
+      case "password":
+        return Lock;
+      case "color":
+        return Palette;
+      case "textarea":
+        return AlignLeft;
+      default:
+        return Type;
+    }
+  }, [config.type]);
+
   // ── Textarea ─────────────────────────────────────────────────────────
   if (config.type === "textarea") {
     const value = (field.state.value as string) ?? "";
@@ -67,24 +82,30 @@ const TextInput: React.FC<Props> = ({ config, field, form }) => {
         error={error}
         dirty={dirty}
       >
-        <Textarea
-          id={fieldId}
-          data-slot="textarea"
-          className={cn(
-            "min-h-32 w-full resize-y rounded-xl border border-input/70 bg-muted/5 px-4 py-3 text-[13.5px] transition-all duration-300 ease-out",
-            "hover:border-primary/40 hover:bg-muted/8 hover:shadow-inner",
-            "focus:border-primary focus:ring-4 focus:ring-primary/10 focus-visible:ring-0",
-            config.readOnly && "cursor-default bg-muted/20 text-muted-foreground opacity-80",
-            config.disabled && "cursor-not-allowed opacity-50 grayscale-[0.5]",
-          )}
-          rows={config.rows ?? 4}
-          placeholder={config.placeholder}
-          value={value}
-          onChange={(event) => field.handleChange(event.target.value)}
-          onBlur={field.handleBlur}
-          readOnly={config.readOnly}
-          disabled={config.disabled}
-        />
+        <div className="relative group/text">
+          <div className="pointer-events-none absolute left-4 top-4 text-muted-foreground/30 transition-all duration-300 group-focus-within/text:text-primary/50 group-focus-within/text:scale-110">
+            <Icon className="size-4.5 stroke-[2.5]" />
+          </div>
+          <Textarea
+            id={fieldId}
+            data-slot="textarea"
+            className={cn(
+              "min-h-32 w-full resize-y rounded-xl border border-input/70 bg-muted/5 pl-11 pr-4 py-3 text-[13.5px] transition-all duration-300 ease-out",
+              "hover:border-primary/40 hover:bg-muted/8 hover:shadow-inner",
+              "focus:border-primary focus:ring-4 focus:ring-primary/10 focus-visible:ring-0",
+              config.readOnly &&
+                "cursor-default bg-muted/20 text-muted-foreground opacity-80",
+              config.disabled && "cursor-not-allowed opacity-50 grayscale-[0.5]",
+            )}
+            rows={config.rows ?? 4}
+            placeholder={config.placeholder}
+            value={value}
+            onChange={(event) => field.handleChange(event.target.value)}
+            onBlur={field.handleBlur}
+            readOnly={config.readOnly}
+            disabled={config.disabled}
+          />
+        </div>
       </FieldWrapper>
     );
   }
@@ -228,27 +249,33 @@ const TextInput: React.FC<Props> = ({ config, field, form }) => {
 
   return (
     <FieldWrapper config={config} fieldId={fieldId} error={error} dirty={dirty}>
-      <Input
-        id={fieldId}
-        data-slot="input"
-        type={inputType}
-        placeholder={config.placeholder}
-        value={value}
-        minLength={config.minLength}
-        maxLength={config.maxLength}
-        onChange={(event) => field.handleChange(event.target.value)}
-        onBlur={field.handleBlur}
-        readOnly={config.readOnly}
-        disabled={config.disabled}
-        className={cn(
-          "h-11 rounded-xl border border-input/70 bg-muted/5 px-4 text-[13.5px] font-medium transition-all duration-300 ease-out",
-          "hover:border-primary/40 hover:bg-muted/8 hover:shadow-inner",
-          "focus:border-primary focus:ring-4 focus:ring-primary/10 focus-visible:ring-0",
-          inputType === "color" && "p-1 h-12 cursor-pointer border-2",
-          safeInputProps?.className,
-        )}
-        {...safeInputProps}
-      />
+      <div className="relative group/text">
+        <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/30 transition-all duration-300 group-focus-within/text:text-primary/50 group-focus-within/text:scale-110">
+          <Icon className="size-4.5 stroke-[2.5]" />
+        </div>
+        <Input
+          id={fieldId}
+          data-slot="input"
+          type={inputType}
+          placeholder={config.placeholder}
+          value={value}
+          minLength={config.minLength}
+          maxLength={config.maxLength}
+          onChange={(event) => field.handleChange(event.target.value)}
+          onBlur={field.handleBlur}
+          readOnly={config.readOnly}
+          disabled={config.disabled}
+          className={cn(
+            "h-11 rounded-xl border border-input/70 bg-muted/5 pl-11 pr-4 text-[13.5px] font-medium transition-all duration-300 ease-out",
+            "hover:border-primary/40 hover:bg-muted/8 hover:shadow-inner",
+            "focus:border-primary focus:ring-4 focus:ring-primary/10 focus-visible:ring-0",
+            inputType === "color" && "pl-11 h-12 cursor-pointer border-2",
+            config.disabled && "cursor-not-allowed opacity-60 grayscale-[0.5]",
+            safeInputProps?.className,
+          )}
+          {...safeInputProps}
+        />
+      </div>
     </FieldWrapper>
   );
 };

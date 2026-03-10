@@ -70,11 +70,12 @@ const NumberInput: React.FC<Props> = ({ config, field, form }) => {
           onBlur={field.handleBlur}
           disabled={config.disabled}
           className={cn(
-            "h-11 rounded-xl border border-input/60 bg-background pl-11 pr-4 text-[13.5px] font-bold transition-all duration-300 ease-out",
-            "hover:border-primary/30 hover:bg-muted/3",
+            "h-11 rounded-xl border border-input/70 bg-muted/5 pl-11 pr-4 text-[13.5px] font-bold transition-all duration-300 ease-out",
+            "hover:border-primary/40 hover:bg-muted/8 hover:shadow-inner",
             "focus:border-primary focus:ring-4 focus:ring-primary/10 focus-visible:ring-0",
             (config.type === "slider" || config.type === "range") &&
               "h-8 px-0 border-none bg-transparent focus:ring-0",
+            config.disabled && "cursor-not-allowed opacity-60 grayscale-[0.5]",
           )}
         />
 

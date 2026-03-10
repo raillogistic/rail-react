@@ -17,7 +17,7 @@ import {
   resolveRequiredError,
 } from "./common";
 import type { BooleanFieldConfig, FieldComponentProps } from "./types";
-import { CheckCircle2, XCircle } from "lucide-react";
+import { CheckCircle2, XCircle, ToggleLeft, ToggleRight, CheckSquare, Square } from "lucide-react";
 
 type Props = FieldComponentProps<BooleanFieldConfig, boolean>;
 
@@ -62,6 +62,13 @@ const BooleanInput: React.FC<Props> = ({ config, field, form }) => {
           )}
           onClick={() => !config.disabled && field.handleChange(!value)}
         >
+          <div className="flex size-10 items-center justify-center rounded-xl bg-background/50 shadow-inner group-hover/bool:bg-background transition-colors">
+            {value ? (
+              <ToggleRight className="size-5.5 text-primary" />
+            ) : (
+              <ToggleLeft className="size-5.5 text-muted-foreground/40" />
+            )}
+          </div>
           <Switch
             id={fieldId}
             data-slot="checkbox"
@@ -102,6 +109,13 @@ const BooleanInput: React.FC<Props> = ({ config, field, form }) => {
         )}
         onClick={() => !config.disabled && field.handleChange(!value)}
       >
+        <div className="flex size-10 items-center justify-center rounded-xl bg-background/50 shadow-inner group-hover/bool:bg-background transition-colors">
+          {value ? (
+            <CheckSquare className="size-5.5 text-primary" />
+          ) : (
+            <Square className="size-5.5 text-muted-foreground/40" />
+          )}
+        </div>
         <div className="relative flex size-5.5 items-center justify-center">
             <Checkbox
               id={fieldId}
