@@ -13,7 +13,6 @@ import {
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from "@/shared/ui/kit/select";
 import {
   DropdownMenu,
@@ -269,6 +268,9 @@ const ChoiceInput: React.FC<Props> = ({ config, field, form }) => {
     (config.required ? (config.options[0]?.value ?? "") : "");
   const canClearSelection = !config.required && Boolean(selectedValue);
   const selectedValueKey = String(selectedValue);
+  const selectedOption = config.options.find(
+    (option) => String(option.value) === selectedValueKey,
+  );
 
   return (
     <FieldWrapper
@@ -297,9 +299,18 @@ const ChoiceInput: React.FC<Props> = ({ config, field, form }) => {
                  "size-4 transition-all duration-300",
                  selectedValue ? "text-primary scale-110" : "text-muted-foreground/30"
                )} />
-               <SelectValue
-                 placeholder={config.placeholder ?? "Choisir une option"}
-               />
+               <span
+                 className={cn(
+                   "block truncate",
+                   selectedOption
+                     ? "text-foreground"
+                     : "text-muted-foreground",
+                 )}
+               >
+                 {selectedOption?.label ??
+                   config.placeholder ??
+                   "Choisir une option"}
+               </span>
             </div>
           </SelectTrigger>
           <SelectContent 
