@@ -23,6 +23,7 @@ export type ReviewModeProps<TValues> = {
  sections: FormSectionConfig[];
  form: UseFormReturn<TValues>;
  columns: number;
+ defaultColSpan?: number;
  variant: "default" | "compact" | "popup";
  config: ReviewConfig<TValues>;
  hiddenFields?: Set<string>;
@@ -35,6 +36,7 @@ export const ReviewMode = <TValues extends Record<string, any>>({
  sections,
  form,
  columns,
+ defaultColSpan,
  variant,
  config,
  hiddenFields,
@@ -123,6 +125,7 @@ export const ReviewMode = <TValues extends Record<string, any>>({
  sections={sections}
  form={form}
  columns={columns}
+ defaultColSpan={defaultColSpan}
  showHeaders
  variant={variant}
  hiddenFields={hiddenFields}

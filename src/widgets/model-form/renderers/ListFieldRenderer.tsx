@@ -52,6 +52,7 @@ export type ListFieldRendererProps<TValues> = {
   form: UseFormReturn<TValues>;
   path: string;
   colSpan?: number;
+  defaultColSpan?: number;
   globalReadOnly?: boolean;
   globalDisabled?: boolean;
   hiddenFields?: Set<string>;
@@ -127,6 +128,7 @@ export const ListFieldRenderer = <TValues extends Record<string, any>>({
   form,
   path,
   colSpan,
+  defaultColSpan,
   globalReadOnly,
   globalDisabled,
   hiddenFields,
@@ -164,6 +166,7 @@ export const ListFieldRenderer = <TValues extends Record<string, any>>({
           fieldApi={fieldApi}
           path={path}
           colSpan={colSpan}
+          defaultColSpan={defaultColSpan}
           itemGridClassName={itemGridClassName}
           itemGridGapStyle={itemGridGapStyle}
           globalReadOnly={globalReadOnly}
@@ -181,6 +184,7 @@ type ListFieldItemsProps<TValues extends Record<string, any>> = {
   fieldApi: any;
   path: string;
   colSpan?: number;
+  defaultColSpan?: number;
   itemGridClassName: string;
   itemGridGapStyle?: React.CSSProperties;
   globalReadOnly?: boolean;
@@ -193,6 +197,7 @@ const ListFieldItems = <TValues extends Record<string, any>>({
   fieldApi,
   path,
   colSpan,
+  defaultColSpan,
   itemGridClassName,
   itemGridGapStyle,
   form,
@@ -563,6 +568,7 @@ const ListFieldItems = <TValues extends Record<string, any>>({
                       config={config}
                       path={path}
                       form={form}
+                      defaultColSpan={defaultColSpan}
                       itemGridClassName={itemGridClassName}
                       itemGridGapStyle={itemGridGapStyle}
                       isReadOnly={isReadOnly}
@@ -601,6 +607,7 @@ type SortableListItemProps<TValues> = {
   config: ListFieldConfig;
   path: string;
   form: UseFormReturn<TValues>;
+  defaultColSpan?: number;
   itemGridClassName: string;
   itemGridGapStyle?: React.CSSProperties;
   isReadOnly?: boolean;
@@ -624,6 +631,7 @@ const SortableListItem = <TValues extends Record<string, any>>({
   config,
   path,
   form,
+  defaultColSpan,
   itemGridClassName,
   itemGridGapStyle,
   isReadOnly,
@@ -765,7 +773,8 @@ const SortableListItem = <TValues extends Record<string, any>>({
               config={child}
               path={`${path}.${index}.${child.name}`}
               form={form}
-              colSpan={child.colSpan ?? 1}
+              colSpan={child.colSpan ?? defaultColSpan}
+              defaultColSpan={defaultColSpan}
               globalReadOnly={isReadOnly}
               globalDisabled={globalDisabled}
               hiddenFields={hiddenFields}

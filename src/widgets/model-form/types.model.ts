@@ -62,6 +62,14 @@ export type ModelFormFieldOverrides = Record<string, ModelFormFieldOverrideValue
 export type ModelFormSectionOverrides<TValues extends Record<string, unknown>> =
  Record<string, ModelFormSectionOverrideValue<TValues>>;
 
+export type ModelFormGeneratedSectionField = string | FormFieldConfig;
+
+export type ModelFormGeneratedSection<
+ TValues extends Record<string, unknown> = Record<string, unknown>,
+> = Omit<FormSectionConfig<TValues>, "fields"> & {
+ fields: ModelFormGeneratedSectionField[];
+};
+
 export type ModelFormNestedAddButtonConfig =
  | boolean
  | string
@@ -169,6 +177,7 @@ export interface ModelFormProps<
  excludeRelationships?: string[];
  fieldOverrides?: ModelFormFieldOverrides;
  sectionOverrides?: ModelFormSectionOverrides<TFormValues>;
+ generatedSections?: ModelFormGeneratedSection<TFormValues>[];
 
  validatorExtensions?: GeneratedValidatorExtensionMap;
  legacySchema?: FormSchema<TFormValues>;

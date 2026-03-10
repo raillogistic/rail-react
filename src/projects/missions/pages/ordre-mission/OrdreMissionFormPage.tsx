@@ -1,5 +1,6 @@
 import { useParams } from "react-router-dom";
 import { ModelForm } from "@/widgets/model-form";
+import { today } from "@/widgets/model-form/inputs/date";
 
 export function OrdreMissionFormPage() {
   const { id = "" } = useParams();
@@ -30,46 +31,67 @@ export function OrdreMissionFormPage() {
           "objet",
           "valableEtranger",
           "destination",
-          "lieuDepart",
           "dateDepart",
           "dateRetour",
-          "nombreJours",
+          "repas",
+          "hebergement",
+          "primeRepas",
+          "avancePrime",
           "moyenTransport",
           "vehicule",
           "commentaire",
+          "adresseAdministrative",
         ]}
+        state={{ defaultValues: { dateDepart: today(), dateRetour: today() } }}
         fieldOverrides={{
-          beneficiaire: { colSpan: 2 },
-          objet: { colSpan: 2 },
-          destination: { colSpan: 1 },
-          lieuDepart: { colSpan: 1 },
-          nombreJours: {
-            helpText: "Saisie par tranche de 0.5 : 0.5, 1.0, 1.5, 2.0...",
+          avancePrime: {},
+          repas: {
+            helpText:
+              "Nombre de repas pris en charge pour le calcul de la prime.",
+          },
+          dateDepart: { colSpan: 3 },
+          commentaire: { colSpan: 6 },
+          dateRetour: { colSpan: 3 },
+          destination: {
+            colSpan: 6,
+          },
+          hebergement: {
+            helpText:
+              "Nombre d'hebergements pris en charge pour le calcul de la prime.",
+          },
+          primeRepas: {
+            readOnly: true,
+            helpText:
+              "Calcule automatiquement a partir du bareme et du nombre de repas.",
+          },
+          adresseAdministrative: {
+            type: "text",
           },
           vehicule: {
-            colSpan: 2,
             placeholder: "Choisir un vehicule de l'entreprise",
             helpText:
               "Champ visible et obligatoire uniquement pour un vehicule.",
             visible: (values) => values.moyenTransport === "vehicule",
           },
-          valable_etranger: { colSpan: 2 },
-          commentaire: { colSpan: 2 },
         }}
         layout={{
-          columns: 2,
+          columns: 6,
+          defaultColSpan: 2,
           ordering: {
             order: [
-              "beneficiaire",
               "objet",
-              "lieuDepart",
+              "beneficiaire",
+              "adresseAdministrative",
               "destination",
-              "valableEtranger",
               "dateDepart",
               "dateRetour",
-              "nombreJours",
+              "repas",
+              "hebergement",
+              "primeRepas",
+              "avancePrime",
               "moyenTransport",
               "vehicule",
+              "valableEtranger",
             ],
             tailing: ["commentaire"],
           },
@@ -85,7 +107,6 @@ export function OrdreMissionFormPage() {
             },
           },
         }}
-        devtools={{ enabled: true }}
         actions={{
           submitLabel: isUpdate
             ? "Enregistrer les modifications"

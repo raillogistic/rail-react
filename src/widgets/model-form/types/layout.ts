@@ -78,6 +78,8 @@ export interface FormFieldOrderingConfig {
 export interface FormLayoutConfig<TValues = Record<string, any>> {
  /** Default column count for sections (1-6) */
  columns?: number;
+ /** Default field colSpan when a field does not define one explicitly */
+ defaultColSpan?: number;
  /** Vertical gap between rows */
  gap?: number | string;
  /** Adapts spacing for different contexts */

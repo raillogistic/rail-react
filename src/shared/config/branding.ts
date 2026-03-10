@@ -4,11 +4,11 @@
  */
 
 export const BRANDING = {
-  productName: "Rail Starter",
-  productNameLong: "Rail React Starter",
-  editionLabel: "STARTER",
-  platformLabel: "Application Platform",
-  hubLabel: "Workspace Hub",
+  productName: "TRANSTEV",
+  productNameLong: "TRANSTEV",
+  editionLabel: "",
+  platformLabel: "",
+  hubLabel: "",
   logoAlt: "App logo",
 } as const;
 

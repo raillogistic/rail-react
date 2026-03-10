@@ -24,6 +24,7 @@ export type SectionRendererProps<TValues> = {
   section: FormSectionConfig;
   form: UseFormReturn<TValues>;
   columns: number;
+  defaultColSpan?: number;
   showHeaders: boolean;
   variant: "default" | "compact" | "popup";
   hiddenFields?: Set<string>;
@@ -59,6 +60,7 @@ export const SectionRenderer = <TValues extends Record<string, any>>({
   section,
   form,
   columns,
+  defaultColSpan,
   showHeaders,
   variant,
   hiddenFields,
@@ -112,7 +114,8 @@ export const SectionRenderer = <TValues extends Record<string, any>>({
       )}
     >
       {visibleFields.map((field) => {
-        const span = field.type === "list" ? columns : field.colSpan;
+        const span =
+          field.colSpan ?? (field.type === "list" ? columns : defaultColSpan);
         return (
           <FieldRenderer
             key={field.name}
@@ -120,6 +123,7 @@ export const SectionRenderer = <TValues extends Record<string, any>>({
             path={field.name}
             form={form}
             colSpan={span}
+            defaultColSpan={defaultColSpan}
             globalReadOnly={globalReadOnly}
             globalDisabled={globalDisabled}
             hiddenFields={hiddenFields}

@@ -4,6 +4,7 @@ import {
  FileText,
  ArrowRight,
  ClipboardList,
+ Loader2,
  Sparkles,
  Trash2,
  X,
@@ -263,9 +264,15 @@ export function ModelTableBulkActionsBar({
  <Button
  variant="ghost"
  size="icon"
+ aria-label="Suppression en masse"
  className="size-8 text-rose-500 hover:bg-rose-500 hover:text-white transition-all"
+ disabled={!controller.canBulkDelete || controller.bulkDeleteLoading}
  >
+ {controller.bulkDeleteLoading ? (
+ <Loader2 className="size-4 animate-spin" />
+ ) : (
  <Trash2 className="size-4" />
+ )}
  </Button>
  </AlertDialogTrigger>
  </TooltipTrigger>
@@ -273,7 +280,7 @@ export function ModelTableBulkActionsBar({
  side="top"
  className="bg-rose-600 font-bold uppercase text-[9px] tracking-widest text-white"
  >
- Suppression en masse
+ {controller.bulkDeleteDisabledReason || "Suppression en masse"}
  </TooltipContent>
  </Tooltip>
  <AlertDialogContent className="max-w-[420px] border-border/30 shadow-2xl overflow-hidden p-0 bg-background/95 backdrop-blur-2xl">
@@ -304,10 +311,18 @@ export function ModelTableBulkActionsBar({
  Annuler
  </AlertDialogCancel>
  <AlertDialogAction
- onClick={controller.confirmBulkDelete}
+ onClick={() => void controller.confirmBulkDelete()}
+ disabled={!controller.canBulkDelete || controller.bulkDeleteLoading}
  className="h-10 flex-1 bg-rose-500 font-bold text-xs uppercase tracking-wider text-white shadow-lg shadow-rose-500/20 transition-all hover:bg-rose-600 hover:scale-[1.02] active:scale-95"
  >
- Confirmer la suppression
+ {controller.bulkDeleteLoading ? (
+ <>
+ <Loader2 className="mr-2 size-4 animate-spin" />
+ Suppression...
+ </>
+ ) : (
+ "Confirmer la suppression"
+ )}
  </AlertDialogAction>
  </AlertDialogFooter>
  </div>

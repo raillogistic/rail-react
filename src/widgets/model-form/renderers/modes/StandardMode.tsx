@@ -10,6 +10,7 @@ export type StandardModeProps<TValues> = {
  sections: FormSectionConfig[];
  form: UseFormReturn<TValues>;
  columns: number;
+ defaultColSpan?: number;
  showHeaders: boolean;
  variant: "default" | "compact" | "popup";
  hiddenFields?: Set<string>;
@@ -20,10 +21,11 @@ export type StandardModeProps<TValues> = {
 
 export const StandardMode = <TValues extends Record<string, any>>({
  sections,
- form,
- columns,
- showHeaders,
- variant,
+  form,
+  columns,
+  defaultColSpan,
+  showHeaders,
+  variant,
  hiddenFields,
  hiddenSections,
  globalReadOnly,
@@ -41,13 +43,14 @@ export const StandardMode = <TValues extends Record<string, any>>({
  className="animate-in fade-in slide-in-from-bottom-4 duration-500 ease-out"
  style={{ animationDelay:`${index * 100}ms`, animationFillMode: 'both' }}
  >
- <SectionRenderer
- section={section}
- form={form}
- columns={section.columns ?? columns}
- showHeaders={showHeaders}
- variant={variant}
- hiddenFields={hiddenFields}
+         <SectionRenderer
+           section={section}
+           form={form}
+           columns={section.columns ?? columns}
+           defaultColSpan={defaultColSpan}
+           showHeaders={showHeaders}
+           variant={variant}
+           hiddenFields={hiddenFields}
  globalReadOnly={globalReadOnly}
  globalDisabled={globalDisabled}
  />

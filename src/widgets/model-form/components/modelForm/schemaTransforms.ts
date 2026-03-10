@@ -7,6 +7,7 @@ import type {
 import type { ModelFormContract } from "../../types/generatedContract";
 import type {
  ModelFormFieldOverrideValue,
+ ModelFormGeneratedSection,
  ModelFormNestedDefinition,
  ModelFormNestedFieldsOrderMode,
  ModelFormSectionOverrideValue,
@@ -467,6 +468,134 @@ export function materializeNestedRelationFields<
  return {
  ...schema,
  sections: nextSections,
+ };
+}
+
+function slugifyGeneratedSectionId(title: string, index: number): string {
+ const normalized = title
+ .trim()
+ .toLowerCase()
+ .replace(/[^a-z0-9]+/g, "-")
+ .replace(/^-+|-+$/g, "");
+ return normalized || `generated-section-${index + 1}`;
+}
+
+function collectUniqueSchemaFields<TValues extends Record<string, unknown>>(
+ schema: FormSchema<TValues>,
+): FormFieldConfig[] {
+ const sourceFields = schema.sections?.length
+ ? schema.sections.flatMap((section) => section.fields)
+ : schema.fields ?? [];
+ const seen = new Set<string>();
+
+ return sourceFields.filter((field) => {
+ const name = String(field.name ?? "").trim();
+ if (!name || seen.has(name)) return false;
+ seen.add(name);
+ return true;
+ });
+}
+
+function resolveGeneratedSectionId<TValues extends Record<string, unknown>>(
+ section: ModelFormGeneratedSection<TValues>,
+ index: number,
+): string {
+ const explicitId = String(section.id ?? "").trim();
+ if (explicitId) return explicitId;
+ const title = String(section.title ?? "").trim();
+ return slugifyGeneratedSectionId(title, index);
+}
+
+function assertGeneratedSectionFieldAvailable(
+ availableFields: Map<string, FormFieldConfig>,
+ selector: string,
+): FormFieldConfig | null {
+ const resolved = availableFields.get(selector);
+ if (resolved) return resolved;
+ if (!import.meta.env.PROD) {
+ throw new Error(
+ `[ModelForm] Unknown generated field "${selector}" referenced in generatedSections.`,
+ );
+ }
+ return null;
+}
+
+export function applyGeneratedSectionLayout<
+ TValues extends Record<string, unknown>,
+>(
+ schema: FormSchema<TValues>,
+ generatedSections?: ModelFormGeneratedSection<TValues>[],
+): FormSchema<TValues> {
+ if (!generatedSections?.length) return schema;
+
+ const availableFields = new Map(
+ collectUniqueSchemaFields(schema).map((field) => [field.name, field] as const),
+ );
+ const assignedFields = new Set<string>();
+ const assignedSectionIds = new Set<string>();
+
+ const nextSections = generatedSections
+ .map((section, index) => {
+ const sectionId = resolveGeneratedSectionId(section, index);
+ if (assignedSectionIds.has(sectionId) && !import.meta.env.PROD) {
+ throw new Error(
+ `[ModelForm] Duplicate generated section id "${sectionId}" in generatedSections.`,
+ );
+ }
+ assignedSectionIds.add(sectionId);
+
+ const resolvedFields = section.fields
+ .map((entry): FormFieldConfig | null => {
+ const fieldSelector =
+ typeof entry === "string" ? entry.trim() : String(entry.name ?? "").trim();
+
+ if (typeof entry === "string") {
+ const resolved = assertGeneratedSectionFieldAvailable(
+ availableFields,
+ fieldSelector,
+ );
+ if (!resolved) return null;
+ if (assignedFields.has(fieldSelector)) {
+ if (!import.meta.env.PROD) {
+ throw new Error(
+ `[ModelForm] Duplicate generated field "${fieldSelector}" in generatedSections.`,
+ );
+ }
+ return null;
+ }
+ assignedFields.add(fieldSelector);
+ return resolved;
+ }
+
+ if (fieldSelector && availableFields.has(fieldSelector)) {
+ if (assignedFields.has(fieldSelector)) {
+ if (!import.meta.env.PROD) {
+ throw new Error(
+ `[ModelForm] Duplicate generated field "${fieldSelector}" in generatedSections.`,
+ );
+ }
+ return null;
+ }
+ assignedFields.add(fieldSelector);
+ }
+ return entry;
+ })
+ .filter((field): field is FormFieldConfig => Boolean(field));
+
+ if (resolvedFields.length === 0) return null;
+
+ return {
+ ...section,
+ id: sectionId,
+ fields: resolvedFields,
+ };
+ })
+ .filter(Boolean) as FormSectionConfig<TValues>[];
+
+ return {
+ ...schema,
+ sections: nextSections,
+ fields: undefined,
  };
 }
 

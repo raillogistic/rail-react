@@ -30,6 +30,7 @@ export type FieldRendererProps<TValues> = {
   path: string;
   form: UseFormReturn<TValues>;
   colSpan?: number;
+  defaultColSpan?: number;
   globalReadOnly?: boolean;
   globalDisabled?: boolean;
   hiddenFields?: Set<string>;
@@ -40,6 +41,7 @@ export const FieldRenderer = <TValues extends Record<string, any>>({
   path,
   form,
   colSpan,
+  defaultColSpan,
   globalReadOnly,
   globalDisabled,
   hiddenFields,
@@ -56,6 +58,7 @@ export const FieldRenderer = <TValues extends Record<string, any>>({
         path={path}
         form={form}
         colSpan={colSpan}
+        defaultColSpan={defaultColSpan}
         globalReadOnly={globalReadOnly}
         globalDisabled={globalDisabled}
         hiddenFields={hiddenFields}
@@ -108,6 +111,8 @@ export const FieldRenderer = <TValues extends Record<string, any>>({
               config={child}
               path={`${path}.${child.name}`}
               form={form}
+              colSpan={child.colSpan ?? defaultColSpan}
+              defaultColSpan={defaultColSpan}
               globalReadOnly={globalReadOnly}
               globalDisabled={globalDisabled}
               hiddenFields={hiddenFields}
@@ -126,6 +131,7 @@ export const FieldRenderer = <TValues extends Record<string, any>>({
         form={form}
         path={path}
         colSpan={colSpan}
+        defaultColSpan={defaultColSpan}
         globalReadOnly={globalReadOnly}
         globalDisabled={globalDisabled}
         hiddenFields={hiddenFields}

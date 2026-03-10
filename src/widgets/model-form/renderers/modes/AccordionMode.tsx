@@ -22,6 +22,7 @@ export type AccordionModeProps<TValues> = {
   sections: FormSectionConfig[];
   form: UseFormReturn<TValues>;
   columns: number;
+  defaultColSpan?: number;
   variant: "default" | "compact" | "popup";
   config: AccordionConfig;
   hiddenFields?: Set<string>;
@@ -50,6 +51,7 @@ export const AccordionMode = <TValues extends Record<string, any>>({
   sections,
   form,
   columns,
+  defaultColSpan,
   variant,
   config,
   hiddenFields,
@@ -170,6 +172,7 @@ export const AccordionMode = <TValues extends Record<string, any>>({
                     }}
                     form={form}
                     columns={section.columns ?? columns}
+                    defaultColSpan={defaultColSpan}
                     showHeaders={true}
                     variant={variant}
                     hiddenFields={hiddenFields}

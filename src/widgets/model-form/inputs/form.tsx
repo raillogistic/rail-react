@@ -30,7 +30,7 @@ import { ReviewMode } from "../renderers/modes/ReviewMode";
 import { normalizeFieldOrder } from "./fieldOrder";
 import { clearSubmitErrorsForChanges } from "../utils/errors";
 
-const DEFAULT_COLUMNS = 2;
+const DEFAULT_COLUMNS = 1;
 const CANONICAL_FORM_ERROR_KEY = "__all__";
 const LEGACY_DYNAMIC_FORM_PROP_KEYS = [
   "defaultValues",
@@ -227,6 +227,7 @@ const DynamicForm = <TValues extends Record<string, any> = Record<string, any>>(
   const autosave = behaviorConfig?.autosave;
 
   const layoutColumns = layoutConfig?.columns ?? DEFAULT_COLUMNS;
+  const defaultColSpan = layoutConfig?.defaultColSpan;
   const isMobile = useIsMobile();
   const resolvedColumns = isMobile ? 1 : layoutColumns;
   const layoutVariant = layoutConfig?.variant ?? "default";
@@ -473,6 +474,7 @@ const DynamicForm = <TValues extends Record<string, any> = Record<string, any>>(
     sections,
     form,
     columns: resolvedColumns,
+    defaultColSpan,
     variant: layoutVariant,
     hiddenFields,
     hiddenSections,

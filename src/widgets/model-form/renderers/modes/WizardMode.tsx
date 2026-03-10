@@ -23,6 +23,7 @@ export type WizardModeProps<TValues> = {
   sections: FormSectionConfig[];
   form: UseFormReturn<TValues>;
   columns: number;
+  defaultColSpan?: number;
   variant: "default" | "compact" | "popup";
   config: WizardConfig<TValues>;
   hiddenFields?: Set<string>;
@@ -36,6 +37,7 @@ export const WizardMode = <TValues extends Record<string, any>>({
   sections,
   form,
   columns,
+  defaultColSpan,
   variant,
   config,
   hiddenFields,
@@ -185,6 +187,7 @@ export const WizardMode = <TValues extends Record<string, any>>({
             }}
             form={form}
             columns={currentSection.columns ?? columns}
+            defaultColSpan={defaultColSpan}
             showHeaders
             variant={variant}
             hiddenFields={hiddenFields}

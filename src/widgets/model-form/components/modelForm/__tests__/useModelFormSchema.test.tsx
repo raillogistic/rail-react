@@ -150,4 +150,107 @@ describe("useModelFormSchema", () => {
       lignes: [{ montantRepas: "8000", montantHebergement: "6000" }],
     });
   });
+
+  it("rebuilds generated schema sections from generatedSections selectors", () => {
+    const generatedSchema: FormSchema<Record<string, unknown>> = {
+      id: "operations.Decharge.CREATE",
+      sections: [
+        {
+          id: "default",
+          fields: [
+            { name: "objet", type: "text", label: "Objet" },
+            { name: "beneficiaire", type: "text", label: "Beneficiaire" },
+            { name: "date_retour", type: "date", label: "Date retour" },
+            { name: "date_depart", type: "date", label: "Date depart" },
+            { name: "notes", type: "textarea", label: "Notes" },
+          ],
+        },
+      ],
+    };
+
+    const { result } = renderHook(() =>
+      useModelFormSchema({
+        onlyFields: undefined,
+        excludeFields: undefined,
+        onlyRequired: false,
+        fieldOverrides: undefined,
+        sectionOverrides: undefined,
+        generatedSections: [
+          {
+            title: "General",
+            fields: ["objet", "beneficiaire"],
+          },
+          {
+            title: "Dates",
+            fields: ["date_retour", "date_depart"],
+          },
+        ],
+        generatedEnabled: true,
+        contract: null,
+        generatedSchema,
+        relatedContractsByModel: new Map(),
+        nestedControls: undefined,
+        resolvedOnlyRelationships: [],
+        resolvedExcludeRelationships: [],
+      }),
+    );
+
+    expect(result.current.finalSchema.sections?.map((section) => section.id)).toEqual([
+      "general",
+      "dates",
+    ]);
+    expect(
+      result.current.finalSchema.sections?.[0]?.fields.map((field) => field.name),
+    ).toEqual(["objet", "beneficiaire"]);
+    expect(
+      result.current.finalSchema.sections?.[1]?.fields.map((field) => field.name),
+    ).toEqual(["date_retour", "date_depart"]);
+  });
+
+  it("supports custom fields inside generatedSections", () => {
+    const generatedSchema: FormSchema<Record<string, unknown>> = {
+      id: "operations.Decharge.CREATE",
+      sections: [
+        {
+          id: "default",
+          fields: [
+            { name: "date_retour", type: "date", label: "Date retour" },
+            { name: "date_depart", type: "date", label: "Date depart" },
+          ],
+        },
+      ],
+    };
+
+    const { result } = renderHook(() =>
+      useModelFormSchema({
+        onlyFields: undefined,
+        excludeFields: undefined,
+        onlyRequired: false,
+        fieldOverrides: undefined,
+        sectionOverrides: undefined,
+        generatedSections: [
+          {
+            id: "dates",
+            title: "Dates",
+            fields: [
+              "date_retour",
+              "date_depart",
+              { name: "custom", type: "text", label: "Custom" },
+            ],
+          },
+        ],
+        generatedEnabled: true,
+        contract: null,
+        generatedSchema,
+        relatedContractsByModel: new Map(),
+        nestedControls: undefined,
+        resolvedOnlyRelationships: [],
+        resolvedExcludeRelationships: [],
+      }),
+    );
+
+    expect(
+      result.current.finalSchema.sections?.[0]?.fields.map((field) => field.name),
+    ).toEqual(["date_retour", "date_depart", "custom"]);
+  });
 });

@@ -8,6 +8,7 @@ export function BeneficiaireFormPage() {
   return (
     <section className="space-y-4">
       <ModelForm
+        devtools={{ enabled: true }}
         title={isUpdate ? "Modifier Beneficiaire" : "Créer Beneficiaire"}
         app="catalog"
         model="Benificiaire"

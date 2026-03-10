@@ -5,6 +5,7 @@ import type { ModelFormProps } from "../../types.model";
 import { getValueByPath, setValueByPath } from "../../utils/objectPath";
 import { mergePathLists } from "./nestedSchema";
 import {
+  applyGeneratedSectionLayout,
   applySchemaControls,
   enforceContractSectionFieldOrder,
   enforceTrailingComplexFieldOrder,
@@ -24,6 +25,7 @@ export type UseModelFormSchemaOptions<
   | "onlyRequired"
   | "fieldOverrides"
   | "sectionOverrides"
+  | "generatedSections"
   | "generatedEnabled"
 > & {
   contract: ModelFormContract | null;
@@ -209,6 +211,7 @@ export function useModelFormSchema<TFormValues extends Record<string, unknown>>(
     onlyRequired,
     fieldOverrides,
     sectionOverrides,
+    generatedSections,
     generatedEnabled,
     contract,
     generatedSchema,
@@ -242,7 +245,11 @@ export function useModelFormSchema<TFormValues extends Record<string, unknown>>(
   }, [generatedSchema, contract, nestedControls, relatedContractsByModel]);
 
   const controlledSchema = React.useMemo(() => {
-    const controlled = applySchemaControls(schemaWithNestedRelations, {
+    const generatedSectionedSchema = applyGeneratedSectionLayout(
+      schemaWithNestedRelations,
+      generatedSections,
+    );
+    const controlled = applySchemaControls(generatedSectionedSchema, {
       onlyFields: resolvedOnlyFields,
       excludeFields: resolvedExcludeFields,
       onlyRequired,
@@ -267,6 +274,7 @@ export function useModelFormSchema<TFormValues extends Record<string, unknown>>(
     );
   }, [
     schemaWithNestedRelations,
+    generatedSections,
     resolvedOnlyFields,
     resolvedExcludeFields,
     onlyRequired,

@@ -17,6 +17,7 @@ type GroupFieldRendererProps<TValues> = {
   path: string;
   form: UseFormReturn<TValues>;
   colSpan?: number;
+  defaultColSpan?: number;
   globalReadOnly?: boolean;
   globalDisabled?: boolean;
   hiddenFields?: Set<string>;
@@ -27,6 +28,7 @@ export const GroupFieldRenderer = <TValues extends Record<string, any>>({
   path,
   form,
   colSpan,
+  defaultColSpan,
   globalReadOnly,
   globalDisabled,
   hiddenFields,
@@ -50,7 +52,8 @@ export const GroupFieldRenderer = <TValues extends Record<string, any>>({
           config={child}
           path={`${path}.${child.name}`}
           form={form}
-          colSpan={child.colSpan ?? 1}
+          colSpan={child.colSpan ?? defaultColSpan}
+          defaultColSpan={defaultColSpan}
           globalReadOnly={globalReadOnly}
           globalDisabled={globalDisabled}
           hiddenFields={hiddenFields}
