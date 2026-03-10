@@ -56,8 +56,8 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
   const dirty = meta.isDirty;
   const submitCount = useStore(
     form.store,
-    (state) =>
-      (state as any).submissionAttempts ?? (state as any).submitCount ?? 0,
+    (state: any) =>
+      (state).submissionAttempts ?? (state).submitCount ?? 0,
   );
   const isSubmitted = submitCount > 0;
   const showError =
@@ -344,6 +344,7 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
       prefilledOptions,
       recipe.document,
       resultPath,
+      selectedValues,
     ],
   );
 
@@ -559,8 +560,8 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
                 variant="outline"
                 data-slot="button"
                 className={cn(
-                  "h-auto min-h-12 w-full justify-between rounded-xl border border-input/60 bg-background px-4 py-2.5 text-left text-[13.5px] font-medium transition-all duration-300 ease-out",
-                  "hover:border-primary/30 hover:bg-muted/3 hover:shadow-md hover:shadow-primary/1",
+                  "h-auto min-h-12 w-full justify-between rounded-xl border border-input/70 bg-muted/5 px-4 py-2.5 text-left text-[13.5px] font-medium transition-all duration-300 ease-out",
+                  "hover:border-primary/40 hover:bg-muted/8 hover:shadow-inner hover:shadow-primary/1",
                   "focus:border-primary focus:ring-4 focus:ring-primary/10 data-[state=open]:border-primary data-[state=open]:ring-4 data-[state=open]:ring-primary/10",
                   selectedValues.length > 0
                     ? "border-primary/20 bg-primary/3"
@@ -605,8 +606,8 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
             <DropdownMenuContent
               className="w-96 rounded-2xl border border-border/50 bg-popover/95 backdrop-blur-xl p-0 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-300"
               align="start"
-              // @ts-ignore
-              onOpenAutoFocus={(event) => {
+              // @ts-expect-error Popover/Dropdown onOpenAutoFocus focus shift
+              onOpenAutoFocus={(event: { preventDefault: () => void }) => {
                 event.preventDefault();
                 requestAnimationFrame(() => {
                   searchInputRef.current?.focus();
@@ -674,7 +675,7 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
                         ) : selectedValues.some((value) =>
                           areChoiceValuesEqual(value, option.value),
                         ) ? (
-                            <Check className="size-3.5 stroke-[3]" />
+                            <Check className="size-3.5 stroke-3" />
                         ) : (
                             <div className="size-1.5 rounded-full bg-current opacity-20" />
                         )}
@@ -724,7 +725,7 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
               </div>
               <div className="flex flex-col">
                  <span>{inlineTriggerLabel}</span>
-                 <span className="text-xs font-bold text-muted-foreground/40 uppercase tracking-widest mt-0.5 tracking-tighter">Nouveau Enregistrement</span>
+                 <span className="text-xs font-bold text-muted-foreground/40 uppercase tracking-widest mt-0.5">Nouveau Enregistrement</span>
               </div>
             </DialogTitle>
           </DialogHeader>

@@ -8,7 +8,7 @@
  */
 import * as React from "react";
 import { useStore } from "@tanstack/react-form";
-import { Calendar, CalendarDays, Sparkle } from "lucide-react";
+import { CalendarDays, Sparkle } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -99,11 +99,11 @@ const DateInput: React.FC<Props> = ({ config, field, form }) => {
             variant="outline"
             data-slot="input"
             className={cn(
-              "h-11 w-full justify-start rounded-xl border border-input/60 bg-background px-4 text-left text-[13.5px] font-medium transition-all duration-300 ease-out",
-              "hover:border-primary/30 hover:bg-muted/[0.03] hover:shadow-md hover:shadow-primary/[0.01]",
+              "h-11 w-full justify-start rounded-xl border border-input/70 bg-muted/5 px-4 text-left text-[13.5px] font-medium transition-all duration-300 ease-out",
+              "hover:border-primary/40 hover:bg-muted/8 hover:shadow-inner",
               "focus:border-primary focus:ring-4 focus:ring-primary/10",
               !parsedValue && "text-muted-foreground/60",
-              parsedValue && "text-foreground font-bold border-primary/20 bg-primary/[0.01]",
+              parsedValue && "text-foreground font-bold border-primary/20 bg-primary/2",
               config.disabled && "cursor-not-allowed opacity-50 grayscale",
             )}
             disabled={config.disabled}

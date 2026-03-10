@@ -8,7 +8,7 @@
  */
 import React from "react";
 import { useStore } from "@tanstack/react-form";
-import { format, parseISO } from "date-fns";
+import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { CalendarDays, Clock } from "lucide-react";
 import { cn } from "@/shared/utils";
@@ -105,11 +105,11 @@ const DateTimeInput: React.FC<Props> = ({ config, field, form }) => {
             variant="outline"
             data-slot="input"
             className={cn(
-              "h-12 w-full justify-start rounded-xl border border-input/60 bg-background px-4 text-left text-[13.5px] font-medium transition-all duration-300 ease-out",
-              "hover:border-primary/30 hover:bg-muted/[0.03] hover:shadow-md hover:shadow-primary/[0.01]",
+              "h-12 w-full justify-start rounded-xl border border-input/70 bg-muted/5 px-4 text-left text-[13.5px] font-medium transition-all duration-300 ease-out",
+              "hover:border-primary/30 hover:bg-muted/3 hover:shadow-md hover:shadow-primary/1",
               "focus:border-primary focus:ring-4 focus:ring-primary/10 data-[state=open]:border-primary data-[state=open]:ring-4 data-[state=open]:ring-primary/10",
               !value && "text-muted-foreground/60",
-              isValidDate && "text-foreground font-bold border-primary/20 bg-primary/[0.01]",
+              isValidDate && "text-foreground font-bold border-primary/20 bg-primary/2",
               config.disabled && "cursor-not-allowed opacity-60 grayscale-[0.5]",
             )}
             disabled={config.disabled}

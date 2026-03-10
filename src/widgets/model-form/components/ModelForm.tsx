@@ -7,7 +7,6 @@ import { useGeneratedModelForm } from "../hooks/useGeneratedModelForm";
 import { useGeneratedValidators } from "../hooks/useGeneratedValidators";
 import { normalizeDefaultValuesInput } from "../hooks/useFormDefaults";
 import { buildGeneratedMutationDocument } from "../mutations";
-import type { FormFieldConfig, FormSchema } from "../types";
 import type {
   ModelFormContractPermissions,
   ModelFormOperationPermission,
@@ -490,7 +489,7 @@ export function ModelForm<
       className={cn(
         "group/model-form relative w-full transition-all duration-500 ease-in-out",
         !isPopupLayoutVariant && [
-          "bg-linear-to-br from-background via-background/98 to-primary/[0.02]",
+          "bg-linear-to-br from-background via-background/98 to-primary/2",
           "backdrop-blur-xl",
           "shadow-[0_20px_50px_rgba(0,0,0,0.04)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.2)]",
           "border border-border/50 rounded-2xl p-6 md:p-10",

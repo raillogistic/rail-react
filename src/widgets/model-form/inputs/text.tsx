@@ -21,7 +21,7 @@ import type {
   TextFieldConfig,
 } from "./types";
 import { Textarea } from "@/shared/ui/kit/textarea";
-import { File, X, FileJson, Upload, CloudUpload } from "lucide-react";
+import { File, X, FileJson, CloudUpload } from "lucide-react";
 
 type Props = FieldComponentProps<TextFieldConfig | FileFieldConfig>;
 
@@ -71,8 +71,8 @@ const TextInput: React.FC<Props> = ({ config, field, form }) => {
           id={fieldId}
           data-slot="textarea"
           className={cn(
-            "min-h-32 w-full resize-y rounded-xl border border-input/60 bg-background px-4 py-3 text-[13.5px] transition-all duration-300 ease-out",
-            "hover:border-primary/30 hover:bg-muted/5",
+            "min-h-32 w-full resize-y rounded-xl border border-input/70 bg-muted/5 px-4 py-3 text-[13.5px] transition-all duration-300 ease-out",
+            "hover:border-primary/40 hover:bg-muted/8 hover:shadow-inner",
             "focus:border-primary focus:ring-4 focus:ring-primary/10 focus-visible:ring-0",
             config.readOnly && "cursor-default bg-muted/20 text-muted-foreground opacity-80",
             config.disabled && "cursor-not-allowed opacity-50 grayscale-[0.5]",
@@ -114,7 +114,7 @@ const TextInput: React.FC<Props> = ({ config, field, form }) => {
               multiple={Boolean(config.multiple)}
               className={cn(
                 "flex h-14 w-full cursor-pointer items-center rounded-xl border-2 border-dashed border-border/60 bg-muted/5 p-0 text-sm transition-all duration-300 ease-out",
-                "hover:border-primary/40 hover:bg-primary/[0.02]",
+                "hover:border-primary/40 hover:bg-primary/2",
                 "focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10",
                 "file:h-full file:border-0 file:border-r file:border-dashed file:border-border/60 file:bg-primary/5 file:px-6 file:py-0 file:text-[11px] file:font-bold file:uppercase file:tracking-widest file:text-primary/70 file:hover:bg-primary/10 file:transition-all file:mr-4",
               )}
@@ -138,13 +138,13 @@ const TextInput: React.FC<Props> = ({ config, field, form }) => {
               {fileList.map((file, idx) => (
                 <div
                   key={`${file.name}-${idx}`}
-                  className="group/file-item relative flex items-center gap-3 rounded-xl border border-border/40 bg-background p-2.5 transition-all duration-300 hover:border-primary/20 hover:bg-primary/[0.02] hover:shadow-md hover:shadow-primary/[0.03]"
+                className="group/file-item relative flex items-center gap-3 rounded-xl border border-border/40 bg-muted/5 p-2.5 transition-all duration-300 hover:border-primary/20 hover:bg-primary/2 hover:shadow-md hover:shadow-primary/3"
                 >
                   <div className="flex size-9 items-center justify-center rounded-lg bg-primary/5 text-primary/60 transition-colors group-hover/file-item:bg-primary/10 group-hover/file-item:text-primary">
                     <File className="size-4.5" />
                   </div>
                   <div className="flex flex-col pr-8">
-                    <span className="max-w-[180px] truncate text-[12.5px] font-bold text-foreground/80">
+                    <span className="max-w-45 truncate text-[12.5px] font-bold text-foreground/80">
                       {file.name}
                     </span>
                     <span className="text-[10px] font-semibold text-muted-foreground/50 uppercase tracking-tighter">
@@ -200,7 +200,7 @@ const TextInput: React.FC<Props> = ({ config, field, form }) => {
           <textarea
             id={fieldId}
             data-slot="textarea"
-            className="font-mono min-h-48 w-full resize-y bg-background p-5 text-[13px] leading-relaxed outline-none transition-all duration-500 focus:bg-primary/[0.01]"
+            className="font-mono min-h-48 w-full resize-y bg-muted/2 p-5 text-[13px] leading-relaxed outline-none transition-all duration-500 focus:bg-primary/1"
             value={value}
             onChange={(event) => field.handleChange(event.target.value)}
             onBlur={field.handleBlur}
@@ -241,8 +241,8 @@ const TextInput: React.FC<Props> = ({ config, field, form }) => {
         readOnly={config.readOnly}
         disabled={config.disabled}
         className={cn(
-          "h-11 rounded-xl border border-input/60 bg-background px-4 text-[13.5px] font-medium transition-all duration-300 ease-out",
-          "hover:border-primary/30 hover:bg-muted/[0.03]",
+          "h-11 rounded-xl border border-input/70 bg-muted/5 px-4 text-[13.5px] font-medium transition-all duration-300 ease-out",
+          "hover:border-primary/40 hover:bg-muted/8 hover:shadow-inner",
           "focus:border-primary focus:ring-4 focus:ring-primary/10 focus-visible:ring-0",
           inputType === "color" && "p-1 h-12 cursor-pointer border-2",
           safeInputProps?.className,

@@ -12,7 +12,6 @@ import type {
   ListFieldConfig,
   ChoiceFieldConfig,
   FormInputType,
-  FieldComponentProps,
   GroupFieldConfig,
 } from "../types/schema";
 import { resolveInputComponent } from "../inputs/factory";
@@ -49,6 +48,29 @@ export const FieldRenderer = <TValues extends Record<string, any>>({
   globalDisabled,
   hiddenFields,
 }: FieldRendererProps<TValues>) => {
+  const normalizedConfig = normalizeChoiceConfig(config);
+  const Component = React.useMemo(
+    () =>
+      resolveInputComponent(normalizedConfig.type as FormInputType) ??
+      resolveInputComponent("text"),
+    [normalizedConfig.type],
+  );
+
+  const validators = React.useMemo(
+    () => createValidators(normalizedConfig, form, path),
+    [normalizedConfig, form, path],
+  );
+
+  // Apply global read-only/disabled
+  const effectiveConfig = React.useMemo(() => {
+    if (!globalReadOnly && !globalDisabled) return normalizedConfig;
+    return {
+      ...normalizedConfig,
+      readOnly: globalReadOnly || normalizedConfig.readOnly,
+      disabled: globalDisabled || normalizedConfig.disabled,
+    } as PrimitiveField;
+  }, [normalizedConfig, globalReadOnly, globalDisabled]);
+
   // Check hidden status
   if (config.hidden || hiddenFields?.has(path)) {
     return null;
@@ -79,7 +101,7 @@ export const FieldRenderer = <TValues extends Record<string, any>>({
         className={cn(
           "group/object relative overflow-hidden transition-all duration-500 ease-in-out",
           "rounded-2xl border border-border/30 bg-muted/20 p-6 md:p-8",
-          "hover:border-primary/20 hover:bg-muted/30 hover:shadow-lg hover:shadow-primary/[0.02]",
+          "hover:border-primary/20 hover:bg-muted/30 hover:shadow-lg hover:shadow-primary/2",
         )}
         style={
           colSpan
@@ -116,7 +138,7 @@ export const FieldRenderer = <TValues extends Record<string, any>>({
         ) : null}
 
         {config.description && (
-          <div className="mb-6 rounded-xl border border-primary/5 bg-primary/[0.03] p-4 backdrop-blur-sm">
+          <div className="mb-6 rounded-xl border border-primary/5 bg-primary/3 p-4 backdrop-blur-sm">
             <p className="text-[13px] leading-relaxed text-muted-foreground/80 font-medium italic">
               {config.description}
             </p>
@@ -174,37 +196,18 @@ export const FieldRenderer = <TValues extends Record<string, any>>({
               config,
               field: fieldApi,
               form,
-            } as FieldComponentProps)}
+            } as any)}
           </div>
         )}
       </form.Field>
     );
   }
 
-  const normalizedConfig = normalizeChoiceConfig(config);
-  const Component =
-    resolveInputComponent(normalizedConfig.type as FormInputType) ??
-    resolveInputComponent("text");
-  const validators = React.useMemo(
-    () => createValidators(normalizedConfig, form, path),
-    [normalizedConfig, form, path],
-  );
-
-  // Apply global read-only/disabled
-  const effectiveConfig = React.useMemo(() => {
-    if (!globalReadOnly && !globalDisabled) return normalizedConfig;
-    return {
-      ...normalizedConfig,
-      readOnly: globalReadOnly || normalizedConfig.readOnly,
-      disabled: globalDisabled || normalizedConfig.disabled,
-    };
-  }, [normalizedConfig, globalReadOnly, globalDisabled]);
-
   return (
     <form.Field name={path as any} validators={validators}>
       {(fieldApi) => {
         const refreshInstruction = resolveConflictRefreshInstruction(
-          fieldApi.state.meta,
+          (fieldApi.state as any).meta,
         );
         return (
           <div

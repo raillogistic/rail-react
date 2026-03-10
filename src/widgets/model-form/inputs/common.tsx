@@ -130,35 +130,35 @@ export const FieldWrapper: React.FC<FieldWrapperProps> = ({
           "relative transition-all duration-500 ease-out",
 
           // ── Dirty state — subtle emerald accent ──
-          "data-[dirty=true]:[&_[data-slot=input]]:border-emerald-500/30 data-[dirty=true]:[&_[data-slot=input]]:bg-emerald-500/[0.02]",
-          "data-[dirty=true]:[&_[data-slot=textarea]]:border-emerald-500/30 data-[dirty=true]:[&_[data-slot=textarea]]:bg-emerald-500/[0.02]",
-          "data-[dirty=true]:[&_[data-slot=select-trigger]]:border-emerald-500/30 data-[dirty=true]:[&_[data-slot=select-trigger]]:bg-emerald-500/[0.02]",
-          "data-[dirty=true]:[&_[data-slot=checkbox]]:border-emerald-500 data-[dirty=true]:[&_[data-slot=checkbox]]:bg-emerald-500/10",
-          "data-[dirty=true]:[&_[data-slot=button]]:border-emerald-500/30 data-[dirty=true]:[&_[data-slot=button]]:bg-emerald-500/[0.02]",
+          "data-[dirty=true]:**:data-[slot=input]:border-emerald-500/30 data-[dirty=true]:**:data-[slot=input]:bg-emerald-500/2",
+          "data-[dirty=true]:**:data-[slot=textarea]:border-emerald-500/30 data-[dirty=true]:**:data-[slot=textarea]:bg-emerald-500/2",
+          "data-[dirty=true]:**:data-[slot=select-trigger]:border-emerald-500/30 data-[dirty=true]:**:data-[slot=select-trigger]:bg-emerald-500/2",
+          "data-[dirty=true]:**:data-[slot=checkbox]:border-emerald-500 data-[dirty=true]:**:data-[slot=checkbox]:bg-emerald-500/10",
+          "data-[dirty=true]:**:data-[slot=button]:border-emerald-500/30 data-[dirty=true]:**:data-[slot=button]:bg-emerald-500/2",
 
           // ── Error state — destructive accent ──
-          "data-[error=true]:[&_[data-slot=input]]:border-destructive/60 data-[error=true]:[&_[data-slot=input]]:bg-destructive/[0.03] data-[error=true]:[&_[data-slot=input]]:ring-4 data-[error=true]:[&_[data-slot=input]]:ring-destructive/5",
-          "data-[error=true]:[&_[data-slot=textarea]]:border-destructive/60 data-[error=true]:[&_[data-slot=textarea]]:bg-destructive/[0.03] data-[error=true]:[&_[data-slot=textarea]]:ring-4 data-[error=true]:[&_[data-slot=textarea]]:ring-destructive/5",
-          "data-[error=true]:[&_[data-slot=select-trigger]]:border-destructive/60 data-[error=true]:[&_[data-slot=select-trigger]]:bg-destructive/[0.03] data-[error=true]:[&_[data-slot=select-trigger]]:ring-4 data-[error=true]:[&_[data-slot=select-trigger]]:ring-destructive/5",
-          "data-[error=true]:[&_[data-slot=checkbox]]:border-destructive data-[error=true]:[&_[data-slot=checkbox]]:ring-4 data-[error=true]:[&_[data-slot=checkbox]]:ring-destructive/10",
-          "data-[error=true]:[&_[data-slot=button]]:border-destructive/60 data-[error=true]:[&_[data-slot=button]]:bg-destructive/[0.03] data-[error=true]:[&_[data-slot=button]]:ring-4 data-[error=true]:[&_[data-slot=button]]:ring-destructive/5",
+          "data-[error=true]:**:data-[slot=input]:border-destructive/60 data-[error=true]:**:data-[slot=input]:bg-destructive/3 data-[error=true]:**:data-[slot=input]:ring-4 data-[error=true]:**:data-[slot=input]:ring-destructive/5",
+          "data-[error=true]:**:data-[slot=textarea]:border-destructive/60 data-[error=true]:**:data-[slot=textarea]:bg-destructive/3 data-[error=true]:**:data-[slot=textarea]:ring-4 data-[error=true]:**:data-[slot=textarea]:ring-destructive/5",
+          "data-[error=true]:**:data-[slot=select-trigger]:border-destructive/60 data-[error=true]:**:data-[slot=select-trigger]:bg-destructive/3 data-[error=true]:**:data-[slot=select-trigger]:ring-4 data-[error=true]:**:data-[slot=select-trigger]:ring-destructive/5",
+          "data-[error=true]:**:data-[slot=checkbox]:border-destructive data-[error=true]:**:data-[slot=checkbox]:ring-4 data-[error=true]:**:data-[slot=checkbox]:ring-destructive/10",
+          "data-[error=true]:**:data-[slot=button]:border-destructive/60 data-[error=true]:**:data-[slot=button]:bg-destructive/3 data-[error=true]:**:data-[slot=button]:ring-4 data-[error=true]:**:data-[slot=button]:ring-destructive/5",
 
           // ── Base input styling — Clean & Premium look ──
-          "[&_[data-slot=input]]:shadow-none [&_[data-slot=input]]:border-border/60 [&_[data-slot=input]]:rounded-xl [&_[data-slot=input]]:transition-all [&_[data-slot=input]]:duration-300",
-          "[&_[data-slot=input]:focus]:ring-4 [&_[data-slot=input]:focus]:ring-primary/10 [&_[data-slot=input]:focus]:border-primary/60 [&_[data-slot=input]:focus]:bg-background",
+          "**:data-[slot=input]:shadow-[inset_0_1px_2px_rgba(0,0,0,0.03)] **:data-[slot=input]:border-border/70 **:data-[slot=input]:bg-muted/5 **:data-[slot=input]:rounded-xl **:data-[slot=input]:transition-all **:data-[slot=input]:duration-300",
+          "**:data-[slot=input]:focus:ring-4 **:data-[slot=input]:focus:ring-primary/10 **:data-[slot=input]:focus:border-primary/60 **:data-[slot=input]:focus:bg-background **:data-[slot=input]:focus:shadow-none",
 
-          "[&_[data-slot=textarea]]:shadow-none [&_[data-slot=textarea]]:border-border/60 [&_[data-slot=textarea]]:rounded-xl [&_[data-slot=textarea]]:transition-all [&_[data-slot=textarea]]:duration-300",
-          "[&_[data-slot=textarea]:focus]:ring-4 [&_[data-slot=textarea]:focus]:ring-primary/10 [&_[data-slot=textarea]:focus]:border-primary/60 [&_[data-slot=textarea]:focus]:bg-background",
+          "**:data-[slot=textarea]:shadow-[inset_0_1px_2px_rgba(0,0,0,0.03)] **:data-[slot=textarea]:border-border/70 **:data-[slot=textarea]:bg-muted/5 **:data-[slot=textarea]:rounded-xl **:data-[slot=textarea]:transition-all **:data-[slot=textarea]:duration-300",
+          "**:data-[slot=textarea]:focus:ring-4 **:data-[slot=textarea]:focus:ring-primary/10 **:data-[slot=textarea]:focus:border-primary/60 **:data-[slot=textarea]:focus:bg-background **:data-[slot=textarea]:focus:shadow-none",
 
-          "[&_[data-slot=select-trigger]]:shadow-none [&_[data-slot=select-trigger]]:border-border/60 [&_[data-slot=select-trigger]]:rounded-xl [&_[data-slot=select-trigger]]:transition-all [&_[data-slot=select-trigger]]:duration-300",
-          "[&_[data-slot=select-trigger]:focus]:ring-4 [&_[data-slot=select-trigger]:focus]:ring-primary/10 [&_[data-slot=select-trigger]:focus]:border-primary/60 [&_[data-slot=select-trigger]:focus]:bg-background",
-          "[&_[data-slot=select-trigger][data-state=open]]:ring-4 [&_[data-slot=select-trigger][data-state=open]]:ring-primary/10 [&_[data-slot=select-trigger][data-state=open]]:border-primary/60",
+          "**:data-[slot=select-trigger]:shadow-[inset_0_1px_2px_rgba(0,0,0,0.03)] **:data-[slot=select-trigger]:border-border/70 **:data-[slot=select-trigger]:bg-muted/5 **:data-[slot=select-trigger]:rounded-xl **:data-[slot=select-trigger]:transition-all **:data-[slot=select-trigger]:duration-300",
+          "**:data-[slot=select-trigger]:focus:ring-4 **:data-[slot=select-trigger]:focus:ring-primary/10 **:data-[slot=select-trigger]:focus:border-primary/60 **:data-[slot=select-trigger]:focus:bg-background **:data-[slot=select-trigger]:focus:shadow-none",
+          "**:data-[slot=select-trigger][data-state=open]:ring-4 **:data-[slot=select-trigger][data-state=open]:ring-primary/10 **:data-[slot=select-trigger][data-state=open]:border-primary/60",
 
-          "[&_[data-slot=button]]:shadow-none [&_[data-slot=button]]:rounded-xl",
-          "[&_[data-slot=button]:focus-visible]:ring-4 [&_[data-slot=button]:focus-visible]:ring-primary/10 [&_[data-slot=button]:focus-visible]:border-primary/60",
+          "**:data-[slot=button]:shadow-sm **:data-[slot=button]:rounded-xl",
+          "**:data-[slot=button]:focus-visible:ring-4 **:data-[slot=button]:focus-visible:ring-primary/10 **:data-[slot=button]:focus-visible:border-primary/60",
 
-          "[&_[data-slot=checkbox]]:shadow-none [&_[data-slot=checkbox]]:rounded-lg",
-          "[&_[data-slot=checkbox]:focus-visible]:ring-4 [&_[data-slot=checkbox]:focus-visible]:ring-primary/10",
+          "**:data-[slot=checkbox]:shadow-none **:data-[slot=checkbox]:rounded-lg",
+          "**:data-[slot=checkbox]:focus-visible:ring-4 **:data-[slot=checkbox]:focus-visible:ring-primary/10",
         )}
         data-dirty={dirty ? "true" : undefined}
         data-error={hasError ? "true" : undefined}
@@ -166,7 +166,7 @@ export const FieldWrapper: React.FC<FieldWrapperProps> = ({
         {children}
         
         {/* Subtle glow effect on focus within */}
-        <div className="absolute inset-0 -z-10 bg-primary/[0.02] opacity-0 blur-xl transition-opacity duration-700 group-focus-within/field:opacity-100 pointer-events-none" />
+        <div className="absolute inset-0 -z-10 bg-primary/2 opacity-0 blur-xl transition-opacity duration-700 group-focus-within/field:opacity-100 pointer-events-none" />
       </div>
 
       {/* ── Help text ────────────────────────────────────────────── */}
@@ -182,7 +182,7 @@ export const FieldWrapper: React.FC<FieldWrapperProps> = ({
           {errorList.map((item, index) => (
             <div
               key={`${config.name}-error-${index}`}
-              className="flex items-start gap-2 rounded-xl border border-destructive/10 bg-destructive/[0.03] px-3 py-2 text-[12.5px] font-semibold text-destructive shadow-sm"
+              className="flex items-start gap-2 rounded-xl border border-destructive/10 bg-destructive/3 px-3 py-2 text-[12.5px] font-semibold text-destructive shadow-sm"
             >
               <AlertCircle className="mt-0.5 size-3.5 shrink-0 transition-transform group-hover/field:scale-110" />
               <span className="leading-tight">{item}</span>

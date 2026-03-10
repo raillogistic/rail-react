@@ -46,7 +46,7 @@ const TimeInput: React.FC<Props> = ({ config, field, form }) => {
           disabled={config.disabled}
           className={cn(
             "h-12 rounded-xl border border-input/60 bg-background pl-11 pr-4 text-[13.5px] font-bold transition-all duration-300 ease-out",
-            "hover:border-primary/30 hover:bg-muted/[0.03] hover:shadow-md hover:shadow-primary/[0.01]",
+            "hover:border-primary/30 hover:bg-muted/3 hover:shadow-md hover:shadow-primary/1",
             "focus:border-primary focus:ring-4 focus:ring-primary/10 focus-visible:ring-0",
              config.disabled && "cursor-not-allowed opacity-60 grayscale-[0.5]",
           )}

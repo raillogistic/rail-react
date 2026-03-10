@@ -54,11 +54,11 @@ const BooleanInput: React.FC<Props> = ({ config, field, form }) => {
       >
         <div
           className={cn(
-            "group/bool relative flex items-center gap-4 rounded-xl border border-border/50 bg-background p-4 transition-all duration-500 ease-out",
-            "hover:border-primary/20 hover:bg-muted/[0.03] hover:shadow-md hover:shadow-primary/[0.02] cursor-pointer",
+            "group/bool relative flex items-center gap-4 rounded-xl border border-border/70 bg-muted/5 p-4 transition-all duration-500 ease-out",
+            "hover:border-primary/30 hover:bg-muted/8 hover:shadow-md hover:shadow-primary/1 cursor-pointer",
             value
-              ? "border-primary/40 bg-primary/[0.03] ring-1 ring-primary/10 shadow-sm"
-              : "hover:bg-muted/30",
+              ? "border-primary/40 bg-primary/3 ring-1 ring-primary/10 shadow-sm"
+              : "hover:bg-muted/10",
           )}
           onClick={() => !config.disabled && field.handleChange(!value)}
         >
@@ -94,11 +94,11 @@ const BooleanInput: React.FC<Props> = ({ config, field, form }) => {
     <FieldWrapper config={config} fieldId={fieldId} error={error} dirty={dirty}>
       <div
         className={cn(
-          "group/bool relative flex cursor-pointer items-center gap-4 rounded-xl border border-border/50 bg-background px-5 py-4 transition-all duration-500 ease-out",
-          "hover:border-primary/20 hover:bg-muted/[0.03] hover:shadow-md hover:shadow-primary/[0.02]",
+          "group/bool relative flex cursor-pointer items-center gap-4 rounded-xl border border-border/70 bg-muted/5 px-5 py-4 transition-all duration-500 ease-out",
+          "hover:border-primary/30 hover:bg-muted/8 hover:shadow-md hover:shadow-primary/1",
           value
-            ? "border-primary/40 bg-primary/[0.03] ring-1 ring-primary/10 shadow-sm"
-            : "hover:bg-muted/30",
+            ? "border-primary/40 bg-primary/3 ring-1 ring-primary/10 shadow-sm"
+            : "hover:bg-muted/10",
         )}
         onClick={() => !config.disabled && field.handleChange(!value)}
       >

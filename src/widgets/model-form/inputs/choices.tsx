@@ -22,9 +22,8 @@ import {
   DropdownMenuTrigger,
 } from "@/shared/ui/kit/dropdown-menu";
 import { Button } from "@/shared/ui/kit/button";
-import { Checkbox } from "@/shared/ui/kit/checkbox";
 import { Badge } from "@/shared/ui/kit/badge";
-import { ChevronDown, Check, X, Layers, CircleDot, ListChecks, CheckCircle2 } from "lucide-react";
+import { ChevronDown, X, Layers, CircleDot, ListChecks, CheckCircle2 } from "lucide-react";
 import { cn } from "@/shared/utils";
 import {
   FieldWrapper,
@@ -40,8 +39,8 @@ import type {
 type Props = FieldComponentProps<ChoiceFieldConfig>;
 
 const choiceTriggerClassName = [
-  "w-full rounded-xl border border-input/60 bg-background px-4 text-left text-[13.5px] font-medium transition-all duration-300 ease-out",
-  "hover:border-primary/30 hover:bg-muted/3 hover:shadow-md hover:shadow-primary/1",
+  "w-full rounded-xl border border-input/70 bg-muted/5 px-4 text-left text-[13.5px] font-medium transition-all duration-300 ease-out",
+  "hover:border-primary/40 hover:bg-muted/8 hover:shadow-inner",
   "focus:border-primary focus:ring-4 focus:ring-primary/10",
   "data-[state=open]:border-primary data-[state=open]:ring-4 data-[state=open]:ring-primary/10",
 ].join(" ");
@@ -179,8 +178,8 @@ const ChoiceInput: React.FC<Props> = ({ config, field, form }) => {
             <label
               key={option.value}
               className={cn(
-                "group relative flex w-full cursor-pointer items-center gap-4 rounded-xl border border-border/50 bg-background px-5 py-4 transition-all duration-300 ease-out",
-                "hover:border-primary/20 hover:bg-muted/20 hover:shadow-md hover:shadow-primary/1",
+                "group relative flex w-full cursor-pointer items-center gap-4 rounded-xl border border-border/70 bg-muted/5 px-5 py-4 transition-all duration-300 ease-out",
+                "hover:border-primary/30 hover:bg-muted/8 hover:shadow-md hover:shadow-primary/1",
                 value === option.value
                   ? "border-primary/40 bg-primary/3 ring-1 ring-primary/20 shadow-sm"
                   : "",
@@ -274,13 +273,13 @@ const ChoiceInput: React.FC<Props> = ({ config, field, form }) => {
             className="rounded-2xl border border-border/50 bg-popover/95 backdrop-blur-xl shadow-2xl p-2 animate-in fade-in slide-in-from-top-2 duration-300"
             align="start"
           >
-            <div className="max-h-[300px] overflow-y-auto space-y-1 pr-1 scrollbar-thin">
+            <div className="max-h-75 overflow-y-auto space-y-1 pr-1 scrollbar-thin">
               {config.options.map((option) => (
                 <SelectItem
                   key={option.value}
                   value={String(option.value)}
                   disabled={option.disabled}
-                  className="rounded-xl py-3 px-4 transition-all duration-200 cursor-pointer hover:bg-primary/[0.03] focus:bg-primary/5 focus:text-primary data-[state=checked]:bg-primary/[0.04] data-[state=checked]:font-bold"
+                  className="rounded-xl py-3 px-4 transition-all duration-200 cursor-pointer hover:bg-primary/3 focus:bg-primary/5 focus:text-primary data-[state=checked]:bg-primary/4 data-[state=checked]:font-bold"
                 >
                   <div className="flex flex-col gap-0.5">
                     <span className="text-[13.5px]">{option.label}</span>

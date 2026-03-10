@@ -22,8 +22,6 @@ import {
   ListOrdered,
   Heading1,
   Quote,
-  Undo,
-  Redo,
   Link as LinkIcon,
 } from "lucide-react";
 import {
@@ -114,8 +112,8 @@ const RichTextInput: React.FC<Props> = ({ config, field, form }) => {
     <FieldWrapper config={config} fieldId={fieldId} error={error} dirty={dirty}>
       <div
         className={cn(
-          "flex flex-col overflow-hidden rounded-2xl border border-input/60 bg-background transition-all duration-300 ease-out",
-          "focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10 focus-within:shadow-lg focus-within:shadow-primary/[0.02]",
+          "flex flex-col overflow-hidden rounded-2xl border border-input/70 bg-muted/5 transition-all duration-300 ease-out",
+          "focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10 focus-within:shadow-lg focus-within:shadow-primary/2",
           showError && "border-destructive/40 ring-4 ring-destructive/5",
           config.disabled && "opacity-60 cursor-not-allowed grayscale-[0.5]",
         )}
