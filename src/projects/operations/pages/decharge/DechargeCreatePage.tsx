@@ -1,9 +1,10 @@
 import { ModelForm } from "@/widgets/model-form";
+import type { OperationsDecharge } from "@/models";
 import { today } from "@/widgets/model-form/inputs/date";
 
 export function DechargeCreatePage() {
   return (
-    <ModelForm
+    <ModelForm<OperationsDecharge>
       app="operations"
       model="Decharge"
       title="Creation de decharge"
@@ -17,10 +18,14 @@ export function DechargeCreatePage() {
         "etatSortie",
         "serial",
         "codeInventaire",
-        "etat",
         "garder",
         "commentaire",
       ]}
+      nested={{
+        beneficiaire: {
+          onlyFields: [],
+        },
+      }}
       layout={{
         columns: 3,
         ordering: { tailing: ["commentaire"] },

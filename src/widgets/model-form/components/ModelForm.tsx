@@ -11,7 +11,7 @@ import type {
   ModelFormContractPermissions,
   ModelFormOperationPermission,
 } from "../types/generatedContract";
-import type { ModelFormProps } from "../types.model";
+import type { ModelFormProps, ModelFormValueShape } from "../types.model";
 import { parseRelationNestedFormConfig } from "./modelForm/nestedSchema";
 import {
   EMPTY_RUNTIME_OVERRIDES,
@@ -115,13 +115,19 @@ function normalizeMutationVariablesForGraphQL(
   return nextVariables;
 }
 
+type ResolvedModelFormValues<TSource extends object> =
+  ModelFormValueShape<TSource> extends Record<string, unknown>
+    ? ModelFormValueShape<TSource>
+    : Record<string, unknown>;
+
 /**
  * Composant principal de formulaire généré à partir d'un modèle Django.
  * 
  * @param props Propriétés du formulaire
  */
 export function ModelForm<
-  TFormValues extends Record<string, unknown> = Record<string, unknown>,
+  TSource extends object = Record<string, unknown>,
+  TFormValues extends Record<string, unknown> = ResolvedModelFormValues<TSource>,
 >(props: ModelFormProps<TFormValues>) {
   assertNoLegacyModelFormProps(props as Record<string, unknown>);
   const apolloClient = useApolloClient();

@@ -12,7 +12,7 @@ import type { FetchPolicy } from "@apollo/client";
 import type { UseFormReturn } from "@tanstack/react-form";
 import type { ModelFormProps } from "../types.model";
 
-// ─── Input Types ─────────────────────────────────────────────────────────────
+// --- Input Types -------------------------------------------------------------
 
 export type PrimitiveFormInputType =
  | "text"
@@ -41,14 +41,14 @@ export type StructuralFormInputType = "object" | "list" | "group";
 
 export type FormInputType = PrimitiveFormInputType | StructuralFormInputType;
 
-// ─── Validators ──────────────────────────────────────────────────────────────
+// --- Validators --------------------------------------------------------------
 
 export type ValidatorFn = (
  value: any,
  context: { values: Record<string, any>; name: string },
 ) => string | undefined | Promise<string | undefined>;
 
-// ─── Base Field Config ───────────────────────────────────────────────────────
+// --- Base Field Config -------------------------------------------------------
 
 export interface BaseFieldConfig {
  name: string;
@@ -81,7 +81,7 @@ export interface BaseFieldConfig {
  meta?: Record<string, any>;
 }
 
-// ─── Concrete Field Configs ──────────────────────────────────────────────────
+// --- Concrete Field Configs --------------------------------------------------
 
 export interface TextFieldConfig extends BaseFieldConfig {
  type: "text" | "email" | "password" | "textarea" | "color" | "json";
@@ -286,7 +286,7 @@ export interface RichTextFieldConfig extends BaseFieldConfig {
  )[];
 }
 
-// ─── Field Union ─────────────────────────────────────────────────────────────
+// --- Field Union -------------------------------------------------------------
 
 export type FormFieldConfig =
  | TextFieldConfig
@@ -302,7 +302,7 @@ export type FormFieldConfig =
  | GroupFieldConfig
  | RichTextFieldConfig;
 
-// ─── Field Renderer Types ────────────────────────────────────────────────────
+// --- Field Renderer Types ----------------------------------------------------
 
 export type FieldComponentProps<
  TConfig extends FormFieldConfig = FormFieldConfig,
@@ -322,7 +322,7 @@ export type FieldRenderContext = {
  form: UseFormReturn<Record<string, any>>;
 };
 
-// ─── Section Config ──────────────────────────────────────────────────────────
+// --- Section Config ----------------------------------------------------------
 
 export interface FormSectionConfig<TValues = Record<string, any>> {
  id?: string;
@@ -354,7 +354,7 @@ export interface FormSectionConfig<TValues = Record<string, any>> {
  };
 }
 
-// ─── Schema ──────────────────────────────────────────────────────────────────
+// --- Schema ------------------------------------------------------------------
 
 export type FormValidator<TValues> = (
  values: TValues,
@@ -369,7 +369,7 @@ export interface FormSchema<TValues = Record<string, any>> {
  validators?: FormValidator<TValues>[];
 }
 
-// ─── Change Record ───────────────────────────────────────────────────────────
+// --- Change Record -----------------------------------------------------------
 
 export interface ChangeRecord {
  name: string;

@@ -11,17 +11,20 @@ import type { FieldDependencyMap } from "../types/behavior";
 export function useFormDependencies<TValues extends Record<string, any>>(
  values: TValues,
  form: UseFormReturn<TValues>,
- dependencies?: FieldDependencyMap,
+ dependencies?: FieldDependencyMap<TValues>,
 ) {
  const prevWatchedRef = React.useRef<Record<string, any>>({});
 
  React.useEffect(() => {
  if (!dependencies) return;
+ const dependencyEntries = Object.entries(dependencies) as Array<
+  [string, NonNullable<FieldDependencyMap<TValues>[keyof FieldDependencyMap<TValues>]>]
+ >;
 
  const changedWatched = new Set<string>();
 
  // Detect which watched fields changed
- for (const dep of Object.values(dependencies)) {
+ for (const [, dep] of dependencyEntries) {
  for (const watchField of dep.watch) {
  const current = getNestedValue(values, watchField);
  const previous = prevWatchedRef.current[watchField];
@@ -33,7 +36,7 @@ export function useFormDependencies<TValues extends Record<string, any>>(
 
  // Update snapshot
  const nextSnapshot: Record<string, any> = {};
- for (const dep of Object.values(dependencies)) {
+ for (const [, dep] of dependencyEntries) {
  for (const watchField of dep.watch) {
  nextSnapshot[watchField] = getNestedValue(values, watchField);
  }
@@ -45,7 +48,7 @@ export function useFormDependencies<TValues extends Record<string, any>>(
  if (isFirstRender || changedWatched.size === 0) return;
 
  // Apply effects
- for (const [fieldName, dep] of Object.entries(dependencies)) {
+ for (const [fieldName, dep] of dependencyEntries) {
  const shouldTrigger = dep.watch.some((w) => changedWatched.has(w));
  if (!shouldTrigger) continue;
 

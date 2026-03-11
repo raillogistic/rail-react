@@ -41,7 +41,9 @@ export function useFormConditions<TValues extends Record<string, any>>(
 
  // Evaluate conditions map
  if (conditions) {
- for (const [pattern, predicate] of Object.entries(conditions)) {
+ for (const [pattern, predicate] of Object.entries(conditions) as Array<
+  [string, NonNullable<FieldConditionMap<TValues>[keyof FieldConditionMap<TValues>]>]
+ >) {
  const isVisible = predicate(values, ctx);
  if (!isVisible) {
  if (pattern.includes("*")) {

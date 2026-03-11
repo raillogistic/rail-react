@@ -7,8 +7,10 @@
 import type React from "react";
 import type {
  DynamicFormProps,
+ FormFieldPath,
  FormFieldConfig,
  FormSchema,
+ PrimitiveFormValue,
  FormSectionConfig,
 } from "./types";
 import type {
@@ -29,7 +31,39 @@ export type ModelFormModeInput =
  | "update"
  | "view";
 
-export type ModelFormFieldOverrideResult =
+type ModelFormRelationIdentifier = string | number;
+type ModelFormNil = null | undefined;
+type ModelFormRelationIdOf<T> = Extract<
+ T extends { id?: infer TId } ? NonNullable<TId> : never,
+ ModelFormRelationIdentifier
+>;
+type ModelFormArrayElementValue<T> =
+ ModelFormRelationIdOf<NonNullable<T>> extends never
+ ? ModelFormValueShape<T>
+ : ModelFormRelationIdOf<NonNullable<T>>;
+
+export type ModelFormValueShape<T> = T extends PrimitiveFormValue
+ ? T
+ : T extends Array<infer TValue>
+   ? Array<ModelFormArrayElementValue<TValue>>
+   : T extends ReadonlyArray<infer TValue>
+     ? ReadonlyArray<ModelFormArrayElementValue<TValue>>
+     : T extends object
+       ? { [K in keyof T]: ModelFormFieldValue<T[K]> }
+       : T;
+
+export type ModelFormFieldValue<T> =
+ ModelFormRelationIdOf<NonNullable<T>> extends never
+ ? ModelFormValueShape<T>
+ : ModelFormRelationIdOf<NonNullable<T>> | Extract<T, ModelFormNil>;
+
+export type ModelFormFieldPath<TValues extends Record<string, unknown>> =
+ FormFieldPath<TValues>;
+
+export type ModelFormFieldOverrideResult<
+ TValues extends Record<string, unknown> = Record<string, unknown>,
+ TPath extends ModelFormFieldPath<TValues> = ModelFormFieldPath<TValues>,
+> =
  | Partial<FormFieldConfig>
  | FormFieldConfig
  | null
@@ -41,33 +75,47 @@ export type ModelFormSectionOverrideResult<TValues extends Record<string, unknow
  | null
  | undefined;
 
-export type ModelFormFieldOverride = (
+export type ModelFormFieldOverride<
+ TValues extends Record<string, unknown> = Record<string, unknown>,
+ TPath extends ModelFormFieldPath<TValues> = ModelFormFieldPath<TValues>,
+> = (
  field: FormFieldConfig,
-) => ModelFormFieldOverrideResult;
+) => ModelFormFieldOverrideResult<TValues, TPath>;
 
 export type ModelFormSectionOverride<TValues extends Record<string, unknown>> = (
  section: FormSectionConfig<TValues>,
 ) => ModelFormSectionOverrideResult<TValues>;
 
-export type ModelFormFieldOverrideValue =
+export type ModelFormFieldOverrideValue<
+ TValues extends Record<string, unknown> = Record<string, unknown>,
+ TPath extends ModelFormFieldPath<TValues> = ModelFormFieldPath<TValues>,
+> =
  | Partial<FormFieldConfig>
- | ModelFormFieldOverride;
+ | ModelFormFieldOverride<TValues, TPath>;
 
 export type ModelFormSectionOverrideValue<TValues extends Record<string, unknown>> =
  | Partial<FormSectionConfig<TValues>>
  | ModelFormSectionOverride<TValues>;
 
-export type ModelFormFieldOverrides = Record<string, ModelFormFieldOverrideValue>;
+export type ModelFormFieldOverrides<TValues extends Record<string, unknown>> =
+ Partial<{
+  [TPath in ModelFormFieldPath<TValues>]: ModelFormFieldOverrideValue<
+   TValues,
+   TPath
+  >;
+ }>;
 
 export type ModelFormSectionOverrides<TValues extends Record<string, unknown>> =
  Record<string, ModelFormSectionOverrideValue<TValues>>;
 
-export type ModelFormGeneratedSectionField = string | FormFieldConfig;
+export type ModelFormGeneratedSectionField<
+ TValues extends Record<string, unknown> = Record<string, unknown>,
+> = ModelFormFieldPath<TValues> | FormFieldConfig;
 
 export type ModelFormGeneratedSection<
  TValues extends Record<string, unknown> = Record<string, unknown>,
 > = Omit<FormSectionConfig<TValues>, "fields"> & {
- fields: ModelFormGeneratedSectionField[];
+ fields: ModelFormGeneratedSectionField<TValues>[];
 };
 
 export type ModelFormNestedAddButtonConfig =
@@ -134,7 +182,7 @@ export type ModelFormNestedDefinition<TValues extends Record<string, unknown>> =
  * Optional direct delete mutation triggered by nested list remove button.
  */
  deleteMutation?: ModelFormNestedDeleteMutationConfig;
- fieldOverrides?: ModelFormFieldOverrides;
+ fieldOverrides?: ModelFormFieldOverrides<TValues>;
  sectionOverrides?: ModelFormSectionOverrides<TValues>;
 };
 
@@ -164,18 +212,18 @@ export interface ModelFormProps<
  nested?: ModelFormNestedConfig<TFormValues>;
  runtimeOverrides?: ModelFormRuntimeOverride[];
 
- onlyFields?: string[];
- excludeFields?: string[];
+ onlyFields?: ModelFormFieldPath<TFormValues>[];
+ excludeFields?: ModelFormFieldPath<TFormValues>[];
  /** Render and submit only required fields. */
  onlyRequired?: boolean;
  /**
  * Restrict relation paths (first path segment of nested fields) that are
  * allowed to render.
  */
- onlyRelationships?: string[];
+ onlyRelationships?: Extract<keyof TFormValues, string>[];
  /** Exclude relation paths (first path segment of nested fields). */
- excludeRelationships?: string[];
- fieldOverrides?: ModelFormFieldOverrides;
+ excludeRelationships?: Extract<keyof TFormValues, string>[];
+ fieldOverrides?: ModelFormFieldOverrides<TFormValues>;
  sectionOverrides?: ModelFormSectionOverrides<TFormValues>;
  generatedSections?: ModelFormGeneratedSection<TFormValues>[];
 

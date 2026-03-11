@@ -20,7 +20,9 @@ export function useFormComputed<TValues extends Record<string, any>>(
  let hasChanges = false;
  const updates: Array<{ name: string; value: any }> = [];
 
- for (const [fieldName, derive] of Object.entries(computed)) {
+ for (const [fieldName, derive] of Object.entries(computed) as Array<
+  [string, NonNullable<ComputedFieldMap<TValues>[keyof ComputedFieldMap<TValues>]>]
+ >) {
  const nextValue = derive(values, ctx);
  const prevValue = lastComputedRef.current[fieldName];
 

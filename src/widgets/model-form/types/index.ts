@@ -39,6 +39,7 @@ export type {
 // Behavior types
 export type {
  FormSubmitContext,
+ FormFieldSelector,
  FieldConditionMap,
  ComputedFieldMap,
  FieldDependencyEffect,
@@ -65,6 +66,9 @@ export type {
  FormStateConfig,
  FormDefaultValues,
  DeepPartialFormValue,
+ PrimitiveFormValue,
+ NonTraversableFormValue,
+ FormObjectValue,
  FormFieldPath,
  FormFieldPathValue,
  FormDevtoolsConfig,

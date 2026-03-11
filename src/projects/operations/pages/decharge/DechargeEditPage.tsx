@@ -1,6 +1,6 @@
 import { useParams } from "react-router-dom";
 import { ModelForm } from "@/widgets/model-form";
-import { OperationsDecharge } from "@/models";
+import type { OperationsDecharge } from "@/models";
 
 export function DechargeEditPage() {
   const { id = "" } = useParams();
@@ -12,7 +12,7 @@ export function DechargeEditPage() {
           Modifier une decharge
         </h1>
       </header>
-      <ModelForm
+      <ModelForm<OperationsDecharge>
         app="operations"
         model="Decharge"
         mode="UPDATE"

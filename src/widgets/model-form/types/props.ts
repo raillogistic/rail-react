@@ -13,7 +13,7 @@ import type { FormBehaviorConfig } from "./behavior";
 import type { FormLayoutConfig } from "./layout";
 import type { FormActionsConfig } from "./actions";
 
-type PrimitiveFormValue =
+export type PrimitiveFormValue =
  | string
  | number
  | boolean
@@ -25,9 +25,11 @@ type PrimitiveFormValue =
  | File
  | Blob;
 
-type NonTraversableFormValue = PrimitiveFormValue | ((...args: any[]) => unknown);
+export type NonTraversableFormValue =
+ | PrimitiveFormValue
+ | ((...args: any[]) => unknown);
 
-type FormObjectValue<T> = T extends NonTraversableFormValue
+export type FormObjectValue<T> = T extends NonTraversableFormValue
  ? never
  : T extends readonly any[]
    ? never
