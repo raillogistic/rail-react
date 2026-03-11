@@ -5,8 +5,7 @@
  * Required env:
  *   - VITE_TEST_USERNAME
  *   - VITE_TEST_PASSWORD
- *   - VITE_AUTH_ENDPOINT or VITE_TEST_GRAPHQL_ENDPOINT
- *   - VITE_API_ENDPOINT or VITE_TEST_GRAPHQL_ENDPOINT
+ *   - VITE_TEST_GRAPHQL_ENDPOINT
  * Optional env:
  *   - MODELS_APPS (comma-separated app labels allowlist)
  *   - MODELS_OUTPUT_PATH (default: src/models.ts)
@@ -28,9 +27,10 @@ const OUTPUT_PATH = path.resolve(
   "..",
   process.env.MODELS_OUTPUT_PATH || "src/models.ts",
 );
-const INCLUDE_REVERSE = String(process.env.MODELS_INCLUDE_REVERSE || "true")
-  .trim()
-  .toLowerCase() !== "false";
+const INCLUDE_REVERSE =
+  String(process.env.MODELS_INCLUDE_REVERSE || "true")
+    .trim()
+    .toLowerCase() !== "false";
 const APP_FILTER = (process.env.MODELS_APPS || "")
   .split(",")
   .map((value) => value.trim())
@@ -145,40 +145,6 @@ function requireEnv(name) {
   return value;
 }
 
-function normalizeGraphQLEndpoint(endpoint) {
-  const trimmed = String(endpoint || "").trim();
-  if (!trimmed) {
-    return trimmed;
-  }
-
-  try {
-    const url = new URL(trimmed);
-    if (!url.pathname.endsWith("/")) {
-      url.pathname = `${url.pathname}/`;
-    }
-    return url.toString();
-  } catch {
-    return trimmed.endsWith("/") ? trimmed : `${trimmed}/`;
-  }
-}
-
-function resolveEndpoint(endpoint, baseUrl) {
-  const trimmed = String(endpoint || "").trim();
-  if (!trimmed) {
-    return trimmed;
-  }
-
-  try {
-    return new URL(trimmed).toString();
-  } catch {
-    const normalizedBase = String(baseUrl || "").trim();
-    if (!normalizedBase) {
-      return trimmed;
-    }
-    return new URL(trimmed, normalizedBase).toString();
-  }
-}
-
 function toPascalCase(value) {
   return String(value || "")
     .split(/[_\s-]+/)
@@ -229,24 +195,25 @@ async function postGraphQL(endpoint, query, variables = {}, token) {
     body: JSON.stringify({ query, variables }),
   });
 
-  const rawBody = await response.text();
-  const payload = rawBody
-    ? await Promise.resolve().then(() => JSON.parse(rawBody)).catch(() => ({}))
-    : {};
+  const payload = await response.json().catch(() => ({}));
   if (!response.ok) {
-    const details = rawBody || JSON.stringify(payload);
     throw new Error(
-      `GraphQL request failed (${response.status}): ${details}`,
+      `GraphQL request failed (${response.status}): ${JSON.stringify(payload)}`,
     );
   }
   if (payload.errors?.length) {
-    throw new Error(`GraphQL returned errors: ${JSON.stringify(payload.errors)}`);
+    throw new Error(
+      `GraphQL returned errors: ${JSON.stringify(payload.errors)}`,
+    );
   }
   return payload.data || {};
 }
 
 async function login(endpoint, username, password) {
-  const data = await postGraphQL(endpoint, LOGIN_MUTATION, { username, password });
+  const data = await postGraphQL(endpoint, LOGIN_MUTATION, {
+    username,
+    password,
+  });
   const loginPayload = data.login;
   if (!loginPayload?.ok || !loginPayload?.token) {
     throw new Error(
@@ -414,45 +381,16 @@ function buildOutput(modelSchemas) {
 }
 
 async function run() {
-  const backendUrl = (process.env.VITE_BACKEND_URL || "").trim();
-  const rawLegacyEndpoint = (process.env.VITE_TEST_GRAPHQL_ENDPOINT || "").trim();
-  const rawAuthEndpoint =
-    (process.env.VITE_AUTH_ENDPOINT || "").trim() || rawLegacyEndpoint;
-  const rawApiEndpoint =
-    (process.env.VITE_API_ENDPOINT || "").trim() || rawLegacyEndpoint;
-  const authEndpoint = normalizeGraphQLEndpoint(
-    resolveEndpoint(rawAuthEndpoint, backendUrl),
-  );
-  const apiEndpoint = normalizeGraphQLEndpoint(
-    resolveEndpoint(rawApiEndpoint, backendUrl),
-  );
+  const endpoint = requireEnv("VITE_TEST_GRAPHQL_ENDPOINT");
   const username = requireEnv("VITE_TEST_USERNAME");
   const password = requireEnv("VITE_TEST_PASSWORD");
 
-  if (!authEndpoint) {
-    throw new Error(
-      "Missing required environment variable: VITE_AUTH_ENDPOINT or VITE_TEST_GRAPHQL_ENDPOINT",
-    );
-  }
-  if (!apiEndpoint) {
-    throw new Error(
-      "Missing required environment variable: VITE_API_ENDPOINT or VITE_TEST_GRAPHQL_ENDPOINT",
-    );
-  }
+  console.log(`[getModels] Authenticating against ${endpoint}`);
+  const token = await login(endpoint, username, password);
 
-  if (authEndpoint !== rawAuthEndpoint) {
-    console.log(`[getModels] Normalized auth endpoint to ${authEndpoint}`);
-  }
-  if (apiEndpoint !== rawApiEndpoint) {
-    console.log(`[getModels] Normalized API endpoint to ${apiEndpoint}`);
-  }
-
-  console.log(`[getModels] Authenticating against ${authEndpoint}`);
-  const token = await login(authEndpoint, username, password);
-
-  console.log(`[getModels] Fetching available models from ${apiEndpoint}`);
+  console.log("[getModels] Fetching available models");
   const available = await postGraphQL(
-    apiEndpoint,
+    endpoint,
     AVAILABLE_MODELS_QUERY,
     {},
     token,
@@ -482,7 +420,7 @@ async function run() {
   }
 
   console.log(
-    `[getModels] Fetching schemas for ${selectedModels.length} models from ${apiEndpoint}`,
+    `[getModels] Fetching schemas for ${selectedModels.length} models`,
   );
   const modelSchemas = [];
   const failures = [];
@@ -490,7 +428,7 @@ async function run() {
   for (const modelRef of selectedModels) {
     try {
       const payload = await postGraphQL(
-        apiEndpoint,
+        endpoint,
         MODEL_SCHEMA_QUERY,
         { app: modelRef.app, model: modelRef.model },
         token,

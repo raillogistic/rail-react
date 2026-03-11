@@ -32,8 +32,6 @@ dist_tmp/*
 Thumbs.db
 
 # Generated Types (Changeable/Domain Specific)
-src/models.ts
-src/schema.ts
 
 # App/domain-specific pages (local-only)
 src/apps/**

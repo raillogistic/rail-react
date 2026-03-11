@@ -1,5 +1,6 @@
 import { useParams } from "react-router-dom";
 import { ModelForm } from "@/widgets/model-form";
+import { OperationsDecharge } from "@/models";
 
 export function DechargeEditPage() {
   const { id = "" } = useParams();

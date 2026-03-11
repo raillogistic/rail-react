@@ -6,6 +6,7 @@ export function DechargeCreatePage() {
     <ModelForm
       app="operations"
       model="Decharge"
+      title="Creation de decharge"
       mode="CREATE"
       description="Saisissez les informations de la decharge pour l'article remis."
       onlyFields={[
@@ -20,11 +21,10 @@ export function DechargeCreatePage() {
         "garder",
         "commentaire",
       ]}
-      fieldOverrides={{
-        libelle: { colSpan: 2 },
-        commentaire: { colSpan: 2 },
+      layout={{
+        columns: 3,
+        ordering: { tailing: ["commentaire"] },
       }}
-      layout={{ columns: 2, ordering: { tailing: ["commentaire"] } }}
       state={{
         defaultValues: {
           garder: false,
