@@ -20,6 +20,31 @@ export default defineConfig({
       "react-dom": path.resolve(__dirname, "./node_modules/react-dom"),
     },
   },
+  optimizeDeps: {
+    // Lazy project routes pull these UI primitives in after initial startup.
+    // Pre-bundling them avoids Vite invalidating an older optimized chunk
+    // mid-navigation and returning `504 Outdated Optimize Dep`.
+    include: [
+      "@radix-ui/react-alert-dialog",
+      "@radix-ui/react-avatar",
+      "@radix-ui/react-checkbox",
+      "@radix-ui/react-collapsible",
+      "@radix-ui/react-dialog",
+      "@radix-ui/react-dropdown-menu",
+      "@radix-ui/react-label",
+      "@radix-ui/react-navigation-menu",
+      "@radix-ui/react-popover",
+      "@radix-ui/react-scroll-area",
+      "@radix-ui/react-select",
+      "@radix-ui/react-separator",
+      "@radix-ui/react-slot",
+      "@radix-ui/react-switch",
+      "@radix-ui/react-tabs",
+      "@radix-ui/react-toggle",
+      "@radix-ui/react-toggle-group",
+      "@radix-ui/react-tooltip",
+    ],
+  },
   build: {
     rollupOptions: {
       output: {
