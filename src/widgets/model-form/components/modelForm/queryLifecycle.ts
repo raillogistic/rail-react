@@ -1,9 +1,9 @@
 import type { ModelFormContract } from "../../types/generatedContract";
 import type { ModelFormNestedDefinition } from "../../types.model";
 
-type NestedControlMap<TValues extends Record<string, unknown>> = Record<
+type NestedControlMap<TSource extends object> = Record<
  string,
- ModelFormNestedDefinition<TValues>
+ ModelFormNestedDefinition<TSource>
 >;
 
 function resolveRelationFieldName(relation: {
@@ -45,9 +45,9 @@ export function buildRelationModelKey(appLabel: string, modelName: string): stri
 }
 
 export function collectInitialDataNestedFields<
- TValues extends Record<string, unknown>,
+ TSource extends object,
 >(
- nestedControls: NestedControlMap<TValues> | undefined,
+ nestedControls: NestedControlMap<TSource> | undefined,
  onlyRelationships: string[],
  excludeRelationships: string[],
 ) {
@@ -73,10 +73,10 @@ export function collectInitialDataNestedFields<
 }
 
 export function collectNestedRelationModelRefs<
- TValues extends Record<string, unknown>,
+ TSource extends object,
 >(
  contract: ModelFormContract | null,
- nestedControls: NestedControlMap<TValues> | undefined,
+ nestedControls: NestedControlMap<TSource> | undefined,
 ) {
  if (!contract || !nestedControls) return [];
 
@@ -112,11 +112,11 @@ export function collectNestedRelationModelRefs<
 }
 
 export function expandInitialDataNestedFieldsWithRelatedContracts<
- TValues extends Record<string, unknown>,
+ TSource extends object,
 >(
  initialNestedFields: string[] | undefined,
  contract: ModelFormContract | null,
- nestedControls: NestedControlMap<TValues> | undefined,
+ nestedControls: NestedControlMap<TSource> | undefined,
  relatedContractsByModel: Map<string, ModelFormContract>,
 ) {
  if (!initialNestedFields?.length || !contract || !nestedControls) {

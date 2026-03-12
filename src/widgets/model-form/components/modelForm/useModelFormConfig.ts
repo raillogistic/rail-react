@@ -9,8 +9,11 @@ import {
  EMPTY_PATHS,
 } from "./modelFormUtils";
 
-export function useModelFormConfig<TFormValues extends Record<string, unknown>>(
- props: Pick<ModelFormProps<TFormValues>, "nested" | "includeNested" | "onlyRelationships" | "excludeRelationships">
+export function useModelFormConfig<
+ TFormValues extends Record<string, unknown>,
+ TSource extends object = TFormValues,
+>(
+ props: Pick<ModelFormProps<TFormValues, TSource>, "nested" | "includeNested" | "onlyRelationships" | "excludeRelationships">
 ) {
  const { nested, includeNested, onlyRelationships, excludeRelationships } = props;
 
@@ -41,7 +44,7 @@ export function useModelFormConfig<TFormValues extends Record<string, unknown>>(
 
  const initialDataNestedFields = React.useMemo(() => {
  return collectInitialDataNestedFields(
- nestedControls,
+ nestedControls as any,
  resolvedOnlyRelationships,
  resolvedExcludeRelationships,
  );

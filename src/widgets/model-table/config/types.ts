@@ -1,19 +1,30 @@
 import type React from "react";
 import type { DynamicTableExpandConfig } from "../dynamic-table";
-import type { ModelFormProps } from "@/widgets/model-form/types.model";
+import type {
+  ModelFormProps,
+  ModelFormValueShape,
+} from "@/widgets/model-form/types.model";
 import type { ModelDynamicDetailConfig } from "@/widgets/model-details/config/types";
 import type {
   BaseModelTableColumnActionsInput,
   BaseModelTableColumnOrderingConfig,
+  DynamicModelTableRow,
   BaseModelTableFieldsInput,
   BaseModelTableRefetch,
   PaginationState,
   BaseModelTableRelationConfig,
+  ModelTableAccessorPath,
+  ModelTableRelationKey,
   BaseModelTableRelationStatsConfig,
   ModelSchema,
   TableDensity,
 } from "../types";
 import type { ModelTableContentConfig } from "../components/content/types";
+
+type ResolvedModelTableFormValues<TSource extends object> =
+  ModelFormValueShape<TSource> extends Record<string, unknown>
+    ? ModelFormValueShape<TSource>
+    : Record<string, unknown>;
 
 export type FilterPanelMode = "drawer" | "modal";
 
@@ -75,10 +86,12 @@ export type ModelTableDetailDrawerDirection =
 /**
  * Runtime context supplied to update configuration callbacks.
  */
-export type ModelTableUpdateContext = {
+export type ModelTableUpdateContext<
+  TSource extends object = Record<string, unknown>,
+> = {
   app: string;
   model: string;
-  row: Record<string, unknown>;
+  row: DynamicModelTableRow<TSource>;
   rowId: string;
   metadata?: ModelSchema;
 };
@@ -86,21 +99,25 @@ export type ModelTableUpdateContext = {
 /**
  * Runtime context supplied to create configuration callbacks.
  */
-export type ModelTableCreateContext = {
+export type ModelTableCreateContext<
+  TSource extends object = Record<string, unknown>,
+> = {
   app: string;
   model: string;
   metadata?: ModelSchema;
-  selectedRows: Record<string, unknown>[];
+  selectedRows: DynamicModelTableRow<TSource>[];
   selectionState: Record<string, boolean>;
 };
 
 /**
  * Runtime context supplied to detail configuration callbacks.
  */
-export type ModelTableDetailContext = {
+export type ModelTableDetailContext<
+  TSource extends object = Record<string, unknown>,
+> = {
   app: string;
   model: string;
-  row: Record<string, unknown>;
+  row: DynamicModelTableRow<TSource>;
   rowId: string;
   metadata?: ModelSchema;
 };
@@ -108,31 +125,39 @@ export type ModelTableDetailContext = {
 /**
  * ModelForm override surface accepted by table row update popups.
  */
-export type ModelTableUpdateFormOverrides = Omit<
-  ModelFormProps<Record<string, unknown>>,
+export type ModelTableUpdateFormOverrides<
+  TSource extends object = Record<string, unknown>,
+> = Omit<
+  ModelFormProps<ResolvedModelTableFormValues<TSource>, TSource>,
   "app" | "model" | "mode" | "objectId"
 >;
 
 /**
  * ModelForm override surface accepted by table create popups.
  */
-export type ModelTableCreateFormOverrides = Omit<
-  ModelFormProps<Record<string, unknown>>,
+export type ModelTableCreateFormOverrides<
+  TSource extends object = Record<string, unknown>,
+> = Omit<
+  ModelFormProps<ResolvedModelTableFormValues<TSource>, TSource>,
   "app" | "model" | "mode" | "objectId"
 >;
 
 /**
  * ModelForm override surface accepted by table row detail popups.
  */
-export type ModelTableDetailFormOverrides = Omit<
-  ModelFormProps<Record<string, unknown>>,
+export type ModelTableDetailFormOverrides<
+  TSource extends object = Record<string, unknown>,
+> = Omit<
+  ModelFormProps<ResolvedModelTableFormValues<TSource>, TSource>,
   "app" | "model" | "mode" | "objectId"
 >;
 
 /**
  * Update-action configuration used by DynamicModelTable row edit behavior.
  */
-export type ModelTableUpdateConfig = {
+export type ModelTableUpdateConfig<
+  TSource extends object = Record<string, unknown>,
+> = {
   /**
    * Overlay type for update action.
    * - "drawer" (default)
@@ -143,7 +168,7 @@ export type ModelTableUpdateConfig = {
   /**
    * Popup title or title resolver.
    */
-  title?: React.ReactNode | ((ctx: ModelTableUpdateContext) => React.ReactNode);
+  title?: React.ReactNode | ((ctx: ModelTableUpdateContext<TSource>) => React.ReactNode);
   /**
    * Overlay width CSS value (e.g. "50vw", "900px", "min(90vw, 960px)").
    */
@@ -168,18 +193,18 @@ export type ModelTableUpdateConfig = {
    * Row-aware object id resolver passed to ModelForm update mode.
    */
   resolveObjectId?: (
-    ctx: ModelTableUpdateContext,
+    ctx: ModelTableUpdateContext<TSource>,
   ) => string | number | null | undefined;
   /**
    * Global ModelForm overrides for popup update mode.
    */
-  form?: ModelTableUpdateFormOverrides;
+  form?: ModelTableUpdateFormOverrides<TSource>;
   /**
    * Row-specific ModelForm override resolver.
    */
   resolveFormProps?: (
-    ctx: ModelTableUpdateContext,
-  ) => ModelTableUpdateFormOverrides | undefined;
+    ctx: ModelTableUpdateContext<TSource>,
+  ) => ModelTableUpdateFormOverrides<TSource> | undefined;
   /**
    * Close popup automatically after successful update submit.
    * Defaults to true.
@@ -195,7 +220,9 @@ export type ModelTableUpdateConfig = {
 /**
  * Create-action configuration used by DynamicModelTable top add behavior.
  */
-export type ModelTableCreateConfig = {
+export type ModelTableCreateConfig<
+  TSource extends object = Record<string, unknown>,
+> = {
   /**
    * Overlay type for create action.
    * - "drawer" (default)
@@ -206,7 +233,7 @@ export type ModelTableCreateConfig = {
   /**
    * Popup title or title resolver.
    */
-  title?: React.ReactNode | ((ctx: ModelTableCreateContext) => React.ReactNode);
+  title?: React.ReactNode | ((ctx: ModelTableCreateContext<TSource>) => React.ReactNode);
   /**
    * Overlay width CSS value (e.g. "50vw", "900px", "min(90vw, 960px)").
    */
@@ -226,13 +253,13 @@ export type ModelTableCreateConfig = {
   /**
    * Global ModelForm overrides for popup create mode.
    */
-  form?: ModelTableCreateFormOverrides;
+  form?: ModelTableCreateFormOverrides<TSource>;
   /**
    * Runtime ModelForm override resolver.
    */
   resolveFormProps?: (
-    ctx: ModelTableCreateContext,
-  ) => ModelTableCreateFormOverrides | undefined;
+    ctx: ModelTableCreateContext<TSource>,
+  ) => ModelTableCreateFormOverrides<TSource> | undefined;
   /**
    * Close popup automatically after successful create submit.
    * Defaults to true.
@@ -248,7 +275,9 @@ export type ModelTableCreateConfig = {
 /**
  * Detail-action configuration used by DynamicModelTable row view behavior.
  */
-export type ModelTableDetailConfig = {
+export type ModelTableDetailConfig<
+  TSource extends object = Record<string, unknown>,
+> = {
   /**
    * Overlay type for detail action.
    * - "drawer" (default)
@@ -259,7 +288,7 @@ export type ModelTableDetailConfig = {
   /**
    * Popup title or title resolver.
    */
-  title?: React.ReactNode | ((ctx: ModelTableDetailContext) => React.ReactNode);
+  title?: React.ReactNode | ((ctx: ModelTableDetailContext<TSource>) => React.ReactNode);
   /**
    * Overlay width CSS value (e.g. "50vw", "900px", "min(90vw, 960px)").
    */
@@ -284,18 +313,18 @@ export type ModelTableDetailConfig = {
    * Row-aware object id resolver passed to ModelForm view mode.
    */
   resolveObjectId?: (
-    ctx: ModelTableDetailContext,
+    ctx: ModelTableDetailContext<TSource>,
   ) => string | number | null | undefined;
   /**
    * Global ModelForm overrides for popup detail mode.
    */
-  form?: ModelTableDetailFormOverrides;
+  form?: ModelTableDetailFormOverrides<TSource>;
   /**
    * Row-specific ModelForm override resolver.
    */
   resolveFormProps?: (
-    ctx: ModelTableDetailContext,
-  ) => ModelTableDetailFormOverrides | undefined;
+    ctx: ModelTableDetailContext<TSource>,
+  ) => ModelTableDetailFormOverrides<TSource> | undefined;
   /**
    * Global ModelDynamicDetail configuration overrides.
    */
@@ -304,11 +333,13 @@ export type ModelTableDetailConfig = {
    * Row-specific ModelDynamicDetail configuration resolver.
    */
   resolveBaseDetail?: (
-    ctx: ModelTableDetailContext,
+    ctx: ModelTableDetailContext<TSource>,
   ) => ModelDynamicDetailConfig | undefined;
 };
 
-export type ModelTableV2TopAction = {
+export type ModelTableV2TopAction<
+  TSource extends object = Record<string, unknown>,
+> = {
   key: string;
   label: string;
   icon?: React.ReactNode;
@@ -321,21 +352,23 @@ export type ModelTableV2TopAction = {
   disabledReason?: string;
   dataAttributes?: Record<string, string | number | boolean | undefined>;
   on_click: (ctx: {
-    selected_rows: Record<string, unknown>[];
+    selected_rows: DynamicModelTableRow<TSource>[];
     selection_state: Record<string, boolean>;
   }) => void;
 };
 
-export type ModelTableV2TopActionsInput =
-  | ModelTableV2TopAction[]
+export type ModelTableV2TopActionsInput<
+  TSource extends object = Record<string, unknown>,
+> =
+  | ModelTableV2TopAction<TSource>[]
   | ((ctx: {
       app: string;
       model: string;
       metadata?: ModelSchema;
-      items: Record<string, unknown>[];
-      selected_rows: Record<string, unknown>[];
+      items: DynamicModelTableRow<TSource>[];
+      selected_rows: DynamicModelTableRow<TSource>[];
       selection_state: Record<string, boolean>;
-    }) => ModelTableV2TopAction[] | undefined);
+    }) => ModelTableV2TopAction<TSource>[] | undefined);
 
 export type ModelTableV2TableConfig = {
   pdfPreview?: {
@@ -483,41 +516,47 @@ export type DynamicModelTableInitVariables = {
   per_page?: number;
 } & Record<string, unknown>;
 
-export interface BaseModelTableProps {
+export interface BaseModelTableProps<
+  TSource extends object = Record<string, unknown>,
+> {
   app: string;
   model: string;
   className?: string;
   persistenceKey?: string;
   quickSearch?: boolean;
-  topActions?: ModelTableV2TopActionsInput;
+  topActions?: ModelTableV2TopActionsInput<TSource>;
   children?: React.ReactNode;
   tableConfig?: ModelTableV2TableConfig;
   view?: ModelTableV2ViewOptions;
   performance?: ModelTableV2PerformanceOptions;
   hideTableOnMobile?: boolean;
-  fields?: BaseModelTableFieldsInput;
+  fields?: BaseModelTableFieldsInput<TSource>;
   showReversed?: boolean;
   showCount?: boolean;
-  relations?: Record<string, BaseModelTableRelationConfig>;
-  relationStats?: BaseModelTableRelationStatsConfig;
+  relations?: Partial<
+    Record<ModelTableRelationKey<TSource>, BaseModelTableRelationConfig<TSource>>
+  >;
+  relationStats?: BaseModelTableRelationStatsConfig<TSource>;
   queryManager?: string;
-  columnOrdering?: BaseModelTableColumnOrderingConfig;
+  columnOrdering?: BaseModelTableColumnOrderingConfig<ModelTableAccessorPath<TSource>>;
   skipCount?: boolean;
   disableSorting?: boolean;
   enableSelection?: boolean;
   expand?: ModelTableV2ExpandConfig;
-  columnActions?: BaseModelTableColumnActionsInput;
-  content?: ModelTableContentConfig;
+  columnActions?: BaseModelTableColumnActionsInput<DynamicModelTableRow<TSource>>;
+  content?: ModelTableContentConfig<TSource>;
 }
 
-export interface ModelTableV2Props {
+export interface ModelTableV2Props<
+  TSource extends object = Record<string, unknown>,
+> {
   app: string;
   model: string;
   filterPanel?: ModelTableFilterPanelProps;
-  create?: ModelTableCreateConfig;
-  update?: ModelTableUpdateConfig;
-  detail?: ModelTableDetailConfig;
-  baseTable?: Omit<BaseModelTableProps, "app" | "model" | "children">;
+  create?: ModelTableCreateConfig<TSource>;
+  update?: ModelTableUpdateConfig<TSource>;
+  detail?: ModelTableDetailConfig<TSource>;
+  baseTable?: Omit<BaseModelTableProps<TSource>, "app" | "model" | "children">;
   /**
    * Enables simple runtime diagnostics for table bootstrap timings.
    */
@@ -531,15 +570,17 @@ export interface ModelTableV2Props {
 /**
  * Runtime snapshot exposed by DynamicModelTable imperative refs.
  */
-export interface DynamicModelTableSnapshot {
+export interface DynamicModelTableSnapshot<
+  TSource extends object = Record<string, unknown>,
+> {
   /**
    * Current rendered rows for the active page/query.
    */
-  data: Record<string, unknown>[];
+  data: DynamicModelTableRow<TSource>[];
   /**
    * Rows currently selected from`data`.
    */
-  selectedRows: Record<string, unknown>[];
+  selectedRows: DynamicModelTableRow<TSource>[];
   /**
    * Current selection state keyed by row id.
    */
@@ -573,7 +614,9 @@ export interface DynamicModelTableSnapshot {
 /**
  * Imperative API exposed by DynamicModelTable through React refs.
  */
-export interface DynamicModelTableHandle {
+export interface DynamicModelTableHandle<
+  TSource extends object = Record<string, unknown>,
+> {
   /**
    * Refetches table rows with optional variable overrides.
    */
@@ -581,15 +624,15 @@ export interface DynamicModelTableHandle {
   /**
    * Returns the latest table runtime snapshot.
    */
-  getSnapshot: () => DynamicModelTableSnapshot;
+  getSnapshot: () => DynamicModelTableSnapshot<TSource>;
   /**
    * Current rendered rows for the active page/query.
    */
-  readonly data: Record<string, unknown>[];
+  readonly data: DynamicModelTableRow<TSource>[];
   /**
    * Rows currently selected from`data`.
    */
-  readonly selectedRows: Record<string, unknown>[];
+  readonly selectedRows: DynamicModelTableRow<TSource>[];
   /**
    * Current selection state keyed by row id.
    */
@@ -623,4 +666,6 @@ export interface DynamicModelTableHandle {
 /**
  * Public props contract for the DynamicTable-backed model table implementation.
  */
-export type DynamicModelTableProps = ModelTableV2Props;
+export type DynamicModelTableProps<
+  TSource extends object = Record<string, unknown>,
+> = ModelTableV2Props<TSource>;

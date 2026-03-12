@@ -8,6 +8,7 @@
  */
 import type React from "react";
 import type { UseFormReturn } from "@tanstack/react-form";
+import type { FormFieldPath } from "./props";
 
 export type FormLayoutMode<TValues = Record<string, any>> =
  | { type: "standard" }
@@ -45,34 +46,34 @@ export type FormFieldOrderingPlacement =
  | "after"
  | "index";
 
-export interface FormFieldOrderingRule {
+export interface FormFieldOrderingRule<TValues = Record<string, any>> {
  /** Target field name (within a section) to reposition. */
- field: string;
+ field: FormFieldPath<TValues>;
  /** Placement strategy for the target field. */
  place: FormFieldOrderingPlacement;
  /** Anchor field name used by`before`/`after`. */
- anchor?: string;
+ anchor?: FormFieldPath<TValues>;
  /** Zero-based index used by`index`. */
  index?: number;
 }
 
-export interface FormFieldOrderingConfig {
+export interface FormFieldOrderingConfig<TValues = Record<string, any>> {
  /** Enable or disable runtime ordering overrides. Defaults to true. */
  enabled?: boolean;
  /**
  * Explicit field-name sequence to apply in a section. Can be partial.
  * Unknown names are ignored.
  */
- order?: string[];
+ order?: FormFieldPath<TValues>[];
  /**
  * Explicit field-name sequence to place at the end of a section
  * (tail ordering). Can be partial.
  */
- tailing?: string[];
+ tailing?: FormFieldPath<TValues>[];
  /** Global rules applied to every section. */
- rules?: FormFieldOrderingRule[];
+ rules?: FormFieldOrderingRule<TValues>[];
  /** Per-section rules keyed by section id. */
- sectionRules?: Record<string, FormFieldOrderingRule[]>;
+ sectionRules?: Record<string, FormFieldOrderingRule<TValues>[]>;
 }
 
 export interface FormLayoutConfig<TValues = Record<string, any>> {
@@ -91,7 +92,7 @@ export interface FormLayoutConfig<TValues = Record<string, any>> {
  /** CSS class for the form body (scrollable area) */
  bodyClassName?: string;
  /** Field ordering overrides after schema/order-hint normalization. */
- ordering?: FormFieldOrderingConfig;
+ ordering?: FormFieldOrderingConfig<TValues>;
  /** Rendering mode */
  mode?: FormLayoutMode<TValues>;
 }

@@ -25,12 +25,31 @@ const validDechargeForm = (
     fieldOverrides={{
       commentaire: { colSpan: 2 },
     }}
-    generatedSections={[
+  generatedSections={[
       {
         id: "main",
         fields: ["beneficiaire", "dateDecharge", "commentaire"],
       },
     ]}
+    layout={{
+      ordering: {
+        tailing: ["commentaire"],
+        rules: [
+          {
+            field: "dateDecharge",
+            place: "after",
+            anchor: "beneficiaire",
+          },
+        ],
+      },
+    }}
+    nested={{
+      restitutions: {
+        onlyFields: ["commentaire", "dateRestitution", "etatRetour"],
+        excludeFields: ["legacySource"],
+        customOrder: ["dateRestitution", "etatRetour", "commentaire"],
+      },
+    }}
   />
 );
 
@@ -63,3 +82,31 @@ const invalidRelationDefaultValue = (
 );
 
 void invalidRelationDefaultValue;
+
+const invalidNestedRelationKey = (
+  <ModelForm<OperationsDecharge>
+    app="operations"
+    model="Decharge"
+    mode="CREATE"
+    // @ts-expect-error shorthand nested relation keys must exist on the form shape
+    nested={["missingRelation"]}
+  />
+);
+
+void invalidNestedRelationKey;
+
+const invalidOrderingField = (
+  <ModelForm<OperationsDecharge>
+    app="operations"
+    model="Decharge"
+    mode="CREATE"
+    layout={{
+      ordering: {
+        // @ts-expect-error ordering field names must exist on OperationsDecharge form values
+        tailing: ["etat"],
+      },
+    }}
+  />
+);
+
+void invalidOrderingField;

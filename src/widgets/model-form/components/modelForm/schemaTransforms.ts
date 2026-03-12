@@ -23,9 +23,9 @@ import {
 } from "./nestedSchema";
 import { buildRelationModelKey } from "./queryLifecycle";
 
-type NestedControlMap<TValues extends Record<string, unknown>> = Record<
+type NestedControlMap<TSource extends object> = Record<
  string,
- ModelFormNestedDefinition<TValues>
+ ModelFormNestedDefinition<TSource>
 >;
 
 function resolveRelationFieldName(relation: {
@@ -37,8 +37,8 @@ function resolveRelationFieldName(relation: {
  return String(relation.path ?? "").trim();
 }
 
-function resolveNestedControlForRelation<TValues extends Record<string, unknown>>(
- nestedControls: NestedControlMap<TValues>,
+function resolveNestedControlForRelation<TSource extends object>(
+ nestedControls: NestedControlMap<TSource>,
  relation: ModelFormContract["relations"][number],
 ) {
  const relationFieldName = resolveRelationFieldName(relation);
@@ -90,9 +90,9 @@ function collectUniqueTopLevelFields(
  return Array.from(uniqueFields.values());
 }
 
-function collectNestedRelationFields<TValues extends Record<string, unknown>>(
+function collectNestedRelationFields<TSource extends object>(
  relatedSchema: FormSchema<Record<string, unknown>>,
- nestedControl: ModelFormNestedDefinition<TValues>,
+ nestedControl: ModelFormNestedDefinition<TSource>,
 ): FormFieldConfig[] {
  const relatedSections = relatedSchema.sections ?? [];
  if (relatedSections.length === 0) {
@@ -187,13 +187,13 @@ function orderFieldsBySelectors(
 }
 
 function buildNestedRelationFieldConfig<
- TValues extends Record<string, unknown>,
+ TSource extends object,
 >(
  relationField: FormFieldConfig,
  relation: ModelFormContract["relations"][number],
  nestedFields: FormFieldConfig[],
  nestedFormConfig: RelationNestedFormConfig | null,
- nestedControl: ModelFormNestedDefinition<TValues>,
+ nestedControl: ModelFormNestedDefinition<TSource>,
 ): FormFieldConfig {
  const nestedTitle = nestedControl.title ?? nestedFormConfig?.title;
  const nestedDescription =
@@ -306,11 +306,12 @@ function buildNestedRelationFieldConfig<
 
 export function materializeNestedRelationFields<
  TValues extends Record<string, unknown>,
+ TSource extends object = TValues,
 >(
  schema: FormSchema<TValues>,
  options: {
  contract: ModelFormContract | null;
- nestedControls: NestedControlMap<TValues> | undefined;
+ nestedControls: NestedControlMap<TSource> | undefined;
  relatedContractsByModel: Map<string, ModelFormContract>;
  },
 ): FormSchema<TValues> {
@@ -374,60 +375,72 @@ export function materializeNestedRelationFields<
  relation.nestedForm,
  );
  const includeNestedSelectors = mergePathLists(
- nestedFormConfig?.fields,
- nestedControl.onlyFields ?? nestedControl.fields,
+   nestedFormConfig?.fields,
+   nestedControl.onlyFields ?? nestedControl.fields,
  );
  const excludeNestedSelectors = mergePathLists(
- nestedFormConfig?.excludeFields,
- nestedControl.excludeFields,
+   nestedFormConfig?.excludeFields,
+   nestedControl.excludeFields,
  );
+ const onlyRequiredNestedFields =
+   nestedControl.onlyRequired ?? nestedFormConfig?.onlyRequired ?? false;
  const customOrderSelectors = mergePathLists(
- nestedControl.customOrder,
- nestedFormConfig?.customOrder,
+   nestedControl.customOrder,
+   nestedFormConfig?.customOrder,
  );
  const explicitFieldOrderMode =
- nestedControl.fieldsOrder ?? nestedFormConfig?.fieldsOrder;
+   nestedControl.fieldsOrder ?? nestedFormConfig?.fieldsOrder;
  const fieldOrderMode: ModelFormNestedFieldsOrderMode =
- explicitFieldOrderMode ??
- (customOrderSelectors.length > 0 ? "custom" : "contract");
+   explicitFieldOrderMode ??
+   (customOrderSelectors.length > 0 ? "custom" : "contract");
 
  const nestedFields = relatedFields
- .map((relatedField) => {
- if (backReferenceRelationPaths.has(relatedField.name)) {
- return null;
- }
+   .map((relatedField) => {
+     if (backReferenceRelationPaths.has(relatedField.name)) {
+       return null;
+     }
 
- const fullPath =`${relationFieldName}.${relatedField.name}`;
+     const fullPath = `${relationFieldName}.${relatedField.name}`;
 
- if (
- includeNestedSelectors.length > 0 &&
- !matchFieldSelectors(
- includeNestedSelectors,
- fullPath,
- relationFieldName,
- )
- ) {
- return null;
- }
+     if (
+       includeNestedSelectors.length > 0 &&
+       !matchFieldSelectors(
+         includeNestedSelectors,
+         fullPath,
+         relationFieldName,
+       )
+     ) {
+       return null;
+     }
 
- if (
- excludeNestedSelectors.some((selector) =>
- isFieldSelectorMatch(selector, fullPath, relationFieldName),
- )
- ) {
- return null;
- }
+     if (
+       excludeNestedSelectors.some((selector) =>
+         isFieldSelectorMatch(selector, fullPath, relationFieldName),
+       )
+     ) {
+       return null;
+     }
 
- return applyFieldOverride(
- relatedField,
- resolveFieldOverride(
- nestedControl.fieldOverrides,
- fullPath,
- relationFieldName,
- ),
- );
- })
- .filter(Boolean) as FormFieldConfig[];
+     return applyFieldOverride(
+       relatedField,
+       resolveFieldOverride(
+         nestedControl.fieldOverrides,
+         fullPath,
+         relationFieldName,
+       ),
+     );
+   })
+   .map((nestedField) => {
+     if (
+       onlyRequiredNestedFields &&
+       nestedField &&
+       !shouldKeepFieldInOnlyRequiredMode(nestedField)
+     ) {
+       return null;
+     }
+     return nestedField;
+   })
+   .filter(Boolean) as FormFieldConfig[];
 
  if (nestedFields.length === 0) {
  return field;
@@ -884,7 +897,10 @@ export function enforceContractSectionFieldOrder<
  };
 }
 
-export function applySchemaControls<TValues extends Record<string, unknown>>(
+export function applySchemaControls<
+ TValues extends Record<string, unknown>,
+ TSource extends object = TValues,
+>(
  schema: FormSchema<TValues>,
  options: {
  onlyFields?: string[];
@@ -894,7 +910,7 @@ export function applySchemaControls<TValues extends Record<string, unknown>>(
  excludeRelationships?: string[];
  fieldOverrides?: Record<string, ModelFormFieldOverrideValue>;
  sectionOverrides?: Record<string, ModelFormSectionOverrideValue<TValues>>;
- nestedControls: NestedControlMap<TValues> | null;
+ nestedControls: NestedControlMap<TSource> | null;
  enforceListFieldsAtEnd?: boolean;
  },
 ): FormSchema<TValues> {
@@ -943,68 +959,75 @@ export function applySchemaControls<TValues extends Record<string, unknown>>(
 
  let currentField = field;
 
- if (relationPath && options.nestedControls) {
- const nestedControl = options.nestedControls[relationPath];
- if (!nestedControl || nestedControl.enabled === false) {
- return null;
- }
+      if (relationPath && options.nestedControls) {
+        const nestedControl = options.nestedControls[relationPath];
+        if (!nestedControl || nestedControl.enabled === false) {
+          return null;
+        }
 
- if (
- section.id &&
- nestedControl.includeSections?.length &&
- !nestedControl.includeSections.includes(section.id)
- ) {
- return null;
- }
+        if (
+          section.id &&
+          nestedControl.includeSections?.length &&
+          !nestedControl.includeSections.includes(section.id)
+        ) {
+          return null;
+        }
 
- if (
- section.id &&
- nestedControl.excludeSections?.includes(section.id)
- ) {
- return null;
- }
+        if (
+          section.id &&
+          nestedControl.excludeSections?.includes(section.id)
+        ) {
+          return null;
+        }
 
- const includeNestedSelectors =
- nestedControl.onlyFields ?? nestedControl.fields;
- if (
- includeNestedSelectors?.length &&
- !matchFieldSelectors(
- includeNestedSelectors,
- field.name,
- relationPath,
- )
- ) {
- return null;
- }
+        const includeNestedSelectors =
+          nestedControl.onlyFields ?? nestedControl.fields;
+        if (
+          includeNestedSelectors?.length &&
+          !matchFieldSelectors(
+            includeNestedSelectors,
+            field.name,
+            relationPath,
+          )
+        ) {
+          return null;
+        }
 
- if (
- nestedControl.excludeFields?.length &&
- nestedControl.excludeFields.some((selector) =>
- isFieldSelectorMatch(selector, field.name, relationPath),
- )
- ) {
- return null;
- }
+        if (
+          nestedControl.excludeFields?.length &&
+          nestedControl.excludeFields.some((selector) =>
+            isFieldSelectorMatch(selector, field.name, relationPath),
+          )
+        ) {
+          return null;
+        }
 
- currentField =
- applyFieldOverride(
- currentField,
- resolveFieldOverride(
- nestedControl.fieldOverrides,
- field.name,
- relationPath,
- ),
- ) ?? currentField;
- }
+        currentField =
+          applyFieldOverride(
+            currentField,
+            resolveFieldOverride(
+              nestedControl.fieldOverrides,
+              field.name,
+              relationPath,
+            ),
+          ) ?? currentField;
 
- const globallyOverridden = applyFieldOverride(
- currentField,
- resolveFieldOverride(
- options.fieldOverrides,
- field.name,
- relationPath,
- ),
- );
+        if (
+          nestedControl.onlyRequired &&
+          !shouldKeepFieldInOnlyRequiredMode(currentField)
+        ) {
+          return null;
+        }
+      }
+
+      const globallyOverridden = applyFieldOverride(
+        currentField,
+        resolveFieldOverride(
+          options.fieldOverrides,
+          field.name,
+          relationPath,
+        ),
+      );
  if (!globallyOverridden) {
  return null;
  }

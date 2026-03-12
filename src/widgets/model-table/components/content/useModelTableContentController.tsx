@@ -4,11 +4,14 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useModelBulkDeleteMutation } from "@/shared/api/graphql/graphql";
 import type { FormSchema } from "@/widgets/model-form/inputs/types";
-import type { ModelFormProps } from "@/widgets/model-form/types.model";
+import type {
+  ModelFormProps,
+  ModelFormValueShape,
+} from "@/widgets/model-form/types.model";
 import type { ModelFormMutationOutcome } from "@/widgets/model-form/types/generatedContract";
 import { useMetadata } from "../../context/MetadataContext";
 import { useTable } from "../../context/TableContext";
-import type { TemplateInfo } from "../../types";
+import type { DynamicModelTableRow, TemplateInfo } from "../../types";
 import type {
   ModelTableCreateConfig,
   ModelTableCreateContext,
@@ -38,29 +41,33 @@ export type UseModelTableContentControllerInput = {
   /** Optional filter-panel configuration. */
   filterPanel?: ModelTableFilterPanelProps;
   /** Optional create-action configuration. */
-  create?: ModelTableCreateConfig;
+  create?: ModelTableCreateConfig<any>;
   /** Optional table configuration object. */
   tableConfig?: ModelTableV2TableConfig;
   /** Enables toolbar quick search behavior. */
   quickSearch?: boolean;
   /** Optional field configuration for toolbar selectors. */
-  fields?: import("../../types").BaseModelTableFieldsInput;
+  fields?: import("../../types").BaseModelTableFieldsInput<any>;
   /** Enables reverse relationship fields in default table surfaces. */
   showReversed?: boolean;
   /** Enables synthetic count fields in default table surfaces. */
   showCount?: boolean;
   /** Optional custom top-actions input. */
-  topActions?: ModelTableV2TopActionsInput;
+  topActions?: ModelTableV2TopActionsInput<any>;
   /** Optional PDF preview hook for template-generated PDFs. */
   onTemplatePdfPreview?: (payload: TemplatePdfPreviewPayload) => void;
 };
 
-type CreateFormValues = Record<string, unknown>;
+type CreateFormValues<TSource extends object> = ModelFormValueShape<TSource>;
+type ResolvedCreateFormValues<TSource extends object> =
+  CreateFormValues<TSource> extends Record<string, unknown>
+    ? CreateFormValues<TSource>
+    : Record<string, unknown>;
 
 /**
  * Normalized create-action configuration resolved for one table instance.
  */
-type ResolvedCreateConfig = {
+type ResolvedCreateConfig<TSource extends object = Record<string, unknown>> = {
   type: "drawer" | "modal" | "link";
   title: React.ReactNode;
   width?: string;
@@ -69,7 +76,7 @@ type ResolvedCreateConfig = {
   hrefTemplate?: string;
   closeOnSuccess: boolean;
   refetchOnSuccess: boolean;
-  formOverrides: ModelTableCreateFormOverrides;
+  formOverrides: ModelTableCreateFormOverrides<TSource>;
 };
 
 /**
@@ -86,7 +93,7 @@ function formatTimeAgo(lastUpdated: Date): string {
 /**
  * Filters valid selected row IDs from arbitrary row payloads.
  */
-function extractSelectedRowIds(rows: Record<string, unknown>[]): string[] {
+function extractSelectedRowIds(rows: DynamicModelTableRow[]): string[] {
   return rows
     .map((row) => String(row.id))
     .filter((id) => id !== "undefined" && id !== "null");
@@ -96,9 +103,9 @@ function extractSelectedRowIds(rows: Record<string, unknown>[]): string[] {
  * Merges two optional ModelForm override records.
  */
 function mergeModelFormOverrides(
-  base: ModelTableCreateFormOverrides | undefined,
-  extra: ModelTableCreateFormOverrides | undefined,
-): ModelTableCreateFormOverrides {
+  base: ModelTableCreateFormOverrides<any> | undefined,
+  extra: ModelTableCreateFormOverrides<any> | undefined,
+): ModelTableCreateFormOverrides<any> {
   const left = base ?? {};
   const right = extra ?? {};
   const leftFormProps = left.formProps ?? {};
@@ -143,8 +150,8 @@ function mergeModelFormOverrides(
  * Resolves create overlay title from static text/callback with safe fallback.
  */
 function resolveCreateTitle(
-  title: ModelTableCreateConfig["title"],
-  context: ModelTableCreateContext,
+  title: ModelTableCreateConfig<any>["title"],
+  context: ModelTableCreateContext<any>,
 ): React.ReactNode {
   if (typeof title === "function") {
     return title(context);
@@ -160,7 +167,7 @@ function resolveCreateTitle(
  */
 function buildCreateHrefFromTemplate(
   template: string,
-  context: Pick<ModelTableCreateContext, "app" | "model">,
+  context: Pick<ModelTableCreateContext<any>, "app" | "model">,
 ): string {
   return template
     .replace(/:app\b/g, encodeURIComponent(context.app))
@@ -170,7 +177,9 @@ function buildCreateHrefFromTemplate(
 /**
  * Builds the full content view-model used by composed table content slots.
  */
-export function useModelTableContentController({
+export function useModelTableContentController<
+  TSource extends object = Record<string, unknown>,
+>({
   filterPanel,
   create,
   tableConfig,
@@ -180,7 +189,7 @@ export function useModelTableContentController({
   showCount,
   topActions,
   onTemplatePdfPreview,
-}: UseModelTableContentControllerInput): ModelTableContentControllerState {
+}: UseModelTableContentControllerInput): ModelTableContentControllerState<TSource> {
   const {
     metadata,
     app,
@@ -231,8 +240,11 @@ export function useModelTableContentController({
     model;
   const totalCount = queryPage?.pageInfo?.totalCount ?? pagination.total;
 
-  const selectedRows = useMemo(
-    () => data.filter((row) => !!rowSelection[String(row.id)]),
+  const selectedRows = useMemo<DynamicModelTableRow<TSource>[]>(
+    () =>
+      (data as DynamicModelTableRow<TSource>[]).filter(
+        (row) => !!rowSelection[String(row.id)],
+      ),
     [data, rowSelection],
   );
 
@@ -283,7 +295,7 @@ export function useModelTableContentController({
     },
   });
 
-  const createContext = useMemo<ModelTableCreateContext>(
+  const createContext = useMemo<ModelTableCreateContext<TSource>>(
     () => ({
       app,
       model,
@@ -294,7 +306,7 @@ export function useModelTableContentController({
     [app, metadata, model, rowSelection, selectedRows],
   );
 
-  const resolvedCreateConfig = useMemo<ResolvedCreateConfig>(() => {
+  const resolvedCreateConfig = useMemo<ResolvedCreateConfig<TSource>>(() => {
     const globalOverrides = create?.form;
     const runtimeOverrides = create?.resolveFormProps?.(createContext);
     const mergedOverrides = mergeModelFormOverrides(
@@ -349,7 +361,8 @@ export function useModelTableContentController({
   );
 
   const createFormProps =
-    useMemo<ModelFormProps<CreateFormValues> | null>(() => {
+    useMemo<ModelFormProps<ResolvedCreateFormValues<TSource>, TSource> | null>(
+      () => {
       if (resolvedCreateConfig.type === "link") {
         return null;
       }
@@ -378,9 +391,11 @@ export function useModelTableContentController({
         },
         onSubmitResult: handleCreateSubmitResult,
       };
-    }, [app, handleCreateSubmitResult, model, resolvedCreateConfig]);
+      },
+      [app, handleCreateSubmitResult, model, resolvedCreateConfig],
+    );
 
-  const addAction = useMemo<ModelTableV2TopAction>(() => {
+  const addAction = useMemo<ModelTableV2TopAction<TSource>>(() => {
     return {
       key: "add",
       label: tableConfig?.addLabel ?? "Ajouter",
@@ -426,7 +441,7 @@ export function useModelTableContentController({
     tableConfig?.addLabel,
   ]);
 
-  const importAction = useMemo<ModelTableV2TopAction>(
+  const importAction = useMemo<ModelTableV2TopAction<TSource>>(
     () => ({
       key: "import",
       label: "Importer",
@@ -489,7 +504,7 @@ export function useModelTableContentController({
    * Opens client-input dialog when required, otherwise runs extraction directly.
    */
   const runTemplateForRows = useCallback(
-    (template: TemplateInfo, rows: Record<string, unknown>[]) => {
+    (template: TemplateInfo, rows: DynamicModelTableRow<TSource>[]) => {
       if (template.allowed === false) {
         toast.error(template.denialReason ?? "Template non autorise.");
         return;
@@ -557,14 +572,15 @@ export function useModelTableContentController({
     [templateEntries],
   );
 
-  const resolvedTopActions = useMemo<ModelTableContentTopAction[]>(() => {
+  const resolvedTopActions = useMemo<ModelTableContentTopAction<TSource>[]>(
+    () => {
     const userActions =
       typeof topActions === "function"
         ? topActions({
             app,
             model,
             metadata,
-            items: data,
+            items: data as DynamicModelTableRow<TSource>[],
             selected_rows: selectedRows,
             selection_state: rowSelection,
           })
@@ -602,7 +618,7 @@ export function useModelTableContentController({
    * Executes one resolved top action with current selection context.
    */
   const handleTopActionClick = useCallback(
-    (action: ModelTableContentTopAction) => {
+    (action: ModelTableContentTopAction<TSource>) => {
       if (action.disabled) {
         return;
       }
@@ -705,7 +721,7 @@ export function useModelTableContentController({
     filterPanel,
     tableConfig,
     quickSearch,
-    fields,
+    fields: fields as any,
     showReversed,
     showCount,
     loading,
@@ -746,12 +762,12 @@ export function useModelTableContentController({
     createOverlayHeight: resolvedCreateConfig.height,
     createOverlayDrawerDirection: resolvedCreateConfig.drawerDirection,
     createFormProps,
-    handleTopActionClick,
+    handleTopActionClick: handleTopActionClick as any,
     triggerRefresh: refresh,
     clearSelection,
     runTemplateForRows,
     closePrintDialog,
     submitPrintDialog,
     confirmBulkDelete,
-  };
+  } as ModelTableContentControllerState<TSource>;
 }

@@ -12,7 +12,7 @@ import type {
 } from "../types/layout";
 
 export type NormalizeFieldOrderOptions = {
-  ordering?: FormFieldOrderingConfig;
+  ordering?: FormFieldOrderingConfig<any>;
   sectionId?: string;
 };
 
@@ -120,9 +120,9 @@ function applyExplicitFieldListOrder(
  * Resolves ordering rules for a given section by merging global and section rules.
  */
 function resolveSectionOrderingRules(
-  ordering: FormFieldOrderingConfig | undefined,
+  ordering: FormFieldOrderingConfig<any> | undefined,
   sectionId: string | undefined,
-): FormFieldOrderingRule[] {
+): FormFieldOrderingRule<any>[] {
   if (!ordering || ordering.enabled === false) return [];
 
   const globalRules = Array.isArray(ordering.rules) ? ordering.rules : [];
@@ -138,7 +138,7 @@ function resolveSectionOrderingRules(
  */
 function applyOrderingRules(
   fields: FormFieldConfig[],
-  rules: FormFieldOrderingRule[],
+  rules: FormFieldOrderingRule<any>[],
 ): FormFieldConfig[] {
   if (fields.length < 2 || rules.length === 0) return fields;
 
@@ -164,7 +164,7 @@ function applyOrderingRules(
  */
 function resolveTargetIndex(
   fields: FormFieldConfig[],
-  rule: FormFieldOrderingRule,
+  rule: FormFieldOrderingRule<any>,
 ): number {
   const place = rule.place;
 

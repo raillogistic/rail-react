@@ -128,7 +128,7 @@ type ResolvedModelFormValues<TSource extends object> =
 export function ModelForm<
   TSource extends object = Record<string, unknown>,
   TFormValues extends Record<string, unknown> = ResolvedModelFormValues<TSource>,
->(props: ModelFormProps<TFormValues>) {
+>(props: ModelFormProps<TFormValues, TSource>) {
   assertNoLegacyModelFormProps(props as Record<string, unknown>);
   const apolloClient = useApolloClient();
 
@@ -190,7 +190,7 @@ export function ModelForm<
     resolvedOnlyRelationships,
     resolvedExcludeRelationships,
   } = useModelFormConfig({
-    nested,
+    nested: nested as any,
     includeNested,
     onlyRelationships,
     excludeRelationships,
@@ -223,7 +223,7 @@ export function ModelForm<
     resolvedObjectIdValue,
     initialDataNestedFields,
     runtimeOverridesForQuery,
-    nestedControls,
+    nestedControls: nestedControls as any,
     onContractLoaded,
     onInitialDataLoaded,
     onLoadError,
@@ -341,7 +341,7 @@ export function ModelForm<
       contract,
       generatedSchema: generated.schema as any,
       relatedContractsByModel,
-      nestedControls,
+      nestedControls: nestedControls as any,
       resolvedOnlyRelationships,
       resolvedExcludeRelationships,
     });

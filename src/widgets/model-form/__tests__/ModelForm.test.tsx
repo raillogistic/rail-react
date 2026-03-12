@@ -805,7 +805,7 @@ describe("ModelForm", () => {
  expect(payload.initialValues.name).toBe("Starter");
  });
 
- it("applies nested field controls and overrides", async () => {
+it("applies nested field controls and overrides", async () => {
  const nestedContract = {
  ...sampleModelFormContract,
  appLabel: "store",
@@ -878,11 +878,83 @@ describe("ModelForm", () => {
 
  expect(fields.some((field) => field.name === "customer.phone")).toBe(false);
  const nestedEmail = fields.find((field) => field.name === "customer.email");
- expect(nestedEmail?.label).toBe("Email (Nested Override)");
- });
+expect(nestedEmail?.label).toBe("Email (Nested Override)");
+});
 
- it("materializes nested relation forms for requested relation paths", async () => {
- const updateContract: ModelFormContract = {
+it("supports nested onlyRequired for dotted nested fields", async () => {
+const nestedContract = {
+...sampleModelFormContract,
+appLabel: "store",
+modelName: "Order",
+fields: [
+...sampleModelFormContract.fields,
+{
+...sampleModelFormContract.fields[0],
+name: "customer.email",
+path: "customer.email",
+fieldName: "email",
+label: "Customer Email",
+required: true,
+},
+{
+...sampleModelFormContract.fields[0],
+name: "customer.phone",
+path: "customer.phone",
+fieldName: "phone",
+label: "Customer Phone",
+required: false,
+},
+],
+sections: [
+{
+...sampleModelFormContract.sections[0],
+fieldPaths: ["name", "price", "customer.email", "customer.phone"],
+},
+],
+};
+
+const mocks = [
+{
+request: {
+query: MODEL_FORM_CONTRACT_QUERY,
+variables: {
+appLabel: "store",
+modelName: "Order",
+mode: "CREATE",
+includeNested: true,
+},
+},
+result: {
+data: {
+modelFormContract: nestedContract,
+},
+},
+},
+];
+
+renderWithMocks(
+<ModelForm
+app="store"
+model="Order"
+mode="CREATE"
+nested={{
+customer: {
+onlyRequired: true,
+},
+}}
+/>,
+mocks,
+);
+
+const payload = await getRenderedSchema();
+const fields = payload.sections[0].fields as Array<{ name: string }>;
+
+expect(fields.some((field) => field.name === "customer.email")).toBe(true);
+expect(fields.some((field) => field.name === "customer.phone")).toBe(false);
+});
+
+it("materializes nested relation forms for requested relation paths", async () => {
+const updateContract: ModelFormContract = {
  ...sampleModelFormContract,
  appLabel: "store",
  modelName: "Product",
@@ -1139,7 +1211,7 @@ describe("ModelForm", () => {
  );
  });
 
- it("keeps relation-backed nested blocks in onlyRequired mode when nested fields are required", async () => {
+it("keeps relation-backed nested blocks in onlyRequired mode when nested fields are required", async () => {
  const rootContract: ModelFormContract = {
  ...sampleModelFormContract,
  appLabel: "store",
@@ -1284,15 +1356,163 @@ describe("ModelForm", () => {
 
  const categoryField = fields.find((field) => field.name === "category");
  expect(categoryField?.type).toBe("object");
- expect(
- (categoryField?.fields as Array<{ name: string }>).some(
- (field) => field.name === "name",
- ),
- ).toBe(true);
- });
+expect(
+(categoryField?.fields as Array<{ name: string }>).some(
+(field) => field.name === "name",
+),
+).toBe(true);
+});
 
- it("applies extended nested controls for relation forms", async () => {
- const rootContract: ModelFormContract = {
+it("supports nested onlyRequired for materialized relation fields", async () => {
+const rootContract: ModelFormContract = {
+...sampleModelFormContract,
+appLabel: "store",
+modelName: "Product",
+mode: "CREATE",
+fields: [
+{
+...sampleModelFormContract.fields[0],
+name: "status",
+path: "status",
+fieldName: "status",
+label: "Status",
+required: false,
+readOnly: false,
+hidden: false,
+kind: "TEXT",
+},
+],
+sections: [
+{
+...sampleModelFormContract.sections[0],
+fieldPaths: ["status"],
+},
+],
+relations: [
+{
+path: "category",
+label: "Category",
+relationType: "FOREIGN_KEY",
+toMany: false,
+relatedAppLabel: "store",
+relatedModelName: "Category",
+policy: {
+path: "category",
+allowedActions: ["CONNECT", "CREATE", "UPDATE", "SET"],
+blockedActions: [],
+nestedEnabled: true,
+},
+},
+],
+};
+
+const categoryContract: ModelFormContract = {
+...sampleModelFormContract,
+id: "store.Category.CREATE",
+appLabel: "store",
+modelName: "Category",
+mode: "CREATE",
+fields: [
+{
+...sampleModelFormContract.fields[0],
+name: "name",
+path: "name",
+fieldName: "name",
+label: "Category Name",
+required: true,
+readOnly: false,
+hidden: false,
+kind: "TEXT",
+},
+{
+...sampleModelFormContract.fields[1],
+name: "description",
+path: "description",
+fieldName: "description",
+label: "Category Description",
+required: false,
+readOnly: false,
+hidden: false,
+kind: "TEXTAREA",
+},
+],
+sections: [
+{
+...sampleModelFormContract.sections[0],
+fieldPaths: ["name", "description"],
+},
+],
+relations: [],
+};
+
+const mocks = [
+{
+request: {
+query: MODEL_FORM_CONTRACT_QUERY,
+variables: {
+appLabel: "store",
+modelName: "Product",
+mode: "CREATE",
+includeNested: true,
+},
+},
+result: {
+data: {
+modelFormContract: rootContract,
+},
+},
+},
+{
+request: {
+query: MODEL_FORM_CONTRACT_PAGES_QUERY,
+variables: {
+page: 1,
+perPage: 1,
+models: [{ appLabel: "store", modelName: "Category" }],
+mode: "CREATE",
+includeNested: false,
+},
+},
+result: {
+data: {
+modelFormContractPages: {
+page: 1,
+perPage: 1,
+total: 1,
+results: [categoryContract],
+},
+},
+},
+},
+];
+
+renderWithMocks(
+<ModelForm
+app="store"
+model="Product"
+mode="CREATE"
+nested={{
+category: {
+onlyRequired: true,
+},
+}}
+/>,
+mocks,
+);
+
+const payload = await getRenderedSchema();
+const fields = payload.sections[0].fields as Array<Record<string, unknown>>;
+const categoryField = fields.find((field) => field.name === "category") as
+| Record<string, unknown>
+| undefined;
+
+expect(
+(categoryField?.fields as Array<{ name: string }>).map((field) => field.name),
+).toEqual(["name"]);
+});
+
+it("applies extended nested controls for relation forms", async () => {
+const rootContract: ModelFormContract = {
  ...sampleModelFormContract,
  appLabel: "store",
  modelName: "Product",

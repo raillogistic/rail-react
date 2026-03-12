@@ -45,7 +45,10 @@ import type {
   ModelDynamicDetailConfig,
   ModelDynamicDetailProps,
 } from "@/widgets/model-details/config/types";
-import type { ModelFormProps } from "@/widgets/model-form/types.model";
+import type {
+  ModelFormProps,
+  ModelFormValueShape,
+} from "@/widgets/model-form/types.model";
 import type { ModelFormMutationOutcome } from "@/widgets/model-form/types/generatedContract";
 import { useMetadata } from "../../context/MetadataContext";
 import { useTable } from "../../context/TableContext";
@@ -63,6 +66,7 @@ import type {
   BaseModelTableColumnActionContext,
   BaseModelTableColumnActionsInput,
   BaseModelTableRefetch,
+  DynamicModelTableRow,
   RowMutationPermissions,
   TemplateInfo,
 } from "../../types";
@@ -71,7 +75,7 @@ import { FormOverlay } from "../ModelTableOverlays";
 const LazyModelForm = lazy(() =>
   import("@/widgets/model-form").then((module) => ({
     default: module.ModelForm as React.ComponentType<
-      ModelFormProps<UpdateFormValues>
+      ModelFormProps<UpdateFormValues<any>, any>
     >,
   })),
 );
@@ -83,12 +87,16 @@ const LazyModelDynamicDetail = lazy(() =>
   })),
 );
 
-type UpdateFormValues = Record<string, unknown>;
+type UpdateFormValues<TSource extends object> = ModelFormValueShape<TSource>;
+type ResolvedUpdateFormValues<TSource extends object> =
+  UpdateFormValues<TSource> extends Record<string, unknown>
+    ? UpdateFormValues<TSource>
+    : Record<string, unknown>;
 
 /**
  * Normalized edit-action configuration resolved per row instance.
  */
-type ResolvedUpdateConfig = {
+type ResolvedUpdateConfig<TSource extends object = Record<string, unknown>> = {
   type: "drawer" | "modal" | "link";
   title: React.ReactNode;
   width?: string;
@@ -98,13 +106,13 @@ type ResolvedUpdateConfig = {
   hrefTemplate?: string;
   closeOnSuccess: boolean;
   refetchOnSuccess: boolean;
-  formOverrides: ModelTableUpdateFormOverrides;
+  formOverrides: ModelTableUpdateFormOverrides<TSource>;
 };
 
 /**
  * Normalized detail-action configuration resolved per row instance.
  */
-type ResolvedDetailConfig = {
+type ResolvedDetailConfig<TSource extends object = Record<string, unknown>> = {
   type: "drawer" | "modal" | "link";
   title: React.ReactNode;
   width?: string;
@@ -113,15 +121,15 @@ type ResolvedDetailConfig = {
   objectIdValue: string;
   hrefTemplate?: string;
   baseDetail: ModelDynamicDetailConfig;
-  formOverrides: ModelTableDetailFormOverrides;
+  formOverrides: ModelTableDetailFormOverrides<TSource>;
 };
 
 /**
  * Merges two optional ModelForm override records.
  */
 type RowActionFormOverrides =
-  | ModelTableUpdateFormOverrides
-  | ModelTableDetailFormOverrides;
+  | ModelTableUpdateFormOverrides<any>
+  | ModelTableDetailFormOverrides<any>;
 
 function mergeModelFormOverrides(
   base: RowActionFormOverrides | undefined,
@@ -226,14 +234,14 @@ function mergeModelDynamicDetailConfig(
  */
 function applyDetailFormOverridesToBaseDetail(
   baseDetail: ModelDynamicDetailConfig,
-  formOverrides: ModelTableDetailFormOverrides,
+  formOverrides: ModelTableDetailFormOverrides<any>,
 ): ModelDynamicDetailConfig {
   const existingModelFormProps = (baseDetail.actions?.updateForm
-    ?.modelFormProps ?? {}) as ModelTableDetailFormOverrides;
+    ?.modelFormProps ?? {}) as ModelTableDetailFormOverrides<any>;
   const mergedModelFormProps = mergeModelFormOverrides(
     existingModelFormProps,
     formOverrides,
-  ) as ModelTableDetailFormOverrides;
+  ) as ModelTableDetailFormOverrides<any>;
 
   return {
     ...baseDetail,
@@ -251,8 +259,8 @@ function applyDetailFormOverridesToBaseDetail(
  * Resolves update overlay title from static text/callback with a safe fallback.
  */
 function resolveUpdateTitle(
-  title: ModelTableUpdateConfig["title"],
-  context: ModelTableUpdateContext,
+  title: ModelTableUpdateConfig<any>["title"],
+  context: ModelTableUpdateContext<any>,
 ): React.ReactNode {
   if (typeof title === "function") {
     return title(context);
@@ -267,8 +275,8 @@ function resolveUpdateTitle(
  * Resolves detail overlay title from static text/callback with a safe fallback.
  */
 function resolveDetailTitle(
-  title: ModelTableDetailConfig["title"],
-  context: ModelTableDetailContext,
+  title: ModelTableDetailConfig<any>["title"],
+  context: ModelTableDetailContext<any>,
 ): React.ReactNode {
   if (typeof title === "function") {
     return title(context);
@@ -286,18 +294,18 @@ function buildHrefFromTemplate(template: string, rowId: string): string {
   return template.replace(/:id\b/g, encodeURIComponent(rowId));
 }
 
-type RowActionsProps = {
-  row: Record<string, unknown>;
-  data: Record<string, unknown>[];
+type RowActionsProps<TSource extends object = Record<string, unknown>> = {
+  row: DynamicModelTableRow<TSource>;
+  data: DynamicModelTableRow<TSource>[];
   refetch?: BaseModelTableRefetch;
   permissions?: RowMutationPermissions | null;
-  columnActions?: BaseModelTableColumnActionsInput;
-  update?: ModelTableUpdateConfig;
-  detail?: ModelTableDetailConfig;
+  columnActions?: BaseModelTableColumnActionsInput<DynamicModelTableRow<TSource>>;
+  update?: ModelTableUpdateConfig<TSource>;
+  detail?: ModelTableDetailConfig<TSource>;
   onTemplatePdfPreview?: (payload: TemplatePdfPreviewPayload) => void;
 };
 
-export function RowActions({
+export function RowActions<TSource extends object = Record<string, unknown>>({
   row,
   data,
   refetch,
@@ -306,7 +314,7 @@ export function RowActions({
   update,
   detail,
   onTemplatePdfPreview,
-}: RowActionsProps) {
+}: RowActionsProps<TSource>) {
   const { app, model, metadata } = useMetadata();
   const { refresh } = useTable();
   const navigate = useNavigate();
@@ -348,7 +356,7 @@ export function RowActions({
     !!rowId &&
     (detailUsesUpdateLink ? canEdit : (modelPermissions?.canRetrieve ?? true));
 
-  const updateContext = useMemo<ModelTableUpdateContext>(
+  const updateContext = useMemo<ModelTableUpdateContext<TSource>>(
     () => ({
       app,
       model,
@@ -359,7 +367,7 @@ export function RowActions({
     [app, metadata, model, row, rowId],
   );
 
-  const detailContext = useMemo<ModelTableDetailContext>(
+  const detailContext = useMemo<ModelTableDetailContext<TSource>>(
     () => ({
       app,
       model,
@@ -370,7 +378,7 @@ export function RowActions({
     [app, metadata, model, row, rowId],
   );
 
-  const resolvedUpdateConfig = useMemo<ResolvedUpdateConfig>(() => {
+  const resolvedUpdateConfig = useMemo<ResolvedUpdateConfig<TSource>>(() => {
     const resolvedObjectId =
       update?.resolveObjectId?.(updateContext) ?? update?.objectId ?? rowId;
     const objectIdValue =
@@ -382,7 +390,7 @@ export function RowActions({
     const mergedOverrides = mergeModelFormOverrides(
       globalOverrides,
       perRowOverrides,
-    ) as ModelTableUpdateFormOverrides;
+    ) as ModelTableUpdateFormOverrides<TSource>;
     return {
       type: update?.type ?? "drawer",
       title: resolveUpdateTitle(update?.title, updateContext),
@@ -397,7 +405,7 @@ export function RowActions({
     };
   }, [update, updateContext]);
 
-  const resolvedDetailConfig = useMemo<ResolvedDetailConfig>(() => {
+  const resolvedDetailConfig = useMemo<ResolvedDetailConfig<TSource>>(() => {
     const resolvedObjectId =
       detail?.resolveObjectId?.(detailContext) ?? detail?.objectId ?? rowId;
     const objectIdValue =
@@ -409,7 +417,7 @@ export function RowActions({
     const mergedOverrides = mergeModelFormOverrides(
       globalOverrides,
       perRowOverrides,
-    ) as ModelTableDetailFormOverrides;
+    ) as ModelTableDetailFormOverrides<TSource>;
     const globalBaseDetail = detail?.baseDetail;
     const perRowBaseDetail = detail?.resolveBaseDetail?.(detailContext);
     const mergedBaseDetail = mergeModelDynamicDetailConfig(
@@ -473,7 +481,7 @@ export function RowActions({
     resolvedDetailConfig.objectIdValue,
   ]);
 
-  const actionContext = useMemo<BaseModelTableColumnActionContext>(
+  const actionContext = useMemo<BaseModelTableColumnActionContext<DynamicModelTableRow<TSource>>>(
     () => ({
       row,
       data,
@@ -671,7 +679,7 @@ export function RowActions({
 
   const runCustomAction = (
     onClick: (
-      context: BaseModelTableColumnActionContext,
+      context: BaseModelTableColumnActionContext<DynamicModelTableRow<TSource>>,
     ) => void | Promise<void>,
   ) => {
     void Promise.resolve(onClick(actionContext)).catch((error: unknown) => {
@@ -683,7 +691,9 @@ export function RowActions({
     });
   };
 
-  const updateFormProps = useMemo<ModelFormProps<UpdateFormValues>>(() => {
+  const updateFormProps = useMemo<
+    ModelFormProps<ResolvedUpdateFormValues<TSource>, TSource>
+  >(() => {
     const overrides = resolvedUpdateConfig.formOverrides;
     const formPropsLayout =
       (overrides.formProps?.layout as Record<string, unknown> | undefined) ??
@@ -916,7 +926,7 @@ export function RowActions({
                     const renderAction = (
                       action as {
                         render: (
-                          context: BaseModelTableColumnActionContext,
+                          context: BaseModelTableColumnActionContext<DynamicModelTableRow<TSource>>,
                         ) => React.ReactNode;
                       }
                     ).render;
@@ -929,7 +939,7 @@ export function RowActions({
 
                   const clickAction = action as {
                     onClick: (
-                      context: BaseModelTableColumnActionContext,
+                      context: BaseModelTableColumnActionContext<DynamicModelTableRow<TSource>>,
                     ) => void | Promise<void>;
                     label?: string;
                   };

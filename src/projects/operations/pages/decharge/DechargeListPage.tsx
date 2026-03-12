@@ -1,9 +1,10 @@
 import { ROUTES } from "@/projects/operations/config/routes";
+import type { OperationsDecharge } from "@/models";
 import { DynamicModelTable } from "@/widgets/model-table";
 
 export function DechargeListPageTabs() {
   return (
-    <DynamicModelTable
+    <DynamicModelTable<OperationsDecharge>
       app="operations"
       model="Decharge"
       create={{
@@ -22,7 +23,7 @@ export function DechargeListPageTabs() {
         enabled: true,
       }}
       baseTable={{
-        fields: { exclude: ["numero_annee", "numero_sequence"] },
+        fields: { exclude: ["numeroAnnee", "numeroSequence"] },
         tableConfig: {
           title: "Decharges",
           pdfPreview: {

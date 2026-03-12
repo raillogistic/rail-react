@@ -98,6 +98,7 @@ export type ModelFormSectionOverrideValue<TValues extends Record<string, unknown
  | ModelFormSectionOverride<TValues>;
 
 export type ModelFormFieldOverrides<TValues extends Record<string, unknown>> =
+ Partial<Record<string, ModelFormFieldOverrideValue<TValues>>> &
  Partial<{
   [TPath in ModelFormFieldPath<TValues>]: ModelFormFieldOverrideValue<
    TValues,
@@ -117,6 +118,32 @@ export type ModelFormGeneratedSection<
 > = Omit<FormSectionConfig<TValues>, "fields"> & {
  fields: ModelFormGeneratedSectionField<TValues>[];
 };
+
+export type ModelFormRelationshipSelector<
+ TSource extends object,
+> = Extract<keyof TSource, string>;
+
+type ModelFormNestedRelationSourceValue<T> = T extends Array<infer TValue>
+ ? NonNullable<TValue>
+ : T extends ReadonlyArray<infer TValue>
+   ? NonNullable<TValue>
+   : NonNullable<T>;
+
+export type ModelFormNestedFieldPath<
+ TSource extends object,
+ TRelationKey extends ModelFormRelationshipSelector<TSource>,
+> = string extends keyof TSource
+ ? string
+ : Extract<
+    ModelFormValueShape<ModelFormNestedRelationSourceValue<TSource[TRelationKey]>>,
+    Record<string, unknown>
+   > extends infer TNestedValues
+   ? [TNestedValues] extends [never]
+     ? string
+     : TNestedValues extends Record<string, unknown>
+       ? ModelFormFieldPath<TNestedValues>
+       : string
+   : string;
 
 export type ModelFormNestedAddButtonConfig =
  | boolean
@@ -150,15 +177,20 @@ export type ModelFormNestedDeleteMutationConfig = {
  selection?: string;
 };
 
-export type ModelFormNestedDefinition<TValues extends Record<string, unknown>> = {
+export type ModelFormNestedDefinition<
+ TSource extends object,
+ TRelationKey extends ModelFormRelationshipSelector<TSource> = ModelFormRelationshipSelector<TSource>,
+> = {
  enabled?: boolean;
  title?: string;
  description?: string;
- fields?: string[];
- onlyFields?: string[];
- excludeFields?: string[];
+ fields?: ModelFormNestedFieldPath<TSource, TRelationKey>[];
+ onlyFields?: ModelFormNestedFieldPath<TSource, TRelationKey>[];
+ excludeFields?: ModelFormNestedFieldPath<TSource, TRelationKey>[];
+ /** Render only required nested fields. */
+ onlyRequired?: boolean;
  fieldsOrder?: ModelFormNestedFieldsOrderMode;
- customOrder?: string[];
+ customOrder?: ModelFormNestedFieldPath<TSource, TRelationKey>[];
  includeSections?: string[];
  excludeSections?: string[];
  columns?: number;
@@ -182,13 +214,18 @@ export type ModelFormNestedDefinition<TValues extends Record<string, unknown>> =
  * Optional direct delete mutation triggered by nested list remove button.
  */
  deleteMutation?: ModelFormNestedDeleteMutationConfig;
- fieldOverrides?: ModelFormFieldOverrides<TValues>;
- sectionOverrides?: ModelFormSectionOverrides<TValues>;
+ fieldOverrides?: ModelFormFieldOverrides<Record<string, unknown>>;
+ sectionOverrides?: ModelFormSectionOverrides<Record<string, unknown>>;
 };
 
-export type ModelFormNestedConfig<TValues extends Record<string, unknown>> =
- | string[]
- | Record<string, ModelFormNestedDefinition<TValues>>;
+export type ModelFormNestedConfig<TSource extends object> =
+ | ModelFormRelationshipSelector<TSource>[]
+ | Partial<
+    Record<
+      ModelFormRelationshipSelector<TSource>,
+      ModelFormNestedDefinition<TSource>
+    >
+   >;
 
 export type ModelFormErrorFallbackContext = {
  error: Error;
@@ -201,6 +238,7 @@ export type ModelFormErrorFallbackContext = {
 
 export interface ModelFormProps<
  TFormValues extends Record<string, unknown> = Record<string, unknown>,
+ TSource extends object = TFormValues,
 > extends Omit<Partial<DynamicFormProps<TFormValues>>, "mode"> {
  app?: string;
  model?: string;
@@ -209,7 +247,7 @@ export interface ModelFormProps<
 
  generatedEnabled?: boolean;
  includeNested?: boolean;
- nested?: ModelFormNestedConfig<TFormValues>;
+ nested?: ModelFormNestedConfig<TSource>;
  runtimeOverrides?: ModelFormRuntimeOverride[];
 
  onlyFields?: ModelFormFieldPath<TFormValues>[];

@@ -23,12 +23,12 @@ export function DechargeCreatePage() {
       ]}
       nested={{
         beneficiaire: {
-          onlyFields: [],
+          onlyRequired: true,
         },
       }}
       layout={{
         columns: 3,
-        ordering: { tailing: ["commentaire"] },
+        ordering: { tailing: ["beneficiaire", "codeInventaire"] },
       }}
       state={{
         defaultValues: {

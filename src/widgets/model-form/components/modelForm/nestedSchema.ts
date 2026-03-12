@@ -13,6 +13,7 @@ export type RelationNestedFormConfig = {
  description?: string;
  fields?: string[];
  excludeFields?: string[];
+ onlyRequired?: boolean;
  fieldsOrder?: ModelFormNestedFieldsOrderMode;
  customOrder?: string[];
  columns?: number;
@@ -321,6 +322,12 @@ export function parseRelationNestedFormConfig(
  ...(toOptionalStringArray(record.exclude_fields)
  ? { excludeFields: toOptionalStringArray(record.exclude_fields) }
  : {}),
+ ...(toOptionalBoolean(record.onlyRequired) !== undefined
+ ? { onlyRequired: toOptionalBoolean(record.onlyRequired) }
+ : {}),
+ ...(toOptionalBoolean(record.only_required) !== undefined
+ ? { onlyRequired: toOptionalBoolean(record.only_required) }
+ : {}),
  ...(parseFieldsOrderMode(record.fieldsOrder)
  ? { fieldsOrder: parseFieldsOrderMode(record.fieldsOrder) }
  : {}),
@@ -421,14 +428,14 @@ export function parseRelationNestedFormConfig(
  };
 }
 
-function normalizeNestedDefinition<TValues extends Record<string, unknown>>(
- value: ModelFormNestedDefinition<TValues> | undefined,
-): ModelFormNestedDefinition<TValues> {
+function normalizeNestedDefinition<TSource extends object>(
+ value: ModelFormNestedDefinition<TSource> | undefined,
+): ModelFormNestedDefinition<TSource> {
  if (!value || typeof value !== "object") {
  return { enabled: true };
  }
 
- const normalized: ModelFormNestedDefinition<TValues> = {
+ const normalized: ModelFormNestedDefinition<TSource> = {
  ...value,
  };
 
@@ -436,15 +443,15 @@ function normalizeNestedDefinition<TValues extends Record<string, unknown>>(
  normalized.enabled = true;
  }
 
- normalized.onlyFields = mergePathLists(normalized.onlyFields);
- normalized.excludeFields = mergePathLists(normalized.excludeFields);
+ normalized.onlyFields = mergePathLists(normalized.onlyFields) as typeof normalized.onlyFields;
+ normalized.excludeFields = mergePathLists(normalized.excludeFields) as typeof normalized.excludeFields;
 
  return normalized;
 }
 
-export function normalizeNestedControls<TValues extends Record<string, unknown>>(
- nested: ModelFormNestedConfig<TValues> | undefined,
-): Record<string, ModelFormNestedDefinition<TValues>> | undefined {
+export function normalizeNestedControls<TSource extends object>(
+ nested: ModelFormNestedConfig<TSource> | undefined,
+): Record<string, ModelFormNestedDefinition<TSource>> | undefined {
  if (!nested) return undefined;
 
  if (Array.isArray(nested)) {
@@ -452,7 +459,7 @@ export function normalizeNestedControls<TValues extends Record<string, unknown>>
  .map((path) => String(path ?? "").trim())
  .filter(Boolean);
  if (!normalizedEntries.length) return undefined;
- return normalizedEntries.reduce<Record<string, ModelFormNestedDefinition<TValues>>>(
+ return normalizedEntries.reduce<Record<string, ModelFormNestedDefinition<TSource>>>(
  (acc, path) => {
  acc[path] = { enabled: true };
  return acc;
@@ -468,10 +475,10 @@ export function normalizeNestedControls<TValues extends Record<string, unknown>>
  .filter(([path]) => Boolean(path));
  if (!entries.length) return undefined;
 
- const result: Record<string, ModelFormNestedDefinition<TValues>> = {};
+ const result: Record<string, ModelFormNestedDefinition<TSource>> = {};
  entries.forEach(([path, value]) => {
  result[path] = normalizeNestedDefinition(
- value as ModelFormNestedDefinition<TValues>,
+ value as ModelFormNestedDefinition<TSource>,
  );
  });
  return result;

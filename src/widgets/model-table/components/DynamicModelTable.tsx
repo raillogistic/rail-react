@@ -43,7 +43,10 @@ import type {
   BaseModelTableRefetch,
   BaseModelTableRelationConfig,
   BaseModelTableRelationStatsConfig,
+  DynamicModelTableRow,
   FieldSchema,
+  ModelTableAccessorPath,
+  ModelTableRelationKey,
   RowMutationPermissions,
 } from "../types";
 import type {
@@ -119,31 +122,35 @@ import {
 /**
  * Internal props used by the dynamic-table powered content implementation.
  */
-type DynamicBaseTableContentProps = {
+type DynamicBaseTableContentProps<
+  TSource extends object = Record<string, unknown>,
+> = {
   persistenceKey?: string;
   filterPanel?: ModelTableFilterPanelProps;
-  create?: ModelTableCreateConfig;
-  update?: ModelTableUpdateConfig;
-  detail?: ModelTableDetailConfig;
+  create?: ModelTableCreateConfig<TSource>;
+  update?: ModelTableUpdateConfig<TSource>;
+  detail?: ModelTableDetailConfig<TSource>;
   tableConfig?: ModelTableV2TableConfig;
   view?: ModelTableV2ViewOptions;
   performance?: ModelTableV2PerformanceOptions;
   quickSearch?: boolean;
-  topActions?: ModelTableV2TopActionsInput;
-  content?: ModelTableContentConfig;
+  topActions?: ModelTableV2TopActionsInput<TSource>;
+  content?: ModelTableContentConfig<TSource>;
   hideTableOnMobile?: boolean;
-  fields?: BaseModelTableFieldsInput;
+  fields?: BaseModelTableFieldsInput<TSource>;
   showReversed?: boolean;
   showCount?: boolean;
-  relations?: Record<string, BaseModelTableRelationConfig>;
-  relationStats?: BaseModelTableRelationStatsConfig;
+  relations?: Partial<
+    Record<ModelTableRelationKey<TSource>, BaseModelTableRelationConfig<TSource>>
+  >;
+  relationStats?: BaseModelTableRelationStatsConfig<TSource>;
   queryManager?: string;
-  columnOrdering?: BaseModelTableColumnOrderingConfig;
+  columnOrdering?: BaseModelTableColumnOrderingConfig<ModelTableAccessorPath<TSource>>;
   skipCount?: boolean;
   disableSorting?: boolean;
   enableSelection?: boolean;
   expand?: ModelTableV2ExpandConfig;
-  columnActions?: BaseModelTableColumnActionsInput;
+  columnActions?: BaseModelTableColumnActionsInput<DynamicModelTableRow<TSource>>;
   devtoolsEnabled?: boolean;
   /**
    * Emits the current query refetch function to the parent wrapper.
@@ -152,7 +159,7 @@ type DynamicBaseTableContentProps = {
   /**
    * Emits a runtime snapshot whenever table state changes.
    */
-  onSnapshotResolved?: (snapshot: DynamicModelTableSnapshot) => void;
+  onSnapshotResolved?: (snapshot: DynamicModelTableSnapshot<TSource>) => void;
 };
 
 /**
@@ -673,7 +680,9 @@ function resolveRowId(
 /**
  * Dynamic, feature-parity table content implemented with DynamicTable as the desktop grid.
  */
-function DynamicBaseTableContent({
+function DynamicBaseTableContent<
+  TSource extends object = Record<string, unknown>,
+>({
   persistenceKey,
   filterPanel,
   create,
@@ -700,7 +709,7 @@ function DynamicBaseTableContent({
   devtoolsEnabled = false,
   onRefetchResolved,
   onSnapshotResolved,
-}: DynamicBaseTableContentProps) {
+}: DynamicBaseTableContentProps<TSource>) {
   const { user } = useAuthContext();
   const {
     metadata,
@@ -712,6 +721,10 @@ function DynamicBaseTableContent({
     actionDetailsLoaded,
     scheduleCapabilitiesPrefetch,
   } = useMetadata();
+  const relationConfigMap =
+    relations as unknown as Record<string, BaseModelTableRelationConfig> | undefined;
+  const relationStatsConfig =
+    relationStats as BaseModelTableRelationStatsConfig<any> | undefined;
   const {
     columnVisibility,
     columnWidths,
@@ -1013,8 +1026,8 @@ function DynamicBaseTableContent({
   const { columnDefs, normalizedFieldsConfig, excludedAccessors } =
     useTableColumns({
       metadata,
-      fields: effectiveFields,
-      relations,
+      fields: effectiveFields as BaseModelTableFieldsInput,
+      relations: relationConfigMap,
       columnVisibility,
       persistedVisibility: persistedState?.columnVisibility,
     });
@@ -1036,8 +1049,8 @@ function DynamicBaseTableContent({
   }, [metadata, normalizedFieldsConfig, showCount, showReversed]);
 
   const { queryConfig } = useTableQueryConfig({
-    fields: effectiveFields,
-    relations,
+    fields: effectiveFields as BaseModelTableFieldsInput,
+    relations: relationConfigMap,
     queryManager,
     skipCount,
     performance,
@@ -1178,8 +1191,8 @@ function DynamicBaseTableContent({
       return;
     }
     onSnapshotResolved({
-      data,
-      selectedRows,
+      data: data as DynamicModelTableRow<TSource>[],
+      selectedRows: selectedRows as DynamicModelTableRow<TSource>[],
       rowSelection,
       loading: tableLoading,
       metadataLoading,
@@ -1283,7 +1296,7 @@ function DynamicBaseTableContent({
 
   const resolveStatsRelation = useCallback(
     (column: BaseModelTableColumnDef): StatsRelationMeta | null => {
-      if (!relationStats?.enabled) {
+      if (!relationStatsConfig?.enabled) {
         return null;
       }
 
@@ -1305,18 +1318,18 @@ function DynamicBaseTableContent({
       }
 
       if (
-        relationStats.include &&
-        !relationStats.include.includes(column.id) &&
-        !relationStats.include.includes(columnRoot) &&
-        !relationStats.include.includes(relationMeta.relationName)
+        relationStatsConfig?.include &&
+        !relationStatsConfig.include.includes(column.id) &&
+        !relationStatsConfig.include.includes(columnRoot) &&
+        !relationStatsConfig.include.includes(relationMeta.relationName)
       ) {
         return null;
       }
       if (
-        relationStats.exclude &&
-        (relationStats.exclude.includes(column.id) ||
-          relationStats.exclude.includes(columnRoot) ||
-          relationStats.exclude.includes(relationMeta.relationName))
+        relationStatsConfig?.exclude &&
+        (relationStatsConfig.exclude.includes(column.id) ||
+          relationStatsConfig.exclude.includes(columnRoot) ||
+          relationStatsConfig.exclude.includes(relationMeta.relationName))
       ) {
         return null;
       }
@@ -1328,17 +1341,17 @@ function DynamicBaseTableContent({
         relatedModel: relationMeta.relatedModel,
       };
     },
-    [fieldLookup, relationLookup, relationStats],
+    [fieldLookup, relationLookup, relationStatsConfig],
   );
 
   const resolveStatsOverride = useCallback(
     (columnId: string, relationName: string) => {
       return (
-        relationStats?.overrides?.[columnId] ||
-        relationStats?.overrides?.[relationName]
+        relationStatsConfig?.overrides?.[columnId] ||
+        relationStatsConfig?.overrides?.[relationName]
       );
     },
-    [relationStats?.overrides],
+    [relationStatsConfig?.overrides],
   );
 
   const dynamicColumns = useMemo<
@@ -1691,17 +1704,28 @@ function DynamicBaseTableContent({
       ? handleTemplatePdfPreview
       : undefined,
   };
-  const sectionController = useModelTableContentController(
+  const sectionController = useModelTableContentController<TSource>(
     sectionControllerInput,
   );
   const sectionVisibility = resolveSectionVisibility(content?.show);
-  const HeaderSlot = content?.slots?.Header ?? ModelTableHeader;
-  const TopActionsSlot = content?.slots?.TopActions ?? ModelTableTopActions;
-  const ToolbarSlot = content?.slots?.Toolbar ?? ModelTableToolbarSection;
+  const HeaderSlot =
+    (content?.slots?.Header as React.ComponentType<any> | undefined) ??
+    ModelTableHeader;
+  const TopActionsSlot =
+    (content?.slots?.TopActions as React.ComponentType<any> | undefined) ??
+    ModelTableTopActions;
+  const ToolbarSlot =
+    (content?.slots?.Toolbar as React.ComponentType<any> | undefined) ??
+    ModelTableToolbarSection;
   const BulkActionsBarSlot =
-    content?.slots?.BulkActionsBar ?? ModelTableBulkActionsBar;
-  const FooterSlot = content?.slots?.Footer ?? ModelTableFooter;
-  const DialogsSlot = content?.slots?.Dialogs ?? ModelTableDialogs;
+    (content?.slots?.BulkActionsBar as React.ComponentType<any> | undefined) ??
+    ModelTableBulkActionsBar;
+  const FooterSlot =
+    (content?.slots?.Footer as React.ComponentType<any> | undefined) ??
+    ModelTableFooter;
+  const DialogsSlot =
+    (content?.slots?.Dialogs as React.ComponentType<any> | undefined) ??
+    ModelTableDialogs;
   const headerTopActionsSlot = sectionVisibility.topActions
     ? TopActionsSlot
     : HiddenTopActions;
@@ -1727,29 +1751,29 @@ function DynamicBaseTableContent({
             <div className="flex flex-col w-full">
               {sectionVisibility.header && (
                 <HeaderSlot
-                  controller={sectionController}
+                  controller={sectionController as any}
                   TopActionsComponent={headerTopActionsSlot}
                 />
               )}
 
               {showStandaloneTopActions && (
                 <div className="flex w-full justify-end px-5 py-3 border-t border-border/20 bg-muted/10">
-                  <TopActionsSlot controller={sectionController} />
+                  <TopActionsSlot controller={sectionController as any} />
                 </div>
               )}
 
               {sectionVisibility.toolbar && (
                 <div className="border-t border-border/20 bg-card px-5 py-3 sm:px-6">
-                  <ToolbarSlot controller={sectionController} />
+                  <ToolbarSlot controller={sectionController as any} />
                 </div>
               )}
               {sectionVisibility.bulkActionsBar && (
                 <div className="px-5 py-2 border-t border-border/30 bg-primary/5">
-                  <BulkActionsBarSlot controller={sectionController} />
+                  <BulkActionsBarSlot controller={sectionController as any} />
                 </div>
               )}
               {sectionVisibility.footer && (
-                <FooterSlot controller={sectionController} />
+                <FooterSlot controller={sectionController as any} />
               )}
             </div>
           </div>
@@ -1760,10 +1784,10 @@ function DynamicBaseTableContent({
             <TableMobileCard
               emptyState={tableConfig?.emptyState}
               refetch={refetch}
-              fields={effectiveFields}
-              columnActions={columnActions}
-              update={update}
-              detail={detail}
+              fields={effectiveFields as BaseModelTableFieldsInput}
+              columnActions={columnActions as any}
+              update={update as any}
+              detail={detail as any}
               pdfPreview={tableConfig?.pdfPreview}
               onTemplatePdfPreview={
                 pdfPreviewEnabled ? handleTemplatePdfPreview : undefined
@@ -1809,16 +1833,16 @@ function DynamicBaseTableContent({
                   headerClassName: "w-[1%] whitespace-nowrap pr-3",
                   cellClassName: "w-[1%] whitespace-nowrap pr-3",
                   renderCell: ({ row }) => (
-                    <RowActions
-                      row={row}
-                      data={data}
+                    <RowActions<TSource>
+                      row={row as DynamicModelTableRow<TSource>}
+                      data={data as DynamicModelTableRow<TSource>[]}
                       refetch={refetch}
                       permissions={
                         row.rowPermissions as RowMutationPermissions | undefined
                       }
                       columnActions={columnActions}
-                      update={update}
-                      detail={detail}
+                      update={update as any}
+                      detail={detail as any}
                       onTemplatePdfPreview={
                         pdfPreviewEnabled ? handleTemplatePdfPreview : undefined
                       }
@@ -1904,7 +1928,7 @@ function DynamicBaseTableContent({
           </Dialog>
         ) : null}
         {sectionController.metadata && sectionVisibility.dialogs && (
-          <DialogsSlot controller={sectionController} />
+          <DialogsSlot controller={sectionController as any} />
         )}
       </div>
     </TooltipProvider>
@@ -1914,10 +1938,7 @@ function DynamicBaseTableContent({
 /**
  * Dynamic-model table built on the same metadata/filter contract as ModelTableV2.
  */
-export const DynamicModelTable = forwardRef<
-  DynamicModelTableHandle,
-  DynamicModelTableProps
->(function DynamicModelTable(
+const DynamicModelTableInner = <TSource extends object = Record<string, unknown>>(
   {
     app,
     model,
@@ -1928,9 +1949,9 @@ export const DynamicModelTable = forwardRef<
     baseTable,
     devtools,
     initVariables,
-  }: DynamicModelTableProps,
-  ref,
-) {
+  }: DynamicModelTableProps<TSource>,
+  ref: React.ForwardedRef<DynamicModelTableHandle<TSource>>,
+) => {
   const tableInstanceKey = `${app}:${model}`;
   const initialTableState = useMemo(
     () => resolveInitialTableState(initVariables),
@@ -1942,7 +1963,7 @@ export const DynamicModelTable = forwardRef<
   };
   const devtoolsEnabled = resolveDevtoolsEnabled(devtools);
   const refetchRef = useRef<BaseModelTableRefetch | undefined>(undefined);
-  const snapshotRef = useRef<DynamicModelTableSnapshot>({
+  const snapshotRef = useRef<DynamicModelTableSnapshot<TSource>>({
     data: [],
     selectedRows: [],
     rowSelection: {},
@@ -1967,7 +1988,7 @@ export const DynamicModelTable = forwardRef<
    * Stores the latest runtime snapshot provided by the table content.
    */
   const handleSnapshotResolved = useCallback(
-    (nextSnapshot: DynamicModelTableSnapshot) => {
+    (nextSnapshot: DynamicModelTableSnapshot<TSource>) => {
       snapshotRef.current = nextSnapshot;
     },
     [],
@@ -2041,7 +2062,7 @@ export const DynamicModelTable = forwardRef<
             filterVariables: initialTableState.filterVariables,
           }}
         >
-          <DynamicBaseTableContent
+          <DynamicBaseTableContent<TSource>
             persistenceKey={baseTable?.persistenceKey}
             filterPanel={resolvedFilterPanel}
             create={create}
@@ -2074,9 +2095,16 @@ export const DynamicModelTable = forwardRef<
       </MetadataProvider>
     </div>
   );
-});
+};
 
-DynamicModelTable.displayName = "DynamicModelTable";
+export const DynamicModelTable = forwardRef(DynamicModelTableInner) as <
+  TSource extends object = Record<string, unknown>,
+>(
+  props: DynamicModelTableProps<TSource> &
+    React.RefAttributes<DynamicModelTableHandle<TSource>>,
+) => React.ReactElement | null;
+
+(DynamicModelTable as { displayName?: string }).displayName = "DynamicModelTable";
 
 function TableDevtoolsPanel({ timings }: { timings: TableDevtoolsTimings }) {
   return (

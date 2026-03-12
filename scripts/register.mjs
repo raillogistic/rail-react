@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import { spawn } from "node:child_process";
 import { constants as fsConstants } from "node:fs";
 import { access, mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -520,21 +521,53 @@ const upsertRouteConstants = (source, routeEntries, force) => {
 const quote = (value) =>
   String(value).replace(/\\/g, "\\\\").replace(/"/g, '\\"');
 
+const runCommand = (command, args, options = {}) =>
+  new Promise((resolve, reject) => {
+    const child = spawn(command, args, {
+      stdio: "inherit",
+      shell: false,
+      ...options,
+    });
+
+    child.on("error", reject);
+    child.on("exit", (code, signal) => {
+      if (code === 0) {
+        resolve();
+        return;
+      }
+
+      reject(
+        new Error(
+          signal
+            ? `${command} ${args.join(" ")} was terminated by signal ${signal}.`
+            : `${command} ${args.join(" ")} exited with code ${code}.`,
+        ),
+      );
+    });
+  });
+
+const runGetModels = async (cwd) => {
+  const yarnCommand = process.platform === "win32" ? "yarn.cmd" : "yarn";
+  await runCommand(yarnCommand, ["getModels"], { cwd });
+};
+
 const buildListPageContent = ({
   listComponentName,
   projectId,
   appName,
   modelName,
+  modelTypeName,
   listType,
   listTitle,
   routeConstants,
 }) => {
   if (listType === "inline") {
-    return `import { DynamicModelTable } from "@/widgets/model-table";
+    return `import type { ${modelTypeName} } from "@/models";
+import { DynamicModelTable } from "@/widgets/model-table";
 
 export function ${listComponentName}() {
   return (
-    <DynamicModelTable
+    <DynamicModelTable<${modelTypeName}>
       app="${quote(appName)}"
       model="${quote(modelName)}"
       create={{ type: "drawer" }}
@@ -553,12 +586,13 @@ export default ${listComponentName};
 `;
   }
 
-  return `import { ROUTES } from "@/projects/${quote(projectId)}/config/routes";
+  return `import type { ${modelTypeName} } from "@/models";
+import { ROUTES } from "@/projects/${quote(projectId)}/config/routes";
 import { DynamicModelTable } from "@/widgets/model-table";
 
 export function ${listComponentName}() {
   return (
-    <DynamicModelTable
+    <DynamicModelTable<${modelTypeName}>
       app="${quote(appName)}"
       model="${quote(modelName)}"
       create={{
@@ -591,7 +625,9 @@ const buildFormPageContent = ({
   appName,
   modelName,
   formTitle,
+  modelTypeName,
 }) => `import { useParams } from "react-router-dom";
+import type { ${modelTypeName} } from "@/models";
 import { ModelForm } from "@/widgets/model-form";
 
 export function ${formComponentName}() {
@@ -600,8 +636,8 @@ export function ${formComponentName}() {
 
   return (
     <section className="space-y-4">
-      <ModelForm
-        title={isUpdate ? "Modifier ${quote(formTitle)}" : "Créer ${quote(formTitle)}"}
+      <ModelForm<${modelTypeName}>
+        title={isUpdate ? "Modifier ${quote(formTitle)}" : "Creer ${quote(formTitle)}"}
         app="${quote(appName)}"
         model="${quote(modelName)}"
         mode={isUpdate ? "UPDATE" : "CREATE"}
@@ -913,7 +949,9 @@ const run = async () => {
 
   const resolvedModel = resolveModelReference(options.model, options.app);
   const appName = toKebabCase(resolvedModel.appName);
+  const appPascal = toPascalCase(resolvedModel.appName);
   const modelPascal = toPascalCase(resolvedModel.modelName);
+  const modelTypeName = `${appPascal}${modelPascal}`;
   const projectId = toKebabCase(options.project);
   const modelSlug = toKebabCase(options.slug || resolvedModel.modelName);
   const iconName = String(options.icon ?? "FileText").trim();
@@ -925,6 +963,9 @@ const run = async () => {
   }
   if (!modelPascal) {
     throw new Error("Unable to resolve model name from --model.");
+  }
+  if (!appPascal) {
+    throw new Error("Unable to resolve app type prefix from --model.");
   }
   if (!projectId) {
     throw new Error("Invalid --project value.");
@@ -1026,6 +1067,7 @@ const run = async () => {
         projectId,
         appName,
         modelName: modelPascal,
+        modelTypeName,
         listType: type,
         listTitle,
         routeConstants,
@@ -1041,6 +1083,7 @@ const run = async () => {
           appName,
           modelName: modelPascal,
           formTitle,
+          modelTypeName,
         }),
       },
       {
@@ -1109,6 +1152,9 @@ const run = async () => {
   for (const entry of fileWrites) {
     await writeFile(entry.path, entry.content, "utf8");
   }
+
+  console.log("Refreshing generated model interfaces with `yarn getModels`...");
+  await runGetModels(root);
 
   console.log(
     `Registered ${appName}.${modelPascal} in project "${projectId}".`,

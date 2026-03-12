@@ -12,12 +12,16 @@ const PrintDialog = lazy(() =>
 /**
  * Props for the default dialogs slot.
  */
-type ModelTableDialogsProps = ModelTableDialogsSlotProps;
+type ModelTableDialogsProps<
+ TSource extends object = Record<string, unknown>,
+> = ModelTableDialogsSlotProps<TSource>;
 
 /**
  * Renders dialog overlays required by the composed content shell.
  */
-export function ModelTableDialogs({ controller }: ModelTableDialogsProps) {
+export function ModelTableDialogs<
+ TSource extends object = Record<string, unknown>,
+>({ controller }: ModelTableDialogsProps<TSource>) {
  return (
  <>
  {controller.createFormProps ? (
@@ -30,7 +34,7 @@ export function ModelTableDialogs({ controller }: ModelTableDialogsProps) {
  height={controller.createOverlayHeight}
  drawerDirection={controller.createOverlayDrawerDirection}
  >
- <ModelForm<Record<string, unknown>> {...controller.createFormProps} />
+ <ModelForm<TSource> {...controller.createFormProps} />
  </FormOverlay>
  ) : null}
 

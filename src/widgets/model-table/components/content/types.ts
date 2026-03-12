@@ -1,17 +1,28 @@
 import type React from "react";
 import type { FormSchema } from "@/widgets/model-form/inputs/types";
-import type { ModelFormProps } from "@/widgets/model-form/types.model";
+import type {
+ ModelFormProps,
+ ModelFormValueShape,
+} from "@/widgets/model-form/types.model";
 import type {
  BaseModelTableFieldsInput,
+ DynamicModelTableRow,
  ModelSchema,
  TemplateInfo,
 } from "../../types";
 import type { ModelTableCreateDrawerDirection } from "../../config/types";
 
+type ResolvedModelTableFormValues<TSource extends object> =
+ ModelFormValueShape<TSource> extends Record<string, unknown>
+ ? ModelFormValueShape<TSource>
+ : Record<string, unknown>;
+
 /**
  * Top-action item rendered in the content header action area.
  */
-export type ModelTableContentTopAction = {
+export type ModelTableContentTopAction<
+ TSource extends object = Record<string, unknown>,
+> = {
  /** Stable unique key. */
  key: string;
  /** Visible action label. */
@@ -36,7 +47,7 @@ export type ModelTableContentTopAction = {
  dataAttributes?: Record<string, string | number | boolean | undefined>;
  /** Click callback with selection context. */
  on_click: (ctx: {
- selected_rows: Record<string, unknown>[];
+ selected_rows: DynamicModelTableRow<TSource>[];
  selection_state: Record<string, boolean>;
  }) => void;
 };
@@ -44,7 +55,9 @@ export type ModelTableContentTopAction = {
 /**
  * Shared view-model returned by the content controller hook.
  */
-export type ModelTableContentControllerState = {
+export type ModelTableContentControllerState<
+ TSource extends object = Record<string, unknown>,
+> = {
  /** Current app key. */
  app: string;
  /** Current model key. */
@@ -62,7 +75,7 @@ export type ModelTableContentControllerState = {
  /** Quick-search feature toggle. */
  quickSearch?: boolean;
  /** Field configuration for toolbar column selector. */
- fields?: BaseModelTableFieldsInput;
+ fields?: BaseModelTableFieldsInput<TSource>;
  /** Enables reverse relationship fields in default table surfaces. */
  showReversed?: boolean;
  /** Enables synthetic count fields in default table surfaces. */
@@ -78,7 +91,7 @@ export type ModelTableContentControllerState = {
  /** Current row selection map. */
  rowSelection: Record<string, boolean>;
  /** Selected rows extracted from table data. */
- selectedRows: Record<string, unknown>[];
+ selectedRows: DynamicModelTableRow<TSource>[];
  /** Selected row IDs as strings. */
  selectedRowIds: string[];
  /** Selected row count. */
@@ -86,7 +99,7 @@ export type ModelTableContentControllerState = {
  /** Whether at least one row is selected. */
  hasSelection: boolean;
  /** Resolved top action list after defaults + user actions. */
- resolvedTopActions: ModelTableContentTopAction[];
+ resolvedTopActions: ModelTableContentTopAction<TSource>[];
  /** PDF template actions available on current model. */
  pdfTemplates: TemplateInfo[];
  /** Excel template actions available on current model. */
@@ -124,7 +137,7 @@ export type ModelTableContentControllerState = {
  /** Drawer direction when create overlay is drawer. */
  createOverlayDrawerDirection: ModelTableCreateDrawerDirection;
  /** Resolved ModelForm props for create overlay. */
- createFormProps: ModelFormProps<Record<string, unknown>> | null;
+ createFormProps: ModelFormProps<ResolvedModelTableFormValues<TSource>, TSource> | null;
  /** Invokes one resolved top action. */
  handleTopActionClick: (action: ModelTableContentTopAction) => void;
  /** Triggers table data refresh. */
@@ -134,7 +147,7 @@ export type ModelTableContentControllerState = {
  /** Runs template action for selected rows. */
  runTemplateForRows: (
  template: TemplateInfo,
- rows: Record<string, unknown>[],
+ rows: DynamicModelTableRow<TSource>[],
  ) => void;
  /** Closes print/template dialog. */
  closePrintDialog: () => void;
@@ -147,69 +160,83 @@ export type ModelTableContentControllerState = {
 /**
  * Props passed to top-actions slot components.
  */
-export type ModelTableTopActionsSlotProps = {
+export type ModelTableTopActionsSlotProps<
+ TSource extends object = Record<string, unknown>,
+> = {
  /** Resolved controller state and handlers. */
- controller: ModelTableContentControllerState;
+ controller: ModelTableContentControllerState<TSource>;
 };
 
 /**
  * Props passed to header slot components.
  */
-export type ModelTableHeaderSlotProps = {
+export type ModelTableHeaderSlotProps<
+ TSource extends object = Record<string, unknown>,
+> = {
  /** Resolved controller state and handlers. */
- controller: ModelTableContentControllerState;
+ controller: ModelTableContentControllerState<TSource>;
  /** Slot component used to render top actions in the header. */
- TopActionsComponent: React.ComponentType<ModelTableTopActionsSlotProps>;
+ TopActionsComponent: React.ComponentType<ModelTableTopActionsSlotProps<TSource>>;
 };
 
 /**
  * Props passed to toolbar slot components.
  */
-export type ModelTableToolbarSlotProps = {
+export type ModelTableToolbarSlotProps<
+ TSource extends object = Record<string, unknown>,
+> = {
  /** Resolved controller state and handlers. */
- controller: ModelTableContentControllerState;
+ controller: ModelTableContentControllerState<TSource>;
 };
 
 /**
  * Props passed to bulk-actions bar slot components.
  */
-export type ModelTableBulkActionsBarSlotProps = {
+export type ModelTableBulkActionsBarSlotProps<
+ TSource extends object = Record<string, unknown>,
+> = {
  /** Resolved controller state and handlers. */
- controller: ModelTableContentControllerState;
+ controller: ModelTableContentControllerState<TSource>;
 };
 
 /**
  * Props passed to footer slot components.
  */
-export type ModelTableFooterSlotProps = {
+export type ModelTableFooterSlotProps<
+ TSource extends object = Record<string, unknown>,
+> = {
  /** Resolved controller state and handlers. */
- controller: ModelTableContentControllerState;
+ controller: ModelTableContentControllerState<TSource>;
 };
 
 /**
  * Props passed to dialog slot components.
  */
-export type ModelTableDialogsSlotProps = {
+export type ModelTableDialogsSlotProps<
+ TSource extends object = Record<string, unknown>,
+> = {
  /** Resolved controller state and handlers. */
- controller: ModelTableContentControllerState;
+ controller: ModelTableContentControllerState<TSource>;
 };
 
 /**
  * Slot overrides for content composition.
  */
-export type ModelTableContentSlots = {
+export type ModelTableContentSlots<
+ TSource extends object = Record<string, unknown>,
+> = {
  /** Optional custom header slot. */
- Header?: React.ComponentType<ModelTableHeaderSlotProps>;
+ Header?: React.ComponentType<ModelTableHeaderSlotProps<TSource>>;
  /** Optional custom top-actions slot. */
- TopActions?: React.ComponentType<ModelTableTopActionsSlotProps>;
+ TopActions?: React.ComponentType<ModelTableTopActionsSlotProps<TSource>>;
  /** Optional custom toolbar slot. */
- Toolbar?: React.ComponentType<ModelTableToolbarSlotProps>;
+ Toolbar?: React.ComponentType<ModelTableToolbarSlotProps<TSource>>;
  /** Optional custom floating bulk-actions bar slot. */
- BulkActionsBar?: React.ComponentType<ModelTableBulkActionsBarSlotProps>;
+ BulkActionsBar?: React.ComponentType<ModelTableBulkActionsBarSlotProps<TSource>>;
  /** Optional custom footer slot. */
- Footer?: React.ComponentType<ModelTableFooterSlotProps>;
+ Footer?: React.ComponentType<ModelTableFooterSlotProps<TSource>>;
  /** Optional custom dialog layer slot. */
- Dialogs?: React.ComponentType<ModelTableDialogsSlotProps>;
+ Dialogs?: React.ComponentType<ModelTableDialogsSlotProps<TSource>>;
 };
 
 /**
@@ -233,9 +260,11 @@ export type ModelTableContentSectionVisibility = {
 /**
  * Content-level composition configuration.
  */
-export type ModelTableContentConfig = {
+export type ModelTableContentConfig<
+ TSource extends object = Record<string, unknown>,
+> = {
  /** Optional section visibility configuration. */
  show?: ModelTableContentSectionVisibility;
  /** Optional slot-component overrides. */
- slots?: ModelTableContentSlots;
+ slots?: ModelTableContentSlots<TSource>;
 };

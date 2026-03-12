@@ -1,5 +1,9 @@
 import type { ReactElement, ReactNode } from "react";
 import { FilterFormState } from "@/widgets/model-table/filtering/types";
+import type {
+ FormFieldPath,
+ FormObjectValue,
+} from "@/widgets/model-form/types/props";
 
 // ============================================================================
 // GraphQL Metadata Types (Mirrors rail-django/extensions/metadata/types.py)
@@ -323,12 +327,14 @@ export type TableDensity = "compact" | "comfortable" | "spacious";
 export type ColumnOrderingMode = "persisted" | "config";
 export type ColumnOrderingAppend = "start" | "end";
 
-export interface BaseModelTableColumnOrderingConfig {
- order?: string[]; // preferred column order (by column id)
+export interface BaseModelTableColumnOrderingConfig<
+ TAccessor extends string = string,
+> {
+ order?: TAccessor[]; // preferred column order (by column id)
  mode?: ColumnOrderingMode; // persisted (default) or config-first
  append?: ColumnOrderingAppend; // where to place unspecified columns
  draggable?: boolean; // allow drag-and-drop reordering
- locked?: string[]; // columns that cannot be dragged
+ locked?: TAccessor[]; // columns that cannot be dragged
 }
 
 export interface ColumnVisibilityState {
@@ -406,9 +412,56 @@ export type BaseModelTableRefetch = (
  variables?: Record<string, unknown>,
 ) => Promise<unknown>;
 
-export type BaseModelTableColumnActionContext = {
- row: Record<string, unknown>;
- data: Record<string, unknown>[];
+type ModelTableRelatedObject<T> =
+ NonNullable<T> extends ReadonlyArray<infer TValue>
+ ? FormObjectValue<NonNullable<TValue>>
+ : NonNullable<T> extends Array<infer TValue>
+   ? FormObjectValue<NonNullable<TValue>>
+   : FormObjectValue<NonNullable<T>>;
+
+export type ModelTableRelationKey<TSource extends object> =
+ string extends keyof TSource
+ ? string
+ : {
+     [K in Extract<keyof TSource, string>]:
+       ModelTableRelatedObject<TSource[K]> extends never
+         ? never
+         : K;
+   }[Extract<keyof TSource, string>];
+
+export type ModelTableRelationFieldPath<
+ TSource extends object,
+ TRelationKey extends ModelTableRelationKey<TSource> = ModelTableRelationKey<TSource>,
+> = string extends keyof TSource
+ ? string
+ : TRelationKey extends keyof TSource
+   ? FormFieldPath<ModelTableRelatedObject<TSource[TRelationKey]>>
+   : never;
+
+export type ModelTableRelationCountAccessor<TSource extends object> =
+ string extends keyof TSource
+ ? string
+ : {
+     [K in Extract<keyof TSource, string>]:
+       NonNullable<TSource[K]> extends ReadonlyArray<any> | Array<any>
+         ? `${K}Count`
+         : never;
+   }[Extract<keyof TSource, string>];
+
+export type ModelTableAccessorPath<TSource extends object> =
+ | FormFieldPath<TSource>
+ | ModelTableRelationCountAccessor<TSource>;
+
+export type DynamicModelTableRow<TSource extends object = Record<string, unknown>> =
+ TSource & {
+   rowPermissions?: RowMutationPermissions | null;
+ } & Record<string, unknown>;
+
+export type BaseModelTableColumnActionContext<
+ TRow extends Record<string, unknown> = Record<string, unknown>,
+> = {
+ row: TRow;
+ data: TRow[];
  refetch?: BaseModelTableRefetch;
 };
 
@@ -420,111 +473,158 @@ type BaseModelTableColumnActionBase = {
  disabled?: boolean;
 };
 
-export type BaseModelTableColumnActionRender =
+export type BaseModelTableColumnActionRender<
+ TRow extends Record<string, unknown> = Record<string, unknown>,
+> =
  BaseModelTableColumnActionBase & {
- render: (context: BaseModelTableColumnActionContext) => ReactNode;
+ render: (
+ context: BaseModelTableColumnActionContext<TRow>,
+ ) => ReactNode;
  };
 
-export type BaseModelTableColumnActionClick =
+export type BaseModelTableColumnActionClick<
+ TRow extends Record<string, unknown> = Record<string, unknown>,
+> =
  BaseModelTableColumnActionBase & {
  label: string;
  onClick: (
- context: BaseModelTableColumnActionContext,
+ context: BaseModelTableColumnActionContext<TRow>,
  ) => void | Promise<void>;
  };
 
-export type BaseModelTableColumnAction =
- | BaseModelTableColumnActionRender
- | BaseModelTableColumnActionClick;
+export type BaseModelTableColumnAction<
+ TRow extends Record<string, unknown> = Record<string, unknown>,
+> =
+ | BaseModelTableColumnActionRender<TRow>
+ | BaseModelTableColumnActionClick<TRow>;
 
-export type BaseModelTableColumnActionsInput =
- | BaseModelTableColumnAction[]
- | ((context: BaseModelTableColumnActionContext) =>
- | BaseModelTableColumnAction[]
+export type BaseModelTableColumnActionsInput<
+ TRow extends Record<string, unknown> = Record<string, unknown>,
+> =
+ | BaseModelTableColumnAction<TRow>[]
+ | ((context: BaseModelTableColumnActionContext<TRow>) =>
+ | BaseModelTableColumnAction<TRow>[]
  | undefined);
 
-export type BaseModelTableRenderContext = {
- accessor: string;
+export type BaseModelTableRenderContext<
+ TRow extends Record<string, unknown> = Record<string, unknown>,
+ TAccessor extends string = string,
+> = {
+ accessor: TAccessor;
  columnId: string;
- data: Record<string, unknown>[];
+ data: TRow[];
  refetch?: BaseModelTableRefetch;
 };
 
-export type BaseModelTableFieldRender = (
+export type BaseModelTableFieldRender<
+ TRow extends Record<string, unknown> = Record<string, unknown>,
+ TAccessor extends string = string,
+> = (
  value: unknown,
- row: Record<string, unknown>,
- context: BaseModelTableRenderContext,
+ row: TRow,
+ context: BaseModelTableRenderContext<TRow, TAccessor>,
 ) => ReactNode;
 
-export type BaseModelTableFieldRenderMap = Record<
- string,
+export type BaseModelTableFieldRenderMap<
+ TRow extends Record<string, unknown> = Record<string, unknown>,
+ TAccessor extends string = string,
+> = Partial<Record<
+ TAccessor,
  (
  value: unknown,
- row: Record<string, unknown>,
- data: Record<string, unknown>[],
+ row: TRow,
+ data: TRow[],
  refetch?: BaseModelTableRefetch,
  ) => ReactNode
->;
+>>;
 
-export type BaseModelTableField =
- | string
+export type BaseModelTableField<
+ TAccessor extends string = string,
+ TRow extends Record<string, unknown> = Record<string, unknown>,
+> =
+ | TAccessor
  | {
- accessor: string;
+ accessor: TAccessor;
  title?: string;
- render?: BaseModelTableFieldRender;
+ render?: BaseModelTableFieldRender<TRow, TAccessor>;
  };
 
-export type BaseModelTableFieldAddOrder =
+export type BaseModelTableFieldAddOrder<TAccessor extends string = string> =
  | number
  | {
- after?: string;
- before?: string;
+ after?: TAccessor;
+ before?: TAccessor;
  };
 
-export type BaseModelTableFieldAdd = {
- accessor: string;
+export type BaseModelTableFieldAdd<TAccessor extends string = string> = {
+ accessor: TAccessor;
  title?: string;
- order?: BaseModelTableFieldAddOrder;
+ order?: BaseModelTableFieldAddOrder<TAccessor>;
 };
 
-export type BaseModelTableFieldsConfig = {
- include?: BaseModelTableField[];
- add?: BaseModelTableFieldAdd[];
- exclude?: string[];
- render?: BaseModelTableFieldRenderMap;
+export type BaseModelTableFieldsConfig<
+ TSource extends object = Record<string, unknown>,
+ TRow extends Record<string, unknown> = DynamicModelTableRow<TSource>,
+ TAccessor extends string = ModelTableAccessorPath<TSource>,
+> = {
+ include?: BaseModelTableField<TAccessor, TRow>[];
+ add?: BaseModelTableFieldAdd<TAccessor>[];
+ exclude?: TAccessor[];
+ render?: BaseModelTableFieldRenderMap<TRow, TAccessor>;
 };
 
-export type BaseModelTableFieldsInput =
- | BaseModelTableField[]
- | BaseModelTableFieldsConfig;
+export type BaseModelTableFieldsInput<
+ TSource extends object = Record<string, unknown>,
+ TRow extends Record<string, unknown> = DynamicModelTableRow<TSource>,
+ TAccessor extends string = ModelTableAccessorPath<TSource>,
+> =
+ | BaseModelTableField<TAccessor, TRow>[]
+ | BaseModelTableFieldsConfig<TSource, TRow, TAccessor>;
 
-export type BaseModelTableRelationConfig = {
- fields?: string[];
- display?: string;
+export type BaseModelTableRelationConfig<
+ TSource extends object = Record<string, unknown>,
+ TRelationKey extends ModelTableRelationKey<TSource> = ModelTableRelationKey<TSource>,
+> = {
+ fields?: ModelTableRelationFieldPath<TSource, TRelationKey>[];
+ display?: ModelTableRelationFieldPath<TSource, TRelationKey>;
 };
 
-export type BaseModelTableRelationStatsOverrideData = {
- row: Record<string, unknown>;
- relationName: string;
+export type BaseModelTableRelationStatsOverrideData<
+ TSource extends object = Record<string, unknown>,
+ TRelationKey extends ModelTableRelationKey<TSource> = ModelTableRelationKey<TSource>,
+> = {
+ row: DynamicModelTableRow<TSource>;
+ relationName: TRelationKey;
  loading: boolean;
  error: string | null;
  stats: Record<string, unknown> | null;
 };
 
-export type BaseModelTableRelationStatsOverride = (
- data: BaseModelTableRelationStatsOverrideData,
+export type BaseModelTableRelationStatsOverride<
+ TSource extends object = Record<string, unknown>,
+ TRelationKey extends ModelTableRelationKey<TSource> = ModelTableRelationKey<TSource>,
+> = (
+ data: BaseModelTableRelationStatsOverrideData<TSource, TRelationKey>,
 ) => ReactElement;
 
-export type BaseModelTableRelationStatsConfig = {
+export type BaseModelTableRelationStatsConfig<
+ TSource extends object = Record<string, unknown>,
+ TRelationKey extends ModelTableRelationKey<TSource> = ModelTableRelationKey<TSource>,
+> = {
  enabled?: boolean;
- include?: string[];
- exclude?: string[];
- overrides?: Record<string, BaseModelTableRelationStatsOverride>;
+ include?: TRelationKey[];
+ exclude?: TRelationKey[];
+ overrides?: Partial<
+   Record<TRelationKey, BaseModelTableRelationStatsOverride<TSource, TRelationKey>>
+ >;
 };
 
-export type BaseModelTableColumnDef = {
+export type BaseModelTableColumnDef<
+ TRow extends Record<string, unknown> = Record<string, unknown>,
+ TAccessor extends string = string,
+> = {
  id: string;
- accessor: string;
+ accessor: TAccessor;
  title: string;
- render?: BaseModelTableFieldRender;
+ render?: BaseModelTableFieldRender<TRow, TAccessor>;
 };
