@@ -4,34 +4,19 @@ import { Send } from "lucide-react";
 import { CustomMutationsDropdown } from "@/widgets/components/CustomMutationsDropdown";
 import { ModelTemplateAction } from "@/widgets/components/ModelTemplateAction";
 import { ModelTemplatesDropdown } from "@/widgets/components/ModelTemplatesDropdown";
+import { ModelDynamicDetail } from "@/widgets/model-details";
+import { OperationsDecharge } from "@/models";
 
 export function DechargeDetailPage() {
   const { id = "" } = useParams();
 
   return (
-    <>
-      <ModelTemplatesDropdown
-        data={{
-          app: "operations",
-          model: "Decharge",
-          objectId: id,
-        }}
-      />
-      <ModelTemplateAction
-        data={{
-          app: "operations",
-          model: "Decharge",
-          funcName: "print_decharge",
-          objectId: id,
-        }}
-        button={{
-          label: "impression",
-        }}
-      />
-    </>
+    <ModelDynamicDetail<OperationsDecharge>
+      app="operations"
+      model="Decharge"
+      id={id}
+    />
   );
-
-  // <ModelDynamicDetail app="operations" model="Decharge" id={id} />;
 }
 
 export default DechargeDetailPage;

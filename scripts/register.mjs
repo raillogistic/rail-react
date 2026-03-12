@@ -654,12 +654,14 @@ const buildDetailPageContent = ({
   detailComponentName,
   appName,
   modelName,
+  modelTypeName,
 }) => `import { useParams } from "react-router-dom";
+import type { ${modelTypeName} } from "@/models";
 import { ModelDynamicDetail } from "@/widgets/model-details";
 
 export function ${detailComponentName}() {
   const { id = "" } = useParams();
-  return <ModelDynamicDetail app="${quote(appName)}" model="${quote(modelName)}" id={id} />;
+  return <ModelDynamicDetail<${modelTypeName}> app="${quote(appName)}" model="${quote(modelName)}" id={id} />;
 }
 
 export default ${detailComponentName};
@@ -1092,6 +1094,7 @@ const run = async () => {
           detailComponentName,
           appName,
           modelName: modelPascal,
+          modelTypeName,
         }),
       },
     );

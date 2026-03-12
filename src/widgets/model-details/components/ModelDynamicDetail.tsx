@@ -130,11 +130,15 @@ type MutationActionEntry = {
   defaults?: Record<string, unknown>;
 };
 
-type ResolvedFieldConfig = ModelDynamicDetailFieldConfig & {
+type ResolvedFieldConfig<
+  TRecord extends object = Record<string, unknown>,
+> = ModelDynamicDetailFieldConfig<TRecord> & {
   path: string;
 };
 
-type ResolvedLayoutSection = {
+type ResolvedLayoutSection<
+  TRecord extends object = Record<string, unknown>,
+> = {
   id: string;
   tabId?: string;
   title?: React.ReactNode;
@@ -144,7 +148,7 @@ type ResolvedLayoutSection = {
   rows: Array<{
     id: string;
     columns: number;
-    fields: ResolvedFieldConfig[];
+    fields: ResolvedFieldConfig<TRecord>[];
   }>;
 };
 
@@ -179,9 +183,11 @@ type ResolvedLayoutTab = {
   permissions?: string[];
 };
 
-type ResolvedHeaderActionEntry = {
+type ResolvedHeaderActionEntry<
+  TRecord extends object = Record<string, unknown>,
+> = {
   position: number;
-  render: ModelDynamicDetailHeaderActionConfig["render"];
+  render: ModelDynamicDetailHeaderActionConfig<TRecord>["render"];
 };
 
 type FormSubmitOutcome = NonNullable<
@@ -334,12 +340,12 @@ function warnDev(message: string): void {
 /**
  * Resolves tab definitions from layout config and current render context.
  */
-function resolveLayoutTabs(options: {
-  tabs: ModelDynamicDetailTabConfig[] | undefined;
+function resolveLayoutTabs<TRecord extends object>(options: {
+  tabs: ModelDynamicDetailTabConfig<TRecord>[] | undefined;
   app: string;
   model: string;
   id: string;
-  data: Record<string, unknown> | null;
+  data: TRecord | null;
   metadata: ModelMetadata | null;
 }): ResolvedLayoutTab[] {
   const { tabs, app, model, id, data, metadata } = options;
@@ -910,17 +916,17 @@ function inferFieldKind(
   return "text";
 }
 
-function normalizeFieldConfig(
-  entry: string | ModelDynamicDetailFieldConfig,
+function normalizeFieldConfig<TRecord extends object>(
+  entry: string | ModelDynamicDetailFieldConfig<TRecord>,
   options?: {
     pathPrefix?: string;
     fieldOverrides?: Record<
       string,
-      Omit<ModelDynamicDetailFieldConfig, "path">
+      Omit<ModelDynamicDetailFieldConfig<TRecord>, "path">
     >;
     keepRelative?: boolean;
   },
-): ResolvedFieldConfig {
+): ResolvedFieldConfig<TRecord> {
   const rawPath = typeof entry === "string" ? entry : entry.path;
   const normalized = normalizePath(rawPath);
   const normalizedGraphql =
@@ -933,25 +939,26 @@ function normalizeFieldConfig(
     pathPrefix && !normalizedGraphql.startsWith(`${pathPrefix}.`)
       ? `${pathPrefix}.${normalizedGraphql}`
       : normalizedGraphql;
+  const typedPath = path as ModelDynamicDetailFieldConfig<TRecord>["path"];
 
-  const payload: ModelDynamicDetailFieldConfig =
-    typeof entry === "string" ? { path } : { ...entry, path };
+  const payload: ModelDynamicDetailFieldConfig<TRecord> =
+    typeof entry === "string" ? { path: typedPath } : { ...entry, path: typedPath };
 
   const override = options?.fieldOverrides?.[path];
   if (!override) {
-    return payload as ResolvedFieldConfig;
+    return payload as ResolvedFieldConfig<TRecord>;
   }
 
   return {
     ...payload,
     ...override,
-    path,
-  } as ResolvedFieldConfig;
+    path: typedPath,
+  } as ResolvedFieldConfig<TRecord>;
 }
 
-function resolveBaseFieldPaths(
+function resolveBaseFieldPaths<TRecord extends object>(
   metadata: ModelMetadata | null,
-  layout: ModelDynamicDetailConfig["layout"],
+  layout: ModelDynamicDetailConfig<TRecord>["layout"],
   nestedFields: Record<string, ModelDynamicDetailNestedConfig>,
 ): string[] {
   const excluded = new Set(
@@ -1072,10 +1079,10 @@ function resolveNestedFieldConfigs(options: {
   ];
 }
 
-function resolveRowPermissions(
-  data: Record<string, unknown> | null,
+function resolveRowPermissions<TRecord extends object>(
+  data: TRecord | null,
 ): RowPermissionSnapshot {
-  const value = data?.rowPermissions;
+  const value = (data as Record<string, unknown> | null)?.rowPermissions;
   if (!isRecord(value)) {
     return {};
   }
@@ -1096,13 +1103,13 @@ function resolveRowPermissions(
   };
 }
 
-function evaluateOverrideBoolean(
+function evaluateOverrideBoolean<TRecord extends object>(
   source:
     | boolean
-    | ((ctx: ModelDynamicDetailActionContext) => boolean)
+    | ((ctx: ModelDynamicDetailActionContext<TRecord>) => boolean)
     | undefined,
   fallback: boolean,
-  ctx: ModelDynamicDetailActionContext,
+  ctx: ModelDynamicDetailActionContext<TRecord>,
 ): boolean {
   if (typeof source === "boolean") return source;
   if (typeof source === "function") {
@@ -1193,14 +1200,14 @@ function buildSelectionInput(options: {
     .join("\n");
 }
 
-function buildLayoutSections(options: {
+function buildLayoutSections<TRecord extends object>(options: {
   metadata: ModelMetadata | null;
-  config: ModelDynamicDetailConfig;
-  data: Record<string, unknown> | null;
+  config: ModelDynamicDetailConfig<TRecord>;
+  data: TRecord | null;
   app: string;
   model: string;
   id: string;
-}): ResolvedLayoutSection[] {
+}): ResolvedLayoutSection<TRecord>[] {
   const layout = options.config.layout;
   const fieldOverrides = layout?.fieldOverrides ?? {};
   const defaultColumns = normalizeColumns(layout?.defaultColumns, 2);
@@ -1208,10 +1215,13 @@ function buildLayoutSections(options: {
   const basePaths = resolveBaseFieldPaths(
     options.metadata,
     layout,
-    options.config.nestedFields ?? {},
+    (options.config.nestedFields ?? {}) as Record<
+      string,
+      ModelDynamicDetailNestedConfig
+    >,
   );
   const baseFields = basePaths.map((path) =>
-    normalizeFieldConfig(path, { fieldOverrides }),
+    normalizeFieldConfig<TRecord>(path, { fieldOverrides }),
   );
 
   const renderCtx = {
@@ -1226,7 +1236,7 @@ function buildLayoutSections(options: {
 
   const normalizedSections = (layout?.sections ?? [])
     .filter((section) => (section.visible ? section.visible(renderCtx) : true))
-    .map<ResolvedLayoutSection>((section, sectionIndex) => {
+    .map<ResolvedLayoutSection<TRecord>>((section, sectionIndex) => {
       const rows = (section.rows ?? []).map((row, rowIndex) => ({
         id: row.id ?? `${section.id}:row:${rowIndex}`,
         columns: normalizeColumns(
@@ -1234,7 +1244,7 @@ function buildLayoutSections(options: {
           defaultColumns,
         ),
         fields: row.fields
-          .map((entry) => normalizeFieldConfig(entry, { fieldOverrides }))
+          .map((entry) => normalizeFieldConfig<TRecord>(entry, { fieldOverrides }))
           .filter((entry) => !entry.hidden),
       }));
 
@@ -1243,7 +1253,7 @@ function buildLayoutSections(options: {
           id: `${section.id}:row:0`,
           columns: normalizeColumns(section.columns, defaultColumns),
           fields: section.fields
-            .map((entry) => normalizeFieldConfig(entry, { fieldOverrides }))
+            .map((entry) => normalizeFieldConfig<TRecord>(entry, { fieldOverrides }))
             .filter((entry) => !entry.hidden),
         });
       }
@@ -1267,7 +1277,7 @@ function buildLayoutSections(options: {
   if (layout?.includeUnassignedFields !== false) {
     const leftovers = baseFields.filter((field) => !assigned.has(field.path));
     if (leftovers.length > 0) {
-      const rows: ResolvedLayoutSection["rows"] = [];
+      const rows: ResolvedLayoutSection<TRecord>["rows"] = [];
       for (let index = 0; index < leftovers.length; index += defaultColumns) {
         rows.push({
           id: `section:auto:${index}`,
@@ -1289,9 +1299,9 @@ function buildLayoutSections(options: {
     (left, right) => (left.order ?? 0) - (right.order ?? 0),
   );
 }
-function renderFieldValue(options: {
-  field: ResolvedFieldConfig;
-  record: Record<string, unknown>;
+function renderFieldValue<TRecord extends object>(options: {
+  field: ResolvedFieldConfig<TRecord>;
+  record: TRecord;
   sectionId: string;
   metadata: ModelMetadata | null;
   nestedMetadataByRelation: Record<string, ModelMetadata | null>;
@@ -1299,13 +1309,13 @@ function renderFieldValue(options: {
   const { field, record, sectionId, metadata, nestedMetadataByRelation } =
     options;
   const path = normalizePath(field.path);
-  const value = getValueByPath(record, path);
+  const value = getValueByPath(record as Record<string, unknown>, path);
 
   if (typeof field.render === "function") {
-    const ctx: ModelDynamicDetailFieldRenderContext = {
+    const ctx: ModelDynamicDetailFieldRenderContext<TRecord> = {
       value,
       record,
-      path,
+      path: path as ModelDynamicDetailFieldRenderContext<TRecord>["path"],
       field,
       sectionId,
     };
@@ -1341,14 +1351,28 @@ function renderFieldValue(options: {
   return <UnitFieldRenderer field={unitField} />;
 }
 
-export const ModelDynamicDetail = React.forwardRef<
-  ModelDynamicDetailHandle,
-  ModelDynamicDetailProps
->(function ModelDynamicDetail(props, ref) {
+type ModelDynamicDetailComponent = <
+  TRecord extends object = Record<string, unknown>,
+>(
+  props: ModelDynamicDetailProps<TRecord> &
+    React.RefAttributes<ModelDynamicDetailHandle<TRecord>>,
+) => React.ReactElement | null;
+
+const ModelDynamicDetailInner = <
+  TRecord extends object = Record<string, unknown>,
+>(
+  props: ModelDynamicDetailProps<TRecord>,
+  ref: React.ForwardedRef<ModelDynamicDetailHandle<TRecord>>,
+) => {
   const { app, model, id, baseDetail } = props;
-  const config = baseDetail ?? {};
+  const config: ModelDynamicDetailConfig<TRecord> = baseDetail ?? {};
   const nestedConfig = config.nestedFields ?? {};
-  const actionsConfig: ModelDynamicDetailActionsConfig = config.actions ?? {};
+  const looseNestedConfig = nestedConfig as Record<
+    string,
+    ModelDynamicDetailNestedConfig
+  >;
+  const actionsConfig: ModelDynamicDetailActionsConfig<TRecord> =
+    config.actions ?? {};
   const idAsString = String(id);
   const apolloClient = useApolloClient();
 
@@ -1389,7 +1413,7 @@ export const ModelDynamicDetail = React.forwardRef<
   );
 
   const resolvedNestedSections = React.useMemo<ResolvedNestedSection[]>(() => {
-    return Object.entries(nestedConfig)
+    return Object.entries(looseNestedConfig)
       .map(([rawPath, nested], index) => {
         const path = toGraphqlPath(rawPath);
         const relation = relationLookup.get(path);
@@ -1428,11 +1452,11 @@ export const ModelDynamicDetail = React.forwardRef<
       })
       .filter((entry): entry is ResolvedNestedSection => Boolean(entry))
       .sort((left, right) => left.sortOrder - right.sortOrder);
-  }, [nestedConfig, relationLookup, nestedMetadataByRelation]);
+  }, [looseNestedConfig, relationLookup, nestedMetadataByRelation]);
 
   React.useEffect(() => {
     if (!metadataState.metadata) return;
-    if (Object.keys(nestedConfig).length === 0) {
+    if (Object.keys(looseNestedConfig).length === 0) {
       setNestedMetadataByRelation((previous) =>
         Object.keys(previous).length === 0 ? previous : {},
       );
@@ -1442,7 +1466,7 @@ export const ModelDynamicDetail = React.forwardRef<
     let active = true;
 
     void Promise.all(
-      Object.entries(nestedConfig).map(async ([rawPath]) => {
+      Object.entries(looseNestedConfig).map(async ([rawPath]) => {
         const relationPath = toGraphqlPath(rawPath);
         const relation = relationLookup.get(relationPath);
         if (!relation) {
@@ -1481,9 +1505,9 @@ export const ModelDynamicDetail = React.forwardRef<
     return () => {
       active = false;
     };
-  }, [apolloClient, metadataState.metadata, nestedConfig, relationLookup]);
+  }, [apolloClient, metadataState.metadata, looseNestedConfig, relationLookup]);
 
-  const layoutSections = React.useMemo(
+  const layoutSections = React.useMemo<ResolvedLayoutSection<TRecord>[]>(
     () =>
       buildLayoutSections({
         metadata: metadataState.metadata,
@@ -1510,13 +1534,13 @@ export const ModelDynamicDetail = React.forwardRef<
     resolveBaseFieldPaths(
       metadataState.metadata,
       config.layout,
-      nestedConfig,
+      looseNestedConfig,
     ).forEach((path) => {
       paths.add(toGraphqlPath(path));
     });
 
     return [...paths].filter(Boolean);
-  }, [config.layout, layoutSections, metadataState.metadata, nestedConfig]);
+  }, [config.layout, layoutSections, metadataState.metadata, looseNestedConfig]);
 
   const selection = React.useMemo(
     () =>
@@ -1549,7 +1573,7 @@ export const ModelDynamicDetail = React.forwardRef<
   const record = React.useMemo(
     () =>
       isRecord(queryState.data)
-        ? (queryState.data as Record<string, unknown>)
+        ? (queryState.data as TRecord)
         : null,
     [queryState.data],
   );
@@ -1565,7 +1589,7 @@ export const ModelDynamicDetail = React.forwardRef<
     [rowPermissions.canDelete, rowPermissions.canUpdate],
   );
 
-  const actionContext = React.useMemo<ModelDynamicDetailActionContext>(
+  const actionContext = React.useMemo<ModelDynamicDetailActionContext<TRecord>>(
     () => ({
       app,
       model,
@@ -1592,7 +1616,7 @@ export const ModelDynamicDetail = React.forwardRef<
     ]);
   }, [metadataState, queryState]);
 
-  const snapshot = React.useMemo<ModelDynamicDetailSnapshot>(
+  const snapshot = React.useMemo<ModelDynamicDetailSnapshot<TRecord>>(
     () => ({
       data: record,
       metadata: metadataState.metadata,
@@ -1979,7 +2003,7 @@ export const ModelDynamicDetail = React.forwardRef<
   }, [actionContext, actionsConfig]);
 
   const customHeaderActionProps =
-    React.useMemo<ModelDynamicDetailHeaderActionRenderProps>(
+    React.useMemo<ModelDynamicDetailHeaderActionRenderProps<TRecord>>(
       () => ({
         app,
         model,
@@ -1991,7 +2015,9 @@ export const ModelDynamicDetail = React.forwardRef<
       [app, idAsString, metadataState.metadata, model, record, refetch],
     );
 
-  const customHeaderActions = React.useMemo<ResolvedHeaderActionEntry[]>(() => {
+  const customHeaderActions = React.useMemo<
+    ResolvedHeaderActionEntry<TRecord>[]
+  >(() => {
     const resolveActions = config.header?.actions;
     if (!resolveActions) return [];
 
@@ -1999,7 +2025,7 @@ export const ModelDynamicDetail = React.forwardRef<
     if (!Array.isArray(actionList) || actionList.length === 0) return [];
 
     return actionList
-      .filter((action): action is ModelDynamicDetailHeaderActionConfig =>
+      .filter((action): action is ModelDynamicDetailHeaderActionConfig<TRecord> =>
         Boolean(action?.render),
       )
       .map((action, index) => ({
@@ -2014,6 +2040,7 @@ export const ModelDynamicDetail = React.forwardRef<
   const resolvedHeaderTitle = React.useMemo<
     React.ReactElement | string | null
   >(() => {
+    const recordValue = record as Record<string, unknown> | null;
     if (config.header?.title) {
       const title = config.header.title(record);
       if (typeof title === "string") {
@@ -2023,13 +2050,13 @@ export const ModelDynamicDetail = React.forwardRef<
       return title ?? null;
     }
 
-    const fallbackName = record?.["name"];
+    const fallbackName = recordValue?.["name"];
     if (typeof fallbackName === "string") {
       const trimmed = fallbackName.trim();
       return trimmed || null;
     }
 
-    const fallbackTitle = record?.["title"];
+    const fallbackTitle = recordValue?.["title"];
     if (typeof fallbackTitle === "string") {
       const trimmed = fallbackTitle.trim();
       return trimmed || null;
@@ -2037,7 +2064,9 @@ export const ModelDynamicDetail = React.forwardRef<
     return null;
   }, [config.header?.title, record]);
 
-  const layoutSectionsWithData = React.useMemo(
+  const layoutSectionsWithData = React.useMemo<
+    ResolvedLayoutSection<TRecord>[]
+  >(
     () =>
       buildLayoutSections({
         metadata: metadataState.metadata,
@@ -2089,7 +2118,7 @@ export const ModelDynamicDetail = React.forwardRef<
   }, [config.view, layoutSectionSpanClassById]);
 
   const resolvedNestedWithData = React.useMemo<ResolvedNestedSection[]>(() => {
-    return Object.entries(nestedConfig)
+    return Object.entries(looseNestedConfig)
       .map(([rawPath, nested], index) => {
         const path = toGraphqlPath(rawPath);
         const relation = relationLookup.get(path);
@@ -2111,7 +2140,7 @@ export const ModelDynamicDetail = React.forwardRef<
           relationPath: path,
           config: nested,
           relatedMetadata: nestedMetadataByRelation[path] ?? null,
-          data: record,
+          data: record as Record<string, unknown> | null,
         });
 
         return {
@@ -2128,9 +2157,10 @@ export const ModelDynamicDetail = React.forwardRef<
       })
       .filter((entry): entry is ResolvedNestedSection => Boolean(entry))
       .sort((left, right) => left.sortOrder - right.sortOrder);
-  }, [nestedConfig, nestedMetadataByRelation, record, relationLookup]);
+  }, [looseNestedConfig, nestedMetadataByRelation, record, relationLookup]);
 
   const detailsSchema = React.useMemo<DetailsPageSchema>(() => {
+    const recordValue = record as Record<string, unknown> | null;
     const headerFrame = config.header?.frame;
     const resolvedHeaderDescription = (() => {
       const source = headerFrame?.description;
@@ -2147,13 +2177,13 @@ export const ModelDynamicDetail = React.forwardRef<
         return trimmed || undefined;
       }
 
-      const fallbackDesc = record?.["desc"];
+      const fallbackDesc = recordValue?.["desc"];
       if (typeof fallbackDesc === "string") {
         const trimmed = fallbackDesc.trim();
         if (trimmed) return trimmed;
       }
 
-      const fallbackDescription = record?.["description"];
+      const fallbackDescription = recordValue?.["description"];
       if (typeof fallbackDescription === "string") {
         const trimmed = fallbackDescription.trim();
         if (trimmed) return trimmed;
@@ -2899,8 +2929,12 @@ export const ModelDynamicDetail = React.forwardRef<
       />
     </div>
   );
-});
+};
 
-ModelDynamicDetail.displayName = "ModelDynamicDetail";
+const ForwardedModelDynamicDetail = React.forwardRef(ModelDynamicDetailInner);
+ForwardedModelDynamicDetail.displayName = "ModelDynamicDetail";
+
+export const ModelDynamicDetail =
+  ForwardedModelDynamicDetail as ModelDynamicDetailComponent;
 
 export default ModelDynamicDetail;

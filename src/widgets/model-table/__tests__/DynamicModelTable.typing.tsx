@@ -122,3 +122,20 @@ const invalidRelationKey = (
 );
 
 void invalidRelationKey;
+
+const invalidCreateFormOverrideField = (
+  <DynamicModelTable<OperationsDecharge>
+    app="operations"
+    model="Decharge"
+    create={{
+      resolveFormProps: () => ({
+        fieldOverrides: {
+          // @ts-expect-error form overrides forwarded through table must respect OperationsDecharge form fields
+          etat: { colSpan: 2 },
+        },
+      }),
+    }}
+  />
+);
+
+void invalidCreateFormOverrideField;

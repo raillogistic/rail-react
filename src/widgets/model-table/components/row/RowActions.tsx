@@ -83,7 +83,7 @@ const LazyModelForm = lazy(() =>
 const LazyModelDynamicDetail = lazy(() =>
   import("@/widgets/model-details").then((module) => ({
     default:
-      module.ModelDynamicDetail as React.ComponentType<ModelDynamicDetailProps>,
+      module.ModelDynamicDetail as React.ComponentType<ModelDynamicDetailProps<any>>,
   })),
 );
 
@@ -120,7 +120,7 @@ type ResolvedDetailConfig<TSource extends object = Record<string, unknown>> = {
   drawerDirection: "left" | "right" | "top" | "bottom";
   objectIdValue: string;
   hrefTemplate?: string;
-  baseDetail: ModelDynamicDetailConfig;
+  baseDetail: ModelDynamicDetailConfig<TSource>;
   formOverrides: ModelTableDetailFormOverrides<TSource>;
 };
 
@@ -179,9 +179,9 @@ function mergeModelFormOverrides(
  * Merges two optional ModelDynamicDetail config records.
  */
 function mergeModelDynamicDetailConfig(
-  base: ModelDynamicDetailConfig | undefined,
-  extra: ModelDynamicDetailConfig | undefined,
-): ModelDynamicDetailConfig {
+  base: ModelDynamicDetailConfig<any> | undefined,
+  extra: ModelDynamicDetailConfig<any> | undefined,
+): ModelDynamicDetailConfig<any> {
   const left = base ?? {};
   const right = extra ?? {};
 
@@ -233,9 +233,9 @@ function mergeModelDynamicDetailConfig(
  * Applies row-detail ModelForm overrides to ModelDynamicDetail update-form config.
  */
 function applyDetailFormOverridesToBaseDetail(
-  baseDetail: ModelDynamicDetailConfig,
+  baseDetail: ModelDynamicDetailConfig<any>,
   formOverrides: ModelTableDetailFormOverrides<any>,
-): ModelDynamicDetailConfig {
+): ModelDynamicDetailConfig<any> {
   const existingModelFormProps = (baseDetail.actions?.updateForm
     ?.modelFormProps ?? {}) as ModelTableDetailFormOverrides<any>;
   const mergedModelFormProps = mergeModelFormOverrides(
@@ -727,7 +727,7 @@ export function RowActions<TSource extends object = Record<string, unknown>>({
     resolvedUpdateConfig.objectIdValue,
   ]);
 
-  const detailViewProps = useMemo<ModelDynamicDetailProps>(
+  const detailViewProps = useMemo<ModelDynamicDetailProps<TSource>>(
     () => ({
       app,
       model,

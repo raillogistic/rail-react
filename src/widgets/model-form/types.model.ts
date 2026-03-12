@@ -98,7 +98,6 @@ export type ModelFormSectionOverrideValue<TValues extends Record<string, unknown
  | ModelFormSectionOverride<TValues>;
 
 export type ModelFormFieldOverrides<TValues extends Record<string, unknown>> =
- Partial<Record<string, ModelFormFieldOverrideValue<TValues>>> &
  Partial<{
   [TPath in ModelFormFieldPath<TValues>]: ModelFormFieldOverrideValue<
    TValues,
@@ -119,15 +118,34 @@ export type ModelFormGeneratedSection<
  fields: ModelFormGeneratedSectionField<TValues>[];
 };
 
-export type ModelFormRelationshipSelector<
- TSource extends object,
-> = Extract<keyof TSource, string>;
-
 type ModelFormNestedRelationSourceValue<T> = T extends Array<infer TValue>
  ? NonNullable<TValue>
  : T extends ReadonlyArray<infer TValue>
    ? NonNullable<TValue>
    : NonNullable<T>;
+
+type ModelFormNestedFieldValues<
+ TSource extends object,
+ TRelationKey extends string,
+> = TRelationKey extends keyof TSource
+ ? Extract<
+    ModelFormValueShape<ModelFormNestedRelationSourceValue<TSource[TRelationKey]>>,
+    Record<string, unknown>
+   >
+ : Record<string, unknown>;
+
+export type ModelFormRelationshipSelector<
+ TSource extends object,
+> = string extends keyof TSource
+ ? string
+ : [Extract<keyof TSource, string>] extends [never]
+   ? string
+ : {
+     [K in Extract<keyof TSource, string>]:
+       ModelFormNestedFieldValues<TSource, K> extends never
+         ? never
+         : K;
+   }[Extract<keyof TSource, string>];
 
 export type ModelFormNestedFieldPath<
  TSource extends object,
@@ -135,7 +153,7 @@ export type ModelFormNestedFieldPath<
 > = string extends keyof TSource
  ? string
  : Extract<
-    ModelFormValueShape<ModelFormNestedRelationSourceValue<TSource[TRelationKey]>>,
+    ModelFormNestedFieldValues<TSource, TRelationKey>,
     Record<string, unknown>
    > extends infer TNestedValues
    ? [TNestedValues] extends [never]
@@ -214,18 +232,30 @@ export type ModelFormNestedDefinition<
  * Optional direct delete mutation triggered by nested list remove button.
  */
  deleteMutation?: ModelFormNestedDeleteMutationConfig;
- fieldOverrides?: ModelFormFieldOverrides<Record<string, unknown>>;
- sectionOverrides?: ModelFormSectionOverrides<Record<string, unknown>>;
+ fieldOverrides?: TRelationKey extends keyof TSource
+  ? ModelFormNestedFieldValues<TSource, TRelationKey> extends infer TNestedValues
+    ? TNestedValues extends Record<string, unknown>
+      ? ModelFormFieldOverrides<TNestedValues>
+      : ModelFormFieldOverrides<Record<string, unknown>>
+    : ModelFormFieldOverrides<Record<string, unknown>>
+  : ModelFormFieldOverrides<Record<string, unknown>>;
+ sectionOverrides?: TRelationKey extends keyof TSource
+  ? ModelFormNestedFieldValues<TSource, TRelationKey> extends infer TNestedValues
+    ? TNestedValues extends Record<string, unknown>
+      ? ModelFormSectionOverrides<TNestedValues>
+      : ModelFormSectionOverrides<Record<string, unknown>>
+    : ModelFormSectionOverrides<Record<string, unknown>>
+  : ModelFormSectionOverrides<Record<string, unknown>>;
 };
 
 export type ModelFormNestedConfig<TSource extends object> =
  | ModelFormRelationshipSelector<TSource>[]
- | Partial<
-    Record<
-      ModelFormRelationshipSelector<TSource>,
-      ModelFormNestedDefinition<TSource>
-    >
-   >;
+ | Partial<{
+    [TRelationKey in ModelFormRelationshipSelector<TSource>]: ModelFormNestedDefinition<
+      TSource,
+      TRelationKey
+    >;
+   }>;
 
 export type ModelFormErrorFallbackContext = {
  error: Error;
@@ -258,9 +288,9 @@ export interface ModelFormProps<
  * Restrict relation paths (first path segment of nested fields) that are
  * allowed to render.
  */
- onlyRelationships?: Extract<keyof TFormValues, string>[];
+ onlyRelationships?: ModelFormRelationshipSelector<TSource>[];
  /** Exclude relation paths (first path segment of nested fields). */
- excludeRelationships?: Extract<keyof TFormValues, string>[];
+ excludeRelationships?: ModelFormRelationshipSelector<TSource>[];
  fieldOverrides?: ModelFormFieldOverrides<TFormValues>;
  sectionOverrides?: ModelFormSectionOverrides<TFormValues>;
  generatedSections?: ModelFormGeneratedSection<TFormValues>[];

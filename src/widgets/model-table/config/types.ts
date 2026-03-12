@@ -328,13 +328,13 @@ export type ModelTableDetailConfig<
   /**
    * Global ModelDynamicDetail configuration overrides.
    */
-  baseDetail?: ModelDynamicDetailConfig;
+  baseDetail?: ModelDynamicDetailConfig<TSource>;
   /**
    * Row-specific ModelDynamicDetail configuration resolver.
    */
   resolveBaseDetail?: (
     ctx: ModelTableDetailContext<TSource>,
-  ) => ModelDynamicDetailConfig | undefined;
+  ) => ModelDynamicDetailConfig<TSource> | undefined;
 };
 
 export type ModelTableV2TopAction<

@@ -267,7 +267,7 @@ export function ModelForm<
     () =>
       buildSubmitRelationsFromContracts({
         contract,
-        nestedControls,
+        nestedControls: nestedControls as any,
         relatedContractsByModel,
       }),
     [contract, nestedControls, relatedContractsByModel],

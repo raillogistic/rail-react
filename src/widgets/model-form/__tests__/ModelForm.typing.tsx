@@ -25,7 +25,7 @@ const validDechargeForm = (
     fieldOverrides={{
       commentaire: { colSpan: 2 },
     }}
-  generatedSections={[
+    generatedSections={[
       {
         id: "main",
         fields: ["beneficiaire", "dateDecharge", "commentaire"],
@@ -110,3 +110,51 @@ const invalidOrderingField = (
 );
 
 void invalidOrderingField;
+
+const invalidFieldOverrideKey = (
+  <ModelForm<OperationsDecharge>
+    app="operations"
+    model="Decharge"
+    mode="CREATE"
+    fieldOverrides={{
+      // @ts-expect-error field override keys must exist on OperationsDecharge form values
+      etat: { colSpan: 2 },
+    }}
+  />
+);
+
+void invalidFieldOverrideKey;
+
+const invalidNestedFieldOverrideKey = (
+  <ModelForm<OperationsDecharge>
+    app="operations"
+    model="Decharge"
+    mode="CREATE"
+    nested={{
+      restitutions: {
+        fieldOverrides: {
+          // @ts-expect-error nested field override keys must exist on OperationsRestitution form values
+          missingField: { colSpan: 2 },
+        },
+      },
+    }}
+  />
+);
+
+void invalidNestedFieldOverrideKey;
+
+const invalidNestedScalarField = (
+  <ModelForm<OperationsDecharge>
+    app="operations"
+    model="Decharge"
+    mode="CREATE"
+    nested={{
+      // @ts-expect-error nested config keys must point to relation fields on OperationsDecharge
+      site: {
+        onlyFields: ["nom"],
+      },
+    }}
+  />
+);
+
+void invalidNestedScalarField;
