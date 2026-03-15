@@ -57,4 +57,30 @@ describe("useTablePersistence helpers", () => {
       wrapCells: false,
     });
   });
+
+  it("restores local fallback state across trailing-slash key variants", () => {
+    window.localStorage.setItem(
+      "rail-table-v2:catalog-Benificiaire-/catalog/beneficiaire",
+      JSON.stringify({
+        columnOrder: ["name"],
+        columnVisibility: { name: true },
+        perPage: 50,
+        density: "compact",
+        wrapCells: false,
+      }),
+    );
+
+    const restoredState = loadPersistedTableState(
+      "catalog-Benificiaire-/catalog/beneficiaire/",
+      null,
+      { allowLocalFallback: true },
+    );
+
+    expect(restoredState).toMatchObject({
+      columnOrder: ["name"],
+      perPage: 50,
+      density: "compact",
+      wrapCells: false,
+    });
+  });
 });

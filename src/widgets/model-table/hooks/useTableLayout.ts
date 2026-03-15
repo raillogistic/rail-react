@@ -3,7 +3,7 @@ import { arrayMove } from "@dnd-kit/sortable";
 import type { DragEndEvent } from "@dnd-kit/core";
 import { useMetadata } from "../context/MetadataContext";
 import { useTable } from "../context/TableContext";
-import { toGraphqlFieldName } from "../utils";
+import { toCamelCase, toGraphqlFieldName, toSnakeCase } from "../utils";
 import type {
  BaseModelTableColumnDef,
  BaseModelTableColumnOrderingConfig,
@@ -14,6 +14,64 @@ interface UseTableLayoutOptions {
  columnOrdering?: BaseModelTableColumnOrderingConfig;
  defaultHiddenColumnIds: Set<string>;
  persistedState?: any;
+}
+
+function buildColumnIdAliases(value: string): string[] {
+ const trimmed = String(value || "").trim();
+ if (!trimmed) {
+ return [];
+ }
+
+ const normalizedPath = trimmed.replace(/__/g, ".");
+ const segments = normalizedPath.split(".").filter(Boolean);
+ if (segments.length === 0) {
+ return [trimmed];
+ }
+
+ const graphqlSegments = segments.map((segment) => toGraphqlFieldName(segment));
+ const snakeSegments = graphqlSegments.map((segment) => toSnakeCase(segment));
+ const camelSegments = graphqlSegments.map((segment) => toCamelCase(segment));
+
+ return Array.from(
+ new Set([
+ trimmed,
+ normalizedPath,
+ graphqlSegments.join("."),
+ graphqlSegments.join("__"),
+ snakeSegments.join("."),
+ snakeSegments.join("__"),
+ camelSegments.join("."),
+ camelSegments.join("__"),
+ ]),
+ );
+}
+
+export function normalizeColumnOrderEntries(
+ entries: string[],
+ availableIds: string[],
+): string[] {
+ const aliasMap = new Map<string, string>();
+ availableIds.forEach((availableId) => {
+ buildColumnIdAliases(availableId).forEach((alias) => {
+ if (!aliasMap.has(alias)) {
+ aliasMap.set(alias, availableId);
+ }
+ });
+ });
+
+ const next: string[] = [];
+ const seen = new Set<string>();
+ entries.forEach((entry) => {
+ const resolvedId = buildColumnIdAliases(entry)
+ .map((alias) => aliasMap.get(alias))
+ .find((candidate): candidate is string => !!candidate);
+ if (!resolvedId || seen.has(resolvedId)) {
+ return;
+ }
+ seen.add(resolvedId);
+ next.push(resolvedId);
+ });
+ return next;
 }
 
 export function useTableLayout({
@@ -93,16 +151,8 @@ export function useTableLayout({
  : availableIds;
  const availableSet = new Set(availableIds);
  
- const normalize = (entries: string[], valid: Set<string>) => {
- const next: string[] = [];
- const seen = new Set<string>();
- entries.forEach((id) => {
- if (!valid.has(id) || seen.has(id)) return;
- next.push(id);
- seen.add(id);
- });
- return next;
- };
+ const normalize = (entries: string[], valid: Set<string>) =>
+ normalizeColumnOrderEntries(entries, Array.from(valid));
 
  const baseNormalized = normalize(baseOrder, availableSet);
  const baseSet = new Set(baseNormalized);

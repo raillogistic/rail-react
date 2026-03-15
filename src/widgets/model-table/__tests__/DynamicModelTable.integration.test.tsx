@@ -23,9 +23,11 @@ vi.mock("../components/TableToolbar", () => ({
  TableToolbar: () => <div data-testid="table-toolbar-mock">Toolbar</div>,
 }));
 
+let mockAuthUser: unknown = null;
+
 vi.mock("@/features/auth/context", () => ({
  useAuthContext: () => ({
- user: null,
+ user: mockAuthUser,
  }),
 }));
 
@@ -322,7 +324,7 @@ const DATA_MOCK = {
  query: DATA_QUERY,
  variables: {
  page: 1,
- perPage: 20,
+ perPage: 10,
  orderBy: ["-id"],
  quick: undefined,
  where: undefined,
@@ -341,7 +343,7 @@ const DATA_MOCK_MINIMAL = {
  query: DATA_QUERY_MINIMAL,
  variables: {
  page: 1,
- perPage: 20,
+ perPage: 10,
  orderBy: undefined,
  where: undefined,
  presets: undefined,
@@ -486,6 +488,7 @@ describe("DynamicModelTable integration", () => {
  beforeEach(() => {
  vi.clearAllMocks();
  window.localStorage.clear();
+ mockAuthUser = null;
  });
 
  it("renders headers and rows from metadata-driven query", async () => {
@@ -682,6 +685,85 @@ describe("DynamicModelTable integration", () => {
  screen.getByText((content) => content.includes("2") && content.includes("total")),
  ).toBeInTheDocument();
  });
+ });
+
+ it("uses saved user table config page size on the initial query", async () => {
+ mockAuthUser = {
+ settings: {
+ table_configs: {
+ "users-list": {
+ columnOrder: ["username"],
+ columnVisibility: {
+ username: true,
+ },
+ perPage: 25,
+ density: "compact",
+ wrapCells: false,
+ },
+ },
+ },
+ };
+
+ render(
+ <MockedProvider
+ mocks={[
+ buildMetadataMock(),
+ buildMetadataMock(),
+ buildActionsBootstrapMock(),
+ {
+ request: {
+ query: DATA_QUERY,
+ variables: {
+ page: 1,
+ perPage: 25,
+ orderBy: ["-id"],
+ quick: undefined,
+ where: undefined,
+ presets: undefined,
+ distinctOn: undefined,
+ skipCount: false,
+ },
+ },
+ result: {
+ data: DATA_RESULT,
+ },
+ },
+ {
+ request: {
+ query: DATA_QUERY_MINIMAL,
+ variables: {
+ page: 1,
+ perPage: 25,
+ orderBy: undefined,
+ where: undefined,
+ presets: undefined,
+ distinctOn: undefined,
+ skipCount: false,
+ },
+ },
+ result: {
+ data: DATA_RESULT,
+ },
+ },
+ buildCapabilitiesMock(),
+ buildActionDetailsMock(),
+ ]}
+ >
+ <MemoryRouter>
+ <DynamicModelTable
+ app="auth"
+ model="User"
+ baseTable={{
+ persistenceKey: "users-list",
+ }}
+ />
+ </MemoryRouter>
+ </MockedProvider>,
+ );
+
+ await waitFor(() => {
+ expect(screen.getAllByText("Username").length).toBeGreaterThan(0);
+ }, { timeout: 4000 });
  });
 
  it("executes bulk delete for selected rows", async () => {

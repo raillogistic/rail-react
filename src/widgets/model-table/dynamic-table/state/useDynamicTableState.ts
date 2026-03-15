@@ -217,9 +217,11 @@ export function useDynamicTableState(
  () => ({
  ...DEFAULT_STATE,
  ...defaultState,
- pagination: defaultState?.pagination ?? DEFAULT_STATE.pagination,
+ ...state,
+ pagination:
+ state?.pagination ?? defaultState?.pagination ?? DEFAULT_STATE.pagination,
  }),
- [defaultState],
+ [defaultState, state],
  );
 
  const [uncontrolledOrderBy, setUncontrolledOrderBy] = useState<DynamicTableOrderByEntry[]>(initialState.orderBy);

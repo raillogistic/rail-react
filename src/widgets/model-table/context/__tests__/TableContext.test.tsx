@@ -13,7 +13,7 @@ describe('TableContext', () => {
  const { result } = renderHook(() => useTable(), { wrapper });
 
  expect(result.current.pagination.page).toBe(1);
- expect(result.current.pagination.perPage).toBe(20);
+ expect(result.current.pagination.perPage).toBe(10);
  expect(result.current.quickSearch).toBe('');
  });
 

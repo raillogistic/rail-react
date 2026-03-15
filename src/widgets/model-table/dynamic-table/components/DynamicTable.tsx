@@ -605,6 +605,9 @@ export function DynamicTable<TRow extends Record<string, unknown>>({
  const table = useReactTable({
  data: rows,
  columns: columnDefs,
+ initialState: {
+ pagination: dynamicState.pagination,
+ },
  state: {
  sorting: sortingState,
  rowSelection: dynamicState.rowSelection,

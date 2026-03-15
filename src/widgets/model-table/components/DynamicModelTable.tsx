@@ -439,13 +439,15 @@ type ResolvedInitialTableState = {
  */
 function resolveInitialTableState(
   initVariables?: DynamicModelTableInitVariables,
+  fallbackPerPage?: number,
 ): ResolvedInitialTableState {
   const filterVariables = isRecord(initVariables) ? { ...initVariables } : {};
 
   const page = toPositiveInteger(filterVariables.page) ?? 1;
   const perPage =
     toPositiveInteger(filterVariables.perPage ?? filterVariables.per_page) ??
-    20;
+    fallbackPerPage ??
+    10;
   delete filterVariables.page;
   delete filterVariables.perPage;
   delete filterVariables.per_page;
@@ -1952,10 +1954,32 @@ const DynamicModelTableInner = <TSource extends object = Record<string, unknown>
   }: DynamicModelTableProps<TSource>,
   ref: React.ForwardedRef<DynamicModelTableHandle<TSource>>,
 ) => {
+  const { user } = useAuthContext();
   const tableInstanceKey = `${app}:${model}`;
+  const locationPath =
+    typeof window !== "undefined" ? window.location.pathname : "";
+  const effectivePersistenceKey =
+    baseTable?.persistenceKey || `${app}-${model}-${locationPath}`;
+  const rawUserTableConfigs = useMemo(() => {
+    const settings = user?.settings as
+      | { table_configs?: unknown; tableConfigs?: unknown }
+      | undefined;
+    return settings?.table_configs ?? settings?.tableConfigs ?? null;
+  }, [user?.settings]);
+  const userTableConfigsSignature = useMemo(
+    () => stableSerializeUnknown(rawUserTableConfigs),
+    [rawUserTableConfigs],
+  );
+  const persistedInitialState = useMemo(
+    () =>
+      loadPersistedTableState(effectivePersistenceKey, rawUserTableConfigs, {
+        allowLocalFallback: true,
+      }),
+    [effectivePersistenceKey, userTableConfigsSignature, rawUserTableConfigs],
+  );
   const initialTableState = useMemo(
-    () => resolveInitialTableState(initVariables),
-    [initVariables],
+    () => resolveInitialTableState(initVariables, persistedInitialState?.perPage),
+    [initVariables, persistedInitialState?.perPage],
   );
   const resolvedFilterPanel: ModelTableFilterPanelProps = {
     ...(filterPanel ?? {}),

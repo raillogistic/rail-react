@@ -389,11 +389,18 @@ export function loadPersistedTableState(
  if (!allowLocalFallback) return null;
 
  if (typeof window === "undefined") return null;
- const storageKey = buildStorageKey(key);
  try {
- const stored = localStorage.getItem(storageKey);
- if (!stored) return null;
- return parsePersistedTableState(stored);
+ for (const candidateKey of getNormalizedTablePersistenceKeys(key)) {
+ const stored = localStorage.getItem(buildStorageKey(candidateKey));
+ if (!stored) {
+ continue;
+ }
+ const parsed = parsePersistedTableState(stored);
+ if (parsed) {
+ return parsed;
+ }
+ }
+ return null;
  } catch (e) {
  console.warn("Failed to load table state from localStorage", e);
  return null;
@@ -545,34 +552,22 @@ export function useTablePersistence(key: string) {
 
  if (hasHydratedRef.current) return;
 
- const pendingReset = hasPendingTablePersistenceReset(key);
- const userConfig = pendingReset
- ? null
- : getConfigForKey(key, readTableConfigsFromSettings());
- if (userConfig) {
- applyParsedState(userConfig);
+ const restoredState = loadPersistedTableState(
+ key,
+ readTableConfigsFromSettings(),
+ {
+ allowLocalFallback: true,
+ },
+ );
+ if (restoredState) {
+ applyParsedState(restoredState);
  hasAppliedPersistedStateRef.current = true;
  hasHydratedRef.current = true;
  setHydrated(true);
  return;
  }
 
- const isAuthenticated = !!user?.id;
- if (!isAuthenticated) {
- if (!pendingReset) {
- try {
- const stored = localStorage.getItem(storageKey);
- if (stored) {
- const parsed = parsePersistedTableStateInput(stored);
- if (parsed) {
- applyParsedState(parsed);
- hasAppliedPersistedStateRef.current = true;
- }
- }
- } catch (e) {
- console.warn("Failed to load table state from localStorage", e);
- }
- }
+ if (!user?.id) {
  clearPendingTablePersistenceReset(key);
  }
 
@@ -798,7 +793,9 @@ export function useTablePersistence(key: string) {
  };
 
  try {
- localStorage.setItem(storageKey, JSON.stringify(stateToSave));
+ getNormalizedTablePersistenceKeys(key).forEach((candidateKey) => {
+ localStorage.setItem(buildStorageKey(candidateKey), JSON.stringify(stateToSave));
+ });
  } catch (e) {
  console.warn("Failed to save table state to localStorage", e);
  }

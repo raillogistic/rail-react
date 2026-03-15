@@ -150,10 +150,10 @@ function tableReducer(
             : action.page > 1,
         },
       };
-    case "SET_PER_PAGE":
-      return {
-        ...state,
-        pagination: {
+ case "SET_PER_PAGE":
+ return {
+ ...state,
+ pagination: {
           ...state.pagination,
           perPage: action.perPage,
           page: 1,
