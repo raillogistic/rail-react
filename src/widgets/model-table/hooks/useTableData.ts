@@ -203,7 +203,7 @@ export function useTableData(config?: TableDataConfig) {
  variables,
  apollo: {
  skip: !queryEnabled || !app || !model || !metadata,
- fetchPolicy: "cache-first",
+ fetchPolicy: "cache-and-network",
  nextFetchPolicy: "cache-first",
  returnPartialData: true,
  notifyOnNetworkStatusChange: false,

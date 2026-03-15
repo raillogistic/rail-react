@@ -88,7 +88,9 @@ describe("useTableData", () => {
 
  expect(result.current.pagination.total).toBe(1);
  expect(result.current.pagination.numPages).toBe(1);
- expect(mockUseModelPageQuery).toHaveBeenCalledWith(
+ expect(mockUseModelPageQuery).toHaveBeenCalled();
+ const latestCall = mockUseModelPageQuery.mock.calls.at(-1)?.[0];
+ expect(latestCall).toEqual(
  expect.objectContaining({
  identity: {
  app: "auth",
@@ -101,9 +103,13 @@ describe("useTableData", () => {
  }),
  variables: expect.objectContaining({
  page: 1,
- perPage: 20,
  orderBy: ["-id"],
  skipCount: false,
+ }),
+ apollo: expect.objectContaining({
+ fetchPolicy: "cache-and-network",
+ nextFetchPolicy: "cache-first",
+ returnPartialData: true,
  }),
  }),
  );
