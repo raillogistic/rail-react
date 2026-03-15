@@ -11,6 +11,10 @@ import type {
   ModelFormContractPermissions,
   ModelFormOperationPermission,
 } from "../types/generatedContract";
+import type {
+  FormFieldOrderingConfig,
+  FormLayoutConfig,
+} from "../types/layout";
 import type { ModelFormProps, ModelFormValueShape } from "../types.model";
 import { parseRelationNestedFormConfig } from "./modelForm/nestedSchema";
 import {
@@ -113,6 +117,51 @@ function normalizeMutationVariablesForGraphQL(
     );
   }
   return nextVariables;
+}
+
+function normalizeOrderingFieldNames(
+  names: readonly unknown[] | undefined,
+): string[] {
+  if (!Array.isArray(names) || names.length === 0) return [];
+  return Array.from(
+    new Set(
+      names
+        .map((name) => String(name ?? "").trim())
+        .filter((name) => name.length > 0),
+    ),
+  );
+}
+
+function arraysEqual(a: readonly string[], b: readonly string[]) {
+  if (a === b) return true;
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i += 1) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+}
+
+function resolveOrderingFromOnlyFields<TValues extends Record<string, unknown>>(
+  ordering: FormFieldOrderingConfig<TValues> | undefined,
+  onlyFields: readonly unknown[] | undefined,
+): FormFieldOrderingConfig<TValues> | undefined {
+  const normalizedOnlyFields = normalizeOrderingFieldNames(onlyFields);
+  if (normalizedOnlyFields.length === 0) return ordering;
+
+  const explicitOrder = normalizeOrderingFieldNames(ordering?.order);
+  const mergedOrder = explicitOrder.length
+    ? [
+        ...explicitOrder,
+        ...normalizedOnlyFields.filter((name) => !explicitOrder.includes(name)),
+      ]
+    : normalizedOnlyFields;
+
+  if (arraysEqual(explicitOrder, mergedOrder)) return ordering;
+
+  return {
+    ...(ordering ?? {}),
+    order: mergedOrder as FormFieldOrderingConfig<TValues>["order"],
+  };
 }
 
 type ResolvedModelFormValues<TSource extends object> =
@@ -347,9 +396,20 @@ export function ModelForm<
     });
 
   const resolvedLayout = React.useMemo(() => {
-    const merged = { ...(formProps?.layout ?? {}), ...(layout ?? {}) };
-    return Object.keys(merged).length > 0 ? merged : undefined;
-  }, [formProps?.layout, layout]);
+    const merged: FormLayoutConfig<TFormValues> = {
+      ...(formProps?.layout ?? {}),
+      ...(layout ?? {}),
+    };
+    const resolvedOrdering = resolveOrderingFromOnlyFields(
+      merged.ordering,
+      onlyFields,
+    );
+    const nextLayout =
+      resolvedOrdering === merged.ordering
+        ? merged
+        : { ...merged, ordering: resolvedOrdering };
+    return Object.keys(nextLayout).length > 0 ? nextLayout : undefined;
+  }, [formProps?.layout, layout, onlyFields]);
   const isPopupLayoutVariant = React.useMemo(() => {
     const variant = String(
       (resolvedLayout as Record<string, unknown> | undefined)?.variant ?? "",

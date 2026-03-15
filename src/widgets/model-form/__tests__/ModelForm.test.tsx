@@ -144,6 +144,90 @@ describe("ModelForm", () => {
  expect(fieldNames).toContain("price");
  });
 
+ it("uses onlyFields as the ordering source when layout.ordering is missing", async () => {
+ const mocks = [
+ {
+ request: {
+ query: MODEL_FORM_CONTRACT_QUERY,
+ variables: {
+ appLabel: "store",
+ modelName: "Product",
+ mode: "CREATE",
+ includeNested: false,
+ },
+ },
+ result: {
+ data: {
+ modelFormContract: {
+ ...sampleModelFormContract,
+ appLabel: "store",
+ modelName: "Product",
+ mode: "CREATE",
+ },
+ },
+ },
+ },
+ ];
+
+ renderWithMocks(
+ <ModelForm
+ app="store"
+ model="Product"
+ mode="CREATE"
+ onlyFields={["price", "name"]}
+ layout={{ columns: 2 }}
+ />,
+ mocks,
+ );
+
+ const config = await getRenderedConfig();
+ expect(config.layout?.ordering?.order).toEqual(["price", "name"]);
+ });
+
+ it("fills partial layout.ordering.order entries from onlyFields", async () => {
+ const mocks = [
+ {
+ request: {
+ query: MODEL_FORM_CONTRACT_QUERY,
+ variables: {
+ appLabel: "store",
+ modelName: "Product",
+ mode: "CREATE",
+ includeNested: false,
+ },
+ },
+ result: {
+ data: {
+ modelFormContract: {
+ ...sampleModelFormContract,
+ appLabel: "store",
+ modelName: "Product",
+ mode: "CREATE",
+ },
+ },
+ },
+ },
+ ];
+
+ renderWithMocks(
+ <ModelForm
+ app="store"
+ model="Product"
+ mode="CREATE"
+ onlyFields={["price", "name"]}
+ layout={{
+ ordering: {
+ order: ["name"],
+ },
+ }}
+ />,
+ mocks,
+ );
+
+ const config = await getRenderedConfig();
+ expect(config.layout?.ordering?.order).toEqual(["name", "price"]);
+ });
+
  it("loads initial data automatically for UPDATE mode with objectId", async () => {
  const onInitialDataLoaded = vi.fn();
  const updateContract: ModelFormContract = {

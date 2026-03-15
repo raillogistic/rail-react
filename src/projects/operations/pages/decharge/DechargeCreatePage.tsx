@@ -19,18 +19,19 @@ export function DechargeFormPage() {
         "dateDecharge",
         "site",
         "libelle",
-        "etatSortie",
         "codeInventaire",
         "serial",
-        "commentaire",
+        "etatSortie",
         "garder",
+        "commentaire",
       ]}
       fieldOverrides={{
         libelle: { colSpan: 3 },
+        commentaire: { colSpan: 3 },
       }}
       layout={{
         columns: 3,
-        // ordering: { tailing: ["beneficiaire", "codeInventaire"] },
+        // ordering: { tailing: [ "codeInventaire"] },
       }}
       state={{
         defaultValues: {
