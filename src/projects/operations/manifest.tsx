@@ -26,13 +26,7 @@ const DechargeListPage = lazy(() =>
 
 const DechargeCreatePage = lazy(() =>
   import("./pages/decharge/DechargeCreatePage").then((module) => ({
-    default: module.DechargeCreatePage,
-  })),
-);
-
-const DechargeEditPage = lazy(() =>
-  import("./pages/decharge/DechargeEditPage").then((module) => ({
-    default: module.DechargeEditPage,
+    default: module.DechargeFormPage,
   })),
 );
 
@@ -93,7 +87,7 @@ export const OPERATIONS_MANIFEST: AppManifest = defineProjectManifest({
       title: "Modifier une decharge",
       hidden: true,
       icon: BookOpen,
-      element: withRouteSuspense(<DechargeEditPage />),
+      element: withRouteSuspense(<DechargeCreatePage />),
     }),
     protectedRoute("operations", {
       id: "operations:decharge:detail",

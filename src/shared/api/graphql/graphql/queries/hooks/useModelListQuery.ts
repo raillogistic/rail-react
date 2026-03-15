@@ -10,14 +10,20 @@ import {
   resolveModelQueryOptions,
   resolveActiveDocument,
 } from "./shared";
-import type { UseModelListQueryOptions, UseModelQueryResult } from "../types";
+import type {
+  ModelListQueryData,
+  UseModelListQueryOptions,
+  UseModelQueryResult,
+} from "../types";
 
 /**
  * Executes a generated list model query with metadata-aware selection.
  */
-export function useModelListQuery(
+export function useModelListQuery<
+  TRecord extends object = Record<string, unknown>,
+>(
   options: UseModelListQueryOptions,
-): UseModelQueryResult {
+): UseModelQueryResult<ModelListQueryData<TRecord> | null> {
   const resolved = resolveModelQueryOptions(options);
 
   const metadataState = useModelQueryMetadata({
@@ -119,7 +125,9 @@ export function useModelListQuery(
 
   const loading = builtDocument ? queryState.loading : metadataState.loading;
   const rawData = queryState.data as Record<string, unknown> | undefined;
-  const data = builtDocument ? rawData?.[queryName] ?? null : null;
+  const data = (builtDocument ? rawData?.[queryName] ?? null : null) as
+    | ModelListQueryData<TRecord>
+    | null;
   const error = (queryState.error || metadataState.error) as
     | Error
     | undefined;

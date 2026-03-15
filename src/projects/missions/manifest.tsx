@@ -1,5 +1,5 @@
 import { lazy, Suspense, type ReactNode } from "react";
-import { LayoutDashboard, FileText } from "lucide-react";
+import { FileText } from "lucide-react";
 import type { AppManifest } from "@/app/router/contracts";
 import {
   defineProjectManifest,
@@ -36,21 +36,27 @@ const OrdreMissionDetailPage = lazy(() =>
   })),
 );
 const BaremePrimeMissionListPage = lazy(() =>
-  import("./pages/bareme-prime-mission/BaremePrimeMissionListPage").then((module) => ({
-    default: module.BaremePrimeMissionListPage,
-  })),
+  import("./pages/bareme-prime-mission/BaremePrimeMissionListPage").then(
+    (module) => ({
+      default: module.BaremePrimeMissionListPage,
+    }),
+  ),
 );
 
 const BaremePrimeMissionFormPage = lazy(() =>
-  import("./pages/bareme-prime-mission/BaremePrimeMissionFormPage").then((module) => ({
-    default: module.BaremePrimeMissionFormPage,
-  })),
+  import("./pages/bareme-prime-mission/BaremePrimeMissionFormPage").then(
+    (module) => ({
+      default: module.BaremePrimeMissionFormPage,
+    }),
+  ),
 );
 
 const BaremePrimeMissionDetailPage = lazy(() =>
-  import("./pages/bareme-prime-mission/BaremePrimeMissionDetailPage").then((module) => ({
-    default: module.BaremePrimeMissionDetailPage,
-  })),
+  import("./pages/bareme-prime-mission/BaremePrimeMissionDetailPage").then(
+    (module) => ({
+      default: module.BaremePrimeMissionDetailPage,
+    }),
+  ),
 );
 export const MISSIONS_MANIFEST: AppManifest = defineProjectManifest({
   projectId: "missions",
@@ -89,7 +95,7 @@ export const MISSIONS_MANIFEST: AppManifest = defineProjectManifest({
       icon: FileText,
       element: withRouteSuspense(<OrdreMissionDetailPage />),
     }),
-  
+
     protectedRoute("missions", {
       id: "missions:bareme-prime-mission:list",
       path: ROUTES.BAREME_PRIME_MISSION_LIST,
@@ -122,7 +128,7 @@ export const MISSIONS_MANIFEST: AppManifest = defineProjectManifest({
       icon: FileText,
       element: withRouteSuspense(<BaremePrimeMissionDetailPage />),
     }),
-],
+  ],
   navigation: [
     navGroup("missions", {
       id: "missions",
@@ -164,7 +170,7 @@ export const MISSIONS_MANIFEST: AppManifest = defineProjectManifest({
             },
           ],
         },
-      
+
         {
           id: "missions:bareme-prime-mission:list",
           routeId: "missions:bareme-prime-mission:list",
@@ -200,7 +206,7 @@ export const MISSIONS_MANIFEST: AppManifest = defineProjectManifest({
             },
           ],
         },
-],
+      ],
     }),
   ],
 });

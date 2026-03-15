@@ -1,14 +1,18 @@
 import { ModelForm } from "@/widgets/model-form";
 import type { OperationsDecharge } from "@/models";
 import { today } from "@/widgets/model-form/inputs/date";
+import { useParams } from "react-router-dom";
 
-export function DechargeCreatePage() {
+export function DechargeFormPage() {
+  const { id = "" } = useParams();
+  const isUpdate = Boolean(id);
   return (
     <ModelForm<OperationsDecharge>
       app="operations"
       model="Decharge"
-      title="Creation de decharge"
-      mode="CREATE"
+      objectId={isUpdate ? id : undefined}
+      title={isUpdate ? "Modification de la decharge" : "Creation de decharge"}
+      mode={isUpdate ? "UPDATE" : "CREATE"}
       description="Saisissez les informations de la decharge pour l'article remis."
       onlyFields={[
         "beneficiaire",
@@ -16,19 +20,17 @@ export function DechargeCreatePage() {
         "site",
         "libelle",
         "etatSortie",
-        "serial",
         "codeInventaire",
-        "garder",
+        "serial",
         "commentaire",
+        "garder",
       ]}
-      nested={{
-        beneficiaire: {
-          onlyRequired: true,
-        },
+      fieldOverrides={{
+        libelle: { colSpan: 3 },
       }}
       layout={{
         columns: 3,
-        ordering: { tailing: ["beneficiaire", "codeInventaire"] },
+        // ordering: { tailing: ["beneficiaire", "codeInventaire"] },
       }}
       state={{
         defaultValues: {
@@ -52,4 +54,4 @@ export function DechargeCreatePage() {
   );
 }
 
-export default DechargeCreatePage;
+export default DechargeFormPage;

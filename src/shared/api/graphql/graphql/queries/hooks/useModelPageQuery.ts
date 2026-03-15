@@ -10,14 +10,20 @@ import {
   resolveModelQueryOptions,
   resolveActiveDocument,
 } from "./shared";
-import type { UseModelPageQueryOptions, UseModelQueryResult } from "../types";
+import type {
+  ModelPageQueryData,
+  UseModelPageQueryOptions,
+  UseModelQueryResult,
+} from "../types";
 
 /**
  * Executes a generated paginated model query with metadata-aware selection.
  */
-export function useModelPageQuery(
+export function useModelPageQuery<
+  TRecord extends object = Record<string, unknown>,
+>(
   options: UseModelPageQueryOptions,
-): UseModelQueryResult {
+): UseModelQueryResult<ModelPageQueryData<TRecord> | null> {
   const resolved = resolveModelQueryOptions(options);
 
   const metadataState = useModelQueryMetadata({
@@ -119,7 +125,9 @@ export function useModelPageQuery(
 
   const loading = builtDocument ? queryState.loading : metadataState.loading;
   const rawData = queryState.data as Record<string, unknown> | undefined;
-  const data = builtDocument ? rawData?.[queryName] ?? null : null;
+  const data = (builtDocument ? rawData?.[queryName] ?? null : null) as
+    | ModelPageQueryData<TRecord>
+    | null;
   const error = (queryState.error || metadataState.error) as
     | Error
     | undefined;

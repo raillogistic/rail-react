@@ -5,10 +5,18 @@ import { CustomMutationsDropdown } from "@/widgets/components/CustomMutationsDro
 import { ModelTemplateAction } from "@/widgets/components/ModelTemplateAction";
 import { ModelTemplatesDropdown } from "@/widgets/components/ModelTemplatesDropdown";
 import { ModelDynamicDetail } from "@/widgets/model-details";
-import { OperationsDecharge } from "@/models";
+import type { OperationsDecharge } from "@/models";
+import {
+  useModelPageQuery,
+  useModelSingleQuery,
+} from "@/shared/api/graphql/graphql";
 
 export function DechargeDetailPage() {
   const { id = "" } = useParams();
+  const { data } = useModelPageQuery<OperationsDecharge>({
+    app: "operations",
+    model: "Decharge",
+  });
 
   return (
     <ModelDynamicDetail<OperationsDecharge>

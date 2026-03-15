@@ -10,14 +10,20 @@ import {
   resolveModelQueryOptions,
   resolveActiveDocument,
 } from "./shared";
-import type { UseModelQueryResult, UseModelSingleQueryOptions } from "../types";
+import type {
+  ModelSingleQueryData,
+  UseModelQueryResult,
+  UseModelSingleQueryOptions,
+} from "../types";
 
 /**
  * Executes a generated single-object model query.
  */
-export function useModelSingleQuery(
+export function useModelSingleQuery<
+  TRecord extends object = Record<string, unknown>,
+>(
   options: UseModelSingleQueryOptions,
-): UseModelQueryResult {
+): UseModelQueryResult<ModelSingleQueryData<TRecord>> {
   const resolved = resolveModelQueryOptions(options);
 
   const metadataState = useModelQueryMetadata({
@@ -122,7 +128,8 @@ export function useModelSingleQuery(
 
   const loading = builtDocument ? queryState.loading : metadataState.loading;
   const rawData = queryState.data as Record<string, unknown> | undefined;
-  const data = builtDocument ? rawData?.[queryName] ?? null : null;
+  const data = (builtDocument ? rawData?.[queryName] ?? null : null) as
+    ModelSingleQueryData<TRecord>;
   const error = (queryState.error || metadataState.error) as
     | Error
     | undefined;

@@ -369,6 +369,29 @@ export interface UseModelSingleQueryOptions extends UseModelQueryBaseOptions {
   requireId?: boolean;
 }
 
+export interface ModelPageQueryPageInfo {
+  totalCount?: number | null;
+  pageCount?: number | null;
+  hasNextPage?: boolean | null;
+  hasPreviousPage?: boolean | null;
+}
+
+export interface ModelPageQueryData<
+  TRecord extends object = Record<string, unknown>,
+> {
+  pageInfo?: ModelPageQueryPageInfo | null;
+  items?: TRecord[] | null;
+  [key: string]: unknown;
+}
+
+export type ModelListQueryData<
+  TRecord extends object = Record<string, unknown>,
+> = TRecord[];
+
+export type ModelSingleQueryData<
+  TRecord extends object = Record<string, unknown>,
+> = TRecord | null;
+
 /**
  * Result metadata for generated query document.
  */
@@ -560,11 +583,11 @@ export interface UseModelQueryDevMetrics {
 /**
  * Shared result shape returned by generated model query hooks.
  */
-export interface UseModelQueryResult {
+export interface UseModelQueryResult<TData = unknown> {
   /**
    * Data extracted from root query field.
    */
-  data: unknown;
+  data: TData;
   /**
    * Raw Apollo result data object.
    */
