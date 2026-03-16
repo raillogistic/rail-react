@@ -407,7 +407,15 @@ export function loadPersistedTableState(
  }
 }
 
-export function useTablePersistence(key: string) {
+type UseTablePersistenceOptions = {
+ bootstrapState?: PersistedTableStateInput | null;
+ bootstrapStateReady?: boolean;
+};
+
+export function useTablePersistence(
+ key: string,
+ options?: UseTablePersistenceOptions,
+) {
  const apolloClient = useApolloClient();
  const { user } = useAuthContext();
  const {
@@ -424,6 +432,8 @@ export function useTablePersistence(key: string) {
  setDensity,
  setWrapCells,
  } = useTable();
+ const bootstrapState = options?.bootstrapState ?? null;
+ const bootstrapStateReady = options?.bootstrapStateReady ?? true;
 
  const storageKey = buildStorageKey(key);
  const initialKeyRef = useRef(key);
@@ -529,8 +539,23 @@ export function useTablePersistence(key: string) {
  setPerPage,
  setDensity,
  setWrapCells,
- ],
+  ],
  );
+
+ useEffect(() => {
+ const settingsConfigs = decodeTableConfigs(readTableConfigsFromSettings());
+ const pendingReset = hasPendingTablePersistenceReset(key);
+ if (!settingsConfigs) {
+ return;
+ }
+
+ tableConfigsRef.current = settingsConfigs;
+ const config = pendingReset ? null : getConfigForKey(key, settingsConfigs);
+ if (config) {
+ applyParsedState(config);
+ hasAppliedPersistedStateRef.current = true;
+ }
+ }, [key, readTableConfigsFromSettings, applyParsedState]);
 
  useEffect(() => {
  if (initialKeyRef.current !== key) {
@@ -551,6 +576,16 @@ export function useTablePersistence(key: string) {
  }
 
  if (hasHydratedRef.current) return;
+ if (!bootstrapStateReady) return;
+
+ const bootstrapPersistedState = parsePersistedTableStateInput(bootstrapState);
+ if (bootstrapPersistedState) {
+ applyParsedState(bootstrapPersistedState);
+ hasAppliedPersistedStateRef.current = true;
+ hasHydratedRef.current = true;
+ setHydrated(true);
+ return;
+ }
 
  const restoredState = loadPersistedTableState(
  key,
@@ -578,6 +613,8 @@ export function useTablePersistence(key: string) {
  storageKey,
  readTableConfigsFromSettings,
  applyParsedState,
+ bootstrapState,
+ bootstrapStateReady,
  user?.id,
  ]);
 
@@ -590,15 +627,6 @@ export function useTablePersistence(key: string) {
 
  setRemoteSyncSettled(false);
 
- const remoteFetchKey =`${userId}|${key}`;
- if (
- lastRemoteFetchKeyRef.current === remoteFetchKey &&
- !remoteFetchInFlightRef.current
- ) {
- setRemoteSyncSettled(true);
- return;
- }
-
  const settingsConfigsRaw = readTableConfigsFromSettings();
  const settingsConfigs = decodeTableConfigs(settingsConfigsRaw);
  const pendingReset = hasPendingTablePersistenceReset(key);
@@ -608,7 +636,19 @@ export function useTablePersistence(key: string) {
  if (config) {
  applyParsedState(config);
  hasAppliedPersistedStateRef.current = true;
+    }
+  }
+
+ const remoteFetchKey =`${userId}|${key}`;
+ if (
+ lastRemoteFetchKeyRef.current === remoteFetchKey &&
+ !remoteFetchInFlightRef.current
+ ) {
+ setRemoteSyncSettled(true);
+ return;
  }
+ if (remoteFetchInFlightRef.current) {
+ return;
  }
 
  let cancelled = false;
@@ -840,6 +880,9 @@ export function useTablePersistence(key: string) {
  }, []);
 
  const hasPersistedState = useCallback(() => {
+ if (parsePersistedTableStateInput(bootstrapState)) {
+ return true;
+ }
  if (getConfigForKey(key, readTableConfigsFromSettings())) {
  return true;
  }
@@ -850,7 +893,7 @@ export function useTablePersistence(key: string) {
  } catch {
  return false;
  }
- }, [key, storageKey, readTableConfigsFromSettings, user?.id]);
+ }, [bootstrapState, key, storageKey, readTableConfigsFromSettings, user?.id]);
 
  return { hasPersistedState, hydrated };
 }

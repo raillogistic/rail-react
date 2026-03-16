@@ -36,7 +36,7 @@ describe("useTableMetadata", () => {
  mockUseQuery.mockImplementation((query: unknown) => {
  if (query === TABLE_BOOTSTRAP_METADATA_QUERY) {
  return {
- data: { modelSchema: null },
+ data: { modelSchema: null, tableBootstrapMinimal: null },
  loading: false,
  error: undefined,
  };
@@ -106,7 +106,7 @@ describe("useTableMetadata", () => {
  expect(mockUseQuery).toHaveBeenCalledWith(
  TABLE_BOOTSTRAP_METADATA_QUERY,
  expect.objectContaining({
- variables: { app: "inventory", model: "Product" },
+ variables: { app: "inventory", model: "Product", persistenceKey: undefined },
  skip: false,
  }),
  );

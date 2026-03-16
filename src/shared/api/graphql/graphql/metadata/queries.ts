@@ -119,6 +119,7 @@ export const TABLE_BOOTSTRAP_METADATA_QUERY = gql`
     $app: String!
     $model: String!
     $objectId: ID
+    $persistenceKey: String
   ) {
     modelSchema(app: $app, model: $model, objectId: $objectId) {
       app
@@ -191,6 +192,24 @@ export const TABLE_BOOTSTRAP_METADATA_QUERY = gql`
       }
       metadataVersion
       customMetadata
+    }
+    tableBootstrapMinimal(
+      app: $app
+      model: $model
+      persistenceKey: $persistenceKey
+    ) {
+      initialState {
+        page
+        pageSize
+        ordering
+        columnOrder
+        columnVisibility
+        columnWidths
+        density
+        wrapCells
+        visibilityVersion
+        persistenceKey
+      }
     }
   }
 `;

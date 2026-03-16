@@ -34,6 +34,7 @@ interface AuthProviderProps {
   onLogout?: () => Promise<void>;
   onRefresh?: (refreshToken?: string | null) => Promise<TokenPair>;
   onValidateSession?: () => Promise<boolean>;
+  onResolveCurrentUser?: () => Promise<AuthUser | null>;
 }
 
 export function AuthProvider({
@@ -44,6 +45,7 @@ export function AuthProvider({
   onRefresh,
   onValidateSession,
   onVerifyMFA,
+  onResolveCurrentUser,
 }: AuthProviderProps) {
   const [manager] = useState(() => new AuthenticationManager(config));
   // Initialize with loading state to prevent flash of unauthenticated content
@@ -78,6 +80,21 @@ export function AuthProvider({
 
       if (!cancelled) {
         await manager.initialize();
+      }
+
+      if (
+        !cancelled &&
+        onResolveCurrentUser &&
+        manager.getState().isAuthenticated
+      ) {
+        try {
+          const resolvedUser = await onResolveCurrentUser();
+          if (!cancelled && resolvedUser) {
+            manager.syncAuthenticatedUser(resolvedUser);
+          }
+        } catch {
+          // Keep the token-derived user when resolving the full user fails.
+        }
       }
     };
 
@@ -116,7 +133,7 @@ export function AuthProvider({
       unsubscribe();
       manager.destroy();
     };
-  }, [manager, onRefresh, onValidateSession]);
+  }, [manager, onRefresh, onResolveCurrentUser, onValidateSession]);
 
   const login = useCallback(async (credentials: LoginCredentials) => {
     if (!onLogin) throw new Error('onLogin handler not provided');

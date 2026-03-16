@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useRef } from "react";
 import { useApolloClient } from "@apollo/client";
 import { AuthProvider } from "./AuthProvider";
 import {
@@ -261,6 +261,7 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const client = useApolloClient();
+  const resolvedCurrentUserRef = useRef<AuthUser | null>(null);
 
   const fetchCurrentSessionId = useCallback(
     async (accessToken: string): Promise<string | null> => {
@@ -339,6 +340,7 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }
 
       const normalizedUser = normalizeAuthUser(login.user, login.permissions);
+      resolvedCurrentUserRef.current = normalizedUser;
       const refreshToken = normalizeRefreshTokenCandidate(login.refresh_token);
       const sessionId = await resolveSessionId(
         login.token,
@@ -372,6 +374,7 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
         verify_mfa_login.user,
         verify_mfa_login.permissions,
       );
+      resolvedCurrentUserRef.current = normalizedUser;
       const refreshToken = normalizeRefreshTokenCandidate(
         verify_mfa_login.refresh_token,
       );
@@ -390,6 +393,7 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
   );
 
   const handleLogout = useCallback(async () => {
+    resolvedCurrentUserRef.current = null;
     try {
       await client.mutate({
         mutation: LOGOUT_MUTATION,
@@ -459,6 +463,7 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
     try {
       const accessToken = tokenStorage.getAccessToken();
       if (!accessToken) {
+        resolvedCurrentUserRef.current = null;
         return false;
       }
 
@@ -472,6 +477,7 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
         accessTokenExpiryMs == null ||
         Date.now() >= accessTokenExpiryMs
       ) {
+        resolvedCurrentUserRef.current = null;
         return false;
       }
 
@@ -485,11 +491,13 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
       });
 
       if (Array.isArray(errors) && errors.some(isAuthError)) {
+        resolvedCurrentUserRef.current = null;
         return false;
       }
 
       const currentUserId = data?.me?.id;
       if (!currentUserId) {
+        resolvedCurrentUserRef.current = null;
         if (Array.isArray(errors) && errors.length > 0) {
           throw new SessionValidationIndeterminateError(
             "Unable to verify current session identity.",
@@ -499,6 +507,9 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }
 
       const isMatchingUser = String(currentUserId) === String(expectedUserId);
+      resolvedCurrentUserRef.current = isMatchingUser
+        ? normalizeAuthUser(data?.me, data?.me?.permissions)
+        : null;
       if (!isMatchingUser) {
         console.error(
           "Auth identity mismatch detected during session validation.",
@@ -528,6 +539,7 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
         Array.isArray(maybeError.graphQLErrors) &&
         maybeError.graphQLErrors.some(isAuthError)
       ) {
+        resolvedCurrentUserRef.current = null;
         return false;
       }
 
@@ -550,12 +562,38 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   }, [client]);
 
+  const handleResolveCurrentUser = useCallback(async () => {
+    if (resolvedCurrentUserRef.current) {
+      return resolvedCurrentUserRef.current;
+    }
+
+    try {
+      const { data } = await client.query({
+        query: GET_CURRENT_USER,
+        fetchPolicy: "network-only",
+        context: {
+          skipAuthRefresh: true,
+          skipAuthErrorHandling: true,
+        },
+      });
+
+      const normalizedUser = data?.me
+        ? normalizeAuthUser(data.me, data.me.permissions)
+        : null;
+      resolvedCurrentUserRef.current = normalizedUser;
+      return normalizedUser;
+    } catch {
+      return null;
+    }
+  }, [client]);
+
   return (
     <AuthProvider
       onLogin={handleLogin}
       onVerifyMFA={handleVerifyMFA}
       onLogout={handleLogout}
       onRefresh={handleRefresh}
+      onResolveCurrentUser={handleResolveCurrentUser}
       onValidateSession={handleValidateSession}
       config={{
         token: {

@@ -1,4 +1,4 @@
-import { renderHook, act } from '@testing-library/react';
+import { renderHook, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useAuth } from '../useAuth';
 import { AuthProvider } from '../../context/AuthProvider';
@@ -140,8 +140,12 @@ describe('useAuth', () => {
     expect(result.current.user).toBeNull();
   });
 
-  it('clears error', () => {
+  it('clears error', async () => {
     const { result } = renderHook(() => useAuth(), { wrapper });
+
+    await waitFor(() => {
+      expect(result.current.isLoading).toBe(false);
+    });
 
     // Simulate an error state if possible, or just check the function exists
     expect(result.current.clearError).toBeDefined();
@@ -153,5 +157,58 @@ describe('useAuth', () => {
     // Since we can't easily inject an error into the manager from here without mocking internals,
     // we just verify it doesn't crash.
     // Ideally we would mock AuthenticationManager to verify clearError is called.
+  });
+
+  it('hydrates user settings after restoring a session', async () => {
+    const hydratedUser: AuthUser = {
+      ...mockUser,
+      settings: {
+        table_configs: {
+          'catalog-Benificiaire-/catalog/beneficiaire': {
+            columnOrder: ['nom', 'prenom'],
+            columnVisibility: {
+              nom: true,
+              prenom: true,
+            },
+            perPage: 10,
+            density: 'compact',
+            wrapCells: false,
+          },
+        },
+      },
+    };
+    const onRefresh = vi.fn().mockResolvedValue(mockTokens);
+    const onValidateSession = vi.fn().mockResolvedValue(true);
+    const onResolveCurrentUser = vi.fn().mockResolvedValue(hydratedUser);
+
+    const hydrationWrapper = ({
+      children,
+    }: {
+      children: React.ReactNode;
+    }) => (
+      <AuthProvider
+        config={{ token: { storageType: 'memory' } }}
+        onLogin={onLogin}
+        onLogout={onLogout}
+        onRefresh={onRefresh}
+        onValidateSession={onValidateSession}
+        onResolveCurrentUser={onResolveCurrentUser}
+      >
+        {children}
+      </AuthProvider>
+    );
+
+    const { result } = renderHook(() => useAuth(), {
+      wrapper: hydrationWrapper,
+    });
+
+    await waitFor(() => {
+      expect(result.current.isAuthenticated).toBe(true);
+      expect(result.current.user?.settings).toEqual(hydratedUser.settings);
+    });
+
+    expect(onRefresh).toHaveBeenCalledWith(null);
+    expect(onValidateSession).toHaveBeenCalledTimes(1);
+    expect(onResolveCurrentUser).toHaveBeenCalledTimes(1);
   });
 });

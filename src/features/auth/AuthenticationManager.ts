@@ -436,6 +436,27 @@ export class AuthenticationManager {
     this.updateState({ error: null });
   }
 
+  syncAuthenticatedUser(user: AuthUser): void {
+    if (!this.state.isAuthenticated || !user?.id) {
+      return;
+    }
+
+    const currentUserId =
+      this.state.user?.id ?? this.sessionService.getSession()?.userId ?? null;
+    if (
+      currentUserId != null &&
+      String(currentUserId) !== String(user.id)
+    ) {
+      return;
+    }
+
+    this.permissionService.setPermissions(user.permissions, user.roles);
+    this.updateState({
+      user,
+      error: null,
+    });
+  }
+
   // Get current state
   getState(): AuthState {
     return { ...this.state };

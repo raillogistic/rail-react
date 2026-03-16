@@ -243,9 +243,9 @@ export interface TemplateClientField {
 }
 
 export interface TemplateInfo {
- key: string;
- templateType?: string;
- title: string;
+  key: string;
+  templateType?: string;
+  title: string;
  endpoint: string;
  urlPath?: string;
  guard?: string | null;
@@ -255,13 +255,30 @@ export interface TemplateInfo {
  allowed?: boolean;
  denialReason?: string | null;
  allowClientData?: boolean;
- clientDataFields?: string[];
- clientDataSchema?: string | TemplateClientField[] | null;
+  clientDataFields?: string[];
+  clientDataSchema?: string | TemplateClientField[] | null;
+}
+
+export interface TableBootstrapInitialState {
+  page: number;
+  pageSize: number;
+  ordering: string[];
+  columnOrder?: string[];
+  columnVisibility?: Record<string, boolean>;
+  columnWidths?: Record<string, number>;
+  density?: TableDensity;
+  wrapCells?: boolean;
+  visibilityVersion?: number;
+  persistenceKey?: string | null;
+}
+
+export interface TableBootstrapMinimal {
+  initialState?: TableBootstrapInitialState | null;
 }
 
 export interface ModelSchema {
- // Identity
- app: string;
+  // Identity
+  app: string;
  model: string;
  verboseName: string;
  verboseNamePlural: string;

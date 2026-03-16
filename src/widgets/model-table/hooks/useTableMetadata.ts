@@ -11,11 +11,18 @@ import {
  readPersistedTableMetadata,
  recordModelUsage,
 } from "@/shared/api/graphql/graphql/metadata/persisted-cache";
-import { ModelPermissions, ModelSchema } from "../types";
+import {
+ ModelPermissions,
+ ModelSchema,
+ TableBootstrapInitialState,
+ TableBootstrapMinimal,
+} from "../types";
 import { toGraphqlFieldName } from "../utils";
 
 export interface UseTableMetadataResult {
  metadata?: ModelSchema;
+ bootstrapInitialState?: TableBootstrapInitialState;
+ bootstrapStateLoading: boolean;
  loading: boolean;
  error?: Error;
  actionBootstrapLoading: boolean;
@@ -34,6 +41,7 @@ export interface UseTableMetadataResult {
 
 type ModelSchemaQueryData = {
  modelSchema?: Partial<ModelSchema> | null;
+ tableBootstrapMinimal?: TableBootstrapMinimal | null;
 };
 
 const DEFAULT_MODEL_PERMISSIONS: ModelPermissions = {
@@ -117,13 +125,14 @@ function normalizeModelSchema(
 export function useTableMetadata(
  app: string,
  model: string,
+ persistenceKey?: string,
 ): UseTableMetadataResult {
  const {
  data: bootstrapQueryData,
  loading: bootstrapLoading,
  error: bootstrapError,
  } = useQuery<ModelSchemaQueryData>(TABLE_BOOTSTRAP_METADATA_QUERY, {
- variables: { app, model },
+ variables: { app, model, persistenceKey },
  skip: !app || !model,
  fetchPolicy: "cache-first",
  nextFetchPolicy: "cache-first",
@@ -172,6 +181,15 @@ export function useTableMetadata(
  () =>
  (bootstrapQueryData?.modelSchema as Partial<ModelSchema> | null | undefined) ??
  null,
+ [bootstrapQueryData],
+ );
+
+ const bootstrapInitialState = useMemo(
+ () =>
+ (bootstrapQueryData?.tableBootstrapMinimal?.initialState as
+ | TableBootstrapInitialState
+ | null
+ | undefined) ?? undefined,
  [bootstrapQueryData],
  );
 
@@ -411,6 +429,8 @@ export function useTableMetadata(
 
  return {
  metadata: mergedMetadata,
+ bootstrapInitialState,
+ bootstrapStateLoading: bootstrapLoading,
  loading,
  error,
  actionBootstrapLoading,

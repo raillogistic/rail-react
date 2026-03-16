@@ -1,5 +1,5 @@
 import { createContext, useContext, ReactNode, useMemo } from "react";
-import { ModelSchema } from "../types";
+import { ModelSchema, TableBootstrapInitialState } from "../types";
 import { useTableMetadata } from "../hooks/useTableMetadata";
 import {
  mergeModelSchemaWithRelationships,
@@ -8,6 +8,8 @@ import {
 
 interface MetadataContextValue {
  metadata?: ModelSchema;
+ bootstrapInitialState?: TableBootstrapInitialState;
+ bootstrapStateLoading: boolean;
  loading: boolean;
  error?: Error;
  app: string;
@@ -33,16 +35,20 @@ const MetadataContext = createContext<MetadataContextValue | undefined>(
 interface MetadataProviderProps {
  app: string;
  model: string;
+ persistenceKey?: string;
  children: ReactNode;
 }
 
 export function MetadataProvider({
  app,
  model,
+ persistenceKey,
  children,
 }: MetadataProviderProps) {
  const {
  metadata,
+ bootstrapInitialState,
+ bootstrapStateLoading,
  loading,
  error,
  actionBootstrapLoading,
@@ -57,7 +63,7 @@ export function MetadataProvider({
  ensureCapabilitiesLoaded,
  scheduleActionDetailsPrefetch,
  scheduleCapabilitiesPrefetch,
- } = useTableMetadata(app, model);
+ } = useTableMetadata(app, model, persistenceKey);
  const mergedMetadata = useMemo(
  () =>
  normalizeModelSchemaAccessors(
@@ -70,6 +76,8 @@ export function MetadataProvider({
  <MetadataContext.Provider
  value={{
  metadata: mergedMetadata,
+ bootstrapInitialState,
+ bootstrapStateLoading,
  loading,
  error,
  app,

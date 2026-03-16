@@ -15,7 +15,6 @@ import type {
   RowSelectionState,
   VisibilityState,
 } from "@tanstack/react-table";
-import { useAuthContext } from "@/features/auth/context";
 import {
   DynamicTable,
   DYNAMIC_TABLE_SELECTION_COLUMN_ID,
@@ -48,6 +47,7 @@ import type {
   ModelTableAccessorPath,
   ModelTableRelationKey,
   RowMutationPermissions,
+  TableBootstrapInitialState,
 } from "../types";
 import type {
   DynamicModelTableDevtoolsConfig,
@@ -550,17 +550,6 @@ function areNumberMapsEqual(
 /**
  * Serializes unknown values into a deterministic string key.
  */
-function stableSerializeUnknown(value: unknown): string {
-  try {
-    return JSON.stringify(value ?? null);
-  } catch {
-    return String(value);
-  }
-}
-
-/**
- * Compares persisted table snapshots for structural equality.
- */
 function isPersistedTableStateEqual(
   left: PersistedTableState | null,
   right: PersistedTableState | null,
@@ -581,6 +570,56 @@ function isPersistedTableStateEqual(
     left.wrapCells === right.wrapCells &&
     (left.visibilityVersion ?? 0) === (right.visibilityVersion ?? 0)
   );
+}
+
+function buildPersistedStateFromBootstrap(
+  initialState: TableBootstrapInitialState | undefined,
+  fallback: PersistedTableState | null,
+): PersistedTableState | null {
+  if (!initialState) {
+    return fallback;
+  }
+
+  const hasBootstrapLayoutState =
+    Array.isArray(initialState.columnOrder) ||
+    (isRecord(initialState.columnVisibility) &&
+      Object.keys(initialState.columnVisibility).length > 0) ||
+    (isRecord(initialState.columnWidths) &&
+      Object.keys(initialState.columnWidths).length > 0) ||
+    typeof initialState.density === "string" ||
+    typeof initialState.wrapCells === "boolean" ||
+    typeof initialState.visibilityVersion === "number";
+
+  if (!hasBootstrapLayoutState) {
+    return fallback;
+  }
+
+  return {
+    columnOrder: Array.isArray(initialState.columnOrder)
+      ? initialState.columnOrder
+      : fallback?.columnOrder ?? [],
+    columnVisibility: isRecord(initialState.columnVisibility)
+      ? (initialState.columnVisibility as Record<string, boolean>)
+      : fallback?.columnVisibility ?? {},
+    columnWidths: isRecord(initialState.columnWidths)
+      ? (initialState.columnWidths as Record<string, number>)
+      : fallback?.columnWidths ?? {},
+    perPage: initialState.pageSize || fallback?.perPage || 10,
+    density:
+      initialState.density === "compact" ||
+      initialState.density === "comfortable" ||
+      initialState.density === "spacious"
+        ? initialState.density
+        : fallback?.density ?? "compact",
+    wrapCells:
+      typeof initialState.wrapCells === "boolean"
+        ? initialState.wrapCells
+        : fallback?.wrapCells ?? false,
+    visibilityVersion:
+      typeof initialState.visibilityVersion === "number"
+        ? initialState.visibilityVersion
+        : fallback?.visibilityVersion,
+  };
 }
 
 /**
@@ -712,9 +751,10 @@ function DynamicBaseTableContent<
   onRefetchResolved,
   onSnapshotResolved,
 }: DynamicBaseTableContentProps<TSource>) {
-  const { user } = useAuthContext();
   const {
     metadata,
+    bootstrapInitialState,
+    bootstrapStateLoading,
     loading: metadataLoading,
     error: metadataError,
     app,
@@ -967,32 +1007,22 @@ function DynamicBaseTableContent<
   const locationPath =
     typeof window !== "undefined" ? window.location.pathname : "";
   const effectiveKey = persistenceKey || `${app}-${model}-${locationPath}`;
-  const { hydrated: persistenceHydrated } = useTablePersistence(effectiveKey);
-
-  const rawUserTableConfigs = useMemo(() => {
-    const settings = user?.settings as
-      | { table_configs?: unknown; tableConfigs?: unknown }
-      | undefined;
-    return settings?.table_configs ?? settings?.tableConfigs ?? null;
-  }, [user?.settings]);
-
-  const userTableConfigsSignature = useMemo(
-    () => stableSerializeUnknown(rawUserTableConfigs),
-    [rawUserTableConfigs],
-  );
-  const stableRawUserTableConfigs = useMemo(
-    () => rawUserTableConfigs,
-    [userTableConfigsSignature],
-  );
-
-  const rawPersistedState = useMemo(
+  const fallbackPersistedState = useMemo(
     () =>
-      loadPersistedTableState(effectiveKey, stableRawUserTableConfigs, {
+      loadPersistedTableState(effectiveKey, null, {
         allowLocalFallback: true,
       }),
-    [effectiveKey, stableRawUserTableConfigs],
+    [effectiveKey],
   );
   const persistedStateRef = useRef<PersistedTableState | null>(null);
+  const rawPersistedState = useMemo(
+    () =>
+      buildPersistedStateFromBootstrap(
+        bootstrapInitialState,
+        fallbackPersistedState,
+      ),
+    [bootstrapInitialState, fallbackPersistedState],
+  );
   const persistedState = useMemo(() => {
     if (
       isPersistedTableStateEqual(rawPersistedState, persistedStateRef.current)
@@ -1002,6 +1032,25 @@ function DynamicBaseTableContent<
     persistedStateRef.current = rawPersistedState;
     return rawPersistedState;
   }, [rawPersistedState]);
+  const bootstrapPersistenceState = useMemo(
+    () =>
+      bootstrapInitialState
+        ? {
+            columnOrder: bootstrapInitialState.columnOrder,
+            columnVisibility: bootstrapInitialState.columnVisibility,
+            columnWidths: bootstrapInitialState.columnWidths,
+            perPage: bootstrapInitialState.pageSize,
+            density: bootstrapInitialState.density,
+            wrapCells: bootstrapInitialState.wrapCells,
+            visibilityVersion: bootstrapInitialState.visibilityVersion,
+          }
+        : null,
+    [bootstrapInitialState],
+  );
+  const { hydrated: persistenceHydrated } = useTablePersistence(effectiveKey, {
+    bootstrapState: bootstrapPersistenceState,
+    bootstrapStateReady: !bootstrapStateLoading,
+  });
 
   const requestedFieldsConfig = useMemo(
     () => normalizeBaseModelTableFieldsInput(fields),
@@ -1954,32 +2003,14 @@ const DynamicModelTableInner = <TSource extends object = Record<string, unknown>
   }: DynamicModelTableProps<TSource>,
   ref: React.ForwardedRef<DynamicModelTableHandle<TSource>>,
 ) => {
-  const { user } = useAuthContext();
   const tableInstanceKey = `${app}:${model}`;
   const locationPath =
     typeof window !== "undefined" ? window.location.pathname : "";
   const effectivePersistenceKey =
     baseTable?.persistenceKey || `${app}-${model}-${locationPath}`;
-  const rawUserTableConfigs = useMemo(() => {
-    const settings = user?.settings as
-      | { table_configs?: unknown; tableConfigs?: unknown }
-      | undefined;
-    return settings?.table_configs ?? settings?.tableConfigs ?? null;
-  }, [user?.settings]);
-  const userTableConfigsSignature = useMemo(
-    () => stableSerializeUnknown(rawUserTableConfigs),
-    [rawUserTableConfigs],
-  );
-  const persistedInitialState = useMemo(
-    () =>
-      loadPersistedTableState(effectivePersistenceKey, rawUserTableConfigs, {
-        allowLocalFallback: true,
-      }),
-    [effectivePersistenceKey, userTableConfigsSignature, rawUserTableConfigs],
-  );
   const initialTableState = useMemo(
-    () => resolveInitialTableState(initVariables, persistedInitialState?.perPage),
-    [initVariables, persistedInitialState?.perPage],
+    () => resolveInitialTableState(initVariables),
+    [initVariables],
   );
   const resolvedFilterPanel: ModelTableFilterPanelProps = {
     ...(filterPanel ?? {}),
@@ -2067,8 +2098,13 @@ const DynamicModelTableInner = <TSource extends object = Record<string, unknown>
           ? `h-full w-full ${baseTable.className}`
           : "h-full w-full"
       }
-    >
-      <MetadataProvider key={tableInstanceKey} app={app} model={model}>
+      >
+      <MetadataProvider
+        key={tableInstanceKey}
+        app={app}
+        model={model}
+        persistenceKey={effectivePersistenceKey}
+      >
         <TableProvider
           initialState={{
             density: baseTable?.view?.defaultDensity ?? "compact",
@@ -2087,7 +2123,7 @@ const DynamicModelTableInner = <TSource extends object = Record<string, unknown>
           }}
         >
           <DynamicBaseTableContent<TSource>
-            persistenceKey={baseTable?.persistenceKey}
+            persistenceKey={effectivePersistenceKey}
             filterPanel={resolvedFilterPanel}
             create={create}
             update={update}

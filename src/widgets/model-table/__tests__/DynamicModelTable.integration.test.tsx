@@ -393,15 +393,34 @@ const DATA_MOCK_WITH_INIT_VARIABLES_MINIMAL = {
  },
 };
 
+function buildBootstrapInitialState(
+ overrides: Record<string, unknown> = {},
+) {
+ return {
+ page: 1,
+ pageSize: 10,
+ ordering: ["-id"],
+ ...overrides,
+ };
+}
+
 function buildMetadataMock(
  templates: unknown[] = [],
  permissions = METADATA_BASE.permissions,
  mutations: unknown[] = [],
+ options?: {
+ persistenceKey?: string;
+ initialState?: Record<string, unknown>;
+ },
 ) {
  return {
  request: {
  query: GET_MODEL_SCHEMA,
- variables: { app: "auth", model: "User" },
+ variables: {
+ app: "auth",
+ model: "User",
+ persistenceKey: options?.persistenceKey ?? "auth-User-/",
+ },
  },
  result: {
  data: {
@@ -410,6 +429,10 @@ function buildMetadataMock(
  permissions,
  mutations,
  templates,
+ },
+ tableBootstrapMinimal: {
+ __typename: "TableBootstrapMinimalType",
+ initialState: buildBootstrapInitialState(options?.initialState),
  },
  },
  },
@@ -687,28 +710,34 @@ describe("DynamicModelTable integration", () => {
  });
  });
 
- it("uses saved user table config page size on the initial query", async () => {
- mockAuthUser = {
- settings: {
- table_configs: {
- "users-list": {
+ it("uses backend bootstrap page size on the initial query", async () => {
+ render(
+ <MockedProvider
+ mocks={[
+ buildMetadataMock([], METADATA_BASE.permissions, [], {
+ persistenceKey: "users-list",
+ initialState: {
+ pageSize: 25,
  columnOrder: ["username"],
  columnVisibility: {
  username: true,
  },
- perPage: 25,
  density: "compact",
  wrapCells: false,
  },
+ }),
+ buildMetadataMock([], METADATA_BASE.permissions, [], {
+ persistenceKey: "users-list",
+ initialState: {
+ pageSize: 25,
+ columnOrder: ["username"],
+ columnVisibility: {
+ username: true,
  },
+ density: "compact",
+ wrapCells: false,
  },
- };
-
- render(
- <MockedProvider
- mocks={[
- buildMetadataMock(),
- buildMetadataMock(),
+ }),
  buildActionsBootstrapMock(),
  {
  request: {
@@ -763,6 +792,136 @@ describe("DynamicModelTable integration", () => {
 
  await waitFor(() => {
  expect(screen.getAllByText("Username").length).toBeGreaterThan(0);
+ }, { timeout: 4000 });
+ });
+
+ it("waits for backend bootstrap state before firing the first row query", async () => {
+ const bootstrapInitialState = {
+ pageSize: 25,
+ columnOrder: ["username"],
+ columnVisibility: {
+ username: true,
+ },
+ density: "compact",
+ wrapCells: false,
+ };
+ const delayedHydratedQuery = vi.fn(() => ({
+ data: DATA_RESULT,
+ }));
+ const delayedHydratedMinimalQuery = vi.fn(() => ({
+ data: DATA_RESULT,
+ }));
+
+ render(
+ <MockedProvider
+ mocks={[
+ {
+ request: {
+ query: GET_MODEL_SCHEMA,
+ variables: {
+ app: "auth",
+ model: "User",
+ persistenceKey: "users-list",
+ },
+ },
+ result: () => ({
+ data: {
+ modelSchema: {
+ ...METADATA_BASE,
+ permissions: METADATA_BASE.permissions,
+ mutations: [],
+ templates: [],
+ },
+ tableBootstrapMinimal: {
+ __typename: "TableBootstrapMinimalType",
+ initialState: buildBootstrapInitialState(bootstrapInitialState),
+ },
+ },
+ }),
+ },
+ {
+ request: {
+ query: GET_MODEL_SCHEMA,
+ variables: {
+ app: "auth",
+ model: "User",
+ persistenceKey: "users-list",
+ },
+ },
+ result: () => ({
+ data: {
+ modelSchema: {
+ ...METADATA_BASE,
+ permissions: METADATA_BASE.permissions,
+ mutations: [],
+ templates: [],
+ },
+ tableBootstrapMinimal: {
+ __typename: "TableBootstrapMinimalType",
+ initialState: buildBootstrapInitialState(bootstrapInitialState),
+ },
+ },
+ }),
+ },
+ buildActionsBootstrapMock(),
+ DATA_MOCK,
+ DATA_MOCK,
+ DATA_MOCK_MINIMAL,
+ DATA_MOCK_MINIMAL,
+ {
+ request: {
+ query: DATA_QUERY,
+ variables: {
+ page: 1,
+ perPage: 25,
+ orderBy: ["-id"],
+ quick: undefined,
+ where: undefined,
+ presets: undefined,
+ distinctOn: undefined,
+ skipCount: false,
+ },
+ },
+ result: delayedHydratedQuery,
+ },
+ {
+ request: {
+ query: DATA_QUERY_MINIMAL,
+ variables: {
+ page: 1,
+ perPage: 25,
+ orderBy: undefined,
+ where: undefined,
+ presets: undefined,
+ distinctOn: undefined,
+ skipCount: false,
+ },
+ },
+ result: delayedHydratedMinimalQuery,
+ },
+ buildCapabilitiesMock(),
+ buildActionDetailsMock(),
+ ]}
+ >
+ <MemoryRouter>
+ <DynamicModelTable
+ app="auth"
+ model="User"
+ baseTable={{
+ persistenceKey: "users-list",
+ }}
+ />
+ </MemoryRouter>
+ </MockedProvider>,
+ );
+
+ await waitFor(() => {
+ expect(screen.getAllByText("Username").length).toBeGreaterThan(0);
+ }, { timeout: 4000 });
+
+ await waitFor(() => {
+ expect(delayedHydratedQuery).toHaveBeenCalled();
+ expect(delayedHydratedMinimalQuery).toHaveBeenCalled();
  }, { timeout: 4000 });
  });
 
