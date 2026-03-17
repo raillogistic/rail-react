@@ -396,16 +396,102 @@ export const DETAIL_BOOTSTRAP_METADATA_QUERY = gql`
         fieldName
         verboseName
         helpText
+        readable
+        visibility
+        isPrimaryKey
+        isJson
+        isDate
+        isDatetime
+        isNumeric
+        isBoolean
+      }
+      relationships {
+        name
+        fieldName
+        verboseName
+        helpText
+        relatedApp
+        relatedModel
+        isToMany
+        lookupField
+      }
+      permissions {
+        canList
+        canRetrieve
+        canCreate
+        canUpdate
+        canDelete
+        canBulkCreate
+        canBulkUpdate
+        canBulkDelete
+        canExport
+        denialReasons
+      }
+    }
+    detailBootstrapMinimal(app: $app, model: $model, objectId: $objectId) {
+      defaultIncludeFields
+    }
+  }
+`;
+
+export const DETAIL_ACTION_DETAILS_METADATA_QUERY = gql`
+  query DetailActionDetailsModelMetadata(
+    $app: String!
+    $model: String!
+    $objectId: ID
+  ) {
+    modelSchema(app: $app, model: $model, objectId: $objectId) {
+      app
+      model
+      verboseName
+      verboseNamePlural
+      primaryKey
+      ordering
+      uniqueTogether
+      fields {
+        name
+        fieldName
+        verboseName
+        helpText
         fieldType
         graphqlType
-        readable
+        pythonType
+        required
+        nullable
+        blank
         editable
+        unique
+        maxLength
+        minLength
+        maxValue
+        minValue
+        decimalPlaces
+        maxDigits
+        choices {
+          value
+          label
+          group
+          disabled
+        }
+        defaultValue
+        hasDefault
+        autoNow
+        autoNowAdd
+        validators {
+          type
+          params
+          message
+        }
+        regexPattern
+        readable
         writable
         visibility
         isPrimaryKey
         isIndexed
         isRelation
         isComputed
+        isFile
+        isImage
         isJson
         isDate
         isDatetime
@@ -413,6 +499,16 @@ export const DETAIL_BOOTSTRAP_METADATA_QUERY = gql`
         isBoolean
         isText
         isRichText
+        isFsmField
+        fsmTransitions {
+          name
+          source
+          target
+          label
+          description
+          permission
+          allowed
+        }
         customMetadata
       }
       relationships {
@@ -427,6 +523,12 @@ export const DETAIL_BOOTSTRAP_METADATA_QUERY = gql`
         isReverse
         isToOne
         isToMany
+        onDelete
+        relatedName
+        throughModel
+        required
+        nullable
+        editable
         lookupField
         searchFields
         readable
@@ -453,27 +555,6 @@ export const DETAIL_BOOTSTRAP_METADATA_QUERY = gql`
         fields
         collapsed
       }
-      metadataVersion
-      customMetadata
-    }
-    detailBootstrapMinimal(app: $app, model: $model, objectId: $objectId) {
-      layoutVersion
-      defaultIncludeFields
-      defaultExcludeFields
-      metadataVersion
-    }
-  }
-`;
-
-export const DETAIL_ACTION_DETAILS_METADATA_QUERY = gql`
-  query DetailActionDetailsModelMetadata(
-    $app: String!
-    $model: String!
-    $objectId: ID
-  ) {
-    modelSchema(app: $app, model: $model, objectId: $objectId) {
-      app
-      model
       mutations {
         name
         operation
@@ -520,6 +601,8 @@ export const DETAIL_ACTION_DETAILS_METADATA_QUERY = gql`
         clientDataFields
         clientDataSchema
       }
+      metadataVersion
+      customMetadata
     }
   }
 `;

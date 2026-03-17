@@ -52,6 +52,7 @@ export type ModelTableNavFilterResolverContext = {
 export type ModelTableNavFilterItem = {
   key: string;
   label: string;
+  count?: number;
   clear?: boolean;
   variables?: ModelTableNavFilterVariables;
   resolveVariables?: (

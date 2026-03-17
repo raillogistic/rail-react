@@ -1658,16 +1658,8 @@ const ModelDynamicDetailInner = <
 
   React.useEffect(() => {
     if (metadataState.loading) return;
-    if (
-      actionsConfig.showTemplates === false &&
-      actionsConfig.showCustomMutations === false
-    ) {
-      return;
-    }
     metadataState.scheduleActionDetailsPrefetch();
   }, [
-    actionsConfig.showCustomMutations,
-    actionsConfig.showTemplates,
     metadataState.loading,
     metadataState.scheduleActionDetailsPrefetch,
   ]);

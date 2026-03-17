@@ -14,7 +14,7 @@ const navFilters: ModelTableNavFiltersConfig = {
       items: [
         { key: "all", label: "All", clear: true },
         { key: "draft", label: "Draft" },
-        { key: "validated", label: "Validated" },
+        { key: "validated", label: "Validated", count: 56 },
       ],
     },
   ],
@@ -41,8 +41,9 @@ describe("NavFiltersBar", () => {
     );
 
     expect(screen.getByTestId("nav-selection")).toHaveTextContent("all");
+    expect(screen.getByRole("radio", { name: "Validated(56)" })).toBeInTheDocument();
 
-    await user.click(screen.getByRole("radio", { name: "Validated" }));
+    await user.click(screen.getByRole("radio", { name: "Validated(56)" }));
     expect(screen.getByTestId("nav-selection")).toHaveTextContent("validated");
 
     await user.click(screen.getByRole("radio", { name: "Draft" }));
@@ -78,7 +79,7 @@ describe("NavFiltersBar", () => {
     await user.click(screen.getByRole("button", { name: "set-page" }));
     expect(screen.getByTestId("page")).toHaveTextContent("3");
 
-    await user.click(screen.getByRole("radio", { name: "Validated" }));
+    await user.click(screen.getByRole("radio", { name: "Validated(56)" }));
     expect(screen.getByTestId("page")).toHaveTextContent("1");
   });
 });

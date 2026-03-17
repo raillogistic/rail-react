@@ -14,17 +14,18 @@ const dechargeNavFilters: ModelTableNavFiltersConfig = {
         { key: "all", label: "all", clear: true },
         {
           key: "brouillon",
-          label: "brouillon",
+          label: "Brouillon",
           variables: { where: { statut: { eq: "brouillon" } } },
+          count: 10,
         },
         {
           key: "validated",
-          label: "validated",
+          label: "Validée",
           variables: { where: { statut: { eq: "validee" } } },
         },
         {
           key: "canceled",
-          label: "canceled",
+          label: "Annulée",
           variables: { where: { statut: { eq: "annulee" } } },
         },
       ],
@@ -37,7 +38,7 @@ const dechargeNavFilters: ModelTableNavFiltersConfig = {
         { key: "all", label: "all", clear: true },
         {
           key: "today",
-          label: "today",
+          label: "Aujourd'hui",
           resolveVariables: () => {
             const [date] = calculateDatePreset("today");
             return { where: { dateDecharge: { eq: date } } };
@@ -45,7 +46,7 @@ const dechargeNavFilters: ModelTableNavFiltersConfig = {
         },
         {
           key: "this_week",
-          label: "this_week",
+          label: "Cette semaine",
           resolveVariables: () => {
             const [start, end] = calculateDatePreset("thisWeek");
             return { where: { dateDecharge: { between: [start, end] } } };
@@ -53,7 +54,7 @@ const dechargeNavFilters: ModelTableNavFiltersConfig = {
         },
         {
           key: "this_month",
-          label: "this_month",
+          label: "Ce mois",
           resolveVariables: () => {
             const [start, end] = calculateDatePreset("thisMonth");
             return { where: { dateDecharge: { between: [start, end] } } };
@@ -61,7 +62,7 @@ const dechargeNavFilters: ModelTableNavFiltersConfig = {
         },
         {
           key: "this_year",
-          label: "this_year",
+          label: "Cette année",
           resolveVariables: () => {
             const [start, end] = calculateDatePreset("thisYear");
             return { where: { dateDecharge: { between: [start, end] } } };

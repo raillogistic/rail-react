@@ -58,9 +58,14 @@ export function NavFiltersBar({
                       item.clear &&
                         "text-muted-foreground data-[state=on]:text-foreground",
                     )}
-                    aria-label={item.label}
+                    aria-label={
+                      typeof item.count === "number"
+                        ? `${item.label}(${item.count})`
+                        : item.label
+                    }
                   >
                     {item.label}
+                    {typeof item.count === "number" ? `(${item.count})` : ""}
                   </ToggleGroupItem>
                 ))}
               </ToggleGroup>
