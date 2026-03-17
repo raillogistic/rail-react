@@ -1,6 +1,7 @@
 import { mergeWhereClauses } from "@/widgets/model-table/filtering/engine";
 import type {
   ModelTableNavFiltersConfig,
+  ModelTableNavFilterItem,
   ModelTableNavFilterVariables,
 } from "../config/types";
 import type { NavFilterSelectionState } from "../types";
@@ -24,6 +25,21 @@ function toStringArray(value: unknown): string[] | undefined {
 
 function normalizeSelectionValue(value: unknown): string | null {
   return typeof value === "string" && value.trim() ? value : null;
+}
+
+export function resolveNavFilterItemVariables(
+  item: ModelTableNavFilterItem,
+  groupKey: string,
+  selections: NavFilterSelectionState | undefined,
+): ModelTableNavFilterVariables | undefined {
+  const safeSelections = selections ?? {};
+  const resolved = item.resolveVariables?.({
+    groupKey,
+    itemKey: item.key,
+    selections: safeSelections,
+  });
+  const itemVariables = mergeModelTableQueryVariables(item.variables, resolved);
+  return Object.keys(itemVariables).length > 0 ? itemVariables : undefined;
 }
 
 export function resolveInitialNavFilterSelections(
@@ -128,14 +144,19 @@ export function mergeModelTableQueryVariables(
 export function resolveNavFilterVariables(
   navFilters: ModelTableNavFiltersConfig | undefined,
   selections: NavFilterSelectionState | undefined,
+  options: { excludeGroupKeys?: string[] } = {},
 ): ModelTableNavFilterVariables | undefined {
   if (!navFilters?.groups.length || !selections) {
     return undefined;
   }
 
+  const excludedGroups = new Set(options.excludeGroupKeys ?? []);
   let merged: Record<string, unknown> = {};
 
   navFilters.groups.forEach((group) => {
+    if (excludedGroups.has(group.key)) {
+      return;
+    }
     const selectedKey = normalizeSelectionValue(selections[group.key]);
     if (!selectedKey) {
       return;
@@ -146,14 +167,10 @@ export function resolveNavFilterVariables(
       return;
     }
 
-    const resolved = selectedItem.resolveVariables?.({
-      groupKey: group.key,
-      itemKey: selectedItem.key,
+    const itemVariables = resolveNavFilterItemVariables(
+      selectedItem,
+      group.key,
       selections,
-    });
-    const itemVariables = mergeModelTableQueryVariables(
-      selectedItem.variables,
-      resolved,
     );
     merged = mergeModelTableQueryVariables(merged, itemVariables);
   });

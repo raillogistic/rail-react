@@ -168,6 +168,10 @@ export interface FilterSchema {
  // Nested filter style
  filterInputType?: string;
  availableOperators?: string[];
+ defaultOperator?: string;
+ preferredOperators?: string[];
+ showInQuickFilter?: boolean;
+ priority?: number;
 }
 
 export interface FilterConfig {

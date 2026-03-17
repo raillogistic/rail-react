@@ -52,7 +52,6 @@ export type ModelTableNavFilterResolverContext = {
 export type ModelTableNavFilterItem = {
   key: string;
   label: string;
-  count?: number;
   clear?: boolean;
   variables?: ModelTableNavFilterVariables;
   resolveVariables?: (
@@ -68,6 +67,8 @@ export type ModelTableNavFilterGroup = {
 };
 
 export type ModelTableNavFiltersConfig = {
+  count?: boolean;
+  includeTableVariable?: boolean;
   groups: ModelTableNavFilterGroup[];
 };
 
@@ -554,6 +555,7 @@ export interface BaseModelTableProps<
   className?: string;
   persistenceKey?: string;
   quickSearch?: boolean;
+  quickFilters?: string[];
   topActions?: ModelTableV2TopActionsInput<TSource>;
   children?: React.ReactNode;
   tableConfig?: ModelTableV2TableConfig;

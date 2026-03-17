@@ -279,6 +279,7 @@ export const ScalarFilterInput: React.FC<ScalarFilterInputProps> = ({
  placeholder={`Entrer ${opLabels[opName] || opName}...`}
  disabled={disabled}
  autoFocus={autoFocus}
+ aria-label={ariaLabel}
  min={opName === "month" ? 1 : opName === "day" ? 1 : undefined}
  max={opName === "month" ? 12 : opName === "day" ? 31 : undefined}
  />
@@ -334,6 +335,7 @@ export const ScalarFilterInput: React.FC<ScalarFilterInputProps> = ({
  placeholder={uiHints?.placeholder ?? "Entrer un nombre..."}
  disabled={disabled}
  autoFocus={autoFocus}
+ aria-label={ariaLabel}
  min={uiHints?.minValue}
  max={uiHints?.maxValue}
  step={uiHints?.step}
@@ -366,6 +368,7 @@ export const ScalarFilterInput: React.FC<ScalarFilterInputProps> = ({
  }}
  placeholder='{"clé": "valeur"}'
  disabled={disabled}
+ aria-label={ariaLabel}
  rows={3}
  className="font-mono text-sm"
  />
@@ -393,6 +396,7 @@ export const ScalarFilterInput: React.FC<ScalarFilterInputProps> = ({
  placeholder={uiHints?.placeholder ?? "Entrer une valeur..."}
  disabled={disabled}
  autoFocus={autoFocus}
+ aria-label={ariaLabel}
  />
  );
 };

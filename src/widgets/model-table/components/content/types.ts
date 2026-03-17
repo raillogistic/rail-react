@@ -75,10 +75,14 @@ export type ModelTableContentControllerState<
  filterPanel?: unknown;
  /** Optional nav-filter bar configuration. */
  navFilters?: ModelTableNavFiltersConfig;
+ /** Optional backend query manager name. */
+ queryManager?: string;
  /** Table-level labels/configuration object. */
  tableConfig?: unknown;
  /** Quick-search feature toggle. */
  quickSearch?: boolean;
+ /** Always-visible metadata-driven quick filter fields. */
+ quickFilters?: string[];
  /** Field configuration for toolbar column selector. */
  fields?: BaseModelTableFieldsInput<TSource>;
  /** Enables reverse relationship fields in default table surfaces. */

@@ -39,6 +39,7 @@ const validDechargeTable = (
         order: ["numero", "beneficiaire.nom", "site", "restitutionsCount"],
         locked: ["numero"],
       },
+      quickFilters: ["site", "beneficiaire.nom"],
       relations: {
         beneficiaire: {
           display: "nom",

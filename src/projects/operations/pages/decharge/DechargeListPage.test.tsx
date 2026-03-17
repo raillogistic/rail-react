@@ -27,20 +27,20 @@ describe("DechargeListPage", () => {
     expect(props.navFilters?.groups[0]).toMatchObject({
       key: "status",
       items: [
-        { key: "all", label: "all" },
-        { key: "brouillon", label: "brouillon" },
-        { key: "validated", label: "validated" },
-        { key: "canceled", label: "canceled" },
+        { key: "all" },
+        { key: "brouillon" },
+        { key: "validated" },
+        { key: "canceled" },
       ],
     });
     expect(props.navFilters?.groups[1]).toMatchObject({
       key: "period",
       items: [
-        { key: "all", label: "all" },
-        { key: "today", label: "today" },
-        { key: "this_week", label: "this_week" },
-        { key: "this_month", label: "this_month" },
-        { key: "this_year", label: "this_year" },
+        { key: "all" },
+        { key: "today" },
+        { key: "this_week" },
+        { key: "this_month" },
+        { key: "this_year" },
       ],
     });
   });

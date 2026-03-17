@@ -5,18 +5,20 @@ import { calculateDatePreset } from "@/widgets/model-table/filtering/datePresets
 import type { ModelTableNavFiltersConfig } from "@/widgets/model-table";
 
 const dechargeNavFilters: ModelTableNavFiltersConfig = {
+  count: true,
+  includeTableVariable: true,
   groups: [
     {
       key: "status",
       label: "status",
       defaultItemKey: "all",
+
       items: [
         { key: "all", label: "all", clear: true },
         {
           key: "brouillon",
           label: "Brouillon",
           variables: { where: { statut: { eq: "brouillon" } } },
-          count: 10,
         },
         {
           key: "validated",
@@ -95,6 +97,7 @@ export function DechargeListPageTabs() {
         enabled: true,
       }}
       baseTable={{
+        quickFilters: ["statut", "beneficiaire"],
         fields: { exclude: ["numeroAnnee", "numeroSequence"] },
         tableConfig: {
           title: "Decharges",

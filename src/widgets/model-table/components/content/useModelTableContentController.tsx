@@ -43,12 +43,16 @@ export type UseModelTableContentControllerInput = {
   filterPanel?: ModelTableFilterPanelProps;
   /** Optional nav-filter bar configuration. */
   navFilters?: ModelTableNavFiltersConfig;
+  /** Optional query manager used by table queries. */
+  queryManager?: string;
   /** Optional create-action configuration. */
   create?: ModelTableCreateConfig<any>;
   /** Optional table configuration object. */
   tableConfig?: ModelTableV2TableConfig;
   /** Enables toolbar quick search behavior. */
   quickSearch?: boolean;
+  /** Always-visible metadata-driven quick filter fields. */
+  quickFilters?: string[];
   /** Optional field configuration for toolbar selectors. */
   fields?: import("../../types").BaseModelTableFieldsInput<any>;
   /** Enables reverse relationship fields in default table surfaces. */
@@ -185,9 +189,11 @@ export function useModelTableContentController<
 >({
   filterPanel,
   navFilters,
+  queryManager,
   create,
   tableConfig,
   quickSearch,
+  quickFilters,
   fields,
   showReversed,
   showCount,
@@ -724,8 +730,10 @@ export function useModelTableContentController<
     templateCapabilitiesPending,
     filterPanel,
     navFilters,
+    queryManager,
     tableConfig,
     quickSearch,
+    quickFilters,
     fields: fields as any,
     showReversed,
     showCount,

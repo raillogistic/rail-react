@@ -139,6 +139,7 @@ type DynamicBaseTableContentProps<
   view?: ModelTableV2ViewOptions;
   performance?: ModelTableV2PerformanceOptions;
   quickSearch?: boolean;
+  quickFilters?: string[];
   topActions?: ModelTableV2TopActionsInput<TSource>;
   content?: ModelTableContentConfig<TSource>;
   hideTableOnMobile?: boolean;
@@ -737,6 +738,7 @@ function DynamicBaseTableContent<
   detail,
   tableConfig,
   quickSearch,
+  quickFilters,
   topActions,
   content,
   performance,
@@ -1762,9 +1764,11 @@ function DynamicBaseTableContent<
   const sectionControllerInput: UseModelTableContentControllerInput = {
     filterPanel,
     navFilters,
+    queryManager,
     create,
     tableConfig,
     quickSearch,
+    quickFilters,
     fields: effectiveFields,
     showReversed,
     showCount,
@@ -2157,6 +2161,7 @@ const DynamicModelTableInner = <TSource extends object = Record<string, unknown>
             view={baseTable?.view}
             performance={baseTable?.performance}
             quickSearch={baseTable?.quickSearch ?? true}
+            quickFilters={baseTable?.quickFilters}
             topActions={baseTable?.topActions}
             content={baseTable?.content}
             hideTableOnMobile={baseTable?.hideTableOnMobile ?? true}

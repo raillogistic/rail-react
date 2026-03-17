@@ -19,38 +19,16 @@ import { useTableFilters } from "../hooks/useTableFilters";
 import { useTable } from "../context/TableContext";
 import { FieldSchema } from "../types";
 import { ScalarFilterInput } from "@/widgets/model-table/filtering/components/ScalarFilterInput";
-import type {
- FilterableField,
- FilterOperator,
- FilterBaseType,
-} from "@/widgets/model-table/filtering/types";
 import { cn } from "@/shared/utils";
-import { translateLookupLabelFr } from "./filtering/operatorLabels";
+import {
+ findModelTableFilterCondition,
+ resolveModelTableFilterField,
+} from "./filterFieldResolver";
 
 interface ColumnFilterProps {
  columnId: string;
  field?: FieldSchema;
  hideTrigger?: boolean;
-}
-
-function resolveLookupOperator(option: {
- name?: string;
- lookup?: string;
- lookup_expr?: string;
-}): string {
- if (typeof option.lookup === "string" && option.lookup.trim().length > 0) {
- return option.lookup.trim();
- }
- if (
- typeof option.lookup_expr === "string" &&
- option.lookup_expr.trim().length > 0
- ) {
- return option.lookup_expr.trim();
- }
- const rawName = typeof option.name === "string" ? option.name : "";
- const match = rawName.match(/__([a-zA-Z0-9_]+)$/);
- if (match?.[1]) return match[1];
- return rawName || "exact";
 }
 
 export function ColumnFilter({
@@ -59,7 +37,6 @@ export function ColumnFilter({
  hideTrigger = false,
 }: ColumnFilterProps) {
  const { metadata } = useMetadata();
- const metadataFilters = metadata?.filters ?? [];
  const { activeColumnFilter, setActiveColumnFilter } = useTable();
  const { addFilterCondition, advancedFilters, removeFilterCondition } =
  useTableFilters();
@@ -74,161 +51,28 @@ export function ColumnFilter({
  );
  }, [field, metadata, columnId]);
 
- // 1. Resolve Filter Schema from Metadata
- const filterMeta = useMemo(() => {
- if (!metadata) return null;
- return metadataFilters.find(
- (f) =>
- f.fieldName === resolvedField?.fieldName ||
- f.name === resolvedField?.name ||
- f.fieldName === columnId ||
- f.name === columnId,
- );
- }, [metadata, metadataFilters, resolvedField, columnId]);
-
- const filterFieldName = useMemo(
+ const resolvedFilterField = useMemo(
  () =>
- filterMeta?.name ||
+ resolveModelTableFilterField(
+ metadata,
+ resolvedField?.fieldName || resolvedField?.name || columnId,
+ ),
+ [columnId, metadata, resolvedField?.fieldName, resolvedField?.name],
+ );
+ const filterMeta = resolvedFilterField?.filterMeta ?? null;
+ const filterFieldName =
+ resolvedFilterField?.filterMeta.name ||
  resolvedField?.name ||
  resolvedField?.fieldName ||
- columnId,
- [filterMeta?.name, resolvedField?.name, resolvedField?.fieldName, columnId],
- );
-
- const filterFieldPath = useMemo(() => {
- if (filterFieldName.includes(".")) {
- return filterFieldName.split(".").filter(Boolean);
- }
- if (filterFieldName.includes("__")) {
- return filterFieldName.split("__").filter(Boolean);
- }
- return [filterFieldName];
- }, [filterFieldName]);
-
- const relationSchema = useMemo(() => {
- if (!metadata || !resolvedField?.isRelation) return undefined;
- const candidates = [
- resolvedField.name,
- resolvedField.fieldName,
- filterMeta?.name,
- filterMeta?.fieldName,
- columnId,
- ].filter(Boolean) as string[];
- return metadata.relationships.find((relation) =>
- candidates.some(
- (candidate) =>
- relation.name === candidate || relation.fieldName === candidate,
- ),
- );
- }, [
- metadata,
- resolvedField?.isRelation,
- resolvedField?.name,
- resolvedField?.fieldName,
- filterMeta?.name,
- filterMeta?.fieldName,
- columnId,
- ]);
-
- // 2. Map to FilterableField for ScalarFilterInput
- const filterableField = useMemo<FilterableField | null>(() => {
- if (!resolvedField || !filterMeta) return null;
-
- // Map base type
- let baseType: FilterBaseType = "String";
- if (resolvedField.isNumeric) baseType = "Number";
- else if (resolvedField.isDate) baseType = "Date";
- else if (resolvedField.isDatetime) baseType = "DateTime";
- else if (resolvedField.isBoolean) baseType = "Boolean";
- else if (resolvedField.isJson) baseType = "JSON";
- else if (resolvedField.isRelation) baseType = "Relationship";
-
- // Map operators
- const operators: FilterOperator[] = filterMeta.options.map((opt) => {
- const lookup = resolveLookupOperator(
- opt as { name?: string; lookup?: string; lookup_expr?: string },
- );
- return {
- name: lookup,
- label: translateLookupLabelFr(lookup, opt.label),
- helpText: opt.helpText,
- graphqlType: opt.graphqlType || "String",
- isList:
- Boolean(opt.isList) ||
- lookup === "in" ||
- lookup === "not_in" ||
- lookup === "hasKeys" ||
- lookup === "hasAnyKeys",
- choices: opt.choices,
- };
- });
-
- return {
- name: resolvedField.name,
- fieldName: resolvedField.fieldName,
- fieldLabel: resolvedField.verboseName,
- helpText: resolvedField.helpText,
- baseType,
- graphqlType: resolvedField.graphqlType,
- filterInputType: filterMeta.filterInputType || "String",
- operators,
- defaultOperator: operators[0]?.name || "exact",
- choices: resolvedField.choices, // Pass field choices
- isRelation: resolvedField.isRelation,
- relationConfig: (() => {
- if (!resolvedField.isRelation) return undefined;
- const relatedModelRaw =
- relationSchema?.relatedModel ?? filterMeta?.relatedModel ?? "";
- const [modelApp, modelName] = relatedModelRaw.includes(".")
- ? relatedModelRaw.split(".", 2)
- : ["", relatedModelRaw];
- const relatedModel = relationSchema?.relatedModel || modelName || "";
- return {
- relatedApp: relationSchema?.relatedApp || modelApp || "",
- relatedModel,
- lookupField:
- relationSchema?.lookupField ||
- resolvedField.relationLookupField ||
- "id",
- searchFields:
- relationSchema?.searchFields &&
- relationSchema.searchFields.length > 0
- ? relationSchema.searchFields
- : ["name"],
- };
- })(),
- uiHints: {
- widget: "text", // Default, ScalarFilterInput auto-detects better
- },
- };
- }, [resolvedField, filterMeta, relationSchema]);
+ columnId;
+ const filterFieldPath = resolvedFilterField?.fieldPath ?? [filterFieldName];
+ const filterableField = resolvedFilterField?.filterableField ?? null;
 
  // 3. Current Filter State
- const activeCondition = useMemo(() => {
- const targetPath = filterFieldPath.join(".");
- // Traverse root group to find condition for this field
- const findCondition = (group: any): any => {
- for (const cond of group.conditions) {
- if (cond.type === "condition") {
- const conditionPath = Array.isArray(cond.fieldPath)
- ? cond.fieldPath.join(".")
- : "";
- if (
- conditionPath === targetPath ||
- cond.fieldName === filterFieldName
- ) {
- return cond;
- }
- }
- if (cond.type === "group") {
- const found = findCondition(cond);
- if (found) return found;
- }
- }
- return null;
- };
- return findCondition(advancedFilters.root);
- }, [advancedFilters.root, filterFieldName, filterFieldPath]);
+ const activeCondition = useMemo(
+ () => findModelTableFilterCondition(advancedFilters.root, filterFieldPath),
+ [advancedFilters.root, filterFieldPath],
+ );
 
  const [operator, setOperator] = useState<string>(
  activeCondition?.operator || filterableField?.defaultOperator || "exact",
@@ -321,6 +165,7 @@ export function ColumnFilter({
  )}
  tabIndex={hideTrigger ? -1 : 0}
  aria-hidden={hideTrigger}
+ aria-label={`Filter ${resolvedField.verboseName}`}
  >
  <Filter className={cn("h-3.5 w-3.5", isActive && "fill-current")} />
  </Button>

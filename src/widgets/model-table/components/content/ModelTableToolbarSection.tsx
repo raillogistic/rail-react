@@ -21,8 +21,10 @@ export function ModelTableToolbarSection({
  <TableToolbar
  filterPanel={controller.filterPanel as ModelTableFilterPanelProps | undefined}
  navFilters={controller.navFilters}
+ queryManager={controller.queryManager}
  tableConfig={controller.tableConfig as ModelTableV2TableConfig | undefined}
  quickSearch={controller.quickSearch}
+ quickFilters={controller.quickFilters}
  fields={controller.fields}
  showReversed={controller.showReversed}
  showCount={controller.showCount}

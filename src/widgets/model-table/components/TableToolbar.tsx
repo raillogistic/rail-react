@@ -70,6 +70,7 @@ import {
   ColumnsMenu,
   GroupingMenu,
   NavFiltersBar,
+  QuickFilters,
   QuickSearch,
   ViewOptionsMenu,
 } from "./toolbar";
@@ -98,8 +99,10 @@ import {
 type TableToolbarProps = {
   filterPanel?: ModelTableFilterPanelProps;
   navFilters?: ModelTableNavFiltersConfig;
+  queryManager?: string;
   tableConfig?: ModelTableV2TableConfig;
   quickSearch?: boolean;
+  quickFilters?: string[];
   fields?: BaseModelTableFieldsInput;
   showReversed?: boolean;
   showCount?: boolean;
@@ -120,8 +123,10 @@ type TableToolbarProps = {
 export function TableToolbar({
   filterPanel,
   navFilters,
+  queryManager,
   tableConfig,
   quickSearch,
+  quickFilters,
   fields,
   showReversed,
   showCount,
@@ -264,6 +269,11 @@ export function TableToolbar({
     void ensureCapabilitiesLoaded();
   }, [ensureCapabilitiesLoaded, filterOpen]);
 
+  useEffect(() => {
+    if (!quickFilters?.length) return;
+    void ensureCapabilitiesLoaded();
+  }, [ensureCapabilitiesLoaded, quickFilters]);
+
   // Gestion des colonnes
   const normalizedFieldsConfig = useMemo(
     () => normalizeBaseModelTableFieldsInput(fields),
@@ -397,10 +407,15 @@ export function TableToolbar({
               "ring-1 ring-primary/15 bg-primary/5 rounded-md p-1 -m-1",
           )}
         >
-          {navFilters?.groups.length ? <NavFiltersBar navFilters={navFilters} /> : null}
+          {navFilters?.groups.length ? (
+            <NavFiltersBar
+              navFilters={navFilters}
+              queryManager={queryManager}
+            />
+          ) : null}
           <div className="flex flex-col items-center justify-between gap-3 sm:flex-row w-full">
             {/* Left: Search and Status Indicators */}
-            <div className="flex w-full flex-1 items-center gap-3 sm:w-auto">
+            <div className="flex w-full flex-1 flex-wrap items-start gap-3 sm:w-auto">
               {quickSearch !== false && supportsQuick && (
                 <QuickSearch
                   value={quickSearchValue}
@@ -412,6 +427,7 @@ export function TableToolbar({
                   onFocusChange={setSearchFocused}
                 />
               )}
+              {quickFilters?.length ? <QuickFilters fields={quickFilters} /> : null}
 
               {/* Status Badges - Visible only if something is active */}
               {!isMobile && (hasActiveFilters || hasGroupedRows) && (
