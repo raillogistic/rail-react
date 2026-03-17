@@ -112,7 +112,7 @@ type TableToolbarProps = {
 /**
  * Composant Toolbar pour le ModelTableV2.
  * GÃ¨re la recherche, les filtres, l'affichage des colonnes, le groupement et l'export.
- * Design moderne, responsive et optimisÃ© pour une utilisation intensive.
+ * Design moderne, responsive et optimisé pour une utilisation intensive.
  *
  * @param {ModelTableFilterPanelProps} filterPanel - Configuration du panneau de filtres.
  * @param {ModelTableV2TableConfig} tableConfig - Configuration globale de la table.
@@ -256,7 +256,7 @@ export function TableToolbar({
   const panelConfig = useMemo(
     () => ({
       mode: filterPanel?.mode ?? (isMobile ? "modal" : "drawer"),
-      title: filterPanel?.title ?? "Filtres AvancÃ©s",
+      title: filterPanel?.title ?? "Filtres Avancés",
       side: filterPanel?.side ?? "right",
       widthClassName:
         filterPanel?.widthClassName ?? (isMobile ? "w-full" : "sm:w-[450px]"),
@@ -427,7 +427,9 @@ export function TableToolbar({
                   onFocusChange={setSearchFocused}
                 />
               )}
-              {quickFilters?.length ? <QuickFilters fields={quickFilters} /> : null}
+              {quickFilters?.length ? (
+                <QuickFilters fields={quickFilters} />
+              ) : null}
 
               {/* Status Badges - Visible only if something is active */}
               {!isMobile && (hasActiveFilters || hasGroupedRows) && (
@@ -469,7 +471,7 @@ export function TableToolbar({
                         <span className="relative inline-flex h-2 w-2 bg-primary"></span>
                       </div>
                       <span className="text-[10px] uppercase tracking-wider">
-                        GroupÃ© par {groupingField}
+                        Groupé par {groupingField}
                       </span>
                       <button
                         onClick={() => setGroupingField(null)}
@@ -519,7 +521,7 @@ export function TableToolbar({
                         </Button>
                       </TooltipTrigger>
                       <TooltipContent side="bottom">
-                        Glisser-dÃ©poser
+                        Glisser-déposer
                       </TooltipContent>
                     </Tooltip>
 
@@ -615,7 +617,7 @@ export function TableToolbar({
                         }
                       >
                         <LayoutGrid className="mr-2 h-4 w-4" />
-                        DensitÃ©: {density}
+                        Densité: {density}
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         onClick={() => setWrapCells(!wrapCells)}
@@ -627,8 +629,7 @@ export function TableToolbar({
                         onClick={() => setDragModeEnabled(!dragModeEnabled)}
                       >
                         <GripVertical className="mr-2 h-4 w-4" />
-                        Mode Glisser:{" "}
-                        {dragModeEnabled ? "ActivÃ©" : "DÃ©sactivÃ©"}
+                        Mode Glisser: {dragModeEnabled ? "Activé" : "Désactivé"}
                       </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>

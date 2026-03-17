@@ -293,7 +293,7 @@ async function fetchTemplateBlob(
     credentials: "include",
   });
   if (!response.ok) {
-    let detail = "Ã‰chec de gÃ©nÃ©ration du template.";
+    let detail = "Ã‰chec de génération du template.";
     try {
       const payload = (await response.json()) as {
         error?: string;
@@ -332,7 +332,7 @@ async function mergeExcelBlobs(blobs: Blob[], rowIds: string[]): Promise<Blob> {
   }
 
   if (!mergedWorkbook.SheetNames.length) {
-    throw new Error("Aucune feuille Excel n'a Ã©tÃ© gÃ©nÃ©rÃ©e.");
+    throw new Error("Aucune feuille Excel n'a été générée.");
   }
   const mergedBytes = XLSX.write(mergedWorkbook, {
     type: "array",
@@ -353,7 +353,7 @@ export async function executeTemplateForRows(
 ): Promise<{ templateType: TemplateActionType; count: number }> {
   const orderedIds = rowIds.filter(Boolean);
   if (!orderedIds.length) {
-    throw new Error("SÃ©lectionnez au moins une ligne.");
+    throw new Error("Sélectionnez au moins une ligne.");
   }
 
   const templateType = normalizeTemplateType(template);
