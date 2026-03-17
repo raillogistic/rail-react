@@ -116,6 +116,7 @@ export interface ChoiceFieldConfig extends BaseFieldConfig {
 export interface QueryChoiceFieldConfig extends BaseFieldConfig {
  type: "select-query";
  multiple?: boolean;
+ selectedDisplay?: "badges" | "count";
  placeholder?: string;
  debounceMs?: number;
  loadOptions?: (

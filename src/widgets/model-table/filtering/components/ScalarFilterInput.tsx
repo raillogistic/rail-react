@@ -57,6 +57,7 @@ export interface ScalarFilterInputProps {
  disabled?: boolean;
  autoFocus?: boolean;
  ariaLabel?: string;
+ appearance?: "default" | "toolbar";
 }
 
 export const ScalarFilterInput: React.FC<ScalarFilterInputProps> = ({
@@ -67,9 +68,11 @@ export const ScalarFilterInput: React.FC<ScalarFilterInputProps> = ({
  disabled,
  autoFocus,
  ariaLabel,
+ appearance = "default",
 }) => {
  const { baseType, uiHints, choices } = field;
  const { name: opName, isList } = operator;
+ const isToolbar = appearance === "toolbar";
  const isBooleanLike =
  baseType === "Boolean" ||
  String(field.filterInputType ?? "")
@@ -120,8 +123,12 @@ export const ScalarFilterInput: React.FC<ScalarFilterInputProps> = ({
  type: "select-query",
  relatedModel: fullModel,
  multiple: isList,
- className:
+ selectedDisplay: isToolbar && isList ? "count" : "badges",
+ className: cn(
  "py-0 [&>div:first-child]:hidden [&_[data-slot=button]]:min-h-8 [&_[data-slot=button]]:h-8 [&_[data-slot=button]]:py-0",
+ isToolbar &&
+ "[&_[data-slot=button]]:border-0 [&_[data-slot=button]]:bg-transparent [&_[data-slot=button]]:px-0 [&_[data-slot=button]]:shadow-none [&_[data-slot=button]]:focus-visible:ring-0",
+ ),
  placeholder: uiHints?.placeholder ?? "Rechercher...",
  graphql: {
  listFieldName: listFieldName.toLowerCase(),
@@ -136,6 +143,7 @@ export const ScalarFilterInput: React.FC<ScalarFilterInputProps> = ({
  field.relationConfig,
  isList,
  uiHints?.placeholder,
+ isToolbar,
  ]);
 
  const relationshipMockField = React.useMemo(
@@ -187,6 +195,7 @@ export const ScalarFilterInput: React.FC<ScalarFilterInputProps> = ({
  value={value ?? []}
  onChange={onChange}
  disabled={disabled}
+ appearance={appearance}
  placeholder={uiHints?.placeholder ?? "Sélectionner des valeurs..."}
  />
  );
@@ -197,6 +206,7 @@ export const ScalarFilterInput: React.FC<ScalarFilterInputProps> = ({
  value={value}
  onChange={onChange}
  disabled={disabled}
+ appearance={appearance}
  placeholder={uiHints?.placeholder ?? "Sélectionner..."}
  />
  );
@@ -411,6 +421,7 @@ interface SingleSelectChoicesProps {
  onChange: (value: string | undefined) => void;
  disabled?: boolean;
  placeholder?: string;
+ appearance?: "default" | "toolbar";
 }
 
 const SingleSelectChoices: React.FC<SingleSelectChoicesProps> = ({
@@ -465,6 +476,7 @@ interface MultiSelectChoicesProps {
  onChange: (value: string[]) => void;
  disabled?: boolean;
  placeholder?: string;
+ appearance?: "default" | "toolbar";
 }
 
 const MultiSelectChoices: React.FC<MultiSelectChoicesProps> = ({
@@ -473,9 +485,11 @@ const MultiSelectChoices: React.FC<MultiSelectChoicesProps> = ({
  onChange,
  disabled,
  placeholder,
+ appearance = "default",
 }) => {
- const [open, setOpen] = useState(false);
- const [search, setSearch] = useState("");
+  const [open, setOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const isToolbar = appearance === "toolbar";
 
  const filteredChoices = search
  ? choices.filter((c) =>
@@ -509,8 +523,9 @@ const MultiSelectChoices: React.FC<MultiSelectChoicesProps> = ({
  <span className="text-muted-foreground">{placeholder}</span>
  ) : (
  <span className="truncate">
- {selectedLabels.join(", ")}
- {value.length > 3 &&` +${value.length - 3} de plus`}
+ {isToolbar
+ ? `${value.length} selected`
+ : `${selectedLabels.join(", ")}${value.length > 3 ? ` +${value.length - 3} de plus` : ""}`}
  </span>
  )}
  <Search className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -545,7 +560,7 @@ const MultiSelectChoices: React.FC<MultiSelectChoicesProps> = ({
  </PopoverContent>
  </Popover>
 
- {value.length > 0 && (
+ {!isToolbar && value.length > 0 && (
  <div className="flex flex-wrap gap-1">
  {value.map((v) => {
  const choice = choices.find((c) => c.value === v);
@@ -898,3 +913,7 @@ const NumberTagInput: React.FC<NumberTagInputProps> = ({
 };
 
 export default ScalarFilterInput;
+
+
+
+

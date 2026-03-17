@@ -545,6 +545,9 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
       ),
     [options, selectedValues],
   );
+  const selectedDisplay = config.selectedDisplay ?? "badges";
+  const selectionSummary =
+    selectedValues.length > 0 ? `${selectedValues.length} selected` : null;
   const hasInlineModelTarget = Boolean(inlineAppName && inlineModelName);
   const inlineButtonVisible =
     inlineCreationEnabled &&
@@ -593,24 +596,30 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
                        <Database className="mr-1 size-4 text-primary/40 shrink-0" />
                     )}
                     {selectedOptions.length > 0 ? (
-                      selectedOptions.map((opt) => (
-                        <Badge
-                          key={opt.value}
-                          variant="secondary"
-                          className="group/badge h-7 rounded-lg bg-primary/5 text-primary hover:bg-primary/10 transition-all border-none px-2.5 text-[11.5px] font-bold"
-                        >
-                          {opt.label}
-                          {config.multiple && (
-                            <X
-                              className="ml-2 size-3 cursor-pointer opacity-40 group-hover/badge:opacity-100 transition-opacity"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                toggle(opt.value);
-                              }}
-                            />
-                          )}
-                        </Badge>
-                      ))
+                      selectedDisplay === "count" && config.multiple ? (
+                        <span className="rounded-lg bg-primary/5 px-2.5 py-1 text-[11.5px] font-bold text-primary">
+                          {selectionSummary}
+                        </span>
+                      ) : (
+                        selectedOptions.map((opt) => (
+                          <Badge
+                            key={opt.value}
+                            variant="secondary"
+                            className="group/badge h-7 rounded-lg bg-primary/5 text-primary hover:bg-primary/10 transition-all border-none px-2.5 text-[11.5px] font-bold"
+                          >
+                            {opt.label}
+                            {config.multiple && (
+                              <X
+                                className="ml-2 size-3 cursor-pointer opacity-40 group-hover/badge:opacity-100 transition-opacity"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  toggle(opt.value);
+                                }}
+                              />
+                            )}
+                          </Badge>
+                        ))
+                      )
                     ) : (
                       <span className="text-muted-foreground/60 font-medium">
                         {config.placeholder ?? "Rechercher une relation..."}

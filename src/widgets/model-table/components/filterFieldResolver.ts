@@ -23,6 +23,36 @@ export type ResolvedModelTableFilterField = {
   label: string;
 };
 
+function resolveDefaultOperator(
+  filterMeta: FilterSchema,
+  operators: FilterOperator[],
+  baseType: FilterBaseType,
+  hasChoices: boolean,
+): string {
+  if (baseType === "Relationship" || hasChoices) {
+    const multiOperator = operators.find(
+      (operator) => operator.name === "in",
+    );
+    if (multiOperator) {
+      return multiOperator.name;
+    }
+  }
+
+  return (
+    filterMeta.defaultOperator ||
+    operators[0]?.name ||
+    (filterMeta.options[0]
+      ? resolveLookupOperator(
+          filterMeta.options[0] as {
+            name?: string;
+            lookup?: string;
+            lookup_expr?: string;
+          },
+        )
+      : "exact")
+  );
+}
+
 function normalizeFilterPath(value: string): string {
   return value.replace(/__/g, ".").split(".").filter(Boolean).join(".");
 }
@@ -258,6 +288,12 @@ export function resolveModelTableFilterField(
     relationSchema,
   );
   const operators = buildOperators(filterMeta);
+  const defaultOperator = resolveDefaultOperator(
+    filterMeta,
+    operators,
+    baseType,
+    Boolean(resolvedField?.choices?.length),
+  );
   const relatedModelRaw =
     relationSchema?.relatedModel ?? filterMeta.relatedModel ?? "";
   const [relatedAppFromMeta, relatedModelFromMeta] = relatedModelRaw.includes(".")
@@ -280,18 +316,7 @@ export function resolveModelTableFilterField(
       graphqlType: resolvedField?.graphqlType || filterMeta.baseType || "String",
       filterInputType: filterMeta.filterInputType || "String",
       operators,
-      defaultOperator:
-        filterMeta.defaultOperator ||
-        operators[0]?.name ||
-        (filterMeta.options[0]
-          ? resolveLookupOperator(
-              filterMeta.options[0] as {
-                name?: string;
-                lookup?: string;
-                lookup_expr?: string;
-              },
-            )
-          : "exact"),
+      defaultOperator,
       choices: resolvedField?.choices ?? undefined,
       isRelation: baseType === "Relationship",
       relationConfig:

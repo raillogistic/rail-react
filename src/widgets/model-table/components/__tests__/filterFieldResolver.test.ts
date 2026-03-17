@@ -77,6 +77,31 @@ const metadata = {
       filterInputType: "StringFilter",
       availableOperators: ["icontains"],
     },
+    {
+      name: "profile",
+      fieldName: "profile",
+      fieldLabel: "Profile",
+      baseType: "Relationship",
+      isNested: false,
+      relatedModel: "auth.Profile",
+      options: [
+        {
+          name: "profile__in",
+          lookup: "in",
+          label: "In",
+          isList: true,
+        },
+        {
+          name: "profile__exact",
+          lookup: "exact",
+          label: "Exact",
+          isList: false,
+        },
+      ],
+      filterInputType: "RelationshipFilter",
+      availableOperators: ["in", "exact"],
+      defaultOperator: "exact",
+    },
   ],
   fields: [
     {
@@ -221,6 +246,18 @@ describe("resolveModelTableFilterField", () => {
     expect(resolved?.fieldPath).toEqual(["profile", "email"]);
     expect(resolved?.fieldName).toBe("email");
     expect(resolved?.filterableField.baseType).toBe("String");
+  });
+
+  it("prefers the in operator for relation quick filters", () => {
+    const resolved = resolveModelTableFilterField(metadata, "profile");
+
+    expect(resolved).not.toBeNull();
+    expect(resolved?.filterableField.baseType).toBe("Relationship");
+    expect(resolved?.filterableField.defaultOperator).toBe("in");
+    expect(
+      resolved?.filterableField.operators.find((operator) => operator.name === "in")
+        ?.isList,
+    ).toBe(true);
   });
 
   it("returns null for unknown filters", () => {
