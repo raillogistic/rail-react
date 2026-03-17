@@ -269,6 +269,13 @@ export interface TemplateInfo {
     | null;
 }
 
+export interface DetailBootstrapMinimal {
+  layoutVersion: string;
+  defaultIncludeFields: string[];
+  defaultExcludeFields: string[];
+  metadataVersion?: string;
+}
+
 export interface ModelMetadata {
   app: string;
   model: string;

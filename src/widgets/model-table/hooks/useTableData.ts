@@ -7,6 +7,7 @@ import {
 import { useMetadata } from "../context/MetadataContext";
 import { useTable } from "../context/TableContext";
 import { useDebouncedValue } from "./useDebouncedValue";
+import { mergeModelTableQueryVariables } from "../utils";
 import type {
  BaseModelTableFieldsInput,
  BaseModelTableRelationConfig,
@@ -22,6 +23,7 @@ export type TableDataConfig = {
  dataMode?: "pagination" | "infinite";
  visibleAccessors?: string[];
  requiredAccessors?: string[];
+ navFilterVariables?: Record<string, unknown>;
 };
 
 type FilterVariablesInput =
@@ -160,7 +162,10 @@ export function useTableData(config?: TableDataConfig) {
  );
 
  const variables = useMemo<ModelPageQueryVariablesInput>(() => {
- const filters = filterVariables as FilterVariablesInput;
+ const filters = mergeModelTableQueryVariables(
+ filterVariables,
+ config?.navFilterVariables,
+ ) as FilterVariablesInput;
  const supportsQuick = !!metadata?.filterConfig?.supportsQuick;
 
  return {
@@ -174,6 +179,7 @@ export function useTableData(config?: TableDataConfig) {
  skipCount: config?.skipCount ?? false,
  };
  }, [
+ config?.navFilterVariables,
  config?.skipCount,
  debouncedQuickSearch,
  filterVariables,

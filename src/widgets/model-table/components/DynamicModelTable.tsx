@@ -58,6 +58,7 @@ import type {
   ModelTableCreateConfig,
   ModelTableDetailConfig,
   ModelTableFilterPanelProps,
+  ModelTableNavFiltersConfig,
   ModelTableUpdateConfig,
   ModelTableV2ExpandConfig,
   ModelTableV2TopActionsInput,
@@ -112,6 +113,9 @@ import {
   getImplicitModelTableFieldExclusions,
   getSyntheticRelationCountSource,
   normalizeBaseModelTableFieldsInput,
+  mergeModelTableQueryVariables,
+  resolveInitialNavFilterSelections,
+  resolveNavFilterVariables,
   toGraphqlFieldName,
 } from "../utils";
 import {
@@ -126,6 +130,7 @@ type DynamicBaseTableContentProps<
   TSource extends object = Record<string, unknown>,
 > = {
   persistenceKey?: string;
+  navFilters?: ModelTableNavFiltersConfig;
   filterPanel?: ModelTableFilterPanelProps;
   create?: ModelTableCreateConfig<TSource>;
   update?: ModelTableUpdateConfig<TSource>;
@@ -725,6 +730,7 @@ function DynamicBaseTableContent<
   TSource extends object = Record<string, unknown>,
 >({
   persistenceKey,
+  navFilters,
   filterPanel,
   create,
   update,
@@ -791,6 +797,7 @@ function DynamicBaseTableContent<
     queryPage,
     pagination,
     error: dataError,
+    navFilterSelections,
   } = useTable();
   const { advancedFilters, filterVariables, setAdvancedFilters } =
     useTableFilters();
@@ -1110,13 +1117,23 @@ function DynamicBaseTableContent<
     defaultHiddenColumnIds,
     persistedVisibility: persistedState?.columnVisibility,
   });
+  const resolvedNavFilterVariables = useMemo(
+    () => resolveNavFilterVariables(navFilters, navFilterSelections),
+    [navFilterSelections, navFilters],
+  );
+  const mergedFilterVariables = useMemo(
+    () =>
+      mergeModelTableQueryVariables(filterVariables, resolvedNavFilterVariables),
+    [filterVariables, resolvedNavFilterVariables],
+  );
 
   const dataConfig = useMemo(
     () => ({
       ...queryConfig,
       enabled: persistenceHydrated,
+      navFilterVariables: resolvedNavFilterVariables,
     }),
-    [persistenceHydrated, queryConfig],
+    [persistenceHydrated, queryConfig, resolvedNavFilterVariables],
   );
   const { refetch } = useTableData(dataConfig);
   useEffect(() => {
@@ -1266,14 +1283,14 @@ function DynamicBaseTableContent<
   ]);
 
   const orderBy = useMemo(() => {
-    const variableOrderBy = isRecord(filterVariables)
-      ? toOrderByEntries(filterVariables.orderBy)
+    const variableOrderBy = isRecord(mergedFilterVariables)
+      ? toOrderByEntries(mergedFilterVariables.orderBy)
       : [];
     if (variableOrderBy.length > 0) {
       return variableOrderBy;
     }
     return resolveOrderByWithFallback(advancedFilters.orderBy);
-  }, [advancedFilters.orderBy, filterVariables]);
+  }, [advancedFilters.orderBy, mergedFilterVariables]);
 
   const fieldLookup = useMemo(() => {
     const lookup = new Map<string, FieldSchema>();
@@ -1744,6 +1761,7 @@ function DynamicBaseTableContent<
 
   const sectionControllerInput: UseModelTableContentControllerInput = {
     filterPanel,
+    navFilters,
     create,
     tableConfig,
     quickSearch,
@@ -1998,6 +2016,7 @@ const DynamicModelTableInner = <TSource extends object = Record<string, unknown>
     update,
     detail,
     baseTable,
+    navFilters,
     devtools,
     initVariables,
   }: DynamicModelTableProps<TSource>,
@@ -2011,6 +2030,10 @@ const DynamicModelTableInner = <TSource extends object = Record<string, unknown>
   const initialTableState = useMemo(
     () => resolveInitialTableState(initVariables),
     [initVariables],
+  );
+  const initialNavFilterSelections = useMemo(
+    () => resolveInitialNavFilterSelections(navFilters),
+    [navFilters],
   );
   const resolvedFilterPanel: ModelTableFilterPanelProps = {
     ...(filterPanel ?? {}),
@@ -2120,10 +2143,12 @@ const DynamicModelTableInner = <TSource extends object = Record<string, unknown>
             },
             advancedFilters: initialTableState.advancedFilters,
             filterVariables: initialTableState.filterVariables,
+            navFilterSelections: initialNavFilterSelections,
           }}
         >
           <DynamicBaseTableContent<TSource>
             persistenceKey={effectivePersistenceKey}
+            navFilters={navFilters}
             filterPanel={resolvedFilterPanel}
             create={create}
             update={update}

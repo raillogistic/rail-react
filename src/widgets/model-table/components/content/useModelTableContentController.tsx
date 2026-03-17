@@ -17,6 +17,7 @@ import type {
   ModelTableCreateContext,
   ModelTableCreateFormOverrides,
   ModelTableFilterPanelProps,
+  ModelTableNavFiltersConfig,
   ModelTableV2TableConfig,
   ModelTableV2TopAction,
   ModelTableV2TopActionsInput,
@@ -40,6 +41,8 @@ import type {
 export type UseModelTableContentControllerInput = {
   /** Optional filter-panel configuration. */
   filterPanel?: ModelTableFilterPanelProps;
+  /** Optional nav-filter bar configuration. */
+  navFilters?: ModelTableNavFiltersConfig;
   /** Optional create-action configuration. */
   create?: ModelTableCreateConfig<any>;
   /** Optional table configuration object. */
@@ -181,6 +184,7 @@ export function useModelTableContentController<
   TSource extends object = Record<string, unknown>,
 >({
   filterPanel,
+  navFilters,
   create,
   tableConfig,
   quickSearch,
@@ -719,6 +723,7 @@ export function useModelTableContentController<
     capabilitiesLoaded: actionDetailsLoaded,
     templateCapabilitiesPending,
     filterPanel,
+    navFilters,
     tableConfig,
     quickSearch,
     fields: fields as any,

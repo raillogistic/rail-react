@@ -10,7 +10,10 @@ import type {
  ModelSchema,
  TemplateInfo,
 } from "../../types";
-import type { ModelTableCreateDrawerDirection } from "../../config/types";
+import type {
+ ModelTableCreateDrawerDirection,
+ ModelTableNavFiltersConfig,
+} from "../../config/types";
 
 type ResolvedModelTableFormValues<TSource extends object> =
  ModelFormValueShape<TSource> extends Record<string, unknown>
@@ -70,6 +73,8 @@ export type ModelTableContentControllerState<
  templateCapabilitiesPending: boolean;
  /** Toolbar filter panel configuration. */
  filterPanel?: unknown;
+ /** Optional nav-filter bar configuration. */
+ navFilters?: ModelTableNavFiltersConfig;
  /** Table-level labels/configuration object. */
  tableConfig?: unknown;
  /** Quick-search feature toggle. */

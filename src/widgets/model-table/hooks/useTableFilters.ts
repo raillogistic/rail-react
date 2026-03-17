@@ -46,8 +46,11 @@ export function useTableFilters() {
  quickSearch,
  advancedFilters,
  filterVariables,
+ navFilterSelections,
  setQuickSearch,
  setAdvancedFilters: setAdvancedFiltersRaw,
+ setNavFilterSelection: setNavFilterSelectionRaw,
+ resetNavFilters,
  // pagination often needed to reset page on filter change (handled in reducer)
  } = useTable();
 
@@ -79,8 +82,9 @@ export function useTableFilters() {
 
  const clearAllFilters = useCallback(() => {
  setQuickSearch("");
+ resetNavFilters();
  handleAdvancedFiltersChange(createInitialFilterState());
- }, [setQuickSearch, handleAdvancedFiltersChange]);
+ }, [resetNavFilters, setQuickSearch, handleAdvancedFiltersChange]);
 
  const addFilterCondition = useCallback(
  (input: AddConditionInput) => {
@@ -180,12 +184,22 @@ export function useTableFilters() {
  );
  const hasActiveFilters = !!quickSearch || activeFilterStats.hasActiveFilters;
 
+ const handleNavFilterSelectionChange = useCallback(
+ (groupKey: string, itemKey: string | null) => {
+ setNavFilterSelectionRaw(groupKey, itemKey);
+ },
+ [setNavFilterSelectionRaw],
+ );
+
  return {
  quickSearch,
  advancedFilters,
  filterVariables,
+ navFilterSelections,
  setQuickSearch: handleQuickSearchChange,
  setAdvancedFilters: handleAdvancedFiltersChange,
+ setNavFilterSelection: handleNavFilterSelectionChange,
+ resetNavFilters,
  clearAllFilters,
  hasActiveFilters,
  activeFilterStats,

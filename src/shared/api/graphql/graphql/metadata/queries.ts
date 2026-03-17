@@ -378,6 +378,152 @@ export const TABLE_ACTION_DETAILS_METADATA_QUERY = gql`
   }
 `;
 
+export const DETAIL_BOOTSTRAP_METADATA_QUERY = gql`
+  query DetailBootstrapModelMetadata(
+    $app: String!
+    $model: String!
+    $objectId: ID
+  ) {
+    modelSchema(app: $app, model: $model, objectId: $objectId) {
+      app
+      model
+      verboseName
+      verboseNamePlural
+      primaryKey
+      ordering
+      fields {
+        name
+        fieldName
+        verboseName
+        helpText
+        fieldType
+        graphqlType
+        readable
+        editable
+        writable
+        visibility
+        isPrimaryKey
+        isIndexed
+        isRelation
+        isComputed
+        isJson
+        isDate
+        isDatetime
+        isNumeric
+        isBoolean
+        isText
+        isRichText
+        customMetadata
+      }
+      relationships {
+        name
+        fieldName
+        verboseName
+        helpText
+        relatedApp
+        relatedModel
+        relatedModelVerbose
+        relationType
+        isReverse
+        isToOne
+        isToMany
+        lookupField
+        searchFields
+        readable
+        writable
+        canCreateInline
+        customMetadata
+      }
+      permissions {
+        canList
+        canRetrieve
+        canCreate
+        canUpdate
+        canDelete
+        canBulkCreate
+        canBulkUpdate
+        canBulkDelete
+        canExport
+        denialReasons
+      }
+      fieldGroups {
+        key
+        label
+        description
+        fields
+        collapsed
+      }
+      metadataVersion
+      customMetadata
+    }
+    detailBootstrapMinimal(app: $app, model: $model, objectId: $objectId) {
+      layoutVersion
+      defaultIncludeFields
+      defaultExcludeFields
+      metadataVersion
+    }
+  }
+`;
+
+export const DETAIL_ACTION_DETAILS_METADATA_QUERY = gql`
+  query DetailActionDetailsModelMetadata(
+    $app: String!
+    $model: String!
+    $objectId: ID
+  ) {
+    modelSchema(app: $app, model: $model, objectId: $objectId) {
+      app
+      model
+      mutations {
+        name
+        operation
+        description
+        methodName
+        inputFields {
+          name
+          fieldName
+          fieldType
+          graphqlType
+          required
+          defaultValue
+          description
+          choices {
+            value
+            label
+          }
+          relatedModel
+        }
+        inputType
+        allowed
+        requiredPermissions
+        reason
+        mutationType
+        modelName
+        successMessage
+        errorMessages
+        action
+      }
+      templates {
+        key
+        templateType
+        title
+        description
+        endpoint
+        urlPath
+        guard
+        requireAuthentication
+        roles
+        permissions
+        allowed
+        denialReason
+        allowClientData
+        clientDataFields
+        clientDataSchema
+      }
+    }
+  }
+`;
+
 export const CUSTOM_MUTATION_METADATA_QUERY = gql`
   query CustomMutationMetadata(
     $app: String!

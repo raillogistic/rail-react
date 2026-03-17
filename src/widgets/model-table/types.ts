@@ -362,6 +362,10 @@ export interface ColumnWidthState {
  [columnId: string]: number;
 }
 
+export interface NavFilterSelectionState {
+ [groupKey: string]: string | null;
+}
+
 export interface TableContextState {
  // Data
  data: Record<string, unknown>[];
@@ -392,6 +396,7 @@ export interface TableContextState {
  quickSearch: string;
  advancedFilters: FilterFormState;
  filterVariables?: Record<string, unknown>; // FilterQueryVariables
+ navFilterSelections: NavFilterSelectionState;
 
  // Actions
  setPage: (page: number) => void;
@@ -408,6 +413,8 @@ export interface TableContextState {
  setWrapCells: (wrap: boolean) => void;
  setQuickSearch: (term: string) => void;
  setAdvancedFilters: (filters: FilterFormState, variables?: Record<string, unknown>) => void;
+ setNavFilterSelection: (groupKey: string, itemKey: string | null) => void;
+ resetNavFilters: () => void;
  refresh: () => void;
 
  // Internal Data Fetching Hooks

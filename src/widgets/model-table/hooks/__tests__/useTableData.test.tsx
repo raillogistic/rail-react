@@ -41,7 +41,13 @@ vi.mock("../../context/MetadataContext", async () => {
  * Harness hook to run table data fetch logic and expose table context state.
  */
 function useTableDataHarness() {
- useTableData();
+ useTableData({
+ navFilterVariables: {
+ where: { status: { eq: "PAID" } },
+ presets: ["today"],
+ orderBy: ["-username"],
+ },
+ });
  return useTable();
 }
 
@@ -103,7 +109,9 @@ describe("useTableData", () => {
  }),
  variables: expect.objectContaining({
  page: 1,
- orderBy: ["-id"],
+ orderBy: ["-username"],
+ where: { status: { eq: "PAID" } },
+ presets: ["today"],
  skipCount: false,
  }),
  apollo: expect.objectContaining({

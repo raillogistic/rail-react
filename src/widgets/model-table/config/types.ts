@@ -41,6 +41,35 @@ export type ModelTableFilterPanelProps = FilterPanelOptions &
     import("@/widgets/model-table/filtering/FilterPanel").FilterPanelProps
   >;
 
+export type ModelTableNavFilterVariables = Record<string, unknown>;
+
+export type ModelTableNavFilterResolverContext = {
+  groupKey: string;
+  itemKey: string;
+  selections: Record<string, string | null>;
+};
+
+export type ModelTableNavFilterItem = {
+  key: string;
+  label: string;
+  clear?: boolean;
+  variables?: ModelTableNavFilterVariables;
+  resolveVariables?: (
+    context: ModelTableNavFilterResolverContext,
+  ) => ModelTableNavFilterVariables | undefined;
+};
+
+export type ModelTableNavFilterGroup = {
+  key: string;
+  label?: string;
+  defaultItemKey?: string;
+  items: ModelTableNavFilterItem[];
+};
+
+export type ModelTableNavFiltersConfig = {
+  groups: ModelTableNavFilterGroup[];
+};
+
 /**
  * Supported update-action presentation modes.
  */
@@ -552,6 +581,7 @@ export interface ModelTableV2Props<
 > {
   app: string;
   model: string;
+  navFilters?: ModelTableNavFiltersConfig;
   filterPanel?: ModelTableFilterPanelProps;
   create?: ModelTableCreateConfig<TSource>;
   update?: ModelTableUpdateConfig<TSource>;

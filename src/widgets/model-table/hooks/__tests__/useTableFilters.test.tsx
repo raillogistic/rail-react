@@ -89,6 +89,7 @@ describe("useTableFilters", () => {
  <TableProvider
  initialState={{
  quickSearch: "paid",
+ navFilterSelections: { status: "all" },
  advancedFilters: makeState({
  root: {
  id: "root",
@@ -127,10 +128,15 @@ describe("useTableFilters", () => {
  const { result } = renderHook(() => useTableFilters(), { wrapper });
 
  act(() => {
+ result.current.setNavFilterSelection("status", "validated");
+ });
+
+ act(() => {
  result.current.clearAllFilters();
  });
 
  expect(result.current.quickSearch).toBe("");
+ expect(result.current.navFilterSelections).toEqual({ status: "all" });
  expect(result.current.advancedFilters.root.conditions).toHaveLength(0);
  expect(result.current.advancedFilters.selectedPresets).toHaveLength(0);
  expect(result.current.advancedFilters.relationFunctions).toHaveLength(0);

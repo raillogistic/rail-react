@@ -110,9 +110,11 @@ const buildRootFieldOrder = (metadata: ModelSchema, columnOrder: string[]) => {
 };
 
 export function ModelTableExportDialog({
+  filterVariablesOverride,
   labels,
   trigger,
 }: {
+  filterVariablesOverride?: FilterQueryVariables;
   labels?: {
     buttonAria?: string;
     title?: string;
@@ -140,7 +142,9 @@ export function ModelTableExportDialog({
   const { metadata, actionBootstrapLoading } = useMetadata();
   const { columnOrder, columnVisibility, filterVariables, groupingField } =
     useTable();
-  const filterPayload = filterVariables as FilterQueryVariables | undefined;
+  const filterPayload =
+    filterVariablesOverride ??
+    (filterVariables as FilterQueryVariables | undefined);
 
   const [open, setOpen] = useState(false);
   const [fileExtension, setFileExtension] = useState<FileExtension>("xlsx");

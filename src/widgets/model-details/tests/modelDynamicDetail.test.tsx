@@ -11,7 +11,7 @@ const { apolloClientMock } = vi.hoisted(() => ({
   },
 }));
 
-const useMetadataMock = vi.fn();
+const useDetailMetadataMock = vi.fn();
 const fetchMetadataSnapshotMock = vi.fn();
 const useModelSingleQueryMock = vi.fn();
 const useModelDeleteMutationMock = vi.fn();
@@ -28,9 +28,12 @@ vi.mock("@apollo/client", async () => {
 });
 
 vi.mock("@/shared/api/graphql/graphql/metadata/gateway", () => ({
-  useMetadata: (...args: unknown[]) => useMetadataMock(...args),
   fetchMetadataSnapshot: (...args: unknown[]) =>
     fetchMetadataSnapshotMock(...args),
+}));
+
+vi.mock("@/widgets/model-details/hooks/useDetailMetadata", () => ({
+  useDetailMetadata: (...args: unknown[]) => useDetailMetadataMock(...args),
 }));
 
 vi.mock("@/shared/api/graphql/graphql/queries/hooks/useModelSingleQuery", () => ({
@@ -206,10 +209,16 @@ function setupDefaultMocks(overrides?: {
       },
     });
 
-  useMetadataMock.mockReturnValue({
+  useDetailMetadataMock.mockReturnValue({
     metadata,
+    defaultIncludeFields: [],
     loading: false,
     error: undefined,
+    actionDetailsLoading: false,
+    actionDetailsLoaded: true,
+    actionDetailsError: undefined,
+    ensureActionDetailsLoaded: vi.fn(),
+    scheduleActionDetailsPrefetch: vi.fn(),
     refetch: metadataRefetch,
   });
 

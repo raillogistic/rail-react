@@ -9,6 +9,7 @@ import {
   TableContextState,
   ColumnVisibilityState,
   ColumnWidthState,
+  NavFilterSelectionState,
   TableDensity,
   QueryPageData,
 } from "../types";
@@ -45,6 +46,8 @@ type TableAction =
       filters: FilterFormState;
       variables?: Record<string, unknown>;
     }
+  | { type: "SET_NAV_FILTER_SELECTION"; groupKey: string; itemKey: string | null }
+  | { type: "RESET_NAV_FILTERS"; selections: NavFilterSelectionState }
   | {
       type: "SET_DATA";
       data: Record<string, unknown>[];
@@ -113,6 +116,7 @@ const initialState: TableContextState = {
     relationFunctions: [],
   },
   filterVariables: {},
+  navFilterSelections: {},
   // Placeholders, will be overwritten by Provider
   setPage: () => {},
   setPerPage: () => {},
@@ -128,6 +132,8 @@ const initialState: TableContextState = {
   setWrapCells: () => {},
   setQuickSearch: () => {},
   setAdvancedFilters: () => {},
+  setNavFilterSelection: () => {},
+  resetNavFilters: () => {},
   refresh: () => {},
   _setPageInfo: () => {},
   _setQueryPage: () => {},
@@ -231,6 +237,28 @@ function tableReducer(
         ...state,
         advancedFilters: normalizeFilterFormState(action.filters),
         filterVariables: action.variables,
+        pagination: { ...state.pagination, page: 1 },
+      };
+    case "SET_NAV_FILTER_SELECTION": {
+      const nextSelections = {
+        ...state.navFilterSelections,
+        [action.groupKey]: action.itemKey,
+      };
+      if (
+        state.navFilterSelections[action.groupKey] === action.itemKey
+      ) {
+        return state;
+      }
+      return {
+        ...state,
+        navFilterSelections: nextSelections,
+        pagination: { ...state.pagination, page: 1 },
+      };
+    }
+    case "RESET_NAV_FILTERS":
+      return {
+        ...state,
+        navFilterSelections: action.selections,
         pagination: { ...state.pagination, page: 1 },
       };
     case "SET_DATA":
@@ -354,6 +382,19 @@ export function TableProvider({
       (filters: FilterFormState, variables?: Record<string, unknown>) =>
         dispatch({ type: "SET_ADVANCED_FILTERS", filters, variables }),
       [],
+    ),
+    setNavFilterSelection: useCallback(
+      (groupKey: string, itemKey: string | null) =>
+        dispatch({ type: "SET_NAV_FILTER_SELECTION", groupKey, itemKey }),
+      [],
+    ),
+    resetNavFilters: useCallback(
+      () =>
+        dispatch({
+          type: "RESET_NAV_FILTERS",
+          selections: mergedInitialState.navFilterSelections ?? {},
+        }),
+      [mergedInitialState.navFilterSelections],
     ),
     refresh: useCallback(() => dispatch({ type: "REFRESH" }), []),
     // Internal use for data hooks

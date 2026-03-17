@@ -53,6 +53,7 @@ import {
 } from "@/widgets/model-table/filtering/types";
 import type {
   ModelTableFilterPanelProps,
+  ModelTableNavFiltersConfig,
   ModelTableV2TableConfig,
 } from "../config/types";
 import type { BaseModelTableFieldsInput } from "../types";
@@ -68,6 +69,7 @@ import { ModelTableExportDialog } from "./ExportDialog";
 import {
   ColumnsMenu,
   GroupingMenu,
+  NavFiltersBar,
   QuickSearch,
   ViewOptionsMenu,
 } from "./toolbar";
@@ -87,9 +89,15 @@ import {
   getNormalizedTablePersistenceKeys,
   markPendingTablePersistenceReset,
 } from "../hooks/useTablePersistence";
+import {
+  getActiveNavFilterCount,
+  mergeModelTableQueryVariables,
+  resolveNavFilterVariables,
+} from "../utils";
 
 type TableToolbarProps = {
   filterPanel?: ModelTableFilterPanelProps;
+  navFilters?: ModelTableNavFiltersConfig;
   tableConfig?: ModelTableV2TableConfig;
   quickSearch?: boolean;
   fields?: BaseModelTableFieldsInput;
@@ -111,6 +119,7 @@ type TableToolbarProps = {
  */
 export function TableToolbar({
   filterPanel,
+  navFilters,
   tableConfig,
   quickSearch,
   fields,
@@ -147,12 +156,14 @@ export function TableToolbar({
   });
   const {
     quickSearch: quickSearchValue,
+    filterVariables,
     setQuickSearch,
     setAdvancedFilters,
     clearAllFilters,
-    hasActiveFilters,
+    hasActiveFilters: hasBaseActiveFilters,
     activeFilterStats,
     advancedFilters,
+    navFilterSelections,
   } = useTableFilters();
 
   const [filterOpen, setFilterOpen] = useState(
@@ -221,7 +232,20 @@ export function TableToolbar({
 
   const supportsQuick = !!metadata?.filterConfig?.supportsQuick;
   const activeAdvancedFilterCount = activeFilterStats.activeCount;
+  const activeNavFilterCount = useMemo(
+    () => getActiveNavFilterCount(navFilters, navFilterSelections),
+    [navFilterSelections, navFilters],
+  );
+  const hasActiveFilters = hasBaseActiveFilters || activeNavFilterCount > 0;
   const hasGroupedRows = !!groupingField;
+  const mergedFilterVariables = useMemo(
+    () =>
+      mergeModelTableQueryVariables(
+        filterVariables,
+        resolveNavFilterVariables(navFilters, navFilterSelections),
+      ),
+    [filterVariables, navFilterSelections, navFilters],
+  );
 
   // Configuration du panneau de filtres
   const panelConfig = useMemo(
@@ -373,6 +397,7 @@ export function TableToolbar({
               "ring-1 ring-primary/15 bg-primary/5 rounded-md p-1 -m-1",
           )}
         >
+          {navFilters?.groups.length ? <NavFiltersBar navFilters={navFilters} /> : null}
           <div className="flex flex-col items-center justify-between gap-3 sm:flex-row w-full">
             {/* Left: Search and Status Indicators */}
             <div className="flex w-full flex-1 items-center gap-3 sm:w-auto">
@@ -407,6 +432,15 @@ export function TableToolbar({
                       >
                         <X className="h-3 w-3" />
                       </button>
+                    </Badge>
+                  )}
+                  {activeNavFilterCount > 0 && (
+                    <Badge
+                      variant="secondary"
+                      className="h-7 gap-1.5 border-none bg-emerald-500/10 px-3 text-xs font-semibold text-emerald-700 transition-all hover:bg-emerald-500/15"
+                    >
+                      <Layers className="h-3.5 w-3.5 fill-emerald-500/20" />
+                      <span>{activeNavFilterCount} raccourcis</span>
                     </Badge>
                   )}
                   {hasGroupedRows && (
@@ -696,6 +730,7 @@ export function TableToolbar({
 
                 <div className="flex items-center gap-0.5 bg-muted/20 p-1">
                   <ModelTableExportDialog
+                    filterVariablesOverride={mergedFilterVariables}
                     labels={tableConfig?.exportLabels}
                     trigger={
                       <Button
@@ -769,6 +804,15 @@ export function TableToolbar({
                   className="h-3 w-3 cursor-pointer ml-1"
                   onClick={clearAllFilters}
                 />
+              </Badge>
+            )}
+            {activeNavFilterCount > 0 && (
+              <Badge
+                variant="secondary"
+                className="h-7 gap-1.5 bg-emerald-500/10 text-emerald-700 border-none"
+              >
+                <Layers className="h-3 w-3" />
+                {activeNavFilterCount} raccourcis
               </Badge>
             )}
             {hasGroupedRows && (

@@ -20,6 +20,7 @@ export function ModelTableToolbarSection({
  return (
  <TableToolbar
  filterPanel={controller.filterPanel as ModelTableFilterPanelProps | undefined}
+ navFilters={controller.navFilters}
  tableConfig={controller.tableConfig as ModelTableV2TableConfig | undefined}
  quickSearch={controller.quickSearch}
  fields={controller.fields}

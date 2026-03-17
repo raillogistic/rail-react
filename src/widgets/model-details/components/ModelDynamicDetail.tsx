@@ -12,7 +12,6 @@ import { cn } from "@/shared/utils";
 import { toGraphqlFieldName } from "@/shared/api/graphql/graphql/naming";
 import {
   fetchMetadataSnapshot,
-  useMetadata,
 } from "@/shared/api/graphql/graphql/metadata/gateway";
 import { useModelSingleQuery } from "@/shared/api/graphql/graphql/queries/hooks/useModelSingleQuery";
 import { useModelDeleteMutation } from "@/shared/api/graphql/graphql/mutations/hooks/useModelDeleteMutation";
@@ -106,6 +105,7 @@ import type {
   ModelDynamicDetailTabConfig,
 } from "../config/types";
 import { IconInfoCircle } from "@tabler/icons-react";
+import { useDetailMetadata } from "@/widgets/model-details/hooks/useDetailMetadata";
 
 interface SelectionTreeNode {
   [key: string]: true | SelectionTreeNode;
@@ -960,6 +960,7 @@ function resolveBaseFieldPaths<TRecord extends object>(
   metadata: ModelMetadata | null,
   layout: ModelDynamicDetailConfig<TRecord>["layout"],
   nestedFields: Record<string, ModelDynamicDetailNestedConfig>,
+  bootstrapDefaultIncludeFields?: string[],
 ): string[] {
   const excluded = new Set(
     (layout?.excludeFields ?? []).map((entry) => toGraphqlPath(entry)),
@@ -977,6 +978,13 @@ function resolveBaseFieldPaths<TRecord extends object>(
   );
   if (requested.length > 0) {
     return requested.filter((entry) => Boolean(entry) && !excluded.has(entry));
+  }
+
+  const bootstrapDefaults = (bootstrapDefaultIncludeFields ?? [])
+    .map((entry) => toGraphqlPath(entry))
+    .filter(Boolean);
+  if (bootstrapDefaults.length > 0) {
+    return bootstrapDefaults.filter((entry) => !excluded.has(entry));
   }
 
   const defaults: string[] = [];
@@ -1207,6 +1215,7 @@ function buildLayoutSections<TRecord extends object>(options: {
   app: string;
   model: string;
   id: string;
+  bootstrapDefaultIncludeFields?: string[];
 }): ResolvedLayoutSection<TRecord>[] {
   const layout = options.config.layout;
   const fieldOverrides = layout?.fieldOverrides ?? {};
@@ -1219,6 +1228,7 @@ function buildLayoutSections<TRecord extends object>(options: {
       string,
       ModelDynamicDetailNestedConfig
     >,
+    options.bootstrapDefaultIncludeFields,
   );
   const baseFields = basePaths.map((path) =>
     normalizeFieldConfig<TRecord>(path, { fieldOverrides }),
@@ -1396,15 +1406,9 @@ const ModelDynamicDetailInner = <
     typeof (apolloClient as { watchQuery?: unknown } | null)?.watchQuery ===
     "function";
 
-  const metadataState = useMetadata({
-    app,
-    model,
-    profile: "table",
-    objectId: idAsString,
-    queryOptions: {
-      fetchPolicy: config.queryOptions?.fetchPolicy,
-      errorPolicy: config.queryOptions?.errorPolicy,
-    },
+  const metadataState = useDetailMetadata(app, model, idAsString, {
+    fetchPolicy: config.queryOptions?.fetchPolicy,
+    errorPolicy: config.queryOptions?.errorPolicy,
   });
 
   const relationLookup = React.useMemo(
@@ -1516,8 +1520,9 @@ const ModelDynamicDetailInner = <
         app,
         model,
         id: idAsString,
+        bootstrapDefaultIncludeFields: metadataState.defaultIncludeFields,
       }),
-    [app, config, idAsString, metadataState.metadata, model],
+    [app, config, idAsString, metadataState.defaultIncludeFields, metadataState.metadata, model],
   );
 
   const baseSelectionPaths = React.useMemo(() => {
@@ -1535,12 +1540,19 @@ const ModelDynamicDetailInner = <
       metadataState.metadata,
       config.layout,
       looseNestedConfig,
+      metadataState.defaultIncludeFields,
     ).forEach((path) => {
       paths.add(toGraphqlPath(path));
     });
 
     return [...paths].filter(Boolean);
-  }, [config.layout, layoutSections, metadataState.metadata, looseNestedConfig]);
+  }, [
+    config.layout,
+    layoutSections,
+    metadataState.defaultIncludeFields,
+    metadataState.metadata,
+    looseNestedConfig,
+  ]);
 
   const selection = React.useMemo(
     () =>
@@ -1643,6 +1655,23 @@ const ModelDynamicDetailInner = <
     }),
     [refetch, snapshot],
   );
+
+  React.useEffect(() => {
+    if (metadataState.loading) return;
+    if (
+      actionsConfig.showTemplates === false &&
+      actionsConfig.showCustomMutations === false
+    ) {
+      return;
+    }
+    metadataState.scheduleActionDetailsPrefetch();
+  }, [
+    actionsConfig.showCustomMutations,
+    actionsConfig.showTemplates,
+    metadataState.loading,
+    metadataState.scheduleActionDetailsPrefetch,
+  ]);
+
   const canUpdate = React.useMemo(() => {
     const backendAllowed =
       actionsConfig.showUpdate !== false &&
@@ -2075,8 +2104,17 @@ const ModelDynamicDetailInner = <
         app,
         model,
         id: idAsString,
+        bootstrapDefaultIncludeFields: metadataState.defaultIncludeFields,
       }),
-    [app, config, idAsString, metadataState.metadata, model, record],
+    [
+      app,
+      config,
+      idAsString,
+      metadataState.defaultIncludeFields,
+      metadataState.metadata,
+      model,
+      record,
+    ],
   );
 
   const layoutSectionSpanClassById = React.useMemo(() => {
