@@ -80,7 +80,7 @@ export function DechargeListPageTabs() {
     <DynamicModelTable<OperationsDecharge>
       app="operations"
       model="Decharge"
-      navFilters={dechargeNavFilters}
+      // navFilters={dechargeNavFilters}
       create={{
         type: "link",
         hrefTemplate: ROUTES.DECHARGE_CREATE,
@@ -97,8 +97,22 @@ export function DechargeListPageTabs() {
         enabled: true,
       }}
       baseTable={{
-        quickFilters: ["statut", "beneficiaire"],
-        fields: { exclude: ["numeroAnnee", "numeroSequence"] },
+        // quickFilters: ["statut", "beneficiaire"],
+        fields: {
+          include: [
+            { accessor: "libelle", title: "Libelle" },
+            { accessor: "beneficiaire", title: "Beneficiaire" },
+            { accessor: "dateDecharge", title: "Date de decharge" },
+            { accessor: "statut", title: "Statut" },
+            { accessor: "site", title: "Site" },
+            { accessor: "codeInventaire", title: "Code inventaire" },
+            { accessor: "serial", title: "Serial" },
+            { accessor: "etatSortie", title: "Etat de sortie" },
+            { accessor: "garder", title: "Garder" },
+            { accessor: "customIntro", title: "Introduction personnalisée" },
+            { accessor: "commentaire", title: "Commentaire" },
+          ],
+        },
         tableConfig: {
           title: "Decharges",
           pdfPreview: {

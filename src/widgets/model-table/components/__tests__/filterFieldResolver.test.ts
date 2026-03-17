@@ -78,6 +78,30 @@ const metadata = {
       availableOperators: ["icontains"],
     },
     {
+      name: "status",
+      fieldName: "status",
+      fieldLabel: "Status",
+      baseType: "String",
+      isNested: false,
+      options: [
+        {
+          name: "status__in",
+          lookup: "in",
+          label: "In",
+          isList: true,
+        },
+        {
+          name: "status__exact",
+          lookup: "exact",
+          label: "Exact",
+          isList: false,
+        },
+      ],
+      filterInputType: "ChoiceFilter",
+      availableOperators: ["in", "exact"],
+      defaultOperator: "exact",
+    },
+    {
       name: "profile",
       fieldName: "profile",
       fieldLabel: "Profile",
@@ -167,6 +191,43 @@ const metadata = {
       readable: true,
       writable: true,
       visibility: "list",
+      choices: null,
+    },
+    {
+      name: "status",
+      fieldName: "status",
+      verboseName: "Status",
+      fieldType: "CharField",
+      graphqlType: "String",
+      required: true,
+      nullable: false,
+      blank: false,
+      editable: true,
+      unique: false,
+      hasDefault: false,
+      autoNow: false,
+      autoNowAdd: false,
+      isPrimaryKey: false,
+      isIndexed: true,
+      isRelation: false,
+      isComputed: false,
+      isFile: false,
+      isImage: false,
+      isJson: false,
+      isDate: false,
+      isDatetime: false,
+      isNumeric: false,
+      isBoolean: false,
+      isText: false,
+      isRichText: false,
+      isFsmField: false,
+      readable: true,
+      writable: true,
+      visibility: "list",
+      choices: [
+        { value: "draft", label: "Draft" },
+        { value: "done", label: "Done" },
+      ],
     },
     {
       name: "profile",
@@ -258,6 +319,17 @@ describe("resolveModelTableFilterField", () => {
       resolved?.filterableField.operators.find((operator) => operator.name === "in")
         ?.isList,
     ).toBe(true);
+  });
+
+  it("prefers the in operator for choice quick filters", () => {
+    const resolved = resolveModelTableFilterField(metadata, "status");
+
+    expect(resolved).not.toBeNull();
+    expect(resolved?.filterableField.defaultOperator).toBe("in");
+    expect(resolved?.filterableField.choices).toEqual([
+      { value: "draft", label: "Draft" },
+      { value: "done", label: "Done" },
+    ]);
   });
 
   it("returns null for unknown filters", () => {

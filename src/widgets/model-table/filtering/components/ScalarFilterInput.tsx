@@ -124,6 +124,7 @@ export const ScalarFilterInput: React.FC<ScalarFilterInputProps> = ({
  relatedModel: fullModel,
  multiple: isList,
  selectedDisplay: isToolbar && isList ? "count" : "badges",
+ loadOnOpen: isToolbar,
  className: cn(
  "py-0 [&>div:first-child]:hidden [&_[data-slot=button]]:min-h-8 [&_[data-slot=button]]:h-8 [&_[data-slot=button]]:py-0",
  isToolbar &&

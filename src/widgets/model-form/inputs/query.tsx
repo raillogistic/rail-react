@@ -56,8 +56,7 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
   const dirty = meta.isDirty;
   const submitCount = useStore(
     form.store,
-    (state: any) =>
-      (state).submissionAttempts ?? (state).submitCount ?? 0,
+    (state: any) => state.submissionAttempts ?? state.submitCount ?? 0,
   );
   const isSubmitted = submitCount > 0;
   const showError =
@@ -166,6 +165,8 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
     React.useState<ChoiceOption[]>(prefilledOptions);
   const [loading, setLoading] = React.useState(false);
   const [inlineFormOpen, setInlineFormOpen] = React.useState(false);
+  const [menuOpen, setMenuOpen] = React.useState(false);
+  const [hasLoadedOnce, setHasLoadedOnce] = React.useState(false);
   const [search, setSearch] = React.useState("");
   const [highlightedIndex, setHighlightedIndex] = React.useState<number>(-1);
   const formValuesRef = React.useRef(form.state.values);
@@ -352,6 +353,7 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
     config.debounceMs ??
     graphqlConfig?.debounceMs ??
     (graphqlConfig ? 250 : undefined);
+  const loadOnOpen = config.loadOnOpen ?? false;
 
   const scheduleLoad = React.useCallback(
     (term: string) => {
@@ -370,13 +372,28 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
   );
 
   React.useEffect(() => {
+    if (loadOnOpen) {
+      return () => {
+        if (debounceRef.current) {
+          clearTimeout(debounceRef.current);
+        }
+      };
+    }
     scheduleLoad("");
     return () => {
       if (debounceRef.current) {
         clearTimeout(debounceRef.current);
       }
     };
-  }, [scheduleLoad]);
+  }, [loadOnOpen, scheduleLoad]);
+
+  React.useEffect(() => {
+    if (!loadOnOpen || !menuOpen || hasLoadedOnce) {
+      return;
+    }
+    setHasLoadedOnce(true);
+    scheduleLoad(search);
+  }, [hasLoadedOnce, loadOnOpen, menuOpen, scheduleLoad, search]);
 
   const handleInlineCreated = React.useCallback(
     (payload: any) => {
@@ -575,14 +592,14 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
     <FieldWrapper config={config} error={error} dirty={dirty}>
       <div className="flex items-start gap-2">
         <div className="flex-1">
-          <DropdownMenu>
+          <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
             <div className="relative">
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="outline"
                   data-slot="button"
                   className={cn(
-                    "h-auto min-h-12 w-full justify-between rounded-xl border border-input/70 bg-muted/5 px-4 py-2.5 text-left text-[13.5px] font-medium transition-all duration-300 ease-out",
+                    "h-11 w-full justify-between rounded-xl border border-input/70 bg-muted/5 px-4 py-0 text-left text-[13.5px] font-medium transition-all duration-300 ease-out",
                     "hover:border-primary/40 hover:bg-muted/8 hover:shadow-inner hover:shadow-primary/1",
                     "focus:border-primary focus:ring-4 focus:ring-primary/10 data-[state=open]:border-primary data-[state=open]:ring-4 data-[state=open]:ring-primary/10",
                     canClearSelection ? "pr-12" : "",
@@ -591,9 +608,9 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
                       : "",
                   )}
                 >
-                  <div className="flex flex-wrap items-center gap-2 pr-4">
+                  <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden pr-4">
                     {selectedOptions.length === 0 && (
-                       <Database className="mr-1 size-4 text-primary/40 shrink-0" />
+                      <Database className="mr-1 size-4 text-primary/40 shrink-0" />
                     )}
                     {selectedOptions.length > 0 ? (
                       selectedDisplay === "count" && config.multiple ? (
@@ -605,7 +622,7 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
                           <Badge
                             key={opt.value}
                             variant="secondary"
-                            className="group/badge h-7 rounded-lg bg-primary/5 text-primary hover:bg-primary/10 transition-all border-none px-2.5 text-[11.5px] font-bold"
+                            className="group/badge max-w-full shrink-0 truncate rounded-lg bg-primary/5 px-2.5 py-1 text-[11.5px] font-bold text-primary transition-all hover:bg-primary/10 border-none"
                           >
                             {opt.label}
                             {config.multiple && (
@@ -621,7 +638,7 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
                         ))
                       )
                     ) : (
-                      <span className="text-muted-foreground/60 font-medium">
+                      <span className="truncate text-muted-foreground/60 font-medium">
                         {config.placeholder ?? "Rechercher une relation..."}
                       </span>
                     )}
@@ -690,7 +707,8 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
                       Aucun résultat trouvé
                     </p>
                     <p className="text-[11px] font-medium text-muted-foreground/30 px-6 mt-1">
-                      Essayez d'ajuster votre recherche ou d'ajouter une nouvelle entrée.
+                      Essayez d'ajuster votre recherche ou d'ajouter une
+                      nouvelle entrée.
                     </p>
                   </div>
                 ) : (
@@ -720,11 +738,11 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
                         {loading && index === highlightedIndex ? (
                           <Loader2 className="size-3 animate-spin" />
                         ) : selectedValues.some((value) =>
-                          areChoiceValuesEqual(value, option.value),
-                        ) ? (
-                            <Check className="size-3.5 stroke-3" />
+                            areChoiceValuesEqual(value, option.value),
+                          ) ? (
+                          <Check className="size-3.5 stroke-3" />
                         ) : (
-                            <div className="size-1.5 rounded-full bg-current opacity-20" />
+                          <div className="size-1.5 rounded-full bg-current opacity-20" />
                         )}
                       </span>
                       <div className="flex flex-col gap-0.5">
@@ -771,8 +789,10 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
                 <Plus className="size-6 stroke-[2.5]" />
               </div>
               <div className="flex flex-col">
-                 <span>{inlineTriggerLabel}</span>
-                 <span className="text-xs font-bold text-muted-foreground/40 uppercase tracking-widest mt-0.5">Nouveau Enregistrement</span>
+                <span>{inlineTriggerLabel}</span>
+                <span className="text-xs font-bold text-muted-foreground/40 uppercase tracking-widest mt-0.5">
+                  Nouveau Enregistrement
+                </span>
               </div>
             </DialogTitle>
           </DialogHeader>
@@ -1068,7 +1088,9 @@ function buildGraphQLRecipe(config?: QueryChoiceGraphQLConfig): GraphQLRecipe {
       ...(config.extraFields ?? []),
     ]
       .filter(Boolean)
-      .map((selection) => normalizeSelectionField(selection as string)) as string[],
+      .map((selection) =>
+        normalizeSelectionField(selection as string),
+      ) as string[],
   );
   if (selections.length === 0) {
     selections.push("id: pk");

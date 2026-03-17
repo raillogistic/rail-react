@@ -23,10 +23,12 @@ export function DechargeFormPage() {
         "serial",
         "etatSortie",
         "garder",
+        "customIntro",
         "commentaire",
       ]}
       fieldOverrides={{
         libelle: { colSpan: 3 },
+        customIntro: { colSpan: 3 },
         commentaire: { colSpan: 3 },
       }}
       layout={{

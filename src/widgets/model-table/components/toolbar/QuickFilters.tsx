@@ -137,7 +137,7 @@ function QuickFilterField({ field }: { field: ResolvedModelTableFilterField }) {
         "group flex min-h-9 min-w-[180px] max-w-[320px] items-center overflow-hidden rounded-xl border border-border/60 bg-background/95 shadow-xs backdrop-blur-sm transition-all",
         hasMeaningfulFilterValue(localValue)
           ? "border-foreground/15 shadow-sm"
-          : "hover:border-border hover:bg-background",
+          : "",
       )}
     >
       <div className="flex h-full shrink-0 items-center gap-2 border-r border-border/60 px-3 text-sm font-semibold text-foreground">
@@ -161,7 +161,7 @@ function QuickFilterField({ field }: { field: ResolvedModelTableFilterField }) {
           type="button"
           variant="ghost"
           size="icon-sm"
-          className="mr-1 shrink-0 text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+          className="mr-1 shrink-0 text-muted-foreground"
           onClick={handleClear}
           aria-label={`Clear ${field.label} quick filter`}
         >
