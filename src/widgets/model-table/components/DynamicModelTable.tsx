@@ -84,6 +84,7 @@ import { useTableLayout } from "../hooks/useTableLayout";
 import { useTableQueryConfig } from "../hooks/useTableQueryConfig";
 import { useTableFilters } from "../hooks/useTableFilters";
 import { ColumnFilter } from "./ColumnFilter";
+import { ProtectedFileCell } from "./ProtectedFileCell";
 import { RowActions } from "./row/RowActions";
 import {
   useModelTableContentController,
@@ -152,6 +153,7 @@ type DynamicBaseTableContentProps<
   relationStats?: BaseModelTableRelationStatsConfig<TSource>;
   queryManager?: string;
   columnOrdering?: BaseModelTableColumnOrderingConfig<ModelTableAccessorPath<TSource>>;
+  hydratePersistedColumnOrder?: boolean;
   skipCount?: boolean;
   disableSorting?: boolean;
   enableSelection?: boolean;
@@ -264,6 +266,19 @@ function collectExplicitFieldAccessors(
     }
   });
   return Array.from(explicit);
+}
+
+function collectIncludedFieldAccessors(
+  fields: ReturnType<typeof normalizeBaseModelTableFieldsInput>,
+): string[] {
+  const ordered = new Set<string>();
+  (fields.include ?? []).forEach((entry) => {
+    const accessor = typeof entry === "string" ? entry : entry.accessor;
+    if (accessor) {
+      ordered.add(accessor);
+    }
+  });
+  return Array.from(ordered);
 }
 
 function mergeManagedFieldExclusions(
@@ -750,6 +765,7 @@ function DynamicBaseTableContent<
   relationStats,
   queryManager,
   columnOrdering,
+  hydratePersistedColumnOrder = true,
   skipCount,
   disableSorting,
   enableSelection,
@@ -1041,6 +1057,15 @@ function DynamicBaseTableContent<
     persistedStateRef.current = rawPersistedState;
     return rawPersistedState;
   }, [rawPersistedState]);
+  const layoutPersistedState = useMemo(() => {
+    if (hydratePersistedColumnOrder || !persistedState) {
+      return persistedState;
+    }
+    return {
+      ...persistedState,
+      columnOrder: [],
+    };
+  }, [hydratePersistedColumnOrder, persistedState]);
   const bootstrapPersistenceState = useMemo(
     () =>
       bootstrapInitialState
@@ -1059,6 +1084,7 @@ function DynamicBaseTableContent<
   const { hydrated: persistenceHydrated } = useTablePersistence(effectiveKey, {
     bootstrapState: bootstrapPersistenceState,
     bootstrapStateReady: !bootstrapStateLoading,
+    hydrateColumnOrder: hydratePersistedColumnOrder,
   });
 
   const requestedFieldsConfig = useMemo(
@@ -1223,7 +1249,7 @@ function DynamicBaseTableContent<
     columnDefs,
     columnOrdering,
     defaultHiddenColumnIds,
-    persistedState,
+    persistedState: layoutPersistedState,
   });
 
   const resolvedEnableSelection = useMemo(() => {
@@ -1460,7 +1486,14 @@ function DynamicBaseTableContent<
           </div>
         ),
         cell: ({ row, value }) => {
-          const pdfUrl = pdfPreviewEnabled ? normalizePdfUrl(value) : null;
+          const root = column.accessor.replace(/__/g, ".").split(".")[0];
+          const field = fieldLookup.get(root);
+          const isProtectedFileField =
+            !column.render && field?.isFile && typeof value === "string";
+          const pdfUrl =
+            !isProtectedFileField && pdfPreviewEnabled
+              ? normalizePdfUrl(value)
+              : null;
           const renderedValue = column.render
             ? column.render(value, row, {
                 accessor: column.accessor,
@@ -1468,14 +1501,21 @@ function DynamicBaseTableContent<
                 data,
                 refetch: refetch as BaseModelTableRefetch | undefined,
               })
-            : (() => {
-                const root = column.accessor.replace(/__/g, ".").split(".")[0];
-                const field = fieldLookup.get(root);
-                if (field) {
-                  return formatCellValue(value, field);
-                }
-                return formatFallbackCellValue(value);
-              })();
+            : isProtectedFileField
+              ? (
+                  <ProtectedFileCell
+                    value={value}
+                    onPdfPreview={
+                      pdfPreviewEnabled ? handleTemplatePdfPreview : undefined
+                    }
+                  />
+                )
+              : (() => {
+                  if (field) {
+                    return formatCellValue(value, field);
+                  }
+                  return formatFallbackCellValue(value);
+                })();
 
           const displayValue =
             pdfUrl && typeof renderedValue === "string" ? (
@@ -1524,6 +1564,7 @@ function DynamicBaseTableContent<
     data,
     disableSorting,
     fieldLookup,
+    handleTemplatePdfPreview,
     metadata?.model,
     openPdfPreview,
     primaryKey,
@@ -2043,6 +2084,34 @@ const DynamicModelTableInner = <TSource extends object = Record<string, unknown>
     ...(filterPanel ?? {}),
     widthClassName: "!w-full lg:!w-1/2 sm:!max-w-none",
   };
+  const normalizedBaseTableFields = useMemo(
+    () => normalizeBaseModelTableFieldsInput(baseTable?.fields),
+    [baseTable?.fields],
+  );
+  const baseTableIncludedFieldOrder = useMemo(
+    () => collectIncludedFieldAccessors(normalizedBaseTableFields),
+    [normalizedBaseTableFields],
+  );
+  const effectiveColumnOrdering = useMemo(() => {
+    const explicitOrder = baseTable?.columnOrdering?.order;
+    if (explicitOrder && explicitOrder.length > 0) {
+      return baseTable.columnOrdering;
+    }
+    if (baseTableIncludedFieldOrder.length === 0) {
+      return baseTable?.columnOrdering;
+    }
+    return {
+      ...baseTable?.columnOrdering,
+      order: baseTableIncludedFieldOrder,
+    };
+  }, [baseTable?.columnOrdering, baseTableIncludedFieldOrder]);
+  const shouldHydratePersistedColumnOrder = useMemo(() => {
+    const explicitOrder = baseTable?.columnOrdering?.order;
+    if (explicitOrder && explicitOrder.length > 0) {
+      return true;
+    }
+    return baseTableIncludedFieldOrder.length === 0;
+  }, [baseTable?.columnOrdering?.order, baseTableIncludedFieldOrder.length]);
   const devtoolsEnabled = resolveDevtoolsEnabled(devtools);
   const refetchRef = useRef<BaseModelTableRefetch | undefined>(undefined);
   const snapshotRef = useRef<DynamicModelTableSnapshot<TSource>>({
@@ -2171,7 +2240,8 @@ const DynamicModelTableInner = <TSource extends object = Record<string, unknown>
             relations={baseTable?.relations}
             relationStats={baseTable?.relationStats}
             queryManager={baseTable?.queryManager}
-            columnOrdering={baseTable?.columnOrdering}
+            columnOrdering={effectiveColumnOrdering}
+            hydratePersistedColumnOrder={shouldHydratePersistedColumnOrder}
             skipCount={baseTable?.skipCount ?? false}
             disableSorting={baseTable?.disableSorting}
             enableSelection={baseTable?.enableSelection}

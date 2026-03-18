@@ -2,6 +2,7 @@ import React from "react";
 import { cn } from "@/shared/utils";
 import { Checkbox } from "@/shared/ui/kit/checkbox";
 import { TableCell, TableRow as ShadcnTableRow } from "../TableFrame";
+import { ProtectedFileCell } from "../ProtectedFileCell";
 import { formatCellValue, resolveFieldValue } from "../../utils";
 import type {
  BaseModelTableColumnActionsInput,
@@ -142,6 +143,8 @@ export function DataRow({
  data,
  refetch,
  })
+ : metaField?.isFile && typeof value === "string"
+ ? <ProtectedFileCell value={value} />
  : metaField
  ? formatCellValue(value, metaField)
  : formatFallbackValue(value);
@@ -195,10 +198,11 @@ export function DataRow({
  statsRelation.relationName,
  )
  : undefined;
- const renderedValue = formatCellValue(
- resolveFieldValue(row, legacyField),
- legacyField,
- );
+ const legacyValue = resolveFieldValue(row, legacyField);
+ const legacyRenderedValue =
+ legacyField.isFile && typeof legacyValue === "string"
+ ? <ProtectedFileCell value={legacyValue} />
+ : formatCellValue(legacyValue, legacyField);
 
  return (
  <TableCell
@@ -227,11 +231,11 @@ export function DataRow({
  overrideRenderer={statsOverride}
  >
  <span className="cursor-pointer hover:text-primary transition-colors underline-offset-4 decoration-primary/30 hover:underline">
- {renderedValue}
+ {legacyRenderedValue}
  </span>
  </RelationStatsHover>
  ) : (
- renderedValue
+ legacyRenderedValue
  )}
  </div>
  </TableCell>

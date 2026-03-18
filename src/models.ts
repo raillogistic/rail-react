@@ -1,7 +1,7 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
 // Source: scripts/getModels.mjs
 // Command: npm run getModels
-// Generated at: 2026-03-17T18:55:28.405Z
+// Generated at: 2026-03-18T17:24:23.194Z
 
 export interface CatalogBenificiaire {
   /** Historiques d'affectation */
@@ -290,8 +290,8 @@ export interface OperationsDecharge {
   restitutionPieceJointeUrl?: string | null;
   /** restitution recu par */
   restitutionRecuPar?: string | null;
-  /** Restitutions */
-  restitutions?: OperationsRestitution[] | null;
+  /** Restitution */
+  restitutionRelation?: OperationsRestitution[] | null;
   /** restitution serial retour */
   restitutionSerialRetour?: string | null;
   /** restitution statut */

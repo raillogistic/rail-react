@@ -237,3 +237,31 @@ export function resolveRequiredError(
   }
   return undefined;
 }
+
+const REQUIRED_FIELD_MESSAGES = new Set([
+  "Ce champ est obligatoire",
+  "This field is required",
+]);
+
+/**
+ * Removes stale required-field messages when the current value is no longer empty.
+ */
+export function pruneResolvedRequiredErrors(
+  error: string | string[] | undefined,
+  requiredError: string | undefined,
+) {
+  if (requiredError || !error) {
+    return error;
+  }
+
+  const errors = Array.isArray(error) ? error : [error];
+  const filtered = errors.filter(
+    (entry) => !REQUIRED_FIELD_MESSAGES.has(String(entry).trim()),
+  );
+
+  if (filtered.length === 0) {
+    return undefined;
+  }
+
+  return Array.isArray(error) ? filtered : filtered[0];
+}

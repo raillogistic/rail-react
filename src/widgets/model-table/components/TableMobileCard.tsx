@@ -37,6 +37,7 @@ import type {
 import type { TemplatePdfPreviewPayload } from "../utils/templateExecution";
 import { cn } from "@/shared/utils";
 import { RowActions } from "./row/RowActions";
+import { ProtectedFileCell } from "./ProtectedFileCell";
 import {
   Dialog,
   DialogContent,
@@ -305,6 +306,15 @@ export function TableMobileCard({
     value: unknown,
     field: (typeof metadata.fields)[number],
   ) => {
+    if (field.isFile && typeof value === "string") {
+      return (
+        <ProtectedFileCell
+          value={value}
+          onPdfPreview={pdfPreviewEnabled ? onTemplatePdfPreview : undefined}
+        />
+      );
+    }
+
     const renderedValue = formatCellValue(value, field);
     const pdfUrl = pdfPreviewEnabled ? normalizePdfUrl(value) : null;
     if (!pdfUrl || typeof renderedValue !== "string") {

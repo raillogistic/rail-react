@@ -23,6 +23,7 @@ export function DechargeFormPage() {
         "serial",
         "etatSortie",
         "garder",
+        "pieceJointeUrl",
         "customIntro",
         "commentaire",
       ]}

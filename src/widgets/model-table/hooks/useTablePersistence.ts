@@ -410,6 +410,7 @@ export function loadPersistedTableState(
 type UseTablePersistenceOptions = {
  bootstrapState?: PersistedTableStateInput | null;
  bootstrapStateReady?: boolean;
+ hydrateColumnOrder?: boolean;
 };
 
 export function useTablePersistence(
@@ -434,6 +435,7 @@ export function useTablePersistence(
  } = useTable();
  const bootstrapState = options?.bootstrapState ?? null;
  const bootstrapStateReady = options?.bootstrapStateReady ?? true;
+ const hydrateColumnOrder = options?.hydrateColumnOrder ?? true;
 
  const storageKey = buildStorageKey(key);
  const initialKeyRef = useRef(key);
@@ -495,7 +497,11 @@ export function useTablePersistence(
  (parsed: PersistedTableStateInput) => {
  const currentState = currentStateRef.current;
 
- if (parsed.columnOrder && Array.isArray(parsed.columnOrder)) {
+ if (
+ hydrateColumnOrder &&
+ parsed.columnOrder &&
+ Array.isArray(parsed.columnOrder)
+ ) {
  if (!areStringArraysEqual(parsed.columnOrder, currentState.columnOrder)) {
  setColumnOrder(parsed.columnOrder);
  }
@@ -534,6 +540,7 @@ export function useTablePersistence(
  },
  [
  setColumnOrder,
+ hydrateColumnOrder,
  setColumnVisibility,
  setColumnWidths,
  setPerPage,

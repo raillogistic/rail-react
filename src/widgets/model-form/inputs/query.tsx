@@ -29,6 +29,7 @@ import {
 import { Badge } from "@/shared/ui/kit/badge";
 import {
   FieldWrapper,
+  pruneResolvedRequiredErrors,
   resolveFieldErrors,
   resolveRequiredError,
 } from "./common";
@@ -62,8 +63,12 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
   const showError =
     dirty || meta.isBlurred || isSubmitted || Boolean(meta.errorMap?.onSubmit);
   const fieldErrors = resolveFieldErrors(meta, showError);
-  const error =
-    fieldErrors ?? resolveRequiredError(config, field.state.value, showError);
+  const requiredError = resolveRequiredError(
+    config,
+    field.state.value,
+    showError,
+  );
+  const error = pruneResolvedRequiredErrors(fieldErrors, requiredError) ?? requiredError;
   const graphqlConfig = React.useMemo<
     QueryChoiceGraphQLConfig | undefined
   >(() => {
