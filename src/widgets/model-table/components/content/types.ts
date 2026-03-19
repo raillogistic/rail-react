@@ -99,8 +99,8 @@ export type ModelTableContentControllerState<
  timeAgo: string;
  /** Current row selection map. */
  rowSelection: Record<string, boolean>;
- /** Selected rows extracted from table data. */
- selectedRows: DynamicModelTableRow<TSource>[];
+  /** Selected rows resolved for the current selection, including cached rows from prior pages. */
+  selectedRows: DynamicModelTableRow<TSource>[];
  /** Selected row IDs as strings. */
  selectedRowIds: string[];
  /** Selected row count. */

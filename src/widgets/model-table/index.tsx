@@ -17,6 +17,7 @@ export * from "./components/TableToolbar";
 export * from "./components/TableMobileCard";
 export * from "./components/ExportDialog";
 export * from "./components/DynamicModelTable";
+export * from "./components/LightModelTable";
 export * from "./components/content/types";
 export * from "./components/content/ModelTableHeader";
 export * from "./components/content/ModelTableTopActions";

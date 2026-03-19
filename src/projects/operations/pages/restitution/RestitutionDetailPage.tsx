@@ -112,9 +112,8 @@ export function RestitutionDetailPage() {
                 "dateRestitution",
                 "recuPar",
                 {
-                  path: "etatRetour",
+                  path: "etatRetour.libelle",
                   label: "Etat au retour",
-                  render: ({ record }) => record.etatRetour?.libelle || "-",
                 },
               ],
             },

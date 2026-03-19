@@ -120,10 +120,7 @@ export type CustomMutationActionProps = {
   queryOptions?: CustomMutationActionQueryOptions;
   mutation?: CustomMutationActionMutationConfig;
   onSuccess?: (context: CustomMutationActionSuccessContext) => void;
-  onError?: (
-    error: Error,
-    context: CustomMutationActionErrorContext,
-  ) => void;
+  onError?: (error: Error, context: CustomMutationActionErrorContext) => void;
   onOpenChange?: (open: boolean) => void;
   onMetadataLoaded?: (mutation: MutationMetadata) => void;
   renderTrigger?: (context: {
@@ -188,7 +185,10 @@ function resolvePopupDescription(
   }
 
   const actionPayload = parseJsonObject(mutation.action);
-  if (typeof actionPayload?.message === "string" && actionPayload.message.trim()) {
+  if (
+    typeof actionPayload?.message === "string" &&
+    actionPayload.message.trim()
+  ) {
     return actionPayload.message.trim();
   }
   if (typeof mutation.description === "string" && mutation.description.trim()) {
@@ -225,8 +225,13 @@ export function CustomMutationAction({
     !data.model.trim() ||
     !data.funcName.trim();
 
-  const { data: queryData, loading, error } =
-    useQuery<CustomMutationMetadataQueryResult>(CUSTOM_MUTATION_METADATA_QUERY, {
+  const {
+    data: queryData,
+    loading,
+    error,
+  } = useQuery<CustomMutationMetadataQueryResult>(
+    CUSTOM_MUTATION_METADATA_QUERY,
+    {
       variables: {
         app: data.app,
         model: data.model,
@@ -236,7 +241,8 @@ export function CustomMutationAction({
       skip: shouldSkip,
       fetchPolicy: queryOptions?.fetchPolicy,
       nextFetchPolicy: queryOptions?.nextFetchPolicy,
-    });
+    },
+  );
 
   const mutationMetadata = queryData?.customMutation ?? null;
 
@@ -300,7 +306,8 @@ export function CustomMutationAction({
     if (!mutationMetadata) return "Action metadata is unavailable.";
     if (mutationMetadata.allowed === false) {
       return (
-        mutationMetadata.reason || "You do not have permission to run this action."
+        mutationMetadata.reason ||
+        "You do not have permission to run this action."
       );
     }
     return null;
@@ -353,9 +360,7 @@ export function CustomMutationAction({
               variableType: identifier.variableType,
               value: objectIdValue,
             }
-          : undefined
-      ;
-
+          : undefined;
       setSubmitting(true);
       try {
         const result = await executeCustomMutationAction({
@@ -421,11 +426,15 @@ export function CustomMutationAction({
   const overlayTitle =
     mutationMetadata && actionMode
       ? resolvePopupTitle(popup?.title, mutationMetadata)
-      : popup?.title ?? resolvedButtonLabel;
+      : (popup?.title ?? resolvedButtonLabel);
   const overlayDescription =
     mutationMetadata && actionMode
-      ? resolvePopupDescription(popup?.description, mutationMetadata, actionMode)
-      : popup?.description ?? null;
+      ? resolvePopupDescription(
+          popup?.description,
+          mutationMetadata,
+          actionMode,
+        )
+      : (popup?.description ?? null);
 
   const resolvedFormActions = useMemo<
     DynamicFormProps<CustomMutationValues>["actions"]
@@ -486,9 +495,11 @@ export function CustomMutationAction({
           {loading ? (
             <Loader2 className="size-4 animate-spin" />
           ) : (
-            button?.icon ?? <Zap className="size-4" />
+            (button?.icon ?? <Zap className="size-4" />)
           )}
-          {loading ? button?.loadingLabel ?? resolvedButtonLabel : resolvedButtonLabel}
+          {loading
+            ? (button?.loadingLabel ?? resolvedButtonLabel)
+            : resolvedButtonLabel}
         </Button>
       )}
 

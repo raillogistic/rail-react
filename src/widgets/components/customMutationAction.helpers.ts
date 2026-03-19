@@ -3,6 +3,7 @@ import type {
   FormFieldConfig,
   FormSchema,
 } from "@/widgets/model-form/inputs/types";
+import { buildModelMethodInputType } from "@/shared/api/graphql/graphql/mutations/naming";
 import type {
   MutationInputField,
   MutationMetadata,
@@ -255,6 +256,26 @@ export function buildMutationOperationNames(
   return [...names].filter((entry) => entry.length > 0);
 }
 
+function resolveMutationInputType(
+  mutation: MutationMetadata,
+  fallbackModelName: string,
+): string | null {
+  const explicitInputType = String(mutation.inputType ?? "").trim();
+  if (explicitInputType) {
+    return explicitInputType;
+  }
+
+  const methodName = String(mutation.methodName ?? "").trim();
+  const modelName = String(
+    mutation.modelName ?? fallbackModelName ?? "",
+  ).trim();
+  if (!methodName || !modelName) {
+    return null;
+  }
+
+  return buildModelMethodInputType(modelName, methodName);
+}
+
 function normalizeGraphqlType(
   rawType: string | undefined,
   required: boolean,
@@ -368,16 +389,21 @@ export async function executeCustomMutationAction(options: {
   const inputFields = normalizeMutationInputFields(options.mutation);
   const hasInputPayload = inputFields.length > 0;
   const inputPayload = hasInputPayload ? options.payload : {};
+  const inputType = hasInputPayload
+    ? resolveMutationInputType(options.mutation, options.modelName)
+    : null;
+  if (hasInputPayload && !inputType) {
+    throw new Error("Mutation input type could not be resolved.");
+  }
   const errors: string[] = [];
 
   for (const operationName of operationNames) {
-    const plans =
-      hasInputPayload && options.mutation.inputType ? [true, false] : [false];
+    const plans = hasInputPayload ? [true] : [false];
 
     for (const useInputObject of plans) {
       const document = buildMutationDocument({
         operationName,
-        inputType: options.mutation.inputType,
+        inputType,
         inputFields,
         useInputObject,
         identifier: options.identifier,

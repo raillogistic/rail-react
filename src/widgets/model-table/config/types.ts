@@ -611,7 +611,7 @@ export interface DynamicModelTableSnapshot<
    */
   data: DynamicModelTableRow<TSource>[];
   /**
-   * Rows currently selected from`data`.
+   * Rows currently selected for the active selection state.
    */
   selectedRows: DynamicModelTableRow<TSource>[];
   /**
@@ -663,7 +663,7 @@ export interface DynamicModelTableHandle<
    */
   readonly data: DynamicModelTableRow<TSource>[];
   /**
-   * Rows currently selected from`data`.
+   * Rows currently selected for the active selection state.
    */
   readonly selectedRows: DynamicModelTableRow<TSource>[];
   /**

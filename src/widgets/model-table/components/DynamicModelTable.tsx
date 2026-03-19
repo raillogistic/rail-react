@@ -548,6 +548,12 @@ function areBooleanMapsEqual(
   return true;
 }
 
+function getSelectedRowIds(rowSelection: RowSelectionState): string[] {
+  return Object.entries(rowSelection)
+    .filter(([, isSelected]) => isSelected)
+    .map(([rowId]) => rowId);
+}
+
 /**
  * Compares two number record maps for exact key/value equality.
  */
@@ -1265,19 +1271,45 @@ function DynamicBaseTableContent<
   }, [expand]);
 
   const primaryKey = metadata?.primaryKey || "id";
+  const selectedRowsCacheRef = useRef<
+    Record<string, DynamicModelTableRow<TSource>>
+  >({});
+  const selectedRowIds = useMemo(
+    () => getSelectedRowIds(rowSelection),
+    [rowSelection],
+  );
   const selectedRows = useMemo(() => {
-    const selectedRowIds = new Set(
-      Object.entries(rowSelection)
-        .filter(([, isSelected]) => isSelected)
-        .map(([rowId]) => rowId),
-    );
-    if (selectedRowIds.size === 0) {
+    if (selectedRowIds.length === 0) {
+      selectedRowsCacheRef.current = {};
       return [];
     }
-    return data.filter((row, index) =>
-      selectedRowIds.has(resolveRowId(row, index, primaryKey)),
-    );
-  }, [data, primaryKey, rowSelection]);
+
+    // Preserve selected row payloads across page changes so bulk actions and
+    // imperative snapshots stay aligned with the persisted selection map.
+    const selectedRowIdSet = new Set(selectedRowIds);
+    const nextCache = { ...selectedRowsCacheRef.current };
+
+    Object.keys(nextCache).forEach((rowId) => {
+      if (!selectedRowIdSet.has(rowId)) {
+        delete nextCache[rowId];
+      }
+    });
+
+    (data as DynamicModelTableRow<TSource>[]).forEach((row, index) => {
+      const rowId = resolveRowId(row, index, primaryKey);
+      if (selectedRowIdSet.has(rowId)) {
+        nextCache[rowId] = row;
+      }
+    });
+
+    selectedRowsCacheRef.current = nextCache;
+
+    return selectedRowIds
+      .map((rowId) => nextCache[rowId])
+      .filter(
+        (row): row is DynamicModelTableRow<TSource> => row !== undefined,
+      );
+  }, [data, primaryKey, selectedRowIds]);
   const whereType =
     metadata?.filterConfig?.inputTypeName ||
     `${metadata?.model || "Model"}WhereInput`;
@@ -1814,6 +1846,7 @@ function DynamicBaseTableContent<
     showReversed,
     showCount,
     topActions,
+    selectedRows,
     onTemplatePdfPreview: pdfPreviewEnabled
       ? handleTemplatePdfPreview
       : undefined,

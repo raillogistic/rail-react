@@ -63,6 +63,8 @@ export type UseModelTableContentControllerInput = {
   topActions?: ModelTableV2TopActionsInput<any>;
   /** Optional PDF preview hook for template-generated PDFs. */
   onTemplatePdfPreview?: (payload: TemplatePdfPreviewPayload) => void;
+  /** Optional resolved selection rows that may span beyond the current page. */
+  selectedRows?: DynamicModelTableRow<any>[];
 };
 
 type CreateFormValues<TSource extends object> = ModelFormValueShape<TSource>;
@@ -199,6 +201,7 @@ export function useModelTableContentController<
   showCount,
   topActions,
   onTemplatePdfPreview,
+  selectedRows: resolvedSelectedRows,
 }: UseModelTableContentControllerInput): ModelTableContentControllerState<TSource> {
   const {
     metadata,
@@ -252,10 +255,11 @@ export function useModelTableContentController<
 
   const selectedRows = useMemo<DynamicModelTableRow<TSource>[]>(
     () =>
+      resolvedSelectedRows ??
       (data as DynamicModelTableRow<TSource>[]).filter(
         (row) => !!rowSelection[String(row.id)],
       ),
-    [data, rowSelection],
+    [data, resolvedSelectedRows, rowSelection],
   );
 
   const selectedRowIds = useMemo(

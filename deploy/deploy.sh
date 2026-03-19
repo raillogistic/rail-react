@@ -65,6 +65,10 @@ require_cmd() {
   command -v "$1" >/dev/null 2>&1 || fail "Missing required command: $1"
 }
 
+has_buildx() {
+  docker buildx version >/dev/null 2>&1
+}
+
 is_valid_port() {
   local port="$1"
   [[ "$port" =~ ^[0-9]+$ ]] && ((port >= 1 && port <= 65535))
@@ -206,7 +210,20 @@ $NO_CACHE && build_args+=(--no-cache)
 build_args+=("$PROJECT_ROOT")
 
 log "Building image ${FULL_IMAGE} from dist folder ${DIST_REL}"
-run_with_retries "$BUILD_RETRIES" docker "${build_args[@]}" || fail "Docker build failed after ${BUILD_RETRIES} attempt(s)."
+if has_buildx; then
+  build_args=(buildx build -f "$DOCKERFILE_PATH" -t "$FULL_IMAGE" --build-arg "DIST_DIR=${DIST_REL}" --load)
+  $PULL_BASE && build_args+=(--pull)
+  $NO_CACHE && build_args+=(--no-cache)
+  build_args+=("$PROJECT_ROOT")
+  run_with_retries "$BUILD_RETRIES" docker "${build_args[@]}" || fail "Docker build failed after ${BUILD_RETRIES} attempt(s)."
+else
+  log "Buildx unavailable; falling back to legacy docker build without --load"
+  build_args=(build -f "$DOCKERFILE_PATH" -t "$FULL_IMAGE" --build-arg "DIST_DIR=${DIST_REL}")
+  $PULL_BASE && build_args+=(--pull)
+  $NO_CACHE && build_args+=(--no-cache)
+  build_args+=("$PROJECT_ROOT")
+  run_with_retries "$BUILD_RETRIES" docker "${build_args[@]}" || fail "Docker build failed after ${BUILD_RETRIES} attempt(s)."
+fi
 docker image inspect "$FULL_IMAGE" >/dev/null 2>&1 || fail "Built image missing locally: ${FULL_IMAGE}"
 
 if $BUILD_ONLY; then

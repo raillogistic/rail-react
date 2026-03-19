@@ -1,11 +1,7 @@
 import type React from "react";
+import { format } from "date-fns";
 import { ArrowUpRight, ReceiptText } from "lucide-react";
-import {
-  Link,
-  generatePath,
-  useNavigate,
-  useParams,
-} from "react-router-dom";
+import { Link, generatePath, useNavigate, useParams } from "react-router-dom";
 import type { OperationsDecharge } from "@/models";
 import { ROUTES } from "@/projects/operations/config/routes";
 import { Badge } from "@/shared/ui/kit/badge";
@@ -13,7 +9,6 @@ import { Button } from "@/shared/ui/kit/button";
 import { useModelSingleQuery } from "@/shared/api/graphql/graphql";
 import { CustomMutationAction } from "@/widgets/components/CustomMutationAction";
 import { ModelDynamicDetail } from "@/widgets/model-details";
-import { now } from "@/widgets/model-form/inputs/datetime";
 import { ProtectedFileCell } from "@/widgets/model-table/components/ProtectedFileCell";
 
 const STATUS_LABELS: Record<string, string> = {
@@ -42,7 +37,9 @@ export function DechargeDetailPage() {
       baseDetail={{
         header: {
           title: (data) =>
-            data?.numero ? `Decharge ${data.numero}` : data?.libelle || "Detail decharge",
+            data?.numero
+              ? `Decharge ${data.numero}`
+              : data?.libelle || "Detail decharge",
           frame: {
             description: (data) =>
               data?.beneficiaire?.name
@@ -96,7 +93,7 @@ export function DechargeDetailPage() {
                   }}
                   form={{
                     defaults: {
-                      dateRestitution: now(),
+                      dateRestitution: format(new Date(), "yyyy-MM-dd"),
                     },
                     fieldOverrides: {
                       dateRestitution: {
@@ -125,6 +122,7 @@ export function DechargeDetailPage() {
                       },
                       commentaire: {
                         colSpan: 2,
+                        type: "textarea",
                       },
                     },
                     layout: {
@@ -134,7 +132,7 @@ export function DechargeDetailPage() {
                       submitLabel: "Creer la restitution",
                     },
                   }}
-                  onSuccess={() => {
+                  onSuccess={({}) => {
                     void detailQuery.refetch().then((result) => {
                       const responseRecord = (
                         result as {
@@ -182,12 +180,6 @@ export function DechargeDetailPage() {
                   "-"
                 ),
             },
-            beneficiaire: {
-              render: ({ record }) => record.beneficiaire?.name || "-",
-            },
-            etatSortie: {
-              render: ({ record }) => record.etatSortie?.libelle || "-",
-            },
             garder: {
               render: ({ value }) => (value ? "Oui" : "Non"),
             },
@@ -204,14 +196,20 @@ export function DechargeDetailPage() {
                   label: "Statut",
                   render: ({ value }) => (
                     <Badge
-                      variant={value === "annulee" ? "destructive" : "secondary"}
+                      variant={
+                        value === "annulee" ? "destructive" : "secondary"
+                      }
                     >
-                      {STATUS_LABELS[String(value || "")] || String(value || "-")}
+                      {STATUS_LABELS[String(value || "")] ||
+                        String(value || "-")}
                     </Badge>
                   ),
                 },
                 "dateDecharge",
-                "beneficiaire",
+                {
+                  path: "beneficiaire.name",
+                  label: "Beneficiaire",
+                },
                 "site",
                 "pieceJointeUrl",
               ],
@@ -222,11 +220,13 @@ export function DechargeDetailPage() {
               columns: 3,
               fields: [
                 "libelle",
-                "etatSortie",
+                {
+                  path: "etatSortie.libelle",
+                  label: "Etat de sortie",
+                },
                 "garder",
                 "codeInventaire",
                 "serial",
-                "gardeMsg",
               ],
             },
             {
@@ -258,11 +258,17 @@ export function DechargeDetailPage() {
                               Restitution enregistree
                             </p>
                             <p className="text-sm text-muted-foreground">
-                              Le retour de ce materiel est deja trace dans une fiche de restitution.
+                              Le retour de ce materiel est deja trace dans une
+                              fiche de restitution.
                             </p>
                           </div>
                           {restitutionLink ? (
-                            <Button asChild size="sm" variant="outline" className="gap-2">
+                            <Button
+                              asChild
+                              size="sm"
+                              variant="outline"
+                              className="gap-2"
+                            >
                               <Link to={restitutionLink}>
                                 <ArrowUpRight className="size-4" />
                                 Ouvrir la fiche
@@ -322,7 +328,8 @@ export function DechargeDetailPage() {
                               Observation
                             </p>
                             <p className="mt-2 text-sm text-foreground">
-                              {data.restitutionObservation || "Aucune observation."}
+                              {data.restitutionObservation ||
+                                "Aucune observation."}
                             </p>
                           </div>
                           <div className="rounded-xl border bg-background/60 p-4">
@@ -330,7 +337,8 @@ export function DechargeDetailPage() {
                               Commentaire
                             </p>
                             <p className="mt-2 text-sm text-foreground">
-                              {data.restitutionCommentaire || "Aucun commentaire."}
+                              {data.restitutionCommentaire ||
+                                "Aucun commentaire."}
                             </p>
                           </div>
                         </div>
@@ -350,7 +358,9 @@ export function DechargeDetailPage() {
                             </p>
                             <div className="mt-2 text-sm text-foreground">
                               {data.restitutionPieceJointeUrl ? (
-                                <ProtectedFileCell value={data.restitutionPieceJointeUrl} />
+                                <ProtectedFileCell
+                                  value={data.restitutionPieceJointeUrl}
+                                />
                               ) : (
                                 "Aucune piece jointe."
                               )}
@@ -364,8 +374,10 @@ export function DechargeDetailPage() {
                           Aucune restitution enregistree
                         </p>
                         <p className="mt-2 text-sm text-muted-foreground">
-                          Cette decharge n'a pas encore de fiche de retour rattachee. Utilisez l'action
-                          de creation en haut de page pour enregistrer la restitution sans quitter le dossier.
+                          Cette decharge n'a pas encore de fiche de retour
+                          rattachee. Utilisez l'action de creation en haut de
+                          page pour enregistrer la restitution sans quitter le
+                          dossier.
                         </p>
                       </div>
                     )}

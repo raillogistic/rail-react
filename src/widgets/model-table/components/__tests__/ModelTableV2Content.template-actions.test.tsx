@@ -7,7 +7,10 @@ import { ModelTableDialogs } from "../content/ModelTableDialogs";
 import { ModelTableHeader } from "../content/ModelTableHeader";
 import { ModelTableToolbarSection } from "../content/ModelTableToolbarSection";
 import { ModelTableTopActions } from "../content/ModelTableTopActions";
-import { useModelTableContentController } from "../content/useModelTableContentController";
+import {
+  useModelTableContentController,
+  type UseModelTableContentControllerInput,
+} from "../content/useModelTableContentController";
 
 const mockUseMetadata = vi.fn();
 const mockUseTable = vi.fn();
@@ -123,11 +126,17 @@ async function openExcelTemplatesDropdown() {
  });
 }
 
-function DynamicContentSectionsHarness() {
- const controller = useModelTableContentController({});
- if (!controller.metadata) {
- return null;
- }
+type DynamicContentSectionsHarnessProps = {
+  controllerInput?: UseModelTableContentControllerInput;
+};
+
+function DynamicContentSectionsHarness({
+  controllerInput = {},
+}: DynamicContentSectionsHarnessProps) {
+  const controller = useModelTableContentController(controllerInput);
+  if (!controller.metadata) {
+  return null;
+  }
 
  return (
  <TooltipProvider delayDuration={200}>
@@ -221,18 +230,75 @@ describe("Dynamic section composition template actions", () => {
  if (printDialog) {
  expect(String(requestUrl)).toContain("notes=client");
  }
- expect(options).toMatchObject({
- method: "GET",
- credentials: "include",
+  expect(options).toMatchObject({
+  method: "GET",
+  credentials: "include",
  headers: expect.objectContaining({
  Authorization: "Bearer test-token",
- "X-CSRFToken": "csrf-token",
- }),
- });
- });
+  "X-CSRFToken": "csrf-token",
+  }),
+  });
+  });
 
- it("calls excel template endpoint directly with selected row id", async () => {
- const fetchMock = vi.mocked(fetch);
+  it("uses resolved selected rows even when the current page no longer contains them", async () => {
+  const fetchMock = vi.mocked(fetch);
+  fetchMock.mockResolvedValue({
+  ok: true,
+  blob: async () =>
+  new Blob(["excel"], {
+  type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  }),
+  headers: new Headers({
+  "content-disposition": 'attachment; filename="orders.xlsx"',
+  }),
+  } as Response);
+
+  mockUseMetadata.mockReturnValue({
+  app: "store",
+  model: "Order",
+  actionBootstrapLoading: false,
+  actionDetailsLoading: false,
+  actionDetailsLoaded: true,
+  ensureActionDetailsLoaded: vi.fn(),
+  metadata: {
+  model: "Order",
+  verboseNamePlural: "Orders",
+  mutations: [{ name: "createOrder", operation: "create", allowed: true }],
+  templates: [
+  {
+  key: "store/order/export_excel",
+  templateType: "xlsx",
+  title: "Order export",
+  endpoint: "/api/templates/store/order/export_excel/%3Cpk%3E/",
+  allowed: true,
+  },
+  ],
+  },
+  });
+  mockUseTable.mockReturnValue({
+  data: [{ id: 2, desc: "Order #2" }],
+  rowSelection: { "9": true },
+  });
+
+  render(
+  <DynamicContentSectionsHarness
+  controllerInput={{ selectedRows: [{ id: 9, desc: "Order #9" }] }}
+  />,
+  );
+
+  await openExcelTemplatesDropdown();
+  fireEvent.click(screen.getByText(/Order export/i));
+
+  await waitFor(() => {
+  expect(fetchMock).toHaveBeenCalledTimes(1);
+  });
+
+  const [requestUrl] = fetchMock.mock.calls[0] ?? [];
+  expect(String(requestUrl)).toContain("/api/v1/templates/store/order/export_excel/9/");
+  });
+
+  it("calls excel template endpoint directly with selected row id", async () => {
+  const fetchMock = vi.mocked(fetch);
  fetchMock.mockResolvedValue({
  ok: true,
  blob: async () =>
