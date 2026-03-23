@@ -711,17 +711,29 @@ function DynamicBaseTableContent<
 
       if (
         relationStatsConfig?.include &&
-        !relationStatsConfig.include.includes(column.id) &&
-        !relationStatsConfig.include.includes(columnRoot) &&
-        !relationStatsConfig.include.includes(relationMeta.relationName)
+        !relationStatsConfig.include.includes(
+          column.id as ModelTableRelationKey<TSource>,
+        ) &&
+        !relationStatsConfig.include.includes(
+          columnRoot as ModelTableRelationKey<TSource>,
+        ) &&
+        !relationStatsConfig.include.includes(
+          relationMeta.relationName as ModelTableRelationKey<TSource>,
+        )
       ) {
         return null;
       }
       if (
         relationStatsConfig?.exclude &&
-        (relationStatsConfig.exclude.includes(column.id) ||
-          relationStatsConfig.exclude.includes(columnRoot) ||
-          relationStatsConfig.exclude.includes(relationMeta.relationName))
+        (relationStatsConfig.exclude.includes(
+          column.id as ModelTableRelationKey<TSource>,
+        ) ||
+          relationStatsConfig.exclude.includes(
+            columnRoot as ModelTableRelationKey<TSource>,
+          ) ||
+          relationStatsConfig.exclude.includes(
+            relationMeta.relationName as ModelTableRelationKey<TSource>,
+          ))
       ) {
         return null;
       }
@@ -1145,6 +1157,42 @@ function DynamicBaseTableContent<
     (content?.slots?.Dialogs ?? ModelTableDialogs) as React.ComponentType<
       ModelTableDialogsSlotProps<TSource>
     >;
+  const HiddenTopActions: React.ComponentType<
+    ModelTableTopActionsSlotProps<TSource>
+  > = () => null;
+  const headerTopActionsSlot = sectionVisibility.topActions
+    ? TopActionsSlot
+    : HiddenTopActions;
+  const topContent = sectionController.metadata ? (
+    <div className="flex w-full flex-col">
+      {sectionVisibility.header && (
+        <HeaderSlot
+          controller={sectionController}
+          TopActionsComponent={headerTopActionsSlot}
+        />
+      )}
+
+      {!sectionVisibility.header && sectionVisibility.topActions && (
+        <div className="flex w-full justify-end border-t border-border/20 bg-muted/10 px-5 py-3">
+          <TopActionsSlot controller={sectionController} />
+        </div>
+      )}
+
+      {sectionVisibility.toolbar && (
+        <div className="border-t border-border/20 bg-card px-5 py-3 sm:px-6">
+          <ToolbarSlot controller={sectionController} />
+        </div>
+      )}
+
+      {sectionVisibility.bulkActionsBar && (
+        <div className="border-t border-border/30 bg-primary/5 px-5 py-2">
+          <BulkActionsBarSlot controller={sectionController} />
+        </div>
+      )}
+
+      {sectionVisibility.footer && <FooterSlot controller={sectionController} />}
+    </div>
+  ) : null;
 
   if (metadataLoading) {
     return <ModelTableLoadingSkeleton />;
@@ -1154,19 +1202,12 @@ function DynamicBaseTableContent<
   }
 
   return (
-    <ModelTableSurface<TSource>
+    <ModelTableSurface
       persistenceKey={effectiveKey}
-      controller={sectionController}
-      sectionVisibility={sectionVisibility}
-      HeaderSlot={HeaderSlot}
-      TopActionsSlot={TopActionsSlot}
-      ToolbarSlot={ToolbarSlot}
-      BulkActionsBarSlot={BulkActionsBarSlot}
-      FooterSlot={FooterSlot}
-      DialogsSlot={DialogsSlot}
       devtools={
         devtoolsEnabled ? <ModelTableDevtoolsPanel timings={timings} /> : null
       }
+      topContent={topContent}
       hideTableOnMobile={hideTableOnMobile}
       mobileContent={
         hideTableOnMobile ? (
@@ -1175,8 +1216,8 @@ function DynamicBaseTableContent<
             refetch={refetch}
             fields={effectiveFields}
             columnActions={columnActions}
-            update={update}
-            detail={detail}
+            update={update as ModelTableUpdateConfig}
+            detail={detail as ModelTableDetailConfig}
             pdfPreview={tableConfig?.pdfPreview}
             onTemplatePdfPreview={
               pdfPreviewEnabled ? handleTemplatePdfPreview : undefined
@@ -1278,6 +1319,11 @@ function DynamicBaseTableContent<
             refreshing={pdfPreviewRefreshing}
             onRefresh={refreshPdfPreview}
           />
+        ) : null
+      }
+      dialogsContent={
+        sectionController.metadata && sectionVisibility.dialogs ? (
+          <DialogsSlot controller={sectionController} />
         ) : null
       }
     />
@@ -1475,7 +1521,9 @@ const DynamicModelTableInner = <TSource extends object = Record<string, unknown>
             relations={baseTable?.relations}
             relationStats={baseTable?.relationStats}
             queryManager={baseTable?.queryManager}
-            columnOrdering={effectiveColumnOrdering}
+            columnOrdering={
+              effectiveColumnOrdering as BaseModelTableColumnOrderingConfig<ModelTableAccessorPath<TSource>>
+            }
             hydratePersistedColumnOrder={shouldHydratePersistedColumnOrder}
             skipCount={baseTable?.skipCount ?? false}
             disableSorting={baseTable?.disableSorting}

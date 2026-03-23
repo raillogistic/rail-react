@@ -81,6 +81,7 @@ export type CustomMutationsDropdownProps = {
   data: {
     app: string;
     model: string;
+    funcName?: string;
     objectId?: string | number | null;
   };
   button?: CustomMutationActionButtonConfig;

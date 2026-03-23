@@ -35,7 +35,7 @@ type TemplateClientData = Record<string, unknown>;
 export type ModelTemplateActionData = {
   app: string;
   model: string;
-  funcName: string;
+  funcName?: string;
   objectId?: string | number | null;
 };
 

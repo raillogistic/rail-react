@@ -2252,11 +2252,13 @@ const rootContract: ModelFormContract = {
  model="Product"
  mode="CREATE"
  nested={["tags"]}
- fieldOverrides={{
+ fieldOverrides={
+ {
  tags: { order: 0 },
  name: { order: 1 },
  status: { order: 2 },
- }}
+ } as any
+ }
  />,
  mocks,
  );

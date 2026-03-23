@@ -18,7 +18,6 @@ import type {
 } from "@tanstack/react-table";
 import { createInitialFilterState } from "@/widgets/model-table/filtering/state";
 import { Button } from "@/shared/ui/kit/button";
-import { TooltipProvider } from "@/shared/ui/kit/tooltip";
 import { cn } from "@/shared/utils";
 import { buildModelQueryDocument } from "@/shared/api/graphql/graphql/queries/queryBuilder";
 import {
@@ -37,6 +36,8 @@ import { TableProvider, useTable } from "../context/TableContext";
 import { useDebouncedValue } from "../hooks/useDebouncedValue";
 import { useTablePersistence } from "../hooks/useTablePersistence";
 import { TablePagination } from "./TablePagination";
+import { ModelTableDataErrorDisplay } from "./content/ModelTableFeedback";
+import { ModelTableSurface } from "./content/ModelTableSurface";
 import {
   mergeBaseModelTableFields,
   mergeModelTableQueryVariables,
@@ -54,7 +55,6 @@ import type {
   BaseModelTableFieldsInput,
   BaseModelTableRefetch,
   BaseModelTableRelationConfig,
-  DynamicModelTableInitVariables,
   DynamicModelTableRow,
   ModelTableAccessorPath,
   ModelTableRelationKey,
@@ -62,11 +62,23 @@ import type {
   TableDensity,
 } from "../types";
 import type {
+  DynamicModelTableInitVariables,
   ModelTableV2ExpandConfig,
   ModelTableV2PerformanceOptions,
   ModelTableV2TableConfig,
   ModelTableV2ViewOptions,
 } from "../config/types";
+import {
+  areBooleanMapsEqual,
+  areNumberMapsEqual,
+  areStringArraysEqual,
+  formatFallbackCellValue,
+  getSelectedRowIds,
+  isExpandedStateEqual,
+  isPaginationStateEqual,
+  isRecord,
+  resolveRowId,
+} from "./DynamicModelTable.shared";
 
 type SelectionTreeNode = {
   [key: string]: SelectionTreeNode | true;
@@ -138,10 +150,6 @@ export interface LightModelTableProps<
 
 const DEFAULT_BACKEND_ORDER_BY = ["-id"] as const;
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
 function toPositiveInteger(value: unknown): number | null {
   if (typeof value !== "number" || !Number.isFinite(value) || value <= 0) {
     return null;
@@ -161,72 +169,6 @@ function toStringEntries(value: unknown): string[] {
     .filter((entry): entry is string => typeof entry === "string")
     .map((entry) => entry.trim())
     .filter(Boolean);
-}
-
-function areStringArraysEqual(left: string[], right: string[]): boolean {
-  if (left.length !== right.length) {
-    return false;
-  }
-  for (let index = 0; index < left.length; index += 1) {
-    if (left[index] !== right[index]) {
-      return false;
-    }
-  }
-  return true;
-}
-
-function areBooleanMapsEqual(
-  left: Record<string, boolean>,
-  right: Record<string, boolean>,
-): boolean {
-  const leftKeys = Object.keys(left);
-  const rightKeys = Object.keys(right);
-  if (leftKeys.length !== rightKeys.length) {
-    return false;
-  }
-  for (const key of leftKeys) {
-    if (left[key] !== right[key]) {
-      return false;
-    }
-  }
-  return true;
-}
-
-function areNumberMapsEqual(
-  left: Record<string, number>,
-  right: Record<string, number>,
-): boolean {
-  const leftKeys = Object.keys(left);
-  const rightKeys = Object.keys(right);
-  if (leftKeys.length !== rightKeys.length) {
-    return false;
-  }
-  for (const key of leftKeys) {
-    if (left[key] !== right[key]) {
-      return false;
-    }
-  }
-  return true;
-}
-
-function isExpandedStateEqual(
-  left: ExpandedState,
-  right: ExpandedState,
-): boolean {
-  if (left === right) {
-    return true;
-  }
-  if (typeof left === "boolean" || typeof right === "boolean") {
-    return left === right;
-  }
-  return areBooleanMapsEqual(left, right);
-}
-
-function isPaginationStateEqual(
-  left: DynamicPaginationState,
-  right: DynamicPaginationState,
-): boolean {
-  return left.pageIndex === right.pageIndex && left.pageSize === right.pageSize;
 }
 
 function resolveInitialTableState(
@@ -323,45 +265,6 @@ function prettifyAccessorLabel(accessor: string): string {
   return withSpaces.charAt(0).toUpperCase() + withSpaces.slice(1);
 }
 
-function formatFallbackCellValue(value: unknown): string {
-  if (value === null || value === undefined) {
-    return "-";
-  }
-  if (Array.isArray(value)) {
-    if (value.length === 0) {
-      return "-";
-    }
-    const labels = value
-      .map((entry) => {
-        if (typeof entry === "string" || typeof entry === "number") {
-          return String(entry);
-        }
-        if (isRecord(entry)) {
-          const label =
-            entry.desc ?? entry.name ?? entry.title ?? entry.label ?? entry.id;
-          if (typeof label === "string" || typeof label === "number") {
-            return String(label);
-          }
-        }
-        return null;
-      })
-      .filter((entry): entry is string => Boolean(entry));
-    if (labels.length > 0) {
-      return labels.join(", ");
-    }
-    return String(value.length);
-  }
-  if (isRecord(value)) {
-    const label =
-      value.desc ?? value.name ?? value.title ?? value.label ?? value.id;
-    if (typeof label === "string" || typeof label === "number") {
-      return String(label);
-    }
-    return JSON.stringify(value);
-  }
-  return String(value);
-}
-
 function buildColumnAliases(value: string): string[] {
   const trimmed = String(value || "").trim();
   if (!trimmed) {
@@ -417,24 +320,6 @@ function normalizeColumnOrderEntries(
     ordered.push(resolved);
   });
   return ordered;
-}
-
-function resolveRowId(
-  row: Record<string, unknown>,
-  index: number,
-  primaryKey: string,
-): string {
-  const value = resolveValueOptimized(row, buildAccessorPath(primaryKey)) ?? row.id;
-  if (typeof value === "string" || typeof value === "number") {
-    return String(value);
-  }
-  return String(index);
-}
-
-function getSelectedRowIds(rowSelection: RowSelectionState): string[] {
-  return Object.entries(rowSelection)
-    .filter(([, selected]) => selected)
-    .map(([rowId]) => rowId);
 }
 
 function ensureNode(tree: SelectionTreeNode, key: string): SelectionTreeNode {
@@ -660,6 +545,7 @@ function LightModelTableContent<
     setColumnWidths,
     setRowSelection,
     setGroupingField,
+    setGroupCollapsed,
     setDragModeEnabled,
     setDensity,
     setWrapCells,
@@ -1329,6 +1215,99 @@ function LightModelTableContent<
     setGroupCollapsed(nextCollapsed);
   }, [data, groupingField]);
 
+  const topContent = displayToolbar ? (
+    <div className="flex flex-col gap-3 px-4 py-3">
+      <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
+        <div className="flex w-full flex-1 flex-wrap items-start gap-3 sm:w-auto">
+          {quickSearch ? (
+            <QuickSearch
+              value={quickSearchTerm}
+              onChange={setQuickSearch}
+              placeholder={tableConfig?.searchPlaceholder ?? "Quick search"}
+              expanded={searchFocused || Boolean(quickSearchTerm)}
+              onFocusChange={setSearchFocused}
+            />
+          ) : null}
+        </div>
+
+        <div className="flex w-full items-center justify-end gap-1.5 sm:w-auto">
+          <div className="flex items-center gap-0.5 bg-muted/20 p-1">
+            <ViewOptionsMenu
+              density={density}
+              onDensityChange={setDensity}
+              wrapCells={wrapCells}
+              onWrapChange={setWrapCells}
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              onClick={() => setDragModeEnabled(!dragModeEnabled)}
+              className={cn(
+                "h-8 w-8 transition-all",
+                dragModeEnabled
+                  ? "bg-primary/20 text-primary shadow-inner"
+                  : "text-muted-foreground hover:bg-background hover:text-foreground",
+              )}
+            >
+              <GripVertical className="h-4 w-4" />
+            </Button>
+            <ColumnsMenu
+              columnSearch={columnSearch}
+              onColumnSearchChange={setColumnSearch}
+              visibleColumns={visibleColumns}
+              columnVisibility={columnVisibility}
+              allColumnsVisible={allColumnsVisible}
+              onToggleColumn={toggleColumn}
+              onSetAllColumnsVisibility={(checked) => {
+                const nextVisibility = { ...columnVisibility };
+                orderedColumns.forEach((column) => {
+                  column.visibilityKeys.forEach((key) => {
+                    nextVisibility[key] = checked;
+                  });
+                });
+                setColumnVisibility(nextVisibility);
+              }}
+              onApplyDefaultColumnsVisibility={() => {
+                const nextVisibility = { ...columnVisibility };
+                orderedColumns.forEach((column) => {
+                  column.visibilityKeys.forEach((key) => {
+                    nextVisibility[key] = true;
+                  });
+                });
+                setColumnVisibility(nextVisibility);
+              }}
+            />
+            <GroupingMenu
+              groupingField={groupingField}
+              hasGroupedRows={Boolean(groupingField)}
+              groupableFields={groupableFields}
+              onSetGroupingField={setGroupingField}
+              onResetCollapsed={() => setGroupCollapsed({})}
+              onExpandAll={handleExpandAllGroups}
+              onCollapseAll={handleCollapseAllGroups}
+            />
+          </div>
+
+          <div className="flex items-center gap-0.5 bg-muted/20 p-1">
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-muted-foreground transition-all hover:bg-background hover:text-primary active:scale-90"
+              onClick={() => void refetch()}
+              disabled={tableLoading}
+            >
+              <RotateCw
+                className={cn("h-4 w-4", tableLoading && "animate-spin")}
+              />
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  ) : null;
+
   if (columnDefs.length === 0) {
     return (
       <div className="flex h-full items-center justify-center border border-dashed border-border/50 bg-muted/20 px-6 text-sm text-muted-foreground">
@@ -1338,151 +1317,56 @@ function LightModelTableContent<
   }
 
   return (
-    <TooltipProvider delayDuration={200}>
-      <div className="flex h-full min-h-0 flex-col">
-        {displayToolbar ? (
-          <div className="flex flex-col gap-3 border-b border-border/40 px-4 py-3">
-            <div className="flex flex-col items-center justify-between gap-3 sm:flex-row">
-              <div className="flex w-full flex-1 flex-wrap items-start gap-3 sm:w-auto">
-                {quickSearch ? (
-                  <QuickSearch
-                    value={quickSearchTerm}
-                    onChange={setQuickSearch}
-                    placeholder={tableConfig?.searchPlaceholder ?? "Quick search"}
-                    expanded={searchFocused || Boolean(quickSearchTerm)}
-                    onFocusChange={setSearchFocused}
-                  />
-                ) : null}
-              </div>
-
-              <div className="flex w-full items-center justify-end gap-1.5 sm:w-auto">
-                <div className="flex items-center gap-0.5 bg-muted/20 p-1">
-                  <ViewOptionsMenu
-                    density={density}
-                    onDensityChange={setDensity}
-                    wrapCells={wrapCells}
-                    onWrapChange={setWrapCells}
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => setDragModeEnabled(!dragModeEnabled)}
-                    className={cn(
-                      "h-8 w-8 transition-all",
-                      dragModeEnabled
-                        ? "bg-primary/20 text-primary shadow-inner"
-                        : "text-muted-foreground hover:bg-background hover:text-foreground",
-                    )}
-                  >
-                    <GripVertical className="h-4 w-4" />
-                  </Button>
-                  <ColumnsMenu
-                    columnSearch={columnSearch}
-                    onColumnSearchChange={setColumnSearch}
-                    visibleColumns={visibleColumns}
-                    columnVisibility={columnVisibility}
-                    allColumnsVisible={allColumnsVisible}
-                    onToggleColumn={toggleColumn}
-                    onSetAllColumnsVisibility={(checked) => {
-                      const nextVisibility = { ...columnVisibility };
-                      orderedColumns.forEach((column) => {
-                        column.visibilityKeys.forEach((key) => {
-                          nextVisibility[key] = checked;
-                        });
-                      });
-                      setColumnVisibility(nextVisibility);
-                    }}
-                    onApplyDefaultColumnsVisibility={() => {
-                      const nextVisibility = { ...columnVisibility };
-                      orderedColumns.forEach((column) => {
-                        column.visibilityKeys.forEach((key) => {
-                          nextVisibility[key] = true;
-                        });
-                      });
-                      setColumnVisibility(nextVisibility);
-                    }}
-                  />
-                  <GroupingMenu
-                    groupingField={groupingField}
-                    hasGroupedRows={Boolean(groupingField)}
-                    groupableFields={groupableFields}
-                    onSetGroupingField={setGroupingField}
-                    onResetCollapsed={() => setGroupCollapsed({})}
-                    onExpandAll={handleExpandAllGroups}
-                    onCollapseAll={handleCollapseAllGroups}
-                  />
-                </div>
-
-                <div className="flex items-center gap-0.5 bg-muted/20 p-1">
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-muted-foreground hover:bg-background hover:text-primary transition-all active:scale-90"
-                    onClick={() => void refetch()}
-                    disabled={tableLoading}
-                  >
-                    <RotateCw
-                      className={cn("h-4 w-4", tableLoading && "animate-spin")}
-                    />
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        ) : null}
-
-        <div className="min-h-0 flex-1">
-        <DynamicTable
-          className="h-full border-none [&_.table-header]:border-b-border/40"
-          rows={data}
-          columns={dynamicColumns}
-          getRowId={(row, index) => resolveRowId(row, index, String(primaryKey))}
-          loading={tableLoading}
-          loadingText={tableConfig?.loadingText}
-          emptyState={tableConfig?.emptyState ?? "No results."}
-          state={dynamicState}
-          onStateChange={handleStateChange}
-          onOrderByChange={handleOrderByChange}
-          onRowSelectionChange={handleRowSelectionChange}
-          onPaginationChange={handlePaginationChange}
-          expand={expand}
-          sortMode="server"
-          paginationMode="server"
-          features={features}
-          layout={{
-            density: resolveTableDensity(view?.defaultDensity),
-            wrapCells: view?.defaultWrapCells ?? false,
-            containerClassName:
-              "group/frame relative flex h-full flex-col overflow-hidden bg-transparent",
-          }}
-          totalRows={pagination.totalKnown ? pagination.total : undefined}
-          pageCount={pagination.totalKnown ? pagination.numPages : undefined}
-          hasNextPage={pagination.hasNextPage}
-          hasPreviousPage={pagination.hasPreviousPage}
-          onLoadMore={() => {
-            if (!isInfiniteMode || tableLoading || !pagination.hasNextPage) {
-              return;
-            }
-            setPage(pagination.page + 1);
-          }}
-        />
+    <ModelTableSurface
+      persistenceKey={effectiveKey}
+      topContent={topContent}
+      desktopContent={
+        <div className="min-h-0 h-full flex-1">
+          <DynamicTable
+            className="h-full border-none [&_.table-header]:border-b-border/40"
+            rows={data}
+            columns={dynamicColumns}
+            getRowId={(row, index) => resolveRowId(row, index, String(primaryKey))}
+            loading={tableLoading}
+            loadingText={tableConfig?.loadingText}
+            emptyState={tableConfig?.emptyState ?? "No results."}
+            state={dynamicState}
+            onStateChange={handleStateChange}
+            onOrderByChange={handleOrderByChange}
+            onRowSelectionChange={handleRowSelectionChange}
+            onPaginationChange={handlePaginationChange}
+            expand={expand}
+            sortMode="server"
+            paginationMode="server"
+            features={features}
+            layout={{
+              density: resolveTableDensity(view?.defaultDensity),
+              wrapCells: view?.defaultWrapCells ?? false,
+              containerClassName:
+                "group/frame relative flex h-full flex-col overflow-hidden bg-transparent",
+            }}
+            totalRows={pagination.totalKnown ? pagination.total : undefined}
+            pageCount={pagination.totalKnown ? pagination.numPages : undefined}
+            hasNextPage={pagination.hasNextPage}
+            hasPreviousPage={pagination.hasPreviousPage}
+            onLoadMore={() => {
+              if (!isInfiniteMode || tableLoading || !pagination.hasNextPage) {
+                return;
+              }
+              setPage(pagination.page + 1);
+            }}
+          />
         </div>
-
-        {!isInfiniteMode ? (
-          <div className="flex-none border-t border-border/40 bg-card backdrop-blur-md">
-            <TablePagination enableSelection={enableSelection ?? true} />
-          </div>
-        ) : null}
-
-        {dataError ? (
-          <div className="mx-4 mb-4 flex items-center gap-2 rounded border border-rose-200/50 bg-rose-50/60 px-3 py-2 text-xs font-medium text-rose-700">
-            {dataError.message}
-          </div>
-        ) : null}
-      </div>
-    </TooltipProvider>
+      }
+      paginationContent={
+        !isInfiniteMode ? (
+          <TablePagination enableSelection={enableSelection ?? true} />
+        ) : null
+      }
+      dataErrorContent={
+        dataError ? <ModelTableDataErrorDisplay error={dataError} /> : null
+      }
+    />
   );
 }
 

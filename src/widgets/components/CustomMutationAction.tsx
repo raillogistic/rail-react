@@ -42,7 +42,7 @@ type CustomMutationValues = Record<string, unknown>;
 export type CustomMutationActionData = {
   app: string;
   model: string;
-  funcName: string;
+  funcName?: string;
   objectId?: string | number | null;
 };
 

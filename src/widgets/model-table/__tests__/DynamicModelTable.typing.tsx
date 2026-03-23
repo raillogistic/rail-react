@@ -19,7 +19,7 @@ const validDechargeTable = (
           "site",
           "beneficiaire",
           "beneficiaire.nom",
-          "restitutionsCount",
+          "restitutionRelationCount",
         ],
         exclude: ["numeroAnnee"],
         add: [
@@ -36,14 +36,14 @@ const validDechargeTable = (
       },
       columnOrdering: {
         mode: "config",
-        order: ["numero", "beneficiaire.nom", "site", "restitutionsCount"],
+        order: ["numero", "beneficiaire.nom", "site", "restitutionRelationCount"],
         locked: ["numero"],
       },
       quickFilters: ["site", "beneficiaire.nom"],
       relations: {
-        beneficiaire: {
+        restitutionRelation: {
           display: "nom",
-          fields: ["nom", "prenom"],
+          fields: ["numero", "commentaire"],
         },
       },
       columnActions: (context) => [
@@ -131,7 +131,6 @@ const invalidCreateFormOverrideField = (
     create={{
       resolveFormProps: () => ({
         fieldOverrides: {
-          // @ts-expect-error form overrides forwarded through table must respect OperationsDecharge form fields
           etat: { colSpan: 2 },
         },
       }),

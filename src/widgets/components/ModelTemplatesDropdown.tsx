@@ -68,6 +68,7 @@ export type ModelTemplatesDropdownProps = {
   data: {
     app: string;
     model: string;
+    funcName?: string;
     objectId?: string | number | null;
   };
   button?: ModelTemplateActionButtonConfig;

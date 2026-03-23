@@ -5,8 +5,13 @@ import type {
   RowSelectionState,
 } from "@tanstack/react-table";
 import { createInitialFilterState } from "@/widgets/model-table/filtering/state";
+import {
+  buildAccessorPath,
+  resolveValueOptimized,
+} from "../utils/valueResolution";
 import type {
   BaseModelTableFieldsInput,
+  ModelTableAccessorPath,
   TableBootstrapInitialState,
 } from "../types";
 import type {
@@ -73,7 +78,7 @@ export function collectExplicitFieldAccessors(
     include?: Array<string | { accessor?: string }>;
     add: Array<{ accessor: string }>;
   },
-): string[] {
+): Array<string> {
   const explicit = new Set<string>();
   (fields.include ?? []).forEach((entry) => {
     const accessor = typeof entry === "string" ? entry : entry.accessor;
@@ -93,7 +98,7 @@ export function collectIncludedFieldAccessors(
   fields: {
     include?: Array<string | { accessor?: string }>;
   },
-): string[] {
+): Array<string> {
   const ordered = new Set<string>();
   (fields.include ?? []).forEach((entry) => {
     const accessor = typeof entry === "string" ? entry : entry.accessor;
@@ -112,7 +117,7 @@ export function mergeManagedFieldExclusions<TSource extends object>(
     return fields;
   }
 
-  const nextExclude = Array.from(exclusions);
+  const nextExclude = Array.from(exclusions) as ModelTableAccessorPath<TSource>[];
   if (!fields) {
     return { exclude: nextExclude };
   }
@@ -124,7 +129,12 @@ export function mergeManagedFieldExclusions<TSource extends object>(
   }
   return {
     ...fields,
-    exclude: Array.from(new Set([...(fields.exclude ?? []), ...nextExclude])),
+    exclude: Array.from(
+      new Set<ModelTableAccessorPath<TSource>>([
+        ...((fields.exclude ?? []) as ModelTableAccessorPath<TSource>[]),
+        ...nextExclude,
+      ]),
+    ),
   };
 }
 
@@ -442,7 +452,38 @@ export function formatFallbackCellValue(value: unknown): string {
   if (value === null || value === undefined) {
     return "-";
   }
+  if (Array.isArray(value)) {
+    if (value.length === 0) {
+      return "-";
+    }
+    const labels = value
+      .map((entry) => {
+        if (typeof entry === "string" || typeof entry === "number") {
+          return String(entry);
+        }
+        if (isRecord(entry)) {
+          const label =
+            entry.desc ?? entry.name ?? entry.title ?? entry.label ?? entry.id;
+          if (typeof label === "string" || typeof label === "number") {
+            return String(label);
+          }
+        }
+        return null;
+      })
+      .filter((entry): entry is string => Boolean(entry));
+    if (labels.length > 0) {
+      return labels.join(", ");
+    }
+    return String(value.length);
+  }
   if (typeof value === "object") {
+    if (isRecord(value)) {
+      const label =
+        value.desc ?? value.name ?? value.title ?? value.label ?? value.id;
+      if (typeof label === "string" || typeof label === "number") {
+        return String(label);
+      }
+    }
     return JSON.stringify(value);
   }
   return String(value);
@@ -498,7 +539,8 @@ export function resolveRowId(
   index: number,
   primaryKey: string,
 ): string {
-  const candidate = row[primaryKey] ?? row.id;
+  const candidate =
+    resolveValueOptimized(row, buildAccessorPath(primaryKey)) ?? row.id;
   if (typeof candidate === "string" || typeof candidate === "number") {
     return String(candidate);
   }

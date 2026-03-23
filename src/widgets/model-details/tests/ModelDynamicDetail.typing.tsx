@@ -49,11 +49,6 @@ const validDechargeDetail = (
           },
         ],
       },
-      nestedFields: {
-        restitutions: {
-          fields: ["dateRestitution", "commentaire"],
-        },
-      },
       actions: {
         onUpdate: ({ data }) => {
           void data?.beneficiaire?.nom;

@@ -2,7 +2,7 @@ import type React from "react";
 import { TooltipProvider } from "@/shared/ui/kit/tooltip";
 import { cn } from "@/shared/utils";
 
-type ModelTableSurfaceProps<TSource extends object> = {
+type ModelTableSurfaceProps = {
   persistenceKey: string;
   devtools?: React.ReactNode;
   topContent?: React.ReactNode;
@@ -15,9 +15,7 @@ type ModelTableSurfaceProps<TSource extends object> = {
   dialogsContent?: React.ReactNode;
 };
 
-export function ModelTableSurface<
-  TSource extends object = Record<string, unknown>,
->({
+export function ModelTableSurface({
   persistenceKey,
   devtools,
   topContent,
@@ -28,7 +26,7 @@ export function ModelTableSurface<
   dataErrorContent,
   pdfPreviewDialog,
   dialogsContent,
-}: ModelTableSurfaceProps<TSource>) {
+}: ModelTableSurfaceProps) {
   return (
     <TooltipProvider delayDuration={200}>
       <div

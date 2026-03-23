@@ -44,7 +44,7 @@ const validDechargeForm = (
       },
     }}
     nested={{
-      restitutions: {
+      restitutionRelation: {
         onlyFields: ["commentaire", "dateRestitution", "etatRetour"],
         excludeFields: ["legacySource"],
         customOrder: ["dateRestitution", "etatRetour", "commentaire"],
@@ -131,7 +131,7 @@ const invalidNestedFieldOverrideKey = (
     model="Decharge"
     mode="CREATE"
     nested={{
-      restitutions: {
+      restitutionRelation: {
         fieldOverrides: {
           // @ts-expect-error nested field override keys must exist on OperationsRestitution form values
           missingField: { colSpan: 2 },
