@@ -38,7 +38,7 @@ export function ModelTablePdfPreviewDialog({
 }: ModelTablePdfPreviewDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex h-[92vh] max-w-6xl flex-col gap-0 overflow-hidden border-border/30 bg-background/95 p-0 shadow-2xl backdrop-blur-xl">
+      <DialogContent className="flex h-[92vh] max-w-6xl flex-col gap-0 overflow-hidden border border-border/50 bg-background p-0 shadow-lg sm:rounded-xl">
         <DialogHeader className="border-b border-border/20 px-6 py-4">
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>

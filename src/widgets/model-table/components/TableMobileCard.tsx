@@ -111,32 +111,34 @@ export function TableMobileCard({
     setVisibleCount(MOBILE_BATCH_SIZE);
   }, [data.length]);
 
-  if (!metadata) return null;
+
 
   const normalizedFieldsConfig = useMemo(
     () => normalizeBaseModelTableFieldsInput(fields),
     [fields],
   );
   const allowedFieldIds = useMemo(
-    () =>
-      new Set(
+    () => {
+      if (!metadata) return new Set<string>();
+      return new Set(
         buildColumnDefinitions(metadata, normalizedFieldsConfig).map(
           (column) => column.id.split(".")[0],
         ),
-      ),
+      );
+    },
     [metadata, normalizedFieldsConfig],
   );
 
   const byName = useMemo(
-    () => new Map(metadata.fields.map((field) => [field.name, field])),
-    [metadata.fields],
+    () => new Map(metadata?.fields.map((field) => [field.name, field]) ?? []),
+    [metadata?.fields],
   );
   const byFieldName = useMemo(
     () =>
       new Map(
-        metadata.fields.map((field) => [field.name || field.fieldName, field]),
+        metadata?.fields.map((field) => [field.name || field.fieldName, field]) ?? [],
       ),
-    [metadata.fields],
+    [metadata?.fields],
   );
 
   const orderedColumns = useMemo(
@@ -144,16 +146,16 @@ export function TableMobileCard({
       columnOrder
         .map((columnId) => byName.get(columnId) || byFieldName.get(columnId))
         .filter(
-          (field): field is (typeof metadata.fields)[number] =>
+          (field): field is NonNullable<typeof metadata>["fields"][number] =>
             !!field &&
             allowedFieldIds.has(toGraphqlFieldName(field.name || field.fieldName)),
         ),
-    [allowedFieldIds, byFieldName, byName, columnOrder, metadata.fields],
+    [allowedFieldIds, byFieldName, byName, columnOrder],
   );
 
   const mergedColumns = useMemo(() => {
     const seenColumns = new Set<string>();
-    return [...orderedColumns, ...metadata.fields].filter((field) => {
+    return [...orderedColumns, ...(metadata?.fields ?? [])].filter((field) => {
       const canonicalFieldId = toGraphqlFieldName(field.name || field.fieldName);
       if (!allowedFieldIds.has(canonicalFieldId)) {
         return false;
@@ -162,7 +164,7 @@ export function TableMobileCard({
       seenColumns.add(field.name);
       return true;
     });
-  }, [allowedFieldIds, metadata.fields, orderedColumns]);
+  }, [allowedFieldIds, metadata?.fields, orderedColumns]);
 
   const visibleColumns = useMemo(
     () =>
@@ -269,6 +271,8 @@ export function TableMobileCard({
     return groups;
   }, [groupedData, visibleCount]);
 
+  if (!metadata) return null;
+
   const hasMore = visibleCount < data.length;
   const pdfPreviewEnabled = pdfPreview?.enabled ?? false;
   const titleField = visibleColumns[0];
@@ -345,7 +349,7 @@ export function TableMobileCard({
     return (
       <Card
         key={`${keyPrefix ?? "row"}:${rowId || index}`}
-        className="overflow-hidden border-border/20 shadow-sm hover:shadow-md transition-shadow"
+        className="overflow-hidden border-border shadow-sm transition-shadow"
       >
         <CardHeader className="pb-2 px-4 pt-4">
           <div className="flex items-start justify-between gap-2">
@@ -483,8 +487,8 @@ export function TableMobileCard({
       ) : null}
       {pdfPreviewEnabled && pdfPreviewUrl ? (
         <Dialog open onOpenChange={closePdfPreview}>
-          <DialogContent className="flex h-[92vh] max-w-6xl flex-col gap-0 overflow-hidden border-border/30 bg-background/95 p-0 shadow-2xl backdrop-blur-xl">
-            <DialogHeader className="border-b border-border/20 px-6 py-4">
+          <DialogContent className="flex h-[92vh] max-w-6xl flex-col gap-0 overflow-hidden border p-0 shadow-lg bg-background">
+            <DialogHeader className="border-b border-border px-6 py-4">
               <DialogTitle>{pdfPreviewTitle || "PDF preview"}</DialogTitle>
               <DialogDescription>
                 {pdfPreview?.description ||

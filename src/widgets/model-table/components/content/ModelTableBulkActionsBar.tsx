@@ -3,7 +3,6 @@ import {
  FileSpreadsheet,
  FileText,
  ArrowRight,
- ClipboardList,
  Loader2,
  Sparkles,
  Trash2,
@@ -29,7 +28,6 @@ import {
  DropdownMenuSeparator,
  DropdownMenuTrigger,
 } from "@/shared/ui/kit/dropdown-menu";
-import { Separator } from "@/shared/ui/kit/separator";
 import {
  Tooltip,
  TooltipContent,
@@ -59,22 +57,20 @@ export function ModelTableBulkActionsBar({
  return (
  <div
  className={cn(
-            "fixed bottom-8 left-1/2 z-[60] -translate-x-1/2",
+            "fixed bottom-6 left-1/2 z-60 -translate-x-1/2",
+            "flex w-[90%] sm:w-auto items-center justify-between sm:justify-center gap-2 sm:gap-4",
  controller.hasSelection
- ? "translate-y-0 opacity-100 scale-100"
- : "translate-y-24 opacity-0 scale-95 pointer-events-none",
+ ? "translate-y-0 opacity-100 scale-100 pointer-events-auto"
+ : "translate-y-8 opacity-0 scale-95 pointer-events-none",
  )}
  >
- <div className="flex items-center gap-3 border border-border/30 bg-background/90 p-2 shadow-xl backdrop-blur-2xl ring-4 ring-primary/5">
+ <div className="flex items-center gap-2 border border-border/50 bg-background p-1.5 shadow-lg rounded-full">
  {/* Selection indicator */}
- <div className="flex items-center gap-3 pl-4 pr-2">
- <div className="relative flex size-9 items-center justify-center bg-primary text-primary-foreground shadow-md shadow-primary/20">
- <ClipboardList className="size-4" />
- <div className="absolute -right-2 -top-2 flex size-5 items-center justify-center bg-foreground text-[9px] font-bold text-background shadow ring-2 ring-background tabular-nums">
+ <div className="flex items-center gap-2 pl-4 pr-1">
+ <div className="flex h-7 px-2.5 items-center justify-center bg-primary text-primary-foreground text-xs font-bold rounded-full">
  {controller.selectedCount}
  </div>
- </div>
- <div className="flex flex-col leading-tight">
+ <div className="flex flex-col leading-tight mr-2">
  <span className="text-[11px] font-bold text-foreground">
  Sélection active
  </span>
@@ -84,11 +80,11 @@ export function ModelTableBulkActionsBar({
  </div>
  </div>
 
- <Separator orientation="vertical" className="h-8 bg-border/20" />
+ <div className="h-5 w-px bg-border/40 mx-1" />
 
  {/* Actions cluster */}
- <div className="flex items-center gap-1.5 bg-muted/30 p-1">
- <div className="flex items-center gap-0.5">
+ <div className="flex items-center gap-1">
+ <div className="flex items-center gap-1">
  {controller.pdfTemplates.length > 0 ? (
  <DropdownMenu>
  <Tooltip>
@@ -98,7 +94,7 @@ export function ModelTableBulkActionsBar({
  variant="ghost"
  size="icon"
  data-testid="templates-pdf-dropdown-trigger"
-                className="size-8 text-blue-500 hover:bg-blue-500 hover:text-white"
+                className="size-8 rounded-full text-blue-500 hover:bg-blue-500/10"
  >
  <FileText className="size-4" />
  </Button>
@@ -153,7 +149,7 @@ export function ModelTableBulkActionsBar({
  variant="ghost"
  size="icon"
  disabled
- className="size-8 text-blue-500/60"
+ className="size-8 text-blue-500/60 rounded-full"
  title="Chargement des templates PDF..."
  >
  <FileText className="size-4" />
@@ -177,7 +173,7 @@ export function ModelTableBulkActionsBar({
  variant="ghost"
  size="icon"
  data-testid="templates-excel-dropdown-trigger"
-                className="size-8 text-emerald-500 hover:bg-emerald-500 hover:text-white"
+                className="size-8 rounded-full text-emerald-500 hover:bg-emerald-500/10"
  >
  <FileSpreadsheet className="size-4" />
  </Button>
@@ -232,7 +228,7 @@ export function ModelTableBulkActionsBar({
  variant="ghost"
  size="icon"
  disabled
- className="size-8 text-emerald-500/60"
+ className="size-8 text-emerald-500/60 rounded-full"
  title="Chargement des templates Excel..."
  >
  <FileSpreadsheet className="size-4" />
@@ -248,12 +244,9 @@ export function ModelTableBulkActionsBar({
  ) : null}
  </div>
 
- <Separator
- orientation="vertical"
- className="h-5 bg-border/30 mx-0.5"
- />
+ <div className="h-5 w-px bg-border/40 mx-1" />
 
- <div className="flex items-center gap-0.5">
+ <div className="flex items-center gap-1 pr-1">
  <AlertDialog
  open={controller.bulkDeleteDialogOpen}
  onOpenChange={controller.setBulkDeleteDialogOpen}
@@ -262,12 +255,12 @@ export function ModelTableBulkActionsBar({
  <TooltipTrigger asChild>
  <AlertDialogTrigger asChild>
  <Button
- variant="ghost"
- size="icon"
- aria-label="Suppression en masse"
-                className="size-8 text-rose-500 hover:bg-rose-500 hover:text-white"
- disabled={!controller.canBulkDelete || controller.bulkDeleteLoading}
- >
+                        variant="ghost"
+                        size="icon"
+                        aria-label="Suppression en masse"
+                        className="size-8 rounded-full text-rose-500 hover:bg-rose-500/10"
+                        disabled={!controller.canBulkDelete || controller.bulkDeleteLoading}
+                      >
  {controller.bulkDeleteLoading ? (
  <Loader2 className="size-4" />
  ) : (
@@ -283,11 +276,11 @@ export function ModelTableBulkActionsBar({
  {controller.bulkDeleteDisabledReason || "Suppression en masse"}
  </TooltipContent>
  </Tooltip>
- <AlertDialogContent className="max-w-[420px] border-border/30 shadow-2xl overflow-hidden p-0 bg-background/95 backdrop-blur-2xl">
+ <AlertDialogContent className="max-w-[420px] border-border/30 shadow-xl overflow-hidden p-0 bg-background/95 backdrop-blur-xl">
  {/* Accent strip */}
  <div className="h-1.5 w-full bg-gradient-to-r from-rose-400 via-rose-500 to-rose-600" />
  <div className="flex flex-col items-center gap-4 p-8 text-center">
- <div className="flex size-14 items-center justify-center bg-rose-500/10">
+ <div className="flex size-14 items-center justify-center bg-rose-500/10 rounded-full">
  <Trash2 className="size-7 text-rose-500" />
  </div>
  <AlertDialogHeader className="space-y-2">
@@ -334,7 +327,7 @@ export function ModelTableBulkActionsBar({
  <Button
  variant="ghost"
  size="icon"
- className="size-8 text-muted-foreground hover:bg-muted"
+ className="size-8 rounded-full text-muted-foreground hover:bg-muted"
  onClick={controller.clearSelection}
  >
  <X className="size-4" />

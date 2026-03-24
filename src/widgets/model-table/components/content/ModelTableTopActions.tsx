@@ -24,10 +24,8 @@ function TopActionButton({ action, controller }: TopActionButtonProps) {
  title={action.disabled ? action.disabledReason : undefined}
  className={cn(
     "h-9 font-bold uppercase tracking-wider text-[10px]",
-    action.key === "add" &&
-    "bg-primary text-primary-foreground shadow-md shadow-primary/15 hover:shadow-lg hover:shadow-primary/25 border-none",
-    action.key === "import" &&
-    "hover:bg-indigo-500 hover:text-white dark:hover:bg-indigo-600 border-indigo-200/50 dark:border-indigo-800/30 text-indigo-600 dark:text-indigo-400",
+        action.key === "add" && "bg-primary text-primary-foreground hover:bg-primary/90 border-transparent",
+        action.key === "import" && "bg-secondary text-secondary-foreground hover:bg-secondary/80 border-transparent",
  action.size === "icon" ? "w-9" : "px-4",
  )}
  disabled={action.disabled || controller.loading || isActionLoading}

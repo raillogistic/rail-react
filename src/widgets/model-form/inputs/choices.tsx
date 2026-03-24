@@ -38,14 +38,15 @@ import type {
 type Props = FieldComponentProps<ChoiceFieldConfig>;
 
 const choiceTriggerClassName = [
-  "w-full rounded-xl border border-input/70 bg-muted/5 px-4 text-left text-[13.5px] font-medium transition-all duration-300 ease-out",
-  "hover:border-primary/40 hover:bg-muted/8 hover:shadow-inner",
-  "focus:border-primary focus:ring-4 focus:ring-primary/10",
-  "data-[state=open]:border-primary data-[state=open]:ring-4 data-[state=open]:ring-primary/10",
+  "flex w-full items-center justify-between rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors",
+  "hover:border-foreground/20",
+  "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
+  "data-[state=open]:outline-none data-[state=open]:ring-1 data-[state=open]:ring-ring",
+  "disabled:cursor-not-allowed disabled:opacity-50"
 ].join(" ");
 
-const multiChoiceTriggerClassName = `${choiceTriggerClassName} h-auto min-h-12 justify-between py-2.5`;
-const singleChoiceTriggerClassName = `${choiceTriggerClassName} h-auto min-h-11`;
+const multiChoiceTriggerClassName = `${choiceTriggerClassName} min-h-9 py-1`;
+const singleChoiceTriggerClassName = `${choiceTriggerClassName} h-9`;
 
 /** Renders a choice input based on configuration (select | multi | radio). */
 const ChoiceInput: React.FC<Props> = ({ config, field, form }) => {
@@ -117,7 +118,7 @@ const ChoiceInput: React.FC<Props> = ({ config, field, form }) => {
                       <Badge
                         key={opt.value}
                         variant="secondary"
-                        className="group/badge h-7 rounded-lg bg-primary/5 text-primary hover:bg-primary/10 transition-all border-none px-2.5 text-[11.5px] font-bold"
+                        className="group/badge rounded-sm px-1.5 py-0.5 text-xs font-medium"
                       >
                         {opt.label}
                         <X
@@ -154,7 +155,7 @@ const ChoiceInput: React.FC<Props> = ({ config, field, form }) => {
             ) : null}
           </div>
           <DropdownMenuContent 
-            className="w-80 rounded-2xl border border-border/50 bg-popover/95 backdrop-blur-xl p-2 shadow-2xl animate-in fade-in zoom-in-95 duration-200"
+            className="w-80 rounded-md border border-input bg-popover p-1 shadow-md animate-in fade-in"
             align="start"
           >
             <div className="max-h-72 overflow-y-auto space-y-1 pr-1 scrollbar-thin">
@@ -201,11 +202,9 @@ const ChoiceInput: React.FC<Props> = ({ config, field, form }) => {
             <label
               key={option.value}
               className={cn(
-                "group relative flex w-full cursor-pointer items-center gap-4 rounded-xl border border-border/70 bg-muted/5 px-5 py-4 transition-all duration-300 ease-out",
-                "hover:border-primary/30 hover:bg-muted/8 hover:shadow-md hover:shadow-primary/1",
-                value === option.value
-                  ? "border-primary/40 bg-primary/3 ring-1 ring-primary/20 shadow-sm"
-                  : "",
+                "group relative flex w-full cursor-pointer items-center gap-3 rounded-md border border-input bg-background px-4 py-3 shadow-sm transition-colors",
+                "hover:bg-accent",
+                value === option.value && "border-ring ring-1 ring-ring",
               )}
               onClick={(event) => {
                 if (!config.required && value === option.value) {
@@ -216,14 +215,14 @@ const ChoiceInput: React.FC<Props> = ({ config, field, form }) => {
             >
               <div
                 className={cn(
-                  "flex size-5 shrink-0 items-center justify-center rounded-full border-2 transition-all duration-300",
+                  "flex size-4 shrink-0 items-center justify-center rounded-full border transition-colors",
                   value === option.value
-                    ? "border-primary bg-primary scale-110 shadow-lg shadow-primary/20"
-                    : "border-muted-foreground/20 group-hover:border-primary/30",
+                    ? "border-primary bg-primary"
+                    : "border-primary/30",
                 )}
               >
                 {value === option.value && (
-                  <div className="size-1.5 rounded-full bg-primary-foreground animate-in zoom-in-0 duration-300" />
+                  <div className="size-1.5 rounded-full bg-primary-foreground" />
                 )}
               </div>
               <div className="flex flex-col gap-1">
@@ -314,7 +313,7 @@ const ChoiceInput: React.FC<Props> = ({ config, field, form }) => {
             </div>
           </SelectTrigger>
           <SelectContent 
-            className="rounded-2xl border border-border/50 bg-popover/95 backdrop-blur-xl shadow-2xl p-2 animate-in fade-in slide-in-from-top-2 duration-300"
+            className="rounded-md border border-input bg-popover p-1 shadow-md animate-in fade-in"
             align="start"
           >
             <div className="max-h-75 overflow-y-auto space-y-1 pr-1 scrollbar-thin">

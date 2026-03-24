@@ -30,12 +30,12 @@ export function ModelTableSurface({
   return (
     <TooltipProvider delayDuration={200}>
       <div
-        className="relative flex h-full w-full max-w-full min-w-0 flex-col overflow-hidden border border-border/40 bg-card/95 backdrop-blur-sm shadow-md sm:rounded-xl transition-all"
+        className="relative flex h-full w-full max-w-full min-w-0 flex-col overflow-hidden border border-border bg-card shadow-sm sm:rounded-md"
         data-model-table-persistence-key={persistenceKey}
       >
         {devtools}
         {topContent ? (
-          <div className="z-20 flex-none shrink-0 border-b border-border/40 bg-card/90 backdrop-blur-md">
+          <div className="z-20 flex-none shrink-0 border-b border-border">
             {topContent}
           </div>
         ) : null}
@@ -56,7 +56,7 @@ export function ModelTableSurface({
         </div>
 
         {paginationContent ? (
-          <div className="z-10 flex-none shrink-0 border-t border-border/40 bg-card/90 backdrop-blur-md">
+          <div className="z-10 flex-none shrink-0 border-t border-border">
             {paginationContent}
           </div>
         ) : null}

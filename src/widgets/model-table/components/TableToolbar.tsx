@@ -401,11 +401,7 @@ export function TableToolbar({
         {/* Main Toolbar Container */}
         <div
           data-slot="table-toolbar"
-          className={cn(
-            "group flex flex-col gap-3 bg-transparent transition-all duration-300",
-            hasActiveFilters &&
-              "ring-1 ring-primary/15 bg-primary/5 rounded-md p-1 -m-1",
-          )}
+          className="group flex flex-col gap-3 bg-transparent transition-all duration-300 w-full"
         >
           {navFilters?.groups.length ? (
             <NavFiltersBar
@@ -437,9 +433,9 @@ export function TableToolbar({
                   {activeAdvancedFilterCount > 0 && (
                     <Badge
                       variant="secondary"
-                      className="h-7 gap-1.5 border-none bg-primary/10 px-3 text-xs font-semibold text-primary transition-all hover:bg-primary/15"
+                      className="h-6 gap-1.5 border-none bg-muted px-2.5 text-[10px] font-medium text-foreground transition-all rounded hover:bg-muted/80"
                     >
-                      <Filter className="h-3.5 w-3.5 fill-primary/20" />
+                      <Filter className="h-3 w-3 opacity-60" />
                       <span>{activeAdvancedFilterCount} filtres</span>
                       <button
                         onClick={(e) => {
@@ -464,14 +460,11 @@ export function TableToolbar({
                   {hasGroupedRows && (
                     <Badge
                       variant="outline"
-                      className="h-7 gap-1.5 border-primary/15 bg-background px-3 text-xs font-semibold text-foreground/70 transition-all hover:border-primary/30"
+                      className="h-6 gap-1.5 border-primary/20 bg-primary/5 px-2 text-[10px] font-semibold text-primary transition-all rounded"
                     >
-                      <div className="relative flex h-2 w-2">
-                        <span className="absolute inline-flex h-full w-full animate-ping bg-primary opacity-75"></span>
-                        <span className="relative inline-flex h-2 w-2 bg-primary"></span>
-                      </div>
-                      <span className="text-[10px] uppercase tracking-wider">
-                        Groupé par {groupingField}
+                      <Layers className="h-3 w-3" />
+                      <span className="uppercase tracking-widest">
+                        {groupingField}
                       </span>
                       <button
                         onClick={() => setGroupingField(null)}
@@ -493,8 +486,7 @@ export function TableToolbar({
                   {extraActions}
                 </div>
               )}
-              {/* Tools Cluster */}
-              <div className="flex items-center gap-0.5 bg-muted/20 p-1 transition-all">
+              <div className="flex items-center gap-1 transition-all">
                 {!isMobile ? (
                   <>
                     <ViewOptionsMenu
@@ -598,7 +590,7 @@ export function TableToolbar({
                     </DropdownMenuTrigger>
                     <DropdownMenuContent
                       align="end"
-                      className="w-56 border-none shadow-xl backdrop-blur-xl"
+                      className="w-56"
                     >
                       <DropdownMenuLabel className="flex items-center gap-2 px-3 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
                         <SlidersHorizontal className="h-3 w-3" />
@@ -644,23 +636,18 @@ export function TableToolbar({
                         variant={hasActiveFilters ? "default" : "secondary"}
                         size="sm"
                         className={cn(
-                          "h-9 gap-2 px-3.5 font-bold text-[10px] transition-all hover:scale-[1.02] active:scale-[0.98]",
+                          "h-8 gap-2 px-3 font-semibold text-[11px] transition-all",
                           hasActiveFilters
-                            ? "bg-primary shadow-md shadow-primary/20 ring-1 ring-primary/20"
-                            : "bg-muted/30 hover:bg-muted/50",
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground",
                         )}
                       >
-                        <ListFilter
-                          className={cn(
-                            "h-4 w-4",
-                            hasActiveFilters && "animate-pulse",
-                          )}
-                        />
-                        <span className="hidden sm:inline-block text-[10px] uppercase tracking-wider">
-                          Filtres
+                        <ListFilter className="h-3.5 w-3.5" />
+                        <span className="hidden sm:inline-block">
+                          Filters
                         </span>
                         {activeAdvancedFilterCount > 0 && (
-                          <Badge className="ml-0.5 flex h-5 w-5 items-center justify-center bg-primary-foreground/20 p-0 text-[10px] font-black backdrop-blur-sm">
+                          <Badge className="ml-1 h-4 w-4 bg-background/20 hover:bg-background/20 text-primary-foreground p-0 text-[10px] border-none font-bold justify-center items-center">
                             {activeAdvancedFilterCount}
                           </Badge>
                         )}
@@ -668,7 +655,7 @@ export function TableToolbar({
                     </DialogTrigger>
                     <DialogContent
                       className={cn(
-                        "flex flex-col overflow-hidden border-none p-0 shadow-3xl bg-background/95 backdrop-blur-xl",
+                        "flex flex-col overflow-hidden border p-0 shadow-lg bg-background",
                         panelConfig.widthClassName,
                       )}
                     >
@@ -697,23 +684,18 @@ export function TableToolbar({
                         variant={hasActiveFilters ? "default" : "secondary"}
                         size="sm"
                         className={cn(
-                          "h-9 gap-2 px-3.5 font-bold text-[10px] transition-all hover:scale-[1.02] active:scale-[0.98]",
+                          "h-8 gap-2 px-3 font-semibold text-[11px] transition-all",
                           hasActiveFilters
-                            ? "bg-primary shadow-md shadow-primary/20 ring-1 ring-primary/20"
-                            : "bg-muted/30 hover:bg-muted/50 dark:bg-muted/15 dark:hover:bg-muted/25",
+                            ? "bg-primary text-primary-foreground"
+                            : "bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground",
                         )}
                       >
-                        <ListFilter
-                          className={cn(
-                            "h-4 w-4",
-                            hasActiveFilters && "animate-pulse",
-                          )}
-                        />
-                        <span className="hidden sm:inline-block text-[10px] uppercase tracking-wider">
-                          Filtres
+                        <ListFilter className="h-3.5 w-3.5" />
+                        <span className="hidden sm:inline-block">
+                          Filters
                         </span>
                         {activeAdvancedFilterCount > 0 && (
-                          <Badge className="ml-0.5 flex h-5 w-5 items-center justify-center bg-primary-foreground/20 p-0 text-[10px] font-black backdrop-blur-sm">
+                          <Badge className="ml-1 h-4 w-4 bg-background/20 hover:bg-background/20 text-primary-foreground p-0 text-[10px] border-none font-bold justify-center items-center">
                             {activeAdvancedFilterCount}
                           </Badge>
                         )}
@@ -724,7 +706,7 @@ export function TableToolbar({
                         panelConfig.side as "top" | "right" | "bottom" | "left"
                       }
                       className={cn(
-                        "p-0 border-none shadow-3xl bg-background/95 backdrop-blur-2xl",
+                        "p-0 border-l shadow-lg bg-background",
                         panelConfig.widthClassName,
                       )}
                     >
@@ -745,7 +727,7 @@ export function TableToolbar({
                   </Sheet>
                 )}
 
-                <div className="flex items-center gap-0.5 bg-muted/20 p-1">
+                <div className="flex items-center gap-1 pl-1 border-l border-border/40">
                   <ModelTableExportDialog
                     filterVariablesOverride={mergedFilterVariables}
                     labels={tableConfig?.exportLabels}
@@ -777,7 +759,7 @@ export function TableToolbar({
                     </DropdownMenuTrigger>
                     <DropdownMenuContent
                       align="end"
-                      className="w-56 border-none shadow-xl backdrop-blur-xl"
+                      className="w-56"
                     >
                       <DropdownMenuLabel className="px-3 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
                         Rafraichissement

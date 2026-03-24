@@ -68,8 +68,7 @@ function DraggableHead({
       style={style}
       className={cn(
         "group/col font-semibold sticky top-0 z-20 whitespace-nowrap overflow-visible",
-        "border-b border-border/30",
-        "bg-muted/30 backdrop-blur-md text-left",
+        "border-b border-border bg-muted/50 text-left",
         "transition-all duration-200",
         density === "compact"
           ? "h-9 p-0 text-[10px] uppercase tracking-wider"
@@ -77,10 +76,10 @@ function DraggableHead({
             ? "h-14 p-0 text-[13px]"
             : "h-11 p-0 text-[11px] uppercase tracking-wide",
         isDragging &&
-          "opacity-75 z-30 ring-1 ring-primary/30 shadow-lg bg-muted/70",
+          "opacity-75 z-30 ring-1 ring-ring shadow-sm bg-accent/50",
         "text-muted-foreground hover:text-foreground",
         isActions &&
-          "bg-muted/20 font-semibold text-[10px] uppercase tracking-widest text-muted-foreground/60",
+          "bg-muted/50 font-semibold text-xs tracking-wider",
         className,
       )}
       aria-sort={ariaSort}
@@ -113,11 +112,11 @@ function DraggableHead({
           aria-orientation="vertical"
           aria-label="Redimensionner la colonne"
           className={cn(
-            "absolute right-0 top-[20%] z-40 h-[60%] w-[3px]",
+            "absolute right-0 top-[20%] z-40 h-[60%] w-0.75",
             "cursor-col-resize touch-none select-none ",
             "bg-primary/0 opacity-0 transition-all",
             "group-hover/col:bg-primary/30 group-hover/col:opacity-100",
-            "hover:!bg-primary/60 active:!bg-primary",
+            "hover:bg-primary/60! active:bg-primary!",
           )}
           onPointerDown={onResizePointerDown}
           onClick={(event) => event.stopPropagation()}
@@ -283,8 +282,8 @@ export function TableHeader({
         {enableSelection ? (
           <TableHead
             className={cn(
-              "w-[50px] table-first-column sticky top-0 z-20 overflow-visible",
-              "border-b border-border/30 bg-muted/30 backdrop-blur-md",
+              "w-12.5 table-first-column sticky top-0 z-20 overflow-visible",
+              "border-b border-border bg-muted/50",
               "transition-colors duration-200",
               density === "compact"
                 ? "py-0 px-2 h-9"
@@ -377,7 +376,7 @@ export function TableHeader({
         <DraggableHead
           id="actions"
           draggable={false}
-          className="w-[140px] text-right sticky right-0 z-30 table-last-column border-l border-border/20 bg-muted/30 backdrop-blur-md"
+          className="w-35 text-right sticky right-0 z-30 table-last-column border-l border-border bg-muted/50"
           density={density}
           isActions
         >

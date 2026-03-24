@@ -107,7 +107,7 @@ export function TablePagination({
             <div className="flex items-center gap-2 animate-in zoom-in-95 duration-300">
               <Badge
                 variant="default"
-                className="h-6 px-2.5 bg-primary text-[11px] font-bold shadow-md shadow-primary/15 transition-all hover:scale-105 active:scale-95 border-none"
+                className="h-6 px-2.5 bg-primary text-[11px] font-bold shadow-sm transition-colors border-none"
               >
                 {selectedCount} sélectionné{selectedCount > 1 ? "s" : ""}
               </Badge>
@@ -138,7 +138,7 @@ export function TablePagination({
             >
               <SelectTrigger
                 className={cn(
-                  "h-8 w-[85px] border-border/30 bg-muted/30 text-xs font-bold transition-all hover:bg-muted/50 hover:border-border/40",
+                  "h-8 w-[85px] border-border bg-background text-xs font-bold transition-colors hover:bg-muted/50",
                 )}
               >
                 <SelectValue placeholder={perPage} />
@@ -146,7 +146,7 @@ export function TablePagination({
               <SelectContent
                 side="top"
                 align="end"
-                className="border-border/30 shadow-xl backdrop-blur-xl bg-background/95"
+                className="border-border bg-popover shadow-md"
               >
                 {pageSizeOptions.map((pageSize) => (
                   <SelectItem
@@ -164,14 +164,14 @@ export function TablePagination({
           <div className="h-8 w-px bg-border/20 hidden md:block" />
 
           {/* Pagination Cluster */}
-          <div className="flex items-center gap-1 p-1 bg-muted/30 border border-border/20">
+          <div className="flex items-center gap-1 p-1 bg-background border border-border rounded-md">
             {/* First Page */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="hidden h-8 w-8 lg:flex hover:bg-background hover:text-primary disabled:opacity-20 transition-all active:scale-90"
+                  className="hidden h-8 w-8 lg:flex hover:bg-muted hover:text-foreground disabled:opacity-50 transition-colors"
                   onClick={() => setPage(1)}
                   disabled={!canGoFirst || loading}
                 >
@@ -192,7 +192,7 @@ export function TablePagination({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 hover:bg-background hover:text-primary disabled:opacity-20 transition-all active:scale-90"
+                  className="h-8 w-8 hover:bg-muted hover:text-foreground disabled:opacity-50 transition-colors"
                   onClick={() => setPage(page - 1)}
                   disabled={!canGoPrevious || loading}
                 >
@@ -211,7 +211,7 @@ export function TablePagination({
             <div className="flex items-center px-4 gap-2 min-w-[120px] justify-center">
               {!isJumping ? (
                 <button
-                  className="group/jump flex flex-col items-center gap-0 cursor-pointer hover:scale-105 transition-all active:scale-95"
+                  className="group/jump flex flex-col items-center gap-0 cursor-pointer hover:bg-muted/50 rounded-sm px-2 py-0.5 transition-colors"
                   onClick={() => totalKnown && setIsQuickJumpOpen(true)}
                 >
                   <span className="text-[9px] font-bold text-muted-foreground/40 uppercase tracking-[0.2em] leading-none group-hover/jump:text-primary/60 transition-colors">
@@ -267,7 +267,7 @@ export function TablePagination({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 hover:bg-background hover:text-primary disabled:opacity-20 transition-all active:scale-90"
+                  className="h-8 w-8 hover:bg-muted hover:text-foreground disabled:opacity-50 transition-colors"
                   onClick={() => setPage(page + 1)}
                   disabled={!canGoNext || loading}
                 >
@@ -288,7 +288,7 @@ export function TablePagination({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="hidden h-8 w-8 lg:flex hover:bg-background hover:text-primary disabled:opacity-20 transition-all active:scale-90"
+                  className="hidden h-8 w-8 lg:flex hover:bg-muted hover:text-foreground disabled:opacity-50 transition-colors"
                   onClick={() => setPage(numPages || 1)}
                   disabled={!canGoLast || loading}
                 >

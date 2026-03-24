@@ -431,8 +431,8 @@ export function ModelTableExportDialog({
     <Dialog open={open} onOpenChange={handleDialogOpenChange}>
       <DialogTrigger asChild>{resolvedTrigger}</DialogTrigger>
       {canOpenDialog && metadata ? (
-        <DialogContent className="max-w-5xl h-[90vh] max-h-[900px] gap-0 p-0 overflow-hidden border-border/30 shadow-2xl backdrop-blur-xl bg-background/95 flex flex-col">
-          <DialogHeader className="flex-none px-6 py-5 border-b border-border/15">
+        <DialogContent className="max-w-5xl h-[90vh] max-h-[900px] gap-0 p-0 overflow-hidden border shadow-lg bg-background flex flex-col">
+          <DialogHeader className="flex-none px-6 py-5 border-b border-border">
             <div className="flex items-center gap-3">
               <div className="flex size-10 items-center justify-center bg-primary/10">
                 <Database className="size-5 text-primary" />
@@ -452,8 +452,8 @@ export function ModelTableExportDialog({
 
           <div className="flex-1 min-h-0 grid gap-0 md:grid-cols-[2.5fr,1fr] overflow-hidden">
             {/* Structure Section */}
-            <div className="flex flex-col border-r border-border/15 bg-background/50 overflow-hidden">
-              <div className="flex-none space-y-3 px-6 py-4 border-b border-border/10">
+            <div className="flex flex-col border-r border-border bg-background overflow-hidden">
+              <div className="flex-none space-y-3 px-6 py-4 border-b border-border">
                 <div className="flex items-center justify-between">
                   <div className="flex flex-col gap-0.5">
                     <div className="flex items-center gap-2">
@@ -639,7 +639,7 @@ export function ModelTableExportDialog({
               <Button
                 onClick={handleExport}
                 disabled={exporting || selectedCount === 0}
-                className="h-9 px-6 text-xs font-bold shadow-lg shadow-primary/20 transition-all hover:scale-[1.02] active:scale-95 disabled:grayscale"
+                className="h-9 px-6 text-xs font-bold shadow-sm transition-all hover:bg-primary/90 disabled:grayscale"
               >
                 {exporting ? (
                   <Loader2 className="mr-2 size-3.5 animate-spin" />

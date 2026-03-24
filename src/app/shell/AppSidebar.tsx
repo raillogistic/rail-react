@@ -132,19 +132,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               <TooltipProvider>
                 <Tooltip delayDuration={0}>
                   <TooltipTrigger asChild>
-                    <div className="flex h-7 w-7 cursor-help items-center justify-center border border-border/40 bg-background/40 backdrop-blur-md shadow-sm hover:bg-background/80 hover:border-primary/20 group/status">
+                    <div className="flex h-7 w-7 cursor-help items-center justify-center rounded-md border border-border bg-background shadow-sm hover:bg-accent hover:text-accent-foreground group/status">
                       <div className="relative h-1.5 w-1.5">
                         <div className="absolute inset-0 bg-emerald-500/40 opacity-75" />
-                        <div className="relative h-1.5 w-1.5 bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.6)]" />
+                        <div className="relative h-1.5 w-1.5 rounded-full bg-emerald-500" />
                       </div>
                     </div>
                   </TooltipTrigger>
                   <TooltipContent
                     side="right"
-                    className="bg-background/95 backdrop-blur-2xl border-border/40 shadow-2xl p-3 "
+                    className="bg-background border border-border shadow-md rounded-md p-3"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="h-7 w-7 bg-emerald-500/10 flex items-center justify-center">
+                      <div className="h-7 w-7 rounded-md bg-emerald-500/10 flex items-center justify-center">
                         <Zap className="size-4 text-emerald-500" />
                       </div>
                       <div className="flex flex-col">

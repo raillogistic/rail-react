@@ -42,43 +42,40 @@ export function ModelTableLoadingSkeleton() {
 export function ModelTableMetadataErrorState({ error }: { error: Error }) {
   return (
     <div className="flex h-100 items-center justify-center p-8">
-      <div className="w-full max-w-md overflow-hidden border border-rose-200/60 bg-background/95 shadow-xl backdrop-blur-xl dark:border-rose-800/30">
-        <div className="h-1.5 w-full bg-linear-to-r from-rose-400 via-rose-500 to-rose-600" />
-        <div className="flex flex-col items-center gap-4 p-8 text-center">
-          <div className="flex size-14 items-center justify-center bg-rose-500/10">
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="size-7 text-rose-500"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth={2}
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
-              />
-            </svg>
-          </div>
-          <div>
-            <h3 className="text-lg font-bold text-foreground">
-              Erreur de metadonnees
-            </h3>
-            <p className="mt-1 text-sm leading-relaxed text-muted-foreground">
-              {localizeTableErrorMessage(error)}
-            </p>
-          </div>
-          <Button
-            type="button"
-            variant="destructive"
-            size="sm"
-            className="mt-2 px-6 py-2.5 text-xs font-bold uppercase tracking-widest shadow-lg shadow-rose-500/20"
-            onClick={() => window.location.reload()}
+      <div className="w-full max-w-md overflow-hidden rounded-xl border border-border/50 bg-background/50 p-8 flex flex-col items-center text-center gap-4">
+        <div className="flex size-12 rounded-full items-center justify-center bg-rose-500/10">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="size-6 text-rose-500"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
           >
-            Reessayer
-          </Button>
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"
+            />
+          </svg>
         </div>
+        <div>
+          <h3 className="text-base font-bold text-foreground">
+            Erreur de métadonnées
+          </h3>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {localizeTableErrorMessage(error)}
+          </p>
+        </div>
+        <Button
+          type="button"
+          variant="destructive"
+          size="sm"
+          className="mt-2"
+          onClick={() => window.location.reload()}
+        >
+          Réessayer
+        </Button>
       </div>
     </div>
   );
@@ -86,8 +83,8 @@ export function ModelTableMetadataErrorState({ error }: { error: Error }) {
 
 export function ModelTableDataErrorDisplay({ error }: { error: Error }) {
   return (
-    <div className="mt-3 flex flex-none items-center gap-3 border border-rose-200/50 bg-rose-50/50 px-4 py-3 text-xs font-semibold text-rose-600 dark:border-rose-800/30 dark:bg-rose-950/20 dark:text-rose-400">
-      <div className="flex size-6 shrink-0 items-center justify-center bg-rose-500/10">
+    <div className="mt-3 flex items-center gap-3 rounded-md px-4 py-3 bg-red-500/10 text-xs font-medium text-red-600 border border-red-500/20">
+      <div className="flex size-6 shrink-0 items-center justify-center rounded-sm bg-red-500/20">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           className="size-3.5 text-rose-500"

@@ -128,64 +128,41 @@ export const FieldWrapper: React.FC<FieldWrapperProps> = ({
       {/* ── Slot container — propagates data-dirty / data-error to children ─ */}
       <div
         className={cn(
-          "relative transition-all duration-500 ease-out",
+          "relative transition-colors",
+          // ── Dirty state ──
+          "data-[dirty=true]:**:data-[slot=input]:border-emerald-500/50",
+          "data-[dirty=true]:**:data-[slot=textarea]:border-emerald-500/50",
+          "data-[dirty=true]:**:data-[slot=select-trigger]:border-emerald-500/50",
 
-          // ── Dirty state — subtle emerald accent ──
-          "data-[dirty=true]:**:data-[slot=input]:border-emerald-500/30 data-[dirty=true]:**:data-[slot=input]:bg-emerald-500/2",
-          "data-[dirty=true]:**:data-[slot=textarea]:border-emerald-500/30 data-[dirty=true]:**:data-[slot=textarea]:bg-emerald-500/2",
-          "data-[dirty=true]:**:data-[slot=select-trigger]:border-emerald-500/30 data-[dirty=true]:**:data-[slot=select-trigger]:bg-emerald-500/2",
-          "data-[dirty=true]:**:data-[slot=checkbox]:border-emerald-500 data-[dirty=true]:**:data-[slot=checkbox]:bg-emerald-500/10",
-          "data-[dirty=true]:**:data-[slot=button]:border-emerald-500/30 data-[dirty=true]:**:data-[slot=button]:bg-emerald-500/2",
-
-          // ── Error state — destructive accent ──
-          "data-[error=true]:**:data-[slot=input]:border-destructive/60 data-[error=true]:**:data-[slot=input]:bg-destructive/3 data-[error=true]:**:data-[slot=input]:ring-4 data-[error=true]:**:data-[slot=input]:ring-destructive/5",
-          "data-[error=true]:**:data-[slot=textarea]:border-destructive/60 data-[error=true]:**:data-[slot=textarea]:bg-destructive/3 data-[error=true]:**:data-[slot=textarea]:ring-4 data-[error=true]:**:data-[slot=textarea]:ring-destructive/5",
-          "data-[error=true]:**:data-[slot=select-trigger]:border-destructive/60 data-[error=true]:**:data-[slot=select-trigger]:bg-destructive/3 data-[error=true]:**:data-[slot=select-trigger]:ring-4 data-[error=true]:**:data-[slot=select-trigger]:ring-destructive/5",
-          "data-[error=true]:**:data-[slot=checkbox]:border-destructive data-[error=true]:**:data-[slot=checkbox]:ring-4 data-[error=true]:**:data-[slot=checkbox]:ring-destructive/10",
-          "data-[error=true]:**:data-[slot=button]:border-destructive/60 data-[error=true]:**:data-[slot=button]:bg-destructive/3 data-[error=true]:**:data-[slot=button]:ring-4 data-[error=true]:**:data-[slot=button]:ring-destructive/5",
-
-          // ── Base input styling — Clean & Premium look ──
-          "**:data-[slot=input]:shadow-[inset_0_1px_2px_rgba(0,0,0,0.03)] **:data-[slot=input]:border-border/70 **:data-[slot=input]:bg-muted/5 **:data-[slot=input]:rounded-xl **:data-[slot=input]:transition-all **:data-[slot=input]:duration-300",
-          "**:data-[slot=input]:focus:ring-4 **:data-[slot=input]:focus:ring-primary/10 **:data-[slot=input]:focus:border-primary/60 **:data-[slot=input]:focus:bg-background **:data-[slot=input]:focus:shadow-none",
-
-          "**:data-[slot=textarea]:shadow-[inset_0_1px_2px_rgba(0,0,0,0.03)] **:data-[slot=textarea]:border-border/70 **:data-[slot=textarea]:bg-muted/5 **:data-[slot=textarea]:rounded-xl **:data-[slot=textarea]:transition-all **:data-[slot=textarea]:duration-300",
-          "**:data-[slot=textarea]:focus:ring-4 **:data-[slot=textarea]:focus:ring-primary/10 **:data-[slot=textarea]:focus:border-primary/60 **:data-[slot=textarea]:focus:bg-background **:data-[slot=textarea]:focus:shadow-none",
-
-          "**:data-[slot=select-trigger]:shadow-[inset_0_1px_2px_rgba(0,0,0,0.03)] **:data-[slot=select-trigger]:border-border/70 **:data-[slot=select-trigger]:bg-muted/5 **:data-[slot=select-trigger]:rounded-xl **:data-[slot=select-trigger]:transition-all **:data-[slot=select-trigger]:duration-300",
-          "**:data-[slot=select-trigger]:focus:ring-4 **:data-[slot=select-trigger]:focus:ring-primary/10 **:data-[slot=select-trigger]:focus:border-primary/60 **:data-[slot=select-trigger]:focus:bg-background **:data-[slot=select-trigger]:focus:shadow-none",
-          "**:data-[slot=select-trigger][data-state=open]:ring-4 **:data-[slot=select-trigger][data-state=open]:ring-primary/10 **:data-[slot=select-trigger][data-state=open]:border-primary/60",
-
-          "**:data-[slot=button]:shadow-sm **:data-[slot=button]:rounded-xl",
-          "**:data-[slot=button]:focus-visible:ring-4 **:data-[slot=button]:focus-visible:ring-primary/10 **:data-[slot=button]:focus-visible:border-primary/60",
-
-          "**:data-[slot=checkbox]:shadow-none **:data-[slot=checkbox]:rounded-lg",
-          "**:data-[slot=checkbox]:focus-visible:ring-4 **:data-[slot=checkbox]:focus-visible:ring-primary/10",
+          // ── Error state ──
+          "data-[error=true]:**:data-[slot=input]:border-destructive focus-within:data-[error=true]:**:data-[slot=input]:ring-destructive",
+          "data-[error=true]:**:data-[slot=textarea]:border-destructive focus-within:data-[error=true]:**:data-[slot=textarea]:ring-destructive",
+          "data-[error=true]:**:data-[slot=select-trigger]:border-destructive focus-within:data-[error=true]:**:data-[slot=select-trigger]:ring-destructive",
+          "data-[error=true]:**:data-[slot=checkbox]:border-destructive focus-within:data-[error=true]:**:data-[slot=checkbox]:ring-destructive",
+          "data-[error=true]:**:data-[slot=button]:border-destructive focus-within:data-[error=true]:**:data-[slot=button]:ring-destructive",
         )}
         data-dirty={dirty ? "true" : undefined}
         data-error={hasError ? "true" : undefined}
       >
         {children}
-        
-        {/* Subtle glow effect on focus within */}
-        <div className="absolute inset-0 -z-10 bg-primary/2 opacity-0 blur-xl transition-opacity duration-700 group-focus-within/field:opacity-100 pointer-events-none" />
       </div>
 
       {/* ── Help text ────────────────────────────────────────────── */}
       {config.helpText && !hasError && (
-        <p className="px-1.5 text-[11px] font-medium leading-tight text-muted-foreground/50 italic">
+        <p className="px-1.5 text-xs text-muted-foreground/80">
           {config.helpText}
         </p>
       )}
 
       {/* ── Error messages ───────────────────────────────────────── */}
       {hasError && (
-        <div className="mt-1 flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-2 duration-500 ease-out">
+        <div className="mt-1 flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
           {errorList.map((item, index) => (
             <div
               key={`${config.name}-error-${index}`}
-              className="flex items-start gap-2 rounded-xl border border-destructive/10 bg-destructive/3 px-3 py-2 text-[12.5px] font-semibold text-destructive shadow-sm"
+              className="flex items-start gap-2 text-xs font-medium text-destructive px-1"
             >
-              <AlertCircle className="mt-0.5 size-3.5 shrink-0 transition-transform group-hover/field:scale-110" />
+              <AlertCircle className="mt-0.5 size-3.5 shrink-0" />
               <span className="leading-tight">{item}</span>
             </div>
           ))}
