@@ -85,7 +85,7 @@ export function ImportIssuesPanel({ issues, onDownloadReport }: ImportIssuesPane
             }}
             disabled={!onDownloadReport || downloading || issues.length === 0}
           >
-            {downloading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+            {downloading ? <Loader2 className="h-4 w-4" /> : <Download className="h-4 w-4" />}
             Rapport complet
           </Button>
         </div>
@@ -133,7 +133,7 @@ export function ImportIssuesPanel({ issues, onDownloadReport }: ImportIssuesPane
                 <div 
                   key={issue.id} 
                   className={cn(
-                    "group relative overflow-hidden rounded-lg border p-3 transition-all hover:shadow-md",
+                    "group relative overflow-hidden rounded-lg border p-3 hover:shadow-md",
                     issue.severity === "ERROR" 
                       ? "border-destructive/20 bg-destructive/5" 
                       : "border-yellow-500/20 bg-yellow-500/5"

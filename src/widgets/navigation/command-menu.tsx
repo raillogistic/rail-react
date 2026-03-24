@@ -126,7 +126,7 @@ export function CommandMenu({
       <Button
         variant="outline"
         className={cn(
-          "relative h-9 w-full justify-start bg-muted/30 border-muted-foreground/20 text-sm font-normal text-muted-foreground shadow-none transition-all hover:bg-muted/50 hover:border-muted-foreground/40 sm:pr-12 max-w-sm md:w-64",
+          "relative h-9 w-full justify-start bg-muted/30 border-muted-foreground/20 text-sm font-normal text-muted-foreground shadow-none hover:bg-muted/50 hover:border-muted-foreground/40 sm:pr-12 max-w-sm md:w-64",
         )}
         onClick={() => setOpen(true)}
       >
@@ -141,7 +141,7 @@ export function CommandMenu({
       <CommandDialog open={open} onOpenChange={setOpen}>
         <div className="bg-accent/30 px-4 py-2 border-b flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <Sparkles className="size-3 text-primary animate-pulse" />
+            <Sparkles className="size-3 text-primary" />
             <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
               Command Palette
             </span>
@@ -177,16 +177,16 @@ export function CommandMenu({
               onSelect={() => runCommand(() => navigate(defaultPath))}
               className="px-3 py-3 cursor-pointer group"
             >
-              <History className="mr-3 h-4 w-4 text-muted-foreground group-aria-selected:text-primary transition-colors" />
+              <History className="mr-3 h-4 w-4 text-muted-foreground group-aria-selected:text-primary" />
               <div className="flex flex-col">
-                <span className="font-semibold text-sm group-aria-selected:text-primary transition-colors">
+                <span className="font-semibold text-sm group-aria-selected:text-primary">
                   Return to Dashboard
                 </span>
                 <span className="text-[11px] text-muted-foreground opacity-70">
                   Recently viewed
                 </span>
               </div>
-              <ArrowUpRight className="ml-auto size-3 opacity-0 group-aria-selected:opacity-40 transition-opacity" />
+              <ArrowUpRight className="ml-auto size-3 opacity-0 group-aria-selected:opacity-40" />
             </CommandItem>
           </CommandGroup>
 
@@ -204,11 +204,11 @@ export function CommandMenu({
                   }}
                   className="px-3 py-3 cursor-pointer group"
                 >
-                  <div className="mr-3 flex h-9 w-9 items-center justify-center bg-muted/50 group-aria-selected:bg-primary/10 transition-colors">
-                    <Icon className="h-4.5 w-4.5 text-muted-foreground group-aria-selected:text-primary transition-colors" />
+                  <div className="mr-3 flex h-9 w-9 items-center justify-center bg-muted/50 group-aria-selected:bg-primary/10">
+                    <Icon className="h-4.5 w-4.5 text-muted-foreground group-aria-selected:text-primary" />
                   </div>
                   <div className="flex flex-col flex-1 truncate">
-                    <span className="font-semibold text-sm group-aria-selected:text-primary transition-colors truncate">
+                    <span className="font-semibold text-sm group-aria-selected:text-primary truncate">
                       {link.title}
                     </span>
                     <div className="flex items-center gap-2">
@@ -225,7 +225,7 @@ export function CommandMenu({
                       )}
                     </div>
                   </div>
-                  <ArrowUpRight className="ml-auto size-3 opacity-0 group-aria-selected:opacity-40 transition-opacity" />
+                  <ArrowUpRight className="ml-auto size-3 opacity-0 group-aria-selected:opacity-40" />
                 </CommandItem>
               );
             })}
@@ -240,7 +240,7 @@ export function CommandMenu({
               }
               className="px-3 py-2 cursor-pointer group"
             >
-              <User className="mr-3 h-4 w-4 text-muted-foreground group-aria-selected:text-primary transition-colors" />
+              <User className="mr-3 h-4 w-4 text-muted-foreground group-aria-selected:text-primary" />
               <span className="font-medium">Account Settings</span>
               <CommandShortcut className="group-aria-selected:text-primary-foreground">
                 Cmd+P
@@ -252,14 +252,14 @@ export function CommandMenu({
               }
               className="px-3 py-2 cursor-pointer group"
             >
-              <Settings className="mr-3 h-4 w-4 text-muted-foreground group-aria-selected:text-primary transition-colors" />
+              <Settings className="mr-3 h-4 w-4 text-muted-foreground group-aria-selected:text-primary" />
               <span className="font-medium">Theme & Appearance</span>
               <CommandShortcut className="group-aria-selected:text-primary-foreground">
                 Cmd+S
               </CommandShortcut>
             </CommandItem>
             <CommandItem className="px-3 py-2 cursor-pointer group">
-              <ShieldCheck className="mr-3 h-4 w-4 text-muted-foreground group-aria-selected:text-primary transition-colors" />
+              <ShieldCheck className="mr-3 h-4 w-4 text-muted-foreground group-aria-selected:text-primary" />
               <span className="font-medium">Security & Privacy</span>
             </CommandItem>
           </CommandGroup>
@@ -268,11 +268,11 @@ export function CommandMenu({
 
           <CommandGroup heading="Support" className="p-2">
             <CommandItem className="px-3 py-2 cursor-pointer group">
-              <HelpCircle className="mr-3 h-4 w-4 text-muted-foreground group-aria-selected:text-primary transition-colors" />
+              <HelpCircle className="mr-3 h-4 w-4 text-muted-foreground group-aria-selected:text-primary" />
               <span className="font-medium">Documentation</span>
             </CommandItem>
             <CommandItem className="px-3 py-2 cursor-pointer group">
-              <Mail className="mr-3 h-4 w-4 text-muted-foreground group-aria-selected:text-primary transition-colors" />
+              <Mail className="mr-3 h-4 w-4 text-muted-foreground group-aria-selected:text-primary" />
               <span className="font-medium">Contact Support</span>
             </CommandItem>
           </CommandGroup>

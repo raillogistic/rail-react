@@ -50,7 +50,7 @@ export function UserNav({ user, onLogout }: UserNavProps = {}) {
  <DropdownMenuTrigger asChild>
  <Button
  variant="ghost"
- className="relative h-9 w-9 p-0 border border-transparent hover:border-border transition-all ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 overflow-hidden"
+ className="relative h-9 w-9 p-0 border border-transparent hover:border-border ring-offset-background focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 overflow-hidden"
  >
  <Avatar className="h-full w-full">
  <AvatarImage

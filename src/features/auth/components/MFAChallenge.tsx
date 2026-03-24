@@ -39,7 +39,7 @@ export function MFAChallenge({
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in zoom-in-95 duration-500">
+    <div className="space-y-8">
       <div className="flex flex-col items-center text-center">
         <div className="h-16 w-16 rounded-2xl bg-primary/5 flex items-center justify-center mb-6 ring-1 ring-primary/20 shadow-[0_0_20px_rgba(var(--primary),0.1)]">
           {getIcon()}
@@ -61,7 +61,7 @@ export function MFAChallenge({
                   type="text"
                   maxLength={1}
                   className={cn(
-                    "w-10 h-14 sm:w-12 sm:h-16 text-center text-2xl font-bold rounded-xl bg-muted/30 border-2 border-transparent transition-all outline-none",
+                    "w-10 h-14 sm:w-12 sm:h-16 text-center text-2xl font-bold rounded-xl bg-muted/30 border-2 border-transparent outline-none",
                     "focus:border-primary focus:bg-background focus:shadow-[0_0_15px_rgba(var(--primary),0.1)]",
                     code[i] ? "border-primary/50 bg-background" : "group-hover:bg-muted/50",
                     error ? "border-destructive/50" : ""
@@ -97,7 +97,7 @@ export function MFAChallenge({
           </div>
           
           {error && (
-            <p className="text-center text-sm font-medium text-destructive animate-in slide-in-from-top-1">
+            <p className="text-center text-sm font-medium text-destructive">
               {error}
             </p>
           )}
@@ -108,13 +108,12 @@ export function MFAChallenge({
             type="submit"
             disabled={isLoading || code.length < 6}
             className={cn(
-              "relative overflow-hidden h-14 w-full rounded-2xl font-bold text-lg transition-all active:scale-95 disabled:opacity-50 disabled:active:scale-100",
-              "bg-primary text-primary-foreground shadow-[0_10px_20px_-5px_rgba(var(--primary),0.3)] hover:shadow-[0_15px_25px_-5px_rgba(var(--primary),0.4)]",
-              "before:absolute before:inset-0 before:bg-gradient-to-r before:from-white/0 before:via-white/20 before:to-white/0 before:translate-x-[-100%] hover:before:translate-x-[100%] before:transition-transform before:duration-1000"
+              "relative overflow-hidden h-14 w-full rounded-2xl font-bold text-lg disabled:opacity-50 disabled:active:scale-100",
+              "bg-primary text-primary-foreground shadow-[0_10px_20px_-5px_rgba(var(--primary),0.3)]",
             )}
           >
             {isLoading ? (
-              <Loader2 className="h-6 w-6 animate-spin mx-auto" />
+              <Loader2 className="h-6 w-6 mx-auto" />
             ) : (
               <span className="flex items-center justify-center gap-2">
                 Valider l'accès <ArrowRight className="h-5 w-5" />
@@ -125,7 +124,7 @@ export function MFAChallenge({
           <button
             type="button"
             onClick={onCancel}
-            className="h-10 text-sm font-semibold text-muted-foreground hover:text-foreground transition-colors"
+            className="h-10 text-sm font-semibold text-muted-foreground hover:text-foreground"
           >
             Retour à l'identification
           </button>

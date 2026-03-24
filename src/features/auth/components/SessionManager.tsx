@@ -71,10 +71,10 @@ export function SessionManager({
   if (isLoading) {
     return (
       <div className="space-y-4">
-        <div className="h-8 w-48 bg-muted animate-pulse rounded" />
+        <div className="h-8 w-48 bg-muted rounded" />
         <div className="space-y-3">
           {[1, 2].map(i => (
-            <div key={i} className="h-24 bg-muted animate-pulse rounded border" />
+            <div key={i} className="h-24 bg-muted rounded border" />
           ))}
         </div>
       </div>

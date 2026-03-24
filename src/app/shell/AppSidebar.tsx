@@ -65,7 +65,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
  collapsible="offcanvas"
  {...props}
  className={cn(
- "overflow-hidden border-r border-sidebar-border/40 bg-sidebar text-sidebar-foreground transition-all duration-500",
+ "overflow-hidden border-r border-sidebar-border/40 bg-sidebar text-sidebar-foreground",
  layout === "mixed" && "top-14 h-[calc(100svh-3.5rem)]",
  )}
  style={
@@ -86,7 +86,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
  }}
  />
  <div
- className="pointer-events-none absolute inset-0 z-0 opacity-0 transition-opacity duration-700 group-hover:opacity-100"
+ className="pointer-events-none absolute inset-0 z-0 opacity-0 group-hover:opacity-100"
  style={{
  background:`radial-gradient(400px circle at ${mousePos.x}px ${mousePos.y}px, rgba(var(--primary-rgb), 0.05), transparent 60%)`,
  }}
@@ -97,21 +97,21 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
  <Link
  to="/"
  className={cn(
- "group flex items-center gap-3 transition-all duration-500",
+ "group flex items-center gap-3",
  isCollapsed ? "w-10 justify-center" : "w-full",
  )}
  >
- <div className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden bg-gradient-to-br from-primary/20 to-primary/5 p-2 shadow-2xl ring-1 ring-primary/10 transition-all duration-500 group-hover:scale-110 group-hover:shadow-primary/20 group-hover:ring-primary/30 group-active:scale-95">
+<div className="relative flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden bg-gradient-to-br from-primary/20 to-primary/5 p-2 shadow-2xl ring-1 ring-primary/10 group-hover:shadow-primary/20 group-hover:ring-primary/30">
  <img
  src={LogoMark}
  alt={BRANDING.logoAlt}
- className="h-full w-full object-contain transition-transform duration-700 group-hover:rotate-[15deg]"
+className="h-full w-full object-contain"
  />
- <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover:opacity-100" />
+ <div className="absolute inset-0 bg-gradient-to-tr from-primary/20 via-transparent to-transparent opacity-0 group-hover:opacity-100" />
  </div>
 
  {!isCollapsed && (
- <div className="flex flex-col transition-all duration-500 group-hover:translate-x-1">
+<div className="flex flex-col">
  <div className="flex items-center gap-1.5">
  <span className="text-sm font-black tracking-tighter text-foreground leading-none">
  {BRANDING.productName}
@@ -128,14 +128,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
  </Link>
 
  {!isCollapsed && (
- <div className="flex items-center gap-2 animate-in fade-in zoom-in-95 duration-700">
+ <div className="flex items-center gap-2">
  <TooltipProvider>
  <Tooltip delayDuration={0}>
  <TooltipTrigger asChild>
- <div className="flex h-7 w-7 cursor-help items-center justify-center border border-border/40 bg-background/40 backdrop-blur-md shadow-sm transition-all hover:bg-background/80 hover:border-primary/20 group/status">
+ <div className="flex h-7 w-7 cursor-help items-center justify-center border border-border/40 bg-background/40 backdrop-blur-md shadow-sm hover:bg-background/80 hover:border-primary/20 group/status">
  <div className="relative h-1.5 w-1.5">
- <div className="absolute inset-0 animate-ping bg-emerald-500/40 opacity-75" />
- <div className="relative h-1.5 w-1.5 bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.6)] transition-all group-hover/status:scale-125" />
+ <div className="absolute inset-0 bg-emerald-500/40 opacity-75" />
+<div className="relative h-1.5 w-1.5 bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.6)]" />
  </div>
  </div>
  </TooltipTrigger>
@@ -171,10 +171,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
  <SidebarFooter className="relative z-10 p-2">
  <div
  className={cn(
- " transition-all duration-500",
+        "",
  isCollapsed
  ? "p-0 bg-transparent"
- : "p-1 bg-muted/30 border border-border/20 backdrop-blur-md shadow-lg hover:shadow-xl hover:bg-muted/40 hover:border-primary/10",
+  : "p-1 bg-muted/30 border border-border/20 backdrop-blur-md shadow-lg hover:bg-muted/40 hover:border-primary/10",
  )}
  >
  <NavUser user={user} onLogout={logout} />

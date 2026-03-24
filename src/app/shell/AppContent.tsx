@@ -19,7 +19,7 @@ export const AppRoutes = () => {
  return (
  <div className="flex min-h-[320px] items-center justify-center rounded-md border border-border/40 bg-card/40">
  <div className="flex flex-col items-center gap-3">
- <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-primary" />
+ <div className="h-8 w-8 rounded-full border-b-2 border-primary" />
  <p className="text-sm text-muted-foreground">
  Chargement des acces...
  </p>

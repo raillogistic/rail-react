@@ -252,7 +252,7 @@ export function UploadFile({
             <label
               htmlFor={`upload-${model}-${field}-${id}`}
               className={cn(
-                "flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border/70 bg-muted/10 px-6 py-8 text-center transition-colors",
+                "flex cursor-pointer flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border/70 bg-muted/10 px-6 py-8 text-center",
                 "hover:border-primary/40 hover:bg-primary/5",
               )}
             >
@@ -336,7 +336,7 @@ export function UploadFile({
             >
               {loading ? (
                 <>
-                  <Loader2 className="size-4 animate-spin" />
+                  <Loader2 className="size-4" />
                   Enregistrement...
                 </>
               ) : (

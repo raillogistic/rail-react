@@ -64,8 +64,8 @@ export function NavUser({ user, onLogout }: NavUserProps = {}) {
  <SidebarMenuButton
  size="lg"
  className={cn(
- "h-14 w-full transition-all duration-300 group",
- "data-[state=open]:bg-sidebar-accent/80 data-[state=open]:text-sidebar-accent-foreground data-[state=open]:shadow-inner",
+ "h-14 w-full group",
+ "data-[state=open]:bg-sidebar-accent/80 data-[state=open]:text-sidebar-accent-foreground",
  "hover:bg-sidebar-accent/50",
  isCollapsed ? "justify-center p-0" : "px-3",
  )}
@@ -73,7 +73,7 @@ export function NavUser({ user, onLogout }: NavUserProps = {}) {
  <div className="relative shrink-0 flex items-center justify-center">
  <Avatar
  className={cn(
- "border-2 border-sidebar-border/30 transition-all duration-300 group-hover:border-primary/30 group-hover:shadow-md group-active:scale-95",
+ "border-2 border-sidebar-border/30 group-hover:border-primary/30 group-hover:shadow-md",
  isCollapsed ? "h-9 w-9" : "h-10 w-10",
  )}
  >
@@ -100,14 +100,14 @@ export function NavUser({ user, onLogout }: NavUserProps = {}) {
  </span>
  </div>
  <div className="ml-auto flex items-center">
- <IconChevronRight className="size-4 text-muted-foreground/30 transition-all duration-300 group-hover:text-muted-foreground group-data-[state=open]:rotate-90 group-data-[state=open]:translate-x-1" />
+ <IconChevronRight className="size-4 text-muted-foreground/30 group-hover:text-muted-foreground" />
  </div>
  </>
  )}
  </SidebarMenuButton>
  </DropdownMenuTrigger>
  <DropdownMenuContent
- className="w-72 border-sidebar-border/40 bg-sidebar/95 p-2.5 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.2)] animate-in zoom-in-95 duration-200"
+ className="w-72 border-sidebar-border/40 bg-sidebar/95 p-2.5 backdrop-blur-2xl shadow-[0_20px_50px_rgba(0,0,0,0.2)]"
  side={isMobile ? "bottom" : "right"}
  align="end"
  sideOffset={15}
@@ -146,7 +146,7 @@ export function NavUser({ user, onLogout }: NavUserProps = {}) {
  <div className="px-3 py-1 text-[10px] font-bold text-muted-foreground uppercase tracking-[0.2em] mb-1">
  Navigation
  </div>
- <DropdownMenuItem className="px-3 py-2.5 focus:bg-primary focus:text-primary-foreground group transition-all cursor-pointer">
+ <DropdownMenuItem className="px-3 py-2.5 focus:bg-primary focus:text-primary-foreground group cursor-pointer">
  <IconUserCircle className="size-5 mr-3 opacity-60 group-focus:opacity-100" />
  <Link
  to={ROUTES.SETTINGS_ACCOUNT}
@@ -160,7 +160,7 @@ export function NavUser({ user, onLogout }: NavUserProps = {}) {
  </DropdownMenuItem>
  <DropdownMenuItem
  asChild
- className="px-3 py-2.5 focus:bg-primary focus:text-primary-foreground group transition-all cursor-pointer"
+ className="px-3 py-2.5 focus:bg-primary focus:text-primary-foreground group cursor-pointer"
  >
  <Link to={ROUTES.SETTINGS_APPEARANCE} className="w-full flex items-center">
  <IconSettings className="size-5 mr-3 opacity-60 group-focus:opacity-100" />
@@ -170,7 +170,7 @@ export function NavUser({ user, onLogout }: NavUserProps = {}) {
  </DropdownMenuShortcut>
  </Link>
  </DropdownMenuItem>
- <DropdownMenuItem className="px-3 py-2.5 focus:bg-primary focus:text-primary-foreground group transition-all cursor-pointer">
+ <DropdownMenuItem className="px-3 py-2.5 focus:bg-primary focus:text-primary-foreground group cursor-pointer">
  <IconShieldLock className="size-5 mr-3 opacity-60 group-focus:opacity-100" />
  <span className="flex-1 font-semibold tracking-tight">Securite</span>
  </DropdownMenuItem>
@@ -179,14 +179,14 @@ export function NavUser({ user, onLogout }: NavUserProps = {}) {
  <DropdownMenuSeparator className="bg-sidebar-border/30 my-2 mx-1" />
 
  <DropdownMenuGroup className="space-y-1 py-1 px-1">
- <DropdownMenuItem className="px-3 py-2.5 focus:bg-accent group transition-all cursor-pointer">
+ <DropdownMenuItem className="px-3 py-2.5 focus:bg-accent group cursor-pointer">
  <IconBell className="size-5 mr-3 opacity-60 group-hover:text-primary" />
  <span className="flex-1 font-medium text-sm">Notifications</span>
  <Badge className="ml-auto h-5 px-1.5 min-w-5 justify-center bg-primary text-primary-foreground text-[10px] font-bold">
  12
  </Badge>
  </DropdownMenuItem>
- <DropdownMenuItem className="px-3 py-2.5 focus:bg-accent group transition-all cursor-pointer">
+ <DropdownMenuItem className="px-3 py-2.5 focus:bg-accent group cursor-pointer">
  <IconHelpCircle className="size-5 mr-3 opacity-60" />
  <span className="flex-1 font-medium text-sm">Centre d'aide</span>
  </DropdownMenuItem>
@@ -197,7 +197,7 @@ export function NavUser({ user, onLogout }: NavUserProps = {}) {
  <div className="px-1">
  <DropdownMenuItem
  onClick={handleLogout}
- className="px-3 py-3 focus:bg-destructive focus:text-destructive-foreground text-destructive font-bold transition-all cursor-pointer shadow-sm hover:shadow-md"
+ className="px-3 py-3 focus:bg-destructive focus:text-destructive-foreground text-destructive font-bold cursor-pointer shadow-sm hover:shadow-md"
  >
  <IconLogout className="size-5 mr-3" />
  <span className="flex-1">Se deconnecter</span>

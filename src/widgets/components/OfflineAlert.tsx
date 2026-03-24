@@ -41,7 +41,7 @@ export const OfflineAlert: React.FC<OfflineAlertProps> = ({
   if (!isVisible) return null;
 
   return (
-    <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 max-w-lg w-[calc(100%-2rem)] mx-auto animate-in fade-in slide-in-from-top-4 duration-300">
+    <div className="fixed top-20 left-1/2 transform -translate-x-1/2 z-50 max-w-lg w-[calc(100%-2rem)] mx-auto">
       <Alert className="border-orange-200 bg-orange-50/90 backdrop-blur-md shadow-lg border-2">
         <WifiOff className="h-5 w-5 text-orange-600" />
         <div className="flex flex-col gap-3">
@@ -75,7 +75,7 @@ export const OfflineAlert: React.FC<OfflineAlertProps> = ({
             >
               {isRetrying ? (
                 <>
-                  <RefreshCw className="h-3.5 w-3.5 mr-2 animate-spin" />
+                  <RefreshCw className="h-3.5 w-3.5 mr-2" />
                   Attempting...
                 </>
               ) : (

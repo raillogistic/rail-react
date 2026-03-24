@@ -52,8 +52,8 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return (
       fallback || (
         <div className="flex items-center justify-center min-h-screen">
-          <div className="flex flex-col items-center space-y-4">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="flex flex-col items-center space-y-4">
+            <div className="rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
             <p className="text-gray-600">{loadingMessage}</p>
           </div>
         </div>
@@ -72,8 +72,8 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({
     return (
       fallback || (
         <div className="flex items-center justify-center min-h-screen">
-          <div className="flex flex-col items-center space-y-4">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="flex flex-col items-center space-y-4">
+            <div className="rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
             <p className="text-gray-600">Loading access rules...</p>
           </div>
         </div>

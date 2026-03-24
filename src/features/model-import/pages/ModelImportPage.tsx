@@ -87,12 +87,12 @@ export function ModelImportPage() {
   ];
 
   return (
-    <div className="flex-1 space-y-8 p-2 pt-0 animate-in fade-in duration-700">
+    <div className="flex-1 space-y-8 p-2 pt-0">
       {/* Header Section */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
         <div className="space-y-3">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/5 border border-primary/10 backdrop-blur-md">
-            <Sparkles className="h-3 w-3 text-primary animate-pulse" />
+            <Sparkles className="h-3 w-3 text-primary" />
             <span className="text-[10px] font-bold text-primary uppercase tracking-widest">Assistant d'Importation</span>
           </div>
           
@@ -117,7 +117,7 @@ export function ModelImportPage() {
                 <p className="text-[10px] font-black text-muted-foreground uppercase tracking-[0.15em] mb-1.5">Statut</p>
                 <div className="flex items-center gap-2">
                    <div className={cn(
-                     "h-2 w-2 rounded-full animate-pulse",
+                     "h-2 w-2 rounded-full",
                      batch.status === "COMMITTED" ? "bg-emerald-500" : "bg-primary"
                    )} />
                    <span className="text-sm font-extrabold tracking-tight">{batch.status}</span>
@@ -146,7 +146,7 @@ export function ModelImportPage() {
       </div>
 
       {pageError && (
-        <Alert variant="destructive" className="rounded-2xl border-destructive/20 bg-destructive/5 animate-in slide-in-from-top-2">
+        <Alert variant="destructive" className="rounded-2xl border-destructive/20 bg-destructive/5">
           <AlertCircle className="h-5 w-5" />
           <AlertTitle className="font-black uppercase tracking-wider text-xs">Anomalie détectée</AlertTitle>
           <AlertDescription className="font-medium text-sm">{pageError}</AlertDescription>
@@ -161,14 +161,14 @@ export function ModelImportPage() {
               key={step.id} 
               value={step.id}
               className={cn(
-                "py-4 flex flex-col items-center md:items-start gap-1 px-6 transition-all duration-500 rounded-2xl group",
+                "py-4 flex flex-col items-center md:items-start gap-1 px-6 rounded-2xl group",
                 "data-[state=active]:bg-background data-[state=active]:shadow-lg data-[state=active]:ring-1 data-[state=active]:ring-primary/10"
               )}
             >
               <div className="flex items-center gap-3 w-full">
                 <div className={cn(
-                  "h-10 w-10 rounded-xl flex items-center justify-center transition-all duration-500 shadow-sm",
-                  activeTab === step.id ? "bg-primary text-primary-foreground scale-110" : "bg-muted/50 text-muted-foreground group-hover:bg-muted"
+                  "h-10 w-10 rounded-xl flex items-center justify-center shadow-sm",
+                  activeTab === step.id ? "bg-primary text-primary-foreground" : "bg-muted/50 text-muted-foreground group-hover:bg-muted"
                 )}>
                   <step.icon className="h-5 w-5" />
                 </div>
@@ -187,7 +187,7 @@ export function ModelImportPage() {
         </TabsList>
 
         <div className="min-h-[500px]">
-          <TabsContent value="preparation" className="space-y-8 m-0 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <TabsContent value="preparation" className="space-y-8 m-0">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <TemplateDownloadCard
                 template={templateState.template}
@@ -220,14 +220,14 @@ export function ModelImportPage() {
 
             {batch && (
               <div className="flex justify-end pt-4">
-                <Button onClick={() => setActiveTab("review")} className="h-14 px-8 rounded-2xl shadow-xl shadow-primary/20 gap-3 font-black text-xs uppercase tracking-widest transition-all hover:-translate-y-1">
-                  Accéder à la révision <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
+                <Button onClick={() => setActiveTab("review")} className="h-14 px-8 rounded-2xl shadow-xl shadow-primary/20 gap-3 font-black text-xs uppercase tracking-widest">
+                  Accéder à la révision <ArrowRight className="h-4 w-4" />
                 </Button>
               </div>
             )}
           </TabsContent>
 
-          <TabsContent value="review" className="space-y-8 m-0 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <TabsContent value="review" className="space-y-8 m-0">
             <div className="grid grid-cols-1 gap-8">
               <div className="rounded-[2rem] border border-border/40 bg-card shadow-2xl shadow-shadow/5 overflow-hidden">
                 <ImportReviewGrid
@@ -257,13 +257,13 @@ export function ModelImportPage() {
               <Button onClick={() => setActiveTab("preparation")} variant="ghost" className="h-12 px-6 rounded-xl font-bold text-xs uppercase tracking-widest gap-2">
                 <ArrowLeft className="h-4 w-4" /> Retour
               </Button>
-              <Button onClick={() => setActiveTab("simulation")} disabled={!batchId} className="h-14 px-8 rounded-2xl shadow-xl shadow-primary/20 gap-3 font-black text-xs uppercase tracking-widest transition-all hover:-translate-y-1">
+              <Button onClick={() => setActiveTab("simulation")} disabled={!batchId} className="h-14 px-8 rounded-2xl shadow-xl shadow-primary/20 gap-3 font-black text-xs uppercase tracking-widest">
                 Lancer la simulation <FlaskConical className="h-4 w-4" />
               </Button>
             </div>
           </TabsContent>
 
-          <TabsContent value="simulation" className="space-y-8 m-0 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <TabsContent value="simulation" className="space-y-8 m-0">
             <ImportSimulationPanel
               disabled={!batchId}
               loading={busy}
@@ -293,14 +293,14 @@ export function ModelImportPage() {
               <Button 
                 onClick={() => setActiveTab("finalize")} 
                 disabled={!batchId || (executionState.simulationSummary?.canCommit === false && reviewState.batch?.lastSimulation?.canCommit === false)}
-                className="h-14 px-8 rounded-2xl shadow-xl shadow-primary/20 gap-3 font-black text-xs uppercase tracking-widest transition-all hover:-translate-y-1"
+                className="h-14 px-8 rounded-2xl shadow-xl shadow-primary/20 gap-3 font-black text-xs uppercase tracking-widest"
               >
                 Passer à la validation <CheckCircle2 className="h-4 w-4" />
               </Button>
             </div>
           </TabsContent>
 
-          <TabsContent value="finalize" className="space-y-8 m-0 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <TabsContent value="finalize" className="space-y-8 m-0">
             <ImportCommitPanel
               disabled={!batchId}
               loading={busy}

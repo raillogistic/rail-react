@@ -56,7 +56,7 @@ export function SiteHeader({
     <header
       data-slot="navbar"
       className={cn(
-        "sticky top-0 z-40 w-full transition-all duration-300 ease-in-out",
+        "sticky top-0 z-40 w-full",
         scrolled
           ? "border-b bg-background/80 backdrop-blur-xl shadow-sm h-14"
           : "border-b bg-background h-16",
@@ -65,15 +65,15 @@ export function SiteHeader({
       <div className="flex h-full items-center gap-4 px-4 sm:px-6">
         {/* Left Section: Sidebar & Navigation */}
         <div className="flex items-center gap-2 md:gap-4 flex-shrink-0">
-          <SidebarTrigger className="h-9 w-9 hover:bg-accent hover:text-accent-foreground transition-all duration-200 active:scale-95" />
+          <SidebarTrigger className="h-9 w-9 hover:bg-accent hover:text-accent-foreground" />
           <Separator orientation="vertical" className="h-6 mx-1 opacity-50" />
 
-          <Breadcrumb className="hidden lg:flex animate-in fade-in slide-in-from-left-4 duration-500">
+          <Breadcrumb className="hidden lg:flex">
             <BreadcrumbList>
               <BreadcrumbItem>
                 <BreadcrumbLink
                   href="/"
-                  className="hover:text-primary transition-colors font-medium"
+                  className="hover:text-primary font-medium"
                 >
                   Dashboard
                 </BreadcrumbLink>
@@ -84,7 +84,7 @@ export function SiteHeader({
                     <ChevronRight className="size-3.5 opacity-40" />
                   </BreadcrumbSeparator>
                   <BreadcrumbItem>
-                    <BreadcrumbLink className="hover:text-primary transition-colors font-medium">
+                    <BreadcrumbLink className="hover:text-primary font-medium">
                       {sectionLabel}
                     </BreadcrumbLink>
                   </BreadcrumbItem>
@@ -101,7 +101,7 @@ export function SiteHeader({
             </BreadcrumbList>
           </Breadcrumb>
 
-          <div className="lg:hidden flex flex-col justify-center animate-in fade-in slide-in-from-left-4 duration-500">
+          <div className="lg:hidden flex flex-col justify-center">
             <h1 className="text-sm font-bold leading-none tracking-tight">
               {title}
             </h1>
@@ -127,9 +127,9 @@ export function SiteHeader({
             {/* <Button
               variant="ghost"
               size="icon"
-              className="h-9 w-9 rounded-full relative hover:bg-accent group transition-all active:scale-95"
+              className="h-9 w-9 rounded-full relative hover:bg-accent group"
             >
-              <Bell className="h-[1.1rem] w-[1.1rem] group-hover:animate-ring transition-transform" />
+              <Bell className="h-[1.1rem] w-[1.1rem]" />
               <span className="absolute top-2.5 right-2.5 flex h-2 w-2 rounded-full bg-primary border-2 border-background shadow-[0_0_8px_rgba(var(--primary),0.5)]" />
               <span className="sr-only">Notifications</span>
             </Button> */}

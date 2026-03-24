@@ -43,7 +43,7 @@ export function ImportCommitPanel({
   const isCommitted = !!commitSummary;
 
   return (
-    <div className="max-w-3xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+    <div className="max-w-3xl mx-auto space-y-8">
       <Card className={cn(
         "shadow-2xl border-2 overflow-hidden",
         isCommitted ? "border-green-500/30" : commitBlocked ? "border-muted" : "border-primary/30"
@@ -55,7 +55,7 @@ export function ImportCommitPanel({
           <div className="flex justify-center mb-4">
             <div className={cn(
               "h-16 w-16 rounded-full flex items-center justify-center shadow-lg",
-              isCommitted ? "bg-green-500 text-white" : commitBlocked ? "bg-muted text-muted-foreground" : "bg-primary text-white animate-bounce-slow"
+              isCommitted ? "bg-green-500 text-white" : commitBlocked ? "bg-muted text-muted-foreground" : "bg-primary text-white"
             )}>
               {isCommitted ? <CheckCircle2 className="h-10 w-10" /> : <Database className="h-10 w-10" />}
             </div>
@@ -181,13 +181,13 @@ export function ImportCommitPanel({
 
               <Button
                 size="lg"
-                className="h-14 px-12 gap-3 font-black text-lg shadow-xl shadow-primary/20 hover:shadow-primary/40 hover:-translate-y-0.5 transition-all min-w-[240px]"
+                className="h-14 px-12 gap-3 font-black text-lg shadow-xl shadow-primary/20 min-w-[240px]"
                 disabled={commitBlocked || loading}
                 onClick={() => {
                   void onCommit();
                 }}
               >
-                {loading ? <Loader2 className="h-6 w-6 animate-spin" /> : <Database className="h-6 w-6" />}
+                {loading ? <Loader2 className="h-6 w-6" /> : <Database className="h-6 w-6" />}
                 Confirmer l'importation
                 {!loading && <ArrowRight className="h-5 w-5" />}
               </Button>
@@ -206,7 +206,7 @@ export function ImportCommitPanel({
       </Card>
       
       {!isCommitted && !commitBlocked && (
-        <p className="text-center text-xs text-muted-foreground animate-pulse">
+        <p className="text-center text-xs text-muted-foreground">
           L'opération peut prendre quelques secondes selon le volume de données.
         </p>
       )}

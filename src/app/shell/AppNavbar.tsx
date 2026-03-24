@@ -125,7 +125,7 @@ const AppNavMenu = ({
  to={firstPath}
  className={cn(
  navigationMenuTriggerStyle(),
- "relative h-9 px-4 text-sm font-semibold transition-all duration-300 ",
+ "relative h-9 px-4 text-sm font-semibold ",
  isActive
  ? "bg-primary/10 text-primary shadow-sm"
  : "text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -133,7 +133,7 @@ const AppNavMenu = ({
  >
  {section.label}
  {isActive && (
- <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-primary animate-in zoom-in duration-300" />
+ <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 bg-primary" />
  )}
  </RouterLink>
  </NavigationMenuItem>
@@ -147,7 +147,7 @@ const AppNavMenu = ({
  to={sectionEntries[0].path}
  className={cn(
  navigationMenuTriggerStyle(),
- "h-9 px-4 font-semibold transition-all duration-300",
+ "h-9 px-4 font-semibold",
  isActive && "bg-primary/10 text-primary",
  )}
  >
@@ -157,7 +157,7 @@ const AppNavMenu = ({
  <>
  <NavigationMenuTrigger
  className={cn(
- "h-9 px-4 font-semibold bg-transparent hover:bg-muted transition-all duration-300",
+ "h-9 px-4 font-semibold bg-transparent hover:bg-muted",
  isActive &&
  "bg-primary/10 text-primary hover:bg-primary/15",
  )}
@@ -165,10 +165,10 @@ const AppNavMenu = ({
  {section.label}
  </NavigationMenuTrigger>
  <NavigationMenuContent className="p-0 border-none bg-transparent">
- <div className="w-[500px] lg:w-[600px] border border-border/40 bg-background/95 backdrop-blur-2xl shadow-2xl p-4 animate-in zoom-in-95 duration-300">
+ <div className="w-[500px] lg:w-[600px] border border-border/40 bg-background/95 backdrop-blur-2xl shadow-2xl p-4">
  <div className="grid grid-cols-[1fr_1.5fr] gap-4">
  <div className="bg-primary/5 p-4 flex flex-col justify-between overflow-hidden relative group">
- <div className="absolute -right-4 -top-4 opacity-5 group-hover:scale-110 transition-transform duration-700">
+ <div className="absolute -right-4 -top-4 opacity-5">
  <IconSparkles className="size-24" />
  </div>
  <div>
@@ -233,7 +233,7 @@ export function AppNavbar() {
  return (
  <header
  className={cn(
- "sticky top-0 z-50 w-full transition-all duration-300 ease-in-out",
+        "sticky top-0 z-50 w-full",
  scrolled
  ? "border-b bg-background/80 backdrop-blur-xl shadow-sm h-14"
  : "border-b bg-background h-16",
@@ -244,10 +244,10 @@ export function AppNavbar() {
  <div className="flex items-center flex-none">
  <Link
  to="/"
- className="flex items-center gap-3 group transition-all active:scale-95"
+ className="flex items-center gap-3 group"
  >
  <div className="relative">
- <div className="absolute inset-0 bg-primary/20 blur-xl scale-150 opacity-0 group-hover:opacity-100 transition-opacity" />
+    <div className="absolute inset-0 bg-primary/20 blur-xl opacity-0 group-hover:opacity-100" />
  <img
  src={Logo}
  alt={BRANDING.logoAlt}
@@ -338,7 +338,7 @@ const ListItem = React.forwardRef<
  ref={ref}
  to={to}
  className={cn(
- "flex items-center gap-3 select-none p-3 leading-none no-underline outline-none transition-all duration-300 group/item",
+        "flex items-center gap-3 select-none p-3 leading-none no-underline outline-none group/item",
  "hover:bg-primary/5 hover:text-primary",
  active ? "bg-primary/5 text-primary" : "text-foreground/70",
  className,
@@ -347,7 +347,7 @@ const ListItem = React.forwardRef<
  >
  <div
  className={cn(
- "h-10 w-10 shrink-0 flex items-center justify-center transition-all duration-300",
+        "h-10 w-10 shrink-0 flex items-center justify-center",
  active
  ? "bg-primary/10 text-primary shadow-sm"
  : "bg-muted/50 text-muted-foreground group-hover/item:bg-primary/10 group-hover/item:text-primary",
@@ -363,11 +363,11 @@ const ListItem = React.forwardRef<
  <div className="text-sm font-bold leading-none tracking-tight">
  {title}
  </div>
- <p className="line-clamp-1 text-xs leading-snug text-muted-foreground opacity-70 group-hover/item:text-primary/70 transition-colors">
+      <p className="line-clamp-1 text-xs leading-snug text-muted-foreground opacity-70 group-hover/item:text-primary/70">
  {children}
  </p>
  </div>
- <IconArrowRight className="size-3.5 opacity-0 group-hover/item:opacity-40 transition-opacity -translate-x-2 group-hover/item:translate-x-0 duration-300" />
+    <IconArrowRight className="size-3.5 opacity-0 group-hover/item:opacity-40" />
  </RouterLink>
  </li>
  );
@@ -383,7 +383,7 @@ function MobileNav({ navigationLinks }: { navigationLinks: NavigationSection[] }
  <button
  data-slot="button"
  aria-label="Open navigation"
- className="inline-flex h-9 w-9 items-center justify-center border border-border/40 bg-background hover:bg-muted text-muted-foreground shadow-sm transition-all active:scale-90"
+      className="inline-flex h-9 w-9 items-center justify-center border border-border/40 bg-background hover:bg-muted text-muted-foreground shadow-sm"
  >
  <IconMenu2 className="size-5" />
  </button>
@@ -428,7 +428,7 @@ function MobileNav({ navigationLinks }: { navigationLinks: NavigationSection[] }
  key={item.path}
  to={item.path}
  className={cn(
- "flex items-center gap-3 px-4 py-3 text-sm font-semibold transition-all duration-300 group",
+            "flex items-center gap-3 px-4 py-3 text-sm font-semibold group",
  isActive
  ? "bg-primary/10 text-primary shadow-sm"
  : "text-muted-foreground hover:bg-muted hover:text-foreground",
@@ -436,7 +436,7 @@ function MobileNav({ navigationLinks }: { navigationLinks: NavigationSection[] }
  >
  <div
  className={cn(
- "h-8 w-8 flex items-center justify-center transition-colors",
+            "h-8 w-8 flex items-center justify-center",
  isActive
  ? "bg-primary/10 text-primary"
  : "bg-muted text-muted-foreground/50 group-hover:bg-background",
@@ -450,7 +450,7 @@ function MobileNav({ navigationLinks }: { navigationLinks: NavigationSection[] }
  </div>
  <span className="flex-1 truncate">{item.title}</span>
  {isActive && (
- <div className="h-1.5 w-1.5 bg-primary shadow-[0_0_8px_rgba(var(--primary),0.5)] animate-pulse" />
+          <div className="h-1.5 w-1.5 bg-primary shadow-[0_0_8px_rgba(var(--primary),0.5)]" />
  )}
  </Link>
  );

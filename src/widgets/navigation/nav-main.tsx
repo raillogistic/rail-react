@@ -100,7 +100,7 @@ export function NavMain({ navigationLinks }: NavMainProps) {
  <SidebarMenu className="gap-0.5">
  {section.items
  .filter((item) => !item.hidden)
- .map((item, index) => {
+ .map((item) => {
  const visibleChildren = item.children?.filter(
  (child) => !child.hidden
  );
@@ -114,16 +114,14 @@ export function NavMain({ navigationLinks }: NavMainProps) {
 
  if (!hasChildren) {
  return (
- <SidebarMenuItem 
- key={item.id} 
- style={{ animationDelay:`${index * 50}ms` }}
- className="animate-fade-in-slide opacity-0"
+ <SidebarMenuItem
+ key={item.id}
  >
  <SidebarMenuButton
  asChild
  tooltip={item.title}
  className={cn(
- "relative h-9 w-full transition-all duration-200 group/btn overflow-hidden ",
+ "relative h-9 w-full group/btn overflow-hidden ",
  isItemActive
  ? "bg-primary/10 text-primary font-bold shadow-xs ring-1 ring-primary/20"
  : "text-muted-foreground/80 hover:bg-sidebar-accent/50 hover:text-foreground"
@@ -134,22 +132,22 @@ export function NavMain({ navigationLinks }: NavMainProps) {
  className="relative flex items-center gap-3 px-3 z-10"
  >
  {isItemActive && (
- <div className="absolute inset-0 -z-10 bg-gradient-to-r from-transparent via-primary/10 to-transparent bg-[length:200%_100%] animate-shimmer pointer-events-none opacity-50" />
+ <div className="absolute inset-0 -z-10 bg-gradient-to-r from-transparent via-primary/10 to-transparent bg-[length:200%_100%] pointer-events-none opacity-50" />
  )}
  {item.icon && (
  <div className="relative flex items-center justify-center">
  {isItemActive && (
- <div className="absolute inset-0 -z-10 scale-[2.5] bg-primary/20 blur-xl animate-pulse" />
+ <div className="absolute inset-0 -z-10 bg-primary/20 blur-xl" />
  )}
  <item.icon className={cn(
- "size-4 shrink-0 transition-transform duration-300 group-hover/btn:scale-110 relative z-10",
+ "size-4 shrink-0 relative z-10",
  isItemActive ? "text-primary drop-shadow-[0_0_8px_rgba(var(--primary),0.5)]" : "text-muted-foreground/60 group-hover/btn:text-foreground"
  )} />
  </div>
  )}
  <span className="truncate">{item.title}</span>
  {isItemActive && !isCollapsed && (
- <div className="absolute right-0 top-1/2 h-5 w-1 -translate-y-1/2 bg-primary shadow-[0_0_8px_rgba(var(--primary),0.5)]" />
+ <div className="absolute right-0 top-1/2 h-5 w-1 bg-primary shadow-[0_0_8px_rgba(var(--primary),0.5)]" />
  )}
  </Link>
  </SidebarMenuButton>
@@ -170,30 +168,29 @@ export function NavMain({ navigationLinks }: NavMainProps) {
  }
  className="group/collapsible"
  >
- <SidebarMenuItem 
- style={{ animationDelay:`${index * 50}ms` }}
- className="animate-fade-in-slide opacity-0"
+ <SidebarMenuItem
+ key={item.id}
  >
  <CollapsibleTrigger asChild>
  <SidebarMenuButton
  tooltip={item.title}
  className={cn(
- "h-9 transition-all duration-200 group/btn relative overflow-hidden",
+ "h-9 group/btn relative overflow-hidden",
  isItemActive && !isOpen
  ? "bg-primary/10 text-primary font-bold shadow-xs ring-1 ring-primary/20"
  : "text-muted-foreground/80 hover:bg-sidebar-accent/50 hover:text-foreground"
  )}
  >
  {isItemActive && !isOpen && (
- <div className="absolute inset-0 -z-10 bg-gradient-to-r from-transparent via-primary/10 to-transparent bg-[length:200%_100%] animate-shimmer pointer-events-none opacity-50" />
+ <div className="absolute inset-0 -z-10 bg-gradient-to-r from-transparent via-primary/10 to-transparent bg-[length:200%_100%] pointer-events-none opacity-50" />
  )}
  {item.icon && (
  <div className="relative flex items-center justify-center">
  {isItemActive && (
- <div className="absolute inset-0 -z-10 scale-[2.5] bg-primary/20 blur-xl animate-pulse" />
+ <div className="absolute inset-0 -z-10 scale-[2.5] bg-primary/20 blur-xl" />
  )}
  <item.icon className={cn(
- "size-4 shrink-0 transition-transform duration-300 group-hover/btn:scale-110 relative z-10",
+ "size-4 shrink-0 relative z-10",
  isItemActive ? "text-primary drop-shadow-[0_0_8px_rgba(var(--primary),0.5)]" : "text-muted-foreground/60 group-hover/btn:text-foreground"
  )} />
  </div>
@@ -201,7 +198,7 @@ export function NavMain({ navigationLinks }: NavMainProps) {
  <div className="flex flex-1 items-center justify-between overflow-hidden z-10">
  <span className="truncate">{item.title}</span>
  <ChevronRight className={cn(
- "ml-auto size-3.5 transition-transform duration-300 group-data-[state=open]/collapsible:rotate-90",
+ "ml-auto size-3.5",
  isItemActive ? "text-primary" : "text-muted-foreground/40"
  )} />
  </div>
@@ -210,7 +207,7 @@ export function NavMain({ navigationLinks }: NavMainProps) {
  )}
  </SidebarMenuButton>
  </CollapsibleTrigger>
- <CollapsibleContent className="overflow-hidden transition-all data-[state=closed]:animate-collapse-up data-[state=open]:animate-collapse-down">
+ <CollapsibleContent className="overflow-hidden">
  <SidebarMenuSub className="mt-1 ml-4 gap-1 border-l border-primary/10 pl-2">
  {visibleChildren?.map((child) => {
  const isChildActive =
@@ -222,7 +219,7 @@ export function NavMain({ navigationLinks }: NavMainProps) {
  <SidebarMenuSubButton
  asChild
  className={cn(
- "h-7 transition-all duration-200 ",
+ "h-7 ",
  isChildActive
  ? "bg-primary/5 text-primary font-semibold"
  : "text-muted-foreground/70 hover:bg-sidebar-accent/30 hover:text-foreground"
@@ -233,8 +230,8 @@ export function NavMain({ navigationLinks }: NavMainProps) {
  className="flex w-full items-center gap-2 px-3"
  >
  <div className={cn(
- "size-1 transition-all duration-300",
- isChildActive ? "bg-primary scale-125 shadow-[0_0_8px_rgba(var(--primary),0.5)]" : "bg-muted-foreground/30"
+ "size-1",
+ isChildActive ? "bg-primary shadow-[0_0_8px_rgba(var(--primary),0.5)]" : "bg-muted-foreground/30"
  )} />
  <span className="truncate">{child.title}</span>
  </Link>

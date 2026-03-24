@@ -92,7 +92,7 @@ export const OfflineNotification: React.FC<OfflineNotificationProps> = ({
 
   return (
     <div className={cn(
-      "fixed z-50 w-full max-w-lg px-4 animate-in fade-in slide-in-from-top-4 duration-300",
+      "fixed z-50 w-full max-w-lg px-4",
       positionClasses,
       className
     )}>
@@ -126,11 +126,11 @@ export const OfflineNotification: React.FC<OfflineNotificationProps> = ({
                 disabled={isRetrying}
                 variant="default"
                 size="sm"
-                className="bg-orange-600 hover:bg-orange-700 text-white shadow-sm h-8 px-4 rounded-full font-bold transition-all active:scale-95"
+                className="bg-orange-600 hover:bg-orange-700 text-white shadow-sm h-8 px-4 rounded-full font-bold"
               >
                 {isRetrying ? (
                   <>
-                    <RefreshCw className="animate-spin h-3.5 w-3.5 mr-2" />
+                    <RefreshCw className="h-3.5 w-3.5 mr-2" />
                     Checking...
                   </>
                 ) : (
@@ -141,7 +141,7 @@ export const OfflineNotification: React.FC<OfflineNotificationProps> = ({
                 )}
               </Button>
               <div className="flex h-2 w-2 relative ml-1">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+                <span className="absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-orange-500"></span>
               </div>
               <span className="text-[10px] text-orange-600/70 font-bold uppercase tracking-widest">Auto-checking</span>
