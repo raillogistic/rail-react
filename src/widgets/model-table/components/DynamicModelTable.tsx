@@ -829,7 +829,7 @@ function DynamicBaseTableContent<
             pdfUrl && typeof renderedValue === "string" ? (
               <button
                 type="button"
-                className="max-w-full truncate text-left text-primary underline underline-offset-4 transition-colors hover:text-primary/80"
+                className="max-w-full truncate text-left text-primary underline underline-offset-4 hover:text-primary/80"
                 onClick={() => openPdfPreview(pdfUrl, renderedValue)}
               >
                 {renderedValue}
@@ -857,7 +857,7 @@ function DynamicBaseTableContent<
               queryManager={queryManager}
               overrideRenderer={overrideRenderer}
             >
-              <span className="cursor-pointer hover:text-primary transition-colors underline-offset-4 decoration-primary/30 hover:underline">
+                <span className="cursor-pointer hover:text-primary underline-offset-4 decoration-primary/30 hover:underline">
                 {displayValue}
               </span>
             </RelationStatsHover>
@@ -1246,7 +1246,7 @@ function DynamicBaseTableContent<
             features={features}
             layout={{
               containerClassName:
-                "group/frame relative flex h-full flex-col overflow-hidden bg-transparent transition-all duration-500",
+              "group/frame relative flex h-full flex-col overflow-hidden bg-transparent",
               stickySelectionColumn: false,
               actions: {
                 headerLabel: tableConfig?.actionsLabel ?? "",

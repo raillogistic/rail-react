@@ -553,20 +553,20 @@ export function ModelForm<
     <div
       data-slot="model-form"
       className={cn(
-        "group/model-form relative w-full transition-all duration-500 ease-in-out",
+        "group/model-form relative w-full",
         !isPopupLayoutVariant && [
           "bg-linear-to-br from-background via-background/98 to-primary/2",
           "backdrop-blur-xl",
           "shadow-[0_20px_50px_rgba(0,0,0,0.04)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.2)]",
           "border border-border/50 rounded-2xl p-6 md:p-10",
           "hover:shadow-[0_25px_60px_rgba(0,0,0,0.06)] dark:hover:shadow-[0_25px_60px_rgba(0,0,0,0.3)]",
-          "hover:border-border/80 transition-shadow duration-700",
+          "hover:border-border/80",
         ],
         containerClassName,
       )}
     >
       {!isPopupLayoutVariant && (
-        <div className="absolute -top-[10%] -left-[5%] size-[40%] rounded-full bg-primary/5 blur-[100px] pointer-events-none opacity-0 group-hover/model-form:opacity-100 transition-opacity duration-1000" />
+        <div className="absolute -top-[10%] -left-[5%] size-[40%] rounded-full bg-primary/5 blur-[100px] pointer-events-none opacity-0 group-hover/model-form:opacity-100" />
       )}
 
       {showHeading && (title || description) ? (
@@ -588,7 +588,7 @@ export function ModelForm<
       ) : null}
       <div
         className={cn(
-          "relative transition-all duration-500",
+          "relative",
           !isPopupLayoutVariant && "pt-8 border-t border-border/30",
           contentClassName,
         )}

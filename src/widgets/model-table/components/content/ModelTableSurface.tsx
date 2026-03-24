@@ -30,7 +30,7 @@ export function ModelTableSurface({
   return (
     <TooltipProvider delayDuration={200}>
       <div
-        className="relative flex h-full w-full max-w-full min-w-0 flex-col overflow-hidden border border-border/50 bg-card shadow-md shadow-black/5 animate-in fade-in duration-500 sm:rounded-xl"
+        className="relative flex h-full w-full max-w-full min-w-0 flex-col overflow-hidden border border-border/50 bg-card shadow-md shadow-black/5 sm:rounded-xl"
         data-model-table-persistence-key={persistenceKey}
       >
         {devtools}
@@ -48,7 +48,7 @@ export function ModelTableSurface({
 
         <div
           className={cn(
-            "flex-1 min-h-0 min-w-0 bg-background/50 transition-all duration-200",
+            "flex-1 min-h-0 min-w-0 bg-background/50",
             hideTableOnMobile ? "hidden md:block" : "block",
           )}
         >

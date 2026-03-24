@@ -59,7 +59,7 @@ export function ModelTableBulkActionsBar({
  return (
  <div
  className={cn(
- "fixed bottom-8 left-1/2 z-[60] -translate-x-1/2 transition-all duration-500 ease-out",
+            "fixed bottom-8 left-1/2 z-[60] -translate-x-1/2",
  controller.hasSelection
  ? "translate-y-0 opacity-100 scale-100"
  : "translate-y-24 opacity-0 scale-95 pointer-events-none",
@@ -98,7 +98,7 @@ export function ModelTableBulkActionsBar({
  variant="ghost"
  size="icon"
  data-testid="templates-pdf-dropdown-trigger"
- className="size-8 text-blue-500 hover:bg-blue-500 hover:text-white transition-all"
+                className="size-8 text-blue-500 hover:bg-blue-500 hover:text-white"
  >
  <FileText className="size-4" />
  </Button>
@@ -132,7 +132,7 @@ export function ModelTableBulkActionsBar({
  controller.selectedRows,
  )
  }
- className="py-2.5 text-xs font-medium gap-3 transition-colors"
+              className="py-2.5 text-xs font-medium gap-3"
  >
  <div className="flex size-7 items-center justify-center bg-blue-500/10 text-blue-500">
  <FileText className="size-3.5" />
@@ -177,7 +177,7 @@ export function ModelTableBulkActionsBar({
  variant="ghost"
  size="icon"
  data-testid="templates-excel-dropdown-trigger"
- className="size-8 text-emerald-500 hover:bg-emerald-500 hover:text-white transition-all"
+                className="size-8 text-emerald-500 hover:bg-emerald-500 hover:text-white"
  >
  <FileSpreadsheet className="size-4" />
  </Button>
@@ -211,7 +211,7 @@ export function ModelTableBulkActionsBar({
  controller.selectedRows,
  )
  }
- className="py-2.5 text-xs font-medium gap-3 transition-colors"
+              className="py-2.5 text-xs font-medium gap-3"
  >
  <div className="flex size-7 items-center justify-center bg-emerald-500/10 text-emerald-500">
  <FileSpreadsheet className="size-3.5" />
@@ -265,11 +265,11 @@ export function ModelTableBulkActionsBar({
  variant="ghost"
  size="icon"
  aria-label="Suppression en masse"
- className="size-8 text-rose-500 hover:bg-rose-500 hover:text-white transition-all"
+                className="size-8 text-rose-500 hover:bg-rose-500 hover:text-white"
  disabled={!controller.canBulkDelete || controller.bulkDeleteLoading}
  >
  {controller.bulkDeleteLoading ? (
- <Loader2 className="size-4 animate-spin" />
+ <Loader2 className="size-4" />
  ) : (
  <Trash2 className="size-4" />
  )}
@@ -307,17 +307,17 @@ export function ModelTableBulkActionsBar({
  </AlertDialogDescription>
  </AlertDialogHeader>
  <AlertDialogFooter className="mt-4 flex flex-col sm:flex-row gap-3 justify-center w-full">
- <AlertDialogCancel className="h-10 flex-1 border-border/30 bg-muted/30 font-bold text-xs uppercase tracking-wider transition-all hover:bg-muted/50 active:scale-95">
+ <AlertDialogCancel className="h-10 flex-1 border-border/30 bg-muted/30 font-bold text-xs uppercase tracking-wider hover:bg-muted/50">
  Annuler
  </AlertDialogCancel>
  <AlertDialogAction
  onClick={() => void controller.confirmBulkDelete()}
  disabled={!controller.canBulkDelete || controller.bulkDeleteLoading}
- className="h-10 flex-1 bg-rose-500 font-bold text-xs uppercase tracking-wider text-white shadow-lg shadow-rose-500/20 transition-all hover:bg-rose-600 hover:scale-[1.02] active:scale-95"
+ className="h-10 flex-1 bg-rose-500 font-bold text-xs uppercase tracking-wider text-white shadow-lg shadow-rose-500/20 hover:bg-rose-600"
  >
  {controller.bulkDeleteLoading ? (
  <>
- <Loader2 className="mr-2 size-4 animate-spin" />
+ <Loader2 className="mr-2 size-4" />
  Suppression...
  </>
  ) : (
@@ -334,7 +334,7 @@ export function ModelTableBulkActionsBar({
  <Button
  variant="ghost"
  size="icon"
- className="size-8 text-muted-foreground hover:bg-muted transition-all"
+ className="size-8 text-muted-foreground hover:bg-muted"
  onClick={controller.clearSelection}
  >
  <X className="size-4" />

@@ -46,7 +46,7 @@ export interface DynamicTablePaginationProps {
 /**
  * Renders premium table pagination controls for both client and server modes.
  * Features a refined visual treatment with containers, subtle backgrounds,
- * smooth transitions, and inline quick-jump capability.
+ * and inline quick-jump capability.
  */
 export function DynamicTablePagination({
  state,
@@ -138,13 +138,13 @@ export function DynamicTablePagination({
  <div
  className={cn(
  "mt-3 flex flex-col items-center justify-between gap-3 border border-border/30 bg-background/60 px-4 py-3 backdrop-blur-xl shadow-sm sm:flex-row",
- "transition-all animate-in fade-in slide-in-from-bottom-1 duration-300",
+ "",
  )}
  >
  {/* Left: Selection & Total Summary */}
  <div className="flex items-center gap-3 text-xs text-muted-foreground">
  {enableSelection && selectedCount > 0 ? (
- <span className="inline-flex items-center gap-1.5 bg-primary/10 px-3 py-1 text-[11px] font-bold text-primary animate-in zoom-in-95 duration-200">
+ <span className="inline-flex items-center gap-1.5 bg-primary/10 px-3 py-1 text-[11px] font-bold text-primary">
  {selectedCount} sélectionné{selectedCount > 1 ? "s" : ""}
  </span>
  ) : null}
@@ -168,7 +168,7 @@ export function DynamicTablePagination({
  }));
  }}
  >
- <SelectTrigger className="h-8 w-[90px] border-border/30 bg-muted/30 text-[11px] font-semibold transition-all hover:bg-muted/50">
+ <SelectTrigger className="h-8 w-[90px] border-border/30 bg-muted/30 text-[11px] font-semibold hover:bg-muted/50">
  <SelectValue />
  </SelectTrigger>
  <SelectContent className="border-border/30 bg-background/95 shadow-xl backdrop-blur-xl">
@@ -193,7 +193,7 @@ export function DynamicTablePagination({
  type="button"
  variant="ghost"
  size="icon"
- className="hidden h-7 w-7 lg:flex hover:bg-background hover:text-primary disabled:opacity-20 transition-all active:scale-90"
+ className="hidden h-7 w-7 lg:flex hover:bg-background hover:text-primary disabled:opacity-20"
  disabled={!canGoPrevious}
  onClick={() => goToPage(0)}
  aria-label="Première page"
@@ -213,7 +213,7 @@ export function DynamicTablePagination({
  type="button"
  variant="ghost"
  size="icon"
- className="h-7 w-7 hover:bg-background hover:text-primary disabled:opacity-20 transition-all active:scale-90"
+ className="h-7 w-7 hover:bg-background hover:text-primary disabled:opacity-20"
  disabled={!canGoPrevious}
  onClick={() => goToPage(state.pagination.pageIndex - 1)}
  aria-label="Page précédente"
@@ -229,7 +229,7 @@ export function DynamicTablePagination({
  {/* Page Indicator / Quick Jump */}
  <div className="flex items-center justify-center min-w-[80px] px-2">
  {isJumpMode ? (
- <div className="flex items-center gap-1 animate-in zoom-in-95 duration-200">
+ <div className="flex items-center gap-1">
  <input
  autoFocus
  className="h-7 w-12 border border-primary/30 bg-background/80 px-1.5 text-center text-xs font-bold tabular-nums focus:outline-none focus:ring-1 focus:ring-primary/20"
@@ -260,7 +260,7 @@ export function DynamicTablePagination({
  ) : (
  <button
  type="button"
- className="flex flex-col items-center gap-0 cursor-pointer hover:scale-105 transition-all active:scale-95"
+ className="flex flex-col items-center gap-0 cursor-pointer"
  onClick={() => totalPages !== null && setIsJumpMode(true)}
  >
  <span className="text-[9px] font-semibold text-muted-foreground/40 uppercase tracking-widest leading-none">
@@ -282,7 +282,7 @@ export function DynamicTablePagination({
  type="button"
  variant="ghost"
  size="icon"
- className="h-7 w-7 hover:bg-background hover:text-primary disabled:opacity-20 transition-all active:scale-90"
+ className="h-7 w-7 hover:bg-background hover:text-primary disabled:opacity-20"
  disabled={!canGoNext}
  onClick={() => goToPage(state.pagination.pageIndex + 1)}
  aria-label="Page suivante"
@@ -302,7 +302,7 @@ export function DynamicTablePagination({
  type="button"
  variant="ghost"
  size="icon"
- className="hidden h-7 w-7 lg:flex hover:bg-background hover:text-primary disabled:opacity-20 transition-all active:scale-90"
+ className="hidden h-7 w-7 lg:flex hover:bg-background hover:text-primary disabled:opacity-20"
  disabled={!canGoNext || totalPages === null}
  onClick={() => {
  if (totalPages !== null) {

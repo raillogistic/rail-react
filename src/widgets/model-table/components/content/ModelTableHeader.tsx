@@ -34,14 +34,14 @@ export function ModelTableHeader({
             <div className="flex items-center gap-2">
               <Badge
                 variant="secondary"
-                className="h-6 px-2.5 bg-secondary text-secondary-foreground hover:bg-secondary/80 text-[11px] font-semibold tabular-nums transition-colors"
+                className="h-6 px-2.5 bg-secondary text-secondary-foreground hover:bg-secondary/80 text-[11px] font-semibold tabular-nums"
                 title="Nombre total d'éléments"
               >
                 {controller.totalCount} au total
               </Badge>
               {controller.hasSelection && (
                 <Badge
-                  className="h-6 px-2.5 bg-primary text-primary-foreground text-[11px] font-semibold shadow-sm animate-in zoom-in duration-200 tabular-nums"
+                  className="h-6 px-2.5 bg-primary text-primary-foreground text-[11px] font-semibold shadow-sm tabular-nums"
                   title={`${controller.selectedCount} éléments sélectionnés`}
                 >
                   {controller.selectedCount} sél.
@@ -74,17 +74,17 @@ export function ModelTableHeader({
           onClick={controller.triggerRefresh}
           disabled={controller.loading}
           className={cn(
-            "flex size-9 items-center justify-center rounded-lg border border-border/50 bg-background/50 shadow-sm transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+            "flex size-9 items-center justify-center rounded-lg border border-border/50 bg-background/50 shadow-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
             controller.loading
               ? "opacity-50 cursor-not-allowed text-muted-foreground"
-              : "hover:bg-accent hover:text-accent-foreground active:scale-95 text-foreground",
+              : "hover:bg-accent hover:text-accent-foreground text-foreground",
           )}
           title="Rafraîchir les données"
         >
           <RefreshCw
             className={cn(
               "size-4",
-              controller.loading && "animate-spin text-primary",
+              controller.loading && "text-primary",
             )}
           />
           <span className="sr-only">Rafraîchir</span>

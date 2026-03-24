@@ -110,7 +110,7 @@ function shouldAutoSizeActionsColumn<TRow extends Record<string, unknown>>(
 
 /**
  * Renders grouped-row value cell using TanStack grouping metadata.
- * Premium styled group header with chevron animation and count badge.
+ * Premium styled group header with chevron and count badge.
  */
 function renderGroupedCell<TRow extends Record<string, unknown>>(
  row: Row<TRow>,
@@ -119,16 +119,11 @@ function renderGroupedCell<TRow extends Record<string, unknown>>(
  return (
  <button
  type="button"
- className="inline-flex items-center gap-2.5 text-left font-semibold text-foreground transition-colors hover:text-primary"
+    className="inline-flex items-center gap-2.5 text-left font-semibold text-foreground hover:text-primary"
  onClick={row.getToggleExpandedHandler()}
  >
- <div className="flex size-5 items-center justify-center bg-primary/10 text-primary transition-colors">
- <ChevronRight
- className={cn(
- "size-3.5 transition-transform duration-200",
- row.getIsExpanded() && "rotate-90",
- )}
- />
+    <div className="flex size-5 items-center justify-center bg-primary/10 text-primary">
+      <ChevronRight className="size-3.5" />
  </div>
  <span className="font-semibold">{value}</span>
  <span className="inline-flex items-center justify-center bg-muted/60 px-2 py-0.5 text-[10px] font-bold tabular-nums text-muted-foreground">
@@ -262,8 +257,7 @@ export function DynamicTableRows<TRow extends Record<string, unknown>>({
  data-row-stripe={rowIndex % 2 === 0 ? "even" : "odd"}
  data-state={row.getIsSelected() ? "selected" : undefined}
  className={cn(
- "transition-colors duration-150",
- "hover:bg-muted/30",
+        "hover:bg-muted/30",
  row.getIsSelected() && "bg-primary/5 hover:bg-primary/8",
  rowIndex % 2 === 1 && !row.getIsSelected() && "bg-muted/8",
  rowClassName,
@@ -345,8 +339,8 @@ export function DynamicTableRows<TRow extends Record<string, unknown>>({
  <TableCell colSpan={visibleColumnCount} className="h-52 border-0">
  <div className="flex flex-col items-center justify-center gap-3 py-8">
  <div className="relative flex size-10 items-center justify-center">
- <div className="absolute inset-0 animate-ping bg-primary/10" />
- <Loader2 className="size-5 animate-spin text-primary" />
+ <div className="absolute inset-0 bg-primary/10" />
+ <Loader2 className="size-5 text-primary" />
  </div>
  <span className="text-xs font-medium text-muted-foreground">
  {loadingText ?? "Chargement des données…"}

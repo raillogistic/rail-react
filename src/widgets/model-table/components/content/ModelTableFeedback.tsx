@@ -4,35 +4,34 @@ import { localizeTableErrorMessage } from "../DynamicModelTable.shared";
 export function ModelTableLoadingSkeleton() {
   return (
     <div
-      className="flex h-105 w-full flex-col gap-5 p-4 animate-in fade-in duration-500"
+      className="flex h-105 w-full flex-col gap-5 p-4"
       role="status"
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <div className="size-12 animate-pulse bg-muted/40" />
+          <div className="size-12 bg-muted/40" />
           <div className="flex flex-col gap-2">
-            <div className="h-3 w-20 animate-pulse bg-muted/30" />
-            <div className="h-6 w-48 animate-pulse bg-muted/40" />
+            <div className="h-3 w-20 bg-muted/30" />
+            <div className="h-6 w-48 bg-muted/40" />
           </div>
         </div>
         <div className="flex gap-2">
-          <div className="h-9 w-24 animate-pulse bg-muted/30" />
-          <div className="h-9 w-20 animate-pulse bg-muted/30" />
+          <div className="h-9 w-24 bg-muted/30" />
+          <div className="h-9 w-20 bg-muted/30" />
         </div>
       </div>
-      <div className="h-12 w-full animate-pulse border border-border/20 bg-muted/20" />
+      <div className="h-12 w-full border border-border/20 bg-muted/20" />
       <div className="flex-1 overflow-hidden border border-border/20 bg-card/30 backdrop-blur-sm">
         <div className="h-10 w-full bg-muted/30" />
         {Array.from({ length: 7 }).map((_, index) => (
           <div
             key={index}
             className="flex items-center gap-4 border-b border-border/10 px-4 py-3"
-            style={{ animationDelay: `${index * 60}ms` }}
           >
-            <div className="size-4 animate-pulse bg-muted/30" />
-            <div className="h-3.5 flex-2 animate-pulse bg-muted/25" />
-            <div className="h-3.5 flex-1 animate-pulse bg-muted/20" />
-            <div className="h-3.5 w-20 animate-pulse bg-muted/20" />
+            <div className="size-4 bg-muted/30" />
+            <div className="h-3.5 flex-2 bg-muted/25" />
+            <div className="h-3.5 flex-1 bg-muted/20" />
+            <div className="h-3.5 w-20 bg-muted/20" />
           </div>
         ))}
       </div>
@@ -43,7 +42,7 @@ export function ModelTableLoadingSkeleton() {
 export function ModelTableMetadataErrorState({ error }: { error: Error }) {
   return (
     <div className="flex h-100 items-center justify-center p-8">
-      <div className="w-full max-w-md overflow-hidden border border-rose-200/60 bg-background/95 shadow-xl backdrop-blur-xl animate-in zoom-in-95 duration-300 dark:border-rose-800/30">
+      <div className="w-full max-w-md overflow-hidden border border-rose-200/60 bg-background/95 shadow-xl backdrop-blur-xl dark:border-rose-800/30">
         <div className="h-1.5 w-full bg-linear-to-r from-rose-400 via-rose-500 to-rose-600" />
         <div className="flex flex-col items-center gap-4 p-8 text-center">
           <div className="flex size-14 items-center justify-center bg-rose-500/10">
@@ -87,7 +86,7 @@ export function ModelTableMetadataErrorState({ error }: { error: Error }) {
 
 export function ModelTableDataErrorDisplay({ error }: { error: Error }) {
   return (
-    <div className="mt-3 flex flex-none items-center gap-3 border border-rose-200/50 bg-rose-50/50 px-4 py-3 text-xs font-semibold text-rose-600 animate-in slide-in-from-top-1 duration-300 dark:border-rose-800/30 dark:bg-rose-950/20 dark:text-rose-400">
+    <div className="mt-3 flex flex-none items-center gap-3 border border-rose-200/50 bg-rose-50/50 px-4 py-3 text-xs font-semibold text-rose-600 dark:border-rose-800/30 dark:bg-rose-950/20 dark:text-rose-400">
       <div className="flex size-6 shrink-0 items-center justify-center bg-rose-500/10">
         <svg
           xmlns="http://www.w3.org/2000/svg"

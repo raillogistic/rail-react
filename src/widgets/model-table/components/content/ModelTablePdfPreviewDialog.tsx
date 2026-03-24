@@ -61,9 +61,7 @@ export function ModelTablePdfPreviewDialog({
               onClick={() => void onRefresh()}
               disabled={refreshing}
             >
-              <RotateCw
-                className={cn("h-3.5 w-3.5", refreshing && "animate-spin")}
-              />
+              <RotateCw className="h-3.5 w-3.5" />
               {refreshing ? refreshPendingLabel : refreshLabel}
             </Button>
           </div>
