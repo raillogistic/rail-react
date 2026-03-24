@@ -302,104 +302,128 @@ body {
   line-height: var(--line-height, 1.5);
   letter-spacing: var(--letter-spacing, 0);
 }
-/* Default theme (fallback) */
+/* Premium Modern ERP Theme (Light) */
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  --radius: 0.75rem;
+  --background: oklch(0.99 0 0);
+  --foreground: oklch(0.14 0 0);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: oklch(0.14 0 0);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: #2563eb;
-  --primary-foreground: #ffffff;
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --destructive-foreground: oklch(1 0 0);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  --popover-foreground: oklch(0.14 0 0);
+  
+  /* Primary: A sleek, trustworthy Indigo/Blue */
+  --primary: oklch(0.45 0.24 270);
+  --primary-foreground: oklch(0.99 0 0);
+  
+  --secondary: oklch(0.96 0.01 270);
+  --secondary-foreground: oklch(0.20 0.05 270);
+  --muted: oklch(0.96 0.01 270);
+  --muted-foreground: oklch(0.55 0.02 270);
+  --accent: oklch(0.96 0.01 270);
+  --accent-foreground: oklch(0.20 0.05 270);
+  
+  --destructive: oklch(0.57 0.20 27);
+  --destructive-foreground: oklch(0.99 0 0);
+  
+  --border: oklch(0.92 0.01 270);
+  --input: oklch(0.92 0.01 270);
+  --ring: oklch(0.45 0.24 270 / 30%);
+  
+  /* Charts */
   --chart-1: oklch(0.646 0.222 41.116);
   --chart-2: oklch(0.6 0.118 184.704);
   --chart-3: oklch(0.398 0.07 227.392);
   --chart-4: oklch(0.828 0.189 84.429);
   --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
-  --navbar-background: oklch(0.985 0 0);
-  --navbar-foreground: oklch(0.145 0 0);
+
+  /* Sidebar: Crisp light setup */
+  --sidebar: oklch(0.98 0 0);
+  --sidebar-foreground: oklch(0.20 0.05 270);
+  --sidebar-primary: oklch(0.45 0.24 270);
+  --sidebar-primary-foreground: oklch(0.99 0 0);
+  --sidebar-accent: oklch(0.96 0.01 270);
+  --sidebar-accent-foreground: oklch(0.20 0.05 270);
+  --sidebar-border: oklch(0.92 0.01 270);
+  --sidebar-ring: oklch(0.45 0.24 270 / 30%);
+
+  /* Custom component vars */
+  --navbar-background: calc(oklch(1 0 0) / 0.8);
+  --navbar-foreground: oklch(0.14 0 0);
   --input-background: oklch(1 0 0);
-  --table-header: oklch(0.97 0 0);
-  --table-header-foreground: oklch(0.556 0 0);
-  --table-row-hover: oklch(0.97 0 0);
-  --table-row-selected: oklch(0.97 0 0);
+  --table-header: oklch(0.98 0 0);
+  --table-header-foreground: oklch(0.45 0.02 270);
+  --table-row-hover: oklch(0.98 0.01 270);
+  --table-row-selected: oklch(0.96 0.05 270);
   --dialog: oklch(1 0 0);
-  --dialog-foreground: oklch(0.145 0 0);
+  --dialog-foreground: oklch(0.14 0 0);
   --sheet: oklch(1 0 0);
-  --sheet-foreground: oklch(0.145 0 0);
+  --sheet-foreground: oklch(0.14 0 0);
   --command: oklch(1 0 0);
-  --command-foreground: oklch(0.145 0 0);
+  --command-foreground: oklch(0.14 0 0);
   --dropdown: oklch(1 0 0);
-  --dropdown-foreground: oklch(0.145 0 0);
+  --dropdown-foreground: oklch(0.14 0 0);
 }
 
+/* Premium Modern ERP Theme (Dark) */
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --destructive-foreground: oklch(1 0 0);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
+  /* Rich, deep indigo-tinted slate background */
+  --background: oklch(0.16 0.01 270);
+  --foreground: oklch(0.98 0.01 270);
+  --card: oklch(0.19 0.01 270);
+  --card-foreground: oklch(0.98 0.01 270);
+  --popover: oklch(0.19 0.01 270);
+  --popover-foreground: oklch(0.98 0.01 270);
+  
+  /* Primary: More vibrant Indigo/Blue for dark mode visibility */
+  --primary: oklch(0.65 0.22 270);
+  --primary-foreground: oklch(0.14 0 0);
+  
+  --secondary: oklch(0.25 0.02 270);
+  --secondary-foreground: oklch(0.98 0.01 270);
+  --muted: oklch(0.25 0.02 270);
+  --muted-foreground: oklch(0.70 0.02 270);
+  --accent: oklch(0.25 0.02 270);
+  --accent-foreground: oklch(0.98 0.01 270);
+  
+  --destructive: oklch(0.65 0.20 27);
+  --destructive-foreground: oklch(0.98 0 0);
+  
+  --border: oklch(0.28 0.02 270);
+  --input: oklch(0.28 0.02 270);
+  --ring: oklch(0.65 0.22 270 / 40%);
+  
+  /* Charts */
   --chart-1: oklch(0.488 0.243 264.376);
   --chart-2: oklch(0.696 0.17 162.48);
   --chart-3: oklch(0.769 0.188 70.08);
   --chart-4: oklch(0.627 0.265 303.9);
   --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
-  --navbar-background: oklch(0.205 0 0);
-  --navbar-foreground: oklch(0.985 0 0);
-  --input-background: oklch(1 0 0 / 15%);
-  --table-header: oklch(0.269 0 0);
-  --table-header-foreground: oklch(0.708 0 0);
-  --table-row-hover: oklch(0.269 0 0);
-  --table-row-selected: oklch(0.269 0 0);
-  --dialog: oklch(0.205 0 0);
-  --dialog-foreground: oklch(0.985 0 0);
-  --sheet: oklch(0.205 0 0);
-  --sheet-foreground: oklch(0.985 0 0);
-  --command: oklch(0.205 0 0);
-  --command-foreground: oklch(0.985 0 0);
-  --dropdown: oklch(0.205 0 0);
-  --dropdown-foreground: oklch(0.985 0 0);
+
+  /* Sidebar: Blends with background but slightly elevated */
+  --sidebar: oklch(0.17 0.01 270);
+  --sidebar-foreground: oklch(0.85 0.01 270);
+  --sidebar-primary: oklch(0.65 0.22 270);
+  --sidebar-primary-foreground: oklch(0.14 0 0);
+  --sidebar-accent: oklch(0.25 0.02 270);
+  --sidebar-accent-foreground: oklch(0.98 0.01 270);
+  --sidebar-border: oklch(0.28 0.02 270);
+  --sidebar-ring: oklch(0.65 0.22 270 / 40%);
+
+  /* Custom component vars */
+  --navbar-background: calc(oklch(0.16 0.01 270) / 0.8);
+  --navbar-foreground: oklch(0.98 0.01 270);
+  --input-background: oklch(0.19 0.01 270);
+  --table-header: oklch(0.19 0.01 270);
+  --table-header-foreground: oklch(0.70 0.02 270);
+  --table-row-hover: oklch(0.21 0.01 270);
+  --table-row-selected: oklch(0.25 0.05 270);
+  --dialog: oklch(0.19 0.01 270);
+  --dialog-foreground: oklch(0.98 0.01 270);
+  --sheet: oklch(0.19 0.01 270);
+  --sheet-foreground: oklch(0.98 0.01 270);
+  --command: oklch(0.19 0.01 270);
+  --command-foreground: oklch(0.98 0.01 270);
+  --dropdown: oklch(0.19 0.01 270);
+  --dropdown-foreground: oklch(0.98 0.01 270);
 }

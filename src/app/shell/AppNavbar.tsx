@@ -233,10 +233,10 @@ export function AppNavbar() {
  return (
  <header
  className={cn(
-        "sticky top-0 z-50 w-full",
+        "sticky top-0 z-50 w-full transition-all duration-300",
  scrolled
- ? "border-b bg-background/80 backdrop-blur-xl shadow-sm h-14"
- : "border-b bg-background h-16",
+ ? "border-b border-border/40 bg-background/70 backdrop-blur-2xl shadow-sm h-14"
+ : "border-b border-border/10 bg-background/40 backdrop-blur-xl h-16",
  )}
  >
  <div className="container flex h-full items-center max-w-screen px-4 gap-4">
