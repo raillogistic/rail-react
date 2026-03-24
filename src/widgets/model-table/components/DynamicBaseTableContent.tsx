@@ -146,6 +146,9 @@ import {
   resolveValueOptimized,
 } from "../utils/valueResolution";
 
+import { DynamicTableTopShell } from "./DynamicTableTopShell";
+import { DynamicTableDesktopGrid } from "./DynamicTableDesktopGrid";
+
 /**
  * Internal props used by the dynamic-table powered content implementation.
  */
@@ -1167,52 +1170,23 @@ export function DynamicBaseTableContent<
   >;
   const HiddenTopActions: React.ComponentType<
     ModelTableTopActionsSlotProps<TSource>
-  > = () => null;
+      > = () => null;
   const headerTopActionsSlot = sectionVisibility.topActions
     ? TopActionsSlot
     : HiddenTopActions;
   
-const renderTopShell = () => {
-  if (!sectionController.metadata) return null;
-  return (
-    <div className="flex w-full flex-col bg-background relative z-10 transition-colors">
-      {/* Header and Top Actions inline */}
-      {(sectionVisibility.header || sectionVisibility.topActions) && (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between px-2 py-4 gap-4">
-          {sectionVisibility.header ? (
-            <div className="flex-1 min-w-0">
-              <HeaderSlot
-                controller={sectionController}
-                TopActionsComponent={headerTopActionsSlot}
-              />
-            </div>
-          ) : (
-            <div className="flex-1" />
-          )}
-
-          {!sectionVisibility.header && sectionVisibility.topActions && (
-            <div className="flex items-center gap-2">
-              <TopActionsSlot controller={sectionController} />
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Toolbar Area */}
-      {sectionVisibility.toolbar && (
-        <div className="px-2 pb-3">
-          <ToolbarSlot controller={sectionController} />
-        </div>
-      )}
-
-      {/* Bulk Actions Bar (Floating) */}
-      {sectionVisibility.bulkActionsBar && selectedRows.length > 0 && (
-        <BulkActionsBarSlot controller={sectionController} />
-      )}
-    </div>
-  );
-};
-
+  const topContent = sectionController.metadata ? (
+    <DynamicTableTopShell
+      sectionVisibility={sectionVisibility}
+      sectionController={sectionController}
+      selectedRows={selectedRows}
+      HeaderSlot={HeaderSlot}
+      TopActionsSlot={TopActionsSlot}
+      ToolbarSlot={ToolbarSlot}
+      BulkActionsBarSlot={BulkActionsBarSlot}
+      headerTopActionsSlot={headerTopActionsSlot}
+    />
+  ) : null;
 
   if (metadataLoading) {
     return <ModelTableLoadingSkeleton />;
@@ -1229,7 +1203,7 @@ const renderTopShell = () => {
       {devtoolsEnabled && <ModelTableDevtoolsPanel timings={timings} />}
 
       {/* Top Shell */}
-      {renderTopShell()}
+      {topContent}
 
       {/* Mobile Grid */}
       {hideTableOnMobile && (
@@ -1250,73 +1224,33 @@ const renderTopShell = () => {
       )}
 
       {/* Desktop Grid */}
-      <div
-        className={cn(
-          "relative z-0 flex-1 min-h-0 w-full overflow-hidden bg-background border-t border-border/40",
-          hideTableOnMobile ? "hidden md:flex" : "flex flex-col",
-        )}
-      >
-        <div
-          ref={tableScrollRef}
-          className="h-full w-full bg-background [&_.table-header]:bg-transparent [&_.table-header]:border-b-border/20 [&_.table-row]:border-b-border/10"
-        >
-          <DynamicTable
-            className="h-full border-none"
-            rows={data}
-            columns={dynamicColumns}
-            getRowId={(row, index) => resolveRowId(row, index, primaryKey)}
-            loading={tableLoading}
-            loadingText={tableConfig?.loadingText}
-            emptyState={tableConfig?.emptyState ?? "Aucun resultat."}
-            state={dynamicState}
-            onStateChange={handleStateChange}
-            onOrderByChange={handleOrderByChange}
-            onRowSelectionChange={handleRowSelectionChange}
-            onPaginationChange={handlePaginationChange}
-            expand={expand}
-            sortMode="server"
-            paginationMode="server"
-            features={features}
-            layout={{
-              containerClassName:
-                "group/frame relative flex h-full flex-col overflow-hidden bg-transparent",
-              stickySelectionColumn: false,
-              actions: {
-                headerLabel: tableConfig?.actionsLabel ?? "",
-                sticky: true,
-                headerClassName: "w-[1%] whitespace-nowrap pr-6 bg-transparent",
-                cellClassName: "w-[1%] whitespace-nowrap pr-6 bg-background/50",
-                renderCell: ({ row }) => (
-                  <RowActions<TSource>
-                    row={row as DynamicModelTableRow<TSource>}
-                    data={data as DynamicModelTableRow<TSource>[]}
-                    refetch={refetch}
-                    permissions={
-                      row.rowPermissions as RowMutationPermissions | undefined
-                    }
-                    columnActions={columnActions}
-                    update={update}
-                    detail={detail}
-                    onTemplatePdfPreview={
-                      pdfPreviewEnabled ? handleTemplatePdfPreview : undefined
-                    }
-                  />
-                ),
-              },
-            }}
-            totalRows={pagination.totalKnown ? pagination.total : undefined}
-            pageCount={pagination.totalKnown ? pagination.numPages : undefined}
-            hasNextPage={pagination.hasNextPage}
-            hasPreviousPage={pagination.hasPreviousPage}
-            onLoadMore={() => {
-              if (!isInfiniteMode || tableLoading || !pagination.hasNextPage) {
-                return;
-              }
-              setPage(pagination.page + 1);
-            }}
-          />
-        </div>
-      </div>
+      {/* Desktop Grid */}
+      <DynamicTableDesktopGrid
+        hideTableOnMobile={hideTableOnMobile}
+        tableScrollRef={tableScrollRef}
+        data={data}
+        dynamicColumns={dynamicColumns}
+        resolveRowId={resolveRowId}
+        primaryKey={primaryKey}
+        tableLoading={tableLoading}
+        tableConfig={tableConfig}
+        dynamicState={dynamicState}
+        handleStateChange={handleStateChange}
+        handleOrderByChange={handleOrderByChange}
+        handleRowSelectionChange={handleRowSelectionChange}
+        handlePaginationChange={handlePaginationChange}
+        expand={expand}
+        features={features}
+        refetch={refetch}
+        update={update}
+        detail={detail}
+        pdfPreviewEnabled={pdfPreviewEnabled}
+        handleTemplatePdfPreview={handleTemplatePdfPreview}
+        columnActions={columnActions}
+        pagination={pagination}
+        isInfiniteMode={isInfiniteMode}
+        setPage={setPage}
+      />
 
       {sectionVisibility.footer && (
         <div className="flex-none px-4 py-2 border-t border-border/10 text-xs">
