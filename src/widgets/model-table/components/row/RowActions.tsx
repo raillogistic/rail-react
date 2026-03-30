@@ -4,7 +4,6 @@ import { useNavigate } from "react-router-dom";
 import {
   Info,
   Loader2,
-  MoreHorizontal,
   Pencil,
   Trash2,
   Zap,
@@ -30,13 +29,6 @@ import {
   AlertDialogTitle,
 } from "@/shared/ui/kit/alert-dialog";
 import { Button } from "@/shared/ui/kit/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuTrigger,
-} from "@/shared/ui/kit/dropdown-menu";
 import {
   Tooltip,
   TooltipContent,
@@ -824,41 +816,9 @@ export function RowActions<TSource extends object = Record<string, unknown>>({
                 ).render;
 
                 return (
-                  <DropdownMenu key={key}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            size="icon"
-                            variant="ghost"
-                            aria-label={String(action.label ?? action.key ?? "Action")}
-                            className={cn(
-                              "size-6 bg-rose-500/10 text-rose-600 dark:text-rose-400 transition-all hover:bg-rose-500 hover:text-white active:scale-95",
-                              action.className,
-                            )}
-                            disabled={action.disabled}
-                          >
-                            {action.icon ?? <MoreHorizontal className="h-3.5 w-3.5" />}
-                          </Button>
-                        </DropdownMenuTrigger>
-                      </TooltipTrigger>
-                      <TooltipContent className="bg-rose-600 text-white font-bold uppercase text-[8px] tracking-widest">
-                        {String(action.label ?? action.key ?? "Action")}
-                      </TooltipContent>
-                    </Tooltip>
-                    <DropdownMenuContent
-                      align="end"
-                      className="w-52 border-border/30 p-1 shadow-xl backdrop-blur-xl bg-background/95"
-                    >
-                      <DropdownMenuLabel className="flex items-center gap-2 px-2 py-1 text-[9px] font-bold uppercase tracking-widest text-muted-foreground/50">
-                        <MoreHorizontal className="h-3 w-3" />
-                        {String(action.label ?? action.key ?? "Action")}
-                      </DropdownMenuLabel>
-                      <div className="flex flex-col gap-0.5 p-0.5">
-                        {renderAction(actionContext)}
-                      </div>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                  <div key={key} className={cn("px-0.5", action.className)}>
+                    {renderAction(actionContext)}
+                  </div>
                 );
               }
 

@@ -5,7 +5,7 @@ import { calculateDatePreset } from "@/widgets/model-table/filtering/datePresets
 import type { ModelTableNavFiltersConfig } from "@/widgets/model-table";
 import { ProtectedFileCell } from "@/widgets/model-table/components/ProtectedFileCell";
 import { UploadButton } from "@/widgets/components";
-import { Pen } from "lucide-react";
+import { Upload } from "lucide-react";
 
 // const dechargeNavFilters: ModelTableNavFiltersConfig = {
 //   count: true,
@@ -131,33 +131,15 @@ export function DechargeListPageTabs() {
         },
         columnActions: [
           {
-            icon: <Pen />,
             variant: "destructive",
             render: ({ row }) => (
-              <>
-                <UploadButton
-                  menu
-                  title="telecharger"
-                  model="Decharge"
-                  id={row.id}
-                  field="pieceJointeUrl"
-                />
-              </>
-            ),
-          },
-          {
-            icon: <Pen />,
-            variant: "default",
-            render: ({ row }) => (
-              <>
-                <UploadButton
-                  menu
-                  title="telecharger"
-                  model="Decharge"
-                  id={row.id}
-                  field="pieceJointeUrl"
-                />
-              </>
+              <UploadButton
+                model="Decharge"
+                id={row.id}
+                field="pieceJointeUrl"
+                icon={<Upload className="h-3.5 w-3.5" />}
+                triggerClassName="size-6 bg-amber-500/10 text-amber-600 dark:text-amber-400 transition-all hover:bg-amber-500 hover:text-white active:scale-95"
+              />
             ),
           },
         ],

@@ -100,6 +100,24 @@ describe("UploadFile", () => {
     expect(executeMock).not.toHaveBeenCalled();
   });
 
+  it("renders an icon-only trigger when an icon is provided without a title", () => {
+    render(
+      <UploadFile
+        model="Decharge"
+        id={24}
+        field="piece_jointe_url"
+        icon={<Pen />}
+      />,
+    );
+
+    const trigger = screen.getByRole("button", {
+      name: "Televerser un fichier",
+    });
+
+    expect(trigger).toHaveClass("size-6");
+    expect(trigger).not.toHaveTextContent("Televerser un fichier");
+  });
+
   it("renders as a dropdown menu item when menu is true", async () => {
     render(
       <DropdownMenu open>

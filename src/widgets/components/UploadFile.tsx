@@ -90,7 +90,8 @@ export function UploadFile({
   const [localError, setLocalError] = React.useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
 
-  const modalTitle = title?.trim() || "Televerser un fichier";
+  const dialogTitle = title?.trim() || "";
+  const hasCustomTitle = Boolean(title?.trim());
   const modalDescription =
     description?.trim() ||
     "Selectionnez un fichier puis confirmez pour l'enregistrer sur cet element.";
@@ -183,13 +184,11 @@ export function UploadFile({
       });
 
       const payload =
-        ((result.data?.response as Record<string, unknown> | undefined) ??
-          null);
+        (result.data?.response as Record<string, unknown> | undefined) ?? null;
 
       if (!payload?.ok) {
         const messages = getPayloadErrors(payload);
-        const message =
-          messages[0] ?? "Le fichier n'a pas pu etre enregistre.";
+        const message = messages[0] ?? "Le fichier n'a pas pu etre enregistre.";
         setLocalError(message);
         toast.error(message);
         return;
@@ -221,18 +220,25 @@ export function UploadFile({
           }}
         >
           {triggerIcon}
-          {modalTitle}
+          {dialogTitle}
         </DropdownMenuItem>
       ) : (
         <Button
           type="button"
+          size={icon && !hasCustomTitle ? "icon" : "default"}
           variant="outline"
-          className={cn("gap-2", triggerClassName, className)}
+          aria-label={icon && !hasCustomTitle ? dialogTitle : undefined}
+          title={icon && !hasCustomTitle ? dialogTitle : undefined}
+          className={cn(
+            icon && !hasCustomTitle ? "size-6" : "gap-2",
+            triggerClassName,
+            className,
+          )}
           onClick={() => setOpen(true)}
           disabled={disabled}
         >
           {triggerIcon}
-          {modalTitle}
+          {icon && !hasCustomTitle ? null : dialogTitle}
         </Button>
       )}
 
@@ -243,7 +249,7 @@ export function UploadFile({
               <span className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
                 {headerIcon}
               </span>
-              {modalTitle}
+              {dialogTitle}
             </DialogTitle>
             <DialogDescription>{modalDescription}</DialogDescription>
           </DialogHeader>
@@ -264,7 +270,9 @@ export function UploadFile({
                   {selectedFile ? "Changer le fichier" : "Choisir un fichier"}
                 </p>
                 <p className="text-xs text-muted-foreground">
-                  {accept ? `Formats acceptés: ${accept}` : "Tous les fichiers sont acceptés."}
+                  {accept
+                    ? `Formats acceptés: ${accept}`
+                    : "Tous les fichiers sont acceptés."}
                 </p>
               </div>
               <Input
@@ -312,7 +320,10 @@ export function UploadFile({
             ) : null}
 
             {localError ? (
-              <Alert variant="destructive" className="border-destructive/30 bg-destructive/5">
+              <Alert
+                variant="destructive"
+                className="border-destructive/30 bg-destructive/5"
+              >
                 <AlertCircle className="size-4" />
                 <AlertTitle>Echec de l'enregistrement</AlertTitle>
                 <AlertDescription>{localError}</AlertDescription>
