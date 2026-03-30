@@ -13,7 +13,10 @@ import {
   FileText,
 } from "lucide-react";
 import { toast } from "sonner";
-import { CustomMutationsDropdown } from "@/widgets/components/CustomMutationsDropdown";
+import {
+  CustomMutationsDropdown,
+  type CustomMutationsDropdownExtraAction,
+} from "@/widgets/components/CustomMutationsDropdown";
 import { ModelTemplateAction } from "@/widgets/components/ModelTemplateAction";
 import { ModelTemplatesDropdown } from "@/widgets/components/ModelTemplatesDropdown";
 import {
@@ -497,6 +500,63 @@ export function RowActions<TSource extends object = Record<string, unknown>>({
         : columnActions;
     return source ?? [];
   }, [actionContext, columnActions]);
+  const destructiveCustomActions = useMemo(
+    () => customActions.filter((action) => action.variant === "destructive"),
+    [customActions],
+  );
+  const menuCustomActions = useMemo(
+    () => customActions.filter((action) => action.variant !== "destructive"),
+    [customActions],
+  );
+  const customMutationMenuActions = useMemo<CustomMutationsDropdownExtraAction[]>(
+    () =>
+      menuCustomActions.map((action, index) => {
+        const key = action.key ?? `custom-row-action-${index}`;
+
+        if (typeof (action as { render?: unknown }).render === "function") {
+          const renderAction = (
+            action as {
+              render: (
+                context: BaseModelTableColumnActionContext<DynamicModelTableRow<TSource>>,
+              ) => React.ReactNode;
+            }
+          ).render;
+
+          return {
+            key,
+            content: renderAction(actionContext),
+          };
+        }
+
+        const clickAction = action as {
+          onClick: (
+            context: BaseModelTableColumnActionContext<DynamicModelTableRow<TSource>>,
+          ) => void | Promise<void>;
+          label?: string;
+        };
+
+        return {
+          key,
+          label: clickAction.label ?? "Action",
+          icon: action.icon ?? <ExternalLink className="h-4 w-4" />,
+          variant: action.variant,
+          disabled: action.disabled,
+          className: cn(action.className),
+          onClick: () => {
+            void Promise.resolve(clickAction.onClick(actionContext)).catch(
+              (error: unknown) => {
+                const message =
+                  error instanceof Error
+                    ? error.message
+                    : "Échec de l'action personnalisée.";
+                toast.error(message);
+              },
+            );
+          },
+        };
+      }),
+    [actionContext, menuCustomActions],
+  );
 
   const hasTemplateActions = templateEntries.length > 0;
   const singleTemplate =
@@ -522,7 +582,8 @@ export function RowActions<TSource extends object = Record<string, unknown>>({
       ),
     [metadata?.mutations],
   );
-  const hasCustomActions = customActions.length > 0;
+  const hasCustomActions =
+    destructiveCustomActions.length > 0 || customMutationMenuActions.length > 0;
   const hasAnyActions =
     hasBuiltinActions ||
     hasTemplateActions ||
@@ -749,21 +810,106 @@ export function RowActions<TSource extends object = Record<string, unknown>>({
   return (
     <TooltipProvider delayDuration={300}>
       <div className="group/actions flex items-center justify-end gap-1 opacity-50 transition-opacity duration-200 group-hover/row:opacity-100">
+        {destructiveCustomActions.length > 0 ? (
+          <div className="flex items-center gap-1">
+            {destructiveCustomActions.map((action, index) => {
+              const key = action.key ?? `custom-row-destructive-action-${index}`;
+              if (typeof (action as { render?: unknown }).render === "function") {
+                const renderAction = (
+                  action as {
+                    render: (
+                      context: BaseModelTableColumnActionContext<DynamicModelTableRow<TSource>>,
+                    ) => React.ReactNode;
+                  }
+                ).render;
+
+                return (
+                  <DropdownMenu key={key}>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            aria-label={String(action.label ?? action.key ?? "Action")}
+                            className={cn(
+                              "size-6 bg-rose-500/10 text-rose-600 dark:text-rose-400 transition-all hover:bg-rose-500 hover:text-white active:scale-95",
+                              action.className,
+                            )}
+                            disabled={action.disabled}
+                          >
+                            {action.icon ?? <MoreHorizontal className="h-3.5 w-3.5" />}
+                          </Button>
+                        </DropdownMenuTrigger>
+                      </TooltipTrigger>
+                      <TooltipContent className="bg-rose-600 text-white font-bold uppercase text-[8px] tracking-widest">
+                        {String(action.label ?? action.key ?? "Action")}
+                      </TooltipContent>
+                    </Tooltip>
+                    <DropdownMenuContent
+                      align="end"
+                      className="w-52 border-border/30 p-1 shadow-xl backdrop-blur-xl bg-background/95"
+                    >
+                      <DropdownMenuLabel className="flex items-center gap-2 px-2 py-1 text-[9px] font-bold uppercase tracking-widest text-muted-foreground/50">
+                        <MoreHorizontal className="h-3 w-3" />
+                        {String(action.label ?? action.key ?? "Action")}
+                      </DropdownMenuLabel>
+                      <div className="flex flex-col gap-0.5 p-0.5">
+                        {renderAction(actionContext)}
+                      </div>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                );
+              }
+
+              const clickAction = action as {
+                onClick: (
+                  context: BaseModelTableColumnActionContext<DynamicModelTableRow<TSource>>,
+                ) => void | Promise<void>;
+                label?: string;
+              };
+
+              return (
+                <Tooltip key={key}>
+                  <TooltipTrigger asChild>
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      aria-label={clickAction.label ?? "Action"}
+                      className={cn(
+                        "size-6 bg-rose-500/10 text-rose-600 dark:text-rose-400 transition-all hover:bg-rose-500 hover:text-white active:scale-95 disabled:grayscale",
+                        action.className,
+                      )}
+                      onClick={() => runCustomAction(clickAction.onClick)}
+                      disabled={action.disabled}
+                    >
+                      {action.icon ?? <Trash2 className="h-3.5 w-3.5" />}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent className="bg-rose-600 text-white font-bold uppercase text-[8px] tracking-widest">
+                    {clickAction.label ?? "Action"}
+                  </TooltipContent>
+                </Tooltip>
+              );
+            })}
+          </div>
+        ) : null}
+
         {canDetail ? (
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button
-                size="icon"
-                variant="ghost"
-                aria-label="Details"
-                className="size-7 bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 transition-all hover:bg-cyan-500 hover:text-white active:scale-95"
-                onClick={handleDetail}
-                disabled={Boolean(detailDisabledReason)}
-              >
-                <Info className="h-4 w-4" />
-              </Button>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  aria-label="Details"
+                  className="size-6 bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 transition-all hover:bg-cyan-500 hover:text-white active:scale-95"
+                  onClick={handleDetail}
+                  disabled={Boolean(detailDisabledReason)}
+                >
+                <Info className="h-3.5 w-3.5" />
+                </Button>
             </TooltipTrigger>
-            <TooltipContent className="bg-cyan-600 text-white font-bold uppercase text-[9px] tracking-widest">
+            <TooltipContent className="bg-cyan-600 text-white font-bold uppercase text-[8px] tracking-widest">
               {detailDisabledReason ?? "Details"}
             </TooltipContent>
           </Tooltip>
@@ -776,14 +922,14 @@ export function RowActions<TSource extends object = Record<string, unknown>>({
                 size="icon"
                 variant="ghost"
                 aria-label="Modifier"
-                className="size-7 bg-blue-500/10 text-blue-600 dark:text-blue-400 transition-all hover:bg-blue-500 hover:text-white active:scale-95"
+                className="size-6 bg-blue-500/10 text-blue-600 dark:text-blue-400 transition-all hover:bg-blue-500 hover:text-white active:scale-95"
                 onClick={handleEdit}
                 disabled={Boolean(editDisabledReason)}
               >
-                <Pencil className="h-4 w-4" />
+                <Pencil className="h-3.5 w-3.5" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent className="bg-blue-600 text-white font-bold uppercase text-[9px] tracking-widest">
+            <TooltipContent className="bg-blue-600 text-white font-bold uppercase text-[8px] tracking-widest">
               {editDisabledReason ?? "Modifier"}
             </TooltipContent>
           </Tooltip>
@@ -795,18 +941,18 @@ export function RowActions<TSource extends object = Record<string, unknown>>({
               <Button
                 size="icon"
                 variant="ghost"
-                className="size-7 bg-rose-500/10 text-rose-600 dark:text-rose-400 transition-all hover:bg-rose-500 hover:text-white active:scale-95 disabled:grayscale"
+                className="size-6 bg-rose-500/10 text-rose-600 dark:text-rose-400 transition-all hover:bg-rose-500 hover:text-white active:scale-95 disabled:grayscale"
                 onClick={() => setConfirmOpen(true)}
                 disabled={deleting}
               >
                 {deleting ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
                 ) : (
-                  <Trash2 className="h-4 w-4" />
+                  <Trash2 className="h-3.5 w-3.5" />
                 )}
               </Button>
             </TooltipTrigger>
-            <TooltipContent className="bg-rose-600 text-white font-bold uppercase text-[9px] tracking-widest">
+            <TooltipContent className="bg-rose-600 text-white font-bold uppercase text-[8px] tracking-widest">
               Supprimer
             </TooltipContent>
           </Tooltip>
@@ -829,18 +975,18 @@ export function RowActions<TSource extends object = Record<string, unknown>>({
                       size="icon"
                       variant="ghost"
                       aria-label={`Template: ${singleTemplateLabel}`}
-                      className="size-7 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 transition-all hover:bg-emerald-500 hover:text-white active:scale-95"
+                      className="size-6 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 transition-all hover:bg-emerald-500 hover:text-white active:scale-95"
                       disabled={
                         Boolean(singleTemplateDisabledReason) || disabled
                       }
                       onClick={run}
                     >
-                      <FileText className="h-4 w-4" />
+                      <FileText className="h-3.5 w-3.5" />
                     </Button>
                   )}
                 />
               </TooltipTrigger>
-              <TooltipContent className="bg-emerald-600 text-white font-bold uppercase text-[9px] tracking-widest">
+              <TooltipContent className="bg-emerald-600 text-white font-bold uppercase text-[8px] tracking-widest">
                 {singleTemplateDisabledReason ?? singleTemplateLabel}
               </TooltipContent>
             </Tooltip>
@@ -860,21 +1006,21 @@ export function RowActions<TSource extends object = Record<string, unknown>>({
                       variant="ghost"
                       aria-label="Templates"
                       disabled={disabled}
-                      className="size-7 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 transition-all hover:bg-emerald-500 hover:text-white active:scale-95"
+                      className="size-6 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 transition-all hover:bg-emerald-500 hover:text-white active:scale-95"
                     >
-                      <FileText className="h-4 w-4" />
+                      <FileText className="h-3.5 w-3.5" />
                     </Button>
                   )}
                 />
               </TooltipTrigger>
-              <TooltipContent className="bg-emerald-600 text-white font-bold uppercase text-[9px] tracking-widest">
+              <TooltipContent className="bg-emerald-600 text-white font-bold uppercase text-[8px] tracking-widest">
                 Templates
               </TooltipContent>
             </Tooltip>
           )
         ) : null}
 
-        {hasMetadataMutationActions ? (
+        {hasMetadataMutationActions || customMutationMenuActions.length > 0 ? (
           <CustomMutationsDropdown
             data={{
               app,
@@ -884,89 +1030,18 @@ export function RowActions<TSource extends object = Record<string, unknown>>({
             button={{
               label: "Actions",
             }}
+            extraActions={customMutationMenuActions}
             renderTrigger={() => (
               <Button
                 size="icon"
                 variant="ghost"
                 aria-label="Actions"
-                className="size-7 bg-amber-500/10 text-amber-600 dark:text-amber-400 transition-all hover:bg-amber-500 hover:text-white active:scale-95"
+                className="size-6 bg-amber-500/10 text-amber-600 dark:text-amber-400 transition-all hover:bg-amber-500 hover:text-white active:scale-95"
               >
-                <Zap className="h-4 w-4" />
+                <Zap className="h-3.5 w-3.5" />
               </Button>
             )}
           />
-        ) : null}
-
-        {hasCustomActions ? (
-          <DropdownMenu modal={false}>
-            <DropdownMenuTrigger asChild>
-              <Button
-                size="icon"
-                variant="ghost"
-                className="size-7 bg-muted/30 text-muted-foreground transition-all hover:bg-primary hover:text-white active:scale-95"
-              >
-                <MoreHorizontal className="h-4 w-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="end"
-              className="w-56 border-border/30 p-1.5 shadow-xl backdrop-blur-xl bg-background/95"
-            >
-              <DropdownMenuLabel className="flex items-center gap-2 px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50">
-                <MoreHorizontal className="h-3.5 w-3.5" />
-                Actions
-              </DropdownMenuLabel>
-              <div className="flex flex-col gap-1 p-1">
-                {customActions.map((action, index) => {
-                  const key = action.key ?? `custom-row-action-${index}`;
-                  if (
-                    typeof (action as { render?: unknown }).render ===
-                    "function"
-                  ) {
-                    const renderAction = (
-                      action as {
-                        render: (
-                          context: BaseModelTableColumnActionContext<DynamicModelTableRow<TSource>>,
-                        ) => React.ReactNode;
-                      }
-                    ).render;
-                    return (
-                      <div key={key} className="px-1">
-                        {renderAction(actionContext)}
-                      </div>
-                    );
-                  }
-
-                  const clickAction = action as {
-                    onClick: (
-                      context: BaseModelTableColumnActionContext<DynamicModelTableRow<TSource>>,
-                    ) => void | Promise<void>;
-                    label?: string;
-                  };
-
-                  return (
-                    <DropdownMenuItem
-                      key={key}
-                      variant={action.variant}
-                      disabled={action.disabled}
-                      onClick={() => runCustomAction(clickAction.onClick)}
-                      className={cn(
-                        "group/custom flex items-center gap-3 py-2.5 text-xs font-medium transition-all",
-                        action.className,
-                      )}
-                    >
-                      <div className="flex h-8 w-8 items-center justify-center bg-muted/40 group-hover/custom:bg-primary group-hover/custom:text-white transition-colors">
-                        {action.icon ?? <ExternalLink className="h-4 w-4" />}
-                      </div>
-                      <span className="font-bold tracking-tight">
-                        {clickAction.label ?? "Action"}
-                      </span>
-                    </DropdownMenuItem>
-                  );
-                })}
-              </div>
-            </DropdownMenuContent>
-          </DropdownMenu>
         ) : null}
       </div>
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>

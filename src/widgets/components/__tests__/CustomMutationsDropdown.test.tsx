@@ -266,4 +266,37 @@ describe("CustomMutationsDropdown", () => {
     });
     expect(toastSuccessMock).toHaveBeenCalledWith("Published");
   });
+
+  it("renders extra row actions even when no metadata mutations are available", () => {
+    useQueryMock.mockReturnValue({
+      data: {
+        customMutations: [],
+      },
+      loading: false,
+      error: undefined,
+    });
+
+    const extraActionSpy = vi.fn();
+
+    render(
+      <CustomMutationsDropdown
+        data={{
+          app: "sales",
+          model: "Order",
+          objectId: "14",
+        }}
+        extraActions={[
+          {
+            key: "flag",
+            label: "Flag order",
+            onClick: extraActionSpy,
+          },
+        ]}
+      />,
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Flag order" }));
+
+    expect(extraActionSpy).toHaveBeenCalledTimes(1);
+  });
 });

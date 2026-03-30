@@ -327,6 +327,63 @@ describe("RowActions update integration", () => {
     });
   });
 
+  it("renders destructive column actions inline before quick actions and forwards the rest to the custom mutation menu", () => {
+    mockUseMetadata.mockReturnValue({
+      app: "store",
+      model: "Order",
+      metadata: {
+        model: "Order",
+        verboseName: "Commande",
+        mutations: [
+          { name: "updateOrder", operation: "update", allowed: true },
+        ],
+        templates: [],
+      },
+    });
+
+    render(
+      <RowActions
+        row={{ id: 88 }}
+        data={[{ id: 88 }]}
+        columnActions={[
+          {
+            key: "archive",
+            label: "Archive",
+            variant: "destructive",
+            onClick: vi.fn(),
+          },
+          {
+            key: "flag",
+            label: "Flag",
+            onClick: vi.fn(),
+          },
+        ]}
+      />,
+    );
+
+    const destructiveButton = screen.getByRole("button", { name: "Archive" });
+    const updateButton = screen.getByRole("button", { name: "Modifier" });
+
+    expect(
+      destructiveButton.compareDocumentPosition(updateButton) &
+        Node.DOCUMENT_POSITION_FOLLOWING,
+    ).toBeTruthy();
+
+    expect(screen.getByTestId("custom-mutations-dropdown")).toBeInTheDocument();
+    const latestProps = customMutationsDropdownSpy.mock.calls.at(-1)?.[0] as
+      | {
+          extraActions?: Array<{
+            key?: string;
+            label?: React.ReactNode;
+            variant?: string;
+          }>;
+        }
+      | undefined;
+
+    expect(latestProps?.extraActions).toHaveLength(1);
+    expect(latestProps?.extraActions?.[0]?.label).toBe("Flag");
+  });
+
   it("keeps detail action visible when retrieve is denied but update link mode is enabled", async () => {
     mockUseMetadata.mockReturnValue({
       app: "store",

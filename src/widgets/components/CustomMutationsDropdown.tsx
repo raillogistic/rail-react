@@ -2,13 +2,14 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useApolloClient, useQuery } from "@apollo/client";
-import { ChevronDown, Loader2, Zap } from "lucide-react";
+import { ChevronDown, Loader2, Sparkles, Zap } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/shared/ui/kit/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/shared/ui/kit/dropdown-menu";
 import { cn } from "@/shared/utils";
@@ -77,6 +78,17 @@ export type CustomMutationsDropdownMenuConfig = {
   loadingLabel?: React.ReactNode;
 };
 
+export type CustomMutationsDropdownExtraAction = {
+  key: string;
+  label?: React.ReactNode;
+  icon?: React.ReactNode;
+  variant?: React.ComponentProps<typeof DropdownMenuItem>["variant"];
+  className?: string;
+  disabled?: boolean;
+  content?: React.ReactNode;
+  onClick?: () => void | Promise<void>;
+};
+
 export type CustomMutationsDropdownProps = {
   data: {
     app: string;
@@ -90,6 +102,7 @@ export type CustomMutationsDropdownProps = {
   form?: CustomMutationActionFormConfig;
   mutation?: CustomMutationActionMutationConfig;
   actions?: CustomMutationsDropdownActionsConfig;
+  extraActions?: CustomMutationsDropdownExtraAction[];
   queryOptions?: CustomMutationActionQueryOptions;
   onSuccess?: (context: CustomMutationActionSuccessContext) => void;
   onError?: (
@@ -303,6 +316,7 @@ export function CustomMutationsDropdown({
   form,
   mutation,
   actions,
+  extraActions,
   queryOptions,
   onSuccess,
   onError,
@@ -343,6 +357,10 @@ export function CustomMutationsDropdown({
         ? queryData.customMutations.filter(Boolean)
         : [],
     [queryData?.customMutations],
+  );
+  const resolvedExtraActions = useMemo(
+    () => (Array.isArray(extraActions) ? extraActions.filter(Boolean) : []),
+    [extraActions],
   );
 
   useEffect(() => {
@@ -440,6 +458,7 @@ export function CustomMutationsDropdown({
     () => mergeMutationConfig(mutation, activeEntry?.override.mutation),
     [activeEntry?.override.mutation, mutation],
   );
+  const hasExtraActions = resolvedExtraActions.length > 0;
 
   const generatedSchema = useMemo(() => {
     if (!activeMutation || activeMode !== "form") {
@@ -626,7 +645,7 @@ export function CustomMutationsDropdown({
     Boolean(button?.disabled) ||
     shouldSkip ||
     Boolean(error) ||
-    resolvedEntries.length === 0;
+    (resolvedEntries.length === 0 && !hasExtraActions);
   const triggerLabel = button?.label ?? "Actions";
 
   return (
@@ -680,15 +699,61 @@ export function CustomMutationsDropdown({
                 key={entry.mutation.name}
                 disabled={Boolean(entry.disabledReason)}
                 onClick={() => openEntry(entry)}
+                className="group/custom flex items-center gap-2 py-1.5 text-xs font-medium transition-all"
               >
-                {entry.label}
+                <div className="flex h-6 w-6 items-center justify-center rounded-md bg-muted/40 text-muted-foreground transition-colors group-hover/custom:bg-primary group-hover/custom:text-white">
+                  <Sparkles className="h-3.5 w-3.5" />
+                </div>
+                <span className="font-bold tracking-tight">{entry.label}</span>
               </DropdownMenuItem>
             ))
-          ) : (
+          ) : null}
+
+          {resolvedEntries.length > 0 && hasExtraActions ? (
+            <DropdownMenuSeparator />
+          ) : null}
+
+          {resolvedExtraActions.length > 0 ? (
+            resolvedExtraActions.map((action) =>
+              action.content ? (
+                <div key={action.key} className="px-1 py-0.5">
+                  {action.content}
+                </div>
+              ) : (
+                <DropdownMenuItem
+                  key={action.key}
+                  variant={action.variant}
+                  disabled={Boolean(action.disabled)}
+                  onClick={() => {
+                    void Promise.resolve(action.onClick?.()).catch((error) => {
+                      toast.error(
+                        error instanceof Error
+                          ? error.message
+                          : "Action execution failed.",
+                      );
+                    });
+                  }}
+                  className={cn(
+                    "group/custom flex items-center gap-2 py-1.5 text-xs font-medium transition-all",
+                    action.className,
+                  )}
+                >
+                  <div className="flex h-6 w-6 items-center justify-center rounded-md bg-muted/40 text-muted-foreground transition-colors group-hover/custom:bg-primary group-hover/custom:text-white">
+                    {action.icon ?? <Sparkles className="h-3.5 w-3.5" />}
+                  </div>
+                  <span className="font-bold tracking-tight">
+                    {action.label ?? "Action"}
+                  </span>
+                </DropdownMenuItem>
+              ),
+            )
+          ) : null}
+
+          {resolvedEntries.length === 0 && !hasExtraActions ? (
             <DropdownMenuItem disabled>
               {actions?.emptyLabel ?? "No actions available."}
             </DropdownMenuItem>
-          )}
+          ) : null}
         </DropdownMenuContent>
       </DropdownMenu>
 

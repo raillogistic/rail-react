@@ -96,9 +96,9 @@ export function DechargeListPageTabs() {
         type: "link",
         hrefTemplate: ROUTES.DECHARGE_DETAIL,
       }}
-      devtools={{
-        enabled: true,
-      }}
+      // devtools={{
+      //   enabled: true,
+      // }}
       baseTable={{
         // quickFilters: ["statut", "beneficiaire"],
         fields: {
@@ -125,17 +125,33 @@ export function DechargeListPageTabs() {
             { accessor: "serial", title: "Serial" },
             { accessor: "etatSortie", title: "Etat de sortie" },
             { accessor: "garder", title: "Garder" },
-            { accessor: "customIntro", title: "Introduction personnalisée" },
-            { accessor: "commentaire", title: "Commentaire" },
+            // { accessor: "customIntro", title: "Introduction personnalisée" },
+            // { accessor: "commentaire", title: "Commentaire" },
           ],
         },
         columnActions: [
+          {
+            icon: <Pen />,
+            variant: "destructive",
+            render: ({ row }) => (
+              <>
+                <UploadButton
+                  menu
+                  title="telecharger"
+                  model="Decharge"
+                  id={row.id}
+                  field="pieceJointeUrl"
+                />
+              </>
+            ),
+          },
           {
             icon: <Pen />,
             variant: "default",
             render: ({ row }) => (
               <>
                 <UploadButton
+                  menu
                   title="telecharger"
                   model="Decharge"
                   id={row.id}
