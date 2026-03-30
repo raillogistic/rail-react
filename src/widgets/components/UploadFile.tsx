@@ -21,6 +21,7 @@ export type UploadFileProps = {
   id: string | number;
   field: string;
   title?: string;
+  modalTitle?: string;
   description?: string;
   icon?: React.ReactNode;
   menu?: boolean;
@@ -74,6 +75,7 @@ export function UploadFile({
   id,
   field,
   title,
+  modalTitle,
   description,
   icon,
   menu = false,
@@ -90,7 +92,7 @@ export function UploadFile({
   const [localError, setLocalError] = React.useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
 
-  const dialogTitle = title?.trim() || "";
+  const dialogTitle = modalTitle?.trim() || "";
   const hasCustomTitle = Boolean(title?.trim());
   const modalDescription =
     description?.trim() ||
