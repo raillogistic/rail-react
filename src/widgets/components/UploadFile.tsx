@@ -92,7 +92,7 @@ export function UploadFile({
   const [localError, setLocalError] = React.useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
 
-  const dialogTitle = modalTitle?.trim() || "";
+  const dialogTitle = modalTitle?.trim();
   const hasCustomTitle = Boolean(title?.trim());
   const modalDescription =
     description?.trim() ||
@@ -245,7 +245,7 @@ export function UploadFile({
       )}
 
       <Dialog open={open} onOpenChange={handleOpenChange}>
-        <DialogContent className="max-w-lg rounded-2xl border border-border/60 p-0 overflow-hidden">
+        <DialogContent className="max-w-lg rounded-2xl border border-border/60 p-0 overflow-hidden data-[state=open]:animate-none data-[state=closed]:animate-none">
           <DialogHeader className="border-b border-border/40 bg-muted/20 px-6 py-5">
             <DialogTitle className="flex items-center gap-3 text-xl font-bold">
               <span className="flex size-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
