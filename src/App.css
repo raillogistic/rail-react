@@ -4,11 +4,6 @@
   currently applied theme (light, dark, or custom variants).
 */
 
-/* Smooth scrolling for a nicer feel */
-html {
-  scroll-behavior: smooth;
-}
-
 /* Firefox scrollbar styling */
 :root {
   scrollbar-width: thin;
