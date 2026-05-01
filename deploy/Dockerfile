@@ -18,7 +18,7 @@ USER 101
 EXPOSE 8080 8443
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
-  CMD wget --no-check-certificate -q -O /dev/null https://127.0.0.1:8443/healthz || exit 1
+  CMD wget --no-check-certificate -q -O /dev/null https://127.0.0.1:8443/health || exit 1
 
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["nginx", "-g", "daemon off;"]
