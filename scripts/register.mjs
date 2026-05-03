@@ -7,7 +7,7 @@ import path from "node:path";
 
 const usage = `
 Usage:
-  npm run register -- --model <app.model> --project <project> [options]
+  npm run register  --model <app.model> --project <project> [options]
 
 Required:
   --model <app.model>      Model reference (for example: catalog.article)
@@ -31,9 +31,9 @@ Additional options:
   --help, -h               Show this help
 
 Examples:
-  npm run register -- --model catalog.article --project catalog
-  npm run register -- --model operations.restitution --project operations --type inline
-  npm run register -- --model article --app catalog --project catalog --title "Articles"
+  npm run register  --model catalog.article --project catalog
+  npm run register  --model operations.restitution --project operations --type inline
+  npm run register  --model article --app catalog --project catalog --title "Articles"
 `;
 
 const parseArgs = (argv) => {
@@ -1009,9 +1009,7 @@ const run = async () => {
     routeConstants.edit = `${constantBase}_EDIT`;
     routeConstants.detail = `${constantBase}_DETAIL`;
   }
-  const routeValues = new Map([
-    [routeConstants.list, routeBase],
-  ]);
+  const routeValues = new Map([[routeConstants.list, routeBase]]);
   if (type !== "inline") {
     routeValues.set(routeConstants.create, `${routeBase}/create`);
     routeValues.set(routeConstants.edit, `${routeBase}/:id/edit`);

@@ -1,7 +1,7 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
 // Source: scripts/getModels.mjs
 // Command: npm run getModels
-// Generated at: 2026-05-01T20:50:54.084Z
+// Generated at: 2026-05-03T20:14:06.548Z
 
 export interface RailDjangoAuditEventModel {
   /** additional data */
@@ -14,6 +14,8 @@ export interface RailDjangoAuditEventModel {
   eventType: string;
   /** ID */
   id?: number | null;
+  /** pk */
+  pk?: string | null;
   /** request method */
   requestMethod?: string | null;
   /** request path */
@@ -58,6 +60,8 @@ export interface RailDjangoImportBatch {
   issues?: RailDjangoImportIssue[] | null;
   /** model name */
   modelName: string;
+  /** pk */
+  pk?: string | null;
   /** import rows */
   rows?: RailDjangoImportRow[] | null;
   /** import simulation snapshots */
@@ -94,6 +98,8 @@ export interface RailDjangoImportIssue {
   id: string;
   /** message */
   message: string;
+  /** pk */
+  pk?: string | null;
   /** row */
   row?: RailDjangoImportRow | null;
   /** row number */
@@ -122,6 +128,8 @@ export interface RailDjangoImportRow {
   matchingKey?: string | null;
   /** normalized values */
   normalizedValues?: Record<string, unknown> | null;
+  /** pk */
+  pk?: string | null;
   /** row number */
   rowNumber: number;
   /** source values */
@@ -146,6 +154,8 @@ export interface RailDjangoImportSimulationSnapshot {
   executedAt?: string | null;
   /** id */
   id: string;
+  /** pk */
+  pk?: string | null;
   /** warnings */
   warnings: number;
   /** would create */
@@ -174,6 +184,8 @@ export interface RailDjangoMediaExportJob {
   message?: string | null;
   /** metadata */
   metadata?: Record<string, unknown> | null;
+  /** pk */
+  pk?: string | null;
   /** progress */
   progress: number;
   /** requested by */
@@ -196,6 +208,8 @@ export interface RailDjangoMetadataDeployVersionModel {
   id?: number | null;
   /** key */
   key: string;
+  /** pk */
+  pk?: string | null;
   /** updated at */
   updatedAt?: string | null;
   /** version */
@@ -212,6 +226,8 @@ export interface RailDjangoMFABackupCode {
   id?: number | null;
   /** Est utilisé */
   isUsed: boolean;
+  /** pk */
+  pk?: string | null;
 }
 export interface RailDjangoMFADevice {
   /** Codes de récupération */
@@ -232,6 +248,8 @@ export interface RailDjangoMFADevice {
   lastUsed?: string | null;
   /** Numéro de téléphone */
   phoneNumber?: string | null;
+  /** pk */
+  pk?: string | null;
   /** Clé secrète */
   secretKey?: string | null;
   /** Utilisateur */
@@ -262,6 +280,8 @@ export interface RailDjangoReportingDataset {
   metrics: Record<string, unknown>;
   /** Tri par defaut */
   ordering: Record<string, unknown>;
+  /** pk */
+  pk?: string | null;
   /** Limite apercu */
   previewLimit: number;
   /** Application source */
@@ -294,6 +314,8 @@ export interface RailDjangoReportingExportJob {
   id?: number | null;
   /** Payload */
   payload: Record<string, unknown>;
+  /** pk */
+  pk?: string | null;
   /** Rapport */
   report?: RailDjangoReportingReport | null;
   /** Debut */
@@ -322,6 +344,8 @@ export interface RailDjangoReportingReport {
   id?: number | null;
   /** Layout */
   layout: Record<string, unknown>;
+  /** pk */
+  pk?: string | null;
   /** Theme */
   theme?: string | null;
   /** Titre */
@@ -336,6 +360,8 @@ export interface RailDjangoReportingReportBlock {
   id?: number | null;
   /** Layout */
   layout: Record<string, unknown>;
+  /** pk */
+  pk?: string | null;
   /** Position */
   position: number;
   /** Rapport */
@@ -370,6 +396,8 @@ export interface RailDjangoReportingVisualization {
   kind: string;
   /** Options UI */
   options: Record<string, unknown>;
+  /** pk */
+  pk?: string | null;
   /** Rapports BI */
   reports?: RailDjangoReportingReport[] | null;
   /** Titre */
@@ -396,6 +424,8 @@ export interface RailDjangoSavedFilter {
   modelName: string;
   /** name */
   name: string;
+  /** pk */
+  pk?: string | null;
   /** updated at */
   updatedAt?: string | null;
   /** use count */
@@ -434,6 +464,8 @@ export interface RailDjangoSchemaRegistryModel {
   performanceSettings: Record<string, unknown>;
   /** persisted query settings */
   persistedQuerySettings: Record<string, unknown>;
+  /** pk */
+  pk?: string | null;
   /** plugin settings */
   pluginSettings: Record<string, unknown>;
   /** query settings */
@@ -458,6 +490,8 @@ export interface RailDjangoSchemaSnapshotModel {
   createdAt?: string | null;
   /** ID */
   id?: number | null;
+  /** pk */
+  pk?: string | null;
   /** schema hash */
   schemaHash: string;
   /** schema json */
@@ -490,6 +524,8 @@ export interface RailDjangoTaskExecution {
   name: string;
   /** owner id */
   ownerId?: string | null;
+  /** pk */
+  pk?: string | null;
   /** progress */
   progress: number;
   /** result */
@@ -518,6 +554,8 @@ export interface RailDjangoTrustedDevice {
   ipAddress: string;
   /** Est actif */
   isActive: boolean;
+  /** pk */
+  pk?: string | null;
   /** Utilisateur */
   user: UsersUser;
   /** User agent */
@@ -534,6 +572,8 @@ export interface UsersPasswordResetOTP {
   id?: number | null;
   /** is used */
   isUsed: boolean;
+  /** pk */
+  pk?: string | null;
   /** user */
   user: UsersUser;
 }
@@ -568,8 +608,8 @@ export interface UsersUser {
   logentry?: Record<string, unknown>[] | null;
   /** Appareils MFA */
   mfaDevices?: RailDjangoMFADevice[] | null;
-  /** password */
-  password: string;
+  /** pk */
+  pk?: string | null;
   /** User Profile */
   profile?: UsersUserProfile[] | null;
   /** media export jobs */
@@ -596,6 +636,8 @@ export interface UsersUserProfile {
   id?: number | null;
   /** phone number */
   phoneNumber?: string | null;
+  /** pk */
+  pk?: string | null;
   /** user */
   user: UsersUser;
 }
@@ -610,6 +652,8 @@ export interface UsersUserSettings {
   layout: string;
   /** mode */
   mode: string;
+  /** pk */
+  pk?: string | null;
   /** sidebar collapse mode */
   sidebarCollapseMode: string;
   /** table configs */
