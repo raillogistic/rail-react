@@ -21,6 +21,7 @@ import {
 import {
   FRONTEND_ROUTE_ACCESS_QUERY,
 } from "@/shared/api/graphql/graphql/metadata/queries";
+import { useEnabledModules } from "./useEnabledModules";
 import type {
   RouteAccessManifest,
   RouteAccessRequirement,
@@ -447,13 +448,34 @@ export const RouteAccessProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const { user, isAuthenticated } = useAuthContext();
-  const routes = useMemo(() => getAllRoutes(), []);
-  const groups = useMemo(() => getNavigationGroups(), []);
+  const { modules: enabledModules, isLoading: modulesLoading } = useEnabledModules();
+  
+  const allRoutes = useMemo(() => getAllRoutes(), []);
+  const allGroups = useMemo(() => getNavigationGroups(), []);
+
+  const routes = useMemo(() => {
+    if (modulesLoading) return [];
+    return allRoutes.filter(route => 
+      !route.moduleId || 
+      route.moduleId === "core" || 
+      enabledModules.includes(route.moduleId)
+    );
+  }, [allRoutes, enabledModules, modulesLoading]);
+
+  const groups = useMemo(() => {
+    if (modulesLoading) return [];
+    return allGroups.filter(group => 
+      !group.moduleId || 
+      group.moduleId === "core" || 
+      enabledModules.includes(group.moduleId)
+    );
+  }, [allGroups, enabledModules, modulesLoading]);
+
   const routeMembershipIndex = useMemo(
     () => buildRouteMembershipIndex(routes, groups),
     [groups, routes],
   );
-  const { data, loading } = useQuery<FrontendRouteAccessQueryData>(
+  const { data, loading: accessLoading } = useQuery<FrontendRouteAccessQueryData>(
     FRONTEND_ROUTE_ACCESS_QUERY,
     {
       skip: !isAuthenticated,
@@ -491,9 +513,12 @@ export const RouteAccessProvider: React.FC<{ children: React.ReactNode }> = ({
       ),
     [canAccessRoute, groups, isAuthenticated, routes, user],
   );
+
+  const isLoading = (isAuthenticated && accessLoading) || modulesLoading;
+
   const effectiveNavigationLinks = useMemo(
-    () => (isAuthenticated && loading ? [] : navigationLinks),
-    [isAuthenticated, loading, navigationLinks],
+    () => (isAuthenticated && isLoading ? [] : navigationLinks),
+    [isAuthenticated, isLoading, navigationLinks],
   );
 
   const defaultRoute = useMemo(
@@ -505,7 +530,7 @@ export const RouteAccessProvider: React.FC<{ children: React.ReactNode }> = ({
   const value = useMemo<RouteAccessContextValue>(
     () => ({
       defaultRoute,
-      isLoading: isAuthenticated && loading,
+      isLoading,
       navigationLinks: effectiveNavigationLinks,
       canAccessRoute,
     }),
@@ -513,8 +538,7 @@ export const RouteAccessProvider: React.FC<{ children: React.ReactNode }> = ({
       canAccessRoute,
       defaultRoute,
       effectiveNavigationLinks,
-      isAuthenticated,
-      loading,
+      isLoading,
     ],
   );
 

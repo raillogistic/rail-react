@@ -35,6 +35,7 @@ export interface NavigationGroup {
   id: string;
   label: string;
   projectId: string;
+  moduleId?: string;
   order?: number;
   access?: RouteAccessRequirement;
   entries: NavigationEntry[];
@@ -42,6 +43,7 @@ export interface NavigationGroup {
 
 export interface AppManifest {
   projectId: string;
+  moduleId?: string;
   order?: number;
   defaultRoute: string;
   routes: AppRouteConfig[];

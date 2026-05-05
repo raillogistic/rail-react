@@ -1,7 +1,7 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
 // Source: scripts/getModels.mjs
 // Command: npm run getModels
-// Generated at: 2026-05-03T20:14:06.548Z
+// Generated at: 2026-05-05T15:10:25.434Z
 
 export interface RailDjangoAuditEventModel {
   /** additional data */

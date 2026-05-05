@@ -48,7 +48,12 @@ const mergeManifests = (manifests: AppManifest[]): RegistrySnapshot => {
   );
 
   const routes = sortedManifests
-    .flatMap((manifest) => manifest.routes)
+    .flatMap((manifest) =>
+      manifest.routes.map((route) => ({
+        ...route,
+        moduleId: route.moduleId ?? manifest.moduleId,
+      })),
+    )
     .sort(
       (a, b) =>
         (projectOrderById.get(a.projectId) ?? Number.MAX_SAFE_INTEGER) -
@@ -58,7 +63,12 @@ const mergeManifests = (manifests: AppManifest[]): RegistrySnapshot => {
     );
 
   const navigation = sortedManifests
-    .flatMap((manifest) => manifest.navigation)
+    .flatMap((manifest) =>
+      manifest.navigation.map((group) => ({
+        ...group,
+        moduleId: group.moduleId ?? manifest.moduleId,
+      })),
+    )
     .sort(
       (a, b) =>
         (projectOrderById.get(a.projectId) ?? Number.MAX_SAFE_INTEGER) -

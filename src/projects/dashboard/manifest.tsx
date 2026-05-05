@@ -26,7 +26,9 @@ const DashboardOverviewPage = lazy(() =>
 
 export const DASHBOARD_MANIFEST: AppManifest = defineProjectManifest({
   projectId: "dashboard",
-  order: 0,
+  moduleId: "reporting",
+  order: 100,
+
   defaultRoute: ROUTES.OVERVIEW,
   routes: [
     protectedRoute("dashboard", {
