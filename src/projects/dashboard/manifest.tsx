@@ -1,5 +1,5 @@
 import { lazy, Suspense, type ReactNode } from "react";
-import { FileText, LayoutDashboard } from "lucide-react";
+import { LayoutDashboard } from "lucide-react";
 import type { AppManifest } from "@/app/router/contracts";
 import {
   defineProjectManifest,
@@ -18,9 +18,9 @@ const withRouteSuspense = (component: ReactNode) => (
   <Suspense fallback={routeFallback}>{component}</Suspense>
 );
 
-const DashboardOverviewPage = lazy(() =>
-  import("./pages/DashboardOverviewPage").then((module) => ({
-    default: module.DashboardOverviewPage,
+const DashboardHomePage = lazy(() =>
+  import("./pages/DashboardHomePage").then((module) => ({
+    default: module.DashboardHomePage,
   })),
 );
 
@@ -28,16 +28,14 @@ export const DASHBOARD_MANIFEST: AppManifest = defineProjectManifest({
   projectId: "dashboard",
   moduleId: "reporting",
   order: 100,
-
-  defaultRoute: ROUTES.OVERVIEW,
+  defaultRoute: ROUTES.HOME,
   routes: [
     protectedRoute("dashboard", {
-      id: "dashboard:overview",
-      path: ROUTES.OVERVIEW,
-      title: "Dashboard Overview",
-      description: "Overview for the dashboard project",
+      id: "dashboard:home",
+      path: ROUTES.HOME,
+      title: "Tableau de bord",
       icon: LayoutDashboard,
-      element: withRouteSuspense(<DashboardOverviewPage />),
+      element: withRouteSuspense(<DashboardHomePage />),
     }),
   ],
   navigation: [
@@ -47,13 +45,12 @@ export const DASHBOARD_MANIFEST: AppManifest = defineProjectManifest({
       order: 0,
       entries: [
         {
-          id: "dashboard:overview",
-          routeId: "dashboard:overview",
-          title: "Tableau de bord",
-          path: ROUTES.OVERVIEW,
+          id: "dashboard:home",
+          routeId: "dashboard:home",
+          title: "Accueil",
+          path: ROUTES.HOME,
           guard: "protected",
           icon: LayoutDashboard,
-          description: "Main workspace",
         },
       ],
     }),

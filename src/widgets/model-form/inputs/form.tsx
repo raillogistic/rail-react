@@ -456,9 +456,7 @@ const DynamicForm = <TValues extends Record<string, any> = Record<string, any>>(
 
   const formWrapperClass = cn(
     "relative flex flex-col w-full transition-all duration-300",
-    isPopup
-      ? "gap-3 border-0 bg-transparent p-0"
-      : "h-full rounded-xl border border-border/40 bg-background p-6 shadow-sm",
+    isPopup ? "gap-3 border-0 bg-transparent p-0" : "h-full rounded-xl   p-6 ",
     layoutClassName,
   );
 
@@ -519,7 +517,12 @@ const DynamicForm = <TValues extends Record<string, any> = Record<string, any>>(
 
   return (
     <div className="relative h-full w-full">
-      <form className={cn("group/form", formWrapperClass)} onSubmit={handleSubmit} noValidate data-layout={layoutVariant}>
+      <form
+        className={cn("group/form", formWrapperClass)}
+        onSubmit={handleSubmit}
+        noValidate
+        data-layout={layoutVariant}
+      >
         <div className={formBodyClass}>
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 ease-out">
             {renderMode()}

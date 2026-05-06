@@ -1,8 +1,146 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
 // Source: scripts/getModels.mjs
 // Command: npm run getModels
-// Generated at: 2026-05-05T15:10:25.434Z
+// Generated at: 2026-05-05T20:50:16.095Z
 
+export interface LocationsLocation {
+  /** address */
+  address?: string | null;
+  /** Biens */
+  assets?: PatrimoineAsset[] | null;
+  /** Locations */
+  children?: LocationsLocation[] | null;
+  /** code */
+  code: string;
+  /** ID */
+  id?: number | null;
+  /** is active */
+  isActive: boolean;
+  /** level */
+  level: string;
+  /** name */
+  name: string;
+  /** parent */
+  parent?: LocationsLocation | null;
+  /** pk */
+  pk?: string | null;
+  /** users */
+  users?: UsersUser[] | null;
+}
+export interface PatrimoineAsset {
+  /** Date d'acquisition */
+  acquisitionDate?: string | null;
+  /** Méthode d'acquisition */
+  acquisitionMethod: string;
+  /** Valeur d'acquisition */
+  acquisitionValue?: number | null;
+  /** Nom du propriétaire réel */
+  actualOwnerName?: string | null;
+  /** Fournisseur propriétaire */
+  actualOwnerSupplier?: ReferentialsSupplier | null;
+  /** Type de propriétaire réel */
+  actualOwnerType: string;
+  /** Statut administratif */
+  administrativeStatus: string;
+  /** Date d'archivage */
+  archivedAt?: string | null;
+  /** Type de bien */
+  assetType: string;
+  /** Marque */
+  brand?: string | null;
+  /** Catégorie */
+  category: ReferentialsAssetCategory;
+  /** Date de création */
+  createdAt?: string | null;
+  /** Créé par */
+  createdBy?: UsersUser | null;
+  /** Description */
+  description?: string | null;
+  /** Date de sortie */
+  exitDate?: string | null;
+  /** Méthode de sortie */
+  exitMethod?: string | null;
+  /** Famille */
+  family: ReferentialsAssetFamily;
+  /** Profil financier */
+  financialProfile?: PatrimoineAssetFinancialProfile[] | null;
+  /** ID */
+  id?: number | null;
+  /** Code inventaire */
+  inventoryCode: string;
+  /** Est actif */
+  isActive: boolean;
+  /** Ancien code */
+  legacyCode?: string | null;
+  /** Localisation */
+  location?: LocationsLocation | null;
+  /** Valeurs de métadonnées */
+  metadataValues?: PatrimoineAssetMetadataValue[] | null;
+  /** Modèle */
+  modelName?: string | null;
+  /** Désignation */
+  name: string;
+  /** Statut de propriété */
+  ownershipStatus: string;
+  /** État physique */
+  physicalCondition?: ReferentialsPhysicalCondition | null;
+  /** pk */
+  pk?: string | null;
+  /** Valeur QR Code */
+  qrCodeValue?: string | null;
+  /** Employé responsable */
+  responsibleEmployee?: ReferentialsEmployee | null;
+  /** Service responsable */
+  responsibleService?: ReferentialsService | null;
+  /** Numéro de série */
+  serialNumber?: string | null;
+  /** Fournisseur */
+  supplier?: ReferentialsSupplier | null;
+  /** Date de modification */
+  updatedAt?: string | null;
+  /** Modifié par */
+  updatedBy?: UsersUser | null;
+}
+export interface PatrimoineAssetFinancialProfile {
+  /** Bien */
+  asset: PatrimoineAsset;
+  /** Base amortissable */
+  depreciableBaseValue?: number | null;
+  /** Durée d'amortissement (mois) */
+  depreciationDurationMonths?: number | null;
+  /** Méthode d'amortissement */
+  depreciationMethod?: string | null;
+  /** Début d'amortissement */
+  depreciationStartDate?: string | null;
+  /** Valeur de sortie */
+  exitValue?: number | null;
+  /** ID */
+  id?: number | null;
+  /** pk */
+  pk?: string | null;
+  /** Valeur résiduelle */
+  residualValue: number;
+}
+export interface PatrimoineAssetMetadataValue {
+  /** Bien */
+  asset: PatrimoineAsset;
+  /** Définition */
+  definition: ReferentialsAssetMetadataDefinition;
+  /** ID */
+  id?: number | null;
+  /** pk */
+  pk?: string | null;
+  /** Valeur booléenne */
+  valueBoolean?: boolean | null;
+  /** Valeur date */
+  valueDate?: string | null;
+  /** Valeur JSON */
+  valueJson?: Record<string, unknown> | null;
+  /** Valeur numérique */
+  valueNumber?: number | null;
+  /** Valeur texte */
+  valueText?: string | null;
+}
 export interface RailDjangoAuditEventModel {
   /** additional data */
   additionalData?: Record<string, unknown> | null;
@@ -561,6 +699,180 @@ export interface RailDjangoTrustedDevice {
   /** User agent */
   userAgent: string;
 }
+export interface ReferentialsAssetCategory {
+  /** Biens */
+  assets?: PatrimoineAsset[] | null;
+  /** code */
+  code: string;
+  /** Asset Families */
+  families?: ReferentialsAssetFamily[] | null;
+  /** icon */
+  icon?: string | null;
+  /** ID */
+  id?: number | null;
+  /** is active */
+  isActive: boolean;
+  /** is system */
+  isSystem: boolean;
+  /** Metadata Definitions */
+  metadataDefinitions?: ReferentialsAssetMetadataDefinition[] | null;
+  /** name */
+  name: string;
+  /** pk */
+  pk?: string | null;
+}
+export interface ReferentialsAssetFamily {
+  /** Biens */
+  assets?: PatrimoineAsset[] | null;
+  /** category */
+  category: ReferentialsAssetCategory;
+  /** code */
+  code: string;
+  /** ID */
+  id?: number | null;
+  /** is active */
+  isActive: boolean;
+  /** Metadata Definitions */
+  metadataDefinitions?: ReferentialsAssetMetadataDefinition[] | null;
+  /** name */
+  name: string;
+  /** pk */
+  pk?: string | null;
+}
+export interface ReferentialsAssetMetadataDefinition {
+  /** category */
+  category?: ReferentialsAssetCategory | null;
+  /** display order */
+  displayOrder: number;
+  /** family */
+  family?: ReferentialsAssetFamily | null;
+  /** field key */
+  fieldKey: string;
+  /** field type */
+  fieldType: string;
+  /** ID */
+  id?: number | null;
+  /** is active */
+  isActive: boolean;
+  /** is required */
+  isRequired: boolean;
+  /** label */
+  label: string;
+  /** options */
+  options?: Record<string, unknown> | null;
+  /** pk */
+  pk?: string | null;
+  /** Valeurs de métadonnées */
+  values?: PatrimoineAssetMetadataValue[] | null;
+}
+export interface ReferentialsAssetSequence {
+  /** category code */
+  categoryCode: string;
+  /** ID */
+  id?: number | null;
+  /** last value */
+  lastValue: number;
+  /** pk */
+  pk?: string | null;
+  /** year */
+  year: number;
+}
+export interface ReferentialsDocumentType {
+  /** code */
+  code: string;
+  /** ID */
+  id?: number | null;
+  /** is active */
+  isActive: boolean;
+  /** name */
+  name: string;
+  /** pk */
+  pk?: string | null;
+}
+export interface ReferentialsEmployee {
+  /** email */
+  email?: string | null;
+  /** employee code */
+  employeeCode: string;
+  /** first name */
+  firstName: string;
+  /** full name */
+  fullName?: string | null;
+  /** ID */
+  id?: number | null;
+  /** is active */
+  isActive: boolean;
+  /** job title */
+  jobTitle?: string | null;
+  /** last name */
+  lastName: string;
+  /** phone */
+  phone?: string | null;
+  /** pk */
+  pk?: string | null;
+  /** Biens */
+  responsibleAssets?: PatrimoineAsset[] | null;
+  /** service */
+  service: ReferentialsService;
+}
+export interface ReferentialsPhysicalCondition {
+  /** Biens */
+  asset?: PatrimoineAsset[] | null;
+  /** code */
+  code: string;
+  /** ID */
+  id?: number | null;
+  /** is active */
+  isActive: boolean;
+  /** name */
+  name: string;
+  /** pk */
+  pk?: string | null;
+}
+export interface ReferentialsService {
+  /** Services */
+  children?: ReferentialsService[] | null;
+  /** code */
+  code: string;
+  /** Employees */
+  employees?: ReferentialsEmployee[] | null;
+  /** ID */
+  id?: number | null;
+  /** is active */
+  isActive: boolean;
+  /** name */
+  name: string;
+  /** parent */
+  parent?: ReferentialsService | null;
+  /** pk */
+  pk?: string | null;
+  /** Biens */
+  responsibleAssets?: PatrimoineAsset[] | null;
+  /** users */
+  users?: UsersUser[] | null;
+}
+export interface ReferentialsSupplier {
+  /** address */
+  address?: string | null;
+  /** Biens */
+  assets?: PatrimoineAsset[] | null;
+  /** code */
+  code: string;
+  /** contact email */
+  contactEmail?: string | null;
+  /** contact phone */
+  contactPhone?: string | null;
+  /** ID */
+  id?: number | null;
+  /** is active */
+  isActive: boolean;
+  /** name */
+  name: string;
+  /** Biens */
+  ownedAssets?: PatrimoineAsset[] | null;
+  /** pk */
+  pk?: string | null;
+}
 export interface UsersPasswordResetOTP {
   /** code */
   code: string;
@@ -578,6 +890,10 @@ export interface UsersPasswordResetOTP {
   user: UsersUser;
 }
 export interface UsersUser {
+  /** Biens */
+  assetsCreated?: PatrimoineAsset[] | null;
+  /** Biens */
+  assetsUpdated?: PatrimoineAsset[] | null;
   /** date joined */
   dateJoined: string;
   /** desc */
@@ -616,10 +932,16 @@ export interface UsersUser {
   railMediaExportJobs?: RailDjangoMediaExportJob[] | null;
   /** password reset otps */
   resetCodes?: UsersPasswordResetOTP[] | null;
+  /** role label */
+  roleLabel?: string | null;
   /** saved filters */
   savedFilters?: RailDjangoSavedFilter[] | null;
+  /** service */
+  service?: ReferentialsService | null;
   /** User Settings */
   settings?: UsersUserSettings[] | null;
+  /** site */
+  site?: LocationsLocation | null;
   /** Appareils de confiance */
   trustedDevices?: RailDjangoTrustedDevice[] | null;
   /** username */
@@ -665,6 +987,10 @@ export interface UsersUserSettings {
 }
 
 export type DjangoModelMap = {
+  "locations.Location": LocationsLocation;
+  "patrimoine.Asset": PatrimoineAsset;
+  "patrimoine.AssetFinancialProfile": PatrimoineAssetFinancialProfile;
+  "patrimoine.AssetMetadataValue": PatrimoineAssetMetadataValue;
   "rail_django.AuditEventModel": RailDjangoAuditEventModel;
   "rail_django.ImportBatch": RailDjangoImportBatch;
   "rail_django.ImportIssue": RailDjangoImportIssue;
@@ -684,6 +1010,15 @@ export type DjangoModelMap = {
   "rail_django.SchemaSnapshotModel": RailDjangoSchemaSnapshotModel;
   "rail_django.TaskExecution": RailDjangoTaskExecution;
   "rail_django.TrustedDevice": RailDjangoTrustedDevice;
+  "referentials.AssetCategory": ReferentialsAssetCategory;
+  "referentials.AssetFamily": ReferentialsAssetFamily;
+  "referentials.AssetMetadataDefinition": ReferentialsAssetMetadataDefinition;
+  "referentials.AssetSequence": ReferentialsAssetSequence;
+  "referentials.DocumentType": ReferentialsDocumentType;
+  "referentials.Employee": ReferentialsEmployee;
+  "referentials.PhysicalCondition": ReferentialsPhysicalCondition;
+  "referentials.Service": ReferentialsService;
+  "referentials.Supplier": ReferentialsSupplier;
   "users.PasswordResetOTP": UsersPasswordResetOTP;
   "users.User": UsersUser;
   "users.UserProfile": UsersUserProfile;

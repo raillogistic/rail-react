@@ -1,4 +1,3 @@
 export const ROUTES = {
-  OVERVIEW: "/admin/overview",
-  REPORTS: "/admin/reports",
+  HOME: "/admin",
 } as const;

@@ -1,5 +1,11 @@
-import { lazy, Suspense, type ReactNode } from "react";
-import { FileText, LayoutDashboard } from "lucide-react";
+import {
+  lazy,
+  Suspense,
+  type ReactNode } from "react";
+import {
+  FileText,
+  LayoutDashboard,
+} from "lucide-react";
 import type { AppManifest } from "@/app/router/contracts";
 import {
   defineProjectManifest,
@@ -18,41 +24,62 @@ const withRouteSuspense = (component: ReactNode) => (
   <Suspense fallback={routeFallback}>{component}</Suspense>
 );
 
-const PatrimoineOverviewPage = lazy(() =>
-  import("./pages/PatrimoineOverviewPage").then((module) => ({
-    default: module.PatrimoineOverviewPage,
+const AssetListPage = lazy(() =>
+  import("./pages/asset/AssetListPage").then((module) => ({
+    default: module.AssetListPage,
   })),
 );
 
-const PatrimoineReportsPage = lazy(() =>
-  import("./pages/PatrimoineReportsPage").then((module) => ({
-    default: module.PatrimoineReportsPage,
+const AssetFormPage = lazy(() =>
+  import("./pages/asset/AssetFormPage").then((module) => ({
+    default: module.AssetFormPage,
   })),
 );
 
+const AssetDetailPage = lazy(() =>
+  import("./pages/asset/AssetDetailPage").then((module) => ({
+    default: module.AssetDetailPage,
+  })),
+);
 export const PATRIMOINE_MANIFEST: AppManifest = defineProjectManifest({
   projectId: "patrimoine",
   moduleId: "patrimoine",
   order: 100,
-  defaultRoute: ROUTES.OVERVIEW,
+  defaultRoute: ROUTES.ASSET_LIST,
   routes: [
     protectedRoute("patrimoine", {
-      id: "patrimoine:overview",
-      path: ROUTES.OVERVIEW,
-      title: "Patrimoine Overview",
-      description: "Overview for the patrimoine project",
-      icon: LayoutDashboard,
-      element: withRouteSuspense(<PatrimoineOverviewPage />),
+      id: "patrimoine:asset:list",
+      path: ROUTES.ASSET_LIST,
+      title: "Asset",
+      description: "Manage Asset records",
+      icon: FileText,
+      element: withRouteSuspense(<AssetListPage />),
     }),
     protectedRoute("patrimoine", {
-      id: "patrimoine:reports",
-      path: ROUTES.REPORTS,
-      title: "Patrimoine Reports",
-      description: "Reporting views for the patrimoine project",
+      id: "patrimoine:asset:create",
+      path: ROUTES.ASSET_CREATE,
+      title: "Create Asset",
+      hidden: true,
       icon: FileText,
-      element: withRouteSuspense(<PatrimoineReportsPage />),
+      element: withRouteSuspense(<AssetFormPage />),
     }),
-  ],
+    protectedRoute("patrimoine", {
+      id: "patrimoine:asset:edit",
+      path: ROUTES.ASSET_EDIT,
+      title: "Edit Asset",
+      hidden: true,
+      icon: FileText,
+      element: withRouteSuspense(<AssetFormPage />),
+    }),
+    protectedRoute("patrimoine", {
+      id: "patrimoine:asset:detail",
+      path: ROUTES.ASSET_DETAIL,
+      title: "Asset details",
+      hidden: true,
+      icon: FileText,
+      element: withRouteSuspense(<AssetDetailPage />),
+    }),
+],
   navigation: [
     navGroup("patrimoine", {
       id: "patrimoine",
@@ -60,24 +87,40 @@ export const PATRIMOINE_MANIFEST: AppManifest = defineProjectManifest({
       order: 0,
       entries: [
         {
-          id: "patrimoine:overview",
-          routeId: "patrimoine:overview",
-          title: "Overview",
-          path: ROUTES.OVERVIEW,
-          guard: "protected",
-          icon: LayoutDashboard,
-          description: "Main workspace",
-        },
-        {
-          id: "patrimoine:reports",
-          routeId: "patrimoine:reports",
-          title: "Reports",
-          path: ROUTES.REPORTS,
+          id: "patrimoine:asset:list",
+          routeId: "patrimoine:asset:list",
+          title: "Asset",
+          path: ROUTES.ASSET_LIST,
           guard: "protected",
           icon: FileText,
-          description: "Reports and analytics",
+          description: "Manage Asset records",          children: [
+            {
+              id: "patrimoine:asset:create",
+              routeId: "patrimoine:asset:create",
+              title: "Create Asset",
+              path: ROUTES.ASSET_CREATE,
+              guard: "protected",
+              hidden: true,
+            },
+            {
+              id: "patrimoine:asset:edit",
+              routeId: "patrimoine:asset:edit",
+              title: "Edit Asset",
+              path: ROUTES.ASSET_EDIT,
+              guard: "protected",
+              hidden: true,
+            },
+            {
+              id: "patrimoine:asset:detail",
+              routeId: "patrimoine:asset:detail",
+              title: "Asset details",
+              path: ROUTES.ASSET_DETAIL,
+              guard: "protected",
+              hidden: true,
+            },
+          ],
         },
-      ],
+],
     }),
   ],
 });

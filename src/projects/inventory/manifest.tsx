@@ -1,5 +1,5 @@
 import { lazy, Suspense, type ReactNode } from "react";
-import { FileText, LayoutDashboard } from "lucide-react";
+import { LayoutDashboard } from "lucide-react";
 import type { AppManifest } from "@/app/router/contracts";
 import {
   defineProjectManifest,
@@ -18,15 +18,9 @@ const withRouteSuspense = (component: ReactNode) => (
   <Suspense fallback={routeFallback}>{component}</Suspense>
 );
 
-const InventoryOverviewPage = lazy(() =>
-  import("./pages/InventoryOverviewPage").then((module) => ({
-    default: module.InventoryOverviewPage,
-  })),
-);
-
-const InventoryReportsPage = lazy(() =>
-  import("./pages/InventoryReportsPage").then((module) => ({
-    default: module.InventoryReportsPage,
+const InventoryHomePage = lazy(() =>
+  import("./pages/InventoryHomePage").then((module) => ({
+    default: module.InventoryHomePage,
   })),
 );
 
@@ -34,23 +28,14 @@ export const INVENTORY_MANIFEST: AppManifest = defineProjectManifest({
   projectId: "inventory",
   moduleId: "inventory",
   order: 100,
-  defaultRoute: ROUTES.OVERVIEW,
+  defaultRoute: ROUTES.HOME,
   routes: [
     protectedRoute("inventory", {
-      id: "inventory:overview",
-      path: ROUTES.OVERVIEW,
-      title: "Inventory Overview",
-      description: "Overview for the inventory project",
+      id: "inventory:home",
+      path: ROUTES.HOME,
+      title: "Inventaire",
       icon: LayoutDashboard,
-      element: withRouteSuspense(<InventoryOverviewPage />),
-    }),
-    protectedRoute("inventory", {
-      id: "inventory:reports",
-      path: ROUTES.REPORTS,
-      title: "Inventory Reports",
-      description: "Reporting views for the inventory project",
-      icon: FileText,
-      element: withRouteSuspense(<InventoryReportsPage />),
+      element: withRouteSuspense(<InventoryHomePage />),
     }),
   ],
   navigation: [
@@ -60,22 +45,12 @@ export const INVENTORY_MANIFEST: AppManifest = defineProjectManifest({
       order: 0,
       entries: [
         {
-          id: "inventory:overview",
-          routeId: "inventory:overview",
-          title: "Overview",
-          path: ROUTES.OVERVIEW,
+          id: "inventory:home",
+          routeId: "inventory:home",
+          title: "Accueil",
+          path: ROUTES.HOME,
           guard: "protected",
           icon: LayoutDashboard,
-          description: "Main workspace",
-        },
-        {
-          id: "inventory:reports",
-          routeId: "inventory:reports",
-          title: "Reports",
-          path: ROUTES.REPORTS,
-          guard: "protected",
-          icon: FileText,
-          description: "Reports and analytics",
         },
       ],
     }),

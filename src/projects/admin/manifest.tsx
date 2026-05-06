@@ -1,5 +1,5 @@
 import { lazy, Suspense, type ReactNode } from "react";
-import { FileText, LayoutDashboard } from "lucide-react";
+import { LayoutDashboard } from "lucide-react";
 import type { AppManifest } from "@/app/router/contracts";
 import {
   defineProjectManifest,
@@ -18,15 +18,9 @@ const withRouteSuspense = (component: ReactNode) => (
   <Suspense fallback={routeFallback}>{component}</Suspense>
 );
 
-const AdminOverviewPage = lazy(() =>
-  import("./pages/AdminOverviewPage").then((module) => ({
-    default: module.AdminOverviewPage,
-  })),
-);
-
-const AdminReportsPage = lazy(() =>
-  import("./pages/AdminReportsPage").then((module) => ({
-    default: module.AdminReportsPage,
+const AdminHomePage = lazy(() =>
+  import("./pages/AdminHomePage").then((module) => ({
+    default: module.AdminHomePage,
   })),
 );
 
@@ -34,23 +28,14 @@ export const ADMIN_MANIFEST: AppManifest = defineProjectManifest({
   projectId: "admin",
   moduleId: "core",
   order: 100,
-  defaultRoute: ROUTES.OVERVIEW,
+  defaultRoute: ROUTES.HOME,
   routes: [
     protectedRoute("admin", {
-      id: "admin:overview",
-      path: ROUTES.OVERVIEW,
-      title: "Admin Overview",
-      description: "Overview for the admin project",
+      id: "admin:home",
+      path: ROUTES.HOME,
+      title: "Administration",
       icon: LayoutDashboard,
-      element: withRouteSuspense(<AdminOverviewPage />),
-    }),
-    protectedRoute("admin", {
-      id: "admin:reports",
-      path: ROUTES.REPORTS,
-      title: "Admin Reports",
-      description: "Reporting views for the admin project",
-      icon: FileText,
-      element: withRouteSuspense(<AdminReportsPage />),
+      element: withRouteSuspense(<AdminHomePage />),
     }),
   ],
   navigation: [
@@ -60,22 +45,12 @@ export const ADMIN_MANIFEST: AppManifest = defineProjectManifest({
       order: 0,
       entries: [
         {
-          id: "admin:overview",
-          routeId: "admin:overview",
-          title: "Overview",
-          path: ROUTES.OVERVIEW,
+          id: "admin:home",
+          routeId: "admin:home",
+          title: "Accueil",
+          path: ROUTES.HOME,
           guard: "protected",
           icon: LayoutDashboard,
-          description: "Main workspace",
-        },
-        {
-          id: "admin:reports",
-          routeId: "admin:reports",
-          title: "Reports",
-          path: ROUTES.REPORTS,
-          guard: "protected",
-          icon: FileText,
-          description: "Reports and analytics",
         },
       ],
     }),

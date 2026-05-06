@@ -1,5 +1,5 @@
 import { lazy, Suspense, type ReactNode } from "react";
-import { FileText, LayoutDashboard } from "lucide-react";
+import { LayoutDashboard } from "lucide-react";
 import type { AppManifest } from "@/app/router/contracts";
 import {
   defineProjectManifest,
@@ -18,15 +18,9 @@ const withRouteSuspense = (component: ReactNode) => (
   <Suspense fallback={routeFallback}>{component}</Suspense>
 );
 
-const FinanceOverviewPage = lazy(() =>
-  import("./pages/FinanceOverviewPage").then((module) => ({
-    default: module.FinanceOverviewPage,
-  })),
-);
-
-const FinanceReportsPage = lazy(() =>
-  import("./pages/FinanceReportsPage").then((module) => ({
-    default: module.FinanceReportsPage,
+const FinanceHomePage = lazy(() =>
+  import("./pages/FinanceHomePage").then((module) => ({
+    default: module.FinanceHomePage,
   })),
 );
 
@@ -34,23 +28,14 @@ export const FINANCE_MANIFEST: AppManifest = defineProjectManifest({
   projectId: "finance",
   moduleId: "finance",
   order: 100,
-  defaultRoute: ROUTES.OVERVIEW,
+  defaultRoute: ROUTES.HOME,
   routes: [
     protectedRoute("finance", {
-      id: "finance:overview",
-      path: ROUTES.OVERVIEW,
-      title: "Finance Overview",
-      description: "Overview for the finance project",
+      id: "finance:home",
+      path: ROUTES.HOME,
+      title: "Finance",
       icon: LayoutDashboard,
-      element: withRouteSuspense(<FinanceOverviewPage />),
-    }),
-    protectedRoute("finance", {
-      id: "finance:reports",
-      path: ROUTES.REPORTS,
-      title: "Finance Reports",
-      description: "Reporting views for the finance project",
-      icon: FileText,
-      element: withRouteSuspense(<FinanceReportsPage />),
+      element: withRouteSuspense(<FinanceHomePage />),
     }),
   ],
   navigation: [
@@ -60,22 +45,12 @@ export const FINANCE_MANIFEST: AppManifest = defineProjectManifest({
       order: 0,
       entries: [
         {
-          id: "finance:overview",
-          routeId: "finance:overview",
-          title: "Overview",
-          path: ROUTES.OVERVIEW,
+          id: "finance:home",
+          routeId: "finance:home",
+          title: "Accueil",
+          path: ROUTES.HOME,
           guard: "protected",
           icon: LayoutDashboard,
-          description: "Main workspace",
-        },
-        {
-          id: "finance:reports",
-          routeId: "finance:reports",
-          title: "Reports",
-          path: ROUTES.REPORTS,
-          guard: "protected",
-          icon: FileText,
-          description: "Reports and analytics",
         },
       ],
     }),

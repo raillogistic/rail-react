@@ -1,5 +1,5 @@
 import { lazy, Suspense, type ReactNode } from "react";
-import { FileText, LayoutDashboard } from "lucide-react";
+import { LayoutDashboard } from "lucide-react";
 import type { AppManifest } from "@/app/router/contracts";
 import {
   defineProjectManifest,
@@ -18,15 +18,9 @@ const withRouteSuspense = (component: ReactNode) => (
   <Suspense fallback={routeFallback}>{component}</Suspense>
 );
 
-const OperationsOverviewPage = lazy(() =>
-  import("./pages/OperationsOverviewPage").then((module) => ({
-    default: module.OperationsOverviewPage,
-  })),
-);
-
-const OperationsReportsPage = lazy(() =>
-  import("./pages/OperationsReportsPage").then((module) => ({
-    default: module.OperationsReportsPage,
+const OperationsHomePage = lazy(() =>
+  import("./pages/OperationsHomePage").then((module) => ({
+    default: module.OperationsHomePage,
   })),
 );
 
@@ -34,23 +28,14 @@ export const OPERATIONS_MANIFEST: AppManifest = defineProjectManifest({
   projectId: "operations",
   moduleId: "assignments",
   order: 100,
-  defaultRoute: ROUTES.OVERVIEW,
+  defaultRoute: ROUTES.HOME,
   routes: [
     protectedRoute("operations", {
-      id: "operations:overview",
-      path: ROUTES.OVERVIEW,
-      title: "Operations Overview",
-      description: "Overview for the operations project",
+      id: "operations:home",
+      path: ROUTES.HOME,
+      title: "Opérations",
       icon: LayoutDashboard,
-      element: withRouteSuspense(<OperationsOverviewPage />),
-    }),
-    protectedRoute("operations", {
-      id: "operations:reports",
-      path: ROUTES.REPORTS,
-      title: "Operations Reports",
-      description: "Reporting views for the operations project",
-      icon: FileText,
-      element: withRouteSuspense(<OperationsReportsPage />),
+      element: withRouteSuspense(<OperationsHomePage />),
     }),
   ],
   navigation: [
@@ -60,22 +45,12 @@ export const OPERATIONS_MANIFEST: AppManifest = defineProjectManifest({
       order: 0,
       entries: [
         {
-          id: "operations:overview",
-          routeId: "operations:overview",
-          title: "Overview",
-          path: ROUTES.OVERVIEW,
+          id: "operations:home",
+          routeId: "operations:home",
+          title: "Accueil",
+          path: ROUTES.HOME,
           guard: "protected",
           icon: LayoutDashboard,
-          description: "Main workspace",
-        },
-        {
-          id: "operations:reports",
-          routeId: "operations:reports",
-          title: "Reports",
-          path: ROUTES.REPORTS,
-          guard: "protected",
-          icon: FileText,
-          description: "Reports and analytics",
         },
       ],
     }),
