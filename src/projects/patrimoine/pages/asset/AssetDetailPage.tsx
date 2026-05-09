@@ -11,8 +11,73 @@ import {
   User, 
   Info,
   History,
-  Paperclip
+  Paperclip,
+  TrendingDown
 } from "lucide-react";
+import { 
+  LineChart, 
+  Line, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer,
+  AreaChart,
+  Area
+} from 'recharts';
+import { format, addMonths, parseISO } from "date-fns";
+import { fr } from "date-fns/locale";
+
+/**
+ * Composant pour afficher le graphique d'amortissement.
+ */
+const DepreciationChart = ({ asset }: { asset: PatrimoineAsset }) => {
+  const profile = asset.financialProfile?.[0];
+  if (!profile || !profile.depreciationDurationMonths || !profile.depreciationStartDate || !profile.depreciableBaseValue) {
+    return <div className="text-muted-foreground text-sm italic p-4 text-center">Données d'amortissement incomplètes pour générer le graphique.</div>;
+  }
+
+  const base = Number(profile.depreciableBaseValue);
+  const residual = Number(profile.residualValue || 0);
+  const duration = profile.depreciationDurationMonths;
+  const startDate = parseISO(profile.depreciationStartDate as unknown as string);
+
+  const data = [];
+  for (let i = 0; i <= duration; i++) {
+    const date = addMonths(startDate, i);
+    const value = Math.max(residual, base - ((base - residual) * i / duration));
+    data.push({
+      month: format(date, "MMM yyyy", { locale: fr }),
+      valeur: value,
+    });
+  }
+
+  return (
+    <div className="h-[300px] w-full mt-4">
+      <ResponsiveContainer width="100%" height="100%">
+        <AreaChart data={data} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+          <defs>
+            <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.1}/>
+              <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+            </linearGradient>
+          </defs>
+          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
+          <XAxis 
+            dataKey="month" 
+            tick={{ fontSize: 10 }} 
+            interval={Math.floor(duration / 6)}
+          />
+          <YAxis tick={{ fontSize: 10 }} />
+          <Tooltip 
+            formatter={(value: number) => [new Intl.NumberFormat('fr-FR', { style: 'currency', currency: 'EUR' }).format(value), 'Valeur Nette']}
+          />
+          <Area type="monotone" dataKey="valeur" stroke="#3b82f6" fillOpacity={1} fill="url(#colorValue)" />
+        </AreaChart>
+      </ResponsiveContainer>
+    </div>
+  );
+};
 
 /**
  * Page de détail pour le modèle Asset (Bien).
@@ -103,6 +168,15 @@ export function AssetDetailPage() {
               ],
             },
             {
+              id: "finance-asset-info",
+              title: "Classification Financière",
+              tabId: "finance",
+              order: 1,
+              fields: [
+                { path: "assetType", label: "Type de bien (Lecture seule)" },
+              ],
+            },
+            {
               id: "exit-info",
               title: "Sortie du patrimoine",
               tabId: "general",
@@ -126,6 +200,15 @@ export function AssetDetailPage() {
                 "updatedBy",
               ],
             }
+          ],
+          customSections: [
+            {
+              id: "depreciation-chart-section",
+              title: "Plan d'amortissement",
+              tabId: "finance",
+              order: 10,
+              render: ({ data }) => data ? <DepreciationChart asset={data} /> : null,
+            }
           ]
         },
         nestedFields: {
@@ -140,6 +223,24 @@ export function AssetDetailPage() {
             tabId: "finance",
             title: "Profil financier",
             mode: "object",
+          },
+          // T-3-08: Historique des affectations
+          "assignments": {
+            tabId: "assignments",
+            title: "Historique des affectations",
+            mode: "table",
+          },
+          // T-3-08: Historique des mouvements
+          "movements": {
+            tabId: "movements",
+            title: "Historique des mouvements",
+            mode: "table",
+          },
+          // T-4-07: Documents et pièces jointes
+          "documents": {
+            tabId: "documents",
+            title: "Documents",
+            mode: "attachments",
           }
         }
       }}

@@ -92,7 +92,7 @@ export function UploadFile({
   const [localError, setLocalError] = React.useState<string | null>(null);
   const [previewUrl, setPreviewUrl] = React.useState<string | null>(null);
 
-  const dialogTitle = modalTitle?.trim();
+  const dialogTitle = (modalTitle || title)?.trim() || "Televerser un fichier";
   const hasCustomTitle = Boolean(title?.trim());
   const modalDescription =
     description?.trim() ||

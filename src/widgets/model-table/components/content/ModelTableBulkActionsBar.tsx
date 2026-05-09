@@ -258,6 +258,7 @@ export function ModelTableBulkActionsBar({
                         variant="ghost"
                         size="icon"
                         aria-label="Suppression en masse"
+                        data-testid="bulk-delete-button"
                         className="size-8 rounded-full text-rose-500 hover:bg-rose-500/10"
                         disabled={!controller.canBulkDelete || controller.bulkDeleteLoading}
                       >

@@ -12,27 +12,6 @@ vi.mock('@/shared/utils/legacy-utils/offline-detector', () => ({
   testServerConnectivity: vi.fn().mockResolvedValue(true),
 }));
 
-// Mock icons to avoid rendering issues
-vi.mock('lucide-react', () => ({
-  Eye: () => <span data-testid="eye-icon" />,
-  EyeOff: () => <span data-testid="eye-off-icon" />,
-  Mail: () => <span data-testid="mail-icon" />,
-  Lock: () => <span data-testid="lock-icon" />,
-  AlertCircle: () => <span data-testid="alert-icon" />,
-  WifiOff: () => <span data-testid="wifi-off-icon" />,
-  ArrowRight: () => <span data-testid="arrow-right-icon" />,
-  Loader2: () => <span data-testid="loader-2-icon" />,
-  ShieldCheck: () => <span data-testid="shield-check-icon" />,
-  Sparkles: () => <span data-testid="sparkles-icon" />,
-  CheckIcon: () => <span data-testid="check-icon" />,
-  // Icons used in routes/links.tsx which are imported by LoginPage indirectly
-  LayoutDashboard: () => <span data-testid="dashboard-icon" />,
-  Settings: () => <span data-testid="settings-icon" />,
-  Shield: () => <span data-testid="shield-icon" />,
-  User: () => <span data-testid="user-icon" />,
-  Smartphone: () => <span data-testid="smartphone-icon" />,
-}));
-
 // Mock MFAChallenge component to test integration without testing the component itself
 type MockMFAChallengeProps = {
   onVerify: (code: string) => void;
@@ -89,10 +68,10 @@ describe('LoginPage', () => {
 
     // Wait for the connectivity check effect to settle
     await waitFor(() => {
-      expect(screen.getByPlaceholderText(/e-mail ou nom d'utilisateur/i)).toBeInTheDocument();
+      expect(screen.getByPlaceholderText(/nom@entreprise\.com/i)).toBeInTheDocument();
     });
 
-    expect(screen.getByPlaceholderText(/saisissez votre code/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText("••••••••")).toBeInTheDocument();
     expect(screen.queryByTestId('mfa-challenge')).not.toBeInTheDocument();
   });
 

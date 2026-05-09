@@ -1,8 +1,186 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
 // Source: scripts/getModels.mjs
 // Command: npm run getModels
-// Generated at: 2026-05-05T20:50:16.095Z
+// Generated at: 2026-05-08T23:20:01.179Z
 
+export interface AssignmentsAssetAssignment {
+  /** Bien */
+  asset: PatrimoineAsset;
+  /** Employé bénéficiaire */
+  assignedToEmployee?: ReferentialsEmployee | null;
+  /** Service bénéficiaire */
+  assignedToService?: ReferentialsService | null;
+  /** Date de création */
+  createdAt?: string | null;
+  /** Créé par */
+  createdBy?: UsersUser | null;
+  /** Description personnalisée */
+  descriptionCustom?: string | null;
+  /** Description standard */
+  descriptionTemplate?: string | null;
+  /** documents */
+  documents?: DocumentsDocument | null;
+  /** Date de fin */
+  endDate?: string | null;
+  /** ID */
+  id?: number | null;
+  /** Motif */
+  reason?: string | null;
+  /** Date de début */
+  startDate: string;
+  /** Date de modification */
+  updatedAt?: string | null;
+  /** Modifié par */
+  updatedBy?: UsersUser | null;
+}
+export interface DocumentsDocument {
+  /** asset */
+  asset?: PatrimoineAsset[] | null;
+  /** assignment */
+  assignment?: AssignmentsAssetAssignment[] | null;
+  /** Type de contenu */
+  contentType: Record<string, unknown>;
+  /** Date de création */
+  createdAt?: string | null;
+  /** Créé par */
+  createdBy?: UsersUser | null;
+  /** Type de document */
+  documentType: ReferentialsDocumentType;
+  /** Fichier */
+  file: string;
+  /** Nom original */
+  fileName: string;
+  /** Taille (octets) */
+  fileSize: number;
+  /** Généré par template */
+  generatedFromTemplate: boolean;
+  /** ID */
+  id?: number | null;
+  /** Actif */
+  isActive: boolean;
+  /** Type MIME */
+  mimeType: string;
+  /** ID de l'objet */
+  objectId: number;
+  /** Titre */
+  title: string;
+  /** Date de modification */
+  updatedAt?: string | null;
+  /** Modifié par */
+  updatedBy?: UsersUser | null;
+  /** Version */
+  version: number;
+}
+export interface DocumentsDocumentTemplate {
+  /** Contenu HTML/CSS */
+  content: string;
+  /** Date de création */
+  createdAt?: string | null;
+  /** Créé par */
+  createdBy?: UsersUser | null;
+  /** ID */
+  id?: number | null;
+  /** Actif */
+  isActive: boolean;
+  /** Nom */
+  name: string;
+  /** Type de template */
+  templateType: string;
+  /** Date de modification */
+  updatedAt?: string | null;
+  /** Modifié par */
+  updatedBy?: UsersUser | null;
+}
+export interface InventoryInventoryCampaign {
+  /** Code de campagne */
+  campaignCode?: string | null;
+  /** Date de création */
+  createdAt?: string | null;
+  /** Créé par */
+  createdBy?: UsersUser | null;
+  /** Date de fin */
+  endDate?: string | null;
+  /** ID */
+  id?: number | null;
+  /** Lignes d'inventaire */
+  lines?: InventoryInventoryLine[] | null;
+  /** Nom */
+  name: string;
+  /** ID de référence du périmètre */
+  scopeReferenceId?: number | null;
+  /** Type de périmètre */
+  scopeType: string;
+  /** Date de début */
+  startDate: string;
+  /** Statut */
+  status: string;
+  /** Date de modification */
+  updatedAt?: string | null;
+  /** Modifié par */
+  updatedBy?: UsersUser | null;
+}
+export interface InventoryInventoryLine {
+  /** Bien */
+  asset: PatrimoineAsset;
+  /** Campagne */
+  campaign: InventoryInventoryCampaign;
+  /** Contrôlé le */
+  checkedAt?: string | null;
+  /** Contrôlé par */
+  checkedBy?: UsersUser | null;
+  /** Commentaire sur l'état */
+  conditionComment?: string | null;
+  /** Date de création */
+  createdAt?: string | null;
+  /** Créé par */
+  createdBy?: UsersUser | null;
+  /** Localisation attendue */
+  expectedLocation?: LocationsLocation | null;
+  /** ID */
+  id?: number | null;
+  /** Localisation constatée */
+  observedLocation?: LocationsLocation | null;
+  /** Résultat */
+  result?: string | null;
+  /** Date de modification */
+  updatedAt?: string | null;
+  /** Modifié par */
+  updatedBy?: UsersUser | null;
+}
+export interface InventoryInventorySequence {
+  /** ID */
+  id?: number | null;
+  /** Dernière valeur */
+  lastValue: number;
+  /** Année */
+  year: number;
+}
+export interface LocationsAssetMovement {
+  /** Bien */
+  asset: PatrimoineAsset;
+  /** Date de création */
+  createdAt?: string | null;
+  /** Créé par */
+  createdBy?: UsersUser | null;
+  /** Ancienne localisation */
+  fromLocation?: LocationsLocation | null;
+  /** ID */
+  id?: number | null;
+  /** Date du mouvement */
+  movementDate?: string | null;
+  /** Effectué par */
+  performedBy?: UsersUser | null;
+  /** Motif */
+  reason?: string | null;
+  /** Référence */
+  reference?: string | null;
+  /** Nouvelle localisation */
+  toLocation: LocationsLocation;
+  /** Date de modification */
+  updatedAt?: string | null;
+  /** Modifié par */
+  updatedBy?: UsersUser | null;
+}
 export interface LocationsLocation {
   /** address */
   address?: string | null;
@@ -11,21 +189,49 @@ export interface LocationsLocation {
   /** Locations */
   children?: LocationsLocation[] | null;
   /** code */
-  code: string;
+  code?: string | null;
+  /** Date de création */
+  createdAt?: string | null;
+  /** Créé par */
+  createdBy?: UsersUser | null;
   /** ID */
   id?: number | null;
+  /** Lignes d'inventaire */
+  inventoryLinesExpected?: InventoryInventoryLine[] | null;
+  /** Lignes d'inventaire */
+  inventoryLinesObserved?: InventoryInventoryLine[] | null;
   /** is active */
   isActive: boolean;
   /** level */
   level: string;
+  /** Mouvements */
+  movementsFrom?: LocationsAssetMovement[] | null;
+  /** Mouvements */
+  movementsTo?: LocationsAssetMovement[] | null;
   /** name */
   name: string;
   /** parent */
   parent?: LocationsLocation | null;
-  /** pk */
-  pk?: string | null;
+  /** Date de modification */
+  updatedAt?: string | null;
+  /** Modifié par */
+  updatedBy?: UsersUser | null;
   /** users */
   users?: UsersUser[] | null;
+}
+export interface LocationsLocationSequence {
+  /** ID */
+  id?: number | null;
+  /** Dernière valeur */
+  lastValue: number;
+}
+export interface LocationsMovementSequence {
+  /** ID */
+  id?: number | null;
+  /** Dernière valeur */
+  lastValue: number;
+  /** Année */
+  year: number;
 }
 export interface PatrimoineAsset {
   /** Date d'acquisition */
@@ -41,11 +247,13 @@ export interface PatrimoineAsset {
   /** Type de propriétaire réel */
   actualOwnerType: string;
   /** Statut administratif */
-  administrativeStatus: string;
+  administrativeStatus?: string | null;
   /** Date d'archivage */
   archivedAt?: string | null;
   /** Type de bien */
   assetType: string;
+  /** Affectations */
+  assignments?: AssignmentsAssetAssignment[] | null;
   /** Marque */
   brand?: string | null;
   /** Catégorie */
@@ -56,6 +264,8 @@ export interface PatrimoineAsset {
   createdBy?: UsersUser | null;
   /** Description */
   description?: string | null;
+  /** documents */
+  documents?: DocumentsDocument | null;
   /** Date de sortie */
   exitDate?: string | null;
   /** Méthode de sortie */
@@ -67,7 +277,9 @@ export interface PatrimoineAsset {
   /** ID */
   id?: number | null;
   /** Code inventaire */
-  inventoryCode: string;
+  inventoryCode?: string | null;
+  /** Lignes d'inventaire */
+  inventoryLines?: InventoryInventoryLine[] | null;
   /** Est actif */
   isActive: boolean;
   /** Ancien code */
@@ -78,14 +290,16 @@ export interface PatrimoineAsset {
   metadataValues?: PatrimoineAssetMetadataValue[] | null;
   /** Modèle */
   modelName?: string | null;
+  /** Mouvements */
+  movements?: LocationsAssetMovement[] | null;
   /** Désignation */
   name: string;
+  /** net book value */
+  netBookValue?: string | null;
   /** Statut de propriété */
   ownershipStatus: string;
   /** État physique */
   physicalCondition?: ReferentialsPhysicalCondition | null;
-  /** pk */
-  pk?: string | null;
   /** Valeur QR Code */
   qrCodeValue?: string | null;
   /** Employé responsable */
@@ -104,6 +318,10 @@ export interface PatrimoineAsset {
 export interface PatrimoineAssetFinancialProfile {
   /** Bien */
   asset: PatrimoineAsset;
+  /** Date de création */
+  createdAt?: string | null;
+  /** Créé par */
+  createdBy?: UsersUser | null;
   /** Base amortissable */
   depreciableBaseValue?: number | null;
   /** Durée d'amortissement (mois) */
@@ -116,20 +334,30 @@ export interface PatrimoineAssetFinancialProfile {
   exitValue?: number | null;
   /** ID */
   id?: number | null;
-  /** pk */
-  pk?: string | null;
+  /** net book value */
+  netBookValue?: string | null;
   /** Valeur résiduelle */
   residualValue: number;
+  /** Date de modification */
+  updatedAt?: string | null;
+  /** Modifié par */
+  updatedBy?: UsersUser | null;
 }
 export interface PatrimoineAssetMetadataValue {
   /** Bien */
   asset: PatrimoineAsset;
+  /** Date de création */
+  createdAt?: string | null;
+  /** Créé par */
+  createdBy?: UsersUser | null;
   /** Définition */
   definition: ReferentialsAssetMetadataDefinition;
   /** ID */
   id?: number | null;
-  /** pk */
-  pk?: string | null;
+  /** Date de modification */
+  updatedAt?: string | null;
+  /** Modifié par */
+  updatedBy?: UsersUser | null;
   /** Valeur booléenne */
   valueBoolean?: boolean | null;
   /** Valeur date */
@@ -152,8 +380,6 @@ export interface RailDjangoAuditEventModel {
   eventType: string;
   /** ID */
   id?: number | null;
-  /** pk */
-  pk?: string | null;
   /** request method */
   requestMethod?: string | null;
   /** request path */
@@ -198,8 +424,6 @@ export interface RailDjangoImportBatch {
   issues?: RailDjangoImportIssue[] | null;
   /** model name */
   modelName: string;
-  /** pk */
-  pk?: string | null;
   /** import rows */
   rows?: RailDjangoImportRow[] | null;
   /** import simulation snapshots */
@@ -236,8 +460,6 @@ export interface RailDjangoImportIssue {
   id: string;
   /** message */
   message: string;
-  /** pk */
-  pk?: string | null;
   /** row */
   row?: RailDjangoImportRow | null;
   /** row number */
@@ -266,8 +488,6 @@ export interface RailDjangoImportRow {
   matchingKey?: string | null;
   /** normalized values */
   normalizedValues?: Record<string, unknown> | null;
-  /** pk */
-  pk?: string | null;
   /** row number */
   rowNumber: number;
   /** source values */
@@ -292,8 +512,6 @@ export interface RailDjangoImportSimulationSnapshot {
   executedAt?: string | null;
   /** id */
   id: string;
-  /** pk */
-  pk?: string | null;
   /** warnings */
   warnings: number;
   /** would create */
@@ -322,8 +540,6 @@ export interface RailDjangoMediaExportJob {
   message?: string | null;
   /** metadata */
   metadata?: Record<string, unknown> | null;
-  /** pk */
-  pk?: string | null;
   /** progress */
   progress: number;
   /** requested by */
@@ -346,8 +562,6 @@ export interface RailDjangoMetadataDeployVersionModel {
   id?: number | null;
   /** key */
   key: string;
-  /** pk */
-  pk?: string | null;
   /** updated at */
   updatedAt?: string | null;
   /** version */
@@ -364,8 +578,6 @@ export interface RailDjangoMFABackupCode {
   id?: number | null;
   /** Est utilisé */
   isUsed: boolean;
-  /** pk */
-  pk?: string | null;
 }
 export interface RailDjangoMFADevice {
   /** Codes de récupération */
@@ -386,8 +598,6 @@ export interface RailDjangoMFADevice {
   lastUsed?: string | null;
   /** Numéro de téléphone */
   phoneNumber?: string | null;
-  /** pk */
-  pk?: string | null;
   /** Clé secrète */
   secretKey?: string | null;
   /** Utilisateur */
@@ -418,8 +628,6 @@ export interface RailDjangoReportingDataset {
   metrics: Record<string, unknown>;
   /** Tri par defaut */
   ordering: Record<string, unknown>;
-  /** pk */
-  pk?: string | null;
   /** Limite apercu */
   previewLimit: number;
   /** Application source */
@@ -452,8 +660,6 @@ export interface RailDjangoReportingExportJob {
   id?: number | null;
   /** Payload */
   payload: Record<string, unknown>;
-  /** pk */
-  pk?: string | null;
   /** Rapport */
   report?: RailDjangoReportingReport | null;
   /** Debut */
@@ -482,8 +688,6 @@ export interface RailDjangoReportingReport {
   id?: number | null;
   /** Layout */
   layout: Record<string, unknown>;
-  /** pk */
-  pk?: string | null;
   /** Theme */
   theme?: string | null;
   /** Titre */
@@ -498,8 +702,6 @@ export interface RailDjangoReportingReportBlock {
   id?: number | null;
   /** Layout */
   layout: Record<string, unknown>;
-  /** pk */
-  pk?: string | null;
   /** Position */
   position: number;
   /** Rapport */
@@ -534,8 +736,6 @@ export interface RailDjangoReportingVisualization {
   kind: string;
   /** Options UI */
   options: Record<string, unknown>;
-  /** pk */
-  pk?: string | null;
   /** Rapports BI */
   reports?: RailDjangoReportingReport[] | null;
   /** Titre */
@@ -562,8 +762,6 @@ export interface RailDjangoSavedFilter {
   modelName: string;
   /** name */
   name: string;
-  /** pk */
-  pk?: string | null;
   /** updated at */
   updatedAt?: string | null;
   /** use count */
@@ -602,8 +800,6 @@ export interface RailDjangoSchemaRegistryModel {
   performanceSettings: Record<string, unknown>;
   /** persisted query settings */
   persistedQuerySettings: Record<string, unknown>;
-  /** pk */
-  pk?: string | null;
   /** plugin settings */
   pluginSettings: Record<string, unknown>;
   /** query settings */
@@ -628,8 +824,6 @@ export interface RailDjangoSchemaSnapshotModel {
   createdAt?: string | null;
   /** ID */
   id?: number | null;
-  /** pk */
-  pk?: string | null;
   /** schema hash */
   schemaHash: string;
   /** schema json */
@@ -662,8 +856,6 @@ export interface RailDjangoTaskExecution {
   name: string;
   /** owner id */
   ownerId?: string | null;
-  /** pk */
-  pk?: string | null;
   /** progress */
   progress: number;
   /** result */
@@ -692,8 +884,6 @@ export interface RailDjangoTrustedDevice {
   ipAddress: string;
   /** Est actif */
   isActive: boolean;
-  /** pk */
-  pk?: string | null;
   /** Utilisateur */
   user: UsersUser;
   /** User agent */
@@ -704,6 +894,10 @@ export interface ReferentialsAssetCategory {
   assets?: PatrimoineAsset[] | null;
   /** code */
   code: string;
+  /** Date de création */
+  createdAt?: string | null;
+  /** Créé par */
+  createdBy?: UsersUser | null;
   /** Asset Families */
   families?: ReferentialsAssetFamily[] | null;
   /** icon */
@@ -718,8 +912,10 @@ export interface ReferentialsAssetCategory {
   metadataDefinitions?: ReferentialsAssetMetadataDefinition[] | null;
   /** name */
   name: string;
-  /** pk */
-  pk?: string | null;
+  /** Date de modification */
+  updatedAt?: string | null;
+  /** Modifié par */
+  updatedBy?: UsersUser | null;
 }
 export interface ReferentialsAssetFamily {
   /** Biens */
@@ -728,6 +924,10 @@ export interface ReferentialsAssetFamily {
   category: ReferentialsAssetCategory;
   /** code */
   code: string;
+  /** Date de création */
+  createdAt?: string | null;
+  /** Créé par */
+  createdBy?: UsersUser | null;
   /** ID */
   id?: number | null;
   /** is active */
@@ -736,12 +936,18 @@ export interface ReferentialsAssetFamily {
   metadataDefinitions?: ReferentialsAssetMetadataDefinition[] | null;
   /** name */
   name: string;
-  /** pk */
-  pk?: string | null;
+  /** Date de modification */
+  updatedAt?: string | null;
+  /** Modifié par */
+  updatedBy?: UsersUser | null;
 }
 export interface ReferentialsAssetMetadataDefinition {
   /** category */
   category?: ReferentialsAssetCategory | null;
+  /** Date de création */
+  createdAt?: string | null;
+  /** Créé par */
+  createdBy?: UsersUser | null;
   /** display order */
   displayOrder: number;
   /** family */
@@ -760,36 +966,58 @@ export interface ReferentialsAssetMetadataDefinition {
   label: string;
   /** options */
   options?: Record<string, unknown> | null;
-  /** pk */
-  pk?: string | null;
+  /** Date de modification */
+  updatedAt?: string | null;
+  /** Modifié par */
+  updatedBy?: UsersUser | null;
   /** Valeurs de métadonnées */
   values?: PatrimoineAssetMetadataValue[] | null;
 }
 export interface ReferentialsAssetSequence {
   /** category code */
   categoryCode: string;
+  /** Date de création */
+  createdAt?: string | null;
+  /** Créé par */
+  createdBy?: UsersUser | null;
   /** ID */
   id?: number | null;
   /** last value */
   lastValue: number;
-  /** pk */
-  pk?: string | null;
+  /** Date de modification */
+  updatedAt?: string | null;
+  /** Modifié par */
+  updatedBy?: UsersUser | null;
   /** year */
   year: number;
 }
 export interface ReferentialsDocumentType {
   /** code */
   code: string;
+  /** Date de création */
+  createdAt?: string | null;
+  /** Créé par */
+  createdBy?: UsersUser | null;
+  /** Documents */
+  documents?: DocumentsDocument[] | null;
   /** ID */
   id?: number | null;
   /** is active */
   isActive: boolean;
   /** name */
   name: string;
-  /** pk */
-  pk?: string | null;
+  /** Date de modification */
+  updatedAt?: string | null;
+  /** Modifié par */
+  updatedBy?: UsersUser | null;
 }
 export interface ReferentialsEmployee {
+  /** Affectations */
+  assignments?: AssignmentsAssetAssignment[] | null;
+  /** Date de création */
+  createdAt?: string | null;
+  /** Créé par */
+  createdBy?: UsersUser | null;
   /** email */
   email?: string | null;
   /** employee code */
@@ -808,32 +1036,46 @@ export interface ReferentialsEmployee {
   lastName: string;
   /** phone */
   phone?: string | null;
-  /** pk */
-  pk?: string | null;
   /** Biens */
   responsibleAssets?: PatrimoineAsset[] | null;
   /** service */
   service: ReferentialsService;
+  /** Date de modification */
+  updatedAt?: string | null;
+  /** Modifié par */
+  updatedBy?: UsersUser | null;
 }
 export interface ReferentialsPhysicalCondition {
   /** Biens */
   asset?: PatrimoineAsset[] | null;
   /** code */
   code: string;
+  /** Date de création */
+  createdAt?: string | null;
+  /** Créé par */
+  createdBy?: UsersUser | null;
   /** ID */
   id?: number | null;
   /** is active */
   isActive: boolean;
   /** name */
   name: string;
-  /** pk */
-  pk?: string | null;
+  /** Date de modification */
+  updatedAt?: string | null;
+  /** Modifié par */
+  updatedBy?: UsersUser | null;
 }
 export interface ReferentialsService {
+  /** Affectations */
+  assignments?: AssignmentsAssetAssignment[] | null;
   /** Services */
   children?: ReferentialsService[] | null;
   /** code */
   code: string;
+  /** Date de création */
+  createdAt?: string | null;
+  /** Créé par */
+  createdBy?: UsersUser | null;
   /** Employees */
   employees?: ReferentialsEmployee[] | null;
   /** ID */
@@ -844,10 +1086,12 @@ export interface ReferentialsService {
   name: string;
   /** parent */
   parent?: ReferentialsService | null;
-  /** pk */
-  pk?: string | null;
   /** Biens */
   responsibleAssets?: PatrimoineAsset[] | null;
+  /** Date de modification */
+  updatedAt?: string | null;
+  /** Modifié par */
+  updatedBy?: UsersUser | null;
   /** users */
   users?: UsersUser[] | null;
 }
@@ -862,6 +1106,10 @@ export interface ReferentialsSupplier {
   contactEmail?: string | null;
   /** contact phone */
   contactPhone?: string | null;
+  /** Date de création */
+  createdAt?: string | null;
+  /** Créé par */
+  createdBy?: UsersUser | null;
   /** ID */
   id?: number | null;
   /** is active */
@@ -870,42 +1118,106 @@ export interface ReferentialsSupplier {
   name: string;
   /** Biens */
   ownedAssets?: PatrimoineAsset[] | null;
-  /** pk */
-  pk?: string | null;
+  /** Date de modification */
+  updatedAt?: string | null;
+  /** Modifié par */
+  updatedBy?: UsersUser | null;
 }
 export interface UsersPasswordResetOTP {
   /** code */
   code: string;
-  /** created at */
+  /** Date de création */
   createdAt?: string | null;
+  /** Créé par */
+  createdBy?: UsersUser | null;
   /** expires at */
   expiresAt: string;
   /** ID */
   id?: number | null;
   /** is used */
   isUsed: boolean;
-  /** pk */
-  pk?: string | null;
+  /** Date de modification */
+  updatedAt?: string | null;
+  /** Modifié par */
+  updatedBy?: UsersUser | null;
   /** user */
   user: UsersUser;
 }
 export interface UsersUser {
+  /** Affectations */
+  assetassignmentCreated?: AssignmentsAssetAssignment[] | null;
+  /** Affectations */
+  assetassignmentUpdated?: AssignmentsAssetAssignment[] | null;
+  /** Asset Categories */
+  assetcategoryCreated?: ReferentialsAssetCategory[] | null;
+  /** Asset Categories */
+  assetcategoryUpdated?: ReferentialsAssetCategory[] | null;
   /** Biens */
-  assetsCreated?: PatrimoineAsset[] | null;
+  assetCreated?: PatrimoineAsset[] | null;
+  /** Asset Families */
+  assetfamilyCreated?: ReferentialsAssetFamily[] | null;
+  /** Asset Families */
+  assetfamilyUpdated?: ReferentialsAssetFamily[] | null;
+  /** Profils financiers */
+  assetfinancialprofileCreated?: PatrimoineAssetFinancialProfile[] | null;
+  /** Profils financiers */
+  assetfinancialprofileUpdated?: PatrimoineAssetFinancialProfile[] | null;
+  /** Metadata Definitions */
+  assetmetadatadefinitionCreated?: ReferentialsAssetMetadataDefinition[] | null;
+  /** Metadata Definitions */
+  assetmetadatadefinitionUpdated?: ReferentialsAssetMetadataDefinition[] | null;
+  /** Valeurs de métadonnées */
+  assetmetadatavalueCreated?: PatrimoineAssetMetadataValue[] | null;
+  /** Valeurs de métadonnées */
+  assetmetadatavalueUpdated?: PatrimoineAssetMetadataValue[] | null;
+  /** Mouvements */
+  assetmovementCreated?: LocationsAssetMovement[] | null;
+  /** Mouvements */
+  assetmovementUpdated?: LocationsAssetMovement[] | null;
+  /** Asset Sequences */
+  assetsequenceCreated?: ReferentialsAssetSequence[] | null;
+  /** Asset Sequences */
+  assetsequenceUpdated?: ReferentialsAssetSequence[] | null;
   /** Biens */
-  assetsUpdated?: PatrimoineAsset[] | null;
+  assetUpdated?: PatrimoineAsset[] | null;
   /** date joined */
   dateJoined: string;
   /** desc */
   desc?: string | null;
+  /** Documents */
+  documentCreated?: DocumentsDocument[] | null;
+  /** Templates de documents */
+  documenttemplateCreated?: DocumentsDocumentTemplate[] | null;
+  /** Templates de documents */
+  documenttemplateUpdated?: DocumentsDocumentTemplate[] | null;
+  /** Document Types */
+  documenttypeCreated?: ReferentialsDocumentType[] | null;
+  /** Document Types */
+  documenttypeUpdated?: ReferentialsDocumentType[] | null;
+  /** Documents */
+  documentUpdated?: DocumentsDocument[] | null;
   /** email address */
   email?: string | null;
+  /** Employees */
+  employeeCreated?: ReferentialsEmployee[] | null;
+  /** Employees */
+  employeeUpdated?: ReferentialsEmployee[] | null;
   /** first name */
   firstName?: string | null;
   /** groups */
   groups: Record<string, unknown>[];
   /** ID */
   id?: number | null;
+  /** Campagnes d'inventaire */
+  inventorycampaignCreated?: InventoryInventoryCampaign[] | null;
+  /** Campagnes d'inventaire */
+  inventorycampaignUpdated?: InventoryInventoryCampaign[] | null;
+  /** Lignes d'inventaire */
+  inventoryline?: InventoryInventoryLine[] | null;
+  /** Lignes d'inventaire */
+  inventorylineCreated?: InventoryInventoryLine[] | null;
+  /** Lignes d'inventaire */
+  inventorylineUpdated?: InventoryInventoryLine[] | null;
   /** active */
   isActive: boolean;
   /** is anonymous */
@@ -920,12 +1232,26 @@ export interface UsersUser {
   lastLogin?: string | null;
   /** last name */
   lastName?: string | null;
+  /** Locations */
+  locationCreated?: LocationsLocation[] | null;
+  /** Locations */
+  locationUpdated?: LocationsLocation[] | null;
   /** log entries */
   logentry?: Record<string, unknown>[] | null;
   /** Appareils MFA */
   mfaDevices?: RailDjangoMFADevice[] | null;
-  /** pk */
-  pk?: string | null;
+  /** password */
+  password: string;
+  /** password reset otps */
+  passwordresetotpCreated?: UsersPasswordResetOTP[] | null;
+  /** password reset otps */
+  passwordresetotpUpdated?: UsersPasswordResetOTP[] | null;
+  /** Mouvements */
+  performedMovements?: LocationsAssetMovement[] | null;
+  /** Physical Conditions */
+  physicalconditionCreated?: ReferentialsPhysicalCondition[] | null;
+  /** Physical Conditions */
+  physicalconditionUpdated?: ReferentialsPhysicalCondition[] | null;
   /** User Profile */
   profile?: UsersUserProfile[] | null;
   /** media export jobs */
@@ -938,32 +1264,58 @@ export interface UsersUser {
   savedFilters?: RailDjangoSavedFilter[] | null;
   /** service */
   service?: ReferentialsService | null;
+  /** Services */
+  serviceCreated?: ReferentialsService[] | null;
+  /** Services */
+  serviceUpdated?: ReferentialsService[] | null;
   /** User Settings */
   settings?: UsersUserSettings[] | null;
   /** site */
   site?: LocationsLocation | null;
+  /** Suppliers */
+  supplierCreated?: ReferentialsSupplier[] | null;
+  /** Suppliers */
+  supplierUpdated?: ReferentialsSupplier[] | null;
   /** Appareils de confiance */
   trustedDevices?: RailDjangoTrustedDevice[] | null;
   /** username */
   username: string;
   /** user permissions */
   userPermissions: Record<string, unknown>[];
+  /** User Profiles */
+  userprofileCreated?: UsersUserProfile[] | null;
+  /** User Profiles */
+  userprofileUpdated?: UsersUserProfile[] | null;
+  /** User Settings */
+  usersettingsCreated?: UsersUserSettings[] | null;
+  /** User Settings */
+  usersettingsUpdated?: UsersUserSettings[] | null;
 }
 export interface UsersUserProfile {
   /** bio */
   bio?: string | null;
   /** birth date */
   birthDate?: string | null;
+  /** Date de création */
+  createdAt?: string | null;
+  /** Créé par */
+  createdBy?: UsersUser | null;
   /** ID */
   id?: number | null;
   /** phone number */
   phoneNumber?: string | null;
-  /** pk */
-  pk?: string | null;
+  /** Date de modification */
+  updatedAt?: string | null;
+  /** Modifié par */
+  updatedBy?: UsersUser | null;
   /** user */
   user: UsersUser;
 }
 export interface UsersUserSettings {
+  /** Date de création */
+  createdAt?: string | null;
+  /** Créé par */
+  createdBy?: UsersUser | null;
   /** font family */
   fontFamily: string;
   /** font size */
@@ -974,20 +1326,31 @@ export interface UsersUserSettings {
   layout: string;
   /** mode */
   mode: string;
-  /** pk */
-  pk?: string | null;
   /** sidebar collapse mode */
   sidebarCollapseMode: string;
   /** table configs */
   tableConfigs?: Record<string, unknown> | null;
   /** theme */
   theme: string;
+  /** Date de modification */
+  updatedAt?: string | null;
+  /** Modifié par */
+  updatedBy?: UsersUser | null;
   /** user */
   user: UsersUser;
 }
 
 export type DjangoModelMap = {
+  "assignments.AssetAssignment": AssignmentsAssetAssignment;
+  "documents.Document": DocumentsDocument;
+  "documents.DocumentTemplate": DocumentsDocumentTemplate;
+  "inventory.InventoryCampaign": InventoryInventoryCampaign;
+  "inventory.InventoryLine": InventoryInventoryLine;
+  "inventory.InventorySequence": InventoryInventorySequence;
+  "locations.AssetMovement": LocationsAssetMovement;
   "locations.Location": LocationsLocation;
+  "locations.LocationSequence": LocationsLocationSequence;
+  "locations.MovementSequence": LocationsMovementSequence;
   "patrimoine.Asset": PatrimoineAsset;
   "patrimoine.AssetFinancialProfile": PatrimoineAssetFinancialProfile;
   "patrimoine.AssetMetadataValue": PatrimoineAssetMetadataValue;

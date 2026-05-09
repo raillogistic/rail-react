@@ -1,16 +1,13 @@
 import { useParams } from "react-router-dom";
-import { AssetForm } from "../../forms/AssetForm";
+import { AssetAssignmentForm } from "../../forms/AssetAssignmentForm";
 
-/**
- * Page de formulaire pour le modèle Asset (Bien).
- */
-export function AssetFormPage() {
+export function AssetAssignmentFormPage() {
   const { id = "" } = useParams();
   const isUpdate = Boolean(id);
 
   return (
     <section className="space-y-4">
-      <AssetForm 
+      <AssetAssignmentForm 
         mode={isUpdate ? "UPDATE" : "CREATE"} 
         objectId={isUpdate ? id : undefined} 
       />
@@ -18,4 +15,4 @@ export function AssetFormPage() {
   );
 }
 
-export default AssetFormPage;
+export default AssetAssignmentFormPage;

@@ -1,5 +1,6 @@
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
+import React from 'react';
 
 // Recharts and some UI primitives rely on ResizeObserver in jsdom tests.
 globalThis.ResizeObserver ??= class ResizeObserver {
@@ -7,6 +8,34 @@ globalThis.ResizeObserver ??= class ResizeObserver {
   unobserve() {}
   disconnect() {}
 };
+
+// Global mock for lucide-react to avoid missing icon exports
+vi.mock('lucide-react', async (importOriginal) => {
+  const actual = await importOriginal() as any;
+  return new Proxy(actual, {
+    get: (target, prop: string) => {
+      if (prop in target) return target[prop];
+      if (typeof prop === 'string' && /^[A-Z]/.test(prop)) {
+        return ({ className, ...props }: any) =>
+          React.createElement('span', {
+            'data-testid': `icon-${prop}`,
+            className,
+            ...props,
+          });
+      }
+      return target[prop];
+    },
+  });
+});
+
+// Mock hooks that use Apollo to avoid "no ApolloClient found" in basic component tests
+vi.mock('@/shared/api/graphql/graphql/mutations/hooks/useModelBulkDeleteMutation', () => ({
+  useModelBulkDeleteMutation: () => ({
+    mutate: vi.fn(),
+    loading: false,
+    error: null,
+  }),
+}));
 
 // Global suppression of specific console warnings/errors
 const originalError = console.error;

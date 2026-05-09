@@ -37,6 +37,7 @@ vi.mock("@/shared/ui/kit/dropdown-menu", () => ({
  DropdownMenuContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
  DropdownMenuPortal: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
  DropdownMenuItem: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
+ DropdownMenuCheckboxItem: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
  DropdownMenuSub: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
  DropdownMenuSubTrigger: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
  DropdownMenuSubContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
@@ -543,7 +544,7 @@ describe("DynamicModelTable integration", () => {
 
  await waitFor(() => {
  expect(
- screen.getByText((content) => content.includes("2") && content.includes("total")),
+ screen.getByText((content) => content.includes("2") && content.includes("results")),
  ).toBeInTheDocument();
  });
  });
@@ -705,7 +706,7 @@ describe("DynamicModelTable integration", () => {
 
  await waitFor(() => {
  expect(
- screen.getByText((content) => content.includes("2") && content.includes("total")),
+ screen.getByText((content) => content.includes("2") && content.includes("results")),
  ).toBeInTheDocument();
  });
  });
@@ -996,7 +997,7 @@ describe("DynamicModelTable integration", () => {
  await user.click(
  await screen.findByLabelText("Select row 1", {}, { timeout: 4000 }),
  );
- await user.click(screen.getByRole("button", { name: /suppression en masse/i }));
+ await user.click(await screen.findByTestId("bulk-delete-button", {}, { timeout: 4000 }));
 
  await waitFor(() => {
  expect(screen.getByText("Action critique")).toBeInTheDocument();

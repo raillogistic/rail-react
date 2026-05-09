@@ -1154,8 +1154,8 @@ const run = async () => {
     await writeFile(entry.path, entry.content, "utf8");
   }
 
-  console.log("Refreshing generated model interfaces with `yarn getModels`...");
-  await runGetModels(root);
+  // console.log("Refreshing generated model interfaces with `yarn getModels`...");
+  // await runGetModels(root);
 
   console.log(
     `Registered ${appName}.${modelPascal} in project "${projectId}".`,

@@ -1,5 +1,5 @@
 import { lazy, Suspense, type ReactNode } from "react";
-import { LayoutDashboard } from "lucide-react";
+import { LayoutDashboard, ClipboardList, AlertCircle } from "lucide-react";
 import type { AppManifest } from "@/app/router/contracts";
 import {
   defineProjectManifest,
@@ -24,6 +24,12 @@ const InventoryHomePage = lazy(() =>
   })),
 );
 
+const InventoryCampaignListPage = lazy(() => import("./pages/inventory-campaign/InventoryCampaignListPage"));
+const InventoryCampaignDetailPage = lazy(() => import("./pages/inventory-campaign/InventoryCampaignDetailPage"));
+const InventoryCampaignFormPage = lazy(() => import("./pages/inventory-campaign/InventoryCampaignFormPage"));
+const InventoryLineListPage = lazy(() => import("./pages/inventory-line/InventoryLineListPage"));
+const InventoryGapReportPage = lazy(() => import("./pages/InventoryGapReportPage"));
+
 export const INVENTORY_MANIFEST: AppManifest = defineProjectManifest({
   projectId: "inventory",
   moduleId: "inventory",
@@ -37,11 +43,53 @@ export const INVENTORY_MANIFEST: AppManifest = defineProjectManifest({
       icon: LayoutDashboard,
       element: withRouteSuspense(<InventoryHomePage />),
     }),
+    protectedRoute("inventory", {
+      id: "inventory:campaign-list",
+      path: ROUTES.INVENTORY_CAMPAIGN_LIST,
+      title: "Campagnes",
+      icon: ClipboardList,
+      element: withRouteSuspense(<InventoryCampaignListPage />),
+    }),
+    protectedRoute("inventory", {
+      id: "inventory:campaign-detail",
+      path: ROUTES.INVENTORY_CAMPAIGN_DETAIL,
+      title: "Détail Campagne",
+      hidden: true,
+      element: withRouteSuspense(<InventoryCampaignDetailPage />),
+    }),
+    protectedRoute("inventory", {
+      id: "inventory:campaign-create",
+      path: ROUTES.INVENTORY_CAMPAIGN_CREATE,
+      title: "Nouvelle Campagne",
+      hidden: true,
+      element: withRouteSuspense(<InventoryCampaignFormPage />),
+    }),
+    protectedRoute("inventory", {
+      id: "inventory:campaign-edit",
+      path: ROUTES.INVENTORY_CAMPAIGN_EDIT,
+      title: "Modifier Campagne",
+      hidden: true,
+      element: withRouteSuspense(<InventoryCampaignFormPage />),
+    }),
+    protectedRoute("inventory", {
+      id: "inventory:gap-report",
+      path: ROUTES.GAP_REPORT,
+      title: "Rapport d'écarts",
+      icon: AlertCircle,
+      element: withRouteSuspense(<InventoryGapReportPage />),
+    }),
+    protectedRoute("inventory", {
+      id: "inventory:line-list",
+      path: ROUTES.INVENTORY_LINE_LIST,
+      title: "Lignes d'inventaire",
+      hidden: true,
+      element: withRouteSuspense(<InventoryLineListPage />),
+    }),
   ],
   navigation: [
     navGroup("inventory", {
       id: "inventory",
-      label: "Inventory",
+      label: "Inventaire",
       order: 0,
       entries: [
         {
@@ -51,6 +99,22 @@ export const INVENTORY_MANIFEST: AppManifest = defineProjectManifest({
           path: ROUTES.HOME,
           guard: "protected",
           icon: LayoutDashboard,
+        },
+        {
+          id: "inventory:campaigns",
+          routeId: "inventory:campaign-list",
+          title: "Campagnes",
+          path: ROUTES.INVENTORY_CAMPAIGN_LIST,
+          guard: "protected",
+          icon: ClipboardList,
+        },
+        {
+          id: "inventory:gaps",
+          routeId: "inventory:gap-report",
+          title: "Rapport d'écarts",
+          path: ROUTES.GAP_REPORT,
+          guard: "protected",
+          icon: AlertCircle,
         },
       ],
     }),

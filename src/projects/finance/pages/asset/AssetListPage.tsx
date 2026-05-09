@@ -1,10 +1,10 @@
 import type { PatrimoineAsset } from "@/models";
-import { ROUTES } from "@/projects/patrimoine/config/routes";
+import { ROUTES } from "@/projects/finance/config/routes";
 import { DynamicModelTable } from "@/widgets/model-table";
 
 export function AssetListPage() {
   return (
-    <DynamicModelTable<PatrimoineAsset>
+    <DynamicModelTable<any>
       app="patrimoine"
       model="Asset"
       create={{
@@ -20,9 +20,18 @@ export function AssetListPage() {
         hrefTemplate: ROUTES.ASSET_DETAIL,
       }}
       baseTable={{
-        // fields: ["acquisitionDate"],
+        fields: [
+          "inventoryCode",
+          "name",
+          "assetType",
+          "ownershipStatus",
+          "acquisitionMethod",
+          "acquisitionValue",
+          "netBookValue",
+        ],
+        quickFilters: ["inventoryCode", "name", "assetType", "ownershipStatus"],
         tableConfig: {
-          title: "Asset",
+          title: "Suivi Financier des Biens",
         },
       }}
     />
