@@ -278,6 +278,44 @@ export function ModelForm<
     onLoadError,
   });
 
+  const finalResolvedExcludeRelationships = React.useMemo(() => {
+    if (
+      includeNested === true ||
+      (onlyRelationships && onlyRelationships.length > 0)
+    ) {
+      return { relationships: resolvedExcludeRelationships, fields: [] };
+    }
+
+    const autoExcluded = (contract?.relations ?? [])
+      .filter((rel) => {
+        const isReverse = Boolean(rel.toMany);
+        const relationFieldName = resolveRelationFieldName(rel);
+        const isNestedExplicitly =
+          nestedControls &&
+          (nestedControls[rel.path] || nestedControls[relationFieldName]);
+
+        return isReverse && !isNestedExplicitly;
+      })
+      .flatMap((rel) => [rel.path, resolveRelationFieldName(rel)].filter(Boolean));
+
+    if (autoExcluded.length === 0) {
+      return { relationships: resolvedExcludeRelationships, fields: [] };
+    }
+
+    return {
+      relationships: Array.from(
+        new Set([...resolvedExcludeRelationships, ...autoExcluded]),
+      ),
+      fields: autoExcluded,
+    };
+  }, [
+    contract,
+    includeNested,
+    onlyRelationships,
+    nestedControls,
+    resolvedExcludeRelationships,
+  ]);
+
   const relationOperationOverrides =
     React.useMemo<NestedMutationOperationOverrides>(() => {
       if (!contract) return {};
@@ -378,10 +416,18 @@ export function ModelForm<
     validatorExtensions,
   );
 
+  const finalExcludeFields = React.useMemo(() => {
+    if (finalResolvedExcludeRelationships.fields.length === 0) {
+      return excludeFields;
+    }
+    const currentExclude = Array.isArray(excludeFields) ? excludeFields : [];
+    return [...currentExclude, ...finalResolvedExcludeRelationships.fields];
+  }, [excludeFields, finalResolvedExcludeRelationships.fields]);
+
   const { finalSchema, editableFieldPaths, sanitizeValuesForControlledSchema } =
     useModelFormSchema({
       onlyFields,
-      excludeFields,
+      excludeFields: finalExcludeFields as any,
       onlyRequired,
       fieldOverrides,
       sectionOverrides,
@@ -392,7 +438,7 @@ export function ModelForm<
       relatedContractsByModel,
       nestedControls: nestedControls as any,
       resolvedOnlyRelationships,
-      resolvedExcludeRelationships,
+      resolvedExcludeRelationships: finalResolvedExcludeRelationships.relationships,
     });
 
   const resolvedLayout = React.useMemo(() => {
