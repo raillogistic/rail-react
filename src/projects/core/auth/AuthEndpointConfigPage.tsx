@@ -1,7 +1,5 @@
 import { useMemo, useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { Input } from "@/shared/ui/kit/input";
-import { Label } from "@/shared/ui/kit/label";
 import { toast } from "sonner";
 import { ROUTES } from "@/shared/routing/routes";
 import {
@@ -11,15 +9,37 @@ import {
   setBackendBaseOverride,
 } from "@/shared/config/backend-endpoint";
 import {
-  Zap,
   ArrowLeft,
   Save,
   RefreshCw,
   Server,
   Settings2,
+  Globe,
+  CheckCircle2,
 } from "lucide-react";
 import Logo from "@/shared/assets/legacy-assets/logos/logo.png";
 import { BRANDING } from "@/shared/config/branding";
+
+// UI Kit Imports
+import { Button } from "@/shared/ui/kit/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from "@/shared/ui/kit/card";
+import { Input } from "@/shared/ui/kit/input";
+import { Label } from "@/shared/ui/kit/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/shared/ui/kit/select";
+import { Alert, AlertDescription, AlertTitle } from "@/shared/ui/kit/alert";
 
 type BackendFormState = {
   protocol: "http" | "https";
@@ -53,7 +73,7 @@ const buildBackendUrl = (state: BackendFormState): string => {
 
 /**
  * Auth page that lets users override backend host and port at runtime.
- * Unified with the corporate neo-brutalist theme of the LoginPage.
+ * Unified with the Premium Modern ERP theme.
  */
 export function AuthEndpointConfigPage() {
   const navigate = useNavigate();
@@ -104,178 +124,156 @@ export function AuthEndpointConfigPage() {
   };
 
   return (
-    <div className="h-[100dvh] w-full flex items-center justify-center bg-[#dbeafe] p-4 relative overflow-hidden font-sans">
-      <style>{`
-        .bg-grid {
-          background-size: 30px 30px;
-          background-image: 
-            linear-gradient(to right, rgba(0,0,0,0.07) 1px, transparent 1px),
-            linear-gradient(to bottom, rgba(0,0,0,0.07) 1px, transparent 1px);
-        }
-        @keyframes subtle-float {
-          0% { transform: translateY(0px) rotate(0deg); }
-          50% { transform: translateY(-15px) rotate(5deg); }
-          100% { transform: translateY(0px) rotate(0deg); }
-        }
-        .animate-subtle-float {
-          animation: subtle-float 7s ease-in-out infinite;
-        }
-      `}</style>
-
-      {/* Corporate Grid Background */}
-      <div className="absolute inset-0 bg-grid pointer-events-none"></div>
-
-      {/* Decorative Elements */}
-      <div className="absolute animate-subtle-float top-12 left-12 w-24 h-24 bg-[#fde047] rounded-full border-2 border-black z-0 shadow-[6px_6px_0_0_#000]"></div>
-      <div className="absolute animate-subtle-float bottom-12 right-12 w-32 h-16 bg-[#34d399] border-2 border-black z-0 shadow-[6px_6px_0_0_#000] rotate-12"></div>
-
-      <div className="w-full max-w-[450px] relative z-10 flex flex-col justify-center h-full max-h-[850px]">
-        {/* Header */}
-        <div className="flex flex-col items-center mb-6 text-center">
-          <div className="relative mb-4">
-            <div className="h-16 w-16 bg-[#fcd34d] border-2 border-black shadow-[4px_4px_0_0_#000] flex items-center justify-center p-3 transform -rotate-2">
-              <img
-                src={Logo}
-                alt="Logo"
-                className="w-full h-full object-contain"
-              />
-            </div>
+    <div className="min-h-screen w-full flex flex-col items-center justify-center bg-muted/30 p-4 font-sans">
+      <div className="w-full max-w-[480px] space-y-8">
+        {/* Brand Header */}
+        <div className="flex flex-col items-center text-center space-y-2">
+          <div className="bg-primary/10 p-3 rounded-2xl mb-2 cursor-pointer hover:bg-primary/20 transition-colors" onClick={() => navigate(ROUTES.LOGIN)}>
+            <img
+              src={Logo}
+              alt="Logo"
+              className="h-10 w-10 object-contain"
+            />
           </div>
-          <h1 className="text-2xl font-black tracking-tight text-black bg-white px-4 py-1 border-2 border-black shadow-[4px_4px_0_0_#000] transform -rotate-1 mb-2 uppercase">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">
             Configuration Réseau
           </h1>
-          <div className="bg-[#818cf8] border-2 border-black px-3 py-1 shadow-[2px_2px_0_0_#000] transform rotate-1 inline-block">
-            <p className="text-[10px] text-white font-bold uppercase tracking-widest">
-              Paramètres de l'Endpoint Backend
-            </p>
-          </div>
+          <p className="text-muted-foreground text-sm">
+            Personnalisez l'adresse du serveur backend pour cet appareil
+          </p>
         </div>
 
-        {/* Card */}
-        <div className="bg-white border-2 border-black shadow-[8px_8px_0_0_#000] p-6 sm:p-8 animate-in fade-in slide-in-from-bottom-8 duration-700">
-          <form className="space-y-6" onSubmit={handleSave}>
-            <div className="space-y-4">
-              {/* Protocol */}
-              <div className="space-y-1.5">
-                <Label className="text-xs font-bold uppercase text-black ml-1 tracking-wide bg-[#bae6fd] px-2 py-0.5 border-[1.5px] border-black shadow-[2px_2px_0_0_#000] inline-block">
-                  Protocole
-                </Label>
-                <select
-                  id="backend-protocol"
-                  className="flex h-12 w-full border-2 border-black bg-white px-3 py-1 text-sm text-black font-semibold shadow-[4px_4px_0_0_#000] focus:shadow-none transition-all focus:translate-x-[4px] focus:translate-y-[4px] focus:bg-[#bae6fd] outline-none"
-                  value={formState.protocol}
-                  onChange={(event) =>
-                    setFormState((prev) => ({
-                      ...prev,
-                      protocol:
-                        event.target.value === "https" ? "https" : "http",
-                    }))
-                  }
-                >
-                  <option value="http">HTTP</option>
-                  <option value="https">HTTPS</option>
-                </select>
-              </div>
+        <Card className="border-none shadow-xl bg-card">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Globe className="h-5 w-5 text-primary" />
+              Paramètres de l'API
+            </CardTitle>
+            <CardDescription>
+              Modifiez les réglages si vous utilisez un serveur de développement ou un proxy spécifique.
+            </CardDescription>
+          </CardHeader>
 
-              {/* Host */}
-              <div className="space-y-1.5">
-                <Label className="text-xs font-bold uppercase text-black ml-1 tracking-wide bg-[#fbcfe8] px-2 py-0.5 border-[1.5px] border-black shadow-[2px_2px_0_0_#000] inline-block">
-                  Hôte
-                </Label>
-                <div className="relative">
-                  <Server className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-black z-10" />
-                  <Input
-                    id="backend-host"
-                    className="h-12 border-2 border-black bg-white pl-10 text-sm font-semibold shadow-[4px_4px_0_0_#000] focus:shadow-none focus:translate-x-[4px] focus:translate-y-[4px] focus-visible:bg-[#fbcfe8] transition-all rounded-none"
-                    value={formState.host}
-                    onChange={(e) =>
-                      setFormState((p) => ({ ...p, host: e.target.value }))
+          <CardContent>
+            <form id="endpoint-form" onSubmit={handleSave} className="space-y-6">
+              <div className="grid grid-cols-1 gap-4">
+                {/* Protocol */}
+                <div className="space-y-2">
+                  <Label htmlFor="protocol">Protocole</Label>
+                  <Select
+                    value={formState.protocol}
+                    onValueChange={(val: "http" | "https") =>
+                      setFormState((prev) => ({ ...prev, protocol: val }))
                     }
-                    placeholder="localhost"
-                  />
+                  >
+                    <SelectTrigger id="protocol">
+                      <SelectValue placeholder="Sélectionnez un protocole" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="http">HTTP (Non sécurisé)</SelectItem>
+                      <SelectItem value="https">HTTPS (Sécurisé)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Host */}
+                <div className="space-y-2">
+                  <Label htmlFor="host">Hôte (Domaine ou IP)</Label>
+                  <div className="relative">
+                    <Server className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="host"
+                      className="pl-9"
+                      value={formState.host}
+                      onChange={(e) =>
+                        setFormState((p) => ({ ...p, host: e.target.value }))
+                      }
+                      placeholder="ex: api.patrimoin.com ou 192.168.1.50"
+                    />
+                  </div>
+                </div>
+
+                {/* Port */}
+                <div className="space-y-2">
+                  <Label htmlFor="port">Port</Label>
+                  <div className="relative">
+                    <Settings2 className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="port"
+                      className="pl-9"
+                      value={formState.port}
+                      onChange={(e) =>
+                        setFormState((p) => ({ ...p, port: e.target.value }))
+                      }
+                      placeholder="ex: 8000"
+                    />
+                  </div>
                 </div>
               </div>
 
-              {/* Port */}
-              <div className="space-y-1.5">
-                <Label className="text-xs font-bold uppercase text-black ml-1 tracking-wide bg-[#fef08a] px-2 py-0.5 border-[1.5px] border-black shadow-[2px_2px_0_0_#000] inline-block">
-                  Port
-                </Label>
-                <div className="relative">
-                  <Settings2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-black z-10" />
-                  <Input
-                    id="backend-port"
-                    className="h-12 border-2 border-black bg-white pl-10 text-sm font-semibold shadow-[4px_4px_0_0_#000] focus:shadow-none focus:translate-x-[4px] focus:translate-y-[4px] focus-visible:bg-[#fef08a] transition-all rounded-none"
-                    value={formState.port}
-                    onChange={(e) =>
-                      setFormState((p) => ({ ...p, port: e.target.value }))
-                    }
-                    placeholder="8000"
-                  />
+              {/* URL Preview */}
+              <div className="rounded-lg border bg-muted/50 p-4 space-y-3">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-muted-foreground font-medium uppercase tracking-wider">Configuration Actuelle</span>
+                  <span className="font-mono bg-background px-2 py-0.5 rounded border">{runtimeConfig.backendUrl}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-foreground font-semibold uppercase tracking-wider text-[10px]">Nouvelle Destination</span>
+                  <span className="font-mono text-primary font-bold">{previewUrl || "---"}</span>
                 </div>
               </div>
-            </div>
 
-            {/* Preview */}
-            <div className="bg-zinc-50 border-2 border-black border-dashed p-4 text-[11px] font-bold leading-relaxed">
-              <p className="flex justify-between border-b border-black/10 pb-1 mb-1">
-                <span className="text-zinc-500 uppercase">Actuel</span>
-                <span>{runtimeConfig.backendUrl}</span>
-              </p>
-              <p className="flex justify-between text-[#3b82f6]">
-                <span className="uppercase">Nouvel Endpoint</span>
-                <span>{previewUrl || "-"}</span>
-              </p>
-            </div>
+              {errorMessage && (
+                <Alert variant="destructive">
+                  <AlertTitle>Erreur de configuration</AlertTitle>
+                  <AlertDescription>{errorMessage}</AlertDescription>
+                </Alert>
+              )}
+            </form>
+          </CardContent>
 
-            {errorMessage && (
-              <div className="bg-[#fca5a5] border-2 border-black p-2 text-xs font-black shadow-[4px_4px_0_0_#000]">
-                {errorMessage}
-              </div>
-            )}
-
-            <div className="space-y-3 pt-2">
-              <button
+          <CardFooter className="flex flex-col gap-3 border-t bg-muted/20 py-6">
+            <div className="grid grid-cols-2 gap-3 w-full">
+              <Button
                 type="submit"
-                className="w-full flex items-center justify-center gap-2 h-12 bg-[#3b82f6] text-white border-2 border-black shadow-[4px_4px_0_0_#000] font-black text-xs uppercase tracking-widest transition-all active:translate-x-[4px] active:translate-y-[4px] active:shadow-none"
+                form="endpoint-form"
+                className="w-full font-semibold"
               >
-                <Save className="h-4 w-4" />
-                Sauvegarder
-              </button>
-
-              <div className="grid grid-cols-2 gap-3">
-                <button
-                  type="button"
-                  onClick={handleReset}
-                  className="flex items-center justify-center gap-2 h-10 bg-[#f472b6] text-white border-2 border-black shadow-[4px_4px_0_0_#000] font-black text-[10px] uppercase transition-all active:translate-x-[4px] active:translate-y-[4px] active:shadow-none"
-                >
-                  <RefreshCw className="h-3.5 w-3.5" />
-                  Reset
-                </button>
-                <button
-                  type="button"
-                  onClick={() => navigate(ROUTES.LOGIN)}
-                  className="flex items-center justify-center gap-2 h-10 bg-white text-black border-2 border-black shadow-[4px_4px_0_0_#000] font-black text-[10px] uppercase transition-all active:translate-x-[4px] active:translate-y-[4px] active:shadow-none"
-                >
-                  <ArrowLeft className="h-3.5 w-3.5" />
-                  Annuler
-                </button>
-              </div>
+                <Save className="h-4 w-4 mr-2" />
+                Appliquer
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => navigate(ROUTES.LOGIN)}
+                className="w-full font-semibold"
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Retour
+              </Button>
             </div>
-          </form>
-        </div>
+            
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={handleReset}
+              className="w-full text-xs text-muted-foreground hover:text-destructive transition-colors"
+            >
+              <RefreshCw className="h-3 w-3 mr-2" />
+              Réinitialiser les paramètres d'usine
+            </Button>
+          </CardFooter>
+        </Card>
 
-        {/* Footer */}
-        <div className="mt-6 flex flex-col items-center gap-3">
-          <div className="flex items-center gap-2 bg-black text-white px-3 py-1 shadow-[4px_4px_0_0_#3b82f6]">
-            <Zap className="h-3 w-3 text-yellow-400" />
-            <span className="text-[10px] font-black uppercase tracking-tighter">
-              Rail Corporate Network Console v1.0
-            </span>
+        {/* Footer Info */}
+        <div className="flex flex-col items-center space-y-2 text-center">
+          <div className="flex items-center gap-1.5 text-[10px] font-medium text-muted-foreground uppercase tracking-[0.2em] bg-background border px-3 py-1 rounded-full shadow-sm">
+            <CheckCircle2 className="h-3 w-3 text-primary" />
+            Console Réseau — {BRANDING.productName}
           </div>
-          <p className="text-[10px] font-bold text-black opacity-60">
-            &copy; {new Date().getFullYear()} {BRANDING.productName} • Sécurité
-            Opérationnelle
+          <p className="text-[10px] text-muted-foreground">
+            &copy; {new Date().getFullYear()} {BRANDING.productName} • Sécurité & Infrastructure
           </p>
         </div>
       </div>

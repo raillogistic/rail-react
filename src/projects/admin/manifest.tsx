@@ -36,6 +36,9 @@ export const ADMIN_MANIFEST: AppManifest = defineProjectManifest({
       title: "Administration",
       icon: LayoutDashboard,
       element: withRouteSuspense(<AdminHomePage />),
+      access: {
+        anyRoles: ["admin_system"],
+      },
     }),
   ],
   navigation: [
@@ -43,6 +46,9 @@ export const ADMIN_MANIFEST: AppManifest = defineProjectManifest({
       id: "admin",
       label: "Admin",
       order: 0,
+      access: {
+        anyRoles: ["admin_system"],
+      },
       entries: [
         {
           id: "admin:home",
@@ -51,6 +57,9 @@ export const ADMIN_MANIFEST: AppManifest = defineProjectManifest({
           path: ROUTES.HOME,
           guard: "protected",
           icon: LayoutDashboard,
+          access: {
+            anyRoles: ["admin_system"],
+          },
         },
       ],
     }),

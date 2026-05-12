@@ -28,28 +28,28 @@ export function ModelTableHeader({
           <div className="flex items-center gap-1.5">
             <Badge
               variant="secondary"
-              className="px-1.5 py-0.5 h-auto leading-none text-[10px] font-semibold bg-muted text-muted-foreground border-transparent rounded"
+              className="px-1.5 py-0.5 h-auto leading-none text-xs font-medium bg-muted text-muted-foreground border-transparent rounded"
               title="Nombre total d'éléments"
             >
-              {controller.totalCount} results
+              {controller.totalCount} éléments
             </Badge>
             {controller.hasSelection && (
-              <Badge className="px-1.5 py-0.5 h-auto leading-none text-[10px] font-semibold bg-primary/10 text-primary border-primary/20 rounded">
-                {controller.selectedCount} selected
+              <Badge className="px-1.5 py-0.5 h-auto leading-none text-xs font-medium bg-primary/10 text-primary border-primary/20 rounded">
+                {controller.selectedCount} sélectionné(s)
               </Badge>
             )}
           </div>
         </div>
 
         {/* Status Line */}
-        <div className="flex items-center text-xs font-medium text-muted-foreground">
-          <span className="uppercase tracking-widest">{controller.app}</span>
-          <span className="mx-2 opacity-30">&middot;</span>
+        <div className="flex items-center text-xs font-medium text-muted-foreground mt-1">
+          <span className="uppercase tracking-wider">{controller.app}</span>
+          <span className="mx-2 text-border">&bull;</span>
           <span>{controller.model}</span>
-          <span className="mx-2 opacity-30">&middot;</span>
-          <span className="flex items-center gap-1.5 opacity-80">
+          <span className="mx-2 text-border">&bull;</span>
+          <span className="flex items-center gap-1.5">
             <RefreshCw className="size-3" />
-            <span>Updated {controller.timeAgo}</span>
+            <span>Mis à jour {controller.timeAgo}</span>
           </span>
         </div>
       </div>

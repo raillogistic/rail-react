@@ -5,11 +5,11 @@ import { ModelForm, type ModelFormProps } from "@/widgets/model-form";
  * Composant de formulaire pour le modèle AssetAssignment (Affectation de Bien).
  * Gère l'affectation d'un bien à un employé ou un service.
  */
-export function AssetAssignmentForm({ 
-  mode = "CREATE", 
-  objectId, 
+export function AssetAssignmentForm({
+  mode = "CREATE",
+  objectId,
   onSuccess,
-  ...props 
+  ...props
 }: Partial<ModelFormProps<AssignmentsAssetAssignment>>) {
   const isUpdate = mode === "UPDATE";
 
@@ -33,19 +33,19 @@ export function AssetAssignmentForm({
           id: "beneficiary",
           title: "Bénéficiaire",
           columns: 2,
-          fields: ["assigned_to_employee", "assigned_to_service"],
+          fields: ["assignedToEmployee", "assignedToService"],
         },
         {
           id: "period",
           title: "Période & Motif",
           columns: 2,
-          fields: ["start_date", "end_date", "reason"],
+          fields: ["startDate", "endDate", "reason"],
         },
         {
           id: "documentation",
           title: "Génération Documentaire",
           columns: 2,
-          fields: ["description_template", "description_custom"],
+          fields: ["descriptionTemplate", "descriptionCustom"],
         },
       ]}
       fieldOverrides={{
@@ -54,23 +54,26 @@ export function AssetAssignmentForm({
         },
 
         // RG-AFF-02: Responsabilité exclusive Employé vs Service
-        assigned_to_employee: {
-          dependsOn: ["assigned_to_service"],
-          disabledWhen: (values) => Boolean(values.assigned_to_service),
+        assignedToEmployee: {
+          dependsOn: ["assignedToService"],
+          disabledWhen: (values) => Boolean(values.assignedToService),
         },
-        assigned_to_service: {
-          dependsOn: ["assigned_to_employee"],
-          disabledWhen: (values) => Boolean(values.assigned_to_employee),
+        assignedToService: {
+          dependsOn: ["assignedToEmployee"],
+          disabledWhen: (values) => Boolean(values.assignedToEmployee),
         },
 
         reason: {
           type: "textarea",
           colSpan: 2,
         },
-        description_template: {
+        endDate: {
+          hidden: mode === "CREATE",
+        },
+        descriptionTemplate: {
           type: "textarea",
         },
-        description_custom: {
+        descriptionCustom: {
           type: "textarea",
         },
       }}

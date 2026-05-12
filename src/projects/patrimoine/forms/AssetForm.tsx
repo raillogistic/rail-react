@@ -78,7 +78,11 @@ export function AssetForm({
         },
       ]}
       fieldOverrides={{
-        // RG-BIEN-01: inventoryCode auto-généré, non saisissable
+        // RG-BIEN-01: inventoryCode auto-généré, non saisissable, visible en lecture seule après création
+        inventoryCode: {
+          readOnly: true,
+          hidden: !isUpdate,
+        },
         description: {
           type: "textarea",
           colSpan: 2,

@@ -174,12 +174,12 @@ function ColumnMenu<TRow extends Record<string, unknown>>({
         <button
           type="button"
           className={cn(
-            "flex h-full w-full items-center justify-between gap-2 px-3 py-0 outline-none",
-            "text-[10px] font-bold uppercase tracking-widest",
-            "hover:bg-primary/5 hover:text-primary group/trigger",
+            "flex h-full w-full items-center justify-between gap-2 px-3 py-2 outline-none",
+            "text-xs font-semibold transition-colors",
+            "hover:bg-muted/60 group/trigger",
             sortedState
-              ? "bg-primary/[0.03] text-primary"
-              : "text-muted-foreground/70 hover:text-foreground",
+              ? "bg-muted/40 text-foreground"
+              : "text-muted-foreground",
             className,
           )}
           aria-label={`Open column menu for ${title}`}
@@ -189,52 +189,52 @@ function ColumnMenu<TRow extends Record<string, unknown>>({
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="start"
-        className="w-56 overflow-hidden border-border/20 bg-background/80 p-1.5 shadow-2xl backdrop-blur-2xl"
+        className="w-56 rounded-md border bg-popover p-1 shadow-md"
       >
-        <div className="px-2 py-1.5 text-[9px] font-black uppercase tracking-[0.2em] text-muted-foreground/50">
+        <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
           Options de colonne
         </div>
-        <DropdownMenuSeparator className="mx-1 bg-border/40" />
+        <DropdownMenuSeparator className="mx-1" />
         {canSort ? (
           <>
             <DropdownMenuItem
               onClick={() => header.column.toggleSorting(false)}
-              className="gap-3 px-3 py-2 text-xs font-semibold focus:bg-primary/5 focus:text-primary"
+              className="gap-3 px-3 py-2 text-sm focus:bg-accent focus:text-accent-foreground cursor-pointer"
             >
-              <ArrowUp className="size-3.5 text-muted-foreground/60" />
+              <ArrowUp className="size-4 text-muted-foreground/60" />
               <span>Trier croissant</span>
               {sortedState === "asc" ? (
-                <Check className="ml-auto size-3.5 text-primary" />
+                <Check className="ml-auto size-4 text-primary" />
               ) : null}
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={() => header.column.toggleSorting(true)}
-              className="gap-3 px-3 py-2 text-xs font-semibold focus:bg-primary/5 focus:text-primary"
+              className="gap-3 px-3 py-2 text-sm focus:bg-accent focus:text-accent-foreground cursor-pointer"
             >
-              <ArrowDown className="size-3.5 text-muted-foreground/60" />
+              <ArrowDown className="size-4 text-muted-foreground/60" />
               <span>Trier décroissant</span>
               {sortedState === "desc" ? (
-                <Check className="ml-auto size-3.5 text-primary" />
+                <Check className="ml-auto size-4 text-primary" />
               ) : null}
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={clearSort}
               disabled={!sortedState}
-              className="gap-3 px-3 py-2 text-xs font-semibold focus:bg-muted/50"
+              className="gap-3 px-3 py-2 text-sm focus:bg-accent focus:text-accent-foreground cursor-pointer"
             >
-              <RotateCcw className="size-3.5 text-muted-foreground/60" />
+              <RotateCcw className="size-4 text-muted-foreground/60" />
               <span>Effacer le tri</span>
             </DropdownMenuItem>
-            <DropdownMenuSeparator className="mx-1 my-1 bg-border/40" />
+            <DropdownMenuSeparator className="mx-1 my-1" />
           </>
         ) : null}
 
         {canGroup ? (
           <DropdownMenuItem
             onClick={() => header.column.toggleGrouping()}
-            className="gap-3 px-3 py-2 text-xs font-semibold focus:bg-primary/5 focus:text-primary"
+            className="gap-3 px-3 py-2 text-sm focus:bg-accent focus:text-accent-foreground cursor-pointer"
           >
-            <Rows3 className="size-3.5 text-muted-foreground/60" />
+            <Rows3 className="size-4 text-muted-foreground/60" />
             <span>
               {header.column.getIsGrouped()
                 ? "Dégrouper cette colonne"
@@ -246,9 +246,9 @@ function ColumnMenu<TRow extends Record<string, unknown>>({
         {canHide ? (
           <DropdownMenuItem
             onClick={() => header.column.toggleVisibility(false)}
-            className="gap-3 px-3 py-2 text-xs font-semibold focus:bg-destructive/5 focus:text-destructive"
+            className="gap-3 px-3 py-2 text-sm text-destructive focus:bg-destructive/10 focus:text-destructive cursor-pointer"
           >
-            <EyeOff className="size-3.5 text-muted-foreground/60" />
+            <EyeOff className="size-4 text-muted-foreground/60" />
             <span>Masquer la colonne</span>
           </DropdownMenuItem>
         ) : null}
@@ -257,9 +257,9 @@ function ColumnMenu<TRow extends Record<string, unknown>>({
           onClick={() =>
             state.setDragModeEnabled((previousValue) => !previousValue)
           }
-          className="gap-3 px-3 py-2 text-xs font-semibold focus:bg-primary/5 focus:text-primary"
+          className="gap-3 px-3 py-2 text-sm focus:bg-accent focus:text-accent-foreground cursor-pointer"
         >
-          <MoveHorizontal className="size-3.5 text-muted-foreground/60" />
+          <MoveHorizontal className="size-4 text-muted-foreground/60" />
           <span>
             {state.dragModeEnabled
               ? "Désactiver glissement/redimension"
@@ -267,13 +267,13 @@ function ColumnMenu<TRow extends Record<string, unknown>>({
           </span>
         </DropdownMenuItem>
 
-        <DropdownMenuSeparator className="mx-1 my-1 bg-border/40" />
+        <DropdownMenuSeparator className="mx-1 my-1" />
 
         <DropdownMenuItem
           onClick={onResetLayout}
-          className="gap-3 px-3 py-2 text-xs font-semibold text-muted-foreground/70 hover:text-foreground focus:bg-muted/50"
+          className="gap-3 px-3 py-2 text-sm text-muted-foreground focus:bg-accent focus:text-accent-foreground cursor-pointer"
         >
-          <RotateCcw className="size-3.5" />
+          <RotateCcw className="size-4" />
           <span>Réinitialiser la disposition</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
@@ -333,8 +333,8 @@ function DraggableHeaderCell<TRow extends Record<string, unknown>>({
       colSpan={header.colSpan}
       style={style}
       className={cn(
-        "group/header relative border-b border-border/30 bg-muted/30 p-0 align-middle",
-        "text-[11px] font-medium tracking-wide text-muted-foreground",
+        "group/header relative border-b border-border bg-muted/40 p-0 align-middle",
+        "text-xs font-medium text-muted-foreground",
         stickyClassName,
         fitContent && "w-[1%] whitespace-nowrap",
         isDragging && "z-40 opacity-75 ring-1 ring-primary/30 shadow-lg",
@@ -345,7 +345,7 @@ function DraggableHeaderCell<TRow extends Record<string, unknown>>({
           <button
             type="button"
             aria-label="Reorder column"
-            className="grid w-8 shrink-0 place-items-center border-r border-border/10 text-muted-foreground/30 hover:bg-primary/5 hover:text-primary"
+            className="grid w-8 shrink-0 place-items-center border-r border-border/50 text-muted-foreground/50 hover:bg-muted/60 hover:text-foreground"
             {...attributes}
             {...listeners}
             onClick={(event) => event.stopPropagation()}
@@ -456,7 +456,7 @@ export function DynamicTableHeader<TRow extends Record<string, unknown>>({
                   key={header.id}
                   colSpan={header.colSpan}
                   style={resolveHeaderStyle(header)}
-                  className="border-b border-border/20 bg-muted/20 px-3 py-2 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground/60"
+                  className="border-b border-border bg-muted/30 px-3 py-2 text-xs font-semibold text-muted-foreground"
                 >
                   {flexRender(
                     header.column.columnDef.header,
@@ -477,7 +477,7 @@ export function DynamicTableHeader<TRow extends Record<string, unknown>>({
                   stickyClassName={stickyClassName}
                   stickyStyle={stickyStyle}
                 >
-                  <div className="grid h-full place-items-center text-[9px] font-semibold uppercase tracking-widest text-muted-foreground/50">
+                  <div className="grid h-full place-items-center text-xs font-semibold text-muted-foreground">
                     {expandColumnHeader ?? null}
                   </div>
                 </DraggableHeaderCell>
@@ -521,7 +521,7 @@ export function DynamicTableHeader<TRow extends Record<string, unknown>>({
                   stickyClassName={stickyClassName}
                   stickyStyle={stickyStyle}
                 >
-                  <div className="flex h-full items-center justify-end text-[9px] font-semibold uppercase tracking-widest text-muted-foreground/50">
+                  <div className="flex h-full items-center justify-end text-xs font-semibold text-muted-foreground px-3">
                     {layout.actions?.headerLabel ?? ""}
                   </div>
                 </DraggableHeaderCell>

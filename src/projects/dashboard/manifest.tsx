@@ -41,7 +41,7 @@ export const DASHBOARD_MANIFEST: AppManifest = defineProjectManifest({
   navigation: [
     navGroup("dashboard", {
       id: "dashboard",
-      label: "Dashboard",
+      label: "Tableau de bord",
       order: 0,
       entries: [
         {

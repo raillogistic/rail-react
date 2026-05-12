@@ -87,10 +87,10 @@ function resolveCellTextClasses(
 ): string {
  const densityClass =
  density === "compact"
- ? "text-[11px] px-2.5 py-1.5"
+ ? "text-xs px-2.5 py-1.5"
  : density === "spacious"
- ? "text-sm px-4 py-3.5"
- : "text-[13px] px-3 py-2.5";
+ ? "text-sm px-4 py-3"
+ : "text-sm px-3 py-2.5";
  const wrappingClass = wrapCells
  ? "whitespace-normal break-words"
  : "truncate";
@@ -126,7 +126,7 @@ function renderGroupedCell<TRow extends Record<string, unknown>>(
       <ChevronRight className="size-3.5" />
  </div>
  <span className="font-semibold">{value}</span>
- <span className="inline-flex items-center justify-center bg-muted/60 px-2 py-0.5 text-[10px] font-bold tabular-nums text-muted-foreground">
+ <span className="inline-flex items-center justify-center rounded-md bg-muted px-2 py-0.5 text-xs font-semibold tabular-nums text-muted-foreground">
  {row.subRows.length}
  </span>
  </button>
@@ -233,7 +233,7 @@ export function DynamicTableRows<TRow extends Record<string, unknown>>({
  <TableRow key={`${row.id}::expanded`} className="hover:bg-transparent">
  <TableCell
  colSpan={visibleColumnCount}
- className="border-b border-border/30 bg-muted/15 px-5 py-4"
+ className="border-b border-border bg-muted/30 px-5 py-4"
  >
  {content}
  </TableCell>
@@ -257,9 +257,9 @@ export function DynamicTableRows<TRow extends Record<string, unknown>>({
  data-row-stripe={rowIndex % 2 === 0 ? "even" : "odd"}
  data-state={row.getIsSelected() ? "selected" : undefined}
  className={cn(
-        "hover:bg-muted/30",
- row.getIsSelected() && "bg-primary/5 hover:bg-primary/8",
- rowIndex % 2 === 1 && !row.getIsSelected() && "bg-muted/8",
+        "hover:bg-muted/50 transition-colors",
+ row.getIsSelected() && "bg-primary/5 hover:bg-primary/10",
+ rowIndex % 2 === 1 && !row.getIsSelected() && "bg-muted/20",
  rowClassName,
  )}
  >
@@ -309,7 +309,7 @@ export function DynamicTableRows<TRow extends Record<string, unknown>>({
  }
  }
  className={cn(
- "border-b border-border/20 align-middle text-foreground/80",
+ "border-b border-border align-middle text-foreground",
  cellTextClasses,
  autoSizeActionsCell && "w-[1%] whitespace-nowrap",
  sticky.className,

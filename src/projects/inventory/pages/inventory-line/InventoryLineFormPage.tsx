@@ -14,12 +14,33 @@ export function InventoryLineFormPage() {
         model="InventoryLine"
         mode={isUpdate ? "UPDATE" : "CREATE"}
         objectId={isUpdate ? id : undefined}
+        generatedSections={[
+          {
+            id: "context",
+            title: "Contexte",
+            columns: 2,
+            fields: ["campaign", "asset"],
+          },
+          {
+            id: "location",
+            title: "Localisation",
+            columns: 2,
+            fields: ["expectedLocation", "observedLocation"],
+          },
+          {
+            id: "result",
+            title: "Résultat",
+            columns: 2,
+            fields: ["result", "conditionComment"],
+          },
+        ]}
         fieldOverrides={{
           campaign: { readOnly: true },
           asset: { readOnly: true },
           expectedLocation: { readOnly: true },
           checkedBy: { hidden: true },
           checkedAt: { hidden: true },
+          conditionComment: { type: "textarea", colSpan: 2 },
         }}
       />
     </section>

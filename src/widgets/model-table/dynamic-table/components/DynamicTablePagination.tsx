@@ -137,7 +137,7 @@ export function DynamicTablePagination({
  <TooltipProvider delayDuration={300}>
  <div
  className={cn(
- "mt-3 flex flex-col items-center justify-between gap-3 border border-border/30 bg-background/60 px-4 py-3 backdrop-blur-xl shadow-sm sm:flex-row",
+ "mt-3 flex flex-col items-center justify-between gap-3 border rounded-md bg-background px-4 py-2 sm:flex-row",
  "",
  )}
  >
@@ -168,15 +168,15 @@ export function DynamicTablePagination({
  }));
  }}
  >
- <SelectTrigger className="h-8 w-[90px] border-border/30 bg-muted/30 text-[11px] font-semibold hover:bg-muted/50">
+ <SelectTrigger className="h-8 w-[100px] bg-background text-xs font-medium">
  <SelectValue />
  </SelectTrigger>
- <SelectContent className="border-border/30 bg-background/95 shadow-xl backdrop-blur-xl">
+ <SelectContent className="rounded-md border bg-popover shadow-md">
  {pageSizeOptions.map((option) => (
  <SelectItem
  key={option}
  value={String(option)}
- className="text-xs font-medium "
+ className="text-xs font-medium cursor-pointer"
  >
  {option} lignes
  </SelectItem>
@@ -185,7 +185,7 @@ export function DynamicTablePagination({
  </Select>
 
  {/* Navigation Cluster */}
- <div className="flex items-center gap-1 bg-muted/30 p-1 border border-border/20">
+ <div className="flex items-center gap-1 bg-muted/20 p-1 rounded-md border">
  {/* First */}
  <Tooltip>
  <TooltipTrigger asChild>
@@ -201,7 +201,7 @@ export function DynamicTablePagination({
  <ChevronsLeft className="size-3.5" />
  </Button>
  </TooltipTrigger>
- <TooltipContent side="top" className="text-[10px] font-bold">
+ <TooltipContent side="top" className="text-xs font-medium">
  Première page
  </TooltipContent>
  </Tooltip>
@@ -221,7 +221,7 @@ export function DynamicTablePagination({
  <ChevronLeft className="size-3.5" />
  </Button>
  </TooltipTrigger>
- <TooltipContent side="top" className="text-[10px] font-bold">
+ <TooltipContent side="top" className="text-xs font-medium">
  Précédent
  </TooltipContent>
  </Tooltip>
@@ -263,10 +263,10 @@ export function DynamicTablePagination({
  className="flex flex-col items-center gap-0 cursor-pointer"
  onClick={() => totalPages !== null && setIsJumpMode(true)}
  >
- <span className="text-[9px] font-semibold text-muted-foreground/40 uppercase tracking-widest leading-none">
+ <span className="text-xs font-medium text-muted-foreground leading-none">
  Page
  </span>
- <span className="text-sm font-bold text-foreground tabular-nums tracking-tight">
+ <span className="text-xs font-semibold text-foreground tabular-nums">
  {totalPages !== null
  ?`${currentPage} / ${totalPages}`
  : String(currentPage)}
@@ -290,7 +290,7 @@ export function DynamicTablePagination({
  <ChevronRight className="size-3.5" />
  </Button>
  </TooltipTrigger>
- <TooltipContent side="top" className="text-[10px] font-bold">
+ <TooltipContent side="top" className="text-xs font-medium">
  Suivant
  </TooltipContent>
  </Tooltip>
@@ -314,7 +314,7 @@ export function DynamicTablePagination({
  <ChevronsRight className="size-3.5" />
  </Button>
  </TooltipTrigger>
- <TooltipContent side="top" className="text-[10px] font-bold">
+ <TooltipContent side="top" className="text-xs font-medium">
  Dernier
  </TooltipContent>
  </Tooltip>

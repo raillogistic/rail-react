@@ -11,4 +11,8 @@ export const ROUTES = {
   ASSET_MOVEMENT_CREATE: "/patrimoine/asset-movement/create",
   ASSET_MOVEMENT_EDIT: "/patrimoine/asset-movement/:id/edit",
   ASSET_MOVEMENT_DETAIL: "/patrimoine/asset-movement/:id",
+  ASSETDISPOSAL_LIST: "/patrimoine/assetdisposal",
+  ASSETDISPOSAL_CREATE: "/patrimoine/assetdisposal/create",
+  ASSETDISPOSAL_EDIT: "/patrimoine/assetdisposal/:id/edit",
+  ASSETDISPOSAL_DETAIL: "/patrimoine/assetdisposal/:id",
 } as const;

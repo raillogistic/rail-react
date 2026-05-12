@@ -14,6 +14,26 @@ export function InventoryCampaignFormPage() {
         model="InventoryCampaign"
         mode={isUpdate ? "UPDATE" : "CREATE"}
         objectId={isUpdate ? id : undefined}
+        generatedSections={[
+          {
+            id: "general",
+            title: "Informations Générales",
+            columns: 1,
+            fields: ["name"],
+          },
+          {
+            id: "scope",
+            title: "Périmètre",
+            columns: 2,
+            fields: ["scopeType", "scopeReferenceId"],
+          },
+          {
+            id: "planning",
+            title: "Planification",
+            columns: 2,
+            fields: ["startDate", "endDate"],
+          },
+        ]}
         fieldOverrides={{
           campaignCode: { hidden: true },
           status: { hidden: true },

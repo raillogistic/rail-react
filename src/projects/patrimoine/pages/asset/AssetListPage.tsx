@@ -22,7 +22,7 @@ export function AssetListPage() {
       baseTable={{
         // fields: ["acquisitionDate"],
         tableConfig: {
-          title: "Asset",
+          title: "Biens",
         },
       }}
     />

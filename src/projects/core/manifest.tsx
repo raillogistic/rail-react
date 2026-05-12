@@ -152,16 +152,7 @@ export const CORE_MANIFEST: AppManifest = defineProjectManifest({
       title: "Root",
       element: <Navigate to={ROUTES.LOGIN} replace />,
     },
-    // {
-    //   id: "core:dashboard",
-    //   path: ROUTES.DASHBOARD,
-    //   guard: "protected",
-    //   projectId: "core",
-    //   title: "Tableau de bord",
-    //   description: "Vue synthese des indicateurs",
-    //   icon: LayoutDashboard,
-    //   element: <>dsmqlkdqslmkdmqsldkqsmldk</>,
-    // },
+
     {
       id: "core:model-import",
       path: ROUTES.MODEL_IMPORT,

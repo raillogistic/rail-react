@@ -1,5 +1,12 @@
-import { lazy, Suspense, type ReactNode } from "react";
-import { LayoutDashboard, FileText } from "lucide-react";
+import {
+  lazy,
+  Suspense,
+  type ReactNode } from "react";
+import { Package,
+  MapPin,
+  ArrowRightLeft,
+  FileText,
+} from "lucide-react";
 import type { AppManifest } from "@/app/router/contracts";
 import {
   defineProjectManifest,
@@ -69,109 +76,159 @@ const AssetMovementDetailPage = lazy(() =>
     default: module.AssetMovementDetailPage,
   })),
 );
+const AssetdisposalListPage = lazy(() =>
+  import("./pages/assetdisposal/AssetdisposalListPage").then((module) => ({
+    default: module.AssetdisposalListPage,
+  })),
+);
+
+const AssetdisposalFormPage = lazy(() =>
+  import("./pages/assetdisposal/AssetdisposalFormPage").then((module) => ({
+    default: module.AssetdisposalFormPage,
+  })),
+);
+
+const AssetdisposalDetailPage = lazy(() =>
+  import("./pages/assetdisposal/AssetdisposalDetailPage").then((module) => ({
+    default: module.AssetdisposalDetailPage,
+  })),
+);
 export const PATRIMOINE_MANIFEST: AppManifest = defineProjectManifest({
   projectId: "patrimoine",
   moduleId: "patrimoine",
-  order: 100,
+  order: 20,
   defaultRoute: ROUTES.ASSET_LIST,
   routes: [
     protectedRoute("patrimoine", {
       id: "patrimoine:asset:list",
       path: ROUTES.ASSET_LIST,
-      title: "Asset",
-      description: "Manage Asset records",
-      icon: FileText,
+      title: "Biens",
+      description: "Gestion des biens du patrimoine",
+      icon: Package,
       element: withRouteSuspense(<AssetListPage />),
     }),
     protectedRoute("patrimoine", {
       id: "patrimoine:asset:create",
       path: ROUTES.ASSET_CREATE,
-      title: "Create Asset",
+      title: "Créer un Bien",
       hidden: true,
-      icon: FileText,
+      icon: Package,
       element: withRouteSuspense(<AssetFormPage />),
     }),
     protectedRoute("patrimoine", {
       id: "patrimoine:asset:edit",
       path: ROUTES.ASSET_EDIT,
-      title: "Edit Asset",
+      title: "Modifier un Bien",
       hidden: true,
-      icon: FileText,
+      icon: Package,
       element: withRouteSuspense(<AssetFormPage />),
     }),
     protectedRoute("patrimoine", {
       id: "patrimoine:asset:detail",
       path: ROUTES.ASSET_DETAIL,
-      title: "Asset details",
+      title: "Détail du Bien",
       hidden: true,
-      icon: FileText,
+      icon: Package,
       element: withRouteSuspense(<AssetDetailPage />),
     }),
     protectedRoute("patrimoine", {
       id: "patrimoine:location:list",
       path: ROUTES.LOCATION_LIST,
-      title: "Location",
-      description: "Manage Location records",
-      icon: FileText,
+      title: "Localisations",
+      description: "Gestion des emplacements",
+      icon: MapPin,
       element: withRouteSuspense(<LocationListPage />),
     }),
     protectedRoute("patrimoine", {
       id: "patrimoine:location:create",
       path: ROUTES.LOCATION_CREATE,
-      title: "Create Location",
+      title: "Créer une Localisation",
       hidden: true,
-      icon: FileText,
+      icon: MapPin,
       element: withRouteSuspense(<LocationFormPage />),
     }),
     protectedRoute("patrimoine", {
       id: "patrimoine:location:edit",
       path: ROUTES.LOCATION_EDIT,
-      title: "Edit Location",
+      title: "Modifier une Localisation",
       hidden: true,
-      icon: FileText,
+      icon: MapPin,
       element: withRouteSuspense(<LocationFormPage />),
     }),
     protectedRoute("patrimoine", {
       id: "patrimoine:location:detail",
       path: ROUTES.LOCATION_DETAIL,
-      title: "Location details",
+      title: "Détail Localisation",
       hidden: true,
-      icon: FileText,
+      icon: MapPin,
       element: withRouteSuspense(<LocationDetailPage />),
     }),
     protectedRoute("patrimoine", {
       id: "patrimoine:asset-movement:list",
       path: ROUTES.ASSET_MOVEMENT_LIST,
       title: "Mouvements",
-      description: "Manage Asset Movement records",
-      icon: FileText,
+      description: "Historique des mouvements de biens",
+      icon: ArrowRightLeft,
       element: withRouteSuspense(<AssetMovementListPage />),
     }),
     protectedRoute("patrimoine", {
       id: "patrimoine:asset-movement:create",
       path: ROUTES.ASSET_MOVEMENT_CREATE,
-      title: "Create Asset Movement",
+      title: "Créer un Mouvement",
       hidden: true,
-      icon: FileText,
+      icon: ArrowRightLeft,
       element: withRouteSuspense(<AssetMovementFormPage />),
     }),
     protectedRoute("patrimoine", {
       id: "patrimoine:asset-movement:edit",
       path: ROUTES.ASSET_MOVEMENT_EDIT,
-      title: "Edit Asset Movement",
+      title: "Modifier un Mouvement",
       hidden: true,
-      icon: FileText,
+      icon: ArrowRightLeft,
       element: withRouteSuspense(<AssetMovementFormPage />),
     }),
     protectedRoute("patrimoine", {
       id: "patrimoine:asset-movement:detail",
       path: ROUTES.ASSET_MOVEMENT_DETAIL,
-      title: "Asset Movement details",
+      title: "Détail Mouvement",
       hidden: true,
-      icon: FileText,
+      icon: ArrowRightLeft,
       element: withRouteSuspense(<AssetMovementDetailPage />),
     }),
-  ],
+  
+    protectedRoute("patrimoine", {
+      id: "patrimoine:assetdisposal:list",
+      path: ROUTES.ASSETDISPOSAL_LIST,
+      title: "Sorties de patrimoine",
+      description: "Gestion des sorties de patrimoine",
+      icon: FileText,
+      element: withRouteSuspense(<AssetdisposalListPage />),
+    }),
+    protectedRoute("patrimoine", {
+      id: "patrimoine:assetdisposal:create",
+      path: ROUTES.ASSETDISPOSAL_CREATE,
+      title: "Créer une Sortie",
+      hidden: true,
+      icon: FileText,
+      element: withRouteSuspense(<AssetdisposalFormPage />),
+    }),
+    protectedRoute("patrimoine", {
+      id: "patrimoine:assetdisposal:edit",
+      path: ROUTES.ASSETDISPOSAL_EDIT,
+      title: "Modifier une Sortie",
+      hidden: true,
+      icon: FileText,
+      element: withRouteSuspense(<AssetdisposalFormPage />),
+    }),
+    protectedRoute("patrimoine", {
+      id: "patrimoine:assetdisposal:detail",
+      path: ROUTES.ASSETDISPOSAL_DETAIL,
+      title: "Détail de la Sortie",
+      hidden: true,
+      icon: FileText,
+      element: withRouteSuspense(<AssetdisposalDetailPage />),
+    }),
+],
   navigation: [
     navGroup("patrimoine", {
       id: "patrimoine",
@@ -181,16 +238,16 @@ export const PATRIMOINE_MANIFEST: AppManifest = defineProjectManifest({
         {
           id: "patrimoine:asset:list",
           routeId: "patrimoine:asset:list",
-          title: "Asset",
+          title: "Biens",
           path: ROUTES.ASSET_LIST,
           guard: "protected",
-          icon: FileText,
-          description: "Manage Asset records",
+          icon: Package,
+          description: "Gestion des biens du patrimoine",
           children: [
             {
               id: "patrimoine:asset:create",
               routeId: "patrimoine:asset:create",
-              title: "Create Asset",
+              title: "Créer un Bien",
               path: ROUTES.ASSET_CREATE,
               guard: "protected",
               hidden: true,
@@ -198,7 +255,7 @@ export const PATRIMOINE_MANIFEST: AppManifest = defineProjectManifest({
             {
               id: "patrimoine:asset:edit",
               routeId: "patrimoine:asset:edit",
-              title: "Edit Asset",
+              title: "Modifier un Bien",
               path: ROUTES.ASSET_EDIT,
               guard: "protected",
               hidden: true,
@@ -206,7 +263,7 @@ export const PATRIMOINE_MANIFEST: AppManifest = defineProjectManifest({
             {
               id: "patrimoine:asset:detail",
               routeId: "patrimoine:asset:detail",
-              title: "Asset details",
+              title: "Détail du Bien",
               path: ROUTES.ASSET_DETAIL,
               guard: "protected",
               hidden: true,
@@ -216,16 +273,16 @@ export const PATRIMOINE_MANIFEST: AppManifest = defineProjectManifest({
         {
           id: "patrimoine:location:list",
           routeId: "patrimoine:location:list",
-          title: "Location",
+          title: "Localisations",
           path: ROUTES.LOCATION_LIST,
           guard: "protected",
-          icon: FileText,
-          description: "Manage Location records",
+          icon: MapPin,
+          description: "Gestion des emplacements",
           children: [
             {
               id: "patrimoine:location:create",
               routeId: "patrimoine:location:create",
-              title: "Create Location",
+              title: "Créer une Localisation",
               path: ROUTES.LOCATION_CREATE,
               guard: "protected",
               hidden: true,
@@ -233,7 +290,7 @@ export const PATRIMOINE_MANIFEST: AppManifest = defineProjectManifest({
             {
               id: "patrimoine:location:edit",
               routeId: "patrimoine:location:edit",
-              title: "Edit Location",
+              title: "Modifier une Localisation",
               path: ROUTES.LOCATION_EDIT,
               guard: "protected",
               hidden: true,
@@ -241,7 +298,7 @@ export const PATRIMOINE_MANIFEST: AppManifest = defineProjectManifest({
             {
               id: "patrimoine:location:detail",
               routeId: "patrimoine:location:detail",
-              title: "Location details",
+              title: "Détail Localisation",
               path: ROUTES.LOCATION_DETAIL,
               guard: "protected",
               hidden: true,
@@ -254,13 +311,13 @@ export const PATRIMOINE_MANIFEST: AppManifest = defineProjectManifest({
           title: "Mouvements",
           path: ROUTES.ASSET_MOVEMENT_LIST,
           guard: "protected",
-          icon: FileText,
-          description: "Manage Asset Movement records",
+          icon: ArrowRightLeft,
+          description: "Historique des mouvements de biens",
           children: [
             {
               id: "patrimoine:asset-movement:create",
               routeId: "patrimoine:asset-movement:create",
-              title: "Create Asset Movement",
+              title: "Créer un Mouvement",
               path: ROUTES.ASSET_MOVEMENT_CREATE,
               guard: "protected",
               hidden: true,
@@ -268,7 +325,7 @@ export const PATRIMOINE_MANIFEST: AppManifest = defineProjectManifest({
             {
               id: "patrimoine:asset-movement:edit",
               routeId: "patrimoine:asset-movement:edit",
-              title: "Edit Asset Movement",
+              title: "Modifier un Mouvement",
               path: ROUTES.ASSET_MOVEMENT_EDIT,
               guard: "protected",
               hidden: true,
@@ -276,14 +333,50 @@ export const PATRIMOINE_MANIFEST: AppManifest = defineProjectManifest({
             {
               id: "patrimoine:asset-movement:detail",
               routeId: "patrimoine:asset-movement:detail",
-              title: "Asset Movement details",
+              title: "Détail Mouvement",
               path: ROUTES.ASSET_MOVEMENT_DETAIL,
               guard: "protected",
               hidden: true,
             },
           ],
         },
-      ],
+      
+        {
+          id: "patrimoine:assetdisposal:list",
+          routeId: "patrimoine:assetdisposal:list",
+          title: "Sorties de patrimoine",
+          path: ROUTES.ASSETDISPOSAL_LIST,
+          guard: "protected",
+          icon: FileText,
+          description: "Gestion des sorties de patrimoine",
+          children: [
+            {
+              id: "patrimoine:assetdisposal:create",
+              routeId: "patrimoine:assetdisposal:create",
+              title: "Créer une Sortie",
+              path: ROUTES.ASSETDISPOSAL_CREATE,
+              guard: "protected",
+              hidden: true,
+            },
+            {
+              id: "patrimoine:assetdisposal:edit",
+              routeId: "patrimoine:assetdisposal:edit",
+              title: "Modifier une Sortie",
+              path: ROUTES.ASSETDISPOSAL_EDIT,
+              guard: "protected",
+              hidden: true,
+            },
+            {
+              id: "patrimoine:assetdisposal:detail",
+              routeId: "patrimoine:assetdisposal:detail",
+              title: "Détail de la Sortie",
+              path: ROUTES.ASSETDISPOSAL_DETAIL,
+              guard: "protected",
+              hidden: true,
+            },
+          ],
+        },
+],
     }),
   ],
 });

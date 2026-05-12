@@ -410,7 +410,7 @@ function buildExpandColumnDef<TRow extends Record<string, unknown>>(
  <div className="grid place-items-center">
  <button
  type="button"
-            className="inline-flex h-7 w-7 items-center justify-center border border-border/60 text-muted-foreground hover:bg-muted/40 hover:text-foreground"
+            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted/80 hover:text-foreground transition-colors"
  onClick={context.row.getToggleExpandedHandler()}
  aria-label={ariaLabel}
  aria-expanded={expanded}
@@ -792,7 +792,7 @@ export function DynamicTable<TRow extends Record<string, unknown>>({
  >
  <div
  className={cn(
- "relative flex min-h-0 flex-1 flex-col overflow-hidden border border-border/30 bg-card/50 shadow-sm backdrop-blur-sm hover:shadow-md",
+ "relative flex min-h-0 flex-1 flex-col overflow-hidden border rounded-md bg-background shadow-none",
  layout.containerClassName,
  )}
  >

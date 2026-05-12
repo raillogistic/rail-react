@@ -50,9 +50,9 @@ export function SessionsPage() {
 
   return (
     <div className="container mx-auto py-8 max-w-4xl">
-      <h1 className="text-2xl font-bold mb-6">Session Management</h1>
+      <h1 className="text-2xl font-bold mb-6">Gestion des Sessions</h1>
       <p className="text-muted-foreground mb-8">
-        Manage your active sessions across different devices and browsers.
+        Gérez vos sessions actives sur les différents appareils et navigateurs.
         Revoking a session will sign you out from that device.
       </p>
 

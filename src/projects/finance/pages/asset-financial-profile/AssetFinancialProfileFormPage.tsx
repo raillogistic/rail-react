@@ -9,11 +9,41 @@ export function AssetFinancialProfileFormPage() {
   return (
     <section className="space-y-4">
       <ModelForm<PatrimoineAssetFinancialProfile>
-        title={isUpdate ? "Modifier Asset Financial Profile" : "Creer Asset Financial Profile"}
+        title={isUpdate ? "Modifier le Profil Financier" : "Créer un Profil Financier"}
+        description="Gérez les informations d'amortissement et les valeurs financières du bien."
         app="patrimoine"
         model="AssetFinancialProfile"
         mode={isUpdate ? "UPDATE" : "CREATE"}
         objectId={isUpdate ? id : undefined}
+        generatedSections={[
+          {
+            id: "identification",
+            title: "Identification",
+            columns: 1,
+            fields: ["asset"],
+          },
+          {
+            id: "depreciation",
+            title: "Amortissement",
+            columns: 2,
+            fields: [
+              "depreciableBaseValue",
+              "residualValue",
+              "depreciationMethod",
+              "depreciationDurationMonths",
+              "depreciationStartDate"
+            ],
+          },
+          {
+            id: "exit",
+            title: "Sortie",
+            columns: 1,
+            fields: ["exitValue"],
+          },
+        ]}
+        fieldOverrides={{
+          asset: { disabled: isUpdate },
+        }}
       />
     </section>
   );

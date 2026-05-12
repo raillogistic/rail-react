@@ -43,11 +43,11 @@ export function AssetMovementForm({
           disabled: isUpdate,
         },
 
-        from_location: {
+        fromLocation: {
           // Affiché en lecture seule (géré par le backend via GraphQLMeta)
           // On le cache si vide à la création pour ne pas encombrer
-          visible: (values) => isUpdate || Boolean(values.from_location),
-          dependsOn: ["fromLocation"],
+          visible: (values) => isUpdate || Boolean(values.fromLocation),
+          dependsOn: ["asset"],
         },
 
         reason: {

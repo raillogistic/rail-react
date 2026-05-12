@@ -721,8 +721,7 @@ export function buildSchemaFromContract(
  const readOnly = Boolean(field.readOnly || !writable);
  if (hidden || readOnly || isGeneratedIdentifierField(field)) continue;
 
- const contractFieldName = resolveContractFieldName(field) || field.path;
- if (!contractFieldName) continue;
+ const contractFieldName = resolveContractFieldName(field) || field.path; if (!contractFieldName) continue;
  const type = mapKindToInputType(field.kind);
  const uiConfig = asRecord(field.ui);
  const constraints = asRecord(field.constraints);

@@ -21,6 +21,7 @@ Use these references when you work in reusable UI and data modules under
 `src/widgets/*`, `src/features/*`, and `src/shared/api/*`.
 
 - [Dynamic form](./libs/dynamic-form.md)
+- [Rail Django Builder Components](./libs/rail-django-builder.md)
 - [Filter panel](./libs/filter-panel.md)
 - [GraphQL model mutation hooks](./libs/graphql-model-mutation-hooks.md)
 - [GraphQL model query hooks](./libs/graphql-model-query-hooks.md)

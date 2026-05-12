@@ -55,8 +55,8 @@ const readEnvValue = (key: string): string => {
   return "";
 };
 
-const MODELFORM_APP_LABEL = readEnvValue("VITE_TEST_MODELFORM_APP_LABEL") || "store";
-const MODELFORM_MODEL_NAME = readEnvValue("VITE_TEST_MODELFORM_MODEL_NAME") || "Product";
+const MODELFORM_APP_LABEL = readEnvValue("VITE_TEST_MODELFORM_APP_LABEL") || "referentials";
+const MODELFORM_MODEL_NAME = readEnvValue("VITE_TEST_MODELFORM_MODEL_NAME") || "Service";
 
 const toLowerCamel = (value: string): string => {
   const trimmed = value.trim();

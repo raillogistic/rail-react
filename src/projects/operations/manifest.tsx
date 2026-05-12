@@ -3,7 +3,8 @@ import {
   Suspense,
   type ReactNode } from "react";
 import { LayoutDashboard,
-  FileText,
+  UserCheck,
+  Undo2,
 } from "lucide-react";
 import type { AppManifest } from "@/app/router/contracts";
 import {
@@ -46,10 +47,29 @@ const AssetAssignmentDetailPage = lazy(() =>
     default: module.AssetAssignmentDetailPage,
   })),
 );
+
+const RestitutionListPage = lazy(() =>
+  import("./pages/restitution/RestitutionListPage").then((module) => ({
+    default: module.RestitutionListPage,
+  })),
+);
+
+const RestitutionFormPage = lazy(() =>
+  import("./pages/restitution/RestitutionFormPage").then((module) => ({
+    default: module.RestitutionFormPage,
+  })),
+);
+
+const RestitutionDetailPage = lazy(() =>
+  import("./pages/restitution/RestitutionDetailPage").then((module) => ({
+    default: module.RestitutionDetailPage,
+  })),
+);
+
 export const OPERATIONS_MANIFEST: AppManifest = defineProjectManifest({
   projectId: "operations",
   moduleId: "assignments",
-  order: 100,
+  order: 30,
   defaultRoute: ROUTES.HOME,
   routes: [
     protectedRoute("operations", {
@@ -63,40 +83,73 @@ export const OPERATIONS_MANIFEST: AppManifest = defineProjectManifest({
     protectedRoute("operations", {
       id: "operations:asset-assignment:list",
       path: ROUTES.ASSET_ASSIGNMENT_LIST,
-      title: "Asset Assignment",
-      description: "Manage Asset Assignment records",
-      icon: FileText,
+      title: "Affectations",
+      description: "Gestion des affectations de biens",
+      icon: UserCheck,
       element: withRouteSuspense(<AssetAssignmentListPage />),
     }),
     protectedRoute("operations", {
       id: "operations:asset-assignment:create",
       path: ROUTES.ASSET_ASSIGNMENT_CREATE,
-      title: "Create Asset Assignment",
+      title: "Créer une Affectation",
       hidden: true,
-      icon: FileText,
+      icon: UserCheck,
       element: withRouteSuspense(<AssetAssignmentFormPage />),
     }),
     protectedRoute("operations", {
       id: "operations:asset-assignment:edit",
       path: ROUTES.ASSET_ASSIGNMENT_EDIT,
-      title: "Edit Asset Assignment",
+      title: "Modifier une Affectation",
       hidden: true,
-      icon: FileText,
+      icon: UserCheck,
       element: withRouteSuspense(<AssetAssignmentFormPage />),
     }),
     protectedRoute("operations", {
       id: "operations:asset-assignment:detail",
       path: ROUTES.ASSET_ASSIGNMENT_DETAIL,
-      title: "Asset Assignment details",
+      title: "Détail Affectation",
       hidden: true,
-      icon: FileText,
+      icon: UserCheck,
       element: withRouteSuspense(<AssetAssignmentDetailPage />),
+    }),
+
+    protectedRoute("operations", {
+      id: "operations:restitution:list",
+      path: ROUTES.RESTITUTION_LIST,
+      title: "Restitutions",
+      description: "Historique des retours de biens",
+      icon: Undo2,
+      element: withRouteSuspense(<RestitutionListPage />),
+    }),
+    protectedRoute("operations", {
+      id: "operations:restitution:create",
+      path: ROUTES.RESTITUTION_CREATE,
+      title: "Enregistrer une Restitution",
+      hidden: true,
+      icon: Undo2,
+      element: withRouteSuspense(<RestitutionFormPage />),
+    }),
+    protectedRoute("operations", {
+      id: "operations:restitution:edit",
+      path: ROUTES.RESTITUTION_EDIT,
+      title: "Modifier une Restitution",
+      hidden: true,
+      icon: Undo2,
+      element: withRouteSuspense(<RestitutionFormPage />),
+    }),
+    protectedRoute("operations", {
+      id: "operations:restitution:detail",
+      path: ROUTES.RESTITUTION_DETAIL,
+      title: "Détail Restitution",
+      hidden: true,
+      icon: Undo2,
+      element: withRouteSuspense(<RestitutionDetailPage />),
     }),
 ],
   navigation: [
     navGroup("operations", {
       id: "operations",
-      label: "Operations",
+      label: "Opérations",
       order: 0,
       entries: [
         {
@@ -111,16 +164,16 @@ export const OPERATIONS_MANIFEST: AppManifest = defineProjectManifest({
         {
           id: "operations:asset-assignment:list",
           routeId: "operations:asset-assignment:list",
-          title: "Asset Assignment",
+          title: "Affectations",
           path: ROUTES.ASSET_ASSIGNMENT_LIST,
           guard: "protected",
-          icon: FileText,
-          description: "Manage Asset Assignment records",
+          icon: UserCheck,
+          description: "Gestion des affectations de biens",
           children: [
             {
               id: "operations:asset-assignment:create",
               routeId: "operations:asset-assignment:create",
-              title: "Create Asset Assignment",
+              title: "Créer une Affectation",
               path: ROUTES.ASSET_ASSIGNMENT_CREATE,
               guard: "protected",
               hidden: true,
@@ -128,7 +181,7 @@ export const OPERATIONS_MANIFEST: AppManifest = defineProjectManifest({
             {
               id: "operations:asset-assignment:edit",
               routeId: "operations:asset-assignment:edit",
-              title: "Edit Asset Assignment",
+              title: "Modifier une Affectation",
               path: ROUTES.ASSET_ASSIGNMENT_EDIT,
               guard: "protected",
               hidden: true,
@@ -136,8 +189,44 @@ export const OPERATIONS_MANIFEST: AppManifest = defineProjectManifest({
             {
               id: "operations:asset-assignment:detail",
               routeId: "operations:asset-assignment:detail",
-              title: "Asset Assignment details",
+              title: "Détail Affectation",
               path: ROUTES.ASSET_ASSIGNMENT_DETAIL,
+              guard: "protected",
+              hidden: true,
+            },
+          ],
+        },
+
+        {
+          id: "operations:restitution:list",
+          routeId: "operations:restitution:list",
+          title: "Restitutions",
+          path: ROUTES.RESTITUTION_LIST,
+          guard: "protected",
+          icon: Undo2,
+          description: "Historique des retours de biens",
+          children: [
+            {
+              id: "operations:restitution:create",
+              routeId: "operations:restitution:create",
+              title: "Enregistrer une Restitution",
+              path: ROUTES.RESTITUTION_CREATE,
+              guard: "protected",
+              hidden: true,
+            },
+            {
+              id: "operations:restitution:edit",
+              routeId: "operations:restitution:edit",
+              title: "Modifier une Restitution",
+              path: ROUTES.RESTITUTION_EDIT,
+              guard: "protected",
+              hidden: true,
+            },
+            {
+              id: "operations:restitution:detail",
+              routeId: "operations:restitution:detail",
+              title: "Détail Restitution",
+              path: ROUTES.RESTITUTION_DETAIL,
               guard: "protected",
               hidden: true,
             },
