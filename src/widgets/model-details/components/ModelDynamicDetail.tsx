@@ -2521,6 +2521,15 @@ const ModelDynamicDetailInner = <
           typeof nested.config.description === "string"
             ? nested.config.description
             : nested.relation.helpText,
+        visibleIf:
+          nested.mode === "table"
+            ? () => {
+                const nestedValue = getValueByPath(record ?? {}, nested.path);
+                return (
+                  Array.isArray(nestedValue) && nestedValue.length > 0
+                );
+              }
+            : undefined,
         render: () => {
           const nestedValue = getValueByPath(record ?? {}, nested.path);
 

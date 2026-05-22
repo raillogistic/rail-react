@@ -212,12 +212,7 @@ export function AssetDetailPage() {
           ]
         },
         nestedFields: {
-          // T-2-13: Métadonnées dynamiques
-          "metadataValues": {
-            tabId: "metadata",
-            title: "Valeurs de métadonnées",
-            mode: "table",
-          },
+
           // T-2-13: Finance (via Profil Financier)
           "financialProfile": {
             tabId: "finance",

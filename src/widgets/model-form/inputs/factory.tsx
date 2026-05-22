@@ -9,6 +9,7 @@ import DateTimeInput from "./datetime";
 import TimeInput from "./time";
 import QueryChoiceInput from "./query";
 import RichTextInput from "./rich-text";
+import JsonNestedInput from "./json-nested";
 
 type Registry = Partial<Record<FormInputType, FieldRendererComponent>>;
 
@@ -19,13 +20,13 @@ const registry: Registry = {
  password: TextInput,
  color: TextInput,
  json: TextInput,
+ "json-nested": JsonNestedInput,
  file: TextInput,
  "rich-text": RichTextInput,
  number: NumberInput,
  decimal: DecimalInput,
  slider: NumberInput,
  range: NumberInput,
- select: ChoiceInput,
  radio: ChoiceInput,
  checkbox: BooleanInput,
  switch: BooleanInput,

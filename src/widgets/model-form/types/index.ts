@@ -34,6 +34,10 @@ export type {
  FormValidator,
  FormSchema,
  ChangeRecord,
+ JsonNestedFieldConfig,
+ JsonNestedFieldDefinition,
+ JsonNestedValidationHandle,
+ JsonNestedSectionConfig,
 } from "./schema";
 
 // Behavior types

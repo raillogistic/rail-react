@@ -4,6 +4,7 @@ import { useAuth } from './useAuth';
 interface ActivityMonitorConfig {
   idleTimeoutMs: number;
   warningThresholdMs: number;
+  autoLogout?: boolean;
   events?: string[];
   throttleMs?: number;
 }
@@ -24,11 +25,12 @@ export function useActivityMonitor(config: ActivityMonitorConfig) {
   const { isAuthenticated, logout } = useAuth();
   
   // Destructure config to ensure stable dependencies for primitives
-  const { 
-    idleTimeoutMs, 
-    warningThresholdMs, 
+  const {
+    idleTimeoutMs,
+    warningThresholdMs,
+    autoLogout = true,
     throttleMs = 1000,
-    events = DEFAULT_EVENTS 
+    events = DEFAULT_EVENTS
   } = config;
 
   const [state, setState] = useState<ActivityMonitorState>({
@@ -80,9 +82,11 @@ export function useActivityMonitor(config: ActivityMonitorConfig) {
     // Set idle timeout
     idleTimeoutRef.current = setTimeout(() => {
       setState(prev => ({ ...prev, isIdle: true }));
-      logout({ reason: 'idle_timeout' });
+      if (autoLogout) {
+        logout({ reason: 'idle_timeout' });
+      }
     }, idleTimeoutMs);
-  }, [isAuthenticated, idleTimeoutMs, warningThresholdMs, logout]);
+  }, [isAuthenticated, idleTimeoutMs, warningThresholdMs, autoLogout, logout]);
 
   const handleActivity = useCallback(() => {
     // Throttle activity updates

@@ -3,6 +3,7 @@ import type {
  ModelFormNestedAction,
 } from "../types/generatedContract";
 
+import { toCamelCase } from "@/shared/api/graphql/graphql/queries/naming";
 const ACTION_KEYS: Record<string, ModelFormNestedAction> = {
  connect: "CONNECT",
  create: "CREATE",
@@ -63,6 +64,7 @@ function buildRelationLookupKeys(relation: ModelFormContractRelation): string[] 
  };
 
  add(relation.name);
+	add(toCamelCase(relation.path ?? ""));
  add(relation.path);
  return Array.from(keys);
 }
@@ -517,6 +519,10 @@ function normalizeToOneRelationInput(
  mode: NestedPayloadMode,
  lookupContext: NestedRelationLookupContext | undefined,
 ) {
+	// Unwrap arrays (select-query may store to-one value as array or empty array when cleared)
+	if (Array.isArray(value)) {
+		value = value.length > 0 ? value[0] : null;
+	}
  if (value === null) {
  if (mode === "UPDATE") {
  assertActionAllowed(relation, relationPath, "DISCONNECT", true);

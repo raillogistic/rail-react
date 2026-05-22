@@ -3,6 +3,8 @@
  * Utilise DynamicModelTable, ModelForm et ModelDynamicDetail de rail-react.
  */
 import { useParams } from "react-router-dom";
+import * as React from "react";
+import { gql, useQuery } from "@apollo/client";
 import type {
   ReferentialsService,
   ReferentialsEmployee,
@@ -16,9 +18,11 @@ import type {
 import { DynamicModelTable } from "@/widgets/model-table";
 import { ModelForm } from "@/widgets/model-form";
 import { ModelDynamicDetail } from "@/widgets/model-details";
+import TableDetail from "@/widgets/model-details/components/TableDetail";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/shared/ui/kit/tabs";
 import { HierarchyOrganigram } from "@/widgets/hierarchy-organigram";
 import { ROUTES } from "@/projects/referentials/config/routes";
+import { Info, Package, Activity, History } from "lucide-react";
 
 // ──────────────────────────────────────────────
 // Service
@@ -64,7 +68,7 @@ export function ServiceListPage() {
                   id: "general",
                   title: "Informations",
                   columns: 2,
-                  fields: ["name", "code", "parent", "isActive"],
+                  fields: ["name", "parent", "isActive"],
                 },
               ],
             }}
@@ -86,6 +90,7 @@ export function ServiceFormPage() {
         description="Gérez les services de l'organisation."
         app="referentials"
         model="Service"
+        devtools={{ enabled: true }}
         mode={isUpdate ? "UPDATE" : "CREATE"}
         objectId={isUpdate ? id : undefined}
         generatedSections={[
@@ -93,15 +98,145 @@ export function ServiceFormPage() {
             id: "general",
             title: "Informations",
             columns: 2,
-            fields: ["name", "code", "parent", "isActive"],
+            fields: ["name", "parent"],
           },
+          {
+            id: "contact",
+            title: "Contact",
+            columns: 2,
+            fields: ["email", "phone"],
+          },
+          { id: "address", title: "Adresse", columns: 1, fields: ["address"] },
+          { id: "status", title: "Statut", columns: 1, fields: ["isActive"] },
         ]}
+        fieldOverrides={{ address: { type: "textarea" } }}
       />
     </section>
   );
 }
 
-/** Détail d'un service. */
+// ── Movements (simple table, service → asset → movements) ──
+
+const SERVICE_ASSET_IDS_QUERY = gql`
+  query ServiceAssetIds($serviceId: ID!) {
+    assetList(where: { responsibleServiceRel: { id: { eq: $serviceId } } }) {
+      id
+    }
+  }
+`;
+
+const SERVICE_MOVEMENTS_QUERY = gql`
+  query ServiceMovements($assetIds: [ID!]) {
+    assetMovementList(
+      where: { asset: { id: { in: $assetIds } } }
+      orderBy: ["-movementDate"]
+    ) {
+      id
+      reference
+      movementDate
+      reason
+      asset {
+        id
+        name
+        inventoryCode
+      }
+      fromLocation {
+        id
+        name
+      }
+      toLocation {
+        id
+        name
+      }
+    }
+  }
+`;
+
+function ServiceMovementsTable({ serviceId }: { serviceId: string }) {
+  const {
+    data: assetData,
+    loading: assetLoading,
+    error: assetError,
+  } = useQuery(SERVICE_ASSET_IDS_QUERY, {
+    variables: { serviceId },
+  });
+
+  const assetIds: string[] = React.useMemo(() => {
+    const assets = (assetData as Record<string, unknown>)?.assetList ?? [];
+    return Array.isArray(assets)
+      ? assets
+          .map((a: Record<string, unknown>) => a.id as string)
+          .filter(Boolean)
+      : [];
+  }, [assetData]);
+
+  const { data, loading, error } = useQuery(SERVICE_MOVEMENTS_QUERY, {
+    variables: { assetIds: assetIds.length > 0 ? assetIds : null },
+    skip: assetIds.length === 0,
+  });
+
+  if (assetLoading || loading) {
+    return (
+      <div className="py-8 text-center text-sm text-muted-foreground">
+        Chargement…
+      </div>
+    );
+  }
+  if (assetError) {
+    return (
+      <div className="py-8 text-center text-sm text-red-500">
+        Erreur : {assetError.message}
+      </div>
+    );
+  }
+  if (error) {
+    return (
+      <div className="py-8 text-center text-sm text-red-500">
+        Erreur : {error.message}
+      </div>
+    );
+  }
+
+  const movements: Record<string, unknown>[] =
+    (data as Record<string, unknown>)?.assetMovementList ?? [];
+
+  if (movements.length === 0) {
+    return (
+      <div className="py-8 text-center text-sm text-muted-foreground">
+        Aucun mouvement.
+      </div>
+    );
+  }
+
+  const rows = movements.map((m) => ({
+    reference: (m.reference as string) ?? "-",
+    movementDate: (m.movementDate as string) ?? "-",
+    asset: ((m.asset as Record<string, unknown>)?.name as string) ?? "-",
+    fromLocation:
+      ((m.fromLocation as Record<string, unknown>)?.name as string) ?? "-",
+    toLocation:
+      ((m.toLocation as Record<string, unknown>)?.name as string) ?? "-",
+    reason: (m.reason as string) ?? "-",
+  }));
+
+  return (
+    <TableDetail
+      columns={[
+        { id: "reference", header: "Référence" },
+        { id: "movementDate", header: "Date" },
+        { id: "asset", header: "Bien" },
+        { id: "fromLocation", header: "De" },
+        { id: "toLocation", header: "Vers" },
+        { id: "reason", header: "Motif" },
+      ]}
+      rows={rows}
+    />
+  );
+}
+
+// ── Service Detail ────────────────────────────────────────────────
+
+/** Détail d'un service avec onglets à chargement paresseux. */
 export function ServiceDetailPage() {
   const { id = "" } = useParams();
   return (
@@ -110,9 +245,118 @@ export function ServiceDetailPage() {
       model="Service"
       id={id}
       baseDetail={{
+        // queryOptions: { fetchPolicy: "no-cache" },
+        layout: {
+          tabs: [
+            {
+              id: "general",
+              title: "Général",
+              order: 10,
+              icon: <Info className="h-4 w-4" />,
+            },
+            {
+              id: "assets",
+              title: "Biens affectés",
+              order: 20,
+              icon: <Package className="h-4 w-4" />,
+            },
+            {
+              id: "movements",
+              title: "Mouvements",
+              order: 30,
+              icon: <Activity className="h-4 w-4" />,
+            },
+            {
+              id: "assignments",
+              title: "Affectations",
+              order: 40,
+              icon: <History className="h-4 w-4" />,
+            },
+          ],
+          sections: [
+            {
+              id: "general-info",
+              title: "Informations générales",
+              tabId: "general",
+              order: 10,
+              columns: 2,
+              fields: ["name"],
+            },
+            {
+              id: "contact",
+              title: "Contact",
+              tabId: "general",
+              order: 15,
+              columns: 2,
+              fields: ["email", "phone"],
+            },
+            {
+              id: "address",
+              title: "Adresse",
+              tabId: "general",
+              order: 17,
+              fields: ["address"],
+            },
+            {
+              id: "hierarchy",
+              title: "Hiérarchie",
+              tabId: "general",
+              order: 20,
+              columns: 2,
+              fields: ["parent.name"],
+            },
+            {
+              id: "audit",
+              title: "Audit",
+              tabId: "general",
+              order: 30,
+              columns: 2,
+              fields: ["isActive", "createdAt", "updatedAt"],
+            },
+          ],
+          customSections: [
+            {
+              id: "movements-table",
+              title: "Mouvements des biens du service",
+              tabId: "movements",
+              order: 10,
+              render: ({ id: serviceId }) => (
+                <ServiceMovementsTable serviceId={serviceId} />
+              ),
+            },
+          ],
+          includeUnassignedFields: false,
+        },
         nestedFields: {
-          employees: { title: "Employés rattachés", mode: "table" },
-          children: { title: "Sous-services", mode: "table" },
+          children: {
+            tabId: "general",
+            title: "Sous-services",
+            mode: "table",
+            fields: ["name", "isActive"],
+          },
+          employees: {
+            tabId: "general",
+            title: "Employés rattachés",
+            mode: "table",
+            fields: ["firstName", "lastName", "jobTitle"],
+          },
+          responsibleAssets: {
+            tabId: "assets",
+            title: "Biens affectés au service",
+            mode: "table",
+            fields: [
+              "name",
+              "inventoryCode",
+              "category.name",
+              "administrativeStatus",
+            ],
+          },
+          assignments: {
+            tabId: "assignments",
+            title: "Historique des affectations",
+            mode: "table",
+            fields: ["asset.name", "startDate", "endDate"],
+          },
         },
       }}
     />
@@ -421,7 +665,7 @@ export function DocumentTypeFormPage() {
             id: "general",
             title: "Informations",
             columns: 2,
-            fields: ["name", "code", "isActive"],
+            fields: ["name", "isActive"],
           },
         ]}
       />
@@ -477,7 +721,7 @@ export function PhysicalConditionFormPage() {
             id: "general",
             title: "Informations",
             columns: 2,
-            fields: ["name", "code", "isActive"],
+            fields: ["name", "isActive"],
           },
         ]}
       />
@@ -532,6 +776,16 @@ export function MetadataDefinitionFormPage() {
         model="AssetMetadataDefinition"
         mode={isUpdate ? "UPDATE" : "CREATE"}
         objectId={isUpdate ? id : undefined}
+        nested={{
+          items: {
+            onlyFields: ["fieldKey", "label", "fieldType", "isRequired"],
+            sortable: {
+              enabled: true,
+              orderField: "displayOrder",
+              mode: "drag&drop",
+            },
+          },
+        }}
         generatedSections={[
           {
             id: "scope",
@@ -540,16 +794,16 @@ export function MetadataDefinitionFormPage() {
             fields: ["category", "family"],
           },
           {
-            id: "definition",
-            title: "Définition du champ",
+            id: "general",
+            title: "Informations",
             columns: 2,
-            fields: ["fieldKey", "label", "fieldType", "isRequired"],
+            fields: ["name", "displayOrder", "isActive"],
           },
           {
-            id: "display",
-            title: "Affichage",
-            columns: 2,
-            fields: ["displayOrder", "isActive"],
+            id: "items",
+            title: "Champs de métadonnées",
+            columns: 1,
+            fields: ["items"],
           },
         ]}
       />

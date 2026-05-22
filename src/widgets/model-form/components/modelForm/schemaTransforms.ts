@@ -520,17 +520,17 @@ function resolveGeneratedSectionId<TValues extends Record<string, unknown>>(
 }
 
 function assertGeneratedSectionFieldAvailable(
- availableFields: Map<string, FormFieldConfig>,
- selector: string,
+  availableFields: Map<string, FormFieldConfig>,
+  selector: string,
 ): FormFieldConfig | null {
- const resolved = availableFields.get(selector);
- if (resolved) return resolved;
- if (!import.meta.env.PROD) {
- throw new Error(
- `[ModelForm] Unknown generated field "${selector}" referenced in generatedSections.`,
- );
- }
- return null;
+  const resolved = availableFields.get(selector);
+  if (resolved) return resolved;
+  if (!import.meta.env.PROD) {
+    console.warn(
+      `[ModelForm] Unknown generated field "${selector}" referenced in generatedSections. This field might have been removed from the backend schema.`,
+    );
+  }
+  return null;
 }
 
 export function applyGeneratedSectionLayout<

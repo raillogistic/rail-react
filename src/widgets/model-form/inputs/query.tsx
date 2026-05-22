@@ -76,13 +76,17 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
       return {
         relatedModel: config.graphql.relatedModel ?? config.relatedModel,
         ...config.graphql,
+        where: config.where ?? config.graphql.where,
       };
     }
-    if (config.relatedModel) {
-      return { relatedModel: config.relatedModel };
+    if (config.relatedModel || config.where) {
+      return {
+        relatedModel: config.relatedModel ?? undefined,
+        where: config.where,
+      };
     }
     return undefined;
-  }, [config.graphql, config.relatedModel]);
+  }, [config.graphql, config.relatedModel, config.where]);
 
   const recipe = React.useMemo(
     () => buildGraphQLRecipe(graphqlConfig),
@@ -225,10 +229,17 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
         typeof graphqlConfig?.variables === "function"
           ? graphqlConfig.variables(ctx)
           : (graphqlConfig?.variables ?? {});
+      const resolvedWhere =
+        typeof graphqlConfig?.where === "function"
+          ? graphqlConfig.where(ctx)
+          : graphqlConfig?.where;
       const variables = {
         ...(graphqlConfig?.initialVariables ?? {}),
         ...dynamicVariables,
       };
+      if (resolvedWhere) {
+        variables.where = resolvedWhere;
+      }
       if (searchVariableName) {
         variables[searchVariableName] = term;
       }
@@ -399,6 +410,50 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
     setHasLoadedOnce(true);
     scheduleLoad(search);
   }, [hasLoadedOnce, loadOnOpen, menuOpen, scheduleLoad, search]);
+
+  // ── dependsOn: re-fetch options when upstream field values change ──────────
+  const dependsOnFields = config.dependsOn;
+  const dependsOnSnapshotRef = React.useRef<Record<string, unknown> | null>(
+    null,
+  );
+
+  React.useEffect(() => {
+    if (!dependsOnFields?.length) return;
+
+    const currentValues: Record<string, unknown> = {};
+    for (const dep of dependsOnFields) {
+      currentValues[dep] = getNestedFormValue(
+        formValuesRef.current,
+        dep,
+      );
+    }
+
+    const prev = dependsOnSnapshotRef.current;
+
+    // First run — just capture the snapshot, do not trigger reload
+    if (prev === null) {
+      dependsOnSnapshotRef.current = currentValues;
+      return;
+    }
+
+    // Detect if any watched value actually changed
+    const hasChanged = dependsOnFields.some(
+      (dep) => prev[dep] !== currentValues[dep],
+    );
+
+    if (!hasChanged) return;
+
+    dependsOnSnapshotRef.current = currentValues;
+
+    // Clear current selection since the upstream context changed
+    field.handleChange(config.multiple ? [] : null);
+
+    // Reset loadOnOpen state so the menu will re-fetch on next open
+    setHasLoadedOnce(false);
+
+    // Re-fetch options with the updated `where` filter
+    scheduleLoad("");
+  }); // intentionally no deps — runs every render to detect value changes
 
   const handleInlineCreated = React.useCallback(
     (payload: any) => {
@@ -1038,6 +1093,7 @@ type GraphQLRecipe = {
   valueKey?: string;
   labelKey?: string;
   descriptionKey?: string;
+  whereVariableType?: string;
 };
 
 function buildGraphQLRecipe(config?: QueryChoiceGraphQLConfig): GraphQLRecipe {
@@ -1046,6 +1102,14 @@ function buildGraphQLRecipe(config?: QueryChoiceGraphQLConfig): GraphQLRecipe {
   }
   if (config.queryDocument) {
     const document = ensureDocumentNode(config.queryDocument);
+    const modelNameForWhere = config.relatedModel
+      ? config.relatedModel.split(".").pop() ?? ""
+      : "";
+    const whereVariableType =
+      config.whereVariableType ??
+      (modelNameForWhere
+        ? `${toPascalCase(modelNameForWhere)}WhereInput`
+        : undefined);
     return {
       document,
       resultPath: config.resultPath,
@@ -1058,6 +1122,7 @@ function buildGraphQLRecipe(config?: QueryChoiceGraphQLConfig): GraphQLRecipe {
       valueKey: config.valueKey,
       labelKey: config.labelKey,
       descriptionKey: config.descriptionKey,
+      whereVariableType,
     };
   }
   const normalizedRelatedModel = config.relatedModel
@@ -1084,6 +1149,14 @@ function buildGraphQLRecipe(config?: QueryChoiceGraphQLConfig): GraphQLRecipe {
       ? "include"
       : config.includeVariableName;
   const includeVariableType = config.includeVariableType ?? "[ID!]";
+  const modelNamePascal =
+    normalizedRelatedModel
+      ? toPascalCase(config.relatedModel?.split(".").pop() ?? "")
+      : "";
+  const whereVariableType =
+    config.whereVariableType ??
+    (modelNamePascal ? `${modelNamePascal}WhereInput` : undefined);
+  const hasWhere = Boolean(config.where);
 
   const selections = dedupeStrings(
     [
@@ -1116,6 +1189,10 @@ function buildGraphQLRecipe(config?: QueryChoiceGraphQLConfig): GraphQLRecipe {
     variableDefinitions.push(`$${includeVariableName}: ${includeVariableType}`);
     fieldArguments.push(`${includeVariableName}: $${includeVariableName}`);
   }
+  if (hasWhere && whereVariableType) {
+    variableDefinitions.push(`$where: ${whereVariableType}`);
+    fieldArguments.push("where: $where");
+  }
 
   const staticArgsEntries = Object.entries(config.staticArgs ?? {});
   staticArgsEntries.forEach(([name, value]) => {
@@ -1145,6 +1222,7 @@ ${selections.map((line) => ` ${line}`).join("\n")}
     labelKey: config.labelKey ?? inferPropName(config.labelField ?? "desc"),
     descriptionKey:
       config.descriptionKey ?? inferPropName(config.descriptionField ?? ""),
+    whereVariableType,
   };
 }
 
@@ -1319,4 +1397,21 @@ function formatGraphQLLiteral(value: string | number | boolean) {
     return JSON.stringify(value);
   }
   return String(value);
+}
+
+/**
+ * Safely reads a (potentially dot-separated) path from a record.
+ * Used by the `dependsOn` watcher to read upstream field values.
+ */
+function getNestedFormValue(
+  obj: Record<string, unknown>,
+  path: string,
+): unknown {
+  const segments = path.split(".");
+  let current: unknown = obj;
+  for (const segment of segments) {
+    if (current === undefined || current === null) return undefined;
+    current = (current as Record<string, unknown>)[segment];
+  }
+  return current;
 }

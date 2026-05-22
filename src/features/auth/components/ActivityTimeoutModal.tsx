@@ -15,13 +15,26 @@ interface ActivityTimeoutModalProps {
   warningThresholdMs?: number;
 }
 
+const isAutoLogoutEnabled = (): boolean => {
+  const value = import.meta.env.VITE_AUTO_LOGOUT_ENABLED;
+  return value !== "false" && value !== "0";
+};
+
+const readEnvMinutes = (key: string, fallbackMinutes: number): number => {
+  const raw = import.meta.env[key];
+  if (raw == null || raw === "") return fallbackMinutes * 60_000;
+  const parsed = Number(raw);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed * 60_000 : fallbackMinutes * 60_000;
+};
+
 export function ActivityTimeoutModal({
-  idleTimeoutMs = 900_000,   // 15 minutes
-  warningThresholdMs = 120_000,  // 2 minutes warning
+  idleTimeoutMs = readEnvMinutes("VITE_IDLE_TIMEOUT_MIN", 15),
+  warningThresholdMs = readEnvMinutes("VITE_IDLE_WARNING_MIN", 2),
 }: ActivityTimeoutModalProps) {
   const { isWarning, timeUntilTimeout, extendSession } = useActivityMonitor({
     idleTimeoutMs,
     warningThresholdMs,
+    autoLogout: isAutoLogoutEnabled(),
   });
   const { logout } = useAuth();
 

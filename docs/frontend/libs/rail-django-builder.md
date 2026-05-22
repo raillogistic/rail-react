@@ -38,9 +38,11 @@ export function ProduitForm() {
 
 ### Personnalisation et Extension
 
-`ModelForm` offre plusieurs niveaux d'extensibilité via ses propriétés :
+Le composant `ModelForm` agit comme un pont vers le composant de bas niveau `DynamicForm` et offre plusieurs niveaux d'extensibilité via ses propriétés :
 
-- **`fieldOverrides`** : Permet de surcharger le comportement d'un champ généré automatiquement. Vous pouvez modifier le type de rendu, ajouter des contraintes (disabled, readOnly) ou remplacer complètement le composant de saisie.
+#### 1. Surcharge des Champs (`fieldOverrides`)
+
+La propriété `fieldOverrides` permet de redéfinir n'importe quel aspect d'un champ généré automatiquement par le backend. 
 
 ```tsx
 <ModelForm
@@ -50,27 +52,49 @@ export function ProduitForm() {
   fieldOverrides={{
     price: {
       required: true,
-      component: CustomCurrencyInput, // Remplacer le rendu natif
+      description: "Le prix doit inclure la TVA",
+      component: CustomCurrencyInput, // Remplacer complètement le rendu natif
     },
     reference: {
-      readOnly: true, // Forcer le champ en lecture seule
+      readOnly: true, // Rendre le champ non modifiable
+      label: "Code Référence",
+    },
+    status: {
+      // Pour forcer un champ en select si ce n'est pas le comportement par défaut
+      type: "select",
+      choices: [
+        { value: "draft", label: "Brouillon" },
+        { value: "published", label: "Publié" }
+      ]
     }
   }}
 />
 ```
 
-- **`sectionOverrides`** et **`generatedSections`** : Modifie la mise en page. Vous pouvez redéfinir les sections (groupes de champs) du formulaire, changer le nombre de colonnes, ou masquer certaines sections.
+#### 2. Layout & Mise en page (`layout`, `sectionOverrides`, `generatedSections`)
+
+Vous pouvez contrôler la façon dont le formulaire s'affiche de manière très granulaire.
+- **`layout`** : Contrôle la configuration globale de l'interface (variantes, colonnes, indicateurs).
+- **`generatedSections`** : Redéfinit complètement les sections du formulaire.
+- **`sectionOverrides`** : Permet de fusionner des propriétés sur les sections renvoyées par le backend (par exemple, pour modifier uniquement le titre d'une section existante).
 
 ```tsx
 <ModelForm
-  // ...
+  app="inventory"
+  model="Product"
+  mode="CREATE"
+  layout={{
+    variant: "popup", // Styles adaptés pour un affichage dans une modale/dialogue
+    gridCols: 2, // Configuration globale sur 2 colonnes
+    hideRequiredIndicators: false,
+  }}
   generatedSections={{
     layout: [
       {
         id: "general",
         title: "Informations Générales",
         fields: ["name", "reference", "price"],
-        columns: 2 // Afficher sur deux colonnes
+        columns: 2 // Surcharge locale pour cette section spécifique
       },
       {
         id: "relations",
@@ -82,7 +106,61 @@ export function ProduitForm() {
 />
 ```
 
-- **Relations Multiples (Nested)** : Pour les champs de type `ManyToManyField` ou les relations inverses, il est impératif d'inclure ces champs dans les `generatedSections` si on souhaite qu'ils soient affichés et modifiables. 
+> **Attention (Nested Relations)** : Pour les champs de type `ManyToManyField` ou les relations inverses gérés par des contrôles imbriqués, il est **impératif d'inclure ces champs dans la structure `generatedSections`** si vous souhaitez qu'ils soient affichés et modifiables. 
+
+#### 3. État et Valeurs Par Défaut (`state`)
+
+Vous pouvez forcer des valeurs initiales côté frontend en utilisant la propriété `state`. Les valeurs fournies ici prendront le dessus sur celles du backend (utile en mode CREATE).
+
+```tsx
+<ModelForm
+  app="inventory"
+  model="Product"
+  mode="CREATE"
+  state={{
+    defaultValues: {
+      status: "draft",
+      category: "cat_default_123"
+    }
+  }}
+/>
+```
+
+#### 4. Comportement et Logique (`behavior`)
+
+`behavior` permet de manipuler la logique interne, par exemple ajouter un validateur personnalisé complexe ou désactiver la soumission à la touche Entrée.
+
+```tsx
+<ModelForm
+  // ...
+  behavior={{
+    disableEnterSubmit: true,
+    formValidator: (values) => {
+      const errors = {};
+      if (values.price < 0) {
+        errors.price = "Le prix ne peut pas être négatif.";
+      }
+      return errors;
+    }
+  }}
+/>
+```
+
+#### 5. Actions et Boutons (`actions`)
+
+Vous pouvez personnaliser la barre d'actions en bas du formulaire.
+
+```tsx
+<ModelForm
+  // ...
+  actions={{
+    submitLabel: "Enregistrer le produit",
+    cancelLabel: "Annuler",
+    hideCancel: false, // Utile pour cacher le bouton annuler
+    submitIcon: <SaveIcon className="size-4" />,
+  }}
+/>
+```
 
 ---
 

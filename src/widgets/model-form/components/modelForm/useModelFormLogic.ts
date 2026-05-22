@@ -31,10 +31,53 @@ export type UseModelFormLogicOptions<TFormValues extends Record<string, unknown>
 function normalizeMutationVariablesForDevtools(
  variables: Record<string, unknown>,
  identifier?: { key: string; value: string | number } | null,
+ contract?: any,
 ) {
- const rawIdentifierName = String(identifier?.key ?? "").trim();
- if (!rawIdentifierName) return variables;
  const nextVariables: Record<string, unknown> = { ...variables };
+
+ if (nextVariables.input && isRecord(nextVariables.input)) {
+ const input = nextVariables.input as Record<string, any>;
+ const relations = contract?.relations ?? [];
+ 
+ const relationMap = new Map<string, any>();
+ for (const rel of relations) {
+ if (rel.name) relationMap.set(rel.name, rel);
+ if (rel.path) {
+ relationMap.set(rel.path, rel);
+ const camel = rel.path.replace(/_([a-z])/g, (g: string) => g[1].toUpperCase());
+ relationMap.set(camel, rel);
+ if (camel.endsWith('Id')) relationMap.set(camel.slice(0, -2), rel);
+ }
+ }
+
+ for (const [key, value] of Object.entries(input)) {
+ const rel = relationMap.get(key);
+ const isKnownToOne = rel && !rel.toMany;
+ const isKnownToMany = rel && rel.toMany;
+ 
+ const isHeuristicToOne = !rel && (key === "asset" || key === "assignedToEmployee" || key === "assignedToService" || key === "category");
+
+ if (isKnownToOne || isHeuristicToOne) {
+ if (value && typeof value === "object" && Array.isArray((value as any).connect)) {
+ input[key] = { ...(value as any), connect: String((value as any).connect[0]) };
+ } else if (typeof value === "string" || typeof value === "number") {
+ input[key] = { connect: String(value) };
+ } else if (Array.isArray(value) && value.length > 0) {
+ input[key] = { connect: String(value[0]) };
+ }
+ } else if (isKnownToMany) {
+ if (typeof value === "string" || typeof value === "number") {
+ input[key] = { connect: [String(value)] };
+ } else if (Array.isArray(value)) {
+ input[key] = { connect: value.map(String) };
+ }
+ }
+ }
+ }
+
+ const rawIdentifierName = String(identifier?.key ?? "").trim();
+ if (!rawIdentifierName) return nextVariables;
+ 
  if (rawIdentifierName !== "id") {
  if (Object.prototype.hasOwnProperty.call(nextVariables, rawIdentifierName)) {
  nextVariables.id = nextVariables[rawIdentifierName];
@@ -45,6 +88,7 @@ function normalizeMutationVariablesForDevtools(
  } else if (nextVariables.id === undefined || nextVariables.id === null) {
  nextVariables.id = identifier?.value;
  }
+
  return nextVariables;
 }
 
@@ -228,6 +272,7 @@ export function useModelFormLogic<TFormValues extends Record<string, unknown>>(
  variables: normalizeMutationVariablesForDevtools(
  envelope.variables,
  envelope.identifier,
+ contract,
  ),
  },
  };

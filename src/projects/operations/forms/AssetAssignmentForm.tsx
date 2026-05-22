@@ -22,6 +22,7 @@ export function AssetAssignmentForm({
       mode={mode}
       objectId={objectId}
       onSuccess={onSuccess}
+      devtools={{ enabled: true }}
       generatedSections={[
         {
           id: "asset_selection",
@@ -51,16 +52,25 @@ export function AssetAssignmentForm({
       fieldOverrides={{
         asset: {
           disabled: isUpdate,
+          graphql: {
+            where: { isAssignable: true },
+          },
         },
 
         // RG-AFF-02: Responsabilité exclusive Employé vs Service
         assignedToEmployee: {
           dependsOn: ["assignedToService"],
-          disabledWhen: (values) => Boolean(values.assignedToService),
+          disabledWhen: (values) =>
+            Array.isArray(values.assignedToService)
+              ? values.assignedToService.length > 0
+              : Boolean(values.assignedToService),
         },
         assignedToService: {
           dependsOn: ["assignedToEmployee"],
-          disabledWhen: (values) => Boolean(values.assignedToEmployee),
+          disabledWhen: (values) =>
+            Array.isArray(values.assignedToEmployee)
+              ? values.assignedToEmployee.length > 0
+              : Boolean(values.assignedToEmployee),
         },
 
         reason: {
@@ -68,7 +78,9 @@ export function AssetAssignmentForm({
           colSpan: 2,
         },
         endDate: {
-          hidden: mode === "CREATE",
+          hidden: true,
+          transform: (value: unknown) =>
+            value === "" || value === null ? undefined : value,
         },
         descriptionTemplate: {
           type: "textarea",
@@ -77,6 +89,30 @@ export function AssetAssignmentForm({
           type: "textarea",
         },
       }}
+      behavior={{
+        validate: (values: Record<string, unknown>) => {
+          const errors: Record<string, string> = {};
+          const hasEmployee = Array.isArray(values.assignedToEmployee)
+            ? values.assignedToEmployee.length > 0
+            : Boolean(values.assignedToEmployee);
+          const hasService = Array.isArray(values.assignedToService)
+            ? values.assignedToService.length > 0
+            : Boolean(values.assignedToService);
+
+          if (hasEmployee && hasService) {
+            errors.assignedToEmployee =
+              "Un bien ne peut pas être assigné à la fois à un employé et à un service.";
+            errors.assignedToService =
+              "Un bien ne peut pas être assigné à la fois à un employé et à un service.";
+          } else if (!hasEmployee && !hasService) {
+            errors.assignedToEmployee = "Un employé ou un service est requis.";
+            errors.assignedToService = "Un employé ou un service est requis.";
+          }
+
+          return errors;
+        },
+      }}
+      runtimeOverrides={[{ path: "endDate", action: "UNSET" }]}
       nested={{
         documents: {
           title: "Pièces Jointes",

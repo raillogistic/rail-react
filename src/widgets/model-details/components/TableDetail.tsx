@@ -215,7 +215,7 @@ export default function TableDetail({
                             className="px-4 py-2.5"
                           >
                             <span className="text-sm font-medium text-foreground/80">
-                              {String(data[key] ?? "")}
+                              {typeof data[key] === "boolean" ? (data[key] ? "Oui" : "Non") : String(data[key] ?? "")}
                             </span>
                           </td>
                         );

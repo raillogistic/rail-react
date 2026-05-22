@@ -565,8 +565,8 @@ function normalizeBooleanValue(
   value: unknown,
   format: UnitFieldBooleanFormat = {},
 ): string | null {
-  const trueLabel = format.trueLabel ?? "Yes";
-  const falseLabel = format.falseLabel ?? "No";
+  const trueLabel = format.trueLabel ?? "Oui";
+  const falseLabel = format.falseLabel ?? "Non";
 
   if (typeof value === "boolean") {
     return value ? trueLabel : falseLabel;
@@ -1007,7 +1007,7 @@ export function formatFieldValue(
     case "boolean": {
       const text = normalizeBooleanValue(field.value, field.format?.boolean);
       return text
-        ? nonEmptyResult(text, text === (field.format?.boolean?.trueLabel ?? "Yes"))
+        ? nonEmptyResult(text, text === (field.format?.boolean?.trueLabel ?? "Oui"))
         : emptyResult(field);
     }
     case "status":

@@ -35,6 +35,7 @@ export type PrimitiveFormInputType =
  | "range"
  | "color"
  | "json"
+ | "json-nested"
  | "custom";
 
 export type StructuralFormInputType = "object" | "list" | "group";
@@ -127,6 +128,8 @@ export interface QueryChoiceFieldConfig extends BaseFieldConfig {
  relatedModel?: string;
  graphql?: QueryChoiceGraphQLConfig;
  inlineCreate?: QueryChoiceInlineCreateConfig;
+ /** GraphQL `where` filter for the list query. Static object or dynamic function receiving context. */
+ where?: QueryChoiceGraphQLConfig["where"];
 }
 
 export type QueryChoiceVariableBuilderContext = {
@@ -154,6 +157,12 @@ export interface QueryChoiceGraphQLConfig {
  limitVariableName?: string | null;
  includeVariableName?: string | null;
  includeVariableType?: string;
+ /** GraphQL `where` filter for the list query. Static object or dynamic function receiving context. */
+ where?:
+ | Record<string, any>
+ | ((ctx: QueryChoiceVariableBuilderContext) => Record<string, any>);
+ /** GraphQL type name for the `where` variable. Defaults to `{ModelName}WhereInput`. */
+ whereVariableType?: string;
  extraFields?: string[];
  valueField?: string;
  labelField?: string;
@@ -221,6 +230,63 @@ export interface FileFieldConfig extends BaseFieldConfig {
 export interface CustomFieldConfig extends BaseFieldConfig {
  type: "custom";
  render: (ctx: FieldRenderContext) => React.ReactNode;
+}
+
+// --- JSON Nested Field Types -------------------------------------------------
+
+/** Configuration d'un champ individuel dans un formulaire JSON imbriqué. */
+export interface JsonNestedFieldDefinition {
+ /** Clé technique du champ (correspond à la clé dans le dictionnaire JSON) */
+ fieldKey: string;
+ /** Libellé affiché à l'utilisateur */
+ label: string;
+ /** Type de contrôle de saisie */
+ fieldType: "text" | "number" | "date" | "boolean";
+ /** Indique si la saisie est obligatoire */
+ isRequired: boolean;
+ /** Ordre d'affichage dans la section */
+ displayOrder: number;
+ /** Texte de placeholder */
+ placeholder?: string;
+ /** Texte d'aide affiché sous le champ */
+ helpText?: string;
+}
+
+/** Configuration d'une section regroupant des champs dans un formulaire JSON imbriqué. */
+export interface JsonNestedSectionConfig {
+ /** Identifiant unique de la section */
+ id: string;
+ /** Nom affiché comme titre de la section */
+ name: string;
+ /** Ordre d'affichage de la section */
+ order: number;
+ /** Champs appartenant à cette section */
+ fields: JsonNestedFieldDefinition[];
+}
+
+/** API exposée au parent via ref pour la validation du formulaire JSON imbriqué. */
+export interface JsonNestedValidationHandle {
+ /** Valide les champs obligatoires et retourne les messages d'erreur */
+ validate: () => string[];
+ /** Indique si des champs de métadonnées sont disponibles */
+ hasFields: boolean;
+}
+
+/** Configuration du champ de formulaire JSON imbriqué. */
+export interface JsonNestedFieldConfig extends BaseFieldConfig {
+ type: "json-nested";
+ /** Sections et champs du formulaire imbriqué */
+ sections?: JsonNestedSectionConfig[];
+ /** État de chargement des définitions */
+ loading?: boolean;
+ /** Message affiché quand aucune définition n'est disponible */
+ emptyMessage?: string;
+ /** Titre global affiché au-dessus des sections */
+ title?: string;
+ /** Sous-titre / description */
+ subtitle?: string;
+ /** Ref pour exposer l'API de validation au parent */
+ validationRef?: React.RefObject<JsonNestedValidationHandle | null>;
 }
 
 export interface ObjectFieldConfig extends BaseFieldConfig {
@@ -299,6 +365,7 @@ export type FormFieldConfig =
  | DateFieldConfig
  | FileFieldConfig
  | CustomFieldConfig
+ | JsonNestedFieldConfig
  | ObjectFieldConfig
  | ListFieldConfig
  | GroupFieldConfig

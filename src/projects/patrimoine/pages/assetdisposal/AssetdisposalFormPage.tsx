@@ -1,6 +1,7 @@
 import { useParams, useNavigate } from "react-router-dom";
 import type { PatrimoineAssetDisposal } from "@/models";
 import { ModelForm } from "@/widgets/model-form";
+import { AssetSelectionField } from "./components/AssetSelectionField";
 
 export function AssetdisposalFormPage() {
   const { id = "" } = useParams();
@@ -10,13 +11,18 @@ export function AssetdisposalFormPage() {
   return (
     <section className="space-y-4">
       <ModelForm<PatrimoineAssetDisposal>
-        title={isUpdate ? "Modifier la Sortie" : "Enregistrer une Sortie de Patrimoine"}
+        title={
+          isUpdate
+            ? "Modifier la Sortie"
+            : "Enregistrer une Sortie de Patrimoine"
+        }
         description="Gérez les sorties en masse (réforme, vente, don...) et sélectionnez les biens concernés."
         app="patrimoine"
         model="AssetDisposal"
         mode={isUpdate ? "UPDATE" : "CREATE"}
         objectId={isUpdate ? id : undefined}
         onSuccess={() => navigate("/patrimoine/assetdisposal")}
+        onlyRelationships={["documents", "assets"]}
         generatedSections={[
           {
             id: "general",
@@ -39,18 +45,11 @@ export function AssetdisposalFormPage() {
             type: "textarea",
           },
           assets: {
-            // M2M field
+            // M2M field with custom table selector
+            type: "custom",
             label: "Biens concernés",
             helpText: "Sélectionnez les biens qui vont sortir du patrimoine.",
-            // Filtrage pour ne proposer que les biens qui peuvent sortir
-            inputProps: {
-              where: {
-                administrativeStatus: { 
-                  in: ["active", "assigned", "out_of_service", "reformed", "lost"] 
-                },
-                isActive: { eq: true }
-              }
-            }
+            render: (ctx) => <AssetSelectionField ctx={ctx} />,
           },
         }}
         nested={{
