@@ -64,41 +64,40 @@ const JsonNestedInput: React.FC<Props> = ({ config, field, form }) => {
   // Valeur interne (JSON)
   const value = (field.state.value as Record<string, any>) || {};
 
-  // État local d'erreurs pour la validation forcée
-  const [localErrors, setLocalErrors] = useState<Record<string, string>>({});
+  // Calculer les sous-erreurs à la volée si showError est vrai
+  const localErrors = React.useMemo(() => {
+    const newErrors: Record<string, string> = {};
+    if (!showError) return newErrors;
+    
+    sections.forEach((section) => {
+      section.fields.forEach((subField) => {
+        if (subField.isRequired) {
+          const val = value[subField.fieldKey];
+          const isEmpty =
+            val === undefined ||
+            val === null ||
+            val === "" ||
+            (Array.isArray(val) && val.length === 0);
 
-  // API de validation exposée au parent
+          if (isEmpty) {
+            newErrors[subField.fieldKey] = "Ce champ est obligatoire";
+          }
+        }
+      });
+    });
+    return newErrors;
+  }, [sections, value, showError]);
+
+  // API de validation exposée au parent (pour compatibilité)
   useImperativeHandle(
     config.validationRef,
     () => ({
       hasFields,
       validate: () => {
-        const newErrors: Record<string, string> = {};
-        const errorMessages: string[] = [];
-
-        sections.forEach((section) => {
-          section.fields.forEach((subField) => {
-            if (subField.isRequired) {
-              const val = value[subField.fieldKey];
-              const isEmpty =
-                val === undefined ||
-                val === null ||
-                val === "" ||
-                (Array.isArray(val) && val.length === 0);
-
-              if (isEmpty) {
-                newErrors[subField.fieldKey] = "Ce champ est obligatoire";
-                errorMessages.push(`[${section.name}] ${subField.label} est obligatoire`);
-              }
-            }
-          });
-        });
-
-        setLocalErrors(newErrors);
-        return errorMessages;
+        return [];
       },
     }),
-    [sections, value, hasFields],
+    [hasFields],
   );
 
   // Helper pour mettre à jour une valeur
@@ -110,13 +109,6 @@ const JsonNestedInput: React.FC<Props> = ({ config, field, form }) => {
       delete nextValue[key];
     } else {
       nextValue[key] = newValue;
-    }
-    
-    // Effacer l'erreur locale si la valeur devient valide
-    if (localErrors[key] && newValue !== undefined && newValue !== null && newValue !== "") {
-      const nextErrors = { ...localErrors };
-      delete nextErrors[key];
-      setLocalErrors(nextErrors);
     }
 
     field.handleChange(nextValue);

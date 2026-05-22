@@ -275,6 +275,34 @@ export function createValidators<TValues>(
     });
   }
 
+  // --- Inject nested validation for json-nested ---
+  if (config.type === "json-nested" && Array.isArray((config as any).sections)) {
+    validators.unshift((value) => {
+      const valObj = (value as Record<string, any>) || {};
+      const errors: string[] = [];
+      const sections = (config as any).sections;
+      
+      sections.forEach((section: any) => {
+        section.fields?.forEach((subField: any) => {
+          if (subField.isRequired) {
+            const val = valObj[subField.fieldKey];
+            const isEmpty =
+              val === undefined ||
+              val === null ||
+              val === "" ||
+              (Array.isArray(val) && val.length === 0);
+
+            if (isEmpty) {
+              errors.push(`[${section.name || "Section"}] ${subField.label} est obligatoire`);
+            }
+          }
+        });
+      });
+
+      return errors.length > 0 ? "Veuillez remplir tous les sous-champs obligatoires." : undefined;
+    });
+  }
+
   if (validators.length === 0) return undefined;
 
   const runSyncValidators = (payload: unknown) => {
