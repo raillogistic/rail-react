@@ -27,6 +27,7 @@ const registry: Registry = {
  decimal: DecimalInput,
  slider: NumberInput,
  range: NumberInput,
+ select: ChoiceInput,
  radio: ChoiceInput,
  checkbox: BooleanInput,
  switch: BooleanInput,
