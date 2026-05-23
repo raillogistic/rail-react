@@ -207,8 +207,11 @@ const JsonNestedInput: React.FC<Props> = ({ config, field, form }) => {
 
   // --- Rendu du Wrapper ---
 
+  const errorList = Array.isArray(error) ? error.filter(Boolean) : error ? [error] : [];
+  const hasGlobalError = errorList.length > 0;
+
   return (
-    <FieldWrapper config={config} fieldId={fieldId} error={error} dirty={dirty}>
+    <FieldWrapper config={config} fieldId={fieldId} dirty={dirty}>
       <div className={cn("flex flex-col gap-4 rounded-xl border bg-muted/5 p-4 transition-colors", 
         hasFields ? "border-input/60" : "border-dashed border-input/40"
       )}>
@@ -265,6 +268,21 @@ const JsonNestedInput: React.FC<Props> = ({ config, field, form }) => {
           </div>
         )}
       </div>
+
+      {/* Rendu manuel des erreurs globales pour éviter le style en cascade de FieldWrapper */}
+      {hasGlobalError && (
+        <div className="mt-1 flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
+          {errorList.map((item, index) => (
+            <div
+              key={`json-error-${index}`}
+              className="flex items-start gap-2 text-xs font-medium text-destructive px-1"
+            >
+              <AlertCircle className="mt-0.5 size-3.5 shrink-0" />
+              <span className="leading-tight">{item}</span>
+            </div>
+          ))}
+        </div>
+      )}
     </FieldWrapper>
   );
 };

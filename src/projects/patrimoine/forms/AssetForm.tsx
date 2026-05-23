@@ -89,7 +89,8 @@ function AssetMetadataCustomFieldWrapper({
     title: "Informations Complémentaires",
     subtitle: "Attributs spécifiques à la catégorie et famille du bien.",
   };
-
+  console.log(jsonConfig);
+  
   return <JsonNestedInput config={jsonConfig} field={field} form={form} />;
 }
 
@@ -178,6 +179,19 @@ export function AssetForm({
           columns: 3,
           fields: ["brand", "modelName", "serialNumber"],
         },
+        
+        {
+          id: "status_condition",
+          title: "Statut & État",
+          columns: 2,
+          fields: ["administrativeStatus", "physicalCondition"],
+        },
+        {
+          id: "exit",
+          title: "Sortie du Patrimoine",
+          columns: 2,
+          fields: ["exitMethod", "exitDate"],
+        },
         {
           id: "metadata_section",
           title: "", // Titre géré par AssetMetadataSection
@@ -196,18 +210,6 @@ export function AssetForm({
               },
             },
           ],
-        },
-        {
-          id: "status_condition",
-          title: "Statut & État",
-          columns: 2,
-          fields: ["administrativeStatus", "physicalCondition"],
-        },
-        {
-          id: "exit",
-          title: "Sortie du Patrimoine",
-          columns: 2,
-          fields: ["exitMethod", "exitDate"],
         },
       ]}
       fieldOverrides={{

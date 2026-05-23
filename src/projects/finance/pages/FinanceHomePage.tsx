@@ -9,7 +9,7 @@ export const FinanceHomePage: React.FC = () => {
           fields: [
             {
               type: "json-nested",
-              
+
               name: "json",
               // Titre et sous-titre globaux affichés au-dessus des sections (Optionnel)
               title: "Informations Financières Complémentaires",
@@ -28,7 +28,7 @@ export const FinanceHomePage: React.FC = () => {
                       isRequired: true,
                       displayOrder: 1,
                       placeholder: "Ex: PROJ-2026-X",
-                      helpText: "Code interne utilisé par la comptabilité."
+                      helpText: "Code interne utilisé par la comptabilité.",
                     },
                     {
                       fieldKey: "budget_alloue",
@@ -36,8 +36,8 @@ export const FinanceHomePage: React.FC = () => {
                       fieldType: "number",
                       isRequired: true,
                       displayOrder: 2,
-                    }
-                  ]
+                    },
+                  ],
                 },
                 {
                   id: "status_info",
@@ -57,14 +57,14 @@ export const FinanceHomePage: React.FC = () => {
                       fieldType: "boolean",
                       isRequired: false,
                       displayOrder: 2,
-                    }
-                  ]
-                }
+                    },
+                  ],
+                },
               ],
               // Affichera ceci s'il n'y a aucune section fournie (Optionnel)
-              emptyMessage: "Aucune donnée financière configurée."
-            }
-          ]
+              emptyMessage: "Aucune donnée financière configurée.",
+            },
+          ],
         }}
         behavior={{
           onSubmit: (values, ctx) => {
@@ -78,9 +78,9 @@ export const FinanceHomePage: React.FC = () => {
                 "est_facturable": true
               }
             */
-          }
+          },
         }}
-        devtools={{enabled:true}}
+        devtools={{ enabled: true }}
       />
     </div>
   );
