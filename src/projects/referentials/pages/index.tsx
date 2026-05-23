@@ -778,7 +778,7 @@ export function MetadataDefinitionFormPage() {
         objectId={isUpdate ? id : undefined}
         nested={{
           items: {
-            onlyFields: ["fieldKey", "label", "fieldType", "isRequired"],
+            onlyFields: ["fieldName", "label", "fieldType", "isRequired"],
             sortable: {
               enabled: true,
               orderField: "displayOrder",

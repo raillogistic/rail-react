@@ -285,7 +285,7 @@ export function createValidators<TValues>(
       sections.forEach((section: any) => {
         section.fields?.forEach((subField: any) => {
           if (subField.isRequired) {
-            const val = valObj[subField.fieldKey];
+            const val = valObj[subField.fieldName];
             const isEmpty =
               val === undefined ||
               val === null ||

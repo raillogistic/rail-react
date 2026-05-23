@@ -22,7 +22,7 @@ export const FinanceHomePage: React.FC = () => {
                   order: 1, // Optionnel: pour l'ordre d'affichage
                   fields: [
                     {
-                      fieldKey: "code_projet", // La clé qui sera utilisée dans l'objet JSON généré
+                      fieldName: "code_projet", // La clé qui sera utilisée dans l'objet JSON généré
                       label: "Code du Projet",
                       fieldType: "text", // "text", "number", "date", ou "boolean"
                       isRequired: true,
@@ -31,7 +31,7 @@ export const FinanceHomePage: React.FC = () => {
                       helpText: "Code interne utilisé par la comptabilité.",
                     },
                     {
-                      fieldKey: "budget_alloue",
+                      fieldName: "budget_alloue",
                       label: "Budget Alloué (€)",
                       fieldType: "number",
                       isRequired: true,
@@ -45,14 +45,14 @@ export const FinanceHomePage: React.FC = () => {
                   order: 2,
                   fields: [
                     {
-                      fieldKey: "date_lancement",
+                      fieldName: "date_lancement",
                       label: "Date de Lancement",
                       fieldType: "date",
                       isRequired: false,
                       displayOrder: 1,
                     },
                     {
-                      fieldKey: "est_facturable",
+                      fieldName: "est_facturable",
                       label: "Est Facturable",
                       fieldType: "boolean",
                       isRequired: false,

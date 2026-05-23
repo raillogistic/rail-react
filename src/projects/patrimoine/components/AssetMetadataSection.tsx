@@ -64,13 +64,13 @@ function MetadataFieldInput({
   onChange: (definitionItemId: string, value: unknown) => void;
   error?: string;
 }) {
-  const inputId = `metadata-${field.fieldKey}`;
+  const inputId = `metadata-${field.fieldName}`;
 
   const handleChange = useCallback(
     (newValue: unknown) => {
-      onChange(field.fieldKey, newValue);
+      onChange(field.fieldName, newValue);
     },
-    [field.fieldKey, onChange],
+    [field.fieldName, onChange],
   );
 
   const baseInputClass = cn(
@@ -234,11 +234,11 @@ function MetadataSectionGroup({
         <div className="grid grid-cols-1 gap-4 px-4 pb-4 sm:grid-cols-2">
           {section.fields.map((field) => (
             <MetadataFieldInput
-              key={field.fieldKey}
+              key={field.fieldName}
               field={field}
-              value={values[field.fieldKey]}
+              value={values[field.fieldName]}
               onChange={onChange}
-              error={errors.get(field.fieldKey)}
+              error={errors.get(field.fieldName)}
             />
           ))}
         </div>
@@ -283,13 +283,13 @@ export const AssetMetadataSection = forwardRef<
         const errors: string[] = [];
         const newErrors = new Map<string, string>();
         for (const field of allFields) {
-          const value = values[field.fieldKey];
+          const value = values[field.fieldName];
           if (
             field.isRequired &&
             (value === undefined || value === null || value === "")
           ) {
             errors.push(`Le champ "${field.label}" est requis.`);
-            newErrors.set(field.fieldKey, "Ce champ est requis");
+            newErrors.set(field.fieldName, "Ce champ est requis");
           }
         }
         setValidationErrors(newErrors);

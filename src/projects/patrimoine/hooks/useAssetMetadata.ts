@@ -22,7 +22,7 @@ export interface MetadataFieldDefinition {
   /** Ordre d'affichage de la section */
   sectionOrder: number;
   /** Clé technique du champ */
-  fieldKey: string;
+  fieldName: string;
   /** Libellé affiché */
   label: string;
   /** Type de champ (text, number, date, boolean, select, multiselect) */
@@ -65,7 +65,7 @@ const METADATA_DEFINITIONS_QUERY = gql`
       }
       items {
         id
-        fieldKey
+        fieldName
         label
         fieldType
         isRequired
@@ -169,7 +169,7 @@ export function useAssetMetadataDefinitions({
               definitionItemId: String(item.id),
               sectionName: def.name,
               sectionOrder: def.displayOrder,
-              fieldKey: item.fieldKey,
+              fieldName: item.fieldName,
               label: item.label,
               fieldType: item.fieldType,
               isRequired: item.isRequired,

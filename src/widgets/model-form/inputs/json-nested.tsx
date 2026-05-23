@@ -72,7 +72,7 @@ const JsonNestedInput: React.FC<Props> = ({ config, field, form }) => {
     sections.forEach((section) => {
       section.fields.forEach((subField) => {
         if (subField.isRequired) {
-          const val = value[subField.fieldKey];
+          const val = value[subField.fieldName];
           const isEmpty =
             val === undefined ||
             val === null ||
@@ -80,7 +80,7 @@ const JsonNestedInput: React.FC<Props> = ({ config, field, form }) => {
             (Array.isArray(val) && val.length === 0);
 
           if (isEmpty) {
-            newErrors[subField.fieldKey] = "Ce champ est obligatoire";
+            newErrors[subField.fieldName] = "Ce champ est obligatoire";
           }
         }
       });
@@ -117,8 +117,8 @@ const JsonNestedInput: React.FC<Props> = ({ config, field, form }) => {
   // --- Rendu des sous-champs ---
 
   const renderField = (def: JsonNestedFieldDefinition) => {
-    const subValue = value[def.fieldKey];
-    const subError = localErrors[def.fieldKey];
+    const subValue = value[def.fieldName];
+    const subError = localErrors[def.fieldName];
 
     const labelNode = (
       <div className="flex items-center gap-2 mb-1.5">
@@ -159,7 +159,7 @@ const JsonNestedInput: React.FC<Props> = ({ config, field, form }) => {
     if (def.fieldType === "text" || def.fieldType === "number" || def.fieldType === "date") {
       const inputType = def.fieldType === "text" ? "text" : def.fieldType === "number" ? "number" : "date";
       return (
-        <div key={def.fieldKey} className="flex flex-col">
+        <div key={def.fieldName} className="flex flex-col">
           {labelNode}
           <Input
             type={inputType}
@@ -167,7 +167,7 @@ const JsonNestedInput: React.FC<Props> = ({ config, field, form }) => {
             value={subValue ?? ""}
             onChange={(e) => {
               const val = e.target.value;
-              updateValue(def.fieldKey, def.fieldType === "number" && val ? Number(val) : val);
+              updateValue(def.fieldName, def.fieldType === "number" && val ? Number(val) : val);
             }}
             onBlur={field.handleBlur}
             disabled={config.disabled || config.readOnly}
@@ -185,12 +185,12 @@ const JsonNestedInput: React.FC<Props> = ({ config, field, form }) => {
     if (def.fieldType === "boolean") {
       const isChecked = Boolean(subValue);
       return (
-        <div key={def.fieldKey} className="flex flex-col">
+        <div key={def.fieldName} className="flex flex-col">
           <div className="flex items-center gap-3 h-9">
             <Switch
               checked={isChecked}
               onCheckedChange={(checked) => {
-                updateValue(def.fieldKey, checked);
+                updateValue(def.fieldName, checked);
                 field.handleBlur();
               }}
               disabled={config.disabled || config.readOnly}
