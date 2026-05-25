@@ -68,18 +68,16 @@ function DraggableHead({
       style={style}
       className={cn(
         "group/col font-semibold sticky top-0 z-20 whitespace-nowrap overflow-visible",
-        "border-b border-border bg-muted/50 text-left",
+        "border-b border-primary-foreground/15 bg-primary/95 text-primary-foreground backdrop-blur-md text-left",
         "transition-all duration-200",
         density === "compact"
-          ? "h-9 p-0 text-[10px] uppercase tracking-wider"
+          ? "h-8 p-0 text-[10px] tracking-normal"
           : density === "spacious"
-            ? "h-14 p-0 text-[13px]"
-            : "h-11 p-0 text-[11px] uppercase tracking-wide",
-        isDragging &&
-          "opacity-75 z-30 ring-1 ring-ring shadow-sm bg-accent/50",
-        "text-muted-foreground hover:text-foreground",
-        isActions &&
-          "bg-muted/50 font-semibold text-xs tracking-wider",
+            ? "h-12 p-0 text-[12px]"
+            : "h-10 p-0 text-[11px] tracking-normal",
+        isDragging && "opacity-75 z-30 ring-1 ring-ring shadow-sm bg-primary",
+        "text-primary-foreground/90 hover:text-white",
+        isActions && "bg-primary/95 font-semibold text-xs tracking-wider",
         className,
       )}
       aria-sort={ariaSort}
@@ -90,10 +88,10 @@ function DraggableHead({
             type="button"
             aria-label="Reordonner la colonne"
             className={cn(
-              "h-full px-2 border-r border-border/20",
-              "text-muted-foreground/30 hover:text-primary hover:bg-primary/5",
+              "h-full px-2 border-r border-primary-foreground/10",
+              "text-primary-foreground/35 hover:text-white hover:bg-primary-foreground/10",
               "cursor-grab active:cursor-grabbing transition-all",
-              "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary/30",
+              "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/30",
             )}
             {...attributes}
             {...listeners}
@@ -283,13 +281,13 @@ export function TableHeader({
           <TableHead
             className={cn(
               "w-12.5 table-first-column sticky top-0 z-20 overflow-visible",
-              "border-b border-border bg-muted/50",
+              "border-b border-primary-foreground/15 bg-primary/95",
               "transition-colors duration-200",
               density === "compact"
-                ? "py-0 px-2 h-9"
+                ? "py-0 px-2 h-8"
                 : density === "spacious"
-                  ? "py-0 px-3.5 h-14"
-                  : "py-0 px-3 h-11",
+                  ? "py-0 px-3.5 h-12"
+                  : "py-0 px-3 h-10",
             )}
           >
             <div className="flex items-center justify-center h-full">
@@ -299,7 +297,7 @@ export function TableHeader({
                 }
                 onCheckedChange={toggleSelectAll}
                 aria-label="Tout sélectionner"
-                className="size-4 transition-all data-[state=checked]:bg-primary data-[state=checked]:border-primary border-muted-foreground/30"
+                className="size-4 transition-all data-[state=checked]:bg-white data-[state=checked]:text-primary border-primary-foreground/45 data-[state=checked]:border-white"
               />
             </div>
           </TableHead>
@@ -332,7 +330,7 @@ export function TableHeader({
                       title={field.title}
                       disabled={disableSorting}
                       fullWidthTrigger
-                      variant="default"
+                      variant="primary"
                     />
                   </div>
                   <ColumnFilter columnId={field.id} hideTrigger />
@@ -364,7 +362,7 @@ export function TableHeader({
                     field={field}
                     disabled={disableSorting}
                     fullWidthTrigger
-                    variant="default"
+                    variant="primary"
                   />
                 </div>
                 <ColumnFilter columnId={field.name} field={field} hideTrigger />
@@ -376,12 +374,12 @@ export function TableHeader({
         <DraggableHead
           id="actions"
           draggable={false}
-          className="w-35 text-right sticky right-0 z-30 table-last-column border-l border-border bg-muted/50"
+          className="w-35 text-right sticky right-0 z-30 table-last-column border-l border-primary-foreground/15 bg-primary/95 text-primary-foreground"
           density={density}
           isActions
         >
           <div className="flex w-full items-center justify-end pr-4 gap-1.5">
-            <span className="block text-[9px] font-semibold uppercase tracking-widest text-muted-foreground/50">
+            <span className="block text-[9px] font-semibold uppercase tracking-widest text-primary-foreground/50">
               {actionsLabel ?? ""}
             </span>
           </div>

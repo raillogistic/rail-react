@@ -79,6 +79,7 @@ export function TableColumnMenu({
     setActiveColumnFilter,
     dragModeEnabled,
     setDragModeEnabled,
+    density,
   } = useTable();
   const { advancedFilters, filterVariables, setAdvancedFilters } =
     useTableFilters();
@@ -258,8 +259,13 @@ export function TableColumnMenu({
             <button
               type="button"
               className={cn(
-                "flex h-full w-full items-center justify-between gap-2 px-3 py-2.5 outline-none border-none",
-                "text-xs font-semibold tracking-normal transition-all duration-200",
+                "flex h-full w-full items-center justify-between outline-none border-none",
+                density === "compact"
+                  ? "px-1.5 py-0 gap-1 text-[10px]"
+                  : density === "spacious"
+                    ? "px-3.5 py-0 gap-2 text-[13px]"
+                    : "px-2.5 py-0 gap-1.5 text-[11px]",
+                "font-semibold tracking-normal transition-all duration-200",
                 "group/trigger",
                 variant === "primary"
                   ? currentSort
@@ -267,20 +273,35 @@ export function TableColumnMenu({
                     : "text-primary-foreground/90 hover:text-white hover:bg-primary-foreground/10 data-[state=open]:bg-primary-foreground/15 data-[state=open]:text-white"
                   : currentSort
                     ? "bg-primary/[0.03] text-primary"
-                    : "text-muted-foreground/70 hover:text-foreground hover:bg-primary/5 active:bg-primary/8 data-[state=open]:bg-primary/5 data-[state=open]:text-primary",
+                    : "text-muted-foreground hover:text-foreground hover:bg-primary/5 active:bg-primary/8 data-[state=open]:bg-primary/5 data-[state=open]:text-primary",
               )}
             >
-              <div className="flex items-center gap-2 min-w-0 flex-1">
-                <span className="truncate text-left">{triggerTitle}</span>
-
-                {/* Sort Indicator */}
-                <div className="flex shrink-0 items-center gap-1" aria-hidden>
-                  {currentSort === "asc" ? (
-                    <ArrowUpAZ className="size-3 animate-in fade-in zoom-in-75 duration-300" />
-                  ) : currentSort === "desc" ? (
-                    <ArrowDownAZ className="size-3 animate-in fade-in zoom-in-75 duration-300" />
-                  ) : null}
-                </div>
+              <div className="flex items-center gap-2 min-w-0 flex-1" title={triggerTitle}>
+                <span className="truncate text-left">{title}</span>
+                {/* Sort Indicator Pill */}
+                {currentSort && (
+                  <div
+                    className={cn(
+                      "flex shrink-0 items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] animate-in fade-in duration-300 font-semibold",
+                      variant === "primary"
+                        ? "bg-primary-foreground/25 text-white border border-white/20"
+                        : "bg-primary/10 text-primary border border-primary/20"
+                    )}
+                    aria-hidden
+                  >
+                    {currentSort === "asc" ? (
+                      <>
+                        <ArrowUpAZ className="size-2.5" />
+                        <span>Croissant</span>
+                      </>
+                    ) : (
+                      <>
+                        <ArrowDownAZ className="size-2.5" />
+                        <span>Décroissant</span>
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
 
               {!currentSort && (

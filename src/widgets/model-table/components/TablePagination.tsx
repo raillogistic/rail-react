@@ -1,3 +1,10 @@
+/**
+ * @file TablePagination.tsx
+ * @description Modern, premium, and feature-rich Table Pagination component.
+ * Provides advanced tactile navigation, exact selection and showing summary,
+ * tabular-nums digit alignment, and high-contrast primary color cues.
+ * Fully responsive and visually cohesive with the modernized table workspace.
+ */
 import { useEffect, useMemo, useState } from "react";
 import {
   ChevronLeft,
@@ -52,6 +59,7 @@ export function TablePagination({
       totalKnown,
       hasNextPage,
       hasPreviousPage,
+      total,
     },
     setPage,
     setPerPage,
@@ -99,37 +107,45 @@ export function TablePagination({
   const canGoLast = totalKnown && page < totalPages;
 
   return (
-    <TooltipProvider delayDuration={300}>
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 bg-transparent">
+    <TooltipProvider delayDuration={200}>
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4.5 bg-background border-t border-border/60">
         {/* Left Section: Selection & Summary */}
-        <div className="flex items-center gap-4 w-full sm:w-auto">
-          {enableSelection && selectedCount > 0 ? (
-            <div className="flex items-center gap-2 animate-in zoom-in-95 duration-300">
+        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto text-xs text-muted-foreground font-medium">
+          {enableSelection && selectedCount > 0 && (
+            <div className="flex items-center gap-2 animate-in zoom-in-95 duration-250">
               <Badge
                 variant="default"
-                className="h-6 px-2.5 bg-primary text-[11px] font-bold shadow-sm transition-colors border-none"
+                className="h-6 px-2.5 bg-primary text-[11px] font-bold shadow-xs transition-colors border-none text-primary-foreground"
               >
                 {selectedCount} sélectionné{selectedCount > 1 ? "s" : ""}
               </Badge>
               <div className="h-4 w-px bg-border/40 mx-1" />
             </div>
-          ) : null}
+          )}
 
-          <div className="flex flex-col gap-0.5"></div>
-
-          <div className="ml-2 group"></div>
+          <div className="flex flex-col gap-0.5 select-none">
+            {totalKnown ? (
+              <span>
+                Affichage de <span className="font-semibold text-foreground tabular-nums">{(page - 1) * perPage + 1}</span> à{" "}
+                <span className="font-semibold text-foreground tabular-nums">{Math.min(page * perPage, total)}</span> sur{" "}
+                <span className="font-semibold text-foreground tabular-nums">{total}</span> éléments
+              </span>
+            ) : (
+              <span>Page {page}</span>
+            )}
+          </div>
         </div>
 
         {/* Right Section: Controls Group */}
-        <div className="flex flex-wrap items-center justify-center sm:justify-end gap-3 sm:gap-8 w-full sm:w-auto">
+        <div className="flex flex-wrap items-center justify-center sm:justify-end gap-3 sm:gap-6 w-full sm:w-auto">
           {/* Rows Per Page Selector */}
-          <div className="flex items-center gap-2.5 group">
-            <div className="flex flex-col items-end gap-0.5">
-              <span className="text-[10px] font-bold text-muted-foreground/40 uppercase tracking-[0.2em] leading-none hidden lg:inline">
+          <div className="flex items-center gap-3 group">
+            <div className="flex flex-col items-end gap-0.5 select-none">
+              <span className="text-[9px] font-bold text-muted-foreground/40 uppercase tracking-[0.15em] leading-none hidden lg:inline">
                 Affichage
               </span>
-              <span className="text-[11px] font-bold text-muted-foreground hidden lg:inline">
-                {labels?.rowsPerPage ?? "Lignes"}
+              <span className="text-[11px] font-semibold text-muted-foreground hidden lg:inline">
+                {labels?.rowsPerPage ?? "Lignes par page"}
               </span>
             </div>
             <Select
@@ -138,21 +154,21 @@ export function TablePagination({
             >
               <SelectTrigger
                 className={cn(
-                  "h-8 w-[85px] border-border bg-background text-xs font-bold transition-colors hover:bg-muted/50",
+                  "h-8.5 w-[105px] border-border bg-background text-xs font-semibold transition-all duration-200 hover:border-primary/30 hover:bg-primary/[0.02] rounded-md shadow-xs active:scale-98",
                 )}
               >
-                <SelectValue placeholder={perPage} />
+                <SelectValue placeholder={`${perPage} lignes`} />
               </SelectTrigger>
               <SelectContent
                 side="top"
                 align="end"
-                className="border-border bg-popover shadow-md"
+                className="border-border bg-popover shadow-md rounded-md p-1"
               >
                 {pageSizeOptions.map((pageSize) => (
                   <SelectItem
                     key={pageSize}
                     value={`${pageSize}`}
-                    className="text-xs font-semibold focus:bg-primary focus:text-primary-foreground m-1 transition-colors"
+                    className="text-xs font-medium focus:bg-primary focus:text-primary-foreground rounded-sm m-0.5 transition-colors cursor-pointer"
                   >
                     {pageSize} lignes
                   </SelectItem>
@@ -161,17 +177,17 @@ export function TablePagination({
             </Select>
           </div>
 
-          <div className="h-8 w-px bg-border/20 hidden md:block" />
+          <div className="h-6 w-px bg-border/40 hidden md:block" />
 
           {/* Pagination Cluster */}
-          <div className="flex items-center gap-1 p-1 bg-background border border-border rounded-md">
+          <div className="flex items-center gap-1 p-1 bg-muted/30 border border-border/80 rounded-lg shadow-2xs">
             {/* First Page */}
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="hidden h-8 w-8 lg:flex hover:bg-muted hover:text-foreground disabled:opacity-50 transition-colors"
+                  className="hidden h-8 w-8 lg:flex hover:bg-primary/10 hover:text-primary active:scale-90 disabled:opacity-30 disabled:pointer-events-none transition-all duration-150 rounded-md"
                   onClick={() => setPage(1)}
                   disabled={!canGoFirst || loading}
                 >
@@ -180,7 +196,7 @@ export function TablePagination({
               </TooltipTrigger>
               <TooltipContent
                 side="top"
-                className="font-bold text-[10px] uppercase tracking-widest"
+                className="font-bold text-[10px] uppercase tracking-widest bg-primary text-primary-foreground border-none shadow-sm rounded-sm"
               >
                 Premier
               </TooltipContent>
@@ -192,7 +208,7 @@ export function TablePagination({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 hover:bg-muted hover:text-foreground disabled:opacity-50 transition-colors"
+                  className="h-8 w-8 hover:bg-primary/10 hover:text-primary active:scale-90 disabled:opacity-30 disabled:pointer-events-none transition-all duration-150 rounded-md"
                   onClick={() => setPage(page - 1)}
                   disabled={!canGoPrevious || loading}
                 >
@@ -201,31 +217,31 @@ export function TablePagination({
               </TooltipTrigger>
               <TooltipContent
                 side="top"
-                className="font-bold text-[10px] uppercase tracking-widest"
+                className="font-bold text-[10px] uppercase tracking-widest bg-primary text-primary-foreground border-none shadow-sm rounded-sm"
               >
                 Précédent
               </TooltipContent>
             </Tooltip>
 
             {/* Middle Indicator with Quick Jump */}
-            <div className="flex items-center px-4 gap-2 min-w-[120px] justify-center">
+            <div className="flex items-center px-3 gap-2 min-w-[125px] justify-center">
               {!isJumping ? (
                 <button
-                  className="group/jump flex flex-col items-center gap-0 cursor-pointer hover:bg-muted/50 rounded-sm px-2 py-0.5 transition-colors"
+                  className="group/jump flex items-center gap-1.5 cursor-pointer hover:bg-primary/5 border border-transparent hover:border-primary/10 rounded-md px-2.5 py-1 transition-all duration-200"
                   onClick={() => totalKnown && setIsQuickJumpOpen(true)}
                 >
-                  <span className="text-[9px] font-bold text-muted-foreground/40 uppercase tracking-[0.2em] leading-none group-hover/jump:text-primary/60 transition-colors">
+                  <span className="text-[9px] font-bold text-muted-foreground/50 uppercase tracking-widest leading-none group-hover/jump:text-primary/70 transition-colors">
                     Page
                   </span>
-                  <span className="text-sm font-black text-foreground tracking-tighter group-hover/jump:text-primary transition-colors">
+                  <span className="text-xs font-extrabold text-foreground tracking-tight group-hover/jump:text-primary transition-colors bg-background border border-border/60 px-1.5 py-0.5 rounded shadow-3xs tabular-nums">
                     {totalKnown
                       ? (labels?.pageStatus?.(page, totalPages) ??
-                        `${page} / ${totalPages}`)
+                        `${page} sur ${totalPages}`)
                       : page}
                   </span>
                 </button>
               ) : (
-                <div className="flex items-center gap-1.5 animate-in zoom-in-95 duration-200">
+                <div className="flex items-center gap-1 animate-in zoom-in-95 duration-200">
                   <Input
                     autoFocus
                     value={pageInput}
@@ -244,12 +260,12 @@ export function TablePagination({
                         setIsQuickJumpOpen(false);
                       }
                     }}
-                    className="h-8 w-14 text-xs font-black text-center p-0 border-primary/30 bg-background/50 focus-visible:ring-primary/20 "
+                    className="h-7 w-12 text-xs font-bold text-center p-0 border-primary/30 bg-background focus-visible:ring-primary/20 rounded-md"
                   />
                   <Button
                     size="icon"
                     variant="ghost"
-                    className="h-8 w-8 text-primary bg-primary/5 "
+                    className="h-7 w-7 text-primary bg-primary/5 hover:bg-primary hover:text-primary-foreground transition-all duration-150 rounded-md shadow-3xs"
                     onClick={() => {
                       commitPageInput();
                       setIsQuickJumpOpen(false);
@@ -267,7 +283,7 @@ export function TablePagination({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-8 w-8 hover:bg-muted hover:text-foreground disabled:opacity-50 transition-colors"
+                  className="h-8 w-8 hover:bg-primary/10 hover:text-primary active:scale-90 disabled:opacity-30 disabled:pointer-events-none transition-all duration-150 rounded-md"
                   onClick={() => setPage(page + 1)}
                   disabled={!canGoNext || loading}
                 >
@@ -276,7 +292,7 @@ export function TablePagination({
               </TooltipTrigger>
               <TooltipContent
                 side="top"
-                className="font-bold text-[10px] uppercase tracking-widest"
+                className="font-bold text-[10px] uppercase tracking-widest bg-primary text-primary-foreground border-none shadow-sm rounded-sm"
               >
                 Suivant
               </TooltipContent>
@@ -288,7 +304,7 @@ export function TablePagination({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="hidden h-8 w-8 lg:flex hover:bg-muted hover:text-foreground disabled:opacity-50 transition-colors"
+                  className="hidden h-8 w-8 lg:flex hover:bg-primary/10 hover:text-primary active:scale-90 disabled:opacity-30 disabled:pointer-events-none transition-all duration-150 rounded-md"
                   onClick={() => setPage(numPages || 1)}
                   disabled={!canGoLast || loading}
                 >
@@ -297,7 +313,7 @@ export function TablePagination({
               </TooltipTrigger>
               <TooltipContent
                 side="top"
-                className="font-bold text-[10px] uppercase tracking-widest"
+                className="font-bold text-[10px] uppercase tracking-widest bg-primary text-primary-foreground border-none shadow-sm rounded-sm"
               >
                 Dernier
               </TooltipContent>

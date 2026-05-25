@@ -144,6 +144,8 @@ function ColumnMenu<TRow extends Record<string, unknown>>({
   onResetLayout,
   children,
   className,
+  isPrimary = false,
+  density = "comfortable",
 }: {
   /** Current TanStack header. */
   header: Header<TRow, unknown>;
@@ -159,6 +161,10 @@ function ColumnMenu<TRow extends Record<string, unknown>>({
   children: ReactNode;
   /** Optional extra classes for the trigger. */
   className?: string;
+  /** Whether the header background is primary color. */
+  isPrimary?: boolean;
+  /** Resolved table density. */
+  density?: "compact" | "comfortable" | "spacious";
 }) {
   const canSort = header.column.getCanSort();
   const canHide = features.enableColumnHiding && header.column.getCanHide();
@@ -181,12 +187,21 @@ function ColumnMenu<TRow extends Record<string, unknown>>({
         <button
           type="button"
           className={cn(
-            "flex h-full w-full items-center justify-between gap-2 px-3 py-2.5 outline-none border-none",
-            "text-xs font-semibold tracking-wide transition-all duration-200",
-            "hover:bg-primary-foreground/10 group/trigger",
+            "flex h-full w-full items-center justify-between outline-none border-none bg-transparent",
+            density === "compact"
+              ? "px-1.5 py-0 gap-1 text-[10px]"
+              : density === "spacious"
+                ? "px-3.5 py-0 gap-2 text-[13px]"
+                : "px-2.5 py-0 gap-1.5 text-[11px]",
+            "font-semibold tracking-normal transition-all duration-200",
+            "group/trigger text-left",
             sortedState
-              ? "bg-primary-foreground/15 text-primary-foreground font-bold shadow-inner"
-              : "text-primary-foreground/80 hover:text-primary-foreground",
+              ? isPrimary
+                ? "text-white font-semibold bg-primary-foreground/10 shadow-sm"
+                : "text-primary font-semibold bg-primary/5 dark:bg-primary/10 shadow-sm"
+              : isPrimary
+                ? "text-primary-foreground/80 hover:text-white hover:bg-primary-foreground/10"
+                : "text-muted-foreground hover:text-foreground",
             className,
           )}
           aria-label={`Open column menu for ${title}`}
@@ -299,6 +314,8 @@ function DraggableHeaderCell<TRow extends Record<string, unknown>>({
   fitContent = false,
   stickyClassName,
   stickyStyle,
+  isPrimary = false,
+  density = "comfortable",
 }: {
   /** Current TanStack header instance. */
   header: Header<TRow, unknown>;
@@ -314,6 +331,10 @@ function DraggableHeaderCell<TRow extends Record<string, unknown>>({
   stickyClassName?: string;
   /** Optional sticky positioning style. */
   stickyStyle?: CSSProperties;
+  /** Whether the header background is primary color. */
+  isPrimary?: boolean;
+  /** Resolved table density. */
+  density?: "compact" | "comfortable" | "spacious";
 }) {
   const {
     attributes,
@@ -340,21 +361,41 @@ function DraggableHeaderCell<TRow extends Record<string, unknown>>({
       colSpan={header.colSpan}
       style={style}
       className={cn(
-        "group/header relative border-b border-primary/20 bg-gradient-to-b from-primary via-primary/95 to-primary p-0 align-middle",
-        "text-xs font-semibold text-primary-foreground transition-all duration-200",
-        "shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]",
+        "group/header relative border-b p-0 align-middle transition-all duration-200",
+        isPrimary
+          ? "border-primary-foreground/15 bg-primary/95 text-primary-foreground backdrop-blur-md"
+          : "border-border/80 bg-background/95 dark:bg-zinc-950/95 backdrop-blur-md text-muted-foreground hover:bg-muted/50 dark:hover:bg-zinc-900/50",
+        isPrimary
+          ? "after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-white/80 after:scale-x-0 after:origin-left after:transition-transform after:duration-300 hover:after:scale-x-100"
+          : "after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-primary/80 after:scale-x-0 after:origin-left after:transition-transform after:duration-300 hover:after:scale-x-100",
+        header.column.getIsSorted() &&
+          (isPrimary
+            ? "after:scale-x-100 after:bg-white text-white bg-primary-foreground/10"
+            : "after:scale-x-100 after:bg-primary text-foreground font-semibold bg-primary/[0.02]"),
+        density === "compact"
+          ? "h-8 text-[10px]"
+          : density === "spacious"
+            ? "h-12 text-[12px]"
+            : "h-10 text-[11px]",
         stickyClassName,
         fitContent && "w-[1%] whitespace-nowrap",
         isDragging &&
-          "z-40 opacity-80 ring-2 ring-primary/50 shadow-2xl scale-[1.01] bg-primary",
+          (isPrimary
+            ? "z-40 opacity-90 ring-2 ring-white shadow-2xl scale-[1.01] bg-primary"
+            : "z-40 opacity-90 ring-2 ring-primary shadow-2xl scale-[1.01] bg-background dark:bg-zinc-950"),
       )}
     >
-      <div className="flex h-full min-h-10 items-stretch">
+      <div className="flex h-full items-stretch">
         {draggable ? (
           <button
             type="button"
             aria-label="Reorder column"
-            className="grid w-8 shrink-0 place-items-center border-r border-primary-foreground/10 text-primary-foreground/45 hover:bg-primary-foreground/10 hover:text-primary-foreground transition-all duration-150"
+            className={cn(
+              "grid w-7 shrink-0 place-items-center border-r transition-all duration-150 cursor-grab active:cursor-grabbing",
+              isPrimary
+                ? "border-primary-foreground/10 text-primary-foreground/40 hover:bg-primary-foreground/10 hover:text-white"
+                : "border-border/40 text-muted-foreground/35 hover:bg-muted-foreground/5 hover:text-muted-foreground",
+            )}
             {...attributes}
             {...listeners}
             onClick={(event) => event.stopPropagation()}
@@ -362,7 +403,7 @@ function DraggableHeaderCell<TRow extends Record<string, unknown>>({
             <GripVertical className="size-3.5" />
           </button>
         ) : null}
-        <div className="min-w-0 flex-1">{children}</div>
+        <div className="min-w-0 flex-1 h-full">{children}</div>
       </div>
       {resizable ? (
         <div
@@ -371,7 +412,17 @@ function DraggableHeaderCell<TRow extends Record<string, unknown>>({
           aria-label="Resize column"
           onMouseDown={header.getResizeHandler()}
           onTouchStart={header.getResizeHandler()}
-          className="absolute right-0 top-0 bottom-0 z-50 w-[4px] cursor-col-resize bg-transparent opacity-0 group-hover/header:opacity-100 hover:!bg-primary-foreground/40 active:!bg-white transition-all duration-150"
+          className={cn(
+            "absolute right-0 top-0 bottom-0 z-50 w-[6px] cursor-col-resize select-none touch-none",
+            "bg-transparent transition-all duration-200",
+            isPrimary
+              ? "before:absolute before:right-[2px] before:top-2 before:bottom-2 before:w-[1px] before:bg-primary-foreground/20 before:transition-all hover:before:bg-white hover:before:w-[2px] hover:before:top-0 hover:before:bottom-0 hover:before:shadow-[0_0_8px_rgba(255,255,255,0.4)]"
+              : "before:absolute before:right-[2px] before:top-2 before:bottom-2 before:w-[1px] before:bg-border/40 before:transition-all hover:before:bg-primary hover:before:w-[2px] hover:before:top-0 hover:before:bottom-0 hover:before:shadow-[0_0_8px_rgba(59,130,246,0.4)]",
+            header.column.getIsResizing() &&
+              (isPrimary
+                ? "before:bg-white before:w-[2px] before:top-0 before:bottom-0 before:shadow-[0_0_8px_rgba(255,255,255,0.7)]"
+                : "before:bg-primary before:w-[2px] before:top-0 before:bottom-0 before:shadow-[0_0_8px_rgba(59,130,246,0.7)]"),
+          )}
         />
       ) : null}
     </TableHead>
@@ -398,6 +449,11 @@ export function DynamicTableHeader<TRow extends Record<string, unknown>>({
   const allPageRowsSelected = table.getIsAllPageRowsSelected();
   const somePageRowsSelected = table.getIsSomePageRowsSelected();
 
+  const isPrimaryHeader =
+    !layout.headerClassName?.includes("bg-background") &&
+    !layout.headerClassName?.includes("bg-default") &&
+    !layout.headerClassName?.includes("bg-muted");
+
   return (
     <UITableHeader className={layout.headerClassName}>
       {table.getHeaderGroups().map((headerGroup) => (
@@ -411,7 +467,12 @@ export function DynamicTableHeader<TRow extends Record<string, unknown>>({
                 <TableHead
                   key={header.id}
                   colSpan={header.colSpan}
-                  className="border-b border-border/20 bg-muted/20"
+                  className={cn(
+                    "border-b",
+                    isPrimaryHeader
+                      ? "border-primary-foreground/10 bg-primary/40"
+                      : "border-border/20 bg-muted/20",
+                  )}
                 />
               );
             }
@@ -465,7 +526,17 @@ export function DynamicTableHeader<TRow extends Record<string, unknown>>({
                   key={header.id}
                   colSpan={header.colSpan}
                   style={resolveHeaderStyle(header)}
-                  className="border-b border-primary/20 bg-primary px-3 py-2.5 text-xs font-semibold text-primary-foreground tracking-normal"
+                  className={cn(
+                    "border-b py-0 outline-none transition-all duration-200 font-semibold tracking-normal",
+                    layout.density === "compact"
+                      ? "px-1.5 gap-1 text-[10px]"
+                      : layout.density === "spacious"
+                        ? "px-3.5 gap-2 text-[13px]"
+                        : "px-2.5 gap-1.5 text-[11px]",
+                    isPrimaryHeader
+                      ? "border-primary-foreground/15 bg-primary/95 text-primary-foreground backdrop-blur-md"
+                      : "border-border/80 bg-background/95 dark:bg-zinc-950/95 backdrop-blur-md text-muted-foreground",
+                  )}
                 >
                   {flexRender(
                     header.column.columnDef.header,
@@ -485,8 +556,17 @@ export function DynamicTableHeader<TRow extends Record<string, unknown>>({
                   fitContent={autoSizeActionsHeader}
                   stickyClassName={stickyClassName}
                   stickyStyle={stickyStyle}
+                  isPrimary={isPrimaryHeader}
+                  density={layout.density}
                 >
-                  <div className="grid h-full place-items-center text-xs font-semibold text-primary-foreground">
+                  <div
+                    className={cn(
+                      "grid h-full place-items-center text-xs font-medium",
+                      isPrimaryHeader
+                        ? "text-primary-foreground"
+                        : "text-muted-foreground",
+                    )}
+                  >
                     {expandColumnHeader ?? null}
                   </div>
                 </DraggableHeaderCell>
@@ -502,6 +582,8 @@ export function DynamicTableHeader<TRow extends Record<string, unknown>>({
                   resizable={false}
                   stickyClassName={stickyClassName}
                   stickyStyle={stickyStyle}
+                  isPrimary={isPrimaryHeader}
+                  density={layout.density}
                 >
                   <div className="grid h-full place-items-center">
                     <Checkbox
@@ -513,7 +595,11 @@ export function DynamicTableHeader<TRow extends Record<string, unknown>>({
                         table.toggleAllPageRowsSelected(Boolean(checked));
                       }}
                       aria-label="Select all rows"
-                      className="data-[state=checked]:bg-primary-foreground data-[state=checked]:text-primary data-[state=checked]:border-primary-foreground border-primary-foreground/50 text-primary-foreground"
+                      className={cn(
+                        isPrimaryHeader
+                          ? "data-[state=checked]:bg-white data-[state=checked]:text-primary border-primary-foreground/40 text-primary-foreground"
+                          : "data-[state=checked]:bg-primary data-[state=checked]:text-primary-foreground border-muted-foreground/30 text-primary-foreground",
+                      )}
                     />
                   </div>
                 </DraggableHeaderCell>
@@ -529,8 +615,17 @@ export function DynamicTableHeader<TRow extends Record<string, unknown>>({
                   resizable={false}
                   stickyClassName={stickyClassName}
                   stickyStyle={stickyStyle}
+                  isPrimary={isPrimaryHeader}
+                  density={layout.density}
                 >
-                  <div className="flex h-full items-center justify-end text-xs font-semibold text-primary-foreground px-3 tracking-normal">
+                  <div
+                    className={cn(
+                      "flex h-full items-center justify-end text-xs font-medium px-3 tracking-normal",
+                      isPrimaryHeader
+                        ? "text-primary-foreground"
+                        : "text-muted-foreground",
+                    )}
+                  >
                     {layout.actions?.headerLabel ?? ""}
                   </div>
                 </DraggableHeaderCell>
@@ -554,12 +649,26 @@ export function DynamicTableHeader<TRow extends Record<string, unknown>>({
                 fitContent={autoSizeActionsHeader}
                 stickyClassName={stickyClassName}
                 stickyStyle={stickyStyle}
+                isPrimary={isPrimaryHeader}
+                density={layout.density}
               >
                 {isCustomHeader ? (
                   <div
                     className={cn("flex h-full items-center", headerClassName)}
                   >
-                    <div className="min-w-0 flex-1 flex items-center h-full text-primary-foreground">
+                    <div
+                      className={cn(
+                        "min-w-0 flex-1 flex items-center h-full font-semibold",
+                        layout.density === "compact"
+                          ? "px-1.5 py-0 gap-1 text-[10px]"
+                          : layout.density === "spacious"
+                            ? "px-3.5 py-0 gap-2 text-[13px]"
+                            : "py-0 gap-1.5 text-[11px]",
+                        isPrimaryHeader
+                          ? "text-primary-foreground"
+                          : "text-muted-foreground hover:text-foreground",
+                      )}
+                    >
                       {flexRender(
                         header.column.columnDef.header,
                         header.getContext(),
@@ -574,25 +683,50 @@ export function DynamicTableHeader<TRow extends Record<string, unknown>>({
                     state={state}
                     onResetLayout={onResetLayout}
                     className={headerClassName}
+                    isPrimary={isPrimaryHeader}
+                    density={layout.density}
                   >
-                    <div className="min-w-0 flex-1 flex items-center gap-2 text-left">
-                      <span className="truncate tracking-wide font-semibold text-xs">
+                    <div
+                      className="min-w-0 flex-1 flex items-center gap-2 text-left"
+                      title={resolveHeaderLabel(header)}
+                    >
+                      <span className="truncate tracking-normal font-semibold text-xs">
                         {resolveHeaderLabel(header)}
                       </span>
-                      {/* Sort Indicator */}
-                      <div
-                        className="flex shrink-0 items-center gap-1"
-                        aria-hidden
-                      >
-                        {sortedState === "asc" ? (
-                          <ArrowUp className="size-3 text-primary-foreground" />
-                        ) : sortedState === "desc" ? (
-                          <ArrowDown className="size-3 text-primary-foreground" />
-                        ) : null}
-                      </div>
+                      {/* Sort Indicator Pill */}
+                      {sortedState && (
+                        <div
+                          className={cn(
+                            "flex shrink-0 items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] border animate-in fade-in duration-300 font-semibold",
+                            isPrimaryHeader
+                              ? "bg-primary-foreground/20 text-white border-white/20"
+                              : "bg-primary/10 text-primary border border-primary/20",
+                          )}
+                          aria-hidden
+                        >
+                          {sortedState === "asc" ? (
+                            <>
+                              <ArrowUp className="size-2.5" />
+                              <span>Croissant</span>
+                            </>
+                          ) : (
+                            <>
+                              <ArrowDown className="size-2.5" />
+                              <span>Décroissant</span>
+                            </>
+                          )}
+                        </div>
+                      )}
                     </div>
                     {!sortedState && (
-                      <ArrowUpDown className="size-3 shrink-0 opacity-0 group-hover/trigger:opacity-60 text-primary-foreground/75 transition-all duration-200" />
+                      <ArrowUpDown
+                        className={cn(
+                          "size-3.5 shrink-0 opacity-0 group-hover/trigger:opacity-40 transition-all duration-250",
+                          isPrimaryHeader
+                            ? "text-primary-foreground/80"
+                            : "text-muted-foreground/60",
+                        )}
+                      />
                     )}
                   </ColumnMenu>
                 )}
