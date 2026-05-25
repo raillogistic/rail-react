@@ -47,13 +47,15 @@ export type DeepPartialFormValue<T> = T extends NonTraversableFormValue
        ? { [K in keyof T]?: DeepPartialFormValue<T[K]> }
        : T;
 
-export type FormFieldPath<T> = T extends object
- ? {
-     [K in Extract<keyof T, string>]: FormObjectValue<NonNullable<T[K]>> extends never
-       ? K
-       : K | `${K}.${FormFieldPath<FormObjectValue<NonNullable<T[K]>>>}`;
-   }[Extract<keyof T, string>]
- : never;
+export type FormFieldPath<T, Depth extends any[] = []> = Depth["length"] extends 3
+ ? string
+ : T extends object
+   ? {
+       [K in Extract<keyof T, string>]: FormObjectValue<NonNullable<T[K]>> extends never
+         ? K
+         : K | `${K}.${FormFieldPath<FormObjectValue<NonNullable<T[K]>>, [...Depth, any]>}`;
+     }[Extract<keyof T, string>]
+   : never;
 
 export type FormFieldPathValue<T, TPath extends string> =
  TPath extends `${infer THead}.${infer TRest}`

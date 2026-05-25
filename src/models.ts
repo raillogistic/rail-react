@@ -1,7 +1,7 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
 // Source: scripts/getModels.mjs
 // Command: npm run getModels
-// Generated at: 2026-05-21T08:30:51.425Z
+// Generated at: 2026-05-24T14:59:47.747Z
 
 export interface AssignmentsAssetAssignment {
   /** Bien */
@@ -265,7 +265,7 @@ export interface LocationsMovementSequence {
 }
 export interface PatrimoineAsset {
   /** Date d'acquisition */
-  acquisitionDate?: string | null;
+  acquisitionDate: string;
   /** Méthode d'acquisition */
   acquisitionMethod: string;
   /** Valeur d'acquisition */
@@ -331,7 +331,7 @@ export interface PatrimoineAsset {
   /** Statut de propriété */
   ownershipStatus: string;
   /** État physique */
-  physicalCondition?: ReferentialsPhysicalCondition | null;
+  physicalCondition: ReferentialsPhysicalCondition;
   /** Valeur QR Code */
   qrCodeValue?: string | null;
   /** Employé responsable */
@@ -380,6 +380,8 @@ export interface PatrimoineAssetDisposal {
 export interface PatrimoineAssetFinancialProfile {
   /** Bien */
   asset: PatrimoineAsset;
+  /** Valeur nette comptable (calculée) */
+  cachedNetBookValue?: number | null;
   /** Date de création */
   createdAt?: string | null;
   /** Créé par */
@@ -396,6 +398,8 @@ export interface PatrimoineAssetFinancialProfile {
   exitValue?: number | null;
   /** ID */
   id?: number | null;
+  /** Dernière date de calcul d'amortissement */
+  lastDepreciationDate?: string | null;
   /** net book value */
   netBookValue?: string | null;
   /** Valeur résiduelle */
@@ -1031,7 +1035,7 @@ export interface ReferentialsAssetMetadataDefinitionItem {
   /** Ordre d'affichage */
   displayOrder: number;
   /** Clé du champ */
-  fieldKey: string;
+  fieldName: string;
   /** Type de champ */
   fieldType: string;
   /** ID */

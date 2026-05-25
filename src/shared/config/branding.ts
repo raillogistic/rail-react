@@ -4,15 +4,15 @@
  */
 
 export const BRANDING = {
-  productName: "TRANSTEV",
-  productNameLong: "TRANSTEV",
-  editionLabel: "",
+  productName: "Patrimoine",
+  productNameLong: "RAIL LOGISTIC",
+  editionLabel: "RAIL LOGISTIC",
   platformLabel: "",
   hubLabel: "",
   logoAlt: "App logo",
 } as const;
 
 export const SYSTEM_STATUS = {
-  connectedLabel: "System connected",
+  connectedLabel: "Connecté",
   latencyRegionLabel: "",
 } as const;

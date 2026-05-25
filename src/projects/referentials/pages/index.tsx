@@ -470,8 +470,8 @@ export function AssetCategoryFormPage() {
           {
             id: "general",
             title: "Informations",
-            columns: 2,
-            fields: ["name", "code", "icon", "isSystem", "isActive"],
+            columns: 3,
+            fields: ["name", "code",   "isActive"],
           },
           {
             id: "finance",
@@ -785,6 +785,30 @@ export function MetadataDefinitionFormPage() {
               mode: "drag&drop",
             },
           },
+        }}
+        fieldOverrides={{
+          // RG-BIEN-07: Filtrage des familles par catégorie
+          family: (field) => ({
+            ...field,
+            type: "select-query",
+            dependsOn: ["category"],
+            visible: (values) => Boolean(values.category),
+            graphql: {
+              // @ts-ignore
+              ...(field.graphql ?? {}),
+              where: (ctx: any) => {
+                const categoryId = Array.isArray(ctx.values.category)
+                  ? ctx.values.category[0]
+                  : ctx.values.category;
+
+                if (!categoryId) return {};
+
+                return {
+                  category: { eq: categoryId },
+                };
+              },
+            },
+          }),
         }}
         generatedSections={[
           {

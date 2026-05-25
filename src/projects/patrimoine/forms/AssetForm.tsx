@@ -184,13 +184,7 @@ export function AssetForm({
           id: "status_condition",
           title: "Statut & État",
           columns: 2,
-          fields: ["administrativeStatus", "physicalCondition"],
-        },
-        {
-          id: "exit",
-          title: "Sortie du Patrimoine",
-          columns: 2,
-          fields: ["exitMethod", "exitDate"],
+          fields: [ "physicalCondition"],
         },
         {
           id: "metadata_section",
@@ -224,11 +218,15 @@ export function AssetForm({
         },
 
         // RG-BIEN-07: Filtrage des familles par catégorie
+        category: {
+          readOnly: isUpdate,
+        },
         family: (field) => ({
           ...field,
           type: "select-query",
           dependsOn: ["category"],
           visible: (values) => Boolean(values.category),
+          readOnly: isUpdate,
           graphql: {
             // @ts-ignore
             ...(field.graphql ?? {}),
@@ -247,20 +245,51 @@ export function AssetForm({
           },
         }),
 
+        location: {
+          readOnly: isUpdate,
+        },
+
         // RG-AFF-05: Responsabilité exclusive Employé vs Service
-        responsibleEmployee: {
+        responsibleEmployee: (field) => ({
+          ...field,
+          type: "select-query",
           dependsOn: ["responsibleService"],
           disabledWhen: (values) => Boolean(values.responsibleService),
-        },
+          readOnly: isUpdate,
+          graphql: {
+            // @ts-ignore
+            ...(field.graphql ?? {}),
+            where: (ctx: any) => {
+              const serviceId = Array.isArray(ctx.values.responsibleService)
+                ? ctx.values.responsibleService[0]
+                : ctx.values.responsibleService;
+
+              if (!serviceId) return {};
+
+              return {
+                service: { eq: serviceId },
+              };
+            },
+          },
+        }),
         responsibleService: {
           dependsOn: ["responsibleEmployee"],
           disabledWhen: (values) => Boolean(values.responsibleEmployee),
+          readOnly: isUpdate,
         },
 
         // RG-FIN-01: Type du bien immuable après création
         assetType: {
           readOnly: isUpdate,
         },
+        acquisitionValue: { readOnly: isUpdate },
+        acquisitionDate: { readOnly: isUpdate },
+        acquisitionMethod: { readOnly: isUpdate },
+        brand: { readOnly: isUpdate },
+        modelName: { readOnly: isUpdate },
+        serialNumber: { readOnly: isUpdate },
+        administrativeStatus: { readOnly: isUpdate },
+        physicalCondition: { readOnly: isUpdate },
 
         // Visibilité conditionnelle des propriétaires externes
         actualOwnerName: {
@@ -275,20 +304,8 @@ export function AssetForm({
         },
 
         // RG-FIN-03: Sortie du patrimoine visible uniquement si statut approprié
-        exitMethod: {
-          dependsOn: ["administrativeStatus"],
-          visible: (values) =>
-            ["reformed", "lost", "disposed"].includes(
-              values.administrativeStatus,
-            ),
-        },
-        exitDate: {
-          dependsOn: ["administrativeStatus"],
-          visible: (values) =>
-            ["reformed", "lost", "disposed"].includes(
-              values.administrativeStatus,
-            ),
-        },
+        
+        
 
         // Champs techniques masqués
         qrCodeValue: { hidden: true },

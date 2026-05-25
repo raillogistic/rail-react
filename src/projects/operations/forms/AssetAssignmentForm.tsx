@@ -22,7 +22,7 @@ export function AssetAssignmentForm({
       mode={mode}
       objectId={objectId}
       onSuccess={onSuccess}
-      devtools={{ enabled: true }}
+      devtools={{enabled:true}}
       generatedSections={[
         {
           id: "asset_selection",
@@ -58,13 +58,30 @@ export function AssetAssignmentForm({
         },
 
         // RG-AFF-02: Responsabilité exclusive Employé vs Service
-        assignedToEmployee: {
+        assignedToEmployee: (field) => ({
+          ...field,
+          type: "select-query",
           dependsOn: ["assignedToService"],
           disabledWhen: (values) =>
             Array.isArray(values.assignedToService)
               ? values.assignedToService.length > 0
               : Boolean(values.assignedToService),
-        },
+          graphql: {
+            // @ts-ignore
+            ...(field.graphql ?? {}),
+            where: (ctx: any) => {
+              const serviceId = Array.isArray(ctx.values.assignedToService)
+                ? ctx.values.assignedToService[0]
+                : ctx.values.assignedToService;
+
+              if (!serviceId) return {};
+
+              return {
+                service: { eq: serviceId },
+              };
+            },
+          },
+        }),
         assignedToService: {
           dependsOn: ["assignedToEmployee"],
           disabledWhen: (values) =>
