@@ -1,3 +1,9 @@
+/**
+ * @file TableColumnMenu.tsx
+ * @description Renders the premium, highly interactive context dropdown menu for column headers.
+ * Modernized with a standard casing font-semibold structure, custom padding/centering,
+ * and high-contrast color variants suited for primary backgrounds.
+ */
 import React, { useCallback, useMemo } from "react";
 import {
   ArrowDownAZ,
@@ -252,13 +258,13 @@ export function TableColumnMenu({
             <button
               type="button"
               className={cn(
-                "flex h-full w-full items-center justify-between gap-2 px-3 py-0 outline-none",
-                "text-[10px] font-bold uppercase tracking-widest transition-all duration-300",
+                "flex h-full w-full items-center justify-between gap-2 px-3 py-2.5 outline-none border-none",
+                "text-xs font-semibold tracking-normal transition-all duration-200",
                 "group/trigger",
                 variant === "primary"
                   ? currentSort
-                    ? "text-white font-black"
-                    : "text-primary-foreground/80 hover:text-white hover:bg-white/5 data-[state=open]:bg-white/10 data-[state=open]:text-white"
+                    ? "text-white bg-primary-foreground/15 font-bold shadow-inner"
+                    : "text-primary-foreground/90 hover:text-white hover:bg-primary-foreground/10 data-[state=open]:bg-primary-foreground/15 data-[state=open]:text-white"
                   : currentSort
                     ? "bg-primary/[0.03] text-primary"
                     : "text-muted-foreground/70 hover:text-foreground hover:bg-primary/5 active:bg-primary/8 data-[state=open]:bg-primary/5 data-[state=open]:text-primary",
@@ -286,14 +292,14 @@ export function TableColumnMenu({
               variant="ghost"
               size="sm"
               className={cn(
-                "h-8 w-8 p-0 ml-1 transition-all duration-200 ",
+                "h-8 w-8 p-0 ml-1 transition-all duration-200 border-none",
                 variant === "primary"
-                  ? "text-primary-foreground/60 hover:text-white hover:bg-white/10 data-[state=open]:bg-white/20 data-[state=open]:text-white"
+                  ? "text-primary-foreground/80 hover:text-white hover:bg-primary-foreground/10 data-[state=open]:bg-primary-foreground/15 data-[state=open]:text-white"
                   : "text-muted-foreground/50 hover:text-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground",
                 currentSort &&
                   (variant === "primary"
-                    ? "text-white scale-110"
-                    : "text-primary scale-110"),
+                    ? "text-white scale-105"
+                    : "text-primary scale-105"),
               )}
             >
               {currentSort === "asc" && <ArrowUpAZ className="h-3.5 w-3.5" />}

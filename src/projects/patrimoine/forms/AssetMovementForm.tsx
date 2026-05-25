@@ -33,7 +33,7 @@ export function AssetMovementForm({
           id: "movement_details",
           title: "Détails du Mouvement",
           columns: 2,
-          fields: ["fromLocation", "toLocation", "reason"],
+          fields: ["fromLocation", "toLocation", "physicalCondition", "reason"],
         },
       ]}
       fieldOverrides={{

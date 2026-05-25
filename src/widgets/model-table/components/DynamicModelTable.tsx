@@ -1,3 +1,10 @@
+/**
+ * @file DynamicModelTable.tsx
+ * @description Composant de table de modèle dynamique fournissant des fonctionnalités d'affichage,
+ * de filtrage, de pagination et d'actions pour les différents modèles de l'application.
+ * Modifié pour définir la densité par défaut à "comfortable" (confortable).
+ */
+
 import React, {
   forwardRef,
   useCallback,
@@ -152,7 +159,9 @@ import {
 import { DynamicBaseTableContent } from "./DynamicBaseTableContent";
 import type { DynamicBaseTableContentProps } from "./DynamicBaseTableContent";
 
-const DynamicModelTableInner = <TSource extends object = Record<string, unknown>>(
+const DynamicModelTableInner = <
+  TSource extends object = Record<string, unknown>,
+>(
   {
     app,
     model,
@@ -292,9 +301,9 @@ const DynamicModelTableInner = <TSource extends object = Record<string, unknown>
       className={
         baseTable?.className
           ? `h-full w-full ${baseTable.className}`
-          : "h-full w-full"
+          : "h-full w-full  "
       }
-      >
+    >
       <MetadataProvider
         key={tableInstanceKey}
         app={app}
@@ -303,7 +312,7 @@ const DynamicModelTableInner = <TSource extends object = Record<string, unknown>
       >
         <TableProvider
           initialState={{
-            density: baseTable?.view?.defaultDensity ?? "compact",
+            density: baseTable?.view?.defaultDensity ?? "comfortable",
             wrapCells: baseTable?.view?.defaultWrapCells ?? false,
             pagination: {
               page: initialTableState.page,
@@ -341,7 +350,9 @@ const DynamicModelTableInner = <TSource extends object = Record<string, unknown>
             relationStats={baseTable?.relationStats}
             queryManager={baseTable?.queryManager}
             columnOrdering={
-              effectiveColumnOrdering as BaseModelTableColumnOrderingConfig<ModelTableAccessorPath<TSource>>
+              effectiveColumnOrdering as BaseModelTableColumnOrderingConfig<
+                ModelTableAccessorPath<TSource>
+              >
             }
             hydratePersistedColumnOrder={shouldHydratePersistedColumnOrder}
             skipCount={baseTable?.skipCount ?? false}
@@ -366,4 +377,5 @@ export const DynamicModelTable = forwardRef(DynamicModelTableInner) as <
     React.RefAttributes<DynamicModelTableHandle<TSource>>,
 ) => React.ReactElement | null;
 
-(DynamicModelTable as { displayName?: string }).displayName = "DynamicModelTable";
+(DynamicModelTable as { displayName?: string }).displayName =
+  "DynamicModelTable";

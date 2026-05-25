@@ -1,3 +1,9 @@
+/**
+ * @file DynamicBaseTableContent.tsx
+ * @description Implements the dynamic table grid content controller, integrating TanStack DynamicTable
+ * with model metadata capabilities, column ordering, filtering, pagination, and persistence.
+ * Customized to pass primary variant styles to table column menus for refined contrast and aesthetics.
+ */
 import React, {
   forwardRef,
   useCallback,
@@ -800,7 +806,7 @@ export function DynamicBaseTableContent<
                 title={column.title}
                 disabled={disableSorting}
                 fullWidthTrigger
-                variant="default"
+                variant="primary"
               />
             </div>
             <ColumnFilter columnId={column.id} hideTrigger />

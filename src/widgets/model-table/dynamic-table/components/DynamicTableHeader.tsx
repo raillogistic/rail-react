@@ -1,3 +1,10 @@
+/**
+ * @file DynamicTableHeader.tsx
+ * @description Renders the custom TanStack table header groups and headers.
+ * Modernized with a premium primary-colored background, custom column menus,
+ * slick drag-and-drop handles, and interactive column resizing handles.
+ * Fully responsive and visually optimized for the Patrimoin workspace.
+ */
 import type { CSSProperties, ReactNode } from "react";
 import type { Header, Table } from "@tanstack/react-table";
 import { useSortable } from "@dnd-kit/sortable";
@@ -174,12 +181,12 @@ function ColumnMenu<TRow extends Record<string, unknown>>({
         <button
           type="button"
           className={cn(
-            "flex h-full w-full items-center justify-between gap-2 px-3 py-2 outline-none",
-            "text-xs font-semibold transition-colors",
-            "hover:bg-muted/60 group/trigger",
+            "flex h-full w-full items-center justify-between gap-2 px-3 py-2.5 outline-none border-none",
+            "text-xs font-semibold tracking-wide transition-all duration-200",
+            "hover:bg-primary-foreground/10 group/trigger",
             sortedState
-              ? "bg-muted/40 text-foreground"
-              : "text-muted-foreground",
+              ? "bg-primary-foreground/15 text-primary-foreground font-bold shadow-inner"
+              : "text-primary-foreground/80 hover:text-primary-foreground",
             className,
           )}
           aria-label={`Open column menu for ${title}`}
@@ -333,24 +340,26 @@ function DraggableHeaderCell<TRow extends Record<string, unknown>>({
       colSpan={header.colSpan}
       style={style}
       className={cn(
-        "group/header relative border-b border-border bg-muted/40 p-0 align-middle",
-        "text-xs font-medium text-muted-foreground",
+        "group/header relative border-b border-primary/20 bg-gradient-to-b from-primary via-primary/95 to-primary p-0 align-middle",
+        "text-xs font-semibold text-primary-foreground transition-all duration-200",
+        "shadow-[inset_0_1px_0_rgba(255,255,255,0.08)]",
         stickyClassName,
         fitContent && "w-[1%] whitespace-nowrap",
-        isDragging && "z-40 opacity-75 ring-1 ring-primary/30 shadow-lg",
+        isDragging &&
+          "z-40 opacity-80 ring-2 ring-primary/50 shadow-2xl scale-[1.01] bg-primary",
       )}
     >
-      <div className="flex h-full min-h-9 items-stretch">
+      <div className="flex h-full min-h-10 items-stretch">
         {draggable ? (
           <button
             type="button"
             aria-label="Reorder column"
-            className="grid w-8 shrink-0 place-items-center border-r border-border/50 text-muted-foreground/50 hover:bg-muted/60 hover:text-foreground"
+            className="grid w-8 shrink-0 place-items-center border-r border-primary-foreground/10 text-primary-foreground/45 hover:bg-primary-foreground/10 hover:text-primary-foreground transition-all duration-150"
             {...attributes}
             {...listeners}
             onClick={(event) => event.stopPropagation()}
           >
-            <GripVertical className="size-3" />
+            <GripVertical className="size-3.5" />
           </button>
         ) : null}
         <div className="min-w-0 flex-1">{children}</div>
@@ -362,7 +371,7 @@ function DraggableHeaderCell<TRow extends Record<string, unknown>>({
           aria-label="Resize column"
           onMouseDown={header.getResizeHandler()}
           onTouchStart={header.getResizeHandler()}
-          className="absolute right-0 top-[20%] z-50 h-[60%] w-[3px] cursor-col-resize bg-primary/0 opacity-0 group-hover/header:bg-primary/30 group-hover/header:opacity-100 hover:!bg-primary/60 active:!bg-primary"
+          className="absolute right-0 top-0 bottom-0 z-50 w-[4px] cursor-col-resize bg-transparent opacity-0 group-hover/header:opacity-100 hover:!bg-primary-foreground/40 active:!bg-white transition-all duration-150"
         />
       ) : null}
     </TableHead>
@@ -456,7 +465,7 @@ export function DynamicTableHeader<TRow extends Record<string, unknown>>({
                   key={header.id}
                   colSpan={header.colSpan}
                   style={resolveHeaderStyle(header)}
-                  className="border-b border-border bg-muted/30 px-3 py-2 text-xs font-semibold text-muted-foreground"
+                  className="border-b border-primary/20 bg-primary px-3 py-2.5 text-xs font-semibold text-primary-foreground tracking-normal"
                 >
                   {flexRender(
                     header.column.columnDef.header,
@@ -477,7 +486,7 @@ export function DynamicTableHeader<TRow extends Record<string, unknown>>({
                   stickyClassName={stickyClassName}
                   stickyStyle={stickyStyle}
                 >
-                  <div className="grid h-full place-items-center text-xs font-semibold text-muted-foreground">
+                  <div className="grid h-full place-items-center text-xs font-semibold text-primary-foreground">
                     {expandColumnHeader ?? null}
                   </div>
                 </DraggableHeaderCell>
@@ -504,7 +513,7 @@ export function DynamicTableHeader<TRow extends Record<string, unknown>>({
                         table.toggleAllPageRowsSelected(Boolean(checked));
                       }}
                       aria-label="Select all rows"
-                      className="data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                      className="data-[state=checked]:bg-primary-foreground data-[state=checked]:text-primary data-[state=checked]:border-primary-foreground border-primary-foreground/50 text-primary-foreground"
                     />
                   </div>
                 </DraggableHeaderCell>
@@ -521,7 +530,7 @@ export function DynamicTableHeader<TRow extends Record<string, unknown>>({
                   stickyClassName={stickyClassName}
                   stickyStyle={stickyStyle}
                 >
-                  <div className="flex h-full items-center justify-end text-xs font-semibold text-muted-foreground px-3">
+                  <div className="flex h-full items-center justify-end text-xs font-semibold text-primary-foreground px-3 tracking-normal">
                     {layout.actions?.headerLabel ?? ""}
                   </div>
                 </DraggableHeaderCell>
@@ -550,7 +559,7 @@ export function DynamicTableHeader<TRow extends Record<string, unknown>>({
                   <div
                     className={cn("flex h-full items-center", headerClassName)}
                   >
-                    <div className="min-w-0 flex-1 flex items-center h-full">
+                    <div className="min-w-0 flex-1 flex items-center h-full text-primary-foreground">
                       {flexRender(
                         header.column.columnDef.header,
                         header.getContext(),
@@ -566,8 +575,8 @@ export function DynamicTableHeader<TRow extends Record<string, unknown>>({
                     onResetLayout={onResetLayout}
                     className={headerClassName}
                   >
-                    <div className="min-w-0 flex-1 flex items-center gap-2">
-                      <span className="truncate">
+                    <div className="min-w-0 flex-1 flex items-center gap-2 text-left">
+                      <span className="truncate tracking-wide font-semibold text-xs">
                         {resolveHeaderLabel(header)}
                       </span>
                       {/* Sort Indicator */}
@@ -576,14 +585,14 @@ export function DynamicTableHeader<TRow extends Record<string, unknown>>({
                         aria-hidden
                       >
                         {sortedState === "asc" ? (
-                          <ArrowUp className="size-3 text-primary" />
+                          <ArrowUp className="size-3 text-primary-foreground" />
                         ) : sortedState === "desc" ? (
-                          <ArrowDown className="size-3 text-primary" />
+                          <ArrowDown className="size-3 text-primary-foreground" />
                         ) : null}
                       </div>
                     </div>
                     {!sortedState && (
-                      <ArrowUpDown className="size-3 shrink-0 opacity-0 group-hover/trigger:opacity-40" />
+                      <ArrowUpDown className="size-3 shrink-0 opacity-0 group-hover/trigger:opacity-60 text-primary-foreground/75 transition-all duration-200" />
                     )}
                   </ColumnMenu>
                 )}

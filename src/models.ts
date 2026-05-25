@@ -1,7 +1,7 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
 // Source: scripts/getModels.mjs
 // Command: npm run getModels
-// Generated at: 2026-05-24T14:59:47.747Z
+// Generated at: 2026-05-25T18:21:01.488Z
 
 export interface AssignmentsAssetAssignment {
   /** Bien */
@@ -22,12 +22,22 @@ export interface AssignmentsAssetAssignment {
   documents?: DocumentsDocument | null;
   /** Date de fin */
   endDate?: string | null;
+  /** Ancien employé */
+  fromEmployee?: ReferentialsEmployee | null;
+  /** Ancienne localisation */
+  fromLocation?: LocationsLocation | null;
+  /** Ancien service */
+  fromService?: ReferentialsService | null;
   /** ID */
   id?: number | null;
+  /** État physique */
+  physicalCondition?: ReferentialsPhysicalCondition | null;
   /** Motif */
   reason?: string | null;
   /** Date de début */
   startDate: string;
+  /** Statut */
+  status: string;
   /** Date de modification */
   updatedAt?: string | null;
   /** Modifié par */
@@ -54,6 +64,8 @@ export interface AssignmentsRestitution {
   physicalCondition: ReferentialsPhysicalCondition;
   /** Date de restitution */
   restitutionDate: string;
+  /** Statut */
+  status: string;
   /** Date de modification */
   updatedAt?: string | null;
   /** Modifié par */
@@ -183,6 +195,34 @@ export interface InventoryInventorySequence {
   /** Année */
   year: number;
 }
+export interface LocationsAssetMassMovement {
+  /** Biens concernés */
+  assets: PatrimoineAsset[];
+  /** Date de création */
+  createdAt?: string | null;
+  /** Créé par */
+  createdBy?: UsersUser | null;
+  /** Date */
+  date: string;
+  /** ID */
+  id?: number | null;
+  /** Notes */
+  notes?: string | null;
+  /** Nouvel état physique (Global) */
+  physicalCondition?: ReferentialsPhysicalCondition | null;
+  /** Motif */
+  reason: string;
+  /** Référence */
+  reference?: string | null;
+  /** Statut */
+  status: string;
+  /** Nouvelle localisation */
+  toLocation: LocationsLocation;
+  /** Date de modification */
+  updatedAt?: string | null;
+  /** Modifié par */
+  updatedBy?: UsersUser | null;
+}
 export interface LocationsAssetMovement {
   /** Bien */
   asset: PatrimoineAsset;
@@ -190,18 +230,26 @@ export interface LocationsAssetMovement {
   createdAt?: string | null;
   /** Créé par */
   createdBy?: UsersUser | null;
+  /** Ancien employé */
+  fromEmployee?: ReferentialsEmployee | null;
   /** Ancienne localisation */
   fromLocation?: LocationsLocation | null;
+  /** Ancien service */
+  fromService?: ReferentialsService | null;
   /** ID */
   id?: number | null;
   /** Date du mouvement */
   movementDate?: string | null;
   /** Effectué par */
   performedBy?: UsersUser | null;
+  /** État physique */
+  physicalCondition?: ReferentialsPhysicalCondition | null;
   /** Motif */
   reason?: string | null;
   /** Référence */
   reference?: string | null;
+  /** Statut */
+  status: string;
   /** Nouvelle localisation */
   toLocation: LocationsLocation;
   /** Date de modification */
@@ -212,8 +260,12 @@ export interface LocationsAssetMovement {
 export interface LocationsLocation {
   /** Adresse */
   address?: string | null;
+  /** Mouvements de masse */
+  assetmassmovement?: LocationsAssetMassMovement[] | null;
   /** Biens */
   assets?: PatrimoineAsset[] | null;
+  /** Affectations */
+  assignmentsFrom?: AssignmentsAssetAssignment[] | null;
   /** Localisations */
   children?: LocationsLocation[] | null;
   /** Code */
@@ -318,6 +370,8 @@ export interface PatrimoineAsset {
   legacyCode?: string | null;
   /** Localisation */
   location?: LocationsLocation | null;
+  /** Mouvements de masse */
+  massMovements?: LocationsAssetMassMovement[] | null;
   /** Métadonnées */
   metadata?: Record<string, unknown> | null;
   /** Modèle */
@@ -342,6 +396,8 @@ export interface PatrimoineAsset {
   restitutions?: AssignmentsRestitution[] | null;
   /** Numéro de série */
   serialNumber?: string | null;
+  /** Suivis d'état des biens */
+  stateTracks?: PatrimoineAssetStateTracker[] | null;
   /** Fournisseur */
   supplier?: ReferentialsSupplier | null;
   /** Date de modification */
@@ -412,6 +468,34 @@ export interface PatrimoineAssetFinancialProfile {
   updatedAt?: string | null;
   /** Modifié par */
   updatedBy?: UsersUser | null;
+}
+export interface PatrimoineAssetStateTracker {
+  /** Description d'action */
+  actionDesignation: string;
+  /** Bien */
+  asset: PatrimoineAsset;
+  /** Date et heure */
+  datetime: string;
+  /** ID */
+  id?: number | null;
+  /** Motif */
+  motif?: string | null;
+  /** Nouveau statut administratif */
+  newAdministrativeStatus?: string | null;
+  /** Nouvelle localisation */
+  newLocation?: LocationsLocation | null;
+  /** Nouvel état physique */
+  newPhysicalCondition?: ReferentialsPhysicalCondition | null;
+  /** Statut administratif précédent */
+  previousAdministrativeStatus?: string | null;
+  /** Localisation précédente */
+  previousLocation?: LocationsLocation | null;
+  /** État physique précédent */
+  previousPhysicalCondition?: ReferentialsPhysicalCondition | null;
+  /** Référence */
+  reference?: string | null;
+  /** Utilisateur */
+  user?: UsersUser | null;
 }
 export interface PatrimoineExitSequence {
   /** ID */
@@ -1090,6 +1174,8 @@ export interface ReferentialsDocumentType {
 export interface ReferentialsEmployee {
   /** Affectations */
   assignments?: AssignmentsAssetAssignment[] | null;
+  /** Affectations */
+  assignmentsFrom?: AssignmentsAssetAssignment[] | null;
   /** Date de création */
   createdAt?: string | null;
   /** Créé par */
@@ -1110,6 +1196,8 @@ export interface ReferentialsEmployee {
   jobTitle?: string | null;
   /** Nom */
   lastName: string;
+  /** Mouvements */
+  movementsFromEmployee?: LocationsAssetMovement[] | null;
   /** Téléphone */
   phone?: string | null;
   /** Biens */
@@ -1124,6 +1212,12 @@ export interface ReferentialsEmployee {
 export interface ReferentialsPhysicalCondition {
   /** Biens */
   asset?: PatrimoineAsset[] | null;
+  /** Affectations */
+  assetassignment?: AssignmentsAssetAssignment[] | null;
+  /** Mouvements de masse */
+  assetmassmovement?: LocationsAssetMassMovement[] | null;
+  /** Mouvements */
+  assetmovement?: LocationsAssetMovement[] | null;
   /** Date de création */
   createdAt?: string | null;
   /** Créé par */
@@ -1146,6 +1240,8 @@ export interface ReferentialsService {
   address?: string | null;
   /** Affectations */
   assignments?: AssignmentsAssetAssignment[] | null;
+  /** Affectations */
+  assignmentsFrom?: AssignmentsAssetAssignment[] | null;
   /** Services */
   children?: ReferentialsService[] | null;
   /** Date de création */
@@ -1160,6 +1256,8 @@ export interface ReferentialsService {
   id?: number | null;
   /** Actif */
   isActive: boolean;
+  /** Mouvements */
+  movementsFromService?: LocationsAssetMovement[] | null;
   /** Nom */
   name: string;
   /** Service parent */
@@ -1244,6 +1342,10 @@ export interface UsersUser {
   assetfinancialprofileCreated?: PatrimoineAssetFinancialProfile[] | null;
   /** Profils financiers */
   assetfinancialprofileUpdated?: PatrimoineAssetFinancialProfile[] | null;
+  /** Mouvements de masse */
+  assetmassmovementCreated?: LocationsAssetMassMovement[] | null;
+  /** Mouvements de masse */
+  assetmassmovementUpdated?: LocationsAssetMassMovement[] | null;
   /** Définitions de métadonnées */
   assetmetadatadefinitionCreated?: ReferentialsAssetMetadataDefinition[] | null;
   /** Champs de métadonnées */
@@ -1260,6 +1362,8 @@ export interface UsersUser {
   assetsequenceCreated?: ReferentialsAssetSequence[] | null;
   /** Séquences d'inventaire */
   assetsequenceUpdated?: ReferentialsAssetSequence[] | null;
+  /** Suivis d'état des biens */
+  assetstatetracker?: PatrimoineAssetStateTracker[] | null;
   /** Biens */
   assetUpdated?: PatrimoineAsset[] | null;
   /** date joined */
@@ -1436,6 +1540,7 @@ export type DjangoModelMap = {
   "inventory.InventoryCampaign": InventoryInventoryCampaign;
   "inventory.InventoryLine": InventoryInventoryLine;
   "inventory.InventorySequence": InventoryInventorySequence;
+  "locations.AssetMassMovement": LocationsAssetMassMovement;
   "locations.AssetMovement": LocationsAssetMovement;
   "locations.Location": LocationsLocation;
   "locations.LocationSequence": LocationsLocationSequence;
@@ -1443,6 +1548,7 @@ export type DjangoModelMap = {
   "patrimoine.Asset": PatrimoineAsset;
   "patrimoine.AssetDisposal": PatrimoineAssetDisposal;
   "patrimoine.AssetFinancialProfile": PatrimoineAssetFinancialProfile;
+  "patrimoine.AssetStateTracker": PatrimoineAssetStateTracker;
   "patrimoine.ExitSequence": PatrimoineExitSequence;
   "rail_django.AuditEventModel": RailDjangoAuditEventModel;
   "rail_django.ImportBatch": RailDjangoImportBatch;

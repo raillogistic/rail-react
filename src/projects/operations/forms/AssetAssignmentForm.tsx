@@ -22,7 +22,7 @@ export function AssetAssignmentForm({
       mode={mode}
       objectId={objectId}
       onSuccess={onSuccess}
-      devtools={{enabled:true}}
+      devtools={{ enabled: true }}
       generatedSections={[
         {
           id: "asset_selection",
@@ -40,7 +40,8 @@ export function AssetAssignmentForm({
           id: "period",
           title: "Période & Motif",
           columns: 2,
-          fields: ["startDate", "endDate", "reason"],
+
+          fields: ["startDate", "physicalCondition", "reason"],
         },
         {
           id: "documentation",
