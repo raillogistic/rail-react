@@ -97,6 +97,14 @@ function resolveFormFieldType(
   if (Array.isArray(field.choices) && field.choices.length > 0) {
     return "select";
   }
+  // Champ de relation : type ID avec un modèle lié → sélecteur de relation
+  if (
+    field.relatedModel ||
+    normalized === "id" ||
+    normalized === "id!"
+  ) {
+    if (field.relatedModel) return "select-query";
+  }
   if (normalized.includes("bool")) return "checkbox";
   if (
     normalized.includes("int") ||
@@ -156,26 +164,62 @@ export function normalizeMutationInputFields(
     });
 }
 
+
+
+/**
+ * Construit la configuration de champ pour un sélecteur de relation (select-query).
+ *
+ * @param field - Champ de mutation avec relatedModel renseigné
+ * @param baseConfig - Configuration de base partagée
+ * @returns Configuration complète QueryChoiceFieldConfig
+ */
+function buildRelationFieldConfig(
+  field: MutationInputField,
+  baseConfig: { name: string; label: string; required: boolean; description?: string },
+): FormFieldConfig {
+  // Le relatedModel est au format "app.ModelName" (ex: "referentials.PhysicalCondition")
+  // Le QueryChoiceInput dérive automatiquement la requête de liste depuis le nom du modèle.
+  return {
+    ...baseConfig,
+    type: "select-query" as const,
+    relatedModel: field.relatedModel,
+    graphql: {
+      relatedModel: field.relatedModel,
+      searchVariableName: "quick",
+      limit: 20,
+    },
+  } as FormFieldConfig;
+}
+
 export function buildMutationSchema(
   fields: MutationInputField[],
 ): FormSchema | null {
   if (fields.length === 0) return null;
 
   return {
-    fields: fields.map(
-      (field) =>
-        ({
-          name: field.name || "",
-          label: humanizeLabel(field.name || field.fieldName || "Field"),
-          type: resolveFormFieldType(field),
-          required: Boolean(field.required),
-          description: field.description || undefined,
-          choices: (field.choices ?? []).map((choice) => ({
-            value: String(choice.value),
-            label: String(choice.label),
-          })),
-        }) as unknown as FormFieldConfig,
-    ),
+    fields: fields.map((field) => {
+      const fieldType = resolveFormFieldType(field);
+      const baseConfig = {
+        name: field.name || "",
+        label: humanizeLabel(field.name || field.fieldName || "Field"),
+        required: Boolean(field.required),
+        description: field.description || undefined,
+      };
+
+      // Champ de relation avec modèle lié → sélecteur dynamique
+      if (fieldType === "select-query" && field.relatedModel) {
+        return buildRelationFieldConfig(field, baseConfig);
+      }
+
+      return ({
+        ...baseConfig,
+        type: fieldType,
+        choices: (field.choices ?? []).map((choice) => ({
+          value: String(choice.value),
+          label: String(choice.label),
+        })),
+      }) as unknown as FormFieldConfig;
+    }),
   };
 }
 
