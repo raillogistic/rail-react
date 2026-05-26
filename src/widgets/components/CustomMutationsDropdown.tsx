@@ -339,7 +339,7 @@ export function CustomMutationsDropdown({
     !data.model.trim() ||
     !objectIdValue;
 
-  const { data: queryData, loading, error } =
+  const { data: queryData, loading, error, refetch } =
     useQuery<CustomMutationsMetadataQueryResult>(CUSTOM_MUTATIONS_METADATA_QUERY, {
       variables: {
         app: data.app,
@@ -606,6 +606,14 @@ export function CustomMutationsDropdown({
           handleOverlayOpenChange(false);
         }
 
+        try {
+          if (typeof refetch === "function") {
+            await refetch();
+          }
+        } catch (err) {
+          console.error("Failed to refetch metadata after custom mutation", err);
+        }
+
         onSuccess?.({
           mutation: activeMutation,
           payload: transformedPayload,
@@ -638,6 +646,7 @@ export function CustomMutationsDropdown({
       objectIdValue,
       onError,
       onSuccess,
+      refetch,
     ],
   );
 
@@ -650,7 +659,14 @@ export function CustomMutationsDropdown({
 
   return (
     <>
-      <DropdownMenu>
+      <DropdownMenu
+        onOpenChange={(open) => {
+          if (open) {
+            void refetch();
+          }
+          onOpenChange?.(open);
+        }}
+      >
         {renderTrigger ? (
           <DropdownMenuTrigger asChild>
             <span>

@@ -991,6 +991,20 @@ export function RowActions<TSource extends object = Record<string, unknown>>({
               label: "Actions",
             }}
             extraActions={customMutationMenuActions}
+            queryOptions={{
+              fetchPolicy: "network-only",
+            }}
+            onSuccess={async () => {
+              try {
+                if (refetch) {
+                  await refetch();
+                } else {
+                  refresh();
+                }
+              } catch (err) {
+                console.error("Failed to refetch table after custom mutation", err);
+              }
+            }}
             renderTrigger={() => (
               <Button
                 size="icon"

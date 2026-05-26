@@ -2366,6 +2366,10 @@ const ModelDynamicDetailInner = <
                     actions={{
                       overrides: customMutationItemOverrides,
                     }}
+                    queryOptions={{
+                      fetchPolicy: "network-only",
+                    }}
+                    onSuccess={refetch}
                     renderTrigger={({ disabled, loading }) => (
                       <Button
                         size="sm"
@@ -2933,6 +2937,7 @@ const ModelDynamicDetailInner = <
               );
               setMutationDialogOpen(false);
               setActiveMutationAction(null);
+              void refetch();
             })
             .catch((error: unknown) => {
               toast.error(getErrorMessage(error, "Action execution failed."));
