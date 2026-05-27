@@ -360,6 +360,7 @@ const DynamicModelTableInner = <
             enableSelection={baseTable?.enableSelection}
             expand={baseTable?.expand}
             columnActions={baseTable?.columnActions}
+            customMutations={baseTable?.customMutations}
             devtoolsEnabled={devtoolsEnabled}
             onRefetchResolved={handleRefetchResolved}
             onSnapshotResolved={handleSnapshotResolved}

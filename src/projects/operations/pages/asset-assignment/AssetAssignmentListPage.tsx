@@ -35,6 +35,15 @@ export function AssetAssignmentListPage() {
         tableConfig: {
           title: "Asset Assignment",
         },
+        customMutations: ({ row }) => {
+          return {
+            overrides: {
+              cancel: {
+                hidden: row.status === "cancelled",
+              },
+            },
+          };
+        },
       }}
     />
   );

@@ -404,6 +404,11 @@ export type ModelDynamicDetailActionsConfig<
       ctx: ModelDynamicDetailActionContext<TRecord>,
     ) => boolean;
   };
+  customMutations?:
+    | import("@/widgets/components/CustomMutationsDropdown").CustomMutationsDropdownConfig
+    | ((
+        ctx: ModelDynamicDetailActionContext<TRecord>,
+      ) => import("@/widgets/components/CustomMutationsDropdown").CustomMutationsDropdownConfig);
   updateForm?: {
     enabled?: boolean;
     modalTitle?: string;

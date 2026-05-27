@@ -56,6 +56,7 @@ type TableMobileCardProps = {
   refetch?: BaseModelTableRefetch;
   fields?: BaseModelTableFieldsInput;
   columnActions?: BaseModelTableColumnActionsInput;
+  customMutations?: any;
   update?: ModelTableUpdateConfig;
   detail?: ModelTableDetailConfig;
   pdfPreview?: ModelTableV2TableConfig["pdfPreview"];
@@ -86,6 +87,7 @@ export function TableMobileCard({
   refetch,
   fields,
   columnActions,
+  customMutations,
   update,
   detail,
   pdfPreview,
@@ -380,6 +382,7 @@ export function TableMobileCard({
                 refetch={refetch}
                 permissions={rowPermissions}
                 columnActions={columnActions}
+                customMutations={customMutations}
                 update={update}
                 detail={detail}
                 onTemplatePdfPreview={onTemplatePdfPreview}

@@ -295,6 +295,11 @@ type RowActionsProps<TSource extends object = Record<string, unknown>> = {
   refetch?: BaseModelTableRefetch;
   permissions?: RowMutationPermissions | null;
   columnActions?: BaseModelTableColumnActionsInput<DynamicModelTableRow<TSource>>;
+  customMutations?:
+    | import("@/widgets/components/CustomMutationsDropdown").CustomMutationsDropdownActionsConfig
+    | ((
+        ctx: BaseModelTableColumnActionContext<DynamicModelTableRow<TSource>>,
+      ) => import("@/widgets/components/CustomMutationsDropdown").CustomMutationsDropdownActionsConfig);
   update?: ModelTableUpdateConfig<TSource>;
   detail?: ModelTableDetailConfig<TSource>;
   onTemplatePdfPreview?: (payload: TemplatePdfPreviewPayload) => void;
@@ -306,6 +311,7 @@ export function RowActions<TSource extends object = Record<string, unknown>>({
   refetch,
   permissions,
   columnActions,
+  customMutations,
   update,
   detail,
   onTemplatePdfPreview,
@@ -549,6 +555,12 @@ export function RowActions<TSource extends object = Record<string, unknown>>({
       }),
     [actionContext, menuCustomActions],
   );
+
+  const resolvedCustomMutations = useMemo(() => {
+    return typeof customMutations === "function"
+      ? customMutations(actionContext)
+      : customMutations;
+  }, [customMutations, actionContext]);
 
   const hasTemplateActions = templateEntries.length > 0;
   const singleTemplate =
@@ -990,6 +1002,7 @@ export function RowActions<TSource extends object = Record<string, unknown>>({
             button={{
               label: "Actions",
             }}
+            actions={resolvedCustomMutations}
             extraActions={customMutationMenuActions}
             queryOptions={{
               fetchPolicy: "network-only",

@@ -33,6 +33,19 @@ export function AssetListPage() {
         tableConfig: {
           title: "Suivi Financier des Biens",
         },
+        customMutations: ({ row }) => {
+          const status = row.administrativeStatus;
+          return {
+            overrides: {
+              reactivate: {
+                hidden: status !== "out_of_service",
+              },
+              set_out_of_service: {
+                hidden: status !== "active" && status !== "assigned",
+              },
+            },
+          };
+        },
       }}
     />
   );

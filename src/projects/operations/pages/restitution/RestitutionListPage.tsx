@@ -26,6 +26,15 @@ export function RestitutionListPage() {
         tableConfig: {
           title: "Restitutions de Biens",
         },
+        customMutations: ({ row }) => {
+          return {
+            overrides: {
+              cancel: {
+                hidden: row.status === "cancelled",
+              },
+            },
+          };
+        },
       }}
     />
   );

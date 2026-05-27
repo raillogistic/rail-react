@@ -4,7 +4,24 @@ import { ModelDynamicDetail } from "@/widgets/model-details";
 
 export function AssetAssignmentDetailPage() {
   const { id = "" } = useParams();
-  return <ModelDynamicDetail<AssignmentsAssetAssignment> app="assignments" model="AssetAssignment" id={id} />;
+  return (
+    <ModelDynamicDetail<AssignmentsAssetAssignment> 
+      app="assignments" 
+      model="AssetAssignment" 
+      id={id} 
+      actionsConfig={{
+        customMutations: ({ data }) => {
+          return {
+            overrides: {
+              cancel: {
+                hidden: data?.status === "cancelled",
+              },
+            },
+          };
+        },
+      }}
+    />
+  );
 }
 
 export default AssetAssignmentDetailPage;

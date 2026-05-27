@@ -30,6 +30,15 @@ export function AssetdisposalListPage() {
             { field: "status", title: "Statut" },
           ],
         },
+        customMutations: ({ row }) => {
+          return {
+            overrides: {
+              cancel: {
+                hidden: row.status === "cancelled",
+              },
+            },
+          };
+        },
       }}
     />
   );

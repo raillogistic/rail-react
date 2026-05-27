@@ -1809,6 +1809,20 @@ const ModelDynamicDetailInner = <
     return Object.fromEntries(entries);
   }, [customMutationEntries]);
 
+  const resolvedCustomMutationsConfig = React.useMemo(() => {
+    const customConfig = typeof actionsConfig.customMutations === "function"
+      ? actionsConfig.customMutations(actionContext)
+      : actionsConfig.customMutations;
+
+    return {
+      ...(customConfig ?? {}),
+      overrides: {
+        ...customMutationItemOverrides,
+        ...(customConfig?.overrides ?? {}),
+      },
+    };
+  }, [actionsConfig.customMutations, actionContext, customMutationItemOverrides]);
+
   const updateFormProps = React.useMemo(
     () => actionsConfig.updateForm?.modelFormProps ?? {},
     [actionsConfig.updateForm?.modelFormProps],
@@ -2363,9 +2377,7 @@ const ModelDynamicDetailInner = <
                       contentClassName:
                         "w-56 p-1.5 rounded-xl shadow-xl border-border/50",
                     }}
-                    actions={{
-                      overrides: customMutationItemOverrides,
-                    }}
+                    actions={resolvedCustomMutationsConfig}
                     queryOptions={{
                       fetchPolicy: "network-only",
                     }}

@@ -577,6 +577,11 @@ export interface BaseModelTableProps<
   expand?: ModelTableV2ExpandConfig;
   columnActions?: BaseModelTableColumnActionsInput<DynamicModelTableRow<TSource>>;
   content?: ModelTableContentConfig<TSource>;
+  customMutations?:
+    | import("@/widgets/components/CustomMutationsDropdown").CustomMutationsDropdownActionsConfig
+    | ((
+        ctx: import("../types").BaseModelTableColumnActionContext<DynamicModelTableRow<TSource>>,
+      ) => import("@/widgets/components/CustomMutationsDropdown").CustomMutationsDropdownActionsConfig);
 }
 
 export interface ModelTableV2Props<

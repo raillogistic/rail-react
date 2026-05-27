@@ -72,6 +72,21 @@ export function AssetDetailPage() {
           content: <FinanceTab assetId={id} />
         }
       ]}
+      actionsConfig={{
+        customMutations: ({ data }) => {
+          const status = data?.administrativeStatus;
+          return {
+            overrides: {
+              reactivate: {
+                hidden: status !== "out_of_service",
+              },
+              set_out_of_service: {
+                hidden: status !== "active" && status !== "assigned",
+              },
+            },
+          };
+        },
+      }}
     />
   );
 }

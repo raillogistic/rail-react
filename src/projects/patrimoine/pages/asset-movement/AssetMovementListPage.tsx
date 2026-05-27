@@ -23,6 +23,16 @@ export function AssetMovementListPage() {
         tableConfig: {
           title: "Mouvements",
         },
+
+        customMutations: ({ row }) => {
+          return {
+            overrides: {
+              cancelAssetMovement: {
+                hidden: row.status === "cancelled",
+              },
+            },
+          };
+        },
       }}
     />
   );

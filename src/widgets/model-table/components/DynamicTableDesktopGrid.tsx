@@ -25,6 +25,7 @@ export interface DynamicTableDesktopGridProps {
   pdfPreviewEnabled: boolean;
   handleTemplatePdfPreview: any;
   columnActions: any;
+  customMutations?: any;
   pagination: any;
   isInfiniteMode: boolean;
   setPage: (page: number) => void;
@@ -52,6 +53,7 @@ export function DynamicTableDesktopGrid({
   pdfPreviewEnabled,
   handleTemplatePdfPreview,
   columnActions,
+  customMutations,
   pagination,
   isInfiniteMode,
   setPage,
@@ -100,6 +102,7 @@ export function DynamicTableDesktopGrid({
                   refetch={refetch}
                   permissions={row.rowPermissions}
                   columnActions={columnActions}
+                  customMutations={customMutations}
                   update={update}
                   detail={detail}
                   onTemplatePdfPreview={

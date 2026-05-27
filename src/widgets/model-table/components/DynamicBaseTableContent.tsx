@@ -197,6 +197,11 @@ type DynamicBaseTableContentProps<
   columnActions?: BaseModelTableColumnActionsInput<
     DynamicModelTableRow<TSource>
   >;
+  customMutations?:
+    | import("@/widgets/components/CustomMutationsDropdown").CustomMutationsDropdownActionsConfig
+    | ((
+        ctx: import("../types").BaseModelTableColumnActionContext<DynamicModelTableRow<TSource>>,
+      ) => import("@/widgets/components/CustomMutationsDropdown").CustomMutationsDropdownActionsConfig);
   devtoolsEnabled?: boolean;
   /**
    * Emits the current query refetch function to the parent wrapper.
@@ -242,6 +247,7 @@ export function DynamicBaseTableContent<
   enableSelection,
   expand,
   columnActions,
+  customMutations,
   devtoolsEnabled = false,
   onRefetchResolved,
   onSnapshotResolved,
@@ -1219,6 +1225,7 @@ export function DynamicBaseTableContent<
             refetch={refetch}
             fields={effectiveFields}
             columnActions={columnActions}
+            customMutations={customMutations}
             update={update as ModelTableUpdateConfig}
             detail={detail as ModelTableDetailConfig}
             pdfPreview={tableConfig?.pdfPreview}
@@ -1253,6 +1260,7 @@ export function DynamicBaseTableContent<
         pdfPreviewEnabled={pdfPreviewEnabled}
         handleTemplatePdfPreview={handleTemplatePdfPreview}
         columnActions={columnActions}
+        customMutations={customMutations}
         pagination={pagination}
         isInfiniteMode={isInfiniteMode}
         setPage={setPage}

@@ -4,7 +4,24 @@ import { ModelDynamicDetail } from "@/widgets/model-details";
 
 export function AssetdisposalDetailPage() {
   const { id = "" } = useParams();
-  return <ModelDynamicDetail<PatrimoineAssetDisposal> app="patrimoine" model="AssetDisposal" id={id} />;
+  return (
+    <ModelDynamicDetail<PatrimoineAssetDisposal> 
+      app="patrimoine" 
+      model="AssetDisposal" 
+      id={id} 
+      actionsConfig={{
+        customMutations: ({ data }) => {
+          return {
+            overrides: {
+              cancel: {
+                hidden: data?.status === "cancelled",
+              },
+            },
+          };
+        },
+      }}
+    />
+  );
 }
 
 export default AssetdisposalDetailPage;
