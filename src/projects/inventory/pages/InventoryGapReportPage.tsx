@@ -13,18 +13,23 @@ export function InventoryGapReportPage() {
         <DynamicModelTable<InventoryInventoryLine>
           app="inventory"
           model="InventoryLine"
-          baseTable={{
-            filter: {
+          initVariables={{
+            where: {
               isGap: { eq: true }
-            },
+            }
+          }}
+          baseTable={{
+            fields: [
+              "campaign",
+              "asset",
+              "expectedLocation",
+              "observedLocation",
+              "result",
+              "conditionComment",
+            ],
             tableConfig: {
               title: "Écarts constatés (Terrain vs Référentiel)",
             },
-            columnOverrides: {
-              result: {
-                header: "Écart",
-              }
-            }
           }}
         />
       </Card>

@@ -122,7 +122,7 @@ export function HierarchyOrganigram<
   >({
     app,
     model,
-    includeRelations: true,
+    includeRelations: [parentField as string],
   });
 
   const { execute: executeDelete } = useModelDeleteMutation({ app, model });
@@ -427,11 +427,11 @@ export function HierarchyOrganigram<
                 runtimeOverrides={runtimeOverrides}
                 generatedSections={formConfig?.generatedSections}
                 fieldOverrides={
-                  formConfig?.fieldOverrides as Record<string, unknown>
+                  formConfig?.fieldOverrides as any
                 }
                 showHeading={false}
                 onSubmitResult={(result) => {
-                  if (result.success) handleFormSuccess();
+                  if (result.ok) handleFormSuccess();
                 }}
               />
             </div>

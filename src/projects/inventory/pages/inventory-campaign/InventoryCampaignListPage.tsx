@@ -6,7 +6,7 @@ import { Badge } from "@/shared/ui/kit/badge";
 
 export function InventoryCampaignListPage() {
   return (
-    <DynamicModelTable<InventoryInventoryCampaign>
+    <DynamicModelTable<any>
       app="inventory"
       model="InventoryCampaign"
       create={{
@@ -22,19 +22,26 @@ export function InventoryCampaignListPage() {
         hrefTemplate: ROUTES.INVENTORY_CAMPAIGN_DETAIL,
       }}
       baseTable={{
-        tableConfig: {
-          title: "Campagnes d'inventaire",
-        },
-        columnOverrides: {
-          status: {
-            cell: ({ getValue }) => {
-              const status = getValue() as string;
-              const variants: Record<string, "default" | "secondary" | "destructive" | "outline" | "success" | "warning"> = {
+        fields: {
+          include: [
+            "campaignCode",
+            "name",
+            "scopeType",
+            "scopeReferenceId",
+            "startDate",
+            "endDate",
+            "status",
+            "progression",
+          ],
+          render: {
+            status: (value) => {
+              const status = value as string;
+              const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
                 draft: "secondary",
                 prepared: "outline",
-                open: "success",
-                checking: "warning",
-                to_close: "warning",
+                open: "default",
+                checking: "outline",
+                to_close: "outline",
                 closed: "default",
                 cancelled: "destructive",
               };
@@ -44,19 +51,19 @@ export function InventoryCampaignListPage() {
                 </Badge>
               );
             },
-          },
-          progression: {
-            header: "Progression",
-            cell: ({ getValue }) => {
-              const value = getValue() as number;
+            progression: (value) => {
+              const val = value as number;
               return (
                 <div className="flex items-center gap-2 min-w-[120px]">
-                  <Progress value={value} className="h-2" />
-                  <span className="text-xs font-medium">{value}%</span>
+                  <Progress value={val} className="h-2" />
+                  <span className="text-xs font-medium">{val}%</span>
                 </div>
               );
             },
-          },
+          }
+        },
+        tableConfig: {
+          title: "Campagnes d'inventaire",
         },
       }}
     />

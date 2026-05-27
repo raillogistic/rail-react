@@ -16,7 +16,7 @@ export function LocationListPage() {
         </div>
         
         <TabsContent value="list" className="mt-0 border-none p-0 outline-none">
-          <DynamicModelTable<LocationsLocation>
+          <DynamicModelTable<any>
             app="locations"
             model="Location"
             create={{
@@ -32,6 +32,7 @@ export function LocationListPage() {
               hrefTemplate: ROUTES.LOCATION_DETAIL,
             }}
             baseTable={{
+              fields: ["code", "name", "level", "parent", "address", "isActive"],
               tableConfig: {
                 title: "Localisations",
               },

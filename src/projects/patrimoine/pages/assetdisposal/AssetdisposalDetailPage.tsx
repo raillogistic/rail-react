@@ -9,15 +9,17 @@ export function AssetdisposalDetailPage() {
       app="patrimoine" 
       model="AssetDisposal" 
       id={id} 
-      actionsConfig={{
-        customMutations: ({ data }) => {
-          return {
-            overrides: {
-              cancel: {
-                hidden: data?.status === "cancelled",
+      baseDetail={{
+        actions: {
+          customMutations: ({ data }) => {
+            return {
+              overrides: {
+                cancel: {
+                  hidden: data?.status === "cancelled",
+                },
               },
-            },
-          };
+            };
+          },
         },
       }}
     />

@@ -235,7 +235,7 @@ export function AssetDetailPage() {
           "documents": {
             tabId: "documents",
             title: "Documents",
-            mode: "attachments",
+            mode: "table",
           }
         }
       }}

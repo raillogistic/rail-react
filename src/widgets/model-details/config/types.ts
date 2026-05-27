@@ -34,10 +34,10 @@ type ModelDynamicDetailNoInfer<T> = [T][T extends any ? 0 : never];
 
 type ModelDynamicDetailRelatedRecord<T> =
   NonNullable<T> extends ReadonlyArray<infer TValue>
-    ? Extract<FormObjectValue<NonNullable<TValue>>, Record<string, unknown>>
+    ? NonNullable<TValue>
     : NonNullable<T> extends Array<infer TValue>
-      ? Extract<FormObjectValue<NonNullable<TValue>>, Record<string, unknown>>
-      : Extract<FormObjectValue<NonNullable<T>>, Record<string, unknown>>;
+      ? NonNullable<TValue>
+      : NonNullable<T>;
 
 export type ModelDynamicDetailFieldPath<
   TRecord extends object,
@@ -405,10 +405,10 @@ export type ModelDynamicDetailActionsConfig<
     ) => boolean;
   };
   customMutations?:
-    | import("@/widgets/components/CustomMutationsDropdown").CustomMutationsDropdownConfig
+    | import("@/widgets/components/CustomMutationsDropdown").CustomMutationsDropdownActionsConfig
     | ((
         ctx: ModelDynamicDetailActionContext<TRecord>,
-      ) => import("@/widgets/components/CustomMutationsDropdown").CustomMutationsDropdownConfig);
+      ) => import("@/widgets/components/CustomMutationsDropdown").CustomMutationsDropdownActionsConfig);
   updateForm?: {
     enabled?: boolean;
     modalTitle?: string;

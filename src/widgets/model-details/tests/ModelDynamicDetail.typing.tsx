@@ -1,43 +1,43 @@
-import type { OperationsDecharge } from "@/models";
+import type { LocationsAssetMovement } from "@/models";
 import {
   ModelDynamicDetail,
   type ModelDynamicDetailHandle,
 } from "@/widgets/model-details";
 
-const detailHandle: ModelDynamicDetailHandle<OperationsDecharge> | null = null;
-void detailHandle?.getSnapshot().data?.site;
-void detailHandle?.getSnapshot().data?.beneficiaire?.nom;
+const detailHandle: ModelDynamicDetailHandle<LocationsAssetMovement> | null = null;
+void detailHandle?.getSnapshot().data?.reason;
+void detailHandle?.getSnapshot().data?.asset?.name;
 
 const validDechargeDetail = (
-  <ModelDynamicDetail<OperationsDecharge>
-    app="operations"
-    model="Decharge"
+  <ModelDynamicDetail<LocationsAssetMovement>
+    app="locations"
+    model="AssetMovement"
     id="1"
     baseDetail={{
       header: {
-        title: (data) => data?.site ?? "Decharge",
+        title: (data) => data?.reason ?? "AssetMovement",
         actions: ({ data }) =>
           data
             ? [
                 {
                   render: ({ data: actionData }) => (
-                    <span>{actionData?.site ?? "-"}</span>
+                    <span>{actionData?.reason ?? "-"}</span>
                   ),
                 },
               ]
             : [],
       },
       layout: {
-        includeFields: ["site", "beneficiaire.nom", "dateDecharge"],
+        includeFields: ["reason", "asset.name", "movementDate"],
         sections: [
           {
             id: "main",
             fields: [
-              "site",
+              "reason",
               {
-                path: "beneficiaire.nom",
-                label: "Beneficiaire",
-                render: ({ record }) => record.beneficiaire.nom,
+                path: "asset.name",
+                label: "Asset",
+                render: ({ record }) => record.asset.name,
               },
             ],
           },
@@ -45,17 +45,17 @@ const validDechargeDetail = (
         customSections: [
           {
             id: "summary",
-            render: ({ data }) => <div>{data?.site ?? "-"}</div>,
+            render: ({ data }) => <div>{data?.reason ?? "-"}</div>,
           },
         ],
       },
       actions: {
         onUpdate: ({ data }) => {
-          void data?.beneficiaire?.nom;
+          void data?.asset?.name;
         },
         updateForm: {
           modelFormProps: {
-            onlyFields: ["site", "commentaire"],
+            onlyFields: ["reason", "status"],
           },
         },
       },
@@ -67,13 +67,13 @@ const validDechargeDetail = (
 void validDechargeDetail;
 
 const invalidDetailFieldPath = (
-  <ModelDynamicDetail<OperationsDecharge>
-    app="operations"
-    model="Decharge"
+  <ModelDynamicDetail<LocationsAssetMovement>
+    app="locations"
+    model="AssetMovement"
     id="1"
     baseDetail={{
       layout: {
-        // @ts-expect-error unknownField is not present on OperationsDecharge
+        // @ts-expect-error unknownField is not present on LocationsAssetMovement
         includeFields: ["unknownField"],
       },
     }}
@@ -83,9 +83,9 @@ const invalidDetailFieldPath = (
 void invalidDetailFieldPath;
 
 const invalidDetailRenderAccess = (
-  <ModelDynamicDetail<OperationsDecharge>
-    app="operations"
-    model="Decharge"
+  <ModelDynamicDetail<LocationsAssetMovement>
+    app="locations"
+    model="AssetMovement"
     id="1"
     baseDetail={{
       layout: {
@@ -94,8 +94,8 @@ const invalidDetailRenderAccess = (
             id: "invalid-render",
             fields: [
               {
-                path: "site",
-                // @ts-expect-error missingField does not exist on OperationsDecharge
+                path: "reason",
+                // @ts-expect-error missingField does not exist on LocationsAssetMovement
                 render: ({ record }) => record.missingField,
               },
             ],
@@ -109,15 +109,15 @@ const invalidDetailRenderAccess = (
 void invalidDetailRenderAccess;
 
 const invalidUpdateFormField = (
-  <ModelDynamicDetail<OperationsDecharge>
-    app="operations"
-    model="Decharge"
+  <ModelDynamicDetail<LocationsAssetMovement>
+    app="locations"
+    model="AssetMovement"
     id="1"
     baseDetail={{
       actions: {
         updateForm: {
           modelFormProps: {
-            // @ts-expect-error update form overrides must use OperationsDecharge form fields
+            // @ts-expect-error update form overrides must use LocationsAssetMovement form fields
             onlyFields: ["missingField"],
           },
         },

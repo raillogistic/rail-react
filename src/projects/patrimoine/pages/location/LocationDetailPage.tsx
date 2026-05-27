@@ -23,7 +23,7 @@ export function LocationDetailPage() {
               title: "Informations générales",
               tabId: "general",
               order: 1,
-              fields: ["code", "name", "level", "parent", "description"]
+              fields: ["code", "name", "level", "parent", "address"]
             }
           ]
         },

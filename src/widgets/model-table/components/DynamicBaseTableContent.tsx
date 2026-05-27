@@ -158,7 +158,7 @@ import { DynamicTableDesktopGrid } from "./DynamicTableDesktopGrid";
 /**
  * Internal props used by the dynamic-table powered content implementation.
  */
-type DynamicBaseTableContentProps<
+export type DynamicBaseTableContentProps<
   TSource extends object = Record<string, unknown>,
 > = {
   persistenceKey?: string;

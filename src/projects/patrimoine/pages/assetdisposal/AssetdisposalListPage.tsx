@@ -4,7 +4,7 @@ import { DynamicModelTable } from "@/widgets/model-table";
 
 export function AssetdisposalListPage() {
   return (
-    <DynamicModelTable<PatrimoineAssetDisposal>
+    <DynamicModelTable<any>
       app="patrimoine"
       model="AssetDisposal"
       create={{
@@ -20,20 +20,14 @@ export function AssetdisposalListPage() {
         hrefTemplate: ROUTES.ASSETDISPOSAL_DETAIL,
       }}
       baseTable={{
+        fields: ["reference", "exitMethod", "date", "reason", "status", "notes"],
         tableConfig: {
           title: "Sorties de patrimoine",
-          description: "Historique et gestion des sorties de patrimoine.",
-          columns: [
-            { field: "reference", title: "Référence" },
-            { field: "exitMethod", title: "Type de sortie" },
-            { field: "date", title: "Date" },
-            { field: "status", title: "Statut" },
-          ],
         },
         customMutations: ({ row }) => {
           return {
             overrides: {
-              cancel: {
+              cancelAssetDisposal: {
                 hidden: row.status === "cancelled",
               },
             },

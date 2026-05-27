@@ -7,7 +7,7 @@ import { DynamicModelTable } from "@/widgets/model-table";
  */
 export function RestitutionListPage() {
   return (
-    <DynamicModelTable<AssignmentsRestitution>
+    <DynamicModelTable<any>
       app="assignments"
       model="Restitution"
       create={{
@@ -23,13 +23,23 @@ export function RestitutionListPage() {
         hrefTemplate: ROUTES.RESTITUTION_DETAIL,
       }}
       baseTable={{
+        fields: [
+          "asset",
+          "restitutionDate",
+          "administrativeStatus",
+          "physicalCondition",
+          "location",
+          "comment",
+          "performedBy",
+          "status",
+        ],
         tableConfig: {
           title: "Restitutions de Biens",
         },
         customMutations: ({ row }) => {
           return {
             overrides: {
-              cancel: {
+              cancelRestitution: {
                 hidden: row.status === "cancelled",
               },
             },

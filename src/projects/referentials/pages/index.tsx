@@ -41,13 +41,16 @@ export function ServiceListPage() {
         </div>
 
         <TabsContent value="list" className="mt-0 border-none p-0 outline-none">
-          <DynamicModelTable<ReferentialsService>
+          <DynamicModelTable<any>
             app="referentials"
             model="Service"
             create={{ type: "link", hrefTemplate: ROUTES.SERVICE_CREATE }}
             update={{ type: "link", hrefTemplate: ROUTES.SERVICE_EDIT }}
             detail={{ type: "link", hrefTemplate: ROUTES.SERVICE_DETAIL }}
-            baseTable={{ tableConfig: { title: "Services" } }}
+            baseTable={{
+              fields: ["name", "parent", "email", "phone", "isActive"],
+              tableConfig: { title: "Services" }
+            }}
           />
         </TabsContent>
 
@@ -198,7 +201,7 @@ function ServiceMovementsTable({ serviceId }: { serviceId: string }) {
   }
 
   const movements: Record<string, unknown>[] =
-    (data as Record<string, unknown>)?.assetMovementList ?? [];
+    ((data as Record<string, unknown>)?.assetMovementList as Record<string, unknown>[]) ?? [];
 
   if (movements.length === 0) {
     return (
@@ -370,13 +373,16 @@ export function ServiceDetailPage() {
 /** Liste des employés. */
 export function EmployeeListPage() {
   return (
-    <DynamicModelTable<ReferentialsEmployee>
+    <DynamicModelTable<any>
       app="referentials"
       model="Employee"
       create={{ type: "link", hrefTemplate: ROUTES.EMPLOYEE_CREATE }}
       update={{ type: "link", hrefTemplate: ROUTES.EMPLOYEE_EDIT }}
       detail={{ type: "link", hrefTemplate: ROUTES.EMPLOYEE_DETAIL }}
-      baseTable={{ tableConfig: { title: "Employés" } }}
+      baseTable={{
+        fields: ["employeeCode", "firstName", "lastName", "service", "jobTitle", "isActive"],
+        tableConfig: { title: "Employés" }
+      }}
     />
   );
 }
@@ -442,13 +448,16 @@ export function EmployeeDetailPage() {
 /** Liste des catégories de biens. */
 export function AssetCategoryListPage() {
   return (
-    <DynamicModelTable<ReferentialsAssetCategory>
+    <DynamicModelTable<any>
       app="referentials"
       model="AssetCategory"
       create={{ type: "link", hrefTemplate: ROUTES.ASSET_CATEGORY_CREATE }}
       update={{ type: "link", hrefTemplate: ROUTES.ASSET_CATEGORY_EDIT }}
       detail={{ type: "link", hrefTemplate: ROUTES.ASSET_CATEGORY_DETAIL }}
-      baseTable={{ tableConfig: { title: "Catégories de biens" } }}
+      baseTable={{
+        fields: ["name", "code", "depreciationMethod", "depreciationDurationMonths", "isActive"],
+        tableConfig: { title: "Catégories de biens" }
+      }}
     />
   );
 }
@@ -509,13 +518,16 @@ export function AssetCategoryDetailPage() {
 /** Liste des familles de biens. */
 export function AssetFamilyListPage() {
   return (
-    <DynamicModelTable<ReferentialsAssetFamily>
+    <DynamicModelTable<any>
       app="referentials"
       model="AssetFamily"
       create={{ type: "link", hrefTemplate: ROUTES.ASSET_FAMILY_CREATE }}
       update={{ type: "link", hrefTemplate: ROUTES.ASSET_FAMILY_EDIT }}
       detail={{ type: "link", hrefTemplate: ROUTES.ASSET_FAMILY_DETAIL }}
-      baseTable={{ tableConfig: { title: "Familles de biens" } }}
+      baseTable={{
+        fields: ["category", "name", "code", "depreciationMethod", "depreciationDurationMonths", "isActive"],
+        tableConfig: { title: "Familles de biens" }
+      }}
     />
   );
 }
@@ -571,13 +583,16 @@ export function AssetFamilyDetailPage() {
 /** Liste des fournisseurs. */
 export function SupplierListPage() {
   return (
-    <DynamicModelTable<ReferentialsSupplier>
+    <DynamicModelTable<any>
       app="referentials"
       model="Supplier"
       create={{ type: "link", hrefTemplate: ROUTES.SUPPLIER_CREATE }}
       update={{ type: "link", hrefTemplate: ROUTES.SUPPLIER_EDIT }}
       detail={{ type: "link", hrefTemplate: ROUTES.SUPPLIER_DETAIL }}
-      baseTable={{ tableConfig: { title: "Fournisseurs" } }}
+      baseTable={{
+        fields: ["name", "contactEmail", "contactPhone", "isActive"],
+        tableConfig: { title: "Fournisseurs" }
+      }}
     />
   );
 }
@@ -600,7 +615,7 @@ export function SupplierFormPage() {
             id: "general",
             title: "Informations",
             columns: 2,
-            fields: ["name", "code"],
+            fields: ["name"],
           },
           {
             id: "contact",
@@ -636,13 +651,16 @@ export function SupplierDetailPage() {
 /** Liste des types de documents. */
 export function DocumentTypeListPage() {
   return (
-    <DynamicModelTable<ReferentialsDocumentType>
+    <DynamicModelTable<any>
       app="referentials"
       model="DocumentType"
       create={{ type: "link", hrefTemplate: ROUTES.DOCUMENT_TYPE_CREATE }}
       update={{ type: "link", hrefTemplate: ROUTES.DOCUMENT_TYPE_EDIT }}
       detail={{ type: "link", hrefTemplate: ROUTES.DOCUMENT_TYPE_DETAIL }}
-      baseTable={{ tableConfig: { title: "Types de documents" } }}
+      baseTable={{
+        fields: ["name", "isActive"],
+        tableConfig: { title: "Types de documents" }
+      }}
     />
   );
 }
@@ -692,13 +710,16 @@ export function DocumentTypeDetailPage() {
 /** Liste des états physiques. */
 export function PhysicalConditionListPage() {
   return (
-    <DynamicModelTable<ReferentialsPhysicalCondition>
+    <DynamicModelTable<any>
       app="referentials"
       model="PhysicalCondition"
       create={{ type: "link", hrefTemplate: ROUTES.PHYSICAL_CONDITION_CREATE }}
       update={{ type: "link", hrefTemplate: ROUTES.PHYSICAL_CONDITION_EDIT }}
       detail={{ type: "link", hrefTemplate: ROUTES.PHYSICAL_CONDITION_DETAIL }}
-      baseTable={{ tableConfig: { title: "États physiques" } }}
+      baseTable={{
+        fields: ["name", "isActive"],
+        tableConfig: { title: "États physiques" }
+      }}
     />
   );
 }
@@ -748,13 +769,16 @@ export function PhysicalConditionDetailPage() {
 /** Liste des définitions de métadonnées. */
 export function MetadataDefinitionListPage() {
   return (
-    <DynamicModelTable<ReferentialsAssetMetadataDefinition>
+    <DynamicModelTable<any>
       app="referentials"
       model="AssetMetadataDefinition"
       create={{ type: "link", hrefTemplate: ROUTES.METADATA_DEFINITION_CREATE }}
       update={{ type: "link", hrefTemplate: ROUTES.METADATA_DEFINITION_EDIT }}
       detail={{ type: "link", hrefTemplate: ROUTES.METADATA_DEFINITION_DETAIL }}
-      baseTable={{ tableConfig: { title: "Définitions de métadonnées" } }}
+      baseTable={{
+        fields: ["name", "category", "family", "isActive"],
+        tableConfig: { title: "Définitions de métadonnées" }
+      }}
     />
   );
 }

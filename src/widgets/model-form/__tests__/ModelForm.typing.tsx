@@ -1,53 +1,53 @@
-import type { OperationsDecharge } from "@/models";
+import type { LocationsAssetMovement } from "@/models";
 import { ModelForm } from "@/widgets/model-form";
 
 const validDechargeForm = (
-  <ModelForm<OperationsDecharge>
-    app="operations"
-    model="Decharge"
+  <ModelForm<LocationsAssetMovement>
+    app="locations"
+    model="AssetMovement"
     mode="CREATE"
-    onlyFields={["beneficiaire", "dateDecharge", "etatSortie", "commentaire"]}
+    onlyFields={["status", "movementDate", "reason", "reference"]}
     state={{
       defaultValues: {
-        beneficiaire: 1,
-        dateDecharge: "2026-03-11",
-        site: "Rouiba",
+        status: "pending",
+        movementDate: "2026-03-11",
+        reason: "mouvement interne",
       },
     }}
     behavior={{
       dependencies: {
-        serial: {
-          watch: ["beneficiaire"],
+        status: {
+          watch: ["reason"],
           effect: "clear",
         },
       },
     }}
     fieldOverrides={{
-      commentaire: { colSpan: 2 },
+      reason: { colSpan: 2 },
     }}
     generatedSections={[
       {
         id: "main",
-        fields: ["beneficiaire", "dateDecharge", "commentaire"],
+        fields: ["status", "movementDate", "reason"],
       },
     ]}
     layout={{
       ordering: {
-        tailing: ["commentaire"],
+        tailing: ["reason"],
         rules: [
           {
-            field: "dateDecharge",
+            field: "movementDate",
             place: "after",
-            anchor: "beneficiaire",
+            anchor: "status",
           },
         ],
       },
     }}
     nested={{
-      restitutionRelation: {
-        onlyFields: ["commentaire", "dateRestitution", "etatRetour"],
-        excludeFields: ["legacySource"],
-        customOrder: ["dateRestitution", "etatRetour", "commentaire"],
+      toLocation: {
+        onlyFields: ["name", "code", "address"],
+        excludeFields: ["isActive"],
+        customOrder: ["name", "code", "address"],
       },
     }}
   />
@@ -56,11 +56,11 @@ const validDechargeForm = (
 void validDechargeForm;
 
 const invalidOnlyFields = (
-  <ModelForm<OperationsDecharge>
-    app="operations"
-    model="Decharge"
+  <ModelForm<LocationsAssetMovement>
+    app="locations"
+    model="AssetMovement"
     mode="CREATE"
-    // @ts-expect-error "etat" is not a field on OperationsDecharge form values
+    // @ts-expect-error "etat" is not a field on LocationsAssetMovement form values
     onlyFields={["etat"]}
   />
 );
@@ -68,14 +68,14 @@ const invalidOnlyFields = (
 void invalidOnlyFields;
 
 const invalidRelationDefaultValue = (
-  <ModelForm<OperationsDecharge>
-    app="operations"
-    model="Decharge"
+  <ModelForm<LocationsAssetMovement>
+    app="locations"
+    model="AssetMovement"
     mode="CREATE"
     state={{
       defaultValues: {
         // @ts-expect-error relation-backed form values use scalar identifiers by default
-        beneficiaire: { id: 1 },
+        toLocation: { id: 1 },
       },
     }}
   />
@@ -84,9 +84,9 @@ const invalidRelationDefaultValue = (
 void invalidRelationDefaultValue;
 
 const invalidNestedRelationKey = (
-  <ModelForm<OperationsDecharge>
-    app="operations"
-    model="Decharge"
+  <ModelForm<LocationsAssetMovement>
+    app="locations"
+    model="AssetMovement"
     mode="CREATE"
     // @ts-expect-error shorthand nested relation keys must exist on the form shape
     nested={["missingRelation"]}
@@ -96,13 +96,13 @@ const invalidNestedRelationKey = (
 void invalidNestedRelationKey;
 
 const invalidOrderingField = (
-  <ModelForm<OperationsDecharge>
-    app="operations"
-    model="Decharge"
+  <ModelForm<LocationsAssetMovement>
+    app="locations"
+    model="AssetMovement"
     mode="CREATE"
     layout={{
       ordering: {
-        // @ts-expect-error ordering field names must exist on OperationsDecharge form values
+        // @ts-expect-error ordering field names must exist on LocationsAssetMovement form values
         tailing: ["etat"],
       },
     }}
@@ -112,12 +112,12 @@ const invalidOrderingField = (
 void invalidOrderingField;
 
 const invalidFieldOverrideKey = (
-  <ModelForm<OperationsDecharge>
-    app="operations"
-    model="Decharge"
+  <ModelForm<LocationsAssetMovement>
+    app="locations"
+    model="AssetMovement"
     mode="CREATE"
     fieldOverrides={{
-      // @ts-expect-error field override keys must exist on OperationsDecharge form values
+      // @ts-expect-error field override keys must exist on LocationsAssetMovement form values
       etat: { colSpan: 2 },
     }}
   />
@@ -126,14 +126,14 @@ const invalidFieldOverrideKey = (
 void invalidFieldOverrideKey;
 
 const invalidNestedFieldOverrideKey = (
-  <ModelForm<OperationsDecharge>
-    app="operations"
-    model="Decharge"
+  <ModelForm<LocationsAssetMovement>
+    app="locations"
+    model="AssetMovement"
     mode="CREATE"
     nested={{
-      restitutionRelation: {
+      toLocation: {
         fieldOverrides: {
-          // @ts-expect-error nested field override keys must exist on OperationsRestitution form values
+          // @ts-expect-error nested field override keys must exist on LocationsLocation form values
           missingField: { colSpan: 2 },
         },
       },
@@ -144,13 +144,13 @@ const invalidNestedFieldOverrideKey = (
 void invalidNestedFieldOverrideKey;
 
 const invalidNestedScalarField = (
-  <ModelForm<OperationsDecharge>
-    app="operations"
-    model="Decharge"
+  <ModelForm<LocationsAssetMovement>
+    app="locations"
+    model="AssetMovement"
     mode="CREATE"
     nested={{
-      // @ts-expect-error nested config keys must point to relation fields on OperationsDecharge
-      site: {
+      // @ts-expect-error nested config keys must point to relation fields on LocationsAssetMovement
+      status: {
         onlyFields: ["nom"],
       },
     }}

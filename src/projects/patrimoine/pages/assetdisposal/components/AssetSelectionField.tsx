@@ -42,7 +42,6 @@ export function AssetSelectionField({ ctx }: { ctx: FieldRenderContext }) {
         isActive: { eq: true },
         ...(debouncedSearch.trim() ? { quick: debouncedSearch } : {})
       },
-      limit: 100, // fetch up to 100
     },
     apollo: {
       fetchPolicy: "cache-first"
@@ -59,7 +58,6 @@ export function AssetSelectionField({ ctx }: { ctx: FieldRenderContext }) {
       where: {
         id: { in: missingIds }
       },
-      limit: missingIds.length || 1, // avoid 0 limit
     },
     apollo: {
       skip: missingIds.length === 0,
@@ -69,10 +67,10 @@ export function AssetSelectionField({ ctx }: { ctx: FieldRenderContext }) {
 
   // Append newly fetched selected assets
   useEffect(() => {
-    if (initialSelectedData?.items?.length) {
+    if (initialSelectedData?.length) {
       setSelectedAssets(prev => {
         const newAssets = [...prev];
-        initialSelectedData.items.forEach(asset => {
+        initialSelectedData.forEach(asset => {
           if (!newAssets.some(a => String(a.id) === String(asset.id))) {
             newAssets.push(asset);
           }
@@ -83,10 +81,10 @@ export function AssetSelectionField({ ctx }: { ctx: FieldRenderContext }) {
   }, [initialSelectedData]);
 
   const availableAssets = useMemo(() => {
-    return (searchData?.items || []).filter(
+    return (searchData || []).filter(
       (a) => !selectedAssets.some((sa) => String(sa.id) === String(a.id))
     );
-  }, [searchData?.items, selectedAssets]);
+  }, [searchData, selectedAssets]);
 
   const toggleLeft = (id: string | number) => {
     const newSet = new Set(leftChecked);

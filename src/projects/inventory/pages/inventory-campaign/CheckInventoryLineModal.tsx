@@ -1,5 +1,5 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/shared/ui/kit/dialog";
-import { ModelDynamicForm } from "@/widgets/model-form";
+import { ModelForm } from "@/widgets/model-form";
 
 interface CheckInventoryLineModalProps {
   lineId: string;
@@ -14,11 +14,11 @@ export function CheckInventoryLineModal({ lineId, open, onOpenChange }: CheckInv
         <DialogHeader>
           <DialogTitle>Saisie Résultat Inventaire</DialogTitle>
         </DialogHeader>
-        <ModelDynamicForm<any>
+        <ModelForm<any>
           app="inventory"
           model="InventoryLine"
-          id={lineId}
-          mode="update"
+          objectId={lineId}
+          mode="UPDATE"
           fieldOverrides={{
             campaign: { hidden: true },
             asset: { hidden: true },
@@ -26,9 +26,11 @@ export function CheckInventoryLineModal({ lineId, open, onOpenChange }: CheckInv
             checkedBy: { hidden: true },
             checkedAt: { hidden: true }
           }}
-          onSuccess={() => {
-            onOpenChange(false);
-            window.location.reload();
+          onSubmitResult={(result) => {
+            if (result.ok) {
+              onOpenChange(false);
+              window.location.reload();
+            }
           }}
         />
       </DialogContent>

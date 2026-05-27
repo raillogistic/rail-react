@@ -4,7 +4,7 @@ import { DynamicModelTable } from "@/widgets/model-table";
 
 export function AssetMovementListPage() {
   return (
-    <DynamicModelTable<LocationsAssetMovement>
+    <DynamicModelTable<any>
       app="locations"
       model="AssetMovement"
       create={{
@@ -20,10 +20,10 @@ export function AssetMovementListPage() {
         hrefTemplate: ROUTES.ASSET_MOVEMENT_DETAIL,
       }}
       baseTable={{
+        fields: ["reference", "asset", "fromLocation", "toLocation", "movementDate", "reason", "status"],
         tableConfig: {
           title: "Mouvements",
         },
-
         customMutations: ({ row }) => {
           return {
             overrides: {

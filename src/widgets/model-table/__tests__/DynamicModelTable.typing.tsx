@@ -1,56 +1,56 @@
-import type { OperationsDecharge } from "@/models";
+import type { LocationsAssetMovement } from "@/models";
 import {
   DynamicModelTable,
   type DynamicModelTableHandle,
 } from "@/widgets/model-table";
 
-const validHandle: DynamicModelTableHandle<OperationsDecharge> | null = null;
-void validHandle?.data[0]?.site;
-void validHandle?.selectedRows[0]?.beneficiaire?.nom;
+const validHandle: DynamicModelTableHandle<LocationsAssetMovement> | null = null;
+void validHandle?.data[0]?.reason;
+void validHandle?.selectedRows[0]?.asset?.name;
 
 const validDechargeTable = (
-  <DynamicModelTable<OperationsDecharge>
-    app="operations"
-    model="Decharge"
+  <DynamicModelTable<LocationsAssetMovement>
+    app="locations"
+    model="AssetMovement"
     baseTable={{
       fields: {
         include: [
-          "numero",
-          "site",
-          "beneficiaire",
-          "beneficiaire.nom",
-          "restitutionRelationCount",
+          "reference",
+          "reason",
+          "asset",
+          "asset.name",
+          "fromEmployee",
         ],
-        exclude: ["numeroAnnee"],
+        exclude: ["id"],
         add: [
           {
-            accessor: "beneficiaire.prenom",
-            title: "Prenom",
-            order: { after: "beneficiaire.nom" },
+            accessor: "asset.brand",
+            title: "Brand",
+            order: { after: "asset.name" },
           },
         ],
         render: {
-          site: (_value, row) => row.site ?? "-",
-          "beneficiaire.nom": (_value, row) => row.beneficiaire.nom,
+          reason: (_value, row) => row.reason ?? "-",
+          "asset.name": (_value, row) => row.asset.name,
         },
       },
       columnOrdering: {
         mode: "config",
-        order: ["numero", "beneficiaire.nom", "site", "restitutionRelationCount"],
-        locked: ["numero"],
+        order: ["reference", "asset.name", "reason", "fromEmployee"],
+        locked: ["reference"],
       },
-      quickFilters: ["site", "beneficiaire.nom"],
+      quickFilters: ["reason", "asset.name"],
       relations: {
-        restitutionRelation: {
-          display: "nom",
-          fields: ["numero", "commentaire"],
+        toLocation: {
+          display: "name",
+          fields: ["code", "address"],
         },
       },
       columnActions: (context) => [
         {
-          label: context.row.site ?? "Action",
+          label: context.row.reason ?? "Action",
           onClick: ({ row }) => {
-            void row.beneficiaire.nom;
+            void row.asset.name;
           },
         },
       ],
@@ -59,7 +59,7 @@ const validDechargeTable = (
       resolveFormProps: ({ selectedRows }) => ({
         state: {
           defaultValues: {
-            site: selectedRows[0]?.site ?? "",
+            reason: selectedRows[0]?.reason ?? "",
           },
         },
       }),
@@ -67,8 +67,8 @@ const validDechargeTable = (
     update={{
       resolveObjectId: ({ row }) => row.id,
       resolveFormProps: ({ row }) => ({
-        onlyFields: ["site", "commentaire"],
-        title: row.site ?? "Modifier",
+        onlyFields: ["reason", "status"],
+        title: row.reason ?? "Modifier",
       }),
     }}
     ref={null}
@@ -78,12 +78,12 @@ const validDechargeTable = (
 void validDechargeTable;
 
 const invalidAccessor = (
-  <DynamicModelTable<OperationsDecharge>
-    app="operations"
-    model="Decharge"
+  <DynamicModelTable<LocationsAssetMovement>
+    app="locations"
+    model="AssetMovement"
     baseTable={{
       fields: {
-        // @ts-expect-error accessor must exist on OperationsDecharge or derived relation paths
+        // @ts-expect-error accessor must exist on LocationsAssetMovement or derived relation paths
         include: ["missingField"],
       },
     }}
@@ -93,13 +93,13 @@ const invalidAccessor = (
 void invalidAccessor;
 
 const invalidDottedAccessor = (
-  <DynamicModelTable<OperationsDecharge>
-    app="operations"
-    model="Decharge"
+  <DynamicModelTable<LocationsAssetMovement>
+    app="locations"
+    model="AssetMovement"
     baseTable={{
       columnOrdering: {
         // @ts-expect-error dotted accessor must resolve from the related interface
-        order: ["beneficiaire.unknownField"],
+        order: ["asset.unknownField"],
       },
     }}
   />
@@ -108,14 +108,14 @@ const invalidDottedAccessor = (
 void invalidDottedAccessor;
 
 const invalidRelationKey = (
-  <DynamicModelTable<OperationsDecharge>
-    app="operations"
-    model="Decharge"
+  <DynamicModelTable<LocationsAssetMovement>
+    app="locations"
+    model="AssetMovement"
     baseTable={{
       relations: {
-        // @ts-expect-error relation key must exist on OperationsDecharge
+        // @ts-expect-error relation key must exist on LocationsAssetMovement
         unknownRelation: {
-          display: "nom",
+          display: "name",
         },
       },
     }}
@@ -125,13 +125,13 @@ const invalidRelationKey = (
 void invalidRelationKey;
 
 const invalidCreateFormOverrideField = (
-  <DynamicModelTable<OperationsDecharge>
-    app="operations"
-    model="Decharge"
+  <DynamicModelTable<LocationsAssetMovement>
+    app="locations"
+    model="AssetMovement"
     create={{
       resolveFormProps: () => ({
         fieldOverrides: {
-          etat: { colSpan: 2 },
+          status: { colSpan: 2 },
         },
       }),
     }}

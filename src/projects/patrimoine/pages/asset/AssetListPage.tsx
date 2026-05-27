@@ -4,7 +4,7 @@ import { DynamicModelTable } from "@/widgets/model-table";
 
 export function AssetListPage() {
   return (
-    <DynamicModelTable<PatrimoineAsset>
+    <DynamicModelTable<any>
       app="patrimoine"
       model="Asset"
       create={{
@@ -20,7 +20,17 @@ export function AssetListPage() {
         hrefTemplate: ROUTES.ASSET_DETAIL,
       }}
       baseTable={{
-        // fields: ["acquisitionDate"],
+        fields: [
+          "inventoryCode",
+          "name",
+          "category",
+          "family",
+          "administrativeStatus",
+          "physicalCondition",
+          "location",
+          "responsibleEmployee",
+          "responsibleService",
+        ],
         tableConfig: {
           title: "Biens",
         },

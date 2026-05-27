@@ -68,7 +68,7 @@ const JsonNestedInput: React.FC<Props> = ({ config, field, form }) => {
   const localErrors = React.useMemo(() => {
     const newErrors: Record<string, string> = {};
     if (!showError) return newErrors;
-    
+
     sections.forEach((section) => {
       section.fields.forEach((subField) => {
         if (subField.isRequired) {
@@ -125,7 +125,7 @@ const JsonNestedInput: React.FC<Props> = ({ config, field, form }) => {
         <Label
           className={cn(
             "text-[13px] font-semibold text-foreground/80",
-            subError && "text-destructive"
+            subError && "text-destructive",
           )}
         >
           {def.label}
@@ -135,7 +135,10 @@ const JsonNestedInput: React.FC<Props> = ({ config, field, form }) => {
           <TooltipProvider>
             <Tooltip delayDuration={300}>
               <TooltipTrigger asChild>
-                <button type="button" className="text-muted-foreground/40 hover:text-primary outline-none">
+                <button
+                  type="button"
+                  className="text-muted-foreground/40 hover:text-primary outline-none"
+                >
                   <Info className="size-3.5" />
                 </button>
               </TooltipTrigger>
@@ -156,8 +159,17 @@ const JsonNestedInput: React.FC<Props> = ({ config, field, form }) => {
     );
 
     // TEXT / NUMBER / DATE
-    if (def.fieldType === "text" || def.fieldType === "number" || def.fieldType === "date") {
-      const inputType = def.fieldType === "text" ? "text" : def.fieldType === "number" ? "number" : "date";
+    if (
+      def.fieldType === "text" ||
+      def.fieldType === "number" ||
+      def.fieldType === "date"
+    ) {
+      const inputType =
+        def.fieldType === "text"
+          ? "text"
+          : def.fieldType === "number"
+            ? "number"
+            : "date";
       return (
         <div key={def.fieldName} className="flex flex-col">
           {labelNode}
@@ -167,13 +179,16 @@ const JsonNestedInput: React.FC<Props> = ({ config, field, form }) => {
             value={subValue ?? ""}
             onChange={(e) => {
               const val = e.target.value;
-              updateValue(def.fieldName, def.fieldType === "number" && val ? Number(val) : val);
+              updateValue(
+                def.fieldName,
+                def.fieldType === "number" && val ? Number(val) : val,
+              );
             }}
             onBlur={field.handleBlur}
             disabled={config.disabled || config.readOnly}
             className={cn(
               "h-9 transition-colors shadow-sm",
-              subError && "border-destructive focus-visible:ring-destructive"
+              subError && "border-destructive focus-visible:ring-destructive",
             )}
           />
           {errorNode}
@@ -207,22 +222,33 @@ const JsonNestedInput: React.FC<Props> = ({ config, field, form }) => {
 
   // --- Rendu du Wrapper ---
 
-  const errorList = Array.isArray(error) ? error.filter(Boolean) : error ? [error] : [];
+  const errorList = Array.isArray(error)
+    ? error.filter(Boolean)
+    : error
+      ? [error]
+      : [];
   const hasGlobalError = errorList.length > 0;
 
   return (
     <FieldWrapper config={config} fieldId={fieldId} dirty={dirty}>
-      <div className={cn("flex flex-col gap-4 rounded-xl border bg-muted/5 p-4 transition-colors", 
-        hasFields ? "border-input/60" : "border-dashed border-input/40"
-      )}>
+      <div
+        className={cn(
+          "flex flex-col gap-4 rounded-xl border bg-muted/5 p-4 transition-colors",
+          hasFields ? "border-input/60" : "border-dashed border-input/40",
+        )}
+      >
         {/* Header optionnel */}
         {(config.title || config.subtitle) && (
           <div className="flex flex-col gap-1 mb-2 border-b border-input/30 pb-3">
-            {config.title && <h4 className="font-bold text-[14px] flex items-center gap-2">
-              <Sparkles className="size-4 text-primary/60" />
-              {config.title}
-            </h4>}
-            {config.subtitle && <p className="text-xs text-muted-foreground">{config.subtitle}</p>}
+            {config.title && (
+              <h4 className="font-bold text-[14px] flex items-center gap-2">
+                <Sparkles className="size-4 text-primary/60" />
+                {config.title}
+              </h4>
+            )}
+            {config.subtitle && (
+              <p className="text-xs text-muted-foreground">{config.subtitle}</p>
+            )}
           </div>
         )}
 
@@ -230,7 +256,9 @@ const JsonNestedInput: React.FC<Props> = ({ config, field, form }) => {
         {loading && (
           <div className="flex flex-col items-center justify-center py-8 text-muted-foreground gap-3">
             <div className="size-5 rounded-full border-2 border-primary/30 border-t-primary animate-spin" />
-            <span className="text-sm font-medium animate-pulse">Chargement des champs...</span>
+            <span className="text-sm font-medium animate-pulse">
+              Chargement des champs...
+            </span>
           </div>
         )}
 
@@ -238,7 +266,9 @@ const JsonNestedInput: React.FC<Props> = ({ config, field, form }) => {
         {!loading && !hasFields && (
           <div className="flex flex-col items-center justify-center py-6 text-muted-foreground/60 gap-2">
             <AlertTriangle className="size-8 opacity-20" />
-            <span className="text-sm font-medium">{config.emptyMessage ?? "Aucun champ disponible."}</span>
+            <span className="text-sm font-medium">
+              {config.emptyMessage ?? "Aucun champ disponible."}
+            </span>
           </div>
         )}
 
@@ -247,16 +277,24 @@ const JsonNestedInput: React.FC<Props> = ({ config, field, form }) => {
           <div className="flex flex-col gap-6">
             {sections.map((section) => {
               if (section.fields.length === 0) return null;
-              
+
               // Tri des champs par ordre
-              const sortedFields = [...section.fields].sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
-              
+              const sortedFields = [...section.fields].sort(
+                (a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0),
+              );
+
               return (
                 <div key={section.id} className="flex flex-col gap-3">
                   <div className="flex items-center justify-between">
-                    <h5 className="text-[13px] font-bold text-foreground/80 uppercase tracking-wider">{section.name}</h5>
-                    <Badge variant="outline" className="text-[10px] h-5 bg-background text-muted-foreground/70">
-                      {section.fields.length} champ{section.fields.length > 1 ? 's' : ''}
+                    <h5 className="text-[13px] font-bold text-foreground/80 uppercase tracking-wider">
+                      {section.name}
+                    </h5>
+                    <Badge
+                      variant="outline"
+                      className="text-[10px] h-5 bg-background text-muted-foreground/70"
+                    >
+                      {section.fields.length} champ
+                      {section.fields.length > 1 ? "s" : ""}
                     </Badge>
                   </div>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5 bg-background rounded-lg border border-input/40 p-4 shadow-sm">

@@ -9,15 +9,17 @@ export function AssetMovementDetailPage() {
       app="locations" 
       model="AssetMovement" 
       id={id} 
-      actionsConfig={{
-        customMutations: ({ data }) => {
-          return {
-            overrides: {
-              cancel: {
-                hidden: data?.status === "cancelled",
+      baseDetail={{
+        actions: {
+          customMutations: ({ data }) => {
+            return {
+              overrides: {
+                cancel: {
+                  hidden: data?.status === "cancelled",
+                },
               },
-            },
-          };
+            };
+          },
         },
       }}
     />

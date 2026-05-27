@@ -172,7 +172,6 @@ export const REFERENTIALS_MANIFEST: AppManifest = defineProjectManifest({
       id: "referentials",
       label: "Référentiels",
       order: 15,
-      icon: BookOpen,
       entries: [
         { id: "referentials:service:list", routeId: "referentials:service:list", title: "Services", path: ROUTES.SERVICE_LIST, guard: "protected", icon: Building2 },
         { id: "referentials:employee:list", routeId: "referentials:employee:list", title: "Employés", path: ROUTES.EMPLOYEE_LIST, guard: "protected", icon: Users },

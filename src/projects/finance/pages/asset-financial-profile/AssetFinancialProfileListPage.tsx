@@ -20,6 +20,15 @@ export function AssetFinancialProfileListPage() {
         hrefTemplate: ROUTES.ASSET_FINANCIAL_PROFILE_DETAIL,
       }}
       baseTable={{
+        fields: [
+          "asset",
+          "depreciableBaseValue",
+          "depreciationMethod",
+          "depreciationDurationMonths",
+          "depreciationStartDate",
+          "residualValue",
+          "cachedNetBookValue",
+        ],
         tableConfig: {
           title: "Asset Financial Profile",
         },

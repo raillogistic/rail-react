@@ -1,13 +1,13 @@
 import { useParams } from "react-router-dom";
 import type { PatrimoineAsset } from "@/models";
 import { ModelDynamicDetail } from "@/widgets/model-details";
-import { ModelDynamicForm } from "@/widgets/model-form";
+import { ModelForm } from "@/widgets/model-form";
 import { AmortizationChart } from "./AmortizationChart";
 import { Card, CardContent } from "@/shared/ui/kit/card";
-import { useModelQuery } from "@/features/model-data/hooks/useModelQuery";
+import { useModelSingleQuery } from "@/shared/api/graphql/graphql";
 
 function FinanceTab({ assetId }: { assetId: string }) {
-  const { data: asset, loading } = useModelQuery<any>({
+  const { data: asset, loading } = useModelSingleQuery<any>({
     app: "patrimoine",
     model: "Asset",
     id: assetId,
@@ -33,14 +33,16 @@ function FinanceTab({ assetId }: { assetId: string }) {
             </div>
           </div>
           
-          <ModelDynamicForm<any>
+          <ModelForm<any>
             app="patrimoine"
             model="AssetFinancialProfile"
-            id={profile?.id}
-            mode={profile?.id ? "update" : "create"}
-            defaultValues={!profile?.id ? { asset: { connect: assetId } } : undefined}
-            onSuccess={() => {
-              window.location.reload();
+            objectId={profile?.id}
+            mode={profile?.id ? "UPDATE" : "CREATE"}
+            state={!profile?.id ? { defaultValues: { asset: { connect: assetId } } } : undefined}
+            onSubmitResult={(result) => {
+              if (result.ok) {
+                window.location.reload();
+              }
             }}
           />
         </CardContent>
@@ -65,27 +67,31 @@ export function AssetDetailPage() {
       app="patrimoine" 
       model="Asset" 
       id={id} 
-      customSections={[
-        {
-          id: "finance",
-          title: "Finance",
-          content: <FinanceTab assetId={id} />
-        }
-      ]}
-      actionsConfig={{
-        customMutations: ({ data }) => {
-          const status = data?.administrativeStatus;
-          return {
-            overrides: {
-              reactivate: {
-                hidden: status !== "out_of_service",
-              },
-              set_out_of_service: {
-                hidden: status !== "active" && status !== "assigned",
-              },
-            },
-          };
+      baseDetail={{
+        layout: {
+          customSections: [
+            {
+              id: "finance",
+              title: "Finance",
+              render: () => <FinanceTab assetId={id} />
+            }
+          ]
         },
+        actions: {
+          customMutations: ({ data }) => {
+            const status = data?.administrativeStatus;
+            return {
+              overrides: {
+                reactivate: {
+                  hidden: status !== "out_of_service",
+                },
+                set_out_of_service: {
+                  hidden: status !== "active" && status !== "assigned",
+                },
+              },
+            };
+          },
+        }
       }}
     />
   );

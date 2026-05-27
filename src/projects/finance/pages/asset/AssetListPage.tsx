@@ -28,6 +28,7 @@ export function AssetListPage() {
           "acquisitionMethod",
           "acquisitionValue",
           "netBookValue",
+          "administrativeStatus",
         ],
         quickFilters: ["inventoryCode", "name", "assetType", "ownershipStatus"],
         tableConfig: {
