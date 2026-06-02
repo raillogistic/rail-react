@@ -3,6 +3,7 @@
  * @description Renders the dynamic rows for TanStack table, with optional virtualization.
  * Redessiné pour correspondre au style Localira (bordures en pointillés, suppression du striping, texte gris).
  * Modifié pour supprimer les animations et les ombres afin d'améliorer les performances de l'interface utilisateur.
+ * Ajoute un attribut `title` natif sur les cellules tronquées pour afficher la valeur complète au survol.
  */
 import { useMemo } from "react";
 import type { CSSProperties, RefObject } from "react";
@@ -307,9 +308,29 @@ export function DynamicTableRows<TRow extends Record<string, unknown>>({
 
           const isFirstCell = cellIndex === 0;
 
+          /**
+           * Calcule l'attribut `title` pour afficher la valeur complète au survol
+           * lorsque le texte est tronqué (wrapCells = false).
+           * Ignoré pour les colonnes utilitaires et les valeurs non-scalaires.
+           */
+          const isUtilityColumn =
+            cell.column.id === expandColumnId ||
+            cell.column.id === selectionColumnId ||
+            cell.column.id === actionsColumnId;
+          const rawValue = cell.getValue();
+          const titleAttr =
+            !layout.wrapCells &&
+            !isUtilityColumn &&
+            rawValue !== null &&
+            rawValue !== undefined &&
+            typeof rawValue !== "object"
+              ? String(rawValue)
+              : undefined;
+
           return (
             <TableCell
               key={cell.id}
+              title={titleAttr}
               style={
                 autoSizeActionsCell
                   ? { ...(sticky.style ?? {}) }

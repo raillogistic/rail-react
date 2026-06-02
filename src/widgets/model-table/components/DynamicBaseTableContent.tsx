@@ -200,7 +200,9 @@ export type DynamicBaseTableContentProps<
   customMutations?:
     | import("@/widgets/components/CustomMutationsDropdown").CustomMutationsDropdownActionsConfig
     | ((
-        ctx: import("../types").BaseModelTableColumnActionContext<DynamicModelTableRow<TSource>>,
+        ctx: import("../types").BaseModelTableColumnActionContext<
+          DynamicModelTableRow<TSource>
+        >,
       ) => import("@/widgets/components/CustomMutationsDropdown").CustomMutationsDropdownActionsConfig);
   devtoolsEnabled?: boolean;
   /**
@@ -1182,11 +1184,11 @@ export function DynamicBaseTableContent<
   >;
   const HiddenTopActions: React.ComponentType<
     ModelTableTopActionsSlotProps<TSource>
-      > = () => null;
+  > = () => null;
   const headerTopActionsSlot = sectionVisibility.topActions
     ? TopActionsSlot
     : HiddenTopActions;
-  
+
   const topContent = sectionController.metadata ? (
     <DynamicTableTopShell
       sectionVisibility={sectionVisibility}
@@ -1216,7 +1218,7 @@ export function DynamicBaseTableContent<
 
       {/* Top Shell */}
       {topContent}
-
+      <br />
       {/* Mobile Grid */}
       {hideTableOnMobile && (
         <div className="flex-1 min-h-0 bg-background md:hidden px-4 py-4 overflow-y-auto custom-scrollbar">
