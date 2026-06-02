@@ -1,3 +1,8 @@
+/**
+ * @file ColumnFilter.tsx
+ * @description Composant de filtrage par colonne du ModelTable.
+ * Modifié pour supprimer les animations et les ombres afin d'améliorer les performances de l'interface utilisateur.
+ */
 import React, { useMemo, useRef, useState } from "react";
 import { Filter } from "lucide-react";
 import { Button } from "@/shared/ui/kit/button";
@@ -171,7 +176,7 @@ export function ColumnFilter({
         </Button>
       </PopoverTrigger>
       <PopoverContent
-        className="w-80 border-border/30 p-3 shadow-xl backdrop-blur-xl bg-background/95"
+        className="w-80 border-border/30 p-3 bg-background/95"
         align="start"
         side="bottom"
       >

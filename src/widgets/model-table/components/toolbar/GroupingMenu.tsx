@@ -1,3 +1,8 @@
+/**
+ * @file GroupingMenu.tsx
+ * @description Composant de menu de regroupement pour la barre d'outils.
+ * Modifié pour supprimer les animations et les ombres afin d'améliorer les performances de l'interface utilisateur.
+ */
 import { Check, Layers, Eye, EyeOff, LayoutPanelTop } from "lucide-react";
 import { Button } from "@/shared/ui/kit/button";
 import {
@@ -45,7 +50,7 @@ export function GroupingMenu({
  variant="ghost"
  size="sm"
  className={cn(
- "h-8 w-8 p-0 transition-all",
+ "h-8 w-8 p-0",
  hasGroupedRows
  ? "bg-primary/10 text-primary"
  : "text-muted-foreground hover:bg-background hover:text-primary",
@@ -59,7 +64,7 @@ export function GroupingMenu({
  </Tooltip>
  <DropdownMenuContent
  align="end"
- className="w-64 border-none p-2 shadow-2xl backdrop-blur-2xl bg-background/95"
+ className="w-64 border-none p-2 bg-background/95"
  >
  <DropdownMenuLabel className="flex items-center gap-2 px-3 py-2 text-xs font-black uppercase tracking-widest text-muted-foreground/60">
  <LayoutPanelTop className="h-3.5 w-3.5" />
@@ -72,7 +77,7 @@ export function GroupingMenu({
  onResetCollapsed();
  }}
  className={cn(
- "gap-3 py-2 text-xs font-medium transition-colors mb-1",
+ "gap-3 py-2 text-xs font-medium mb-1",
  groupingField === null
  ? "bg-primary/5 text-primary"
  : "text-muted-foreground hover:bg-muted/50",
@@ -80,7 +85,7 @@ export function GroupingMenu({
  >
  <div
  className={cn(
- "flex h-4 w-4 items-center justify-center border border-current transition-all",
+ "flex h-4 w-4 items-center justify-center border border-current",
  groupingField === null
  ? "bg-primary/20"
  : "border-muted-foreground/30",
@@ -101,7 +106,7 @@ export function GroupingMenu({
  key={field.value}
  onClick={() => onSetGroupingField(field.value)}
  className={cn(
- "gap-3 py-2 text-xs font-medium transition-colors mb-0.5",
+ "gap-3 py-2 text-xs font-medium mb-0.5",
  isActive
  ? "bg-primary/5 text-primary"
  : "text-muted-foreground hover:bg-muted/50",
@@ -109,7 +114,7 @@ export function GroupingMenu({
  >
  <div
  className={cn(
- "flex h-4 w-4 items-center justify-center border border-current transition-all",
+ "flex h-4 w-4 items-center justify-center border border-current",
  isActive ? "bg-primary/20" : "border-muted-foreground/30",
  )}
  >

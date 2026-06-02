@@ -1,3 +1,8 @@
+/**
+ * @file QuickFilters.tsx
+ * @description Composant QuickFilters pour la barre d'outils.
+ * Modifié pour supprimer les animations et les ombres afin d'améliorer les performances de l'interface utilisateur.
+ */
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { CirclePlus, X } from "lucide-react";
 import { cn } from "@/shared/utils";
@@ -134,9 +139,9 @@ function QuickFilterField({ field }: { field: ResolvedModelTableFilterField }) {
   return (
     <div
       className={cn(
-        "group flex min-h-9 min-w-[180px] max-w-[320px] items-center overflow-hidden rounded-xl border border-border/60 bg-background/95 shadow-xs backdrop-blur-sm transition-all",
+        "group flex min-h-9 min-w-[180px] max-w-[320px] items-center overflow-hidden rounded-xl border border-border/60 bg-background/95",
         hasMeaningfulFilterValue(localValue)
-          ? "border-foreground/15 shadow-sm"
+          ? "border-foreground/15"
           : "",
       )}
     >

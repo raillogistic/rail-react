@@ -1,3 +1,8 @@
+/**
+ * @file ColumnsMenu.tsx
+ * @description Composant de menu de visibilité des colonnes pour la barre d'outils.
+ * Modifié pour supprimer les animations et les ombres afin d'améliorer les performances de l'interface utilisateur.
+ */
 import { Columns3Icon, Search, Settings2, RotateCcw } from "lucide-react";
 import { Button } from "@/shared/ui/kit/button";
 import {
@@ -56,7 +61,7 @@ export function ColumnsMenu({
  <Button
  variant="ghost"
  size="sm"
- className="h-8 gap-2.5 transition-all hover:bg-background hover:text-primary"
+ className="h-8 gap-2.5 hover:bg-background hover:text-primary"
  >
  <Columns3Icon className="h-4 w-4 text-muted-foreground" />
  <span className="hidden lg:inline-block text-[10px] font-bold uppercase tracking-wider">
@@ -69,7 +74,7 @@ export function ColumnsMenu({
  </Tooltip>
  <DropdownMenuContent
  align="end"
- className="w-72 border-none p-2 shadow-2xl backdrop-blur-2xl bg-background/95"
+ className="w-72 border-none p-2 bg-background/95"
  >
  <DropdownMenuLabel className="flex items-center gap-2 px-3 py-2 text-xs font-black uppercase tracking-widest text-muted-foreground/60">
  <Settings2 className="h-3.5 w-3.5" />
@@ -123,7 +128,7 @@ export function ColumnsMenu({
  checked={isVisible}
  onCheckedChange={(v) => onToggleColumn(col, !!v)}
  className={cn(
- " py-2 text-xs font-medium transition-colors mb-0.5",
+ " py-2 text-xs font-medium mb-0.5",
  isVisible
  ? "bg-primary/5 text-primary"
  : "text-muted-foreground hover:bg-muted/50",

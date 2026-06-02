@@ -111,8 +111,9 @@ type TableToolbarProps = {
 
 /**
  * Composant Toolbar pour le ModelTableV2.
- * GÃ¨re la recherche, les filtres, l'affichage des colonnes, le groupement et l'export.
+ * Gère la recherche, les filtres, l'affichage des colonnes, le groupement et l'export.
  * Design moderne, responsive et optimisé pour une utilisation intensive.
+ * Modifié pour supprimer les animations et les ombres afin d'améliorer les performances de l'interface utilisateur.
  *
  * @param {ModelTableFilterPanelProps} filterPanel - Configuration du panneau de filtres.
  * @param {ModelTableV2TableConfig} tableConfig - Configuration globale de la table.
@@ -401,7 +402,7 @@ export function TableToolbar({
         {/* Main Toolbar Container */}
         <div
           data-slot="table-toolbar"
-          className="group flex flex-col gap-3 bg-transparent transition-all duration-300 w-full"
+          className="group flex flex-col gap-3 bg-transparent w-full"
         >
           {navFilters?.groups.length ? (
             <NavFiltersBar
@@ -429,11 +430,11 @@ export function TableToolbar({
 
               {/* Status Badges - Visible only if something is active */}
               {!isMobile && (hasActiveFilters || hasGroupedRows) && (
-                <div className="flex items-center gap-2 animate-in fade-in zoom-in duration-500">
+                <div className="flex items-center gap-2">
                   {activeAdvancedFilterCount > 0 && (
                     <Badge
                       variant="secondary"
-                      className="h-6 gap-1.5 border-none bg-muted px-2.5 text-[10px] font-medium text-foreground transition-all rounded hover:bg-muted/80"
+                      className="h-6 gap-1.5 border-none bg-muted px-2.5 text-[10px] font-medium text-foreground rounded hover:bg-muted/80"
                     >
                       <Filter className="h-3 w-3 opacity-60" />
                       <span>{activeAdvancedFilterCount} filtres</span>
@@ -451,7 +452,7 @@ export function TableToolbar({
                   {activeNavFilterCount > 0 && (
                     <Badge
                       variant="secondary"
-                      className="h-7 gap-1.5 border-none bg-emerald-500/10 px-3 text-xs font-semibold text-emerald-700 transition-all hover:bg-emerald-500/15"
+                      className="h-7 gap-1.5 border-none bg-emerald-500/10 px-3 text-xs font-semibold text-emerald-700 hover:bg-emerald-500/15"
                     >
                       <Layers className="h-3.5 w-3.5 fill-emerald-500/20" />
                       <span>{activeNavFilterCount} raccourcis</span>
@@ -460,7 +461,7 @@ export function TableToolbar({
                   {hasGroupedRows && (
                     <Badge
                       variant="outline"
-                      className="h-6 gap-1.5 border-primary/20 bg-primary/5 px-2 text-[10px] font-semibold text-primary transition-all rounded"
+                      className="h-6 gap-1.5 border-primary/20 bg-primary/5 px-2 text-[10px] font-semibold text-primary rounded"
                     >
                       <Layers className="h-3 w-3" />
                       <span className="uppercase tracking-widest">
@@ -486,7 +487,7 @@ export function TableToolbar({
                   {extraActions}
                 </div>
               )}
-              <div className="flex items-center gap-1 transition-all">
+              <div className="flex items-center gap-1">
                 {!isMobile ? (
                   <>
                     <ViewOptionsMenu
@@ -503,9 +504,9 @@ export function TableToolbar({
                           size="icon"
                           onClick={() => setDragModeEnabled(!dragModeEnabled)}
                           className={cn(
-                            "h-8 w-8 transition-all",
+                            "h-8 w-8",
                             dragModeEnabled
-                              ? "bg-primary/20 text-primary shadow-inner"
+                              ? "bg-primary/20 text-primary"
                               : "text-muted-foreground hover:bg-background hover:text-foreground",
                           )}
                         >
@@ -636,7 +637,7 @@ export function TableToolbar({
                         variant={hasActiveFilters ? "default" : "secondary"}
                         size="sm"
                         className={cn(
-                          "h-8 gap-2 px-3 font-semibold text-[11px] transition-all",
+                          "h-8 gap-2 px-3 font-semibold text-[11px]",
                           hasActiveFilters
                             ? "bg-primary text-primary-foreground"
                             : "bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground",
@@ -655,7 +656,7 @@ export function TableToolbar({
                     </DialogTrigger>
                     <DialogContent
                       className={cn(
-                        "flex flex-col overflow-hidden border p-0 shadow-lg bg-background",
+                        "flex flex-col overflow-hidden border p-0 bg-background",
                         panelConfig.widthClassName,
                       )}
                     >
@@ -684,7 +685,7 @@ export function TableToolbar({
                         variant={hasActiveFilters ? "default" : "secondary"}
                         size="sm"
                         className={cn(
-                          "h-8 gap-2 px-3 font-semibold text-[11px] transition-all",
+                          "h-8 gap-2 px-3 font-semibold text-[11px]",
                           hasActiveFilters
                             ? "bg-primary text-primary-foreground"
                             : "bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground",
@@ -706,7 +707,7 @@ export function TableToolbar({
                         panelConfig.side as "top" | "right" | "bottom" | "left"
                       }
                       className={cn(
-                        "p-0 border-l shadow-lg bg-background",
+                        "p-0 border-l bg-background",
                         panelConfig.widthClassName,
                       )}
                     >
@@ -735,7 +736,7 @@ export function TableToolbar({
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:bg-background hover:text-primary transition-all"
+                        className="h-8 w-8 text-muted-foreground hover:bg-background hover:text-primary"
                       >
                         <Download className="h-4 w-4" />
                       </Button>
@@ -746,7 +747,7 @@ export function TableToolbar({
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:bg-background hover:text-primary transition-all active:scale-90"
+                        className="h-8 w-8 text-muted-foreground hover:bg-background hover:text-primary"
                         disabled={loading || hardRefreshing}
                       >
                         <RefreshCw
@@ -791,7 +792,7 @@ export function TableToolbar({
 
         {/* Mobile Filter Summary Bar */}
         {isMobile && (hasActiveFilters || hasGroupedRows) && (
-          <div className="flex flex-wrap items-center gap-2 px-4 animate-in slide-in-from-top-2 duration-300">
+          <div className="flex flex-wrap items-center gap-2 px-4">
             {activeAdvancedFilterCount > 0 && (
               <Badge
                 variant="secondary"

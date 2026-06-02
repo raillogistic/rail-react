@@ -42,7 +42,7 @@ export function AssetListPage() {
                 hidden: status !== "out_of_service",
               },
               set_out_of_service: {
-                hidden: status !== "active" && status !== "assigned",
+                hidden: status === "out_of_service",
               },
             },
           };

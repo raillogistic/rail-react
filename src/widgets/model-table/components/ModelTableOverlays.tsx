@@ -1,3 +1,8 @@
+/**
+ * @file ModelTableOverlays.tsx
+ * @description Dialogs and Drawers overlays used by the ModelTable.
+ * Modifié pour supprimer les animations et les ombres afin d'améliorer les performances de l'interface utilisateur.
+ */
 import React from "react";
 import {
  Dialog,
@@ -57,7 +62,7 @@ export function FormOverlay({
  <Dialog open={open} onOpenChange={onOpenChange}>
  <DialogContent
  className={cn(
- "max-w-3xl border-border/30 shadow-2xl backdrop-blur-xl bg-background/95",
+ "max-w-3xl border-border/30 bg-background/95",
  width ? "max-w-none" : undefined,
  )}
  style={{
@@ -82,7 +87,7 @@ export function FormOverlay({
  <Drawer open={open} onOpenChange={onOpenChange} direction={drawerDirection}>
  <DrawerContent
  className={cn(
- "p-0 border-border/30 shadow-2xl backdrop-blur-xl bg-background/95",
+ "p-0 border-border/30 bg-background/95",
  width ? "max-w-none" : undefined,
  )}
  style={{
@@ -126,7 +131,7 @@ export function DeleteConfirmationDialog({
 }: DeleteDialogProps) {
  return (
  <Dialog open={open} onOpenChange={(next) => !next && onCancel()}>
- <DialogContent className="max-w-md border-border/30 shadow-2xl backdrop-blur-xl bg-background/95 p-0 overflow-hidden">
+ <DialogContent className="max-w-md border-border/30 bg-background/95 p-0 overflow-hidden">
  <div className="h-1 w-full bg-gradient-to-r from-rose-400 via-rose-500 to-rose-600" />
  <div className="p-6">
  <DialogHeader className="mb-3">
@@ -153,7 +158,7 @@ export function DeleteConfirmationDialog({
  variant="destructive"
  onClick={onConfirm}
  disabled={loading}
- className="h-9 text-xs font-semibold shadow-lg shadow-rose-500/20"
+ className="h-9 text-xs font-semibold"
  >
  {loading ? "Suppression..." : confirmLabel}
  </Button>
@@ -229,7 +234,7 @@ export function ActionDialog({
 
  return (
  <Dialog open={open} onOpenChange={(next) => !next && onCancel()}>
- <DialogContent className="max-w-xl border-border/30 shadow-2xl backdrop-blur-xl bg-background/95">
+ <DialogContent className="max-w-xl border-border/30 bg-background/95">
  <DialogHeader className={mode === "confirm" ? undefined : "sr-only"}>
  <DialogTitle className="font-bold text-lg">
  {(actionPayload.title as string | undefined) ??
@@ -325,7 +330,7 @@ export function PrintDialog({
  if (!open) return null;
  return (
  <Dialog open onOpenChange={(next) => !next && onCancel()}>
- <DialogContent className="max-w-xl border-border/30 shadow-2xl backdrop-blur-xl bg-background/95">
+ <DialogContent className="max-w-xl border-border/30 bg-background/95">
  <DialogHeader>
  <DialogTitle className="font-bold text-lg">{title}</DialogTitle>
  <DialogDescription className="sr-only">

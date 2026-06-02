@@ -3,6 +3,7 @@
  * @description Renders the premium, highly interactive context dropdown menu for column headers.
  * Modernized with a standard casing font-semibold structure, custom padding/centering,
  * and high-contrast color variants suited for primary backgrounds.
+ * Modifié pour supprimer les animations et les ombres afin d'améliorer les performances de l'interface utilisateur.
  */
 import React, { useCallback, useMemo } from "react";
 import {
@@ -257,84 +258,84 @@ export function TableColumnMenu({
         <DropdownMenuTrigger asChild disabled={disabled}>
           {fullWidthTrigger ? (
             <button
-              type="button"
-              className={cn(
-                "flex h-full w-full items-center justify-between outline-none border-none",
-                density === "compact"
-                  ? "px-1.5 py-0 gap-1 text-[10px]"
-                  : density === "spacious"
-                    ? "px-3.5 py-0 gap-2 text-[13px]"
-                    : "px-2.5 py-0 gap-1.5 text-[11px]",
-                "font-semibold tracking-normal transition-all duration-200",
-                "group/trigger",
-                variant === "primary"
-                  ? currentSort
-                    ? "text-white bg-primary-foreground/15 font-bold shadow-inner"
-                    : "text-primary-foreground/90 hover:text-white hover:bg-primary-foreground/10 data-[state=open]:bg-primary-foreground/15 data-[state=open]:text-white"
-                  : currentSort
-                    ? "bg-primary/[0.03] text-primary"
-                    : "text-muted-foreground hover:text-foreground hover:bg-primary/5 active:bg-primary/8 data-[state=open]:bg-primary/5 data-[state=open]:text-primary",
-              )}
-            >
-              <div className="flex items-center gap-2 min-w-0 flex-1" title={triggerTitle}>
-                <span className="truncate text-left">{title}</span>
-                {/* Sort Indicator Pill */}
-                {currentSort && (
-                  <div
-                    className={cn(
-                      "flex shrink-0 items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] animate-in fade-in duration-300 font-semibold",
-                      variant === "primary"
-                        ? "bg-primary-foreground/25 text-white border border-white/20"
-                        : "bg-primary/10 text-primary border border-primary/20"
-                    )}
-                    aria-hidden
-                  >
-                    {currentSort === "asc" ? (
-                      <>
-                        <ArrowUpAZ className="size-2.5" />
-                        <span>Croissant</span>
-                      </>
-                    ) : (
-                      <>
-                        <ArrowDownAZ className="size-2.5" />
-                        <span>Décroissant</span>
-                      </>
-                    )}
-                  </div>
-                )}
-              </div>
-
-              {!currentSort && (
-                <MoreVertical className="size-3 shrink-0 opacity-0 group-hover/trigger:opacity-40 transition-opacity" />
-              )}
-            </button>
-          ) : (
-            <Button
-              variant="ghost"
-              size="sm"
-              className={cn(
-                "h-8 w-8 p-0 ml-1 transition-all duration-200 border-none",
-                variant === "primary"
-                  ? "text-primary-foreground/80 hover:text-white hover:bg-primary-foreground/10 data-[state=open]:bg-primary-foreground/15 data-[state=open]:text-white"
-                  : "text-muted-foreground/50 hover:text-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground",
-                currentSort &&
-                  (variant === "primary"
-                    ? "text-white scale-105"
-                    : "text-primary scale-105"),
-              )}
-            >
-              {currentSort === "asc" && <ArrowUpAZ className="h-3.5 w-3.5" />}
-              {currentSort === "desc" && (
-                <ArrowDownAZ className="h-3.5 w-3.5" />
-              )}
-              {!currentSort && <MoreVertical className="h-3.5 w-3.5" />}
-            </Button>
-          )}
-        </DropdownMenuTrigger>
-        <DropdownMenuContent
-          align="start"
-          className="w-60 border-border/30 p-1.5 shadow-xl backdrop-blur-xl bg-background/95"
-        >
+               type="button"
+               className={cn(
+                 "flex h-full w-full items-center justify-between outline-none border-none",
+                 density === "compact"
+                   ? "px-1.5 py-0 gap-1 text-[10px]"
+                   : density === "spacious"
+                     ? "px-3.5 py-0 gap-2 text-[13px]"
+                     : "px-2.5 py-0 gap-1.5 text-[11px]",
+                 "font-semibold tracking-normal",
+                 "group/trigger",
+                 variant === "primary"
+                   ? currentSort
+                     ? "text-white bg-primary-foreground/15 font-bold"
+                     : "text-primary-foreground/90 hover:text-white hover:bg-primary-foreground/10 data-[state=open]:bg-primary-foreground/15 data-[state=open]:text-white"
+                   : currentSort
+                     ? "bg-primary/[0.03] text-primary"
+                     : "text-muted-foreground hover:text-foreground hover:bg-primary/5 active:bg-primary/8 data-[state=open]:bg-primary/5 data-[state=open]:text-primary",
+               )}
+             >
+               <div className="flex items-center gap-2 min-w-0 flex-1" title={triggerTitle}>
+                 <span className="truncate text-left">{title}</span>
+                 {/* Sort Indicator Pill */}
+                 {currentSort && (
+                   <div
+                     className={cn(
+                       "flex shrink-0 items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] font-semibold",
+                       variant === "primary"
+                         ? "bg-primary-foreground/25 text-white border border-white/20"
+                         : "bg-primary/10 text-primary border border-primary/20"
+                     )}
+                     aria-hidden
+                   >
+                     {currentSort === "asc" ? (
+                       <>
+                         <ArrowUpAZ className="size-2.5" />
+                         <span>Croissant</span>
+                       </>
+                     ) : (
+                       <>
+                         <ArrowDownAZ className="size-2.5" />
+                         <span>Décroissant</span>
+                       </>
+                     )}
+                   </div>
+                 )}
+               </div>
+ 
+               {!currentSort && (
+                 <MoreVertical className="size-3 shrink-0 opacity-0 group-hover/trigger:opacity-40" />
+               )}
+             </button>
+           ) : (
+             <Button
+               variant="ghost"
+               size="sm"
+               className={cn(
+                 "h-8 w-8 p-0 ml-1 border-none",
+                 variant === "primary"
+                   ? "text-primary-foreground/80 hover:text-white hover:bg-primary-foreground/10 data-[state=open]:bg-primary-foreground/15 data-[state=open]:text-white"
+                   : "text-muted-foreground/50 hover:text-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground",
+                 currentSort &&
+                   (variant === "primary"
+                     ? "text-white"
+                     : "text-primary"),
+               )}
+             >
+               {currentSort === "asc" && <ArrowUpAZ className="h-3.5 w-3.5" />}
+               {currentSort === "desc" && (
+                 <ArrowDownAZ className="h-3.5 w-3.5" />
+               )}
+               {!currentSort && <MoreVertical className="h-3.5 w-3.5" />}
+             </Button>
+           )}
+         </DropdownMenuTrigger>
+         <DropdownMenuContent
+           align="start"
+           className="w-60 border-border/30 p-1.5 bg-background/95"
+         >
           <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50 border-b border-border/20 mb-1 flex items-center gap-2">
             <ClipboardList className="size-3 text-muted-foreground/40" />
             {triggerTitle}

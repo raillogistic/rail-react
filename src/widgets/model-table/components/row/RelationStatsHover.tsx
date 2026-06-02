@@ -1,3 +1,9 @@
+/**
+ * @file RelationStatsHover.tsx
+ * @description Composant d'affichage des statistiques de relation au survol.
+ * Optimisé par la suppression des ombres (shadow-xl) et des flous d'arrière-plan (backdrop-blur) pour de meilleures performances de rendu.
+ */
+
 import React, { useMemo, useState } from "react";
 import { Loader2 } from "lucide-react";
 import { useApolloClient } from "@apollo/client";
@@ -258,7 +264,7 @@ export function RelationStatsHover({
  side="top"
  align="start"
  sideOffset={8}
- className="w-[360px] border border-border/70 bg-popover/95 p-0 text-xs text-popover-foreground shadow-xl backdrop-blur"
+ className="w-[360px] border border-border/70 bg-popover/95 p-0 text-xs text-popover-foreground shadow-none backdrop-blur-none"
  >
  <div className="overflow-hidden">
  <div className="border-b border-border/60 bg-muted/40 px-3 py-2.5">

@@ -1,3 +1,9 @@
+/**
+ * @file RelationFilterDialog.tsx
+ * @description Composant de dialogue pour configurer les filtres sur les relations.
+ * Optimisé par la suppression des ombres (shadow-2xl) et des flous d'arrière-plan (backdrop-blur-xl) pour de meilleures performances de rendu.
+ */
+
 import React, { useMemo, useState } from "react";
 import {
   DropdownMenuItem,
@@ -312,7 +318,7 @@ export function RelationFilterDialog({
       </DropdownMenuSub>
 
       <Dialog open={relationDialogOpen} onOpenChange={setRelationDialogOpen}>
-        <DialogContent className="sm:max-w-[480px] border-border/30 shadow-2xl backdrop-blur-xl bg-background/95">
+        <DialogContent className="sm:max-w-[480px] border-border/30 shadow-none backdrop-blur-none bg-background/95">
           <DialogHeader>
             <DialogTitle className="font-bold text-lg">
               Filtre de relation : {relationMode.toUpperCase()}

@@ -1,3 +1,8 @@
+/**
+ * @file TableMobileCard.tsx
+ * @description Composant de rendu de carte pour l'affichage mobile des lignes de tableau.
+ * Modifié pour supprimer les animations et les ombres afin d'améliorer les performances de l'interface utilisateur.
+ */
 import { ChevronDown, ChevronRight } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/shared/ui/kit/button";
@@ -351,7 +356,7 @@ export function TableMobileCard({
     return (
       <Card
         key={`${keyPrefix ?? "row"}:${rowId || index}`}
-        className="overflow-hidden border-border shadow-sm transition-shadow"
+        className="overflow-hidden border-border"
       >
         <CardHeader className="pb-2 px-4 pt-4">
           <div className="flex items-start justify-between gap-2">
@@ -490,7 +495,7 @@ export function TableMobileCard({
       ) : null}
       {pdfPreviewEnabled && pdfPreviewUrl ? (
         <Dialog open onOpenChange={closePdfPreview}>
-          <DialogContent className="flex h-[92vh] max-w-6xl flex-col gap-0 overflow-hidden border p-0 shadow-lg bg-background">
+          <DialogContent className="flex h-[92vh] max-w-6xl flex-col gap-0 overflow-hidden border p-0 bg-background">
             <DialogHeader className="border-b border-border px-6 py-4">
               <DialogTitle>{pdfPreviewTitle || "PDF preview"}</DialogTitle>
               <DialogDescription>

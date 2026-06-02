@@ -1,3 +1,9 @@
+/**
+ * @file ModelTableSurface.tsx
+ * @description Conteneur de surface de table de modèle.
+ * Optimisé par la suppression des ombres (shadow-sm) pour de meilleures performances de rendu.
+ */
+
 import type React from "react";
 import { TooltipProvider } from "@/shared/ui/kit/tooltip";
 import { cn } from "@/shared/utils";
@@ -30,7 +36,7 @@ export function ModelTableSurface({
   return (
     <TooltipProvider delayDuration={200}>
       <div
-        className="relative flex h-full w-full max-w-full min-w-0 flex-col overflow-hidden border border-border bg-card shadow-sm sm:rounded-md"
+        className="relative flex h-full w-full max-w-full min-w-0 flex-col overflow-hidden border border-border bg-card shadow-none sm:rounded-md"
         data-model-table-persistence-key={persistenceKey}
       >
         {devtools}

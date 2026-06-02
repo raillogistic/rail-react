@@ -1,3 +1,8 @@
+/**
+ * @file DynamicTablePagination.tsx
+ * @description Renders the pagination controls for the TanStack table.
+ * Modifié pour supprimer les animations et les ombres afin d'améliorer les performances de l'interface utilisateur.
+ */
 import { useEffect, useMemo, useState } from "react";
 import {
   ChevronLeft,
@@ -171,7 +176,7 @@ export function DynamicTablePagination({
             <SelectTrigger className="h-8 w-[100px] bg-background text-xs font-medium">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent className="rounded-md border bg-popover shadow-md">
+            <SelectContent className="rounded-md border bg-popover">
               {pageSizeOptions.map((option) => (
                 <SelectItem
                   key={option}

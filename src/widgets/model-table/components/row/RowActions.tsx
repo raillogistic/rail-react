@@ -1,3 +1,9 @@
+/**
+ * @file RowActions.tsx
+ * @description Composant d'actions de ligne.
+ * Optimisé par la suppression des ombres, des flous d'arrière-plan, et des animations/transitions (transition-all, active:scale, hover:scale, transition-opacity, shadow-*) pour de meilleures performances de rendu.
+ */
+
 import React, { Suspense, lazy, useCallback, useMemo, useState } from "react";
 import { gql, useMutation } from "@apollo/client";
 import { useNavigate } from "react-router-dom";
@@ -813,7 +819,7 @@ export function RowActions<TSource extends object = Record<string, unknown>>({
 
   return (
     <TooltipProvider delayDuration={300}>
-      <div className="group/actions flex items-center justify-end gap-1 opacity-50 transition-opacity duration-200 group-hover/row:opacity-100">
+      <div className="group/actions flex items-center justify-end gap-1 opacity-50 transition-none group-hover/row:opacity-100">
         {destructiveCustomActions.length > 0 ? (
           <div className="flex items-center gap-1">
             {destructiveCustomActions.map((action, index) => {
@@ -849,7 +855,7 @@ export function RowActions<TSource extends object = Record<string, unknown>>({
                       variant="ghost"
                       aria-label={clickAction.label ?? "Action"}
                       className={cn(
-                        "size-6 bg-rose-500/10 text-rose-600 dark:text-rose-400 transition-all hover:bg-rose-500 hover:text-white active:scale-95 disabled:grayscale",
+                        "size-6 bg-rose-500/10 text-rose-600 dark:text-rose-400 transition-none hover:bg-rose-500 hover:text-white disabled:grayscale",
                         action.className,
                       )}
                       onClick={() => runCustomAction(clickAction.onClick)}
@@ -874,7 +880,7 @@ export function RowActions<TSource extends object = Record<string, unknown>>({
                   size="icon"
                   variant="ghost"
                   aria-label="Details"
-                  className="size-6 bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 transition-all hover:bg-cyan-500 hover:text-white active:scale-95"
+                  className="size-6 bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 transition-none hover:bg-cyan-500 hover:text-white"
                   onClick={handleDetail}
                   disabled={Boolean(detailDisabledReason)}
                 >
@@ -894,7 +900,7 @@ export function RowActions<TSource extends object = Record<string, unknown>>({
                 size="icon"
                 variant="ghost"
                 aria-label="Modifier"
-                className="size-6 bg-blue-500/10 text-blue-600 dark:text-blue-400 transition-all hover:bg-blue-500 hover:text-white active:scale-95"
+                className="size-6 bg-blue-500/10 text-blue-600 dark:text-blue-400 transition-none hover:bg-blue-500 hover:text-white"
                 onClick={handleEdit}
                 disabled={Boolean(editDisabledReason)}
               >
@@ -913,7 +919,7 @@ export function RowActions<TSource extends object = Record<string, unknown>>({
               <Button
                 size="icon"
                 variant="ghost"
-                className="size-6 bg-rose-500/10 text-rose-600 dark:text-rose-400 transition-all hover:bg-rose-500 hover:text-white active:scale-95 disabled:grayscale"
+                className="size-6 bg-rose-500/10 text-rose-600 dark:text-rose-400 transition-none hover:bg-rose-500 hover:text-white disabled:grayscale"
                 onClick={() => setConfirmOpen(true)}
                 disabled={deleting}
               >
@@ -947,7 +953,7 @@ export function RowActions<TSource extends object = Record<string, unknown>>({
                       size="icon"
                       variant="ghost"
                       aria-label={`Template: ${singleTemplateLabel}`}
-                      className="size-6 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 transition-all hover:bg-emerald-500 hover:text-white active:scale-95"
+                      className="size-6 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 transition-none hover:bg-emerald-500 hover:text-white"
                       disabled={
                         Boolean(singleTemplateDisabledReason) || disabled
                       }
@@ -978,7 +984,7 @@ export function RowActions<TSource extends object = Record<string, unknown>>({
                       variant="ghost"
                       aria-label="Templates"
                       disabled={disabled}
-                      className="size-6 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 transition-all hover:bg-emerald-500 hover:text-white active:scale-95"
+                      className="size-6 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 transition-none hover:bg-emerald-500 hover:text-white"
                     >
                       <FileText className="h-3.5 w-3.5" />
                     </Button>
@@ -1023,7 +1029,7 @@ export function RowActions<TSource extends object = Record<string, unknown>>({
                 size="icon"
                 variant="ghost"
                 aria-label="Actions"
-                className="size-6 bg-amber-500/10 text-amber-600 dark:text-amber-400 transition-all hover:bg-amber-500 hover:text-white active:scale-95"
+                className="size-6 bg-amber-500/10 text-amber-600 dark:text-amber-400 transition-none hover:bg-amber-500 hover:text-white"
               >
                 <Zap className="h-3.5 w-3.5" />
               </Button>
@@ -1032,7 +1038,7 @@ export function RowActions<TSource extends object = Record<string, unknown>>({
         ) : null}
       </div>
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
-        <AlertDialogContent className="max-w-[400px] border-border/30 shadow-2xl overflow-hidden p-0 bg-background/95 backdrop-blur-xl">
+        <AlertDialogContent className="max-w-[400px] border-border/30 shadow-none overflow-hidden p-0 bg-background/95 backdrop-blur-none">
           {/* Accent strip */}
           <div className="h-1.5 w-full bg-gradient-to-r from-rose-400 via-rose-500 to-rose-600" />
           <div className="flex flex-col items-center gap-4 p-8 text-center">
@@ -1052,13 +1058,13 @@ export function RowActions<TSource extends object = Record<string, unknown>>({
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter className="mt-4 flex-col sm:flex-row gap-3 justify-center w-full">
-              <AlertDialogCancel className="h-10 flex-1 border-border/30 bg-muted/30 font-bold text-xs uppercase tracking-wider transition-all hover:bg-muted/50 active:scale-95">
+              <AlertDialogCancel className="h-10 flex-1 border-border/30 bg-muted/30 font-bold text-xs uppercase tracking-wider transition-none hover:bg-muted/50">
                 Annuler
               </AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleDelete}
                 disabled={deleting}
-                className="h-10 flex-1 bg-rose-500 font-bold text-xs uppercase tracking-wider text-white shadow-lg shadow-rose-500/20 transition-all hover:bg-rose-600 hover:scale-[1.02] active:scale-95 disabled:grayscale"
+                className="h-10 flex-1 bg-rose-500 font-bold text-xs uppercase tracking-wider text-white shadow-none transition-none hover:bg-rose-600 disabled:grayscale"
               >
                 {deleting ? (
                   <Loader2 className="mr-2 size-4 animate-spin" />

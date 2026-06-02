@@ -1,3 +1,8 @@
+/**
+ * @file ModelTablePdfPreviewDialog.tsx
+ * @description Composant de dialogue pour la prévisualisation des PDF du ModelTable.
+ * Modifié pour supprimer les animations et les ombres afin d'améliorer les performances de l'interface utilisateur.
+ */
 import { RotateCw } from "lucide-react";
 import {
   Dialog,
@@ -38,7 +43,7 @@ export function ModelTablePdfPreviewDialog({
 }: ModelTablePdfPreviewDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="flex h-[92vh] max-w-6xl flex-col gap-0 overflow-hidden border border-border/50 bg-background p-0 shadow-lg sm:rounded-xl">
+      <DialogContent className="flex h-[92vh] max-w-6xl flex-col gap-0 overflow-hidden border border-border/50 bg-background p-0 sm:rounded-xl">
         <DialogHeader className="border-b border-border/20 px-6 py-4">
           <DialogTitle>{title}</DialogTitle>
           <DialogDescription>{description}</DialogDescription>

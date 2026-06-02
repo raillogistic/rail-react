@@ -1,7 +1,7 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
 // Source: scripts/getModels.mjs
 // Command: npm run getModels
-// Generated at: 2026-05-26T01:00:11.451Z
+// Generated at: 2026-06-02T18:24:35.249Z
 
 export interface AssignmentsAssetAssignment {
   /** Bien */

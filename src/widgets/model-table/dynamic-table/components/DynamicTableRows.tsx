@@ -4,6 +4,7 @@
  * Modernized with high-density readable text, translation and selected highlights (left accent border),
  * fluid collapsible groupings, nested detail panels, and premium loading/empty states.
  * Highly reactive visual enhancements for the Patrimoin workspace.
+ * Modifié pour supprimer les animations et les ombres afin d'améliorer les performances de l'interface utilisateur.
  */
 import { useMemo } from "react";
 import type { CSSProperties, RefObject } from "react";
@@ -129,14 +130,14 @@ function renderGroupedCell<TRow extends Record<string, unknown>>(
   return (
     <button
       type="button"
-      className="inline-flex items-center gap-2.5 text-left font-semibold text-foreground hover:text-primary transition-all duration-200 group"
+      className="inline-flex items-center gap-2.5 text-left font-semibold text-foreground hover:text-primary group"
       onClick={row.getToggleExpandedHandler()}
     >
-      <div className="flex size-5 items-center justify-center rounded bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-200 shadow-sm">
-        <ChevronRight className={cn("size-3.5 transition-transform duration-200", isExpanded && "rotate-90")} />
+      <div className="flex size-5 items-center justify-center rounded bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground">
+        <ChevronRight className={cn("size-3.5", isExpanded && "rotate-90")} />
       </div>
       <span className="font-bold tracking-tight text-xs md:text-sm">{value}</span>
-      <span className="inline-flex items-center justify-center rounded-full bg-primary/5 border border-primary/10 px-2 py-0.5 text-[10px] font-bold tabular-nums text-primary shadow-xs">
+      <span className="inline-flex items-center justify-center rounded-full bg-primary/5 border border-primary/10 px-2 py-0.5 text-[10px] font-bold tabular-nums text-primary">
         {row.subRows.length}
       </span>
     </button>
@@ -240,12 +241,12 @@ export function DynamicTableRows<TRow extends Record<string, unknown>>({
     }
 
     return (
-      <TableRow key={`${row.id}::expanded`} className="hover:bg-transparent transition-all duration-300">
+      <TableRow key={`${row.id}::expanded`} className="hover:bg-transparent">
         <TableCell
           colSpan={visibleColumnCount}
           className="border-b border-border bg-muted/15 p-0"
         >
-          <div className="border-l-4 border-l-primary bg-card/60 dark:bg-card/30 mx-4 my-3 p-5 rounded-lg shadow-sm border border-border/80 animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="border-l-4 border-l-primary bg-card/60 dark:bg-card/30 mx-4 my-3 p-5 rounded-lg border border-border/80">
             {content}
           </div>
         </TableCell>
@@ -269,7 +270,7 @@ export function DynamicTableRows<TRow extends Record<string, unknown>>({
         data-row-stripe={rowIndex % 2 === 0 ? "even" : "odd"}
         data-state={row.getIsSelected() ? "selected" : undefined}
         className={cn(
-          "hover:bg-primary/5 hover:translate-x-0.5 hover:shadow-xs transition-all duration-200",
+          "hover:bg-primary/5",
           row.getIsSelected() && "bg-primary/6 hover:bg-primary/8 dark:bg-primary/15 dark:hover:bg-primary/20",
           rowIndex % 2 === 1 && !row.getIsSelected() && "bg-muted/10",
           rowClassName,
@@ -323,7 +324,7 @@ export function DynamicTableRows<TRow extends Record<string, unknown>>({
                     }
               }
               className={cn(
-                "border-b border-border align-middle text-foreground transition-all duration-200",
+                "border-b border-border align-middle text-foreground",
                 cellTextClasses,
                 autoSizeActionsCell && "w-[1%] whitespace-nowrap",
                 sticky.className,
@@ -352,8 +353,8 @@ export function DynamicTableRows<TRow extends Record<string, unknown>>({
       <TableBody>
         <TableRow className="hover:bg-transparent">
           <TableCell colSpan={visibleColumnCount} className="h-64 border-0">
-            <div className="flex flex-col items-center justify-center gap-4 py-12 animate-pulse">
-              <div className="relative flex size-12 items-center justify-center rounded-full bg-primary/10 shadow-[0_0_15px_rgba(var(--primary),0.15)] ring-4 ring-primary/5">
+            <div className="flex flex-col items-center justify-center gap-4 py-12">
+              <div className="relative flex size-12 items-center justify-center rounded-full bg-primary/10">
                 <Loader2 className="size-6 text-primary animate-spin" />
               </div>
               <div className="text-center">
@@ -378,7 +379,7 @@ export function DynamicTableRows<TRow extends Record<string, unknown>>({
         <TableRow className="hover:bg-transparent">
           <TableCell colSpan={visibleColumnCount} className="h-64 border-0">
             <div className="flex flex-col items-center justify-center gap-4 py-12">
-              <div className="flex size-14 items-center justify-center rounded-full bg-primary/5 text-primary/60 border border-primary/10 shadow-inner">
+              <div className="flex size-14 items-center justify-center rounded-full bg-primary/5 text-primary/60 border border-primary/10">
                 <Inbox className="size-6" />
               </div>
               <div className="text-center max-w-sm px-4">

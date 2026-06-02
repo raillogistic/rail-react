@@ -4,6 +4,7 @@
  * Modernized with a premium primary-colored background, custom column menus,
  * slick drag-and-drop handles, and interactive column resizing handles.
  * Fully responsive and visually optimized for the Patrimoin workspace.
+ * Modifié pour supprimer les animations et les ombres afin d'améliorer les performances de l'interface utilisateur.
  */
 import type { CSSProperties, ReactNode } from "react";
 import type { Header, Table } from "@tanstack/react-table";
@@ -193,12 +194,12 @@ function ColumnMenu<TRow extends Record<string, unknown>>({
               : density === "spacious"
                 ? "px-3.5 py-0 gap-2 text-[13px]"
                 : "px-2.5 py-0 gap-1.5 text-[11px]",
-            "font-semibold tracking-normal transition-all duration-200",
+            "font-semibold tracking-normal",
             "group/trigger text-left",
             sortedState
               ? isPrimary
-                ? "text-white font-semibold bg-primary-foreground/10 shadow-sm"
-                : "text-primary font-semibold bg-primary/5 dark:bg-primary/10 shadow-sm"
+                ? "text-white font-semibold bg-primary-foreground/10"
+                : "text-primary font-semibold bg-primary/5 dark:bg-primary/10"
               : isPrimary
                 ? "text-primary-foreground/80 hover:text-white hover:bg-primary-foreground/10"
                 : "text-muted-foreground hover:text-foreground",
@@ -211,7 +212,7 @@ function ColumnMenu<TRow extends Record<string, unknown>>({
       </DropdownMenuTrigger>
       <DropdownMenuContent
         align="start"
-        className="w-56 rounded-md border bg-popover p-1 shadow-md"
+        className="w-56 rounded-md border bg-popover p-1"
       >
         <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">
           Options de colonne
@@ -361,13 +362,13 @@ function DraggableHeaderCell<TRow extends Record<string, unknown>>({
       colSpan={header.colSpan}
       style={style}
       className={cn(
-        "group/header relative border-b p-0 align-middle transition-all duration-200",
+        "group/header relative border-b p-0 align-middle",
         isPrimary
           ? "border-primary-foreground/15 bg-primary/95 text-primary-foreground backdrop-blur-md"
           : "border-border/80 bg-background/95 dark:bg-zinc-950/95 backdrop-blur-md text-muted-foreground hover:bg-muted/50 dark:hover:bg-zinc-900/50",
         isPrimary
-          ? "after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-white/80 after:scale-x-0 after:origin-left after:transition-transform after:duration-300 hover:after:scale-x-100"
-          : "after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-primary/80 after:scale-x-0 after:origin-left after:transition-transform after:duration-300 hover:after:scale-x-100",
+          ? "after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-white/80 after:scale-x-0 after:origin-left hover:after:scale-x-100"
+          : "after:absolute after:bottom-0 after:left-0 after:right-0 after:h-[2px] after:bg-primary/80 after:scale-x-0 after:origin-left hover:after:scale-x-100",
         header.column.getIsSorted() &&
           (isPrimary
             ? "after:scale-x-100 after:bg-white text-white bg-primary-foreground/10"
@@ -381,8 +382,8 @@ function DraggableHeaderCell<TRow extends Record<string, unknown>>({
         fitContent && "w-[1%] whitespace-nowrap",
         isDragging &&
           (isPrimary
-            ? "z-40 opacity-90 ring-2 ring-white shadow-2xl scale-[1.01] bg-primary"
-            : "z-40 opacity-90 ring-2 ring-primary shadow-2xl scale-[1.01] bg-background dark:bg-zinc-950"),
+            ? "z-40 opacity-90 ring-2 ring-white bg-primary"
+            : "z-40 opacity-90 ring-2 ring-primary bg-background dark:bg-zinc-950"),
       )}
     >
       <div className="flex h-full items-stretch">
@@ -391,7 +392,7 @@ function DraggableHeaderCell<TRow extends Record<string, unknown>>({
             type="button"
             aria-label="Reorder column"
             className={cn(
-              "grid w-7 shrink-0 place-items-center border-r transition-all duration-150 cursor-grab active:cursor-grabbing",
+              "grid w-7 shrink-0 place-items-center border-r cursor-grab active:cursor-grabbing",
               isPrimary
                 ? "border-primary-foreground/10 text-primary-foreground/40 hover:bg-primary-foreground/10 hover:text-white"
                 : "border-border/40 text-muted-foreground/35 hover:bg-muted-foreground/5 hover:text-muted-foreground",
@@ -414,14 +415,14 @@ function DraggableHeaderCell<TRow extends Record<string, unknown>>({
           onTouchStart={header.getResizeHandler()}
           className={cn(
             "absolute right-0 top-0 bottom-0 z-50 w-[6px] cursor-col-resize select-none touch-none",
-            "bg-transparent transition-all duration-200",
+            "bg-transparent",
             isPrimary
-              ? "before:absolute before:right-[2px] before:top-2 before:bottom-2 before:w-[1px] before:bg-primary-foreground/20 before:transition-all hover:before:bg-white hover:before:w-[2px] hover:before:top-0 hover:before:bottom-0 hover:before:shadow-[0_0_8px_rgba(255,255,255,0.4)]"
-              : "before:absolute before:right-[2px] before:top-2 before:bottom-2 before:w-[1px] before:bg-border/40 before:transition-all hover:before:bg-primary hover:before:w-[2px] hover:before:top-0 hover:before:bottom-0 hover:before:shadow-[0_0_8px_rgba(59,130,246,0.4)]",
+              ? "before:absolute before:right-[2px] before:top-2 before:bottom-2 before:w-[1px] before:bg-primary-foreground/20 hover:before:bg-white hover:before:w-[2px] hover:before:top-0 hover:before:bottom-0"
+              : "before:absolute before:right-[2px] before:top-2 before:bottom-2 before:w-[1px] before:bg-border/40 hover:before:bg-primary hover:before:w-[2px] hover:before:top-0 hover:before:bottom-0",
             header.column.getIsResizing() &&
               (isPrimary
-                ? "before:bg-white before:w-[2px] before:top-0 before:bottom-0 before:shadow-[0_0_8px_rgba(255,255,255,0.7)]"
-                : "before:bg-primary before:w-[2px] before:top-0 before:bottom-0 before:shadow-[0_0_8px_rgba(59,130,246,0.7)]"),
+                ? "before:bg-white before:w-[2px] before:top-0 before:bottom-0"
+                : "before:bg-primary before:w-[2px] before:top-0 before:bottom-0"),
           )}
         />
       ) : null}
@@ -527,7 +528,7 @@ export function DynamicTableHeader<TRow extends Record<string, unknown>>({
                   colSpan={header.colSpan}
                   style={resolveHeaderStyle(header)}
                   className={cn(
-                    "border-b py-0 outline-none transition-all duration-200 font-semibold tracking-normal",
+                    "border-b py-0 outline-none font-semibold tracking-normal",
                     layout.density === "compact"
                       ? "px-1.5 gap-1 text-[10px]"
                       : layout.density === "spacious"
@@ -697,7 +698,7 @@ export function DynamicTableHeader<TRow extends Record<string, unknown>>({
                       {sortedState && (
                         <div
                           className={cn(
-                            "flex shrink-0 items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] border animate-in fade-in duration-300 font-semibold",
+                            "flex shrink-0 items-center gap-0.5 px-1.5 py-0.5 rounded-full text-[10px] border font-semibold",
                             isPrimaryHeader
                               ? "bg-primary-foreground/20 text-white border-white/20"
                               : "bg-primary/10 text-primary border border-primary/20",
@@ -721,7 +722,7 @@ export function DynamicTableHeader<TRow extends Record<string, unknown>>({
                     {!sortedState && (
                       <ArrowUpDown
                         className={cn(
-                          "size-3.5 shrink-0 opacity-0 group-hover/trigger:opacity-40 transition-all duration-250",
+                          "size-3.5 shrink-0 opacity-0 group-hover/trigger:opacity-40",
                           isPrimaryHeader
                             ? "text-primary-foreground/80"
                             : "text-muted-foreground/60",

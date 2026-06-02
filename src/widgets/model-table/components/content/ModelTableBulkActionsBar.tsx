@@ -1,3 +1,8 @@
+/**
+ * @file ModelTableBulkActionsBar.tsx
+ * @description Composant de barre d'actions groupées pour le ModelTable.
+ * Modifié pour supprimer les animations et les ombres afin d'améliorer les performances de l'interface utilisateur.
+ */
 import React from "react";
 import {
  FileSpreadsheet,
@@ -60,11 +65,11 @@ export function ModelTableBulkActionsBar({
             "fixed bottom-6 left-1/2 z-60 -translate-x-1/2",
             "flex w-[90%] sm:w-auto items-center justify-between sm:justify-center gap-2 sm:gap-4",
  controller.hasSelection
- ? "translate-y-0 opacity-100 scale-100 pointer-events-auto"
- : "translate-y-8 opacity-0 scale-95 pointer-events-none",
+ ? "opacity-100 pointer-events-auto"
+ : "opacity-0 pointer-events-none",
  )}
  >
- <div className="flex items-center gap-2 border border-border/50 bg-background p-1.5 shadow-lg rounded-full">
+ <div className="flex items-center gap-2 border border-border/50 bg-background p-1.5 rounded-full">
  {/* Selection indicator */}
  <div className="flex items-center gap-2 pl-4 pr-1">
  <div className="flex h-7 px-2.5 items-center justify-center bg-primary text-primary-foreground text-xs font-bold rounded-full">
@@ -109,7 +114,7 @@ export function ModelTableBulkActionsBar({
  </Tooltip>
  <DropdownMenuContent
  align="center"
- className="w-64 border-border/30 p-1.5 shadow-xl backdrop-blur-xl bg-background/95"
+ className="w-64 border-border/30 p-1.5 bg-background/95"
  >
  <DropdownMenuLabel className="flex items-center gap-2 px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50">
  <Sparkles className="size-3 text-blue-500" />
@@ -188,7 +193,7 @@ export function ModelTableBulkActionsBar({
  </Tooltip>
  <DropdownMenuContent
  align="center"
- className="w-64 border-border/30 p-1.5 shadow-xl backdrop-blur-xl bg-background/95"
+ className="w-64 border-border/30 p-1.5 bg-background/95"
  >
  <DropdownMenuLabel className="flex items-center gap-2 px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50">
  <Sparkles className="size-3 text-emerald-500" />
@@ -277,7 +282,7 @@ export function ModelTableBulkActionsBar({
  {controller.bulkDeleteDisabledReason || "Suppression en masse"}
  </TooltipContent>
  </Tooltip>
- <AlertDialogContent className="max-w-[420px] border-border/30 shadow-xl overflow-hidden p-0 bg-background/95 backdrop-blur-xl">
+ <AlertDialogContent className="max-w-[420px] border-border/30 overflow-hidden p-0 bg-background/95">
  {/* Accent strip */}
  <div className="h-1.5 w-full bg-gradient-to-r from-rose-400 via-rose-500 to-rose-600" />
  <div className="flex flex-col items-center gap-4 p-8 text-center">
@@ -307,7 +312,7 @@ export function ModelTableBulkActionsBar({
  <AlertDialogAction
  onClick={() => void controller.confirmBulkDelete()}
  disabled={!controller.canBulkDelete || controller.bulkDeleteLoading}
- className="h-10 flex-1 bg-rose-500 font-bold text-xs uppercase tracking-wider text-white shadow-lg shadow-rose-500/20 hover:bg-rose-600"
+ className="h-10 flex-1 bg-rose-500 font-bold text-xs uppercase tracking-wider text-white hover:bg-rose-600"
  >
  {controller.bulkDeleteLoading ? (
  <>
