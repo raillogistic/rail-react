@@ -787,13 +787,13 @@ export function DynamicTable<TRow extends Record<string, unknown>>({
     >
       <div
         className={cn(
-          "relative flex min-h-0 flex-1 flex-col overflow-hidden border rounded-md bg-background shadow-none",
+          "relative flex min-h-0 flex-1 flex-col overflow-hidden bg-background shadow-none",
           layout.containerClassName,
         )}
       >
         <div
           ref={scrollContainerRef}
-          className="min-h-0 flex-1 overflow-auto custom-scrollbar"
+          className="min-h-0 flex-1 overflow-auto"
         >
           <DndContext
             collisionDetection={closestCenter}

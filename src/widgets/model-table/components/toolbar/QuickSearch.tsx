@@ -1,7 +1,14 @@
 /**
  * @file QuickSearch.tsx
- * @description Composant de recherche rapide de la barre d'outils.
- * Modifié pour supprimer les animations et les ombres afin d'améliorer les performances de l'interface utilisateur.
+ * @description Composant de recherche rapide de la barre d'outils redessiné pour le style Localira.
+ * Utilise un design solide, épuré, sans bordure et avec une icône de recherche positionnée.
+ *
+ * @param {object} props - Les propriétés du composant.
+ * @param {string} props.value - La valeur actuelle de la recherche.
+ * @param {function} props.onChange - Callback appelé lors du changement de valeur.
+ * @param {string} [props.placeholder] - Texte d'invite à afficher dans le champ.
+ * @param {boolean} [props.expanded] - Indique si le champ est étendu.
+ * @param {function} [props.onFocusChange] - Callback appelé lors du changement de focus.
  */
 import { Search, X } from "lucide-react";
 import { Input } from "@/shared/ui/kit/input";
@@ -18,31 +25,26 @@ type QuickSearchProps = {
 export function QuickSearch({
   value,
   onChange,
-  placeholder,
+  placeholder = "Chercher...",
   expanded,
   onFocusChange,
 }: QuickSearchProps) {
   return (
     <div
       className={cn(
-        "relative group flex-1 sm:max-w-[280px]",
-        expanded && "sm:max-w-[420px]",
+        "relative flex items-center w-full sm:w-[250px] transition-all",
+        expanded && "sm:w-[300px]",
       )}
     >
-      <div
-        className={cn(
-          "absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none",
-          expanded ? "text-primary" : "text-muted-foreground/40",
-        )}
-      >
+      <div className="absolute left-4 z-10 flex items-center pointer-events-none text-muted-foreground/60">
         <Search className="h-4 w-4" />
       </div>
       <Input
         className={cn(
-          "h-9 w-full pl-10 pr-9 bg-muted/30 border-none",
-          "placeholder:text-muted-foreground/30 placeholder:font-medium",
-          "hover:bg-muted/50",
-          "focus-visible:ring-4 focus-visible:ring-primary/10 focus:bg-background/80 focus:backdrop-blur-md",
+          "h-9.5 w-full pl-11 pr-9 bg-neutral-100 dark:bg-zinc-800 border-none rounded-lg text-xs font-medium text-foreground",
+          "placeholder:text-muted-foreground/50 placeholder:font-medium",
+          "hover:bg-neutral-200/60 dark:hover:bg-zinc-700/60",
+          "focus-visible:ring-0 focus-visible:ring-offset-0 focus:bg-neutral-200/80 dark:focus:bg-zinc-700/80",
         )}
         placeholder={placeholder}
         value={value}
@@ -53,17 +55,12 @@ export function QuickSearch({
       {value && (
         <button
           onClick={() => onChange("")}
-          className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 hover:bg-primary/10 hover:text-primary"
+          className="absolute right-3 p-1 rounded-full hover:bg-neutral-200 dark:hover:bg-zinc-700 text-muted-foreground hover:text-foreground"
         >
-          <X className="h-3.5 w-3.5" />
+          <X className="h-3 w-3" />
         </button>
       )}
-      <div
-        className={cn(
-          "absolute bottom-0 left-1/2 -translate-x-1/2 h-[2px] bg-primary",
-          expanded ? "w-[90%] opacity-100" : "w-0 opacity-0",
-        )}
-      />
     </div>
   );
 }
+

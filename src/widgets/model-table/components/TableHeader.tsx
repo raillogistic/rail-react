@@ -1,3 +1,8 @@
+/**
+ * @file TableHeader.tsx
+ * @description Renders the legacy table header component, styled with the primary background color
+ * and contrast-adjusted elements for clear text, checkboxes, and sort buttons.
+ */
 import React, { useCallback, useEffect, useRef } from "react";
 import { GripVertical } from "lucide-react";
 import { useSortable } from "@dnd-kit/sortable";
@@ -68,16 +73,15 @@ function DraggableHead({
       style={style}
       className={cn(
         "group/col font-semibold sticky top-0 z-20 whitespace-nowrap overflow-visible",
-        "border-b border-primary-foreground/15 bg-primary/95 text-primary-foreground backdrop-blur-md text-left",
+        "border-b border-primary-foreground/15 bg-primary text-primary-foreground hover:bg-primary/95 text-left",
         "transition-all duration-200",
         density === "compact"
-          ? "h-8 p-0 text-[10px] tracking-normal"
+          ? "h-8 p-0 text-[11px] tracking-normal"
           : density === "spacious"
-            ? "h-12 p-0 text-[12px]"
-            : "h-10 p-0 text-[11px] tracking-normal",
-        isDragging && "opacity-75 z-30 ring-1 ring-ring shadow-sm bg-primary",
-        "text-primary-foreground/90 hover:text-white",
-        isActions && "bg-primary/95 font-semibold text-xs tracking-wider",
+            ? "h-12 p-0 text-sm"
+            : "h-10 p-0 text-xs tracking-normal",
+        isDragging && "opacity-75 z-30 ring-1 ring-white shadow-sm bg-primary text-primary-foreground",
+        isActions && "bg-primary font-semibold text-xs tracking-wider",
         className,
       )}
       aria-sort={ariaSort}
@@ -89,9 +93,9 @@ function DraggableHead({
             aria-label="Reordonner la colonne"
             className={cn(
               "h-full px-2 border-r border-primary-foreground/10",
-              "text-primary-foreground/35 hover:text-white hover:bg-primary-foreground/10",
+              "text-primary-foreground/35 hover:text-white hover:bg-primary-foreground/5",
               "cursor-grab active:cursor-grabbing transition-all",
-              "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/30",
+              "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
             )}
             {...attributes}
             {...listeners}
@@ -281,7 +285,7 @@ export function TableHeader({
           <TableHead
             className={cn(
               "w-12.5 table-first-column sticky top-0 z-20 overflow-visible",
-              "border-b border-primary-foreground/15 bg-primary/95",
+              "border-b border-primary-foreground/15 bg-primary",
               "transition-colors duration-200",
               density === "compact"
                 ? "py-0 px-2 h-8"
@@ -374,12 +378,12 @@ export function TableHeader({
         <DraggableHead
           id="actions"
           draggable={false}
-          className="w-35 text-right sticky right-0 z-30 table-last-column border-l border-primary-foreground/15 bg-primary/95 text-primary-foreground"
+          className="w-35 text-right sticky right-0 z-30 table-last-column bg-primary text-primary-foreground border-b border-primary-foreground/15"
           density={density}
           isActions
         >
-          <div className="flex w-full items-center justify-end pr-4 gap-1.5">
-            <span className="block text-[9px] font-semibold uppercase tracking-widest text-primary-foreground/50">
+          <div className="flex w-full items-center justify-end pr-4 gap-1.5 h-full">
+            <span className="block text-[9px] font-semibold uppercase tracking-widest text-primary-foreground/70">
               {actionsLabel ?? ""}
             </span>
           </div>

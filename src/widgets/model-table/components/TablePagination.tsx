@@ -1,10 +1,12 @@
 /**
  * @file TablePagination.tsx
  * @description Modern, premium, and feature-rich Table Pagination component.
- * Provides advanced tactile navigation, exact selection and showing summary,
- * tabular-nums digit alignment, and high-contrast primary color cues.
- * Fully responsive and visually cohesive with the modernized table workspace.
+ * Redessiné pour correspondre au style Localira (boutons de navigation à gauche, résumé et sélection à droite).
  * Modifié pour supprimer les animations et les ombres afin d'améliorer les performances de l'interface utilisateur.
+ *
+ * @param {object} props - Les propriétés du composant.
+ * @param {object} [props.labels] - Libellés et traductions personnalisés pour la pagination.
+ * @param {boolean} [props.enableSelection] - Active l'affichage du nombre de lignes sélectionnées.
  */
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -77,7 +79,7 @@ export function TablePagination({
 
   const pageSizeOptions = useMemo(
     () =>
-      Array.from(new Set([10, 20, 30, 40, 50, 100, 200, perPage])).sort(
+      Array.from(new Set([5, 10, 20, 30, 40, 50, 100, 200, perPage])).sort(
         (a, b) => a - b,
       ),
     [perPage],
@@ -109,14 +111,157 @@ export function TablePagination({
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4.5 bg-background border-t border-border/60">
-        {/* Left Section: Selection & Summary */}
-        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto text-xs text-muted-foreground font-medium">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 bg-background border-t border-border/60">
+        {/* Left Section: Pagination Buttons */}
+        <div className="flex items-center gap-1 p-0.5 bg-neutral-100/50 dark:bg-zinc-800/40 border border-border/60 rounded-lg">
+          {/* First Page */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="hidden h-8 w-8 lg:flex hover:bg-primary/10 hover:text-primary disabled:opacity-30 disabled:pointer-events-none rounded-md"
+                onClick={() => setPage(1)}
+                disabled={!canGoFirst || loading}
+              >
+                <ChevronsLeft className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent
+              side="top"
+              className="font-bold text-[10px] uppercase tracking-widest bg-primary text-primary-foreground border-none rounded-sm"
+            >
+              Premier
+            </TooltipContent>
+          </Tooltip>
+
+          {/* Previous Page */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 hover:bg-primary/10 hover:text-primary disabled:opacity-30 disabled:pointer-events-none rounded-md"
+                onClick={() => setPage(page - 1)}
+                disabled={!canGoPrevious || loading}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent
+              side="top"
+              className="font-bold text-[10px] uppercase tracking-widest bg-primary text-primary-foreground border-none rounded-sm"
+            >
+              Précédent
+            </TooltipContent>
+          </Tooltip>
+
+          {/* Middle Indicator with Quick Jump */}
+          <div className="flex items-center px-3 gap-2 min-w-[125px] justify-center">
+            {!isJumping ? (
+              <button
+                className="group/jump flex items-center gap-1.5 cursor-pointer hover:bg-primary/5 border border-transparent hover:border-primary/10 rounded-md px-2.5 py-1"
+                onClick={() => totalKnown && setIsQuickJumpOpen(true)}
+              >
+                <span className="text-[9px] font-bold text-muted-foreground/50 uppercase tracking-widest leading-none group-hover/jump:text-primary/70">
+                  Page
+                </span>
+                <span className="text-xs font-extrabold text-foreground tracking-tight group-hover/jump:text-primary bg-background border border-border/60 px-1.5 py-0.5 rounded tabular-nums">
+                  {totalKnown
+                    ? (labels?.pageStatus?.(page, totalPages) ??
+                      `${page} sur ${totalPages}`)
+                    : page}
+                </span>
+              </button>
+            ) : (
+              <div className="flex items-center gap-1">
+                <Input
+                  autoFocus
+                  value={pageInput}
+                  onChange={(e) => setPageInput(e.target.value)}
+                  onBlur={() => {
+                    commitPageInput();
+                    setIsQuickJumpOpen(false);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      commitPageInput();
+                      setIsQuickJumpOpen(false);
+                    }
+                    if (e.key === "Escape") {
+                      setPageInput(String(page));
+                      setIsQuickJumpOpen(false);
+                    }
+                  }}
+                  className="h-7 w-12 text-xs font-bold text-center p-0 border-primary/30 bg-background focus-visible:ring-primary/20 rounded-md"
+                />
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-7 w-7 text-primary bg-primary/5 hover:bg-primary hover:text-primary-foreground rounded-md"
+                  onClick={() => {
+                    commitPageInput();
+                    setIsQuickJumpOpen(false);
+                  }}
+                >
+                  <ArrowRight className="h-3.5 w-3.5" />
+                </Button>
+              </div>
+            )}
+          </div>
+
+          {/* Next Page */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 hover:bg-primary/10 hover:text-primary disabled:opacity-30 disabled:pointer-events-none rounded-md"
+                onClick={() => setPage(page + 1)}
+                disabled={!canGoNext || loading}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent
+              side="top"
+              className="font-bold text-[10px] uppercase tracking-widest bg-primary text-primary-foreground border-none rounded-sm"
+            >
+              Suivant
+            </TooltipContent>
+          </Tooltip>
+
+          {/* Last Page */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="hidden h-8 w-8 lg:flex hover:bg-primary/10 hover:text-primary disabled:opacity-30 disabled:pointer-events-none rounded-md"
+                onClick={() => setPage(numPages || 1)}
+                disabled={!canGoLast || loading}
+              >
+                <ChevronsRight className="h-4 w-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent
+              side="top"
+              className="font-bold text-[10px] uppercase tracking-widest bg-primary text-primary-foreground border-none rounded-sm"
+            >
+              Dernier
+            </TooltipContent>
+          </Tooltip>
+        </div>
+
+        {/* Right Section: Showing summary & Page Size Select */}
+        <div className="flex flex-wrap items-center justify-center sm:justify-end gap-4 w-full sm:w-auto text-xs text-muted-foreground font-medium">
           {enableSelection && selectedCount > 0 && (
             <div className="flex items-center gap-2">
               <Badge
                 variant="default"
-                className="h-6 px-2.5 bg-primary text-[11px] font-bold border-none text-primary-foreground"
+                className="h-6 px-2.5 bg-primary text-[11px] font-bold border-none text-primary-foreground rounded"
               >
                 {selectedCount} sélectionné{selectedCount > 1 ? "s" : ""}
               </Badge>
@@ -124,46 +269,34 @@ export function TablePagination({
             </div>
           )}
 
-          <div className="flex flex-col gap-0.5 select-none">
+          <div className="select-none text-neutral-500 dark:text-neutral-400">
             {totalKnown ? (
               <span>
                 Affichage de <span className="font-semibold text-foreground tabular-nums">{(page - 1) * perPage + 1}</span> à{" "}
                 <span className="font-semibold text-foreground tabular-nums">{Math.min(page * perPage, total)}</span> sur{" "}
-                <span className="font-semibold text-foreground tabular-nums">{total}</span> éléments
+                <span className="font-semibold text-foreground tabular-nums">{total}</span> entrées
               </span>
             ) : (
               <span>Page {page}</span>
             )}
           </div>
-        </div>
 
-        {/* Right Section: Controls Group */}
-        <div className="flex flex-wrap items-center justify-center sm:justify-end gap-3 sm:gap-6 w-full sm:w-auto">
-          {/* Rows Per Page Selector */}
-          <div className="flex items-center gap-3 group">
-            <div className="flex flex-col items-end gap-0.5 select-none">
-              <span className="text-[9px] font-bold text-muted-foreground/40 uppercase tracking-[0.15em] leading-none hidden lg:inline">
-                Affichage
-              </span>
-              <span className="text-[11px] font-semibold text-muted-foreground hidden lg:inline">
-                {labels?.rowsPerPage ?? "Lignes par page"}
-              </span>
-            </div>
+          <div className="flex items-center gap-2">
             <Select
               value={`${perPage}`}
               onValueChange={(value) => setPerPage(Number(value))}
             >
               <SelectTrigger
                 className={cn(
-                  "h-8.5 w-[105px] border-border bg-background text-xs font-semibold hover:border-primary/30 hover:bg-primary/[0.02] rounded-md",
+                  "h-8.5 w-16 border-border bg-background text-xs font-semibold hover:border-primary/30 hover:bg-primary/[0.02] rounded-md shadow-none",
                 )}
               >
-                <SelectValue placeholder={`${perPage} lignes`} />
+                <SelectValue placeholder={`${perPage}`} />
               </SelectTrigger>
               <SelectContent
                 side="top"
                 align="end"
-                className="border-border bg-popover rounded-md p-1"
+                className="border-border bg-popover rounded-md p-1 z-50 shadow-lg"
               >
                 {pageSizeOptions.map((pageSize) => (
                   <SelectItem
@@ -171,156 +304,11 @@ export function TablePagination({
                     value={`${pageSize}`}
                     className="text-xs font-medium focus:bg-primary focus:text-primary-foreground rounded-sm m-0.5 cursor-pointer"
                   >
-                    {pageSize} lignes
+                    {pageSize}
                   </SelectItem>
                 ))}
               </SelectContent>
             </Select>
-          </div>
-
-          <div className="h-6 w-px bg-border/40 hidden md:block" />
-
-          {/* Pagination Cluster */}
-          <div className="flex items-center gap-1 p-1 bg-muted/30 border border-border/80 rounded-lg">
-            {/* First Page */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="hidden h-8 w-8 lg:flex hover:bg-primary/10 hover:text-primary disabled:opacity-30 disabled:pointer-events-none rounded-md"
-                  onClick={() => setPage(1)}
-                  disabled={!canGoFirst || loading}
-                >
-                  <ChevronsLeft className="h-4.5 w-4.5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent
-                side="top"
-                className="font-bold text-[10px] uppercase tracking-widest bg-primary text-primary-foreground border-none rounded-sm"
-              >
-                Premier
-              </TooltipContent>
-            </Tooltip>
-
-            {/* Previous Page */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 hover:bg-primary/10 hover:text-primary disabled:opacity-30 disabled:pointer-events-none rounded-md"
-                  onClick={() => setPage(page - 1)}
-                  disabled={!canGoPrevious || loading}
-                >
-                  <ChevronLeft className="h-4.5 w-4.5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent
-                side="top"
-                className="font-bold text-[10px] uppercase tracking-widest bg-primary text-primary-foreground border-none rounded-sm"
-              >
-                Précédent
-              </TooltipContent>
-            </Tooltip>
-
-            {/* Middle Indicator with Quick Jump */}
-            <div className="flex items-center px-3 gap-2 min-w-[125px] justify-center">
-              {!isJumping ? (
-                <button
-                  className="group/jump flex items-center gap-1.5 cursor-pointer hover:bg-primary/5 border border-transparent hover:border-primary/10 rounded-md px-2.5 py-1"
-                  onClick={() => totalKnown && setIsQuickJumpOpen(true)}
-                >
-                  <span className="text-[9px] font-bold text-muted-foreground/50 uppercase tracking-widest leading-none group-hover/jump:text-primary/70">
-                    Page
-                  </span>
-                  <span className="text-xs font-extrabold text-foreground tracking-tight group-hover/jump:text-primary bg-background border border-border/60 px-1.5 py-0.5 rounded tabular-nums">
-                    {totalKnown
-                      ? (labels?.pageStatus?.(page, totalPages) ??
-                        `${page} sur ${totalPages}`)
-                      : page}
-                  </span>
-                </button>
-              ) : (
-                <div className="flex items-center gap-1">
-                  <Input
-                    autoFocus
-                    value={pageInput}
-                    onChange={(e) => setPageInput(e.target.value)}
-                    onBlur={() => {
-                      commitPageInput();
-                      setIsQuickJumpOpen(false);
-                    }}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        commitPageInput();
-                        setIsQuickJumpOpen(false);
-                      }
-                      if (e.key === "Escape") {
-                        setPageInput(String(page));
-                        setIsQuickJumpOpen(false);
-                      }
-                    }}
-                    className="h-7 w-12 text-xs font-bold text-center p-0 border-primary/30 bg-background focus-visible:ring-primary/20 rounded-md"
-                  />
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    className="h-7 w-7 text-primary bg-primary/5 hover:bg-primary hover:text-primary-foreground rounded-md"
-                    onClick={() => {
-                      commitPageInput();
-                      setIsQuickJumpOpen(false);
-                    }}
-                  >
-                    <ArrowRight className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              )}
-            </div>
-
-            {/* Next Page */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 hover:bg-primary/10 hover:text-primary disabled:opacity-30 disabled:pointer-events-none rounded-md"
-                  onClick={() => setPage(page + 1)}
-                  disabled={!canGoNext || loading}
-                >
-                  <ChevronRight className="h-4.5 w-4.5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent
-                side="top"
-                className="font-bold text-[10px] uppercase tracking-widest bg-primary text-primary-foreground border-none rounded-sm"
-              >
-                Suivant
-              </TooltipContent>
-            </Tooltip>
-
-            {/* Last Page */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="hidden h-8 w-8 lg:flex hover:bg-primary/10 hover:text-primary disabled:opacity-30 disabled:pointer-events-none rounded-md"
-                  onClick={() => setPage(numPages || 1)}
-                  disabled={!canGoLast || loading}
-                >
-                  <ChevronsRight className="h-4.5 w-4.5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent
-                side="top"
-                className="font-bold text-[10px] uppercase tracking-widest bg-primary text-primary-foreground border-none rounded-sm"
-              >
-                Dernier
-              </TooltipContent>
-            </Tooltip>
           </div>
         </div>
       </div>

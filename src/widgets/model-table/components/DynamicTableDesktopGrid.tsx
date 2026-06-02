@@ -61,7 +61,7 @@ export function DynamicTableDesktopGrid({
   return (
     <div
       className={cn(
-        "relative z-0 flex-1 min-h-0 w-full overflow-hidden bg-background border-t border-border/40",
+        "relative z-0 flex-1 min-h-0 w-full overflow-hidden bg-background",
         hideTableOnMobile ? "hidden md:flex" : "flex flex-col",
       )}
     >
@@ -94,7 +94,7 @@ export function DynamicTableDesktopGrid({
               headerLabel: tableConfig?.actionsLabel ?? "",
               sticky: true,
               headerClassName: "w-[1%] whitespace-nowrap pr-6 bg-transparent",
-              cellClassName: "w-[1%] whitespace-nowrap pr-6 bg-background/50",
+              cellClassName: "w-[1%] whitespace-nowrap pr-6",
               renderCell: ({ row }) => (
                 <RowActions
                   row={row}

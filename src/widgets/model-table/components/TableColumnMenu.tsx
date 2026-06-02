@@ -260,13 +260,13 @@ export function TableColumnMenu({
             <button
                type="button"
                className={cn(
-                 "flex h-full w-full items-center justify-between outline-none border-none",
-                 density === "compact"
-                   ? "px-1.5 py-0 gap-1 text-[10px]"
-                   : density === "spacious"
-                     ? "px-3.5 py-0 gap-2 text-[13px]"
-                     : "px-2.5 py-0 gap-1.5 text-[11px]",
-                 "font-semibold tracking-normal",
+                 "flex h-full w-full items-center justify-between outline-none border-none bg-transparent text-left",
+                  density === "compact"
+                    ? "px-1.5 py-0 gap-1 text-[11px]"
+                    : density === "spacious"
+                      ? "px-3.5 py-0 gap-2 text-sm"
+                      : "px-2.5 py-0 gap-1.5 text-xs",
+                  "font-semibold uppercase tracking-wider",
                  "group/trigger",
                  variant === "primary"
                    ? currentSort
@@ -274,7 +274,7 @@ export function TableColumnMenu({
                      : "text-primary-foreground/90 hover:text-white hover:bg-primary-foreground/10 data-[state=open]:bg-primary-foreground/15 data-[state=open]:text-white"
                    : currentSort
                      ? "bg-primary/[0.03] text-primary"
-                     : "text-muted-foreground hover:text-foreground hover:bg-primary/5 active:bg-primary/8 data-[state=open]:bg-primary/5 data-[state=open]:text-primary",
+                     : "text-neutral-600 hover:text-foreground dark:text-neutral-300 hover:bg-neutral-100/50 dark:hover:bg-zinc-900/30 data-[state=open]:bg-neutral-100/80 dark:data-[state=open]:bg-zinc-900/50 data-[state=open]:text-foreground",
                )}
              >
                <div className="flex items-center gap-2 min-w-0 flex-1" title={triggerTitle}>
@@ -317,7 +317,7 @@ export function TableColumnMenu({
                  "h-8 w-8 p-0 ml-1 border-none",
                  variant === "primary"
                    ? "text-primary-foreground/80 hover:text-white hover:bg-primary-foreground/10 data-[state=open]:bg-primary-foreground/15 data-[state=open]:text-white"
-                   : "text-muted-foreground/50 hover:text-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground",
+                   : "text-neutral-600 dark:text-neutral-300 hover:text-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground",
                  currentSort &&
                    (variant === "primary"
                      ? "text-white"

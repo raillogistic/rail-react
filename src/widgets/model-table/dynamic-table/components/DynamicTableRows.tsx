@@ -1,9 +1,7 @@
 /**
  * @file DynamicTableRows.tsx
  * @description Renders the dynamic rows for TanStack table, with optional virtualization.
- * Modernized with high-density readable text, translation and selected highlights (left accent border),
- * fluid collapsible groupings, nested detail panels, and premium loading/empty states.
- * Highly reactive visual enhancements for the Patrimoin workspace.
+ * Redessiné pour correspondre au style Localira (bordures en pointillés, suppression du striping, texte gris).
  * Modifié pour supprimer les animations et les ombres afin d'améliorer les performances de l'interface utilisateur.
  */
 import { useMemo } from "react";
@@ -95,10 +93,10 @@ function resolveCellTextClasses(
 ): string {
   const densityClass =
     density === "compact"
-      ? "text-[11px] leading-tight px-3 py-1.5 tabular-nums"
+      ? "text-xs leading-tight px-3 py-1.5 tabular-nums"
       : density === "spacious"
-        ? "text-sm leading-relaxed px-5 py-3.5"
-        : "text-xs leading-normal px-4 py-2.5 tabular-nums";
+        ? "text-base leading-relaxed px-5 py-3.5"
+        : "text-sm leading-normal px-4 py-2.5 tabular-nums";
   const wrappingClass = wrapCells
     ? "whitespace-normal break-words"
     : "truncate";
@@ -270,9 +268,8 @@ export function DynamicTableRows<TRow extends Record<string, unknown>>({
         data-row-stripe={rowIndex % 2 === 0 ? "even" : "odd"}
         data-state={row.getIsSelected() ? "selected" : undefined}
         className={cn(
-          "hover:bg-primary/5",
-          row.getIsSelected() && "bg-primary/6 hover:bg-primary/8 dark:bg-primary/15 dark:hover:bg-primary/20",
-          rowIndex % 2 === 1 && !row.getIsSelected() && "bg-muted/10",
+          "hover:bg-neutral-50 dark:hover:bg-zinc-900/40 border-b border-dashed border-border/80 transition-colors",
+          row.getIsSelected() && "bg-primary/[0.04] hover:bg-primary/[0.06] dark:bg-primary/10 dark:hover:bg-primary/15",
           rowClassName,
         )}
       >
@@ -324,7 +321,7 @@ export function DynamicTableRows<TRow extends Record<string, unknown>>({
                     }
               }
               className={cn(
-                "border-b border-border align-middle text-foreground",
+                "border-b border-dashed border-border/60 align-middle text-neutral-600 dark:text-neutral-300 font-medium",
                 cellTextClasses,
                 autoSizeActionsCell && "w-[1%] whitespace-nowrap",
                 sticky.className,

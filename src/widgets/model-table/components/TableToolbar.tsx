@@ -113,7 +113,7 @@ type TableToolbarProps = {
  * Composant Toolbar pour le ModelTableV2.
  * Gère la recherche, les filtres, l'affichage des colonnes, le groupement et l'export.
  * Design moderne, responsive et optimisé pour une utilisation intensive.
- * Modifié pour supprimer les animations et les ombres afin d'améliorer les performances de l'interface utilisateur.
+ * Redessiné pour correspondre au style Localira (bouton Filtres secondaire et recherche solide).
  *
  * @param {ModelTableFilterPanelProps} filterPanel - Configuration du panneau de filtres.
  * @param {ModelTableV2TableConfig} tableConfig - Configuration globale de la table.
@@ -634,21 +634,19 @@ export function TableToolbar({
                   <Dialog open={filterOpen} onOpenChange={setFilterOpen}>
                     <DialogTrigger asChild>
                       <Button
-                        variant={hasActiveFilters ? "default" : "secondary"}
+                        variant="secondary"
                         size="sm"
                         className={cn(
-                          "h-8 gap-2 px-3 font-semibold text-[11px]",
-                          hasActiveFilters
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground",
+                          "h-9.5 gap-2 px-4 font-bold text-xs bg-neutral-100 text-neutral-700 hover:bg-neutral-200/80 dark:bg-zinc-800 dark:text-neutral-200 dark:hover:bg-zinc-700/80 border-none rounded-lg",
+                          hasActiveFilters && "bg-neutral-200 dark:bg-zinc-700 text-foreground"
                         )}
                       >
                         <ListFilter className="h-3.5 w-3.5" />
                         <span className="hidden sm:inline-block">
-                          Filters
+                          Filtres
                         </span>
                         {activeAdvancedFilterCount > 0 && (
-                          <Badge className="ml-1 h-4 w-4 bg-background/20 hover:bg-background/20 text-primary-foreground p-0 text-[10px] border-none font-bold justify-center items-center">
+                          <Badge className="ml-1 h-4 w-4 bg-primary text-primary-foreground p-0 text-[10px] border-none font-bold justify-center items-center rounded-full">
                             {activeAdvancedFilterCount}
                           </Badge>
                         )}
@@ -682,21 +680,19 @@ export function TableToolbar({
                   <Sheet open={filterOpen} onOpenChange={setFilterOpen}>
                     <SheetTrigger asChild>
                       <Button
-                        variant={hasActiveFilters ? "default" : "secondary"}
+                        variant="secondary"
                         size="sm"
                         className={cn(
-                          "h-8 gap-2 px-3 font-semibold text-[11px]",
-                          hasActiveFilters
-                            ? "bg-primary text-primary-foreground"
-                            : "bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground",
+                          "h-9.5 gap-2 px-4 font-bold text-xs bg-neutral-100 text-neutral-700 hover:bg-neutral-200/80 dark:bg-zinc-800 dark:text-neutral-200 dark:hover:bg-zinc-700/80 border-none rounded-lg",
+                          hasActiveFilters && "bg-neutral-200 dark:bg-zinc-700 text-foreground"
                         )}
                       >
                         <ListFilter className="h-3.5 w-3.5" />
                         <span className="hidden sm:inline-block">
-                          Filters
+                          Filtres
                         </span>
                         {activeAdvancedFilterCount > 0 && (
-                          <Badge className="ml-1 h-4 w-4 bg-background/20 hover:bg-background/20 text-primary-foreground p-0 text-[10px] border-none font-bold justify-center items-center">
+                          <Badge className="ml-1 h-4 w-4 bg-primary text-primary-foreground p-0 text-[10px] border-none font-bold justify-center items-center rounded-full">
                             {activeAdvancedFilterCount}
                           </Badge>
                         )}

@@ -116,15 +116,11 @@
 }
 
 .table-first-column {
-  box-shadow:
-    1px 0 0 color-mix(in srgb, var(--border) 45%, transparent),
-    14px 0 20px -20px rgb(15 23 42 / 0.28);
+  /* Supprimé pour le style épuré Localira */
 }
 
 .table-last-column {
-  box-shadow:
-    -1px 0 0 color-mix(in srgb, var(--border) 45%, transparent),
-    -14px 0 20px -20px rgb(15 23 42 / 0.28);
+  /* Supprimé pour le style épuré Localira */
 }
 
 tr[data-row-stripe="even"] {
