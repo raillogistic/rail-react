@@ -27,16 +27,8 @@ import {
   Zap,
   Sparkles,
   ExternalLink,
-  FileText,
-  MoreHorizontal,
+  Printer,
 } from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/shared/ui/kit/dropdown-menu";
 import { toast } from "sonner";
 import {
   CustomMutationsDropdown,
@@ -54,7 +46,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/shared/ui/kit/alert-dialog";
-import { Button } from "@/shared/ui/kit/button";
+
 import {
   Tooltip,
   TooltipContent,
@@ -839,7 +831,10 @@ export function RowActions<TSource extends object = Record<string, unknown>>({
 
   return (
     <TooltipProvider delayDuration={300}>
-      <div className="flex items-center justify-end">
+      {/* ── Barre d'actions en ligne : boutons icônes carrés ── */}
+      <div className="flex items-center justify-end gap-0.5">
+
+        {/* ── Actions destructives personnalisées ── */}
         {destructiveCustomActions.map((action, action_idx) => {
           const key = action.key ?? `destructive-action-${action_idx}`;
           if (typeof (action as { render?: unknown }).render === "function") {
@@ -856,166 +851,220 @@ export function RowActions<TSource extends object = Record<string, unknown>>({
           return (
             <Tooltip key={key}>
               <TooltipTrigger asChild>
-                <Button
-                  size="icon"
-                  variant="outline"
+                <button
+                  type="button"
                   aria-label={clickAction.label ?? "Action"}
                   disabled={action.disabled}
                   className={cn(
-                    "mr-2 h-8 w-8 rounded border border-border/80 bg-background text-rose-600 hover:bg-rose-50 hover:text-rose-700 inline-flex items-center justify-center cursor-pointer transition-none shadow-none",
+                    "inline-flex items-center justify-center h-7 w-7 rounded-md border border-transparent",
+                    "text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40",
+                    "disabled:opacity-40 disabled:pointer-events-none cursor-pointer",
                     action.className,
                   )}
                   onClick={() => runCustomAction(clickAction.onClick)}
                 >
-                  {action.icon ?? <Trash2 className="h-4 w-4" />}
-                </Button>
+                  {action.icon ?? <Trash2 className="h-3.5 w-3.5" />}
+                </button>
               </TooltipTrigger>
-              <TooltipContent className="bg-rose-600 text-white font-bold uppercase text-[8px] tracking-widest">
+              <TooltipContent className="bg-rose-600 text-white text-[10px] font-bold uppercase tracking-widest px-2 py-1">
                 {clickAction.label ?? "Action"}
               </TooltipContent>
             </Tooltip>
           );
         })}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="outline"
-              size="icon"
-              className="h-8 w-8 rounded border border-border/80 bg-background text-muted-foreground hover:bg-muted hover:text-foreground inline-flex items-center justify-center cursor-pointer transition-none shadow-none"
-              title="Actions"
-            >
-              <MoreHorizontal className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48 bg-background border p-1 rounded-md shadow-lg z-50">
-            {canDetail && (
-              <DropdownMenuItem
+
+        {/* ── Bouton Détails ── */}
+        {canDetail && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                aria-label="Voir les détails"
                 disabled={Boolean(detailDisabledReason)}
                 onClick={handleDetail}
-                className="gap-2 cursor-pointer focus:bg-accent focus:text-accent-foreground text-xs font-semibold py-2"
+                className={cn(
+                  "inline-flex items-center justify-center h-7 w-7 rounded-md border border-transparent",
+                  "text-violet-500 hover:text-violet-600 hover:bg-violet-50 dark:hover:bg-violet-950/40",
+                  "disabled:opacity-40 disabled:pointer-events-none cursor-pointer",
+                )}
               >
-                <Info className="h-4 w-4 text-muted-foreground/60" />
-                <span>Détails</span>
-              </DropdownMenuItem>
-            )}
+                <Info className="h-3.5 w-3.5" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent className="bg-violet-600 text-white text-[10px] font-bold uppercase tracking-widest px-2 py-1">
+              Détails
+            </TooltipContent>
+          </Tooltip>
+        )}
 
-            {canEdit && (
-              <DropdownMenuItem
+        {/* ── Bouton Modifier ── */}
+        {canEdit && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                aria-label="Modifier"
                 disabled={Boolean(editDisabledReason)}
                 onClick={handleEdit}
-                className="gap-2 cursor-pointer focus:bg-accent focus:text-accent-foreground text-xs font-semibold py-2"
-              >
-                <Pencil className="h-4 w-4 text-muted-foreground/60" />
-                <span>Modifier</span>
-              </DropdownMenuItem>
-            )}
-
-            {hasTemplateActions && (
-              <>
-                <DropdownMenuSeparator className="my-1 border-t border-border/40" />
-                {singleTemplate ? (
-                  <ModelTemplateAction
-                    data={{
-                      app,
-                      model,
-                      funcName: singleTemplate.key,
-                      objectId: rowId,
-                    }}
-                    onPdfPreview={onTemplatePdfPreview}
-                    renderTrigger={({ run, disabled }) => (
-                      <DropdownMenuItem
-                        disabled={Boolean(singleTemplateDisabledReason) || disabled}
-                        onClick={run}
-                        className="gap-2 cursor-pointer focus:bg-accent focus:text-accent-foreground text-xs font-semibold py-2"
-                      >
-                        <FileText className="h-4 w-4 text-muted-foreground/60" />
-                        <span>{singleTemplateLabel}</span>
-                      </DropdownMenuItem>
-                    )}
-                  />
-                ) : (
-                  <ModelTemplatesDropdown
-                    data={{
-                      app,
-                      model,
-                      objectId: rowId,
-                    }}
-                    onPdfPreview={onTemplatePdfPreview}
-                    renderTrigger={({ disabled }) => (
-                      <div className="w-full">
-                        <DropdownMenuItem
-                          disabled={disabled}
-                          className="gap-2 cursor-pointer focus:bg-accent focus:text-accent-foreground text-xs font-semibold py-2"
-                        >
-                          <FileText className="h-4 w-4 text-muted-foreground/60" />
-                          <span>Imprimer / Exporter</span>
-                        </DropdownMenuItem>
-                      </div>
-                    )}
-                  />
+                className={cn(
+                  "inline-flex items-center justify-center h-7 w-7 rounded-md border border-transparent",
+                  "text-blue-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-950/40",
+                  "disabled:opacity-40 disabled:pointer-events-none cursor-pointer",
                 )}
-              </>
-            )}
+              >
+                <Pencil className="h-3.5 w-3.5" />
+              </button>
+            </TooltipTrigger>
+            <TooltipContent className="bg-blue-600 text-white text-[10px] font-bold uppercase tracking-widest px-2 py-1">
+              Modifier
+            </TooltipContent>
+          </Tooltip>
+        )}
 
-            {(hasMetadataMutationActions || customMutationMenuActions.length > 0) && (
-              <>
-                <DropdownMenuSeparator className="my-1 border-t border-border/40" />
-                <CustomMutationsDropdown
-                  data={{
-                    app,
-                    model,
-                    objectId: rowId,
-                  }}
-                  button={{
-                    label: "Actions",
-                  }}
-                  actions={resolvedCustomMutations}
-                  extraActions={customMutationMenuActions}
-                  queryOptions={{
-                    fetchPolicy: "network-only",
-                  }}
-                  onSuccess={async () => {
-                    try {
-                      if (refetch) {
-                        await refetch();
-                      } else {
-                        refresh();
-                      }
-                    } catch (err) {
-                      console.error("Failed to refetch table after custom mutation", err);
-                    }
-                  }}
-                  renderTrigger={() => (
-                    <div className="w-full">
-                      <DropdownMenuItem className="gap-2 cursor-pointer focus:bg-accent focus:text-accent-foreground text-xs font-semibold py-2">
-                        <Zap className="h-4 w-4 text-muted-foreground/60" />
-                        <span>Autres Actions</span>
-                      </DropdownMenuItem>
-                    </div>
-                  )}
-                />
-              </>
-            )}
+        {/* ── Bouton Imprimer (menu déroulant si plusieurs templates) ── */}
+        {hasTemplateActions && (
+          singleTemplate ? (
+            <Tooltip>
+              <ModelTemplateAction
+                data={{
+                  app,
+                  model,
+                  funcName: singleTemplate.key,
+                  objectId: rowId,
+                }}
+                onPdfPreview={onTemplatePdfPreview}
+                renderTrigger={({ run, disabled }) => (
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label={singleTemplateLabel}
+                      disabled={Boolean(singleTemplateDisabledReason) || disabled}
+                      onClick={run}
+                      className={cn(
+                        "inline-flex items-center justify-center h-7 w-7 rounded-md border border-transparent",
+                        "text-amber-500 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40",
+                        "disabled:opacity-40 disabled:pointer-events-none cursor-pointer",
+                      )}
+                    >
+                      <Printer className="h-3.5 w-3.5" />
+                    </button>
+                  </TooltipTrigger>
+                )}
+              />
+              <TooltipContent className="bg-amber-500 text-white text-[10px] font-bold uppercase tracking-widest px-2 py-1">
+                {singleTemplateLabel}
+              </TooltipContent>
+            </Tooltip>
+          ) : (
+            /* Plusieurs templates : ModelTemplatesDropdown gère son propre DropdownMenu */
+            <ModelTemplatesDropdown
+              data={{
+                app,
+                model,
+                objectId: rowId,
+              }}
+              onPdfPreview={onTemplatePdfPreview}
+              renderTrigger={({ disabled: triggerDisabled }) => (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      aria-label="Imprimer / Exporter"
+                      disabled={triggerDisabled}
+                      className={cn(
+                        "inline-flex items-center justify-center h-7 w-7 rounded-md border border-transparent",
+                        "text-amber-500 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-950/40",
+                        "disabled:opacity-40 disabled:pointer-events-none cursor-pointer",
+                      )}
+                    >
+                      <Printer className="h-3.5 w-3.5" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent className="bg-amber-500 text-white text-[10px] font-bold uppercase tracking-widest px-2 py-1">
+                    Imprimer / Exporter
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            />
+          )
+        )}
 
-            {canDelete && (
-              <>
-                <DropdownMenuSeparator className="my-1 border-t border-border/40" />
-                <DropdownMenuItem
-                  disabled={deleting}
-                  onClick={() => setConfirmOpen(true)}
-                  className="gap-2 cursor-pointer text-xs font-semibold py-2 text-rose-600 focus:text-rose-600 focus:bg-rose-50 dark:text-rose-400 dark:focus:bg-rose-950/30"
-                >
-                  {deleting ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Trash2 className="h-4 w-4" />
-                  )}
-                  <span>Supprimer</span>
-                </DropdownMenuItem>
-              </>
+        {/* ── Bouton Autres Actions (mutations personnalisées) ── */}
+        {(hasMetadataMutationActions || customMutationMenuActions.length > 0) && (
+          <CustomMutationsDropdown
+            data={{
+              app,
+              model,
+              objectId: rowId,
+            }}
+            button={{ label: "Autres Actions" }}
+            actions={resolvedCustomMutations}
+            extraActions={customMutationMenuActions}
+            queryOptions={{ fetchPolicy: "network-only" }}
+            onSuccess={async () => {
+              try {
+                if (refetch) {
+                  await refetch();
+                } else {
+                  refresh();
+                }
+              } catch (err) {
+                console.error("Failed to refetch table after custom mutation", err);
+              }
+            }}
+            renderTrigger={({ open }) => (
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <button
+                    type="button"
+                    aria-label="Autres actions"
+                    data-state={open ? "open" : "closed"}
+                    className={cn(
+                      "inline-flex items-center justify-center h-7 w-7 rounded-md border border-transparent",
+                      "text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40",
+                      "cursor-pointer",
+                      open && "bg-emerald-50 dark:bg-emerald-950/40",
+                    )}
+                  >
+                    <Zap className="h-3.5 w-3.5" />
+                  </button>
+                </TooltipTrigger>
+                <TooltipContent className="bg-emerald-600 text-white text-[10px] font-bold uppercase tracking-widest px-2 py-1">
+                  Autres Actions
+                </TooltipContent>
+              </Tooltip>
             )}
-          </DropdownMenuContent>
-        </DropdownMenu>
+          />
+        )}
+
+        {/* ── Bouton Supprimer ── */}
+        {canDelete && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button
+                type="button"
+                aria-label="Supprimer"
+                disabled={deleting}
+                onClick={() => setConfirmOpen(true)}
+                className={cn(
+                  "inline-flex items-center justify-center h-7 w-7 rounded-md border border-transparent",
+                  "text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40",
+                  "disabled:opacity-40 disabled:pointer-events-none cursor-pointer",
+                )}
+              >
+                {deleting ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Trash2 className="h-3.5 w-3.5" />
+                )}
+              </button>
+            </TooltipTrigger>
+            <TooltipContent className="bg-rose-600 text-white text-[10px] font-bold uppercase tracking-widest px-2 py-1">
+              Supprimer
+            </TooltipContent>
+          </Tooltip>
+        )}
+
       </div>
       <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
         <AlertDialogContent className="max-w-[400px] border-border/30 shadow-none overflow-hidden p-0 bg-background/95 backdrop-blur-none">
