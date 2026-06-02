@@ -101,7 +101,7 @@ const MFASetupPage = lazy(() =>
 export const CORE_MANIFEST: AppManifest = defineProjectManifest({
   projectId: "core",
   moduleId: "core",
-  order: 99,
+  order: 101,
   defaultRoute: ROUTES.SETTINGS_ACCOUNT,
   routes: [
     {

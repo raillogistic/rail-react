@@ -111,7 +111,7 @@ export function TablePagination({
 
   return (
     <TooltipProvider delayDuration={200}>
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 bg-background border-t border-border/60">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-4  py-4 bg-background ">
         {/* Left Section: Pagination Buttons */}
         <div className="flex items-center gap-1 p-0.5 bg-neutral-100/50 dark:bg-zinc-800/40 border border-border/60 rounded-lg">
           {/* First Page */}
@@ -272,9 +272,19 @@ export function TablePagination({
           <div className="select-none text-neutral-500 dark:text-neutral-400">
             {totalKnown ? (
               <span>
-                Affichage de <span className="font-semibold text-foreground tabular-nums">{(page - 1) * perPage + 1}</span> à{" "}
-                <span className="font-semibold text-foreground tabular-nums">{Math.min(page * perPage, total)}</span> sur{" "}
-                <span className="font-semibold text-foreground tabular-nums">{total}</span> entrées
+                Affichage de{" "}
+                <span className="font-semibold text-foreground tabular-nums">
+                  {(page - 1) * perPage + 1}
+                </span>{" "}
+                à{" "}
+                <span className="font-semibold text-foreground tabular-nums">
+                  {Math.min(page * perPage, total)}
+                </span>{" "}
+                sur{" "}
+                <span className="font-semibold text-foreground tabular-nums">
+                  {total}
+                </span>{" "}
+                entrées
               </span>
             ) : (
               <span>Page {page}</span>
