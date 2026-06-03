@@ -1,10 +1,12 @@
 /**
  * @file DynamicTableHeader.tsx
- * @description Renders the custom TanStack table header groups and headers.
+ * @description Rendu des groupes d'en-tête et en-têtes personnalisés de table TanStack.
  * Redessiné pour utiliser la couleur primaire du thème par défaut pour l'en-tête de table, avec une colorisation
  * contrastée du texte, des icônes et des cases à cocher (style Metronic / Localira raffiné).
  * Modifié pour supprimer les animations et les ombres afin d'améliorer les performances de l'interface utilisateur.
+ * Modifié pour inclure le bouton de configuration de la table dans l'en-tête de la colonne Actions.
  */
+import React, { useState } from "react";
 import type { CSSProperties, ReactNode } from "react";
 import type { Header, Table } from "@tanstack/react-table";
 import { useSortable } from "@dnd-kit/sortable";
@@ -19,6 +21,12 @@ import {
   Rows3,
   EyeOff,
   MoveHorizontal,
+  SlidersHorizontal,
+  Columns3,
+  Search,
+  Layers,
+  LayoutGrid,
+  Eye,
 } from "lucide-react";
 import { cn } from "@/shared/utils";
 import { Checkbox } from "@/shared/ui/kit/checkbox";
@@ -28,12 +36,20 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
+  DropdownMenuCheckboxItem,
+  DropdownMenuLabel,
 } from "@/shared/ui/kit/dropdown-menu";
 import {
   TableHead,
   TableRow,
   TableHeader as UITableHeader,
 } from "@/shared/ui/kit/table";
+import { Button } from "@/shared/ui/kit/button";
+import { Input } from "@/shared/ui/kit/input";
+import { Switch } from "@/shared/ui/kit/switch";
 import { flexRender } from "@tanstack/react-table";
 import type {
   DynamicTableResolvedFeatures,
@@ -443,6 +459,7 @@ export function DynamicTableHeader<TRow extends Record<string, unknown>>({
   selectionColumnLeftOffsetPx,
   onResetLayout,
 }: DynamicTableHeaderProps<TRow>) {
+  const [columnSearch, setColumnSearch] = useState("");
   const allPageRowsSelected = table.getIsAllPageRowsSelected();
   const somePageRowsSelected = table.getIsSomePageRowsSelected();
 
@@ -618,13 +635,270 @@ export function DynamicTableHeader<TRow extends Record<string, unknown>>({
                 >
                   <div
                     className={cn(
-                      "flex h-full items-center justify-end text-xs font-medium px-3 tracking-normal",
+                      "flex h-full items-center justify-end text-xs font-medium px-3 tracking-normal gap-1.5",
                       is_primary_header
                         ? "text-primary-foreground"
                         : "text-muted-foreground",
                     )}
                   >
-                    {layout.actions?.headerLabel ?? ""}
+                    <span>{layout.actions?.headerLabel ?? ""}</span>
+                    
+                    <DropdownMenu modal={false}>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className={cn(
+                            "h-7 w-7 rounded-md hover:bg-primary-foreground/10 text-primary-foreground border-none transition-none shadow-none focus-visible:ring-0",
+                            !is_primary_header && "text-muted-foreground hover:bg-muted"
+                          )}
+                          title="Configuration de la table"
+                        >
+                          <SlidersHorizontal className="h-3.5 w-3.5" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-64 border-none p-2 bg-background/95 shadow-lg z-50">
+                        <DropdownMenuLabel className="flex items-center gap-2 px-3 py-2 text-xs font-black uppercase tracking-widest text-muted-foreground/60">
+                          <SlidersHorizontal className="h-3.5 w-3.5" />
+                          Options de table
+                        </DropdownMenuLabel>
+                        <DropdownMenuSeparator className="mx-2 bg-border/40" />
+
+                        {/* Visibilité des colonnes */}
+                        <DropdownMenuSub>
+                          <DropdownMenuSubTrigger className="flex items-center gap-2 py-2 px-3 text-xs font-medium hover:bg-muted/50 rounded-sm cursor-pointer">
+                            <Columns3 className="h-3.5 w-3.5 text-muted-foreground/60" />
+                            <span>Colonnes visibles</span>
+                          </DropdownMenuSubTrigger>
+                          <DropdownMenuSubContent className="w-72 border-none p-2 bg-background/95 shadow-md">
+                            <div className="relative px-2 pb-2">
+                              <Search className="absolute left-4 top-2.5 h-3.5 w-3.5 text-muted-foreground/40" />
+                              <Input
+                                placeholder="Rechercher une colonne..."
+                                value={columnSearch}
+                                onChange={(e) => setColumnSearch(e.target.value)}
+                                className="h-9 pl-9 pr-4 text-xs bg-muted/30 border-none focus-visible:ring-primary/20"
+                              />
+                            </div>
+                            <div className="flex items-center justify-between gap-2 px-2 py-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 gap-2 text-[10px] font-bold uppercase tracking-wider hover:bg-primary/10 hover:text-primary shadow-none"
+                                onClick={onResetLayout}
+                              >
+                                <RotateCcw className="h-3 w-3" />
+                                Défaut
+                              </Button>
+                              <div className="flex items-center gap-3 bg-muted/30 px-3 py-1.5 rounded">
+                                <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                                  Toutes
+                                </span>
+                                <Switch
+                                  checked={table.getIsAllColumnsVisible()}
+                                  onCheckedChange={(v) => {
+                                    table.toggleAllColumnsVisible(v);
+                                  }}
+                                  className="scale-75 data-[state=checked]:bg-primary"
+                                />
+                              </div>
+                            </div>
+                            <DropdownMenuSeparator className="mx-2 bg-border/40" />
+                            <div className="max-h-[240px] overflow-auto custom-scrollbar px-1 py-1">
+                              {table
+                                .getAllLeafColumns()
+                                .filter((col) => col.getCanHide())
+                                .filter((col) => {
+                                  const labelValue = col.columnDef.header;
+                                  const labelStr = typeof labelValue === "string" ? labelValue : (col.columnDef.meta as any)?.title || col.id;
+                                  return labelStr.toLowerCase().includes(columnSearch.toLowerCase());
+                                })
+                                .map((col) => {
+                                  const id = col.id;
+                                  const isVisible = col.getIsVisible();
+                                  const labelValue = col.columnDef.header;
+                                  const labelStr = typeof labelValue === "string" ? labelValue : (col.columnDef.meta as any)?.title || col.id;
+                                  return (
+                                    <DropdownMenuCheckboxItem
+                                      key={id}
+                                      checked={isVisible}
+                                      onCheckedChange={(v) => col.toggleVisibility(!!v)}
+                                      className={cn(
+                                        "py-2 text-xs font-medium mb-0.5",
+                                        isVisible
+                                          ? "bg-primary/5 text-primary"
+                                          : "text-muted-foreground hover:bg-muted/50",
+                                      )}
+                                    >
+                                      {labelStr}
+                                    </DropdownMenuCheckboxItem>
+                                  );
+                                })}
+                            </div>
+                          </DropdownMenuSubContent>
+                        </DropdownMenuSub>
+
+                        {/* Regroupement des lignes */}
+                        {features.enableGrouping && (
+                          <DropdownMenuSub>
+                            <DropdownMenuSubTrigger className="flex items-center gap-2 py-2 px-3 text-xs font-medium hover:bg-muted/50 rounded-sm cursor-pointer">
+                              <Layers className="h-3.5 w-3.5 text-muted-foreground/60" />
+                              <span>Regrouper les données</span>
+                            </DropdownMenuSubTrigger>
+                            <DropdownMenuSubContent className="w-64 border-none p-2 bg-background/95 shadow-md">
+                              <DropdownMenuItem
+                                onClick={() => {
+                                  table.setGrouping([]);
+                                }}
+                                className={cn(
+                                  "gap-3 py-2 text-xs font-medium mb-1 cursor-pointer",
+                                  table.getState().grouping.length === 0
+                                    ? "bg-primary/5 text-primary"
+                                    : "text-muted-foreground hover:bg-muted/50",
+                                )}
+                              >
+                                <div
+                                  className={cn(
+                                    "flex h-4 w-4 items-center justify-center border border-current",
+                                    table.getState().grouping.length === 0
+                                      ? "bg-primary/20"
+                                      : "border-muted-foreground/30",
+                                  )}
+                                >
+                                  {table.getState().grouping.length === 0 && <Check className="h-2.5 w-2.5" />}
+                                </div>
+                                <span>Aucun regroupement</span>
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator className="mx-2 bg-border/40" />
+                              <div className="max-h-[200px] overflow-auto custom-scrollbar px-1 py-1">
+                                {table
+                                  .getAllLeafColumns()
+                                  .filter((col) => col.getCanGroup())
+                                  .map((col) => {
+                                    const id = col.id;
+                                    const isActive = table.getState().grouping.includes(id);
+                                    const labelValue = col.columnDef.header;
+                                    const labelStr = typeof labelValue === "string" ? labelValue : (col.columnDef.meta as any)?.title || col.id;
+                                    return (
+                                      <DropdownMenuItem
+                                        key={id}
+                                        onClick={() => {
+                                          table.setGrouping([id]);
+                                        }}
+                                        className={cn(
+                                          "gap-3 py-2 text-xs font-medium mb-0.5 cursor-pointer",
+                                          isActive
+                                            ? "bg-primary/5 text-primary"
+                                            : "text-muted-foreground hover:bg-muted/50",
+                                        )}
+                                      >
+                                        <div
+                                          className={cn(
+                                            "flex h-4 w-4 items-center justify-center border border-current",
+                                            isActive ? "bg-primary/20" : "border-muted-foreground/30",
+                                          )}
+                                        >
+                                          {isActive && <Check className="h-2.5 w-2.5" />}
+                                        </div>
+                                        <span>{labelStr}</span>
+                                      </DropdownMenuItem>
+                                    );
+                                  })}
+                              </div>
+                              {table.getState().grouping.length > 0 && (
+                                <>
+                                  <DropdownMenuSeparator className="mx-2 bg-border/40" />
+                                  <div className="grid grid-cols-2 gap-2 p-1">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-8 gap-2 text-[10px] font-bold uppercase tracking-wider hover:bg-primary/10 hover:text-primary shadow-none"
+                                      onClick={() => {
+                                        table.toggleAllRowsExpanded(true);
+                                      }}
+                                    >
+                                      <Eye className="h-3 w-3" />
+                                      Ouvrir
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-8 gap-2 text-[10px] font-bold uppercase tracking-wider hover:bg-primary/10 hover:text-primary shadow-none"
+                                      onClick={() => {
+                                        table.toggleAllRowsExpanded(false);
+                                      }}
+                                    >
+                                      <EyeOff className="h-3 w-3" />
+                                      Fermer
+                                    </Button>
+                                  </div>
+                                </>
+                              )}
+                            </DropdownMenuSubContent>
+                          </DropdownMenuSub>
+                        )}
+
+                        {/* Densité d'affichage */}
+                        <DropdownMenuSub>
+                          <DropdownMenuSubTrigger className="flex items-center gap-2 py-2 px-3 text-xs font-medium hover:bg-muted/50 rounded-sm cursor-pointer">
+                            <LayoutGrid className="h-3.5 w-3.5 text-muted-foreground/60" />
+                            <span>Densité</span>
+                          </DropdownMenuSubTrigger>
+                          <DropdownMenuSubContent className="w-48 border-none p-2 bg-background/95 shadow-md">
+                            <DropdownMenuItem
+                              onClick={() => state.setDensity("compact")}
+                              className={cn(
+                                "py-2 text-xs font-medium cursor-pointer",
+                                state.density === "compact" ? "bg-primary/5 text-primary" : "text-muted-foreground hover:bg-muted/50",
+                              )}
+                            >
+                              {state.density === "compact" && <Check className="mr-2 h-4 w-4" />}
+                              <span className={state.density !== "compact" ? "ml-6" : ""}>Compact</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => state.setDensity("comfortable")}
+                              className={cn(
+                                "py-2 text-xs font-medium cursor-pointer",
+                                state.density === "comfortable" ? "bg-primary/5 text-primary" : "text-muted-foreground hover:bg-muted/50",
+                              )}
+                            >
+                              {state.density === "comfortable" && <Check className="mr-2 h-4 w-4" />}
+                              <span className={state.density !== "comfortable" ? "ml-6" : ""}>Confortable</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => state.setDensity("spacious")}
+                              className={cn(
+                                "py-2 text-xs font-medium cursor-pointer",
+                                state.density === "spacious" ? "bg-primary/5 text-primary" : "text-muted-foreground hover:bg-muted/50",
+                              )}
+                            >
+                              {state.density === "spacious" && <Check className="mr-2 h-4 w-4" />}
+                              <span className={state.density !== "spacious" ? "ml-6" : ""}>Spacieux</span>
+                            </DropdownMenuItem>
+                          </DropdownMenuSubContent>
+                        </DropdownMenuSub>
+
+                        <DropdownMenuSeparator className="mx-2 bg-border/40" />
+
+                        {/* Toggles: Retour à la ligne & Mode Glisser */}
+                        <div className="p-2 flex items-center justify-between text-xs font-medium text-neutral-600 dark:text-neutral-300">
+                          <span>Retour à la ligne</span>
+                          <Switch
+                            checked={state.wrapCells}
+                            onCheckedChange={state.setWrapCells}
+                            className="scale-75 data-[state=checked]:bg-primary"
+                          />
+                        </div>
+                        <div className="p-2 flex items-center justify-between text-xs font-medium text-neutral-600 dark:text-neutral-300">
+                          <span>Mode Glisser-déposer</span>
+                          <Switch
+                            checked={state.dragModeEnabled}
+                            onCheckedChange={state.setDragModeEnabled}
+                            className="scale-75 data-[state=checked]:bg-primary"
+                          />
+                        </div>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </div>
                 </DraggableHeaderCell>
               );

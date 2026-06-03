@@ -1,8 +1,6 @@
 /**
  * @file DynamicBaseTableContent.tsx
- * @description Implements the dynamic table grid content controller, integrating TanStack DynamicTable
- * with model metadata capabilities, column ordering, filtering, pagination, and persistence.
- * Customized to pass primary variant styles to table column menus for refined contrast and aesthetics.
+ * @description Contrôleur de contenu pour la table dynamique, intégrant TanStack DynamicTable avec les métadonnées de modèle, le tri, le filtrage, la pagination et la persistance.
  */
 import React, {
   forwardRef,
@@ -1057,7 +1055,7 @@ export function DynamicBaseTableContent<
 
   const handleRowSelectionChange = useCallback(
     (nextSelection: RowSelectionState) => {
-      console.log("handleRowSelectionChange called with:", JSON.stringify(nextSelection), "current:", JSON.stringify(rowSelection));
+
       if (!areBooleanMapsEqual(nextSelection, rowSelection)) {
         setRowSelection(nextSelection);
       }

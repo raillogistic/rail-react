@@ -51,24 +51,6 @@ vi.mock("@/shared/ui/kit/dropdown-menu", () => ({
  DropdownMenuSeparator: () => null,
 }));
 
-vi.mock("@/shared/ui/kit/checkbox", () => ({
-  Checkbox: ({ checked, onCheckedChange, "aria-label": ariaLabel }: any) => {
-    console.log("Mock Checkbox rendered - aria-label:", ariaLabel, "checked:", checked, "has callback:", typeof onCheckedChange);
-    return (
-      <input
-        type="checkbox"
-        checked={checked ?? false}
-        onChange={(e) => {
-          console.log("Mock Checkbox onChange fired! checked value:", e.target.checked);
-          onCheckedChange?.(e.target.checked);
-        }}
-        aria-label={ariaLabel}
-        data-testid="mock-checkbox"
-      />
-    );
-  },
-}));
-
 const METADATA_BASE = {
  __typename: "ModelSchema",
  app: "auth",
@@ -1010,31 +992,39 @@ describe("DynamicModelTable integration", () => {
   model="User"
   baseTable={{
   enableSelection: true,
+  hideTableOnMobile: false,
   }}
   />
   </MemoryRouter>
   </MockedProvider>,
   );
 
- await waitFor(() => {
- expect(screen.getAllByText("Username").length).toBeGreaterThan(0);
- }, { timeout: 4000 });
-
-  const selectCheckbox = await screen.findByLabelText("Select row 1", {}, { timeout: 4000 });
-  fireEvent.click(selectCheckbox);
-
-  // Wait a small bit for React state to flush
-  await new Promise((resolve) => setTimeout(resolve, 100));
-
-  const bulkDeleteBtn = await screen.findByTestId("bulk-delete-button", {}, { timeout: 4000 });
-  fireEvent.click(bulkDeleteBtn);
+  await waitFor(() => {
+    expect(screen.getAllByText("Username").length).toBeGreaterThan(0);
+  }, { timeout: 4000 });
 
   await waitFor(() => {
-    expect(screen.getByText("Action critique")).toBeInTheDocument();
-  });
+    expect(
+      screen.getByText((content) => content.includes("2") && (content.includes("results") || content.includes("éléments"))),
+    ).toBeInTheDocument();
+  }, { timeout: 4000 });
 
-  const confirmBtn = screen.getByRole("button", { name: /confirmer la suppression/i });
-  fireEvent.click(confirmBtn);
+   await waitFor(() => {
+     const select_checkbox = screen.getByLabelText("Select row 1");
+     fireEvent.click(select_checkbox);
+     expect(screen.getByTestId("bulk-delete-button")).toBeInTheDocument();
+   }, { timeout: 4000 });
+
+   const bulk_delete_btn = screen.getByTestId("bulk-delete-button");
+   await user.click(bulk_delete_btn);
+
+ await waitFor(() => {
+ expect(screen.getByText("Action critique")).toBeInTheDocument();
+ });
+
+ await user.click(
+ screen.getByRole("button", { name: /confirmer la suppression/i }),
+ );
 
  await waitFor(() => {
  expect(screen.queryByText("Action critique")).not.toBeInTheDocument();

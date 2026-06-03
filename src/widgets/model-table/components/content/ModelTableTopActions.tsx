@@ -49,6 +49,7 @@ function TopActionButton({ action, controller }: TopActionButtonProps) {
       key={action.key}
       variant={is_icon_only ? "secondary" : (action.variant ?? "outline")}
       size={is_icon_only ? "icon" : "sm"}
+      title={action.disabled ? action.disabledReason : undefined}
       className={cn(
         "h-9 font-bold uppercase tracking-wider text-[10px] shadow-none",
         action.key === "add" && "bg-primary text-primary-foreground hover:bg-primary/90 border-transparent",

@@ -5,28 +5,16 @@
  * Modifié pour supprimer les ombres sur tous les boutons et appliquer un fond neutre pour les boutons d'icônes.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useMutation } from "@apollo/client";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   Filter,
-  GripVertical,
-  ListFilter,
-  RefreshCw,
-  X,
-  Settings2,
   Layers,
-  LayoutGrid,
-  SlidersHorizontal,
-  Check,
-  Columns3,
-  RotateCcw,
-  Eye,
-  EyeOff,
-  Search,
+  ListFilter,
+  X,
 } from "lucide-react";
 import { Button } from "@/shared/ui/kit/button";
-import { Input } from "@/shared/ui/kit/input";
 import { Badge } from "@/shared/ui/kit/badge";
+import { TooltipProvider } from "@/shared/ui/kit/tooltip";
 import {
   Dialog,
   DialogContent,
@@ -40,73 +28,29 @@ import {
   SheetHeader,
   SheetTrigger,
 } from "@/shared/ui/kit/sheet";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/shared/ui/kit/tooltip";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-  DropdownMenuSub,
-  DropdownMenuSubTrigger,
-  DropdownMenuSubContent,
-  DropdownMenuCheckboxItem,
-} from "@/shared/ui/kit/dropdown-menu";
-import { Switch } from "@/shared/ui/kit/switch";
-import { Separator } from "@/shared/ui/kit/separator";
 import { cn } from "@/shared/utils";
 import { useTable } from "../context/TableContext";
 import { useMetadata } from "../context/MetadataContext";
 import { useTableFilters } from "../hooks/useTableFilters";
 import { FilterPanel } from "@/widgets/model-table/filtering/FilterPanel";
-import {
-  FilterFormState,
-  FilterQueryVariables,
-} from "@/widgets/model-table/filtering/types";
 import type {
   ModelTableFilterPanelProps,
   ModelTableNavFiltersConfig,
   ModelTableV2TableConfig,
 } from "../config/types";
-import type { BaseModelTableFieldsInput } from "../types";
-import { buildColumnDefinitions } from "../builders/columnDefinitions";
+import type {
+  BaseModelTableFieldsInput,
+} from "../types";
+import type {
+  FilterQueryVariables,
+  FilterFormState,
+} from "../filtering/types";
 import {
-  getDefaultHiddenColumnIds,
-  normalizeBaseModelTableFieldsInput,
-  resolveColumnVisibility,
-  resolveGroupingKey,
-  toGraphqlFieldName,
-} from "../utils";
-import {
-  ColumnsMenu,
-  GroupingMenu,
   NavFiltersBar,
   QuickFilters,
   QuickSearch,
-  ViewOptionsMenu,
 } from "./toolbar";
-import type { ColumnsMenuOption } from "./toolbar/ColumnsMenu";
 import { useIsMobile } from "@/shared/hooks/legacy-hooks/use-mobile";
-import {
-  UPSERT_USER_TABLE_CONFIG_MUTATION_RESOLVED,
-  type UpsertUserTableConfigResponse,
-  type UpsertUserTableConfigVariables,
-} from "@/shared/api/graphql/legacy/mutations";
-import {
-  clearPersistedMetadataStore,
-  getActiveMetadataUserKey,
-} from "@/shared/api/graphql/graphql/metadata/persisted-cache";
-import {
-  clearPendingTablePersistenceReset,
-  getNormalizedTablePersistenceKeys,
-  markPendingTablePersistenceReset,
-} from "../hooks/useTablePersistence";
 import {
   getActiveNavFilterCount,
   mergeModelTableQueryVariables,
@@ -170,13 +114,6 @@ export function TableToolbar({
     loading,
     refresh,
   } = useTable();
-  const [hardRefreshing, setHardRefreshing] = useState(false);
-  const [resetUserTableConfig] = useMutation<
-    UpsertUserTableConfigResponse,
-    UpsertUserTableConfigVariables
-  >(UPSERT_USER_TABLE_CONFIG_MUTATION_RESOLVED, {
-    ignoreResults: true,
-  });
   const {
     quickSearch: quickSearchValue,
     filterVariables,
@@ -192,67 +129,7 @@ export function TableToolbar({
   const [filterOpen, setFilterOpen] = useState(
     filterPanel?.defaultOpen ?? false,
   );
-  const [columnSearch, setColumnSearch] = useState("");
   const [searchFocused, setSearchFocused] = useState(false);
-
-  const resolvePersistenceKey = useCallback(() => {
-    const defaultPath =
-      typeof window !== "undefined" ? window.location.pathname : "";
-    const fallbackKey = `${app}-${model}-${defaultPath}`;
-    const keyFromScope = toolbarRootRef.current
-      ?.closest("[data-model-table-persistence-key]")
-      ?.getAttribute("data-model-table-persistence-key");
-    return keyFromScope || fallbackKey;
-  }, [app, model]);
-
-  const handleHardRefresh = useCallback(async () => {
-    if (hardRefreshing) {
-      return;
-    }
-    setHardRefreshing(true);
-
-    const persistenceKey = resolvePersistenceKey();
-    const persistenceKeys = getNormalizedTablePersistenceKeys(persistenceKey);
-    const metadataUserKey = getActiveMetadataUserKey();
-
-    markPendingTablePersistenceReset(persistenceKey);
-
-    if (typeof window !== "undefined") {
-      persistenceKeys.forEach((candidateKey) => {
-        try {
-          window.localStorage.removeItem(`rail-table-v2:${candidateKey}`);
-        } catch {
-          // Ignore storage errors and continue hard-refresh flow.
-        }
-      });
-    }
-
-    if (metadataUserKey) {
-      clearPersistedMetadataStore(metadataUserKey);
-    }
-
-    try {
-      await Promise.all(
-        persistenceKeys.map((candidateKey) =>
-          resetUserTableConfig({
-            variables: {
-              key: candidateKey,
-              tableConfig: {},
-            },
-          }),
-        ),
-      );
-    } catch {
-      // Ignore mutation errors; local reset + reload still provide a hard refresh.
-    }
-
-    if (typeof window !== "undefined") {
-      window.location.reload();
-      return;
-    }
-    clearPendingTablePersistenceReset(persistenceKey);
-  }, [hardRefreshing, resetUserTableConfig, resolvePersistenceKey]);
-
   const supportsQuick = !!metadata?.filterConfig?.supportsQuick;
   const activeAdvancedFilterCount = activeFilterStats.activeCount;
   const activeNavFilterCount = useMemo(
@@ -291,102 +168,6 @@ export function TableToolbar({
     if (!quickFilters?.length) return;
     void ensureCapabilitiesLoaded();
   }, [ensureCapabilitiesLoaded, quickFilters]);
-
-  // Gestion des colonnes
-  const normalizedFieldsConfig = useMemo(
-    () => normalizeBaseModelTableFieldsInput(fields),
-    [fields],
-  );
-
-  const columnDefinitions = useMemo(
-    () =>
-      metadata ? buildColumnDefinitions(metadata, normalizedFieldsConfig) : [],
-    [metadata, normalizedFieldsConfig],
-  );
-
-  const allowedFieldIds = useMemo(
-    () => new Set(columnDefinitions.map((column) => column.id.split(".")[0])),
-    [columnDefinitions],
-  );
-
-  const orderedColumns = useMemo<ColumnsMenuOption[]>(() => {
-    if (!metadata) return [];
-    const definitions = columnDefinitions;
-    const baseColumns = definitions.map((column) => {
-      const rootKey = column.id.split(".")[0];
-      return {
-        id: column.id,
-        label: column.title || column.id,
-        visibilityKeys: Array.from(
-          new Set(
-            [column.id, column.accessor, rootKey].filter(
-              (entry): entry is string => !!entry,
-            ),
-          ),
-        ),
-      };
-    });
-    if (columnOrder.length === 0) return baseColumns;
-
-    const byId = new Map(baseColumns.map((column) => [column.id, column]));
-    const seen = new Set<string>();
-    const ordered: ColumnsMenuOption[] = [];
-
-    columnOrder.forEach((id) => {
-      const column = byId.get(id);
-      if (!column || seen.has(column.id)) return;
-      ordered.push(column);
-      seen.add(column.id);
-    });
-
-    baseColumns.forEach((column) => {
-      if (seen.has(column.id)) return;
-      ordered.push(column);
-      seen.add(column.id);
-    });
-
-    return ordered;
-  }, [columnDefinitions, columnOrder, metadata]);
-
-  const visibleColumns = useMemo(
-    () =>
-      orderedColumns.filter((c) =>
-        c.label.toLowerCase().includes(columnSearch.toLowerCase()),
-      ),
-    [columnSearch, orderedColumns],
-  );
-
-  const allColumnsVisible =
-    orderedColumns.length > 0 &&
-    orderedColumns.every((c) =>
-      resolveColumnVisibility(columnVisibility, c.visibilityKeys),
-    );
-
-  // Actions de groupe
-  const groupableFields = useMemo(() => {
-    if (!metadata) return [];
-    return metadata.fields
-      .filter(
-        (f) =>
-          allowedFieldIds.has(toGraphqlFieldName(f.name || f.fieldName)) &&
-          f.visibility !== "hidden" &&
-          !["DateField", "DateTimeField", "TimeField", "TextField"].includes(
-            f.fieldType,
-          ),
-      )
-      .map((f) => ({
-        value: f.name || f.fieldName,
-        label: f.verboseName || f.name,
-      }));
-  }, [allowedFieldIds, metadata]);
-
-  const toggleColumn = (column: ColumnsMenuOption, checked: boolean) => {
-    const next = { ...columnVisibility };
-    column.visibilityKeys.forEach((key) => {
-      next[key] = checked;
-    });
-    setColumnVisibility(next);
-  };
 
   const handleApplyFilters = (
     variables: FilterQueryVariables,
@@ -593,387 +374,7 @@ export function TableToolbar({
                   {extraActions}
                 </div>
               )}
-              <div className="flex items-center gap-1">
-                {!isMobile ? (
-                  <DropdownMenu modal={false}>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <DropdownMenuTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-8 gap-2 hover:bg-background hover:text-primary shadow-none"
-                          >
-                            <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
-                            <span className="hidden lg:inline-block text-[10px] font-bold uppercase tracking-wider">
-                              Configuration
-                            </span>
-                          </Button>
-                        </DropdownMenuTrigger>
-                      </TooltipTrigger>
-                      <TooltipContent side="bottom">Configuration de la table</TooltipContent>
-                    </Tooltip>
-                    <DropdownMenuContent align="end" className="w-64 border-none p-2 bg-background/95 shadow-lg">
-                      <DropdownMenuLabel className="flex items-center gap-2 px-3 py-2 text-xs font-black uppercase tracking-widest text-muted-foreground/60">
-                        <SlidersHorizontal className="h-3.5 w-3.5" />
-                        Options de table
-                      </DropdownMenuLabel>
-                      <DropdownMenuSeparator className="mx-2 bg-border/40" />
 
-                      {/* Visibilité des colonnes */}
-                      <DropdownMenuSub>
-                        <DropdownMenuSubTrigger className="flex items-center gap-2 py-2 px-3 text-xs font-medium hover:bg-muted/50 rounded-sm cursor-pointer">
-                          <Columns3 className="h-3.5 w-3.5 text-muted-foreground/60" />
-                          <span>Colonnes visibles</span>
-                        </DropdownMenuSubTrigger>
-                        <DropdownMenuSubContent className="w-72 border-none p-2 bg-background/95 shadow-md">
-                          <div className="relative px-2 pb-2">
-                            <Search className="absolute left-4 top-2.5 h-3.5 w-3.5 text-muted-foreground/40" />
-                            <Input
-                              placeholder="Rechercher une colonne..."
-                              value={columnSearch}
-                              onChange={(e) => setColumnSearch(e.target.value)}
-                              className="h-9 pl-9 pr-4 text-xs bg-muted/30 border-none focus-visible:ring-primary/20"
-                            />
-                          </div>
-                          <div className="flex items-center justify-between gap-2 px-2 py-2">
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-8 gap-2 text-[10px] font-bold uppercase tracking-wider hover:bg-primary/10 hover:text-primary shadow-none"
-                              onClick={() => {
-                                if (!metadata) return;
-                                const defaults = getDefaultHiddenColumnIds(metadata, {
-                                  showReversed,
-                                  showCount,
-                                });
-                                const next = { ...columnVisibility };
-                                orderedColumns.forEach((c) => {
-                                  const rootKey = c.id.split(".")[0];
-                                  const vis =
-                                    !defaults.has(rootKey) &&
-                                    !c.visibilityKeys.some((key) => defaults.has(key));
-                                  c.visibilityKeys.forEach((key) => {
-                                    next[key] = vis;
-                                  });
-                                });
-                                setColumnVisibility(next);
-                              }}
-                            >
-                              <RotateCcw className="h-3 w-3" />
-                              Défaut
-                            </Button>
-                            <div className="flex items-center gap-3 bg-muted/30 px-3 py-1.5 rounded">
-                              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                                Toutes
-                              </span>
-                              <Switch
-                                checked={allColumnsVisible}
-                                onCheckedChange={(v) => {
-                                  const next = { ...columnVisibility };
-                                  orderedColumns.forEach((c) => {
-                                    c.visibilityKeys.forEach((key) => {
-                                      next[key] = v;
-                                    });
-                                  });
-                                  setColumnVisibility(next);
-                                }}
-                                className="scale-75 data-[state=checked]:bg-primary"
-                              />
-                            </div>
-                          </div>
-                          <DropdownMenuSeparator className="mx-2 bg-border/40" />
-                          <div className="max-h-[240px] overflow-auto custom-scrollbar px-1 py-1">
-                            {visibleColumns.map((col) => {
-                              const id = col.id;
-                              const isVisible = resolveColumnVisibility(
-                                columnVisibility,
-                                col.visibilityKeys,
-                              );
-                              return (
-                                <DropdownMenuCheckboxItem
-                                  key={id}
-                                  checked={isVisible}
-                                  onCheckedChange={(v) => toggleColumn(col, !!v)}
-                                  className={cn(
-                                    "py-2 text-xs font-medium mb-0.5",
-                                    isVisible
-                                      ? "bg-primary/5 text-primary"
-                                      : "text-muted-foreground hover:bg-muted/50",
-                                  )}
-                                >
-                                  {col.label}
-                                </DropdownMenuCheckboxItem>
-                              );
-                            })}
-                            {visibleColumns.length === 0 && (
-                              <div className="py-8 text-center text-xs text-muted-foreground italic">
-                                Aucune colonne trouvée
-                              </div>
-                            )}
-                          </div>
-                        </DropdownMenuSubContent>
-                      </DropdownMenuSub>
-
-                      {/* Regroupement des lignes */}
-                      <DropdownMenuSub>
-                        <DropdownMenuSubTrigger className="flex items-center gap-2 py-2 px-3 text-xs font-medium hover:bg-muted/50 rounded-sm cursor-pointer">
-                          <Layers className="h-3.5 w-3.5 text-muted-foreground/60" />
-                          <span>Regrouper les données</span>
-                        </DropdownMenuSubTrigger>
-                        <DropdownMenuSubContent className="w-64 border-none p-2 bg-background/95 shadow-md">
-                          <DropdownMenuItem
-                            onClick={() => {
-                              setGroupingField(null);
-                              setGroupCollapsed({});
-                            }}
-                            className={cn(
-                              "gap-3 py-2 text-xs font-medium mb-1 cursor-pointer",
-                              groupingField === null
-                                ? "bg-primary/5 text-primary"
-                                : "text-muted-foreground hover:bg-muted/50",
-                            )}
-                          >
-                            <div
-                              className={cn(
-                                "flex h-4 w-4 items-center justify-center border border-current",
-                                groupingField === null
-                                  ? "bg-primary/20"
-                                  : "border-muted-foreground/30",
-                              )}
-                            >
-                              {groupingField === null && <Check className="h-2.5 w-2.5" />}
-                            </div>
-                            <span>Aucun regroupement</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator className="mx-2 bg-border/40" />
-                          <div className="max-h-[200px] overflow-auto custom-scrollbar px-1 py-1">
-                            {groupableFields.map((field) => {
-                              const isActive = groupingField === field.value;
-                              return (
-                                <DropdownMenuItem
-                                  key={field.value}
-                                  onClick={() => setGroupingField(field.value)}
-                                  className={cn(
-                                    "gap-3 py-2 text-xs font-medium mb-0.5 cursor-pointer",
-                                    isActive
-                                      ? "bg-primary/5 text-primary"
-                                      : "text-muted-foreground hover:bg-muted/50",
-                                  )}
-                                >
-                                  <div
-                                    className={cn(
-                                      "flex h-4 w-4 items-center justify-center border border-current",
-                                      isActive ? "bg-primary/20" : "border-muted-foreground/30",
-                                    )}
-                                  >
-                                    {isActive && <Check className="h-2.5 w-2.5" />}
-                                  </div>
-                                  <span>{field.label}</span>
-                                </DropdownMenuItem>
-                              );
-                            })}
-                          </div>
-                          {hasGroupedRows && (
-                            <>
-                              <DropdownMenuSeparator className="mx-2 bg-border/40" />
-                              <div className="grid grid-cols-2 gap-2 p-1">
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-8 gap-2 text-[10px] font-bold uppercase tracking-wider hover:bg-primary/10 hover:text-primary shadow-none"
-                                  onClick={() => {
-                                    const next: Record<string, boolean> = {};
-                                    const keys = new Set<string>();
-                                    data.forEach((r) =>
-                                      keys.add(resolveGroupingKey(r, groupingField!)),
-                                    );
-                                    keys.forEach((k) => (next[k] = false));
-                                    setGroupCollapsed(next);
-                                  }}
-                                >
-                                  <Eye className="h-3 w-3" />
-                                  Ouvrir
-                                </Button>
-                                <Button
-                                  variant="ghost"
-                                  size="sm"
-                                  className="h-8 gap-2 text-[10px] font-bold uppercase tracking-wider hover:bg-primary/10 hover:text-primary shadow-none"
-                                  onClick={() => {
-                                    const next: Record<string, boolean> = {};
-                                    const keys = new Set<string>();
-                                    data.forEach((r) =>
-                                      keys.add(resolveGroupingKey(r, groupingField!)),
-                                    );
-                                    keys.forEach((k) => (next[k] = true));
-                                    setGroupCollapsed(next);
-                                  }}
-                                >
-                                  <EyeOff className="h-3 w-3" />
-                                  Fermer
-                                </Button>
-                              </div>
-                            </>
-                          )}
-                        </DropdownMenuSubContent>
-                      </DropdownMenuSub>
-
-                      {/* Densité d'affichage */}
-                      <DropdownMenuSub>
-                        <DropdownMenuSubTrigger className="flex items-center gap-2 py-2 px-3 text-xs font-medium hover:bg-muted/50 rounded-sm cursor-pointer">
-                          <LayoutGrid className="h-3.5 w-3.5 text-muted-foreground/60" />
-                          <span>Densité</span>
-                        </DropdownMenuSubTrigger>
-                        <DropdownMenuSubContent className="w-48 border-none p-2 bg-background/95 shadow-md">
-                          <DropdownMenuItem
-                            onClick={() => setDensity("compact")}
-                            className={cn(
-                              "py-2 text-xs font-medium cursor-pointer",
-                              density === "compact" ? "bg-primary/5 text-primary" : "text-muted-foreground hover:bg-muted/50",
-                            )}
-                          >
-                            {density === "compact" && <Check className="mr-2 h-4 w-4" />}
-                            <span className={density !== "compact" ? "ml-6" : ""}>Compact</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => setDensity("comfortable")}
-                            className={cn(
-                              "py-2 text-xs font-medium cursor-pointer",
-                              density === "comfortable" ? "bg-primary/5 text-primary" : "text-muted-foreground hover:bg-muted/50",
-                            )}
-                          >
-                            {density === "comfortable" && <Check className="mr-2 h-4 w-4" />}
-                            <span className={density !== "comfortable" ? "ml-6" : ""}>Confortable</span>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => setDensity("spacious")}
-                            className={cn(
-                              "py-2 text-xs font-medium cursor-pointer",
-                              density === "spacious" ? "bg-primary/5 text-primary" : "text-muted-foreground hover:bg-muted/50",
-                            )}
-                          >
-                            {density === "spacious" && <Check className="mr-2 h-4 w-4" />}
-                            <span className={density !== "spacious" ? "ml-6" : ""}>Spacieux</span>
-                          </DropdownMenuItem>
-                        </DropdownMenuSubContent>
-                      </DropdownMenuSub>
-
-                      <DropdownMenuSeparator className="mx-2 bg-border/40" />
-
-                      {/* Toggles: Retour à la ligne & Mode Glisser */}
-                      <div className="p-2 flex items-center justify-between text-xs font-medium text-neutral-600 dark:text-neutral-300">
-                        <span>Retour à la ligne</span>
-                        <Switch
-                          checked={wrapCells}
-                          onCheckedChange={setWrapCells}
-                          className="scale-75 data-[state=checked]:bg-primary"
-                        />
-                      </div>
-                      <div className="p-2 flex items-center justify-between text-xs font-medium text-neutral-600 dark:text-neutral-300">
-                        <span>Mode Glisser-déposer</span>
-                        <Switch
-                          checked={dragModeEnabled}
-                          onCheckedChange={setDragModeEnabled}
-                          className="scale-75 data-[state=checked]:bg-primary"
-                        />
-                      </div>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                ) : (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="secondary"
-                        size="icon"
-                        className="h-9.5 w-9.5 bg-neutral-100 text-neutral-700 hover:bg-neutral-200/80 dark:bg-zinc-800 dark:text-neutral-200 dark:hover:bg-zinc-700/80 border-none rounded-lg shadow-none"
-                      >
-                        <Settings2 className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                      align="end"
-                      className="w-56"
-                    >
-                      <DropdownMenuLabel className="flex items-center gap-2 px-3 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                        <SlidersHorizontal className="h-3 w-3" />
-                        Affichage & Outils
-                      </DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onClick={() =>
-                          setDensity(
-                            density === "compact"
-                              ? "comfortable"
-                              : density === "comfortable"
-                                ? "spacious"
-                                : "compact",
-                          )
-                        }
-                      >
-                        <LayoutGrid className="mr-2 h-4 w-4" />
-                        Densité: {density}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => setWrapCells(!wrapCells)}
-                      >
-                        <Layers className="mr-2 h-4 w-4" />
-                        Retour a la ligne: {wrapCells ? "Oui" : "Non"}
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => setDragModeEnabled(!dragModeEnabled)}
-                      >
-                        <GripVertical className="mr-2 h-4 w-4" />
-                        Mode Glisser: {dragModeEnabled ? "Activé" : "Désactivé"}
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                )}
-              </div>
-              {/* Refresh Cluster */}
-              <div className="flex items-center gap-1.5">
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="secondary"
-                      size="icon"
-                      className="h-9.5 w-9.5 bg-neutral-100 text-neutral-700 hover:bg-neutral-200/80 dark:bg-zinc-800 dark:text-neutral-200 dark:hover:bg-zinc-700/80 border-none rounded-lg shadow-none"
-                      disabled={loading || hardRefreshing}
-                    >
-                      <RefreshCw
-                        className={cn(
-                          "h-4 w-4",
-                          (loading || hardRefreshing) && "animate-spin",
-                        )}
-                      />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent
-                    align="end"
-                    className="w-56"
-                  >
-                    <DropdownMenuLabel className="px-3 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                      Rafraichissement
-                    </DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      onClick={() => refresh()}
-                      disabled={loading || hardRefreshing}
-                    >
-                      <RefreshCw className="mr-2 h-4 w-4" />
-                      Simple refresh
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      onClick={() => {
-                        void handleHardRefresh();
-                      }}
-                      disabled={hardRefreshing}
-                    >
-                      <RefreshCw className="mr-2 h-4 w-4" />
-                      Hard refresh
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
             </div>
           </div>
         </div>
