@@ -41,7 +41,7 @@ export function QuickSearch({
       </div>
       <Input
         className={cn(
-          "h-9.5 w-full pl-11 pr-9 bg-neutral-100 dark:bg-zinc-800 border-none rounded-lg text-xs font-medium text-foreground",
+          "h-9.5 w-full pl-11 pr-9 bg-neutral-100 dark:bg-zinc-800 border-none rounded-lg text-xs font-medium text-foreground shadow-none",
           "placeholder:text-muted-foreground/50 placeholder:font-medium",
           "hover:bg-neutral-200/60 dark:hover:bg-zinc-700/60",
           "focus-visible:ring-0 focus-visible:ring-offset-0 focus:bg-neutral-200/80 dark:focus:bg-zinc-700/80",

@@ -330,9 +330,9 @@ export function TablePagination({
             <TooltipTrigger asChild>
               <Button
                 type="button"
-                variant="ghost"
+                variant="secondary"
                 size="icon"
-                className="h-8 w-8 hover:bg-primary/10 hover:text-primary disabled:opacity-30 disabled:pointer-events-none rounded-md"
+                className="h-8 w-8 bg-neutral-100 text-neutral-700 hover:bg-neutral-200/80 dark:bg-zinc-800 dark:text-neutral-200 dark:hover:bg-zinc-700/80 border-none rounded-lg shadow-none"
                 onClick={() => refresh()}
                 disabled={loading}
                 aria-label="Rafraîchir les données"

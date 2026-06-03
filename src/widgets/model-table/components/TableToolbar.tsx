@@ -2,6 +2,7 @@
  * @file TableToolbar.tsx
  * @description Barre d'outils de la table de modèle permettant la recherche rapide,
  * l'activation des filtres avancés, et la gestion des options d'affichage de la table.
+ * Modifié pour supprimer les ombres sur tous les boutons et appliquer un fond neutre pour les boutons d'icônes.
  */
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -448,7 +449,7 @@ export function TableToolbar({
                         variant="secondary"
                         size="icon"
                         className={cn(
-                          "h-9.5 w-9.5 bg-neutral-100 text-neutral-700 hover:bg-neutral-200/80 dark:bg-zinc-800 dark:text-neutral-200 dark:hover:bg-zinc-700/80 border-none rounded-lg relative shrink-0",
+                          "h-9.5 w-9.5 bg-neutral-100 text-neutral-700 hover:bg-neutral-200/80 dark:bg-zinc-800 dark:text-neutral-200 dark:hover:bg-zinc-700/80 border-none rounded-lg relative shrink-0 shadow-none",
                           hasActiveFilters && "bg-neutral-200 dark:bg-zinc-700 text-foreground"
                         )}
                       >
@@ -491,7 +492,7 @@ export function TableToolbar({
                         variant="secondary"
                         size="icon"
                         className={cn(
-                          "h-9.5 w-9.5 bg-neutral-100 text-neutral-700 hover:bg-neutral-200/80 dark:bg-zinc-800 dark:text-neutral-200 dark:hover:bg-zinc-700/80 border-none rounded-lg relative shrink-0",
+                          "h-9.5 w-9.5 bg-neutral-100 text-neutral-700 hover:bg-neutral-200/80 dark:bg-zinc-800 dark:text-neutral-200 dark:hover:bg-zinc-700/80 border-none rounded-lg relative shrink-0 shadow-none",
                           hasActiveFilters && "bg-neutral-200 dark:bg-zinc-700 text-foreground"
                         )}
                       >
@@ -601,7 +602,7 @@ export function TableToolbar({
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="h-8 gap-2 hover:bg-background hover:text-primary"
+                            className="h-8 gap-2 hover:bg-background hover:text-primary shadow-none"
                           >
                             <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
                             <span className="hidden lg:inline-block text-[10px] font-bold uppercase tracking-wider">
@@ -639,7 +640,7 @@ export function TableToolbar({
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="h-8 gap-2 text-[10px] font-bold uppercase tracking-wider hover:bg-primary/10 hover:text-primary"
+                              className="h-8 gap-2 text-[10px] font-bold uppercase tracking-wider hover:bg-primary/10 hover:text-primary shadow-none"
                               onClick={() => {
                                 if (!metadata) return;
                                 const defaults = getDefaultHiddenColumnIds(metadata, {
@@ -780,7 +781,7 @@ export function TableToolbar({
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  className="h-8 gap-2 text-[10px] font-bold uppercase tracking-wider hover:bg-primary/10 hover:text-primary"
+                                  className="h-8 gap-2 text-[10px] font-bold uppercase tracking-wider hover:bg-primary/10 hover:text-primary shadow-none"
                                   onClick={() => {
                                     const next: Record<string, boolean> = {};
                                     const keys = new Set<string>();
@@ -797,7 +798,7 @@ export function TableToolbar({
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  className="h-8 gap-2 text-[10px] font-bold uppercase tracking-wider hover:bg-primary/10 hover:text-primary"
+                                  className="h-8 gap-2 text-[10px] font-bold uppercase tracking-wider hover:bg-primary/10 hover:text-primary shadow-none"
                                   onClick={() => {
                                     const next: Record<string, boolean> = {};
                                     const keys = new Set<string>();
@@ -881,7 +882,11 @@ export function TableToolbar({
                 ) : (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon" className="h-8 w-8 ">
+                      <Button
+                        variant="secondary"
+                        size="icon"
+                        className="h-9.5 w-9.5 bg-neutral-100 text-neutral-700 hover:bg-neutral-200/80 dark:bg-zinc-800 dark:text-neutral-200 dark:hover:bg-zinc-700/80 border-none rounded-lg shadow-none"
+                      >
                         <Settings2 className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
@@ -929,9 +934,9 @@ export function TableToolbar({
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
-                      variant="ghost"
+                      variant="secondary"
                       size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:bg-background hover:text-primary"
+                      className="h-9.5 w-9.5 bg-neutral-100 text-neutral-700 hover:bg-neutral-200/80 dark:bg-zinc-800 dark:text-neutral-200 dark:hover:bg-zinc-700/80 border-none rounded-lg shadow-none"
                       disabled={loading || hardRefreshing}
                     >
                       <RefreshCw
