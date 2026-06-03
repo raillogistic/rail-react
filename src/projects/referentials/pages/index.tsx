@@ -12,7 +12,6 @@ import type {
   ReferentialsAssetFamily,
   ReferentialsSupplier,
   ReferentialsDocumentType,
-  ReferentialsPhysicalCondition,
   ReferentialsAssetMetadataDefinition,
 } from "@/models";
 import { DynamicModelTable } from "@/widgets/model-table";
@@ -703,64 +702,7 @@ export function DocumentTypeDetailPage() {
   );
 }
 
-// ──────────────────────────────────────────────
-// PhysicalCondition
-// ──────────────────────────────────────────────
 
-/** Liste des états physiques. */
-export function PhysicalConditionListPage() {
-  return (
-    <DynamicModelTable<any>
-      app="referentials"
-      model="PhysicalCondition"
-      create={{ type: "link", hrefTemplate: ROUTES.PHYSICAL_CONDITION_CREATE }}
-      update={{ type: "link", hrefTemplate: ROUTES.PHYSICAL_CONDITION_EDIT }}
-      detail={{ type: "link", hrefTemplate: ROUTES.PHYSICAL_CONDITION_DETAIL }}
-      baseTable={{
-        fields: ["name", "isActive"],
-        tableConfig: { title: "États physiques" }
-      }}
-    />
-  );
-}
-
-/** Formulaire création/édition d'état physique. */
-export function PhysicalConditionFormPage() {
-  const { id = "" } = useParams();
-  const isUpdate = Boolean(id);
-  return (
-    <section className="space-y-4">
-      <ModelForm<ReferentialsPhysicalCondition>
-        title={isUpdate ? "Modifier l'État physique" : "Créer un État physique"}
-        description="Gérez les états physiques des biens du patrimoine."
-        app="referentials"
-        model="PhysicalCondition"
-        mode={isUpdate ? "UPDATE" : "CREATE"}
-        objectId={isUpdate ? id : undefined}
-        generatedSections={[
-          {
-            id: "general",
-            title: "Informations",
-            columns: 2,
-            fields: ["name", "isActive"],
-          },
-        ]}
-      />
-    </section>
-  );
-}
-
-/** Détail d'un état physique. */
-export function PhysicalConditionDetailPage() {
-  const { id = "" } = useParams();
-  return (
-    <ModelDynamicDetail<ReferentialsPhysicalCondition>
-      app="referentials"
-      model="PhysicalCondition"
-      id={id}
-    />
-  );
-}
 
 // ──────────────────────────────────────────────
 // AssetMetadataDefinition

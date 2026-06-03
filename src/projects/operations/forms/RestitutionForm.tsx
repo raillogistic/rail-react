@@ -1,16 +1,25 @@
-import { ModelForm, type ModelFormProps } from "@/widgets/model-form";
+import { ModelForm } from "@/widgets/model-form";
 import type { AssignmentsRestitution } from "@/models";
 
 /**
  * Formulaire pour l'enregistrement d'une restitution de bien.
  * Cette opération clôture l'affectation active et met à jour l'état du bien.
  */
+export interface RestitutionFormProps {
+  mode?: "CREATE" | "UPDATE" | "VIEW";
+  objectId?: string | number | null;
+  onSuccess?: (data: any) => void;
+  state?: {
+    defaultValues?: any;
+  };
+}
+
 export function RestitutionForm({
   mode = "CREATE",
   objectId,
   onSuccess,
-  ...props
-}: Partial<ModelFormProps<AssignmentsRestitution>>) {
+  state,
+}: RestitutionFormProps) {
   return (
     <ModelForm<AssignmentsRestitution>
       title={mode === "UPDATE" ? "Modifier la Restitution" : "Nouvelle Restitution"}
@@ -19,36 +28,44 @@ export function RestitutionForm({
       model="Restitution"
       mode={mode}
       objectId={objectId}
-      onSuccess={onSuccess}
+      onSubmitResult={(result) => {
+        if (result.ok) onSuccess?.(result.object);
+      }}
+      state={state}
       generatedSections={[
         {
-          id: "asset_info",
-          title: "Bien & Date",
+          id: "general",
+          title: "Informations Générales",
           columns: 2,
-          fields: ["asset", "restitutionDate", "administrativeStatus"],
+          fields: ["restitutionDate", "asset"],
         },
         {
-          id: "return_details",
-          title: "Conditions de Retour",
+          id: "state_location",
+          title: "État & Localisation de Retour",
           columns: 2,
           fields: ["physicalCondition", "location"],
         },
         {
-          id: "execution",
-          title: "Commentaire de retour",
+          id: "status_after",
+          title: "Statut Après Retour",
+          columns: 1,
+          fields: ["administrativeStatus"],
+        },
+        {
+          id: "restitution_comment",
+          title: "Commentaires",
           columns: 1,
           fields: ["comment"],
         },
       ]}
       fieldOverrides={{
-        comment: {
-          type: "textarea",
-        },
         asset: {
           disabled: mode === "UPDATE",
         },
+        comment: {
+          type: "textarea",
+        },
       }}
-      {...props}
     />
   );
 }

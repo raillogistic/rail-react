@@ -46,7 +46,7 @@ export function RestitutionFormPage() {
       }
 
       if (assetData.physicalCondition) {
-        defaults.physicalCondition = assetData.physicalCondition.id;
+        defaults.physicalCondition = assetData.physicalCondition;
       }
     }
 

@@ -21,7 +21,9 @@ export function AssetdisposalFormPage() {
         model="AssetDisposal"
         mode={isUpdate ? "UPDATE" : "CREATE"}
         objectId={isUpdate ? id : undefined}
-        onSuccess={() => navigate("/patrimoine/assetdisposal")}
+        onSubmitResult={(result) => {
+          if (result.ok) navigate("/patrimoine/assetdisposal");
+        }}
         onlyRelationships={["documents", "assets"]}
         generatedSections={[
           {

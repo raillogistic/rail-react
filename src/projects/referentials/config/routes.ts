@@ -33,11 +33,7 @@ export const ROUTES = {
   DOCUMENT_TYPE_CREATE: "/referentials/document-type/create",
   DOCUMENT_TYPE_EDIT: "/referentials/document-type/:id/edit",
   DOCUMENT_TYPE_DETAIL: "/referentials/document-type/:id",
-  // États physiques
-  PHYSICAL_CONDITION_LIST: "/referentials/physical-condition",
-  PHYSICAL_CONDITION_CREATE: "/referentials/physical-condition/create",
-  PHYSICAL_CONDITION_EDIT: "/referentials/physical-condition/:id/edit",
-  PHYSICAL_CONDITION_DETAIL: "/referentials/physical-condition/:id",
+
   // Métadonnées
   METADATA_DEFINITION_LIST: "/referentials/metadata-definition",
   METADATA_DEFINITION_CREATE: "/referentials/metadata-definition/create",

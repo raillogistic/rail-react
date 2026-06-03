@@ -1,16 +1,21 @@
 import type { LocationsAssetMovement } from "@/models";
-import { ModelForm, type ModelFormProps } from "@/widgets/model-form";
+import { ModelForm } from "@/widgets/model-form";
 
 /**
  * Composant de formulaire pour le modèle AssetMovement (Mouvement de Bien).
  * Permet de tracer le déplacement d'un bien d'un emplacement à un autre.
  */
+export interface AssetMovementFormProps {
+  mode?: "CREATE" | "UPDATE" | "VIEW";
+  objectId?: string | number | null;
+  onSuccess?: (data: any) => void;
+}
+
 export function AssetMovementForm({
   mode = "CREATE",
   objectId,
   onSuccess,
-  ...props
-}: Partial<ModelFormProps<LocationsAssetMovement>>) {
+}: AssetMovementFormProps) {
   const isUpdate = mode === "UPDATE";
 
   return (
@@ -21,7 +26,9 @@ export function AssetMovementForm({
       model="AssetMovement"
       mode={mode}
       objectId={objectId}
-      onSuccess={onSuccess}
+      onSubmitResult={(result) => {
+        if (result.ok) onSuccess?.(result.object);
+      }}
       generatedSections={[
         {
           id: "asset_selection",
@@ -55,7 +62,6 @@ export function AssetMovementForm({
           colSpan: 2,
         },
       }}
-      {...props}
     />
   );
 }

@@ -13,7 +13,6 @@ import {
   Layers,
   Truck,
   FileType,
-  HeartPulse,
   Tags,
   BookOpen,
 } from "lucide-react";
@@ -97,16 +96,6 @@ const DocumentTypeDetailPage = lazy(() =>
   import("./pages/index").then((m) => ({ default: m.DocumentTypeDetailPage })),
 );
 
-const PhysicalConditionListPage = lazy(() =>
-  import("./pages/index").then((m) => ({ default: m.PhysicalConditionListPage })),
-);
-const PhysicalConditionFormPage = lazy(() =>
-  import("./pages/index").then((m) => ({ default: m.PhysicalConditionFormPage })),
-);
-const PhysicalConditionDetailPage = lazy(() =>
-  import("./pages/index").then((m) => ({ default: m.PhysicalConditionDetailPage })),
-);
-
 const MetadataDefinitionListPage = lazy(() =>
   import("./pages/index").then((m) => ({ default: m.MetadataDefinitionListPage })),
 );
@@ -156,11 +145,6 @@ export const REFERENTIALS_MANIFEST: AppManifest = defineProjectManifest({
     protectedRoute("referentials", { id: "referentials:doctype:create", path: ROUTES.DOCUMENT_TYPE_CREATE, title: "Créer un Type", icon: FileType, element: withRouteSuspense(<DocumentTypeFormPage />) }),
     protectedRoute("referentials", { id: "referentials:doctype:edit", path: ROUTES.DOCUMENT_TYPE_EDIT, title: "Modifier un Type", icon: FileType, element: withRouteSuspense(<DocumentTypeFormPage />) }),
     protectedRoute("referentials", { id: "referentials:doctype:detail", path: ROUTES.DOCUMENT_TYPE_DETAIL, title: "Détail Type", icon: FileType, element: withRouteSuspense(<DocumentTypeDetailPage />) }),
-    // ── PhysicalCondition ──
-    protectedRoute("referentials", { id: "referentials:condition:list", path: ROUTES.PHYSICAL_CONDITION_LIST, title: "États physiques", icon: HeartPulse, element: withRouteSuspense(<PhysicalConditionListPage />) }),
-    protectedRoute("referentials", { id: "referentials:condition:create", path: ROUTES.PHYSICAL_CONDITION_CREATE, title: "Créer un État physique", icon: HeartPulse, element: withRouteSuspense(<PhysicalConditionFormPage />) }),
-    protectedRoute("referentials", { id: "referentials:condition:edit", path: ROUTES.PHYSICAL_CONDITION_EDIT, title: "Modifier un État physique", icon: HeartPulse, element: withRouteSuspense(<PhysicalConditionFormPage />) }),
-    protectedRoute("referentials", { id: "referentials:condition:detail", path: ROUTES.PHYSICAL_CONDITION_DETAIL, title: "Détail État physique", icon: HeartPulse, element: withRouteSuspense(<PhysicalConditionDetailPage />) }),
     // ── MetadataDefinition ──
     protectedRoute("referentials", { id: "referentials:metadata:list", path: ROUTES.METADATA_DEFINITION_LIST, title: "Métadonnées", icon: Tags, element: withRouteSuspense(<MetadataDefinitionListPage />) }),
     protectedRoute("referentials", { id: "referentials:metadata:create", path: ROUTES.METADATA_DEFINITION_CREATE, title: "Créer une Définition", icon: Tags, element: withRouteSuspense(<MetadataDefinitionFormPage />) }),
@@ -179,7 +163,6 @@ export const REFERENTIALS_MANIFEST: AppManifest = defineProjectManifest({
         { id: "referentials:family:list", routeId: "referentials:family:list", title: "Familles", path: ROUTES.ASSET_FAMILY_LIST, guard: "protected", icon: Layers },
         { id: "referentials:supplier:list", routeId: "referentials:supplier:list", title: "Fournisseurs", path: ROUTES.SUPPLIER_LIST, guard: "protected", icon: Truck },
         { id: "referentials:doctype:list", routeId: "referentials:doctype:list", title: "Types de documents", path: ROUTES.DOCUMENT_TYPE_LIST, guard: "protected", icon: FileType },
-        { id: "referentials:condition:list", routeId: "referentials:condition:list", title: "États physiques", path: ROUTES.PHYSICAL_CONDITION_LIST, guard: "protected", icon: HeartPulse },
         { id: "referentials:metadata:list", routeId: "referentials:metadata:list", title: "Métadonnées", path: ROUTES.METADATA_DEFINITION_LIST, guard: "protected", icon: Tags },
       ],
     }),

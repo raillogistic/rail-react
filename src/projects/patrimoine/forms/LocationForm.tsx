@@ -1,16 +1,21 @@
 import type { LocationsLocation } from "@/models";
-import { ModelForm, type ModelFormProps } from "@/widgets/model-form";
+import { ModelForm } from "@/widgets/model-form";
 
 /**
  * Composant de formulaire pour le modèle Location (Localisation).
  * Gère la hiérarchie des sites, bâtiments, étages et bureaux.
  */
+export interface LocationFormProps {
+  mode?: "CREATE" | "UPDATE" | "VIEW";
+  objectId?: string | number | null;
+  onSuccess?: (data: any) => void;
+}
+
 export function LocationForm({
   mode = "CREATE",
   objectId,
   onSuccess,
-  ...props
-}: Partial<ModelFormProps<LocationsLocation>>) {
+}: LocationFormProps) {
   const isUpdate = mode === "UPDATE";
 
   return (
@@ -25,7 +30,9 @@ export function LocationForm({
       model="Location"
       mode={mode}
       objectId={objectId}
-      onSuccess={onSuccess}
+      onSubmitResult={(result) => {
+        if (result.ok) onSuccess?.(result.object);
+      }}
       generatedSections={[
         {
           id: "general",
@@ -62,7 +69,6 @@ export function LocationForm({
           type: "textarea",
         },
       }}
-      {...props}
     />
   );
 }

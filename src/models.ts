@@ -1,7 +1,7 @@
 // AUTO-GENERATED FILE. DO NOT EDIT.
 // Source: scripts/getModels.mjs
 // Command: npm run getModels
-// Generated at: 2026-06-02T18:24:35.249Z
+// Generated at: 2026-06-02T23:57:14.821Z
 
 export interface AssignmentsAssetAssignment {
   /** Bien */
@@ -31,7 +31,7 @@ export interface AssignmentsAssetAssignment {
   /** ID */
   id?: number | null;
   /** État physique */
-  physicalCondition?: ReferentialsPhysicalCondition | null;
+  physicalCondition?: string | null;
   /** Motif */
   reason?: string | null;
   /** Date de début */
@@ -61,7 +61,7 @@ export interface AssignmentsRestitution {
   /** Effectué par */
   performedBy?: UsersUser | null;
   /** État physique au retour */
-  physicalCondition: ReferentialsPhysicalCondition;
+  physicalCondition: string;
   /** Date de restitution */
   restitutionDate: string;
   /** Statut */
@@ -209,7 +209,7 @@ export interface LocationsAssetMassMovement {
   /** Notes */
   notes?: string | null;
   /** Nouvel état physique (Global) */
-  physicalCondition?: ReferentialsPhysicalCondition | null;
+  physicalCondition?: string | null;
   /** Motif */
   reason: string;
   /** Référence */
@@ -243,7 +243,7 @@ export interface LocationsAssetMovement {
   /** Effectué par */
   performedBy?: UsersUser | null;
   /** État physique */
-  physicalCondition?: ReferentialsPhysicalCondition | null;
+  physicalCondition?: string | null;
   /** Motif */
   reason?: string | null;
   /** Référence */
@@ -352,6 +352,8 @@ export interface PatrimoineAsset {
   documents?: DocumentsDocument | null;
   /** Date de sortie */
   exitDate?: string | null;
+  /** Sortie via */
+  exitDisposal?: PatrimoineAssetDisposal | null;
   /** Méthode de sortie */
   exitMethod?: string | null;
   /** Famille */
@@ -385,7 +387,7 @@ export interface PatrimoineAsset {
   /** Statut de propriété */
   ownershipStatus: string;
   /** État physique */
-  physicalCondition: ReferentialsPhysicalCondition;
+  physicalCondition: string;
   /** Valeur QR Code */
   qrCodeValue?: string | null;
   /** Employé responsable */
@@ -416,6 +418,8 @@ export interface PatrimoineAssetDisposal {
   date: string;
   /** documents */
   documents?: DocumentsDocument | null;
+  /** Biens */
+  exitedAssets?: PatrimoineAsset[] | null;
   /** Type de sortie */
   exitMethod: string;
   /** ID */
@@ -485,13 +489,13 @@ export interface PatrimoineAssetStateTracker {
   /** Nouvelle localisation */
   newLocation?: LocationsLocation | null;
   /** Nouvel état physique */
-  newPhysicalCondition?: ReferentialsPhysicalCondition | null;
+  newPhysicalCondition?: string | null;
   /** Statut administratif précédent */
   previousAdministrativeStatus?: string | null;
   /** Localisation précédente */
   previousLocation?: LocationsLocation | null;
   /** État physique précédent */
-  previousPhysicalCondition?: ReferentialsPhysicalCondition | null;
+  previousPhysicalCondition?: string | null;
   /** Référence */
   reference?: string | null;
   /** Utilisateur */
@@ -1209,32 +1213,6 @@ export interface ReferentialsEmployee {
   /** Modifié par */
   updatedBy?: UsersUser | null;
 }
-export interface ReferentialsPhysicalCondition {
-  /** Biens */
-  asset?: PatrimoineAsset[] | null;
-  /** Affectations */
-  assetassignment?: AssignmentsAssetAssignment[] | null;
-  /** Mouvements de masse */
-  assetmassmovement?: LocationsAssetMassMovement[] | null;
-  /** Mouvements */
-  assetmovement?: LocationsAssetMovement[] | null;
-  /** Date de création */
-  createdAt?: string | null;
-  /** Créé par */
-  createdBy?: UsersUser | null;
-  /** ID */
-  id?: number | null;
-  /** Actif */
-  isActive: boolean;
-  /** Nom */
-  name: string;
-  /** Restitutions */
-  restitution?: AssignmentsRestitution[] | null;
-  /** Date de modification */
-  updatedAt?: string | null;
-  /** Modifié par */
-  updatedBy?: UsersUser | null;
-}
 export interface ReferentialsService {
   /** Adresse */
   address?: string | null;
@@ -1434,10 +1412,6 @@ export interface UsersUser {
   passwordresetotpUpdated?: UsersPasswordResetOTP[] | null;
   /** Mouvements */
   performedMovements?: LocationsAssetMovement[] | null;
-  /** États physiques */
-  physicalconditionCreated?: ReferentialsPhysicalCondition[] | null;
-  /** États physiques */
-  physicalconditionUpdated?: ReferentialsPhysicalCondition[] | null;
   /** Profil utilisateur */
   profile?: UsersUserProfile[] | null;
   /** media export jobs */
@@ -1576,7 +1550,6 @@ export type DjangoModelMap = {
   "referentials.AssetSequence": ReferentialsAssetSequence;
   "referentials.DocumentType": ReferentialsDocumentType;
   "referentials.Employee": ReferentialsEmployee;
-  "referentials.PhysicalCondition": ReferentialsPhysicalCondition;
   "referentials.Service": ReferentialsService;
   "referentials.Supplier": ReferentialsSupplier;
   "users.PasswordResetOTP": UsersPasswordResetOTP;

@@ -8,9 +8,10 @@ import JsonNestedInput from "@/widgets/model-form/inputs/json-nested";
 /**
  * Props du formulaire Asset, étendant les props ModelForm.
  */
-export interface AssetFormProps extends Partial<
-  ModelFormProps<PatrimoineAsset>
-> {
+export interface AssetFormProps {
+  mode?: "CREATE" | "UPDATE" | "VIEW";
+  objectId?: string | number | null;
+  onSuccess?: (data: any) => void;
   /**
    * Callback pour exposer l'instance TanStack Form au parent.
    * Permet au parent de surveiller les valeurs du formulaire
@@ -105,7 +106,6 @@ export function AssetForm({
   onSuccess,
   onFormReady,
   metadataRef,
-  ...props
 }: AssetFormProps) {
   const isUpdate = mode === "UPDATE";
 
@@ -118,7 +118,9 @@ export function AssetForm({
       model="Asset"
       mode={mode}
       objectId={objectId}
-      onSuccess={onSuccess}
+      onSubmitResult={(result) => {
+        if (result.ok) onSuccess?.(result.object);
+      }}
       // Exposer l'instance du formulaire au parent
       state={{
         onReady: onFormReady,
@@ -326,7 +328,6 @@ export function AssetForm({
           addButton: { label: "Ajouter un document" },
         },
       }}
-      {...props}
     />
   );
 }

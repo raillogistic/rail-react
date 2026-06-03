@@ -1,16 +1,21 @@
 import type { AssignmentsAssetAssignment } from "@/models";
-import { ModelForm, type ModelFormProps } from "@/widgets/model-form";
+import { ModelForm } from "@/widgets/model-form";
 
 /**
  * Composant de formulaire pour le modèle AssetAssignment (Affectation de Bien).
  * Gère l'affectation d'un bien à un employé ou un service.
  */
+export interface AssetAssignmentFormProps {
+  mode?: "CREATE" | "UPDATE" | "VIEW";
+  objectId?: string | number | null;
+  onSuccess?: (data: any) => void;
+}
+
 export function AssetAssignmentForm({
   mode = "CREATE",
   objectId,
   onSuccess,
-  ...props
-}: Partial<ModelFormProps<AssignmentsAssetAssignment>>) {
+}: AssetAssignmentFormProps) {
   const isUpdate = mode === "UPDATE";
 
   return (
@@ -21,7 +26,9 @@ export function AssetAssignmentForm({
       model="AssetAssignment"
       mode={mode}
       objectId={objectId}
-      onSuccess={onSuccess}
+      onSubmitResult={(result) => {
+        if (result.ok) onSuccess?.(result.object);
+      }}
       devtools={{ enabled: true }}
       generatedSections={[
         {
@@ -138,7 +145,6 @@ export function AssetAssignmentForm({
           columns: 1,
         },
       }}
-      {...props}
     />
   );
 }
