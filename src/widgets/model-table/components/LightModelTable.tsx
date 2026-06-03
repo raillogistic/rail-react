@@ -1,3 +1,11 @@
+/**
+ * @file LightModelTable.tsx
+ * @description Composant de table allégé (LightModelTable) fournissant des fonctionnalités d'affichage,
+ * de tri, de pagination et de visibilité des colonnes pour un modèle spécifique, sans dépendance à MetadataContext.
+ * Modifié pour supprimer le bouton de rafraîchissement redondant dans la barre d'outils,
+ * la gestion du rafraîchissement étant désormais centralisée dans le composant de pagination.
+ */
+
 import React, {
   forwardRef,
   useCallback,
@@ -8,7 +16,7 @@ import React, {
   useState,
 } from "react";
 import { useQuery } from "@apollo/client";
-import { GripVertical, RotateCw } from "lucide-react";
+import { GripVertical } from "lucide-react";
 import type {
   ColumnSizingState,
   ExpandedState,
@@ -492,6 +500,13 @@ function resolveTableDensity(value?: TableDensity): TableDensity {
   return "compact";
 }
 
+/**
+ * Composant de contenu interne pour LightModelTable.
+ * Gère le cycle de vie des données, le chargement, le tri et l'affichage des lignes.
+ *
+ * @template TSource Le type de l'objet de données de la ligne.
+ * @param props Les propriétés du composant LightModelTable.
+ */
 function LightModelTableContent<
   TSource extends object = Record<string, unknown>,
 >({
@@ -1287,21 +1302,6 @@ function LightModelTableContent<
               onExpandAll={handleExpandAllGroups}
               onCollapseAll={handleCollapseAllGroups}
             />
-          </div>
-
-          <div className="flex items-center gap-0.5 bg-muted/20 p-1">
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 text-muted-foreground transition-all hover:bg-background hover:text-primary active:scale-90"
-              onClick={() => void refetch()}
-              disabled={tableLoading}
-            >
-              <RotateCw
-                className={cn("h-4 w-4", tableLoading && "animate-spin")}
-              />
-            </Button>
           </div>
         </div>
       </div>

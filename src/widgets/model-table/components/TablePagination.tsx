@@ -3,6 +3,7 @@
  * @description Modern, premium, and feature-rich Table Pagination component.
  * Redessiné pour correspondre au style Localira (boutons de navigation à gauche, résumé et sélection à droite).
  * Modifié pour supprimer les animations et les ombres afin d'améliorer les performances de l'interface utilisateur.
+ * Ajout du bouton de rafraîchissement unique à droite de la pagination.
  *
  * @param {object} props - Les propriétés du composant.
  * @param {object} [props.labels] - Libellés et traductions personnalisés pour la pagination.
@@ -15,6 +16,7 @@ import {
   ChevronsLeft,
   ChevronsRight,
   ArrowRight,
+  RefreshCw,
 } from "lucide-react";
 import { Button } from "@/shared/ui/kit/button";
 import { Input } from "@/shared/ui/kit/input";
@@ -68,6 +70,7 @@ export function TablePagination({
     setPerPage,
     rowSelection,
     loading,
+    refresh,
   } = useTable();
 
   const [pageInput, setPageInput] = useState(String(page));
@@ -320,6 +323,30 @@ export function TablePagination({
               </SelectContent>
             </Select>
           </div>
+
+          <div className="h-4 w-px bg-border/40 mx-1" />
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 hover:bg-primary/10 hover:text-primary disabled:opacity-30 disabled:pointer-events-none rounded-md"
+                onClick={() => refresh()}
+                disabled={loading}
+                aria-label="Rafraîchir les données"
+              >
+                <RefreshCw className={cn("h-4 w-4", loading && "animate-spin")} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent
+              side="top"
+              className="font-bold text-[10px] uppercase tracking-widest bg-primary text-primary-foreground border-none rounded-sm"
+            >
+              Rafraîchir
+            </TooltipContent>
+          </Tooltip>
         </div>
       </div>
     </TooltipProvider>

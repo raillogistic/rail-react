@@ -1,3 +1,9 @@
+/**
+ * @file useDynamicTableState.ts
+ * @description Hook React pour gérer l'état interne et contrôlé d'une table dynamique.
+ * Gère le tri, la pagination, la sélection, la visibilité et la taille des colonnes.
+ */
+
 import { useCallback, useMemo, useState } from "react";
 import type {
  ColumnSizingState,

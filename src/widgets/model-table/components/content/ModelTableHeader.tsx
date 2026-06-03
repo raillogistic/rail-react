@@ -55,24 +55,6 @@ export function ModelTableHeader({
       </div>
       
       <div className="flex items-center gap-1.5 shrink-0">
-        <button
-          onClick={controller.triggerRefresh}
-          disabled={controller.loading}
-          className={cn(
-            "flex size-8 items-center justify-center rounded-md text-muted-foreground hover:bg-muted transition-colors",
-            controller.loading && "opacity-50 cursor-not-allowed"
-          )}
-          title="Rafraîchir les données"
-        >
-          <RefreshCw
-            className={cn(
-              "size-4",
-              controller.loading && "animate-spin text-primary"
-            )}
-          />
-          <span className="sr-only">Rafraîchir</span>
-        </button>
-        <div className="h-4 w-px bg-border/40 mx-1 hidden sm:block" />
         <TopActionsComponent controller={controller} />
       </div>
     </div>

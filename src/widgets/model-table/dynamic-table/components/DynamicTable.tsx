@@ -1,3 +1,9 @@
+/**
+ * @file DynamicTable.tsx
+ * @description Composant de table dynamique basé sur TanStack Table v8.
+ * Fournit des fonctionnalités de tri, sélection de lignes, colonnes redimensionnables, regroupement et virtualisation.
+ */
+
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import type { CSSProperties } from "react";
 import { DndContext, closestCenter } from "@dnd-kit/core";

@@ -1,7 +1,12 @@
+/**
+ * @file TableToolbar.tsx
+ * @description Barre d'outils de la table de modèle permettant la recherche rapide,
+ * l'activation des filtres avancés, et la gestion des options d'affichage de la table.
+ */
+
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useMutation } from "@apollo/client";
 import {
-  Download,
   Filter,
   GripVertical,
   ListFilter,
@@ -77,7 +82,6 @@ import {
   resolveGroupingKey,
   toGraphqlFieldName,
 } from "../utils";
-import { ModelTableExportDialog } from "./ExportDialog";
 import {
   ColumnsMenu,
   GroupingMenu,
@@ -920,65 +924,50 @@ export function TableToolbar({
                   </DropdownMenu>
                 )}
               </div>
-              {/* Export & Refresh Cluster */}
+              {/* Refresh Cluster */}
               <div className="flex items-center gap-1.5">
-                <div className="flex items-center gap-1">
-                  <ModelTableExportDialog
-                    filterVariablesOverride={mergedFilterVariables}
-                    labels={tableConfig?.exportLabels}
-                    trigger={
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:bg-background hover:text-primary"
-                      >
-                        <Download className="h-4 w-4" />
-                      </Button>
-                    }
-                  />
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:bg-background hover:text-primary"
-                        disabled={loading || hardRefreshing}
-                      >
-                        <RefreshCw
-                          className={cn(
-                            "h-4 w-4",
-                            (loading || hardRefreshing) && "animate-spin",
-                          )}
-                        />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent
-                      align="end"
-                      className="w-56"
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:bg-background hover:text-primary"
+                      disabled={loading || hardRefreshing}
                     >
-                      <DropdownMenuLabel className="px-3 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
-                        Rafraichissement
-                      </DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        onClick={() => refresh()}
-                        disabled={loading || hardRefreshing}
-                      >
-                        <RefreshCw className="mr-2 h-4 w-4" />
-                        Simple refresh
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() => {
-                          void handleHardRefresh();
-                        }}
-                        disabled={hardRefreshing}
-                      >
-                        <RefreshCw className="mr-2 h-4 w-4" />
-                        Hard refresh
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                </div>
+                      <RefreshCw
+                        className={cn(
+                          "h-4 w-4",
+                          (loading || hardRefreshing) && "animate-spin",
+                        )}
+                      />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="end"
+                    className="w-56"
+                  >
+                    <DropdownMenuLabel className="px-3 py-2 text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                      Rafraichissement
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => refresh()}
+                      disabled={loading || hardRefreshing}
+                    >
+                      <RefreshCw className="mr-2 h-4 w-4" />
+                      Simple refresh
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      onClick={() => {
+                        void handleHardRefresh();
+                      }}
+                      disabled={hardRefreshing}
+                    >
+                      <RefreshCw className="mr-2 h-4 w-4" />
+                      Hard refresh
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
             </div>
           </div>
