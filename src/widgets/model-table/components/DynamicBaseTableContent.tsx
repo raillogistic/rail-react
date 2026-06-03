@@ -1057,6 +1057,7 @@ export function DynamicBaseTableContent<
 
   const handleRowSelectionChange = useCallback(
     (nextSelection: RowSelectionState) => {
+      console.log("handleRowSelectionChange called with:", JSON.stringify(nextSelection), "current:", JSON.stringify(rowSelection));
       if (!areBooleanMapsEqual(nextSelection, rowSelection)) {
         setRowSelection(nextSelection);
       }

@@ -93,7 +93,7 @@ export function normalizeTemplateType(
   template: TemplateInfo,
 ): TemplateActionType {
   const declared = String(template.templateType ?? "").toLowerCase();
-  if (declared === "excel") return "excel";
+  if (declared === "excel" || declared === "xlsx" || declared === "xls") return "excel";
   if (declared === "pdf") return "pdf";
 
   const endpoint = String(template.endpoint ?? "").toLowerCase();
@@ -198,13 +198,11 @@ function buildTemplateRequestUrl(
   if (!resolved) return "";
 
   let baseUrl = resolved;
-  if (templateType === "pdf") {
-    if (/<pk>|%3Cpk%3E/i.test(resolved)) {
-      baseUrl = resolved.replace(/<pk>|%3Cpk%3E/gi, encodeURIComponent(rowId));
-    } else {
-      const normalizedBase = resolved.endsWith("/") ? resolved : `${resolved}/`;
-      baseUrl = `${normalizedBase}${encodeURIComponent(rowId)}/`;
-    }
+  if (/<pk>|%3Cpk%3E/i.test(resolved)) {
+    baseUrl = resolved.replace(/<pk>|%3Cpk%3E/gi, encodeURIComponent(rowId));
+  } else if (templateType === "pdf") {
+    const normalizedBase = resolved.endsWith("/") ? resolved : `${resolved}/`;
+    baseUrl = `${normalizedBase}${encodeURIComponent(rowId)}/`;
   } else {
     baseUrl = appendQueryParams(resolved, { pk: rowId });
   }

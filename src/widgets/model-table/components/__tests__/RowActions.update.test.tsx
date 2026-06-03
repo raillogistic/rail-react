@@ -286,7 +286,7 @@ describe("RowActions update integration", () => {
       />,
     );
 
-    const detailButton = screen.getByRole("button", { name: "Détails" });
+    const detailButton = screen.getByRole("button", { name: "Voir les détails" });
     const updateButton = screen.getByRole("button", { name: "Modifier" });
     const order = detailButton.compareDocumentPosition(updateButton);
 
@@ -423,7 +423,7 @@ describe("RowActions update integration", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Détails" }));
+    fireEvent.click(screen.getByRole("button", { name: "Voir les détails" }));
 
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith("/orders/106");
@@ -447,7 +447,7 @@ describe("RowActions update integration", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Détails" }));
+    fireEvent.click(screen.getByRole("button", { name: "Voir les détails" }));
 
     await waitFor(() => {
       expect(screen.getByText("Details 42")).toBeInTheDocument();
@@ -480,7 +480,7 @@ describe("RowActions update integration", () => {
       />,
     );
 
-    fireEvent.click(screen.getByRole("button", { name: "Détails" }));
+    fireEvent.click(screen.getByRole("button", { name: "Voir les détails" }));
 
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith("/orders/105");

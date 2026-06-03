@@ -1,4 +1,10 @@
+/**
+ * @file DynamicModelTable.integration.test.tsx
+ * @description Tests d'intégration pour le composant DynamicModelTable (sélection, pagination, suppression en masse).
+ */
+
 import { render, screen, waitFor } from "@testing-library/react";
+import { createRef } from "react";
 import userEvent from "@testing-library/user-event";
 import { MockedProvider } from "@apollo/client/testing";
 import { gql } from "@apollo/client";
@@ -43,6 +49,24 @@ vi.mock("@/shared/ui/kit/dropdown-menu", () => ({
  DropdownMenuSubContent: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
  DropdownMenuLabel: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
  DropdownMenuSeparator: () => null,
+}));
+
+vi.mock("@/shared/ui/kit/checkbox", () => ({
+  Checkbox: ({ checked, onCheckedChange, "aria-label": ariaLabel }: any) => {
+    console.log("Mock Checkbox rendered - aria-label:", ariaLabel, "checked:", checked, "has callback:", typeof onCheckedChange);
+    return (
+      <input
+        type="checkbox"
+        checked={checked ?? false}
+        onChange={(e) => {
+          console.log("Mock Checkbox onChange fired! checked value:", e.target.checked);
+          onCheckedChange?.(e.target.checked);
+        }}
+        aria-label={ariaLabel}
+        data-testid="mock-checkbox"
+      />
+    );
+  },
 }));
 
 const METADATA_BASE = {
@@ -543,9 +567,9 @@ describe("DynamicModelTable integration", () => {
  }, { timeout: 4000 });
 
  await waitFor(() => {
- expect(
- screen.getByText((content) => content.includes("2") && content.includes("results")),
- ).toBeInTheDocument();
+  expect(
+    screen.getByText((content) => content.includes("2") && (content.includes("results") || content.includes("éléments"))),
+  ).toBeInTheDocument();
  });
  });
 
@@ -705,9 +729,9 @@ describe("DynamicModelTable integration", () => {
  });
 
  await waitFor(() => {
- expect(
- screen.getByText((content) => content.includes("2") && content.includes("results")),
- ).toBeInTheDocument();
+  expect(
+    screen.getByText((content) => content.includes("2") && (content.includes("results") || content.includes("éléments"))),
+  ).toBeInTheDocument();
  });
  });
 
@@ -946,57 +970,77 @@ describe("DynamicModelTable integration", () => {
  selection: "id",
  });
 
- render(
- <MockedProvider
- mocks={[
- buildMetadataMock([], bulkDeletePermissions, [bulkDeleteMutation]),
- buildMetadataMock([], bulkDeletePermissions, [bulkDeleteMutation]),
- buildActionsBootstrapMock([bulkDeleteMutation], bulkDeletePermissions),
- DATA_MOCK,
- DATA_MOCK,
- DATA_MOCK,
- DATA_MOCK_MINIMAL,
- DATA_MOCK_MINIMAL,
- buildCapabilitiesMock(),
- buildActionDetailsMock(),
- {
- request: {
- query: bulkDeleteDocument.mutationDocument,
- variables: {
- ids: ["1"],
- },
- },
- result: {
- data: {
- response: {
- ok: true,
- objects: [{ id: "1" }],
- errors: null,
- },
- },
- },
- },
- ]}
- >
- <MemoryRouter>
- <DynamicModelTable
- app="auth"
- model="User"
- baseTable={{
- enableSelection: true,
- }}
- />
- </MemoryRouter>
- </MockedProvider>,
- );
+  const ref = createRef<any>();
+  render(
+  <MockedProvider
+  mocks={[
+  buildMetadataMock([], bulkDeletePermissions, [bulkDeleteMutation]),
+  buildMetadataMock([], bulkDeletePermissions, [bulkDeleteMutation]),
+  buildActionsBootstrapMock([bulkDeleteMutation], bulkDeletePermissions),
+  DATA_MOCK,
+  DATA_MOCK,
+  DATA_MOCK,
+  DATA_MOCK_MINIMAL,
+  DATA_MOCK_MINIMAL,
+  buildCapabilitiesMock(),
+  buildActionDetailsMock(),
+  {
+  request: {
+  query: bulkDeleteDocument.mutationDocument,
+  variables: {
+  ids: ["1"],
+  },
+  },
+  result: {
+  data: {
+  response: {
+  ok: true,
+  objects: [{ id: "1" }],
+  errors: null,
+  },
+  },
+  },
+  },
+  ]}
+  >
+  <MemoryRouter>
+  <DynamicModelTable
+  ref={ref}
+  app="auth"
+  model="User"
+  baseTable={{
+  enableSelection: true,
+  }}
+  />
+  </MemoryRouter>
+  </MockedProvider>,
+  );
 
  await waitFor(() => {
  expect(screen.getAllByText("Username").length).toBeGreaterThan(0);
  }, { timeout: 4000 });
 
- await user.click(
- await screen.findByLabelText("Select row 1", {}, { timeout: 4000 }),
- );
+  const selectCheckbox = await screen.findByLabelText("Select row 1", {}, { timeout: 4000 });
+  console.log("selectCheckbox found, HTML:", selectCheckbox.outerHTML, "checked:", selectCheckbox.checked, "role:", selectCheckbox.getAttribute("role"), "aria-checked:", selectCheckbox.getAttribute("aria-checked"));
+  await user.click(selectCheckbox);
+  console.log("selectCheckbox checked after click:", selectCheckbox.checked, "aria-checked:", selectCheckbox.getAttribute("aria-checked"));
+
+ // Wait a small bit for React state to flush
+ await new Promise((resolve) => setTimeout(resolve, 100));
+ console.log("selectCheckbox checked after delay:", selectCheckbox.checked);
+ if (ref.current) {
+ const snapshot = ref.current.getSnapshot();
+ console.log("ref current is NOT null");
+ console.log("snapshot rowSelection:", JSON.stringify(snapshot.rowSelection));
+ console.log("snapshot selectedRows length:", snapshot.selectedRows?.length);
+ console.log("snapshot data length:", snapshot.data?.length);
+ if (snapshot.selectedRows?.length > 0) {
+ console.log("snapshot selectedRows[0] keys:", Object.keys(snapshot.selectedRows[0]));
+ }
+ } else {
+ console.log("ref current IS null");
+ }
+
  await user.click(await screen.findByTestId("bulk-delete-button", {}, { timeout: 4000 }));
 
  await waitFor(() => {

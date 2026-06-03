@@ -97,7 +97,7 @@ function resolveCellTextClasses(
       ? "text-xs leading-tight px-3 py-1.5 tabular-nums"
       : density === "spacious"
         ? "text-base leading-relaxed px-5 py-3.5"
-        : "text-sm leading-normal px-4 py-2.5 tabular-nums";
+        : "text-sm leading-normal px-4 py-3 tabular-nums";
   const wrappingClass = wrapCells
     ? "whitespace-normal break-words"
     : "truncate";
@@ -269,7 +269,7 @@ export function DynamicTableRows<TRow extends Record<string, unknown>>({
         data-row-stripe={rowIndex % 2 === 0 ? "even" : "odd"}
         data-state={row.getIsSelected() ? "selected" : undefined}
         className={cn(
-          "hover:bg-neutral-50 dark:hover:bg-zinc-900/40 border-b border-dashed border-border/80 transition-colors",
+          "hover:bg-neutral-50 dark:hover:bg-zinc-900/40 border-b border-dashed border-border/40 transition-colors",
           row.getIsSelected() && "bg-primary/[0.04] hover:bg-primary/[0.06] dark:bg-primary/10 dark:hover:bg-primary/15",
           rowClassName,
         )}
@@ -342,7 +342,7 @@ export function DynamicTableRows<TRow extends Record<string, unknown>>({
                     }
               }
               className={cn(
-                "border-b border-dashed border-border/60 align-middle text-neutral-600 dark:text-neutral-300 font-medium",
+                "border-b border-dashed border-border/30 align-middle text-neutral-600 dark:text-neutral-300 font-medium",
                 cellTextClasses,
                 autoSizeActionsCell && "w-[1%] whitespace-nowrap",
                 sticky.className,

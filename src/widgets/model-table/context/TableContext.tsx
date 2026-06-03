@@ -209,6 +209,7 @@ function tableReducer(
     case "SET_COLUMN_ORDER":
       return { ...state, columnOrder: action.order };
     case "SET_ROW_SELECTION":
+      console.log("TableContext Reducer SET_ROW_SELECTION called with:", JSON.stringify(action.selection));
       return { ...state, rowSelection: action.selection };
     case "SET_GROUPING_FIELD":
       return {

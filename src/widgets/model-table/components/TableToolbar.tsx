@@ -11,8 +11,15 @@ import {
   Layers,
   LayoutGrid,
   SlidersHorizontal,
+  Check,
+  Columns3,
+  RotateCcw,
+  Eye,
+  EyeOff,
+  Search,
 } from "lucide-react";
 import { Button } from "@/shared/ui/kit/button";
+import { Input } from "@/shared/ui/kit/input";
 import { Badge } from "@/shared/ui/kit/badge";
 import {
   Dialog,
@@ -40,7 +47,12 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
+  DropdownMenuCheckboxItem,
 } from "@/shared/ui/kit/dropdown-menu";
+import { Switch } from "@/shared/ui/kit/switch";
 import { Separator } from "@/shared/ui/kit/separator";
 import { cn } from "@/shared/utils";
 import { useTable } from "../context/TableContext";
@@ -113,7 +125,7 @@ type TableToolbarProps = {
  * Composant Toolbar pour le ModelTableV2.
  * Gère la recherche, les filtres, l'affichage des colonnes, le groupement et l'export.
  * Design moderne, responsive et optimisé pour une utilisation intensive.
- * Redessiné pour correspondre au style Localira (bouton Filtres secondaire et recherche solide).
+ * Redessiné pour correspondre au style Localira (recherche solide et bouton Filtres icône à droite de la recherche).
  *
  * @param {ModelTableFilterPanelProps} filterPanel - Configuration du panneau de filtres.
  * @param {ModelTableV2TableConfig} tableConfig - Configuration globale de la table.
@@ -413,17 +425,106 @@ export function TableToolbar({
           <div className="flex flex-col items-center justify-between gap-3 sm:flex-row w-full">
             {/* Left: Search and Status Indicators */}
             <div className="flex w-full flex-1 flex-wrap items-start gap-3 sm:w-auto">
-              {quickSearch !== false && supportsQuick && (
-                <QuickSearch
-                  value={quickSearchValue}
-                  onChange={setQuickSearch}
-                  placeholder={
-                    tableConfig?.searchPlaceholder ?? "Rechercher partout..."
-                  }
-                  expanded={searchFocused || !!quickSearchValue}
-                  onFocusChange={setSearchFocused}
-                />
-              )}
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                {quickSearch !== false && supportsQuick && (
+                  <QuickSearch
+                    value={quickSearchValue}
+                    onChange={setQuickSearch}
+                    placeholder={
+                      tableConfig?.searchPlaceholder ?? "Rechercher partout..."
+                    }
+                    expanded={searchFocused || !!quickSearchValue}
+                    onFocusChange={setSearchFocused}
+                  />
+                )}
+                {panelConfig.mode === "modal" ? (
+                  <Dialog open={filterOpen} onOpenChange={setFilterOpen}>
+                    <DialogTrigger asChild>
+                      <Button
+                        variant="secondary"
+                        size="icon"
+                        className={cn(
+                          "h-9.5 w-9.5 bg-neutral-100 text-neutral-700 hover:bg-neutral-200/80 dark:bg-zinc-800 dark:text-neutral-200 dark:hover:bg-zinc-700/80 border-none rounded-lg relative shrink-0",
+                          hasActiveFilters && "bg-neutral-200 dark:bg-zinc-700 text-foreground"
+                        )}
+                      >
+                        <ListFilter className="h-4 w-4" />
+                        {activeAdvancedFilterCount > 0 && (
+                          <Badge className="absolute -top-1 -right-1 h-4 w-4 bg-primary text-primary-foreground p-0 text-[10px] border-none font-bold justify-center items-center rounded-full">
+                            {activeAdvancedFilterCount}
+                          </Badge>
+                        )}
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent
+                      className={cn(
+                        "flex flex-col overflow-hidden border p-0 bg-background",
+                        panelConfig.widthClassName,
+                      )}
+                    >
+                      <DialogHeader className="bg-muted/30 dark:bg-muted/10 px-8 py-6 backdrop-blur-md">
+                        <div className="flex items-center justify-between">
+                          <DialogTitle className="text-2xl font-black uppercase tracking-tighter text-foreground/80">
+                            {panelConfig.title}
+                          </DialogTitle>
+                          <Badge
+                            variant="outline"
+                            className="border-primary/20 bg-primary/5 text-[10px] font-bold text-primary dark:text-primary/90 uppercase tracking-widest px-3 py-1"
+                          >
+                            {model}
+                          </Badge>
+                        </div>
+                      </DialogHeader>
+                      <div className="flex-1 overflow-auto bg-background/50 custom-scrollbar">
+                        {renderFilterContent()}
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                ) : (
+                  <Sheet open={filterOpen} onOpenChange={setFilterOpen}>
+                    <SheetTrigger asChild>
+                      <Button
+                        variant="secondary"
+                        size="icon"
+                        className={cn(
+                          "h-9.5 w-9.5 bg-neutral-100 text-neutral-700 hover:bg-neutral-200/80 dark:bg-zinc-800 dark:text-neutral-200 dark:hover:bg-zinc-700/80 border-none rounded-lg relative shrink-0",
+                          hasActiveFilters && "bg-neutral-200 dark:bg-zinc-700 text-foreground"
+                        )}
+                      >
+                        <ListFilter className="h-4 w-4" />
+                        {activeAdvancedFilterCount > 0 && (
+                          <Badge className="absolute -top-1 -right-1 h-4 w-4 bg-primary text-primary-foreground p-0 text-[10px] border-none font-bold justify-center items-center rounded-full">
+                            {activeAdvancedFilterCount}
+                          </Badge>
+                        )}
+                      </Button>
+                    </SheetTrigger>
+                    <SheetContent
+                      side={
+                        panelConfig.side as "top" | "right" | "bottom" | "left"
+                      }
+                      className={cn(
+                        "p-0 border-l bg-background",
+                        panelConfig.widthClassName,
+                      )}
+                    >
+                      <SheetHeader className="bg-muted/30 dark:bg-muted/10 px-8 py-6 backdrop-blur-md border-b border-border/10">
+                        <div className="flex items-center gap-3">
+                          <div className="bg-primary/10 p-2 text-primary">
+                            <Filter className="h-5 w-5" />
+                          </div>
+                          <DialogTitle className="text-2xl font-black uppercase tracking-tighter text-foreground/80">
+                            {panelConfig.title}
+                          </DialogTitle>
+                        </div>
+                      </SheetHeader>
+                      <div className="h-[calc(100%-88px)] overflow-auto custom-scrollbar">
+                        {renderFilterContent()}
+                      </div>
+                    </SheetContent>
+                  </Sheet>
+                )}
+              </div>
               {quickFilters?.length ? (
                 <QuickFilters fields={quickFilters} />
               ) : null}
@@ -489,99 +590,290 @@ export function TableToolbar({
               )}
               <div className="flex items-center gap-1">
                 {!isMobile ? (
-                  <>
-                    <ViewOptionsMenu
-                      density={density}
-                      onDensityChange={setDensity}
-                      wrapCells={wrapCells}
-                      onWrapChange={setWrapCells}
-                    />
-
+                  <DropdownMenu modal={false}>
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => setDragModeEnabled(!dragModeEnabled)}
-                          className={cn(
-                            "h-8 w-8",
-                            dragModeEnabled
-                              ? "bg-primary/20 text-primary"
-                              : "text-muted-foreground hover:bg-background hover:text-foreground",
-                          )}
-                        >
-                          <GripVertical className="h-4 w-4" />
-                        </Button>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-8 gap-2 hover:bg-background hover:text-primary"
+                          >
+                            <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
+                            <span className="hidden lg:inline-block text-[10px] font-bold uppercase tracking-wider">
+                              Configuration
+                            </span>
+                          </Button>
+                        </DropdownMenuTrigger>
                       </TooltipTrigger>
-                      <TooltipContent side="bottom">
-                        Glisser-déposer
-                      </TooltipContent>
+                      <TooltipContent side="bottom">Configuration de la table</TooltipContent>
                     </Tooltip>
+                    <DropdownMenuContent align="end" className="w-64 border-none p-2 bg-background/95 shadow-lg">
+                      <DropdownMenuLabel className="flex items-center gap-2 px-3 py-2 text-xs font-black uppercase tracking-widest text-muted-foreground/60">
+                        <SlidersHorizontal className="h-3.5 w-3.5" />
+                        Options de table
+                      </DropdownMenuLabel>
+                      <DropdownMenuSeparator className="mx-2 bg-border/40" />
 
-                    <Separator orientation="vertical" className="mx-1 h-4" />
+                      {/* Visibilité des colonnes */}
+                      <DropdownMenuSub>
+                        <DropdownMenuSubTrigger className="flex items-center gap-2 py-2 px-3 text-xs font-medium hover:bg-muted/50 rounded-sm cursor-pointer">
+                          <Columns3 className="h-3.5 w-3.5 text-muted-foreground/60" />
+                          <span>Colonnes visibles</span>
+                        </DropdownMenuSubTrigger>
+                        <DropdownMenuSubContent className="w-72 border-none p-2 bg-background/95 shadow-md">
+                          <div className="relative px-2 pb-2">
+                            <Search className="absolute left-4 top-2.5 h-3.5 w-3.5 text-muted-foreground/40" />
+                            <Input
+                              placeholder="Rechercher une colonne..."
+                              value={columnSearch}
+                              onChange={(e) => setColumnSearch(e.target.value)}
+                              className="h-9 pl-9 pr-4 text-xs bg-muted/30 border-none focus-visible:ring-primary/20"
+                            />
+                          </div>
+                          <div className="flex items-center justify-between gap-2 px-2 py-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-8 gap-2 text-[10px] font-bold uppercase tracking-wider hover:bg-primary/10 hover:text-primary"
+                              onClick={() => {
+                                if (!metadata) return;
+                                const defaults = getDefaultHiddenColumnIds(metadata, {
+                                  showReversed,
+                                  showCount,
+                                });
+                                const next = { ...columnVisibility };
+                                orderedColumns.forEach((c) => {
+                                  const rootKey = c.id.split(".")[0];
+                                  const vis =
+                                    !defaults.has(rootKey) &&
+                                    !c.visibilityKeys.some((key) => defaults.has(key));
+                                  c.visibilityKeys.forEach((key) => {
+                                    next[key] = vis;
+                                  });
+                                });
+                                setColumnVisibility(next);
+                              }}
+                            >
+                              <RotateCcw className="h-3 w-3" />
+                              Défaut
+                            </Button>
+                            <div className="flex items-center gap-3 bg-muted/30 px-3 py-1.5 rounded">
+                              <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                                Toutes
+                              </span>
+                              <Switch
+                                checked={allColumnsVisible}
+                                onCheckedChange={(v) => {
+                                  const next = { ...columnVisibility };
+                                  orderedColumns.forEach((c) => {
+                                    c.visibilityKeys.forEach((key) => {
+                                      next[key] = v;
+                                    });
+                                  });
+                                  setColumnVisibility(next);
+                                }}
+                                className="scale-75 data-[state=checked]:bg-primary"
+                              />
+                            </div>
+                          </div>
+                          <DropdownMenuSeparator className="mx-2 bg-border/40" />
+                          <div className="max-h-[240px] overflow-auto custom-scrollbar px-1 py-1">
+                            {visibleColumns.map((col) => {
+                              const id = col.id;
+                              const isVisible = resolveColumnVisibility(
+                                columnVisibility,
+                                col.visibilityKeys,
+                              );
+                              return (
+                                <DropdownMenuCheckboxItem
+                                  key={id}
+                                  checked={isVisible}
+                                  onCheckedChange={(v) => toggleColumn(col, !!v)}
+                                  className={cn(
+                                    "py-2 text-xs font-medium mb-0.5",
+                                    isVisible
+                                      ? "bg-primary/5 text-primary"
+                                      : "text-muted-foreground hover:bg-muted/50",
+                                  )}
+                                >
+                                  {col.label}
+                                </DropdownMenuCheckboxItem>
+                              );
+                            })}
+                            {visibleColumns.length === 0 && (
+                              <div className="py-8 text-center text-xs text-muted-foreground italic">
+                                Aucune colonne trouvée
+                              </div>
+                            )}
+                          </div>
+                        </DropdownMenuSubContent>
+                      </DropdownMenuSub>
 
-                    <ColumnsMenu
-                      columnSearch={columnSearch}
-                      onColumnSearchChange={setColumnSearch}
-                      visibleColumns={visibleColumns}
-                      columnVisibility={columnVisibility}
-                      allColumnsVisible={allColumnsVisible}
-                      onToggleColumn={toggleColumn}
-                      onSetAllColumnsVisibility={(v) => {
-                        const next = { ...columnVisibility };
-                        orderedColumns.forEach((c) => {
-                          c.visibilityKeys.forEach((key) => {
-                            next[key] = v;
-                          });
-                        });
-                        setColumnVisibility(next);
-                      }}
-                      onApplyDefaultColumnsVisibility={() => {
-                        if (!metadata) return;
-                        const defaults = getDefaultHiddenColumnIds(metadata, {
-                          showReversed,
-                          showCount,
-                        });
-                        const next = { ...columnVisibility };
-                        orderedColumns.forEach((c) => {
-                          const rootKey = c.id.split(".")[0];
-                          const vis =
-                            !defaults.has(rootKey) &&
-                            !c.visibilityKeys.some((key) => defaults.has(key));
-                          c.visibilityKeys.forEach((key) => {
-                            next[key] = vis;
-                          });
-                        });
-                        setColumnVisibility(next);
-                      }}
-                    />
+                      {/* Regroupement des lignes */}
+                      <DropdownMenuSub>
+                        <DropdownMenuSubTrigger className="flex items-center gap-2 py-2 px-3 text-xs font-medium hover:bg-muted/50 rounded-sm cursor-pointer">
+                          <Layers className="h-3.5 w-3.5 text-muted-foreground/60" />
+                          <span>Regrouper les données</span>
+                        </DropdownMenuSubTrigger>
+                        <DropdownMenuSubContent className="w-64 border-none p-2 bg-background/95 shadow-md">
+                          <DropdownMenuItem
+                            onClick={() => {
+                              setGroupingField(null);
+                              setGroupCollapsed({});
+                            }}
+                            className={cn(
+                              "gap-3 py-2 text-xs font-medium mb-1 cursor-pointer",
+                              groupingField === null
+                                ? "bg-primary/5 text-primary"
+                                : "text-muted-foreground hover:bg-muted/50",
+                            )}
+                          >
+                            <div
+                              className={cn(
+                                "flex h-4 w-4 items-center justify-center border border-current",
+                                groupingField === null
+                                  ? "bg-primary/20"
+                                  : "border-muted-foreground/30",
+                              )}
+                            >
+                              {groupingField === null && <Check className="h-2.5 w-2.5" />}
+                            </div>
+                            <span>Aucun regroupement</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator className="mx-2 bg-border/40" />
+                          <div className="max-h-[200px] overflow-auto custom-scrollbar px-1 py-1">
+                            {groupableFields.map((field) => {
+                              const isActive = groupingField === field.value;
+                              return (
+                                <DropdownMenuItem
+                                  key={field.value}
+                                  onClick={() => setGroupingField(field.value)}
+                                  className={cn(
+                                    "gap-3 py-2 text-xs font-medium mb-0.5 cursor-pointer",
+                                    isActive
+                                      ? "bg-primary/5 text-primary"
+                                      : "text-muted-foreground hover:bg-muted/50",
+                                  )}
+                                >
+                                  <div
+                                    className={cn(
+                                      "flex h-4 w-4 items-center justify-center border border-current",
+                                      isActive ? "bg-primary/20" : "border-muted-foreground/30",
+                                    )}
+                                  >
+                                    {isActive && <Check className="h-2.5 w-2.5" />}
+                                  </div>
+                                  <span>{field.label}</span>
+                                </DropdownMenuItem>
+                              );
+                            })}
+                          </div>
+                          {hasGroupedRows && (
+                            <>
+                              <DropdownMenuSeparator className="mx-2 bg-border/40" />
+                              <div className="grid grid-cols-2 gap-2 p-1">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 gap-2 text-[10px] font-bold uppercase tracking-wider hover:bg-primary/10 hover:text-primary"
+                                  onClick={() => {
+                                    const next: Record<string, boolean> = {};
+                                    const keys = new Set<string>();
+                                    data.forEach((r) =>
+                                      keys.add(resolveGroupingKey(r, groupingField!)),
+                                    );
+                                    keys.forEach((k) => (next[k] = false));
+                                    setGroupCollapsed(next);
+                                  }}
+                                >
+                                  <Eye className="h-3 w-3" />
+                                  Ouvrir
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-8 gap-2 text-[10px] font-bold uppercase tracking-wider hover:bg-primary/10 hover:text-primary"
+                                  onClick={() => {
+                                    const next: Record<string, boolean> = {};
+                                    const keys = new Set<string>();
+                                    data.forEach((r) =>
+                                      keys.add(resolveGroupingKey(r, groupingField!)),
+                                    );
+                                    keys.forEach((k) => (next[k] = true));
+                                    setGroupCollapsed(next);
+                                  }}
+                                >
+                                  <EyeOff className="h-3 w-3" />
+                                  Fermer
+                                </Button>
+                              </div>
+                            </>
+                          )}
+                        </DropdownMenuSubContent>
+                      </DropdownMenuSub>
 
-                    <GroupingMenu
-                      groupingField={groupingField}
-                      hasGroupedRows={hasGroupedRows}
-                      groupableFields={groupableFields}
-                      onSetGroupingField={setGroupingField}
-                      onResetCollapsed={() => setGroupCollapsed({})}
-                      onExpandAll={() => {
-                        const next: Record<string, boolean> = {};
-                        const keys = new Set<string>();
-                        data.forEach((r) =>
-                          keys.add(resolveGroupingKey(r, groupingField!)),
-                        );
-                        keys.forEach((k) => (next[k] = false));
-                        setGroupCollapsed(next);
-                      }}
-                      onCollapseAll={() => {
-                        const next: Record<string, boolean> = {};
-                        const keys = new Set<string>();
-                        data.forEach((r) =>
-                          keys.add(resolveGroupingKey(r, groupingField!)),
-                        );
-                        keys.forEach((k) => (next[k] = true));
-                        setGroupCollapsed(next);
-                      }}
-                    />
-                  </>
+                      {/* Densité d'affichage */}
+                      <DropdownMenuSub>
+                        <DropdownMenuSubTrigger className="flex items-center gap-2 py-2 px-3 text-xs font-medium hover:bg-muted/50 rounded-sm cursor-pointer">
+                          <LayoutGrid className="h-3.5 w-3.5 text-muted-foreground/60" />
+                          <span>Densité</span>
+                        </DropdownMenuSubTrigger>
+                        <DropdownMenuSubContent className="w-48 border-none p-2 bg-background/95 shadow-md">
+                          <DropdownMenuItem
+                            onClick={() => setDensity("compact")}
+                            className={cn(
+                              "py-2 text-xs font-medium cursor-pointer",
+                              density === "compact" ? "bg-primary/5 text-primary" : "text-muted-foreground hover:bg-muted/50",
+                            )}
+                          >
+                            {density === "compact" && <Check className="mr-2 h-4 w-4" />}
+                            <span className={density !== "compact" ? "ml-6" : ""}>Compact</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => setDensity("comfortable")}
+                            className={cn(
+                              "py-2 text-xs font-medium cursor-pointer",
+                              density === "comfortable" ? "bg-primary/5 text-primary" : "text-muted-foreground hover:bg-muted/50",
+                            )}
+                          >
+                            {density === "comfortable" && <Check className="mr-2 h-4 w-4" />}
+                            <span className={density !== "comfortable" ? "ml-6" : ""}>Confortable</span>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => setDensity("spacious")}
+                            className={cn(
+                              "py-2 text-xs font-medium cursor-pointer",
+                              density === "spacious" ? "bg-primary/5 text-primary" : "text-muted-foreground hover:bg-muted/50",
+                            )}
+                          >
+                            {density === "spacious" && <Check className="mr-2 h-4 w-4" />}
+                            <span className={density !== "spacious" ? "ml-6" : ""}>Spacieux</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuSubContent>
+                      </DropdownMenuSub>
+
+                      <DropdownMenuSeparator className="mx-2 bg-border/40" />
+
+                      {/* Toggles: Retour à la ligne & Mode Glisser */}
+                      <div className="p-2 flex items-center justify-between text-xs font-medium text-neutral-600 dark:text-neutral-300">
+                        <span>Retour à la ligne</span>
+                        <Switch
+                          checked={wrapCells}
+                          onCheckedChange={setWrapCells}
+                          className="scale-75 data-[state=checked]:bg-primary"
+                        />
+                      </div>
+                      <div className="p-2 flex items-center justify-between text-xs font-medium text-neutral-600 dark:text-neutral-300">
+                        <span>Mode Glisser-déposer</span>
+                        <Switch
+                          checked={dragModeEnabled}
+                          onCheckedChange={setDragModeEnabled}
+                          className="scale-75 data-[state=checked]:bg-primary"
+                        />
+                      </div>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 ) : (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -628,103 +920,9 @@ export function TableToolbar({
                   </DropdownMenu>
                 )}
               </div>
-              {/* Filters & Export Cluster */}
+              {/* Export & Refresh Cluster */}
               <div className="flex items-center gap-1.5">
-                {panelConfig.mode === "modal" ? (
-                  <Dialog open={filterOpen} onOpenChange={setFilterOpen}>
-                    <DialogTrigger asChild>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        className={cn(
-                          "h-9.5 gap-2 px-4 font-bold text-xs bg-neutral-100 text-neutral-700 hover:bg-neutral-200/80 dark:bg-zinc-800 dark:text-neutral-200 dark:hover:bg-zinc-700/80 border-none rounded-lg",
-                          hasActiveFilters && "bg-neutral-200 dark:bg-zinc-700 text-foreground"
-                        )}
-                      >
-                        <ListFilter className="h-3.5 w-3.5" />
-                        <span className="hidden sm:inline-block">
-                          Filtres
-                        </span>
-                        {activeAdvancedFilterCount > 0 && (
-                          <Badge className="ml-1 h-4 w-4 bg-primary text-primary-foreground p-0 text-[10px] border-none font-bold justify-center items-center rounded-full">
-                            {activeAdvancedFilterCount}
-                          </Badge>
-                        )}
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent
-                      className={cn(
-                        "flex flex-col overflow-hidden border p-0 bg-background",
-                        panelConfig.widthClassName,
-                      )}
-                    >
-                      <DialogHeader className="bg-muted/30 dark:bg-muted/10 px-8 py-6 backdrop-blur-md">
-                        <div className="flex items-center justify-between">
-                          <DialogTitle className="text-2xl font-black uppercase tracking-tighter text-foreground/80">
-                            {panelConfig.title}
-                          </DialogTitle>
-                          <Badge
-                            variant="outline"
-                            className="border-primary/20 bg-primary/5 text-[10px] font-bold text-primary dark:text-primary/90 uppercase tracking-widest px-3 py-1"
-                          >
-                            {model}
-                          </Badge>
-                        </div>
-                      </DialogHeader>
-                      <div className="flex-1 overflow-auto bg-background/50 custom-scrollbar">
-                        {renderFilterContent()}
-                      </div>
-                    </DialogContent>
-                  </Dialog>
-                ) : (
-                  <Sheet open={filterOpen} onOpenChange={setFilterOpen}>
-                    <SheetTrigger asChild>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        className={cn(
-                          "h-9.5 gap-2 px-4 font-bold text-xs bg-neutral-100 text-neutral-700 hover:bg-neutral-200/80 dark:bg-zinc-800 dark:text-neutral-200 dark:hover:bg-zinc-700/80 border-none rounded-lg",
-                          hasActiveFilters && "bg-neutral-200 dark:bg-zinc-700 text-foreground"
-                        )}
-                      >
-                        <ListFilter className="h-3.5 w-3.5" />
-                        <span className="hidden sm:inline-block">
-                          Filtres
-                        </span>
-                        {activeAdvancedFilterCount > 0 && (
-                          <Badge className="ml-1 h-4 w-4 bg-primary text-primary-foreground p-0 text-[10px] border-none font-bold justify-center items-center rounded-full">
-                            {activeAdvancedFilterCount}
-                          </Badge>
-                        )}
-                      </Button>
-                    </SheetTrigger>
-                    <SheetContent
-                      side={
-                        panelConfig.side as "top" | "right" | "bottom" | "left"
-                      }
-                      className={cn(
-                        "p-0 border-l bg-background",
-                        panelConfig.widthClassName,
-                      )}
-                    >
-                      <SheetHeader className="bg-muted/30 dark:bg-muted/10 px-8 py-6 backdrop-blur-md border-b border-border/10">
-                        <div className="flex items-center gap-3">
-                          <div className="bg-primary/10 p-2 text-primary">
-                            <Filter className="h-5 w-5" />
-                          </div>
-                          <DialogTitle className="text-2xl font-black uppercase tracking-tighter text-foreground/80">
-                            {panelConfig.title}
-                          </DialogTitle>
-                        </div>
-                      </SheetHeader>
-                      <div className="h-[calc(100%-88px)] overflow-auto custom-scrollbar">
-                        {renderFilterContent()}
-                      </div>
-                    </SheetContent>
-                  </Sheet>
-                )}
-
-                <div className="flex items-center gap-1 pl-1 border-l border-border/40">
+                <div className="flex items-center gap-1">
                   <ModelTableExportDialog
                     filterVariablesOverride={mergedFilterVariables}
                     labels={tableConfig?.exportLabels}
