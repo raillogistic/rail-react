@@ -1,55 +1,22 @@
 import type { PatrimoineAsset } from "@/models";
-import { ModelForm, type ModelFormProps } from "@/widgets/model-form";
+import { ModelForm } from "@/widgets/model-form";
 import { useStore } from "@tanstack/react-form";
 import { useAssetMetadataDefinitions } from "../hooks/useAssetMetadata";
 import type { JsonNestedValidationHandle } from "@/widgets/model-form/types";
 import JsonNestedInput from "@/widgets/model-form/inputs/json-nested";
+import {
+  activeOnlyWhere,
+  extractScalarId,
+} from "@/shared/utils/modelFormFilters";
 
-/**
- * Props du formulaire Asset, étendant les props ModelForm.
- */
 export interface AssetFormProps {
   mode?: "CREATE" | "UPDATE" | "VIEW";
   objectId?: string | number | null;
   onSuccess?: (data: any) => void;
-  /**
-   * Callback pour exposer l'instance TanStack Form au parent.
-   * Permet au parent de surveiller les valeurs du formulaire
-   * (category, family) pour le rendu dynamique des métadonnées.
-   */
   onFormReady?: (form: any) => void;
-  /**
-   * Reférence à la section des métadonnées pour gérer la validation.
-   */
   metadataRef?: React.RefObject<JsonNestedValidationHandle | null>;
 }
 
-/**
- * Extrait un ID scalaire d'une valeur de formulaire qui peut être
- * un ID direct, un tableau, ou un objet avec une propriété `id`.
- */
-function extractScalarId(value: unknown): string | null {
-  if (value === null || value === undefined) return null;
-  if (typeof value === "string") return value || null;
-  if (typeof value === "number") return String(value);
-  if (Array.isArray(value)) {
-    const first = value[0];
-    if (typeof first === "string") return first || null;
-    if (typeof first === "number") return String(first);
-    if (first && typeof first === "object" && "id" in first) {
-      return String((first as any).id);
-    }
-    return null;
-  }
-  if (typeof value === "object" && "id" in (value as object)) {
-    return String((value as { id: unknown }).id);
-  }
-  return null;
-}
-
-/**
- * Wrapper component to safely use hooks inside the custom field renderer.
- */
 function AssetMetadataCustomFieldWrapper({
   ctx,
   metadataRef,
@@ -59,18 +26,21 @@ function AssetMetadataCustomFieldWrapper({
 }) {
   const { form, field, config } = ctx;
 
-  const categoryId = extractScalarId(
+  const categoryValue = extractScalarId(
     useStore(form.store, (state: any) => state.values?.category),
   );
-  const familyId = extractScalarId(
+  const familyValue = extractScalarId(
     useStore(form.store, (state: any) => state.values?.family),
   );
 
-  const {
-    sections,
-    loading,
-    hasDefinitions,
-  } = useAssetMetadataDefinitions({ categoryId, familyId });
+  const categoryId =
+    categoryValue === undefined ? null : String(categoryValue);
+  const familyId = familyValue === undefined ? null : String(familyValue);
+
+  const { sections, loading } = useAssetMetadataDefinitions({
+    categoryId,
+    familyId,
+  });
 
   const mappedSections = sections.map((section) => ({
     id: section.definitionId,
@@ -78,28 +48,26 @@ function AssetMetadataCustomFieldWrapper({
     fields: section.fields as any,
   }));
 
-  const jsonConfig = {
-    ...config,
-    type: "json-nested",
-    sections: mappedSections,
-    loading,
-    emptyMessage: categoryId
-      ? "Aucune métadonnée définie pour cette catégorie."
-      : "Veuillez sélectionner une catégorie pour voir les informations complémentaires.",
-    validationRef: metadataRef,
-    title: "Informations Complémentaires",
-    subtitle: "Attributs spécifiques à la catégorie et famille du bien.",
-  };
-  console.log(jsonConfig);
-  
-  return <JsonNestedInput config={jsonConfig} field={field} form={form} />;
+  return (
+    <JsonNestedInput
+      config={{
+        ...config,
+        type: "json-nested",
+        sections: mappedSections,
+        loading,
+        emptyMessage: categoryId
+          ? "Aucune métadonnée définie pour cette catégorie."
+          : "Veuillez sélectionner une catégorie pour voir les informations complémentaires.",
+        validationRef: metadataRef,
+        title: "Informations Complémentaires",
+        subtitle: "Attributs spécifiques à la catégorie et famille du bien.",
+      }}
+      field={field}
+      form={form}
+    />
+  );
 }
 
-/**
- * Composant de formulaire pour le modèle Asset (Bien).
- *
- * Centralise les règles métier et la structure du formulaire.
- */
 export function AssetForm({
   mode = "CREATE",
   objectId,
@@ -121,7 +89,6 @@ export function AssetForm({
       onSubmitResult={(result) => {
         if (result.ok) onSuccess?.(result.object);
       }}
-      // Exposer l'instance du formulaire au parent
       state={{
         onReady: onFormReady,
       }}
@@ -139,7 +106,6 @@ export function AssetForm({
           return undefined;
         },
       }}
-      // Organisation en sections pour une meilleure lisibilité
       generatedSections={[
         {
           id: "identification",
@@ -181,35 +147,31 @@ export function AssetForm({
           columns: 3,
           fields: ["brand", "modelName", "serialNumber"],
         },
-        
         {
           id: "status_condition",
           title: "Statut & État",
           columns: 2,
-          fields: [ "physicalCondition"],
+          fields: ["physicalCondition"],
         },
         {
           id: "metadata_section",
-          title: "", // Titre géré par AssetMetadataSection
+          title: "",
           columns: 1,
           fields: [
             {
               name: "metadata",
               type: "custom",
-              render: (ctx) => {
-                return (
-                  <AssetMetadataCustomFieldWrapper
-                    ctx={ctx}
-                    metadataRef={metadataRef}
-                  />
-                );
-              },
+              render: (ctx) => (
+                <AssetMetadataCustomFieldWrapper
+                  ctx={ctx}
+                  metadataRef={metadataRef}
+                />
+              ),
             },
           ],
         },
       ]}
       fieldOverrides={{
-        // RG-BIEN-01: inventoryCode auto-généré, non saisissable, visible en lecture seule après création
         inventoryCode: {
           readOnly: true,
           hidden: !isUpdate,
@@ -218,59 +180,55 @@ export function AssetForm({
           type: "textarea",
           colSpan: 2,
         },
-
-        // RG-BIEN-07: Filtrage des familles par catégorie
         category: {
           readOnly: isUpdate,
+          graphql: {
+            where: activeOnlyWhere(),
+          },
         },
-        family: (field) => ({
+        family: (field: any) => ({
           ...field,
           type: "select-query",
           dependsOn: ["category"],
           visible: (values) => Boolean(values.category),
           readOnly: isUpdate,
           graphql: {
-            // @ts-ignore
             ...(field.graphql ?? {}),
             where: (ctx: any) => {
-              // Ensure we extract a valid single scalar ID or undefined
-              const categoryId = Array.isArray(ctx.values.category)
-                ? ctx.values.category[0]
-                : ctx.values.category;
-
-              if (!categoryId) return {};
-
-              return {
-                category: { eq: categoryId },
-              };
+              const categoryId = extractScalarId(ctx.values.category);
+              return activeOnlyWhere(
+                categoryId
+                  ? {
+                      category: { eq: categoryId },
+                    }
+                  : undefined,
+              );
             },
           },
         }),
-
         location: {
           readOnly: isUpdate,
+          graphql: {
+            where: activeOnlyWhere(),
+          },
         },
-
-        // RG-AFF-05: Responsabilité exclusive Employé vs Service
-        responsibleEmployee: (field) => ({
+        responsibleEmployee: (field: any) => ({
           ...field,
           type: "select-query",
           dependsOn: ["responsibleService"],
           disabledWhen: (values) => Boolean(values.responsibleService),
           readOnly: isUpdate,
           graphql: {
-            // @ts-ignore
             ...(field.graphql ?? {}),
             where: (ctx: any) => {
-              const serviceId = Array.isArray(ctx.values.responsibleService)
-                ? ctx.values.responsibleService[0]
-                : ctx.values.responsibleService;
-
-              if (!serviceId) return {};
-
-              return {
-                service: { eq: serviceId },
-              };
+              const serviceId = extractScalarId(ctx.values.responsibleService);
+              return activeOnlyWhere(
+                serviceId
+                  ? {
+                      service: { eq: serviceId },
+                    }
+                  : undefined,
+              );
             },
           },
         }),
@@ -278,9 +236,10 @@ export function AssetForm({
           dependsOn: ["responsibleEmployee"],
           disabledWhen: (values) => Boolean(values.responsibleEmployee),
           readOnly: isUpdate,
+          graphql: {
+            where: activeOnlyWhere(),
+          },
         },
-
-        // RG-FIN-01: Type du bien immuable après création
         assetType: {
           readOnly: isUpdate,
         },
@@ -292,8 +251,6 @@ export function AssetForm({
         serialNumber: { readOnly: isUpdate },
         administrativeStatus: { readOnly: isUpdate },
         physicalCondition: { readOnly: isUpdate },
-
-        // Visibilité conditionnelle des propriétaires externes
         actualOwnerName: {
           dependsOn: ["actualOwnerType"],
           visible: (values) =>
@@ -303,23 +260,23 @@ export function AssetForm({
         actualOwnerSupplier: {
           dependsOn: ["actualOwnerType"],
           visible: (values) => values.actualOwnerType === "supplier",
+          graphql: {
+            where: activeOnlyWhere(),
+          },
         },
-
-        // RG-FIN-03: Sortie du patrimoine visible uniquement si statut approprié
-        
-        
-
-        // Champs techniques masqués
+        supplier: {
+          graphql: {
+            where: activeOnlyWhere(),
+          },
+        },
         qrCodeValue: { hidden: true },
         archivedAt: { hidden: true },
         isActive: { hidden: true },
-        
         metadata: {
           hidden: false,
           type: "custom",
-        }
+        },
       }}
-      // Gestion des relations imbriquées (Documents uniquement)
       nested={{
         documents: {
           title: "Documents & Pièces Jointes",

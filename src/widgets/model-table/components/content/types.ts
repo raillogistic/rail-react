@@ -196,6 +196,11 @@ export type ModelTableToolbarSlotProps<
 > = {
  /** Resolved controller state and handlers. */
  controller: ModelTableContentControllerState<TSource>;
+ /**
+  * Optional top-actions node (Ajouter, Export, Import) to render aligned
+  * with the search/filter row instead of the header.
+  */
+ topActionsNode?: React.ReactNode;
 };
 
 /**

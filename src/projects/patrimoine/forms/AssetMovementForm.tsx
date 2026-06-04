@@ -1,5 +1,10 @@
 import type { LocationsAssetMovement } from "@/models";
 import { ModelForm } from "@/widgets/model-form";
+import {
+  activeOnlyWhere,
+  combineWhereClauses,
+  extractScalarId,
+} from "@/shared/utils/modelFormFilters";
 
 /**
  * Composant de formulaire pour le modèle AssetMovement (Mouvement de Bien).
@@ -46,20 +51,49 @@ export function AssetMovementForm({
       fieldOverrides={{
         reference: { hidden: true },
         asset: {
-          // Désactivé en modification car on ne change pas le bien d'un mouvement existant
           disabled: isUpdate,
+          graphql: {
+            where: combineWhereClauses(
+              { isActive: { eq: true } },
+              {
+                administrativeStatus: {
+                  notIn: ["reformed", "disposed", "archived", "lost"],
+                },
+              },
+            ),
+          },
         },
-
         fromLocation: {
-          // Affiché en lecture seule (géré par le backend via GraphQLMeta)
-          // On le cache si vide à la création pour ne pas encombrer
           visible: (values) => isUpdate || Boolean(values.fromLocation),
           dependsOn: ["asset"],
         },
-
+        toLocation: {
+          graphql: {
+            where: activeOnlyWhere(),
+          },
+        },
         reason: {
           type: "textarea",
           colSpan: 2,
+        },
+      }}
+      behavior={{
+        validate: (values: Record<string, unknown>) => {
+          const fromLocationId = extractScalarId(values.fromLocation);
+          const toLocationId = extractScalarId(values.toLocation);
+
+          if (
+            fromLocationId !== undefined &&
+            toLocationId !== undefined &&
+            String(fromLocationId) === String(toLocationId)
+          ) {
+            return {
+              toLocation:
+                "La nouvelle localisation doit être différente de l'ancienne.",
+            };
+          }
+
+          return undefined;
         },
       }}
     />

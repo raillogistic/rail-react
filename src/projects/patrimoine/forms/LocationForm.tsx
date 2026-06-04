@@ -1,10 +1,16 @@
 import type { LocationsLocation } from "@/models";
 import { ModelForm } from "@/widgets/model-form";
+import { activeOnlyWhere } from "@/shared/utils/modelFormFilters";
 
-/**
- * Composant de formulaire pour le modèle Location (Localisation).
- * Gère la hiérarchie des sites, bâtiments, étages et bureaux.
- */
+const ALLOWED_PARENT_LEVELS: Record<string, string[]> = {
+  site: [],
+  building: ["site"],
+  floor: ["building"],
+  office: ["floor"],
+  room: ["floor"],
+  zone: ["office", "room"],
+};
+
 export interface LocationFormProps {
   mode?: "CREATE" | "UPDATE" | "VIEW";
   objectId?: string | number | null;
@@ -48,23 +54,28 @@ export function LocationForm({
         },
       ]}
       fieldOverrides={{
-        // Le code est auto-généré et en lecture seule
         code: { hidden: true },
-
-        // Filtrage du parent en fonction du niveau sélectionné
-        // EC-REF-05: Validation de la hiérarchie
-        parent: (field) => ({
+        parent: (field: any) => ({
           ...field,
           type: "select-query",
           dependsOn: ["level"],
           visible: (values) => values.level !== "site",
-          inputProps: {
-            // On pourrait filtrer ici les parents valides (niveau < niveau actuel)
-            // Mais pour simplifier et éviter des requêtes complexes, on laisse le backend valider
-            // ou on peut ajouter un filtre basique si on connaît l'ordre des niveaux.
+          graphql: {
+            ...(field.graphql ?? {}),
+            where: (ctx: any) => {
+              const allowedLevels =
+                ALLOWED_PARENT_LEVELS[String(ctx.values.level ?? "")] ?? [];
+
+              return activeOnlyWhere(
+                allowedLevels.length > 0
+                  ? {
+                      level: { in: allowedLevels },
+                    }
+                  : undefined,
+              );
+            },
           },
         }),
-
         address: {
           type: "textarea",
         },

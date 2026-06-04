@@ -1,5 +1,10 @@
 import type { AssignmentsAssetAssignment } from "@/models";
 import { ModelForm } from "@/widgets/model-form";
+import {
+  activeOnlyWhere,
+  combineWhereClauses,
+  extractScalarId,
+} from "@/shared/utils/modelFormFilters";
 
 /**
  * Composant de formulaire pour le modèle AssetAssignment (Affectation de Bien).
@@ -61,7 +66,10 @@ export function AssetAssignmentForm({
         asset: {
           disabled: isUpdate,
           graphql: {
-            where: { isAssignable: true },
+            where: combineWhereClauses(
+              { isAssignable: true },
+              { isActive: { eq: true } },
+            ),
           },
         },
 
@@ -78,15 +86,15 @@ export function AssetAssignmentForm({
             // @ts-ignore
             ...(field.graphql ?? {}),
             where: (ctx: any) => {
-              const serviceId = Array.isArray(ctx.values.assignedToService)
-                ? ctx.values.assignedToService[0]
-                : ctx.values.assignedToService;
+              const serviceId = extractScalarId(ctx.values.assignedToService);
 
-              if (!serviceId) return {};
-
-              return {
-                service: { eq: serviceId },
-              };
+              return activeOnlyWhere(
+                serviceId
+                  ? {
+                      service: { eq: serviceId },
+                    }
+                  : undefined,
+              );
             },
           },
         }),
@@ -96,6 +104,9 @@ export function AssetAssignmentForm({
             Array.isArray(values.assignedToEmployee)
               ? values.assignedToEmployee.length > 0
               : Boolean(values.assignedToEmployee),
+          graphql: {
+            where: ACTIVE_ONLY_SERVICE_WHERE,
+          },
         },
 
         reason: {
@@ -148,3 +159,7 @@ export function AssetAssignmentForm({
     />
   );
 }
+
+const ACTIVE_ONLY_SERVICE_WHERE = {
+  isActive: { eq: true },
+};

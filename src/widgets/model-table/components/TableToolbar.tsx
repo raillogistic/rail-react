@@ -2,7 +2,8 @@
  * @file TableToolbar.tsx
  * @description Barre d'outils de la table de modèle permettant la recherche rapide,
  * l'activation des filtres avancés, et la gestion des options d'affichage de la table.
- * Modifié pour supprimer les ombres sur tous les boutons et appliquer un fond neutre pour les boutons d'icônes.
+ * Les boutons d'actions principales (Ajouter, Export, Import) sont rendus à droite de la
+ * barre de recherche via la prop `extraActions`, dans la même rangée horizontale.
  */
 
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -74,13 +75,16 @@ type TableToolbarProps = {
  * Composant Toolbar pour le ModelTableV2.
  * Gère la recherche, les filtres, l'affichage des colonnes, le groupement et l'export.
  * Design moderne, responsive et optimisé pour une utilisation intensive.
- * Redessiné pour correspondre au style Localira (recherche solide et bouton Filtres icône à droite de la recherche).
+ * Style Localira : recherche solide et bouton Filtres icône à droite de la recherche.
+ * Les actions principales (Ajouter, Export, Import) sont injectées via `extraActions`
+ * et s'affichent à droite dans la même rangée horizontale que la recherche.
  *
  * @param {ModelTableFilterPanelProps} filterPanel - Configuration du panneau de filtres.
  * @param {ModelTableV2TableConfig} tableConfig - Configuration globale de la table.
  * @param {boolean} quickSearch - Active/Desactive la recherche rapide.
  * @param {BaseModelTableFieldsInput} fields - Configuration des colonnes exposees dans le selecteur.
- * @param {React.ReactNode} extraActions - Actions supplementaires a afficher.
+ * @param {React.ReactNode} extraActions - Actions principales (Ajouter, Export, Import) a afficher
+ *   a droite de la barre de recherche.
  */
 export function TableToolbar({
   filterPanel,
@@ -367,15 +371,10 @@ export function TableToolbar({
             </div>
 
             {/* Right: Action Clusters */}
-            <div className="flex w-full items-center justify-end gap-1.5 sm:w-auto">
-              {/* Extra Actions Integration */}
-              {extraActions && (
-                <div className="flex items-center gap-1 bg-muted/20 p-1">
-                  {extraActions}
-                </div>
-              )}
-
+            <div className="flex w-full items-center justify-end gap-2 sm:w-auto">
+              {extraActions}
             </div>
+
           </div>
         </div>
 

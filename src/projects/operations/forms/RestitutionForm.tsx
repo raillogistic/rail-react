@@ -1,5 +1,9 @@
 import { ModelForm } from "@/widgets/model-form";
 import type { AssignmentsRestitution } from "@/models";
+import {
+  activeOnlyWhere,
+  combineWhereClauses,
+} from "@/shared/utils/modelFormFilters";
 
 /**
  * Formulaire pour l'enregistrement d'une restitution de bien.
@@ -61,6 +65,17 @@ export function RestitutionForm({
       fieldOverrides={{
         asset: {
           disabled: mode === "UPDATE",
+          graphql: {
+            where: combineWhereClauses(
+              { administrativeStatus: { eq: "assigned" } },
+              { isActive: { eq: true } },
+            ),
+          },
+        },
+        location: {
+          graphql: {
+            where: activeOnlyWhere(),
+          },
         },
         comment: {
           type: "textarea",
