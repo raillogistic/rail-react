@@ -191,6 +191,12 @@ function buildRelationFieldConfig(
   } as FormFieldConfig;
 }
 
+/**
+ * Construit le schéma de formulaire pour une mutation personnalisée.
+ *
+ * @param fields Les champs d'entrée de la mutation.
+ * @returns Le schéma de formulaire ou null s'il n'y a pas de champs.
+ */
 export function buildMutationSchema(
   fields: MutationInputField[],
 ): FormSchema | null {
@@ -211,13 +217,18 @@ export function buildMutationSchema(
         return buildRelationFieldConfig(field, baseConfig);
       }
 
+      const hasChoices = Array.isArray(field.choices) && field.choices.length > 0;
+      const options = hasChoices
+        ? field.choices.map((choice) => ({
+            value: String(choice.value),
+            label: String(choice.label),
+          }))
+        : undefined;
+
       return ({
         ...baseConfig,
         type: fieldType,
-        choices: (field.choices ?? []).map((choice) => ({
-          value: String(choice.value),
-          label: String(choice.label),
-        })),
+        ...(hasChoices ? { choices: options, options } : {}),
       }) as unknown as FormFieldConfig;
     }),
   };

@@ -621,23 +621,36 @@ function normalizeMutationInputFields(
     });
 }
 
+/**
+ * Construit le schéma de formulaire pour une mutation personnalisée.
+ *
+ * @param fields Les champs d'entrée de la mutation.
+ * @returns Le schéma de formulaire ou null s'il n'y a pas de champs.
+ */
 function buildMutationSchema(fields: MutationInputField[]): FormSchema | null {
   if (!fields.length) return null;
 
   return {
     fields: fields.map(
-      (field) =>
-        ({
+      (field) => {
+        const fieldType = resolveFormFieldType(field);
+        const hasChoices = Array.isArray(field.choices) && field.choices.length > 0;
+        const options = hasChoices
+          ? field.choices.map((choice) => ({
+              value: String(choice.value),
+              label: String(choice.label),
+            }))
+          : undefined;
+
+        return ({
           name: field.name || "",
           label: humanizeLabel(field.name || field.fieldName || "Field"),
-          type: resolveFormFieldType(field),
+          type: fieldType,
           required: Boolean(field.required),
           description: field.description || undefined,
-          choices: (field.choices ?? []).map((choice) => ({
-            value: String(choice.value),
-            label: String(choice.label),
-          })),
-        }) as unknown as FormFieldConfig,
+          ...(hasChoices ? { choices: options, options } : {}),
+        }) as unknown as FormFieldConfig;
+      },
     ),
   };
 }

@@ -26,10 +26,40 @@ export function AssetListPage() {
             key: "etat",
             items: [
               {
+                key: "active",
+                label: "active",
+                clear: true,
+                variables: {
+                  where: { administrativeStatus: { eq: "active" } },
+                },
+              },
+            ],
+          },
+          {
+            label: "assigned",
+            key: "assigned",
+            items: [
+              {
                 key: "assigned",
                 label: "assigned",
                 clear: true,
-                variables: { where: { status: {} } },
+                variables: {
+                  where: { administrativeStatus: { eq: "assigned" } },
+                },
+              },
+            ],
+          },
+          {
+            label: "out_of_service",
+            key: "out_of_service",
+            items: [
+              {
+                key: "out_of_service",
+                label: "out_of_service",
+                clear: true,
+                variables: {
+                  where: { administrativeStatus: { eq: "out_of_service" } },
+                },
               },
             ],
           },
