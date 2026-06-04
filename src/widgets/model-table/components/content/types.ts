@@ -148,7 +148,7 @@ export type ModelTableContentControllerState<
  /** Resolved ModelForm props for create overlay. */
  createFormProps: ModelFormProps<ResolvedModelTableFormValues<TSource>, TSource> | null;
  /** Invokes one resolved top action. */
- handleTopActionClick: (action: ModelTableContentTopAction) => void;
+ handleTopActionClick: (action: ModelTableContentTopAction<TSource>) => void;
  /** Triggers table data refresh. */
  triggerRefresh: () => void;
  /** Clears selected rows. */

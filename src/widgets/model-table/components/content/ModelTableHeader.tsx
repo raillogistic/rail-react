@@ -40,20 +40,8 @@ export function ModelTableHeader({
             )}
           </div>
         </div>
-
-        {/* Status Line */}
-        <div className="flex items-center text-xs font-medium text-muted-foreground mt-1">
-          <span className="uppercase tracking-wider">{controller.app}</span>
-          <span className="mx-2 text-border">&bull;</span>
-          <span>{controller.model}</span>
-          <span className="mx-2 text-border">&bull;</span>
-          <span className="flex items-center gap-1.5">
-            <RefreshCw className="size-3" />
-            <span>Mis à jour {controller.timeAgo}</span>
-          </span>
-        </div>
       </div>
-      
+
       <div className="flex items-center gap-1.5 shrink-0">
         <TopActionsComponent controller={controller} />
       </div>
