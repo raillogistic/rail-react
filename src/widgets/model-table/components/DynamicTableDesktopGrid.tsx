@@ -1,3 +1,10 @@
+/**
+ * @file DynamicTableDesktopGrid.tsx
+ * @description Conteneur du grid desktop de la table dynamique.
+ * Rend le composant `DynamicTable` de TanStack avec les colonnes, la mise en page,
+ * les actions par ligne et les extras injectés dans l'en-tête de la colonne Actions.
+ */
+
 import React from "react";
 import { DynamicTable } from "../dynamic-table";
 import { RowActions } from "./row/RowActions";
@@ -29,6 +36,11 @@ export interface DynamicTableDesktopGridProps {
   pagination: any;
   isInfiniteMode: boolean;
   setPage: (page: number) => void;
+  /**
+   * Nœud React injecté dans l'en-tête de la colonne Actions à côté du bouton de
+   * configuration. Typiquement les boutons Export et Import.
+   */
+  actionsHeaderExtras?: React.ReactNode;
 }
 
 export function DynamicTableDesktopGrid({
@@ -57,6 +69,7 @@ export function DynamicTableDesktopGrid({
   pagination,
   isInfiniteMode,
   setPage,
+  actionsHeaderExtras,
 }: DynamicTableDesktopGridProps) {
   return (
     <div
@@ -92,6 +105,7 @@ export function DynamicTableDesktopGrid({
             stickySelectionColumn: false,
             actions: {
               headerLabel: tableConfig?.actionsLabel ?? "",
+              headerExtras: actionsHeaderExtras,
               sticky: true,
               headerClassName: "w-[1%] whitespace-nowrap pr-6 bg-transparent",
               cellClassName: "w-[1%] whitespace-nowrap pr-6",

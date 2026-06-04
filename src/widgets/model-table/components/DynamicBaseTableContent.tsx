@@ -93,6 +93,7 @@ import { ModelTableHeader } from "./content/ModelTableHeader";
 import { ModelTablePdfPreviewDialog } from "./content/ModelTablePdfPreviewDialog";
 import { ModelTableToolbarSection } from "./content/ModelTableToolbarSection";
 import { ModelTableTopActions } from "./content/ModelTableTopActions";
+import { ActionsColumnHeaderButtons } from "./content/ActionsColumnHeaderButtons";
 import type {
   ModelTableBulkActionsBarSlotProps,
   ModelTableContentConfig,
@@ -1265,6 +1266,11 @@ export function DynamicBaseTableContent<
         pagination={pagination}
         isInfiniteMode={isInfiniteMode}
         setPage={setPage}
+        actionsHeaderExtras={
+          sectionController.metadata ? (
+            <ActionsColumnHeaderButtons controller={sectionController} />
+          ) : undefined
+        }
       />
 
       {sectionVisibility.footer && (

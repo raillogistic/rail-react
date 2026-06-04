@@ -642,7 +642,14 @@ export function DynamicTableHeader<TRow extends Record<string, unknown>>({
                     )}
                   >
                     <span>{layout.actions?.headerLabel ?? ""}</span>
-                    
+
+                    {/* Extra nodes (Export, Import) injected from outside */}
+                    {layout.actions?.headerExtras && (
+                      <div className="flex items-center gap-0.5">
+                        {layout.actions.headerExtras}
+                      </div>
+                    )}
+
                     <DropdownMenu modal={false}>
                       <DropdownMenuTrigger asChild>
                         <Button

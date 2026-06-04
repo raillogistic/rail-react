@@ -181,6 +181,8 @@ export interface DynamicTableActionsLayout<
 > {
  /** Header label for the actions column. */
  headerLabel?: React.ReactNode;
+ /** Extra ReactNode rendered alongside the column-config dropdown in the header. */
+ headerExtras?: React.ReactNode;
  /** Whether the actions column is sticky on the right edge. */
  sticky?: boolean;
  /** Fixed size in px for the actions column. */
@@ -197,6 +199,7 @@ export interface DynamicTableActionsLayout<
  rowIndex: number;
  }) => React.ReactNode;
 }
+
 
 /**
  * Optional configuration for the built-in row-expand utility column.
