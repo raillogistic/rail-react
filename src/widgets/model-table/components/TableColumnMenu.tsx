@@ -4,6 +4,7 @@
  * Modernized with a standard casing font-semibold structure, custom padding/centering,
  * and high-contrast color variants suited for primary backgrounds.
  * Modifié pour supprimer les animations et les ombres afin d'améliorer les performances de l'interface utilisateur.
+ * Ajout de la fonctionnalité de redimensionnement automatique des colonnes basée sur les données chargées.
  */
 import React, { useCallback, useMemo } from "react";
 import {
@@ -39,6 +40,10 @@ import type { FieldSchema } from "../types";
 import { cn } from "@/shared/utils";
 import { getSyntheticRelationCountSource } from "../utils";
 import { RelationFilterDialog } from "./column-menu";
+import {
+  buildAccessorPath,
+  resolveValueOptimized,
+} from "../utils/valueResolution";
 
 interface TableColumnMenuProps {
   columnId: string;
@@ -51,6 +56,77 @@ interface TableColumnMenuProps {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/**
+ * Estime la longueur textuelle d'une valeur de cellule pour l'auto-dimensionnement.
+ *
+ * @param value Valeur de la cellule à mesurer.
+ * @param field Schéma de champ optionnel décrivant le type.
+ * @returns Longueur estimée du texte en caractères.
+ */
+function get_cell_text_length(value: unknown, field?: FieldSchema): number {
+  if (value === null || value === undefined) return 1;
+
+  if (Array.isArray(value)) {
+    if (field?.isRelation) {
+      const rel_key = field.relationLookupField;
+      const rendered = value
+        .map((item) => {
+          if (!item || typeof item !== "object") return String(item);
+          const item_obj = item as Record<string, unknown>;
+          if (item_obj.desc !== undefined && item_obj.desc !== null) return String(item_obj.desc);
+          if (rel_key && item_obj[rel_key] !== undefined && item_obj[rel_key] !== null) {
+            return String(item_obj[rel_key]);
+          }
+          return String(item_obj.name ?? item_obj.id ?? JSON.stringify(item));
+        });
+      return rendered.join(", ").length;
+    }
+    return JSON.stringify(value).length;
+  }
+
+  if (field?.isBoolean) {
+    return 3; // "Oui" / "Non"
+  }
+
+  if (field?.isDate || field?.isDatetime) {
+    if (typeof value === "string") {
+      if (field.isDate) {
+        const date_only = value.match(/^(\d{4}-\d{2}-\d{2})/);
+        if (date_only?.[1]) return date_only[1].length;
+      }
+      if (field.isDatetime) {
+        const date_time = value.match(/^((\d{4}-\d{2}-\d{2}))[T\s](\d{2}):(\d{2})/);
+        if (date_time) {
+          return `${date_time[1]} ${date_time[3]}:${date_time[4]}`.length;
+        }
+      }
+    }
+    return 16;
+  }
+
+  if (field?.choices) {
+    const choice = field.choices.find((c) => c.value === value);
+    return choice ? choice.label.length : String(value).length;
+  }
+
+  if (typeof value === "object") {
+    const val_obj = value as Record<string, unknown>;
+    if (field?.isRelation) {
+      const rel_key = field.relationLookupField;
+      if (val_obj.desc !== undefined && val_obj.desc !== null) {
+        return String(val_obj.desc).length;
+      }
+      if (rel_key && val_obj[rel_key] !== undefined && val_obj[rel_key] !== null) {
+        return String(val_obj[rel_key]).length;
+      }
+      return String(val_obj.name ?? val_obj.id ?? JSON.stringify(value)).length;
+    }
+    return String(val_obj.name || val_obj.id || JSON.stringify(value)).length;
+  }
+
+  return String(value).length;
 }
 
 export function TableColumnMenu({
@@ -77,10 +153,12 @@ export function TableColumnMenu({
     setGroupCollapsed,
     setColumnOrder,
     setColumnWidths,
+    columnWidths,
     setActiveColumnFilter,
     dragModeEnabled,
     setDragModeEnabled,
     density,
+    data,
   } = useTable();
   const { advancedFilters, filterVariables, setAdvancedFilters } =
     useTableFilters();
@@ -176,6 +254,39 @@ export function TableColumnMenu({
 
   const handleToggleDragMode = () => {
     setDragModeEnabled(!dragModeEnabled);
+  };
+
+  /**
+   * Calcule et applique automatiquement la largeur optimale pour la colonne courante.
+   */
+  const handle_auto_resize = () => {
+    const path = buildAccessorPath(columnId.replace(/__/g, "."));
+    let max_len = triggerTitle.length;
+
+    if (data && data.length > 0) {
+      data.forEach((row) => {
+        const val = resolveValueOptimized(row, path);
+        const len = get_cell_text_length(val, resolvedField);
+        if (len > max_len) {
+          max_len = len;
+        }
+      });
+    }
+
+    const estimated_width = Math.max(
+      120,
+      Math.min(
+        500,
+        Math.ceil(max_len * 7.8) + 40
+      )
+    );
+
+    const new_widths = {
+      ...columnWidths,
+      [columnId]: estimated_width,
+    };
+
+    setColumnWidths(new_widths);
   };
 
   const filterSchema = useMemo(() => {
@@ -309,33 +420,33 @@ export function TableColumnMenu({
                  <MoreVertical className="size-3 shrink-0 opacity-0 group-hover/trigger:opacity-40" />
                )}
              </button>
-           ) : (
-             <Button
-               variant="ghost"
-               size="sm"
-               className={cn(
-                 "h-8 w-8 p-0 ml-1 border-none",
-                 variant === "primary"
-                   ? "text-primary-foreground/80 hover:text-white hover:bg-primary-foreground/10 data-[state=open]:bg-primary-foreground/15 data-[state=open]:text-white"
-                   : "text-neutral-600 dark:text-neutral-300 hover:text-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground",
-                 currentSort &&
-                   (variant === "primary"
-                     ? "text-white"
-                     : "text-primary"),
-               )}
-             >
-               {currentSort === "asc" && <ArrowUpAZ className="h-3.5 w-3.5" />}
-               {currentSort === "desc" && (
-                 <ArrowDownAZ className="h-3.5 w-3.5" />
-               )}
-               {!currentSort && <MoreVertical className="h-3.5 w-3.5" />}
-             </Button>
-           )}
-         </DropdownMenuTrigger>
-         <DropdownMenuContent
-           align="start"
-           className="w-60 border-border/30 p-1.5 bg-background/95"
-         >
+          ) : (
+            <Button
+              variant="ghost"
+              size="sm"
+              className={cn(
+                "h-8 w-8 p-0 ml-1 border-none",
+                variant === "primary"
+                  ? "text-primary-foreground/80 hover:text-white hover:bg-primary-foreground/10 data-[state=open]:bg-primary-foreground/15 data-[state=open]:text-white"
+                  : "text-neutral-600 dark:text-neutral-300 hover:text-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground",
+                currentSort &&
+                  (variant === "primary"
+                    ? "text-white"
+                    : "text-primary"),
+              )}
+            >
+              {currentSort === "asc" && <ArrowUpAZ className="h-3.5 w-3.5" />}
+              {currentSort === "desc" && (
+                <ArrowDownAZ className="h-3.5 w-3.5" />
+              )}
+              {!currentSort && <MoreVertical className="h-3.5 w-3.5" />}
+            </Button>
+          )}
+        </DropdownMenuTrigger>
+        <DropdownMenuContent
+          align="start"
+          className="w-60 border-border/30 p-1.5 bg-background/95"
+        >
           <div className="px-3 py-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground/50 border-b border-border/20 mb-1 flex items-center gap-2">
             <ClipboardList className="size-3 text-muted-foreground/40" />
             {triggerTitle}
@@ -416,7 +527,7 @@ export function TableColumnMenu({
             </DropdownMenuItem>
           )}
 
-          <DropdownMenuItem onClick={() => console.log("Auto resize")}>
+          <DropdownMenuItem onClick={handle_auto_resize}>
             <Scaling className="mr-2 h-3.5 w-3.5 text-muted-foreground" />
             <span>Ajuster la largeur</span>
           </DropdownMenuItem>

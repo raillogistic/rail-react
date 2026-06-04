@@ -4,7 +4,7 @@ import { DynamicModelTable } from "@/widgets/model-table";
 
 export function AssetListPage() {
   return (
-    <DynamicModelTable<any>
+    <DynamicModelTable<PatrimoineAsset>
       app="patrimoine"
       model="Asset"
       create={{
@@ -18,6 +18,22 @@ export function AssetListPage() {
       detail={{
         type: "link",
         hrefTemplate: ROUTES.ASSET_DETAIL,
+      }}
+      navFilters={{
+        groups: [
+          {
+            label: "Etat",
+            key: "etat",
+            items: [
+              {
+                key: "assigned",
+                label: "assigned",
+                clear: true,
+                variables: { where: { status: {} } },
+              },
+            ],
+          },
+        ],
       }}
       baseTable={{
         fields: [
