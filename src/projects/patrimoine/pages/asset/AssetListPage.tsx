@@ -22,43 +22,62 @@ export function AssetListPage() {
       navFilters={{
         groups: [
           {
-            label: "Etat",
-            key: "etat",
+            label: "Statut",
+            key: "status",
+            defaultItemKey: "all",
             items: [
               {
-                key: "active",
-                label: "active",
+                key: "all",
+                label: "Tous",
                 clear: true,
+              },
+              {
+                key: "active",
+                label: "Actifs",
                 variables: {
                   where: { administrativeStatus: { eq: "active" } },
                 },
               },
-            ],
-          },
-          {
-            label: "assigned",
-            key: "assigned",
-            items: [
               {
                 key: "assigned",
-                label: "assigned",
-                clear: true,
+                label: "Affectés",
                 variables: {
                   where: { administrativeStatus: { eq: "assigned" } },
                 },
               },
-            ],
-          },
-          {
-            label: "out_of_service",
-            key: "out_of_service",
-            items: [
               {
                 key: "out_of_service",
-                label: "out_of_service",
-                clear: true,
+                label: "Hors Service",
                 variables: {
                   where: { administrativeStatus: { eq: "out_of_service" } },
+                },
+              },
+              {
+                key: "reformed",
+                label: "Réformés",
+                variables: {
+                  where: { administrativeStatus: { eq: "reformed" } },
+                },
+              },
+              {
+                key: "lost",
+                label: "Perdus",
+                variables: {
+                  where: { administrativeStatus: { eq: "lost" } },
+                },
+              },
+              {
+                key: "disposed",
+                label: "Sortis",
+                variables: {
+                  where: { administrativeStatus: { eq: "disposed" } },
+                },
+              },
+              {
+                key: "archived",
+                label: "Archivés",
+                variables: {
+                  where: { administrativeStatus: { eq: "archived" } },
                 },
               },
             ],

@@ -21,6 +21,12 @@ type NavFiltersBarProps = {
   className?: string;
 };
 
+/**
+ * Affiche la barre des filtres de navigation sous forme de segments premium.
+ *
+ * @param props Les paramètres de rendu, incluant la configuration des filtres.
+ * @returns Le composant de la barre de filtres.
+ */
 export function NavFiltersBar({
   navFilters,
   queryManager,
@@ -35,32 +41,30 @@ export function NavFiltersBar({
   return (
     <div
       className={cn(
-        "flex w-full flex-col gap-3 overflow-hidden rounded-xl border border-border/40 bg-muted/20 px-3 py-3",
+        "flex w-full flex-col gap-2 overflow-hidden border-b border-border/10 bg-transparent py-2.5",
         className,
       )}
       data-testid="table-nav-filters"
     >
-      <div className="flex w-full gap-3 overflow-x-auto pb-1">
+      <div className="flex w-full gap-5 items-center overflow-x-auto pb-1 select-none no-scrollbar">
         {navFilters.groups.map((group) => {
           const selectedValue = navFilterSelections[group.key] ?? undefined;
 
           return (
-            <div key={group.key} className="flex min-w-max flex-col gap-2">
+            <div key={group.key} className="flex min-w-max items-center gap-3">
               {group.label ? (
-                <span className="px-1 text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground">
+                <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground/60 mr-1">
                   {group.label}
                 </span>
               ) : null}
               <ToggleGroup
                 type="single"
                 variant="outline"
-                size="sm"
-                spacing={1}
                 value={selectedValue ?? ""}
                 onValueChange={(value) =>
                   setNavFilterSelection(group.key, value || null)
                 }
-                className="flex-nowrap"
+                className="flex items-center gap-1 bg-muted/40 p-0.5 rounded-lg border border-border/5"
                 aria-label={group.label || group.key}
               >
                 {group.items.map((item) => (
@@ -68,9 +72,9 @@ export function NavFiltersBar({
                     key={item.key}
                     value={item.key}
                     className={cn(
-                      "h-8 rounded-md border-border/60 bg-background/80 px-3 text-[11px] font-semibold capitalize whitespace-nowrap",
-                      item.clear &&
-                        "text-muted-foreground data-[state=on]:text-foreground",
+                      "h-7 rounded-md px-3 text-[11px] font-semibold transition-all duration-300 whitespace-nowrap border-none shadow-none",
+                      "text-muted-foreground/80 hover:text-foreground hover:bg-muted/35",
+                      "data-[state=on]:bg-background data-[state=on]:text-primary data-[state=on]:font-bold data-[state=on]:shadow-sm data-[state=on]:border-border/10",
                     )}
                     aria-label={item.label}
                   >
@@ -100,6 +104,12 @@ type NavFilterItemLabelProps = {
   label: string;
 };
 
+/**
+ * Libellé d'un filtre de navigation incluant son badge de compteur dynamique.
+ *
+ * @param props Les paramètres de l'item à afficher.
+ * @returns Le libellé formaté avec son badge.
+ */
 function NavFilterItemLabel({
   navFilters,
   queryManager,
@@ -157,8 +167,6 @@ function NavFilterItemLabel({
       skipMetadata: true,
     },
     selectionOptions: {
-      // Page queries already include pageInfo in the generated selection block.
-      // Ask for the smallest valid item payload and read totalCount from pageInfo.
       selection: "id",
     },
     variables: {
@@ -184,10 +192,23 @@ function NavFilterItemLabel({
   });
 
   const count = data?.pageInfo?.totalCount;
+  const isSelected = navFilterSelections[groupKey] === itemKey;
+
   return (
-    <>
-      {label}
-      {navFilters.count && typeof count === "number" ? `(${count})` : ""}
-    </>
+    <div className="flex items-center gap-1.5">
+      <span>{label}</span>
+      {navFilters.count && typeof count === "number" && (
+        <span
+          className={cn(
+            "inline-flex items-center justify-center rounded-full px-1.5 py-0.25 text-[9px] font-bold transition-all duration-300",
+            isSelected
+              ? "bg-primary/10 text-primary"
+              : "bg-muted-foreground/10 text-muted-foreground/75",
+          )}
+        >
+          ({count})
+        </span>
+      )}
+    </div>
   );
 }
