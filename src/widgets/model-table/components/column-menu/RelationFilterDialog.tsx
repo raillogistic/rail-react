@@ -387,15 +387,15 @@ export function RelationFilterDialog({
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="eq">égal Ã  (eq)</SelectItem>
+                        <SelectItem value="eq">égal à (eq)</SelectItem>
                         <SelectItem value="neq">différent de (neq)</SelectItem>
-                        <SelectItem value="gt">supérieur Ã  (gt)</SelectItem>
+                        <SelectItem value="gt">supérieur à (gt)</SelectItem>
                         <SelectItem value="gte">
-                          supérieur ou égal Ã  (gte)
+                          supérieur ou égal à (gte)
                         </SelectItem>
-                        <SelectItem value="lt">inférieur Ã  (lt)</SelectItem>
+                        <SelectItem value="lt">inférieur à (lt)</SelectItem>
                         <SelectItem value="lte">
-                          inférieur ou égal Ã  (lte)
+                          inférieur ou égal à (lte)
                         </SelectItem>
                       </SelectContent>
                     </Select>

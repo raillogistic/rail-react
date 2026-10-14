@@ -458,7 +458,7 @@ export const model_metadata = gql`
             {
               "name": "username__icontains",
               "lookupExpr": "icontains",
-              "helpText": "Nom d'utilisateur contient (insensible Ã  la casse)",
+              "helpText": "Nom d'utilisateur contient (insensible à la casse)",
               "filterType": "CharFilter"
             }
           ]

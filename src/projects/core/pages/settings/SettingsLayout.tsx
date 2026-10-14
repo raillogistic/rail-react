@@ -8,15 +8,15 @@ import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/kit/tabs";
 import { User, Settings, Shield, Smartphone, Lock, Sparkles } from "lucide-react";
 
 /**
- * Interface pour les propriÃ©tÃ©s du composant SettingsLayout.
+ * Interface pour les propriétés du composant SettingsLayout.
  */
 interface SettingsLayoutProps {
-  /** Les Ã©lÃ©ments enfants Ã  afficher Ã  l'intÃ©rieur du layout des paramÃ¨tres. */
+  /** Les éléments enfants à afficher à l'intérieur du layout des paramètres. */
   children: React.ReactNode;
 }
 
 /**
- * RequÃªte GraphQL permettant de rÃ©cupÃ©rer les permissions de l'utilisateur connectÃ©
+ * Requête GraphQL permettant de récupérer les permissions de l'utilisateur connecté
  * afin de conditionner l'affichage de l'onglet d'administration UI.
  */
 const GET_USER_PERMISSIONS = gql`
@@ -37,11 +37,11 @@ const GET_USER_PERMISSIONS = gql`
 
 /**
  * @file SettingsLayout.tsx
- * @description Layout commun pour la page des paramÃ¨tres qui encapsule les enfants dans une interface Ã  onglets.
- * JSDoc: Ce composant synchronise les onglets avec le chemin de l'URL courante et restreint l'accÃ¨s Ã  l'onglet admin.
- * Tous les intitulÃ©s sont en franÃ§ais conformÃ©ment aux directives de style du projet.
+ * @description Layout commun pour la page des paramètres qui encapsule les enfants dans une interface à onglets.
+ * JSDoc: Ce composant synchronise les onglets avec le chemin de l'URL courante et restreint l'accès à l'onglet admin.
+ * Tous les intitulés sont en français conformément aux directives de style du projet.
  *
- * @param props - Les propriÃ©tÃ©s du composant.
+ * @param props - Les propriétés du composant.
  * @returns Le composant de mise en page avec la barre d'onglets et le contenu enfant.
  */
 export function SettingsLayout({ children }: SettingsLayoutProps) {
@@ -70,7 +70,7 @@ export function SettingsLayout({ children }: SettingsLayoutProps) {
   const currentTab = location.pathname;
 
   /**
-   * Redirige l'utilisateur vers la route correspondant Ã  l'onglet sÃ©lectionnÃ©.
+   * Redirige l'utilisateur vers la route correspondant à l'onglet sélectionné.
    * @param value - La route cible de l'onglet.
    */
   const handleTabChange = (value: string) => {
@@ -80,9 +80,9 @@ export function SettingsLayout({ children }: SettingsLayoutProps) {
   return (
     <div className="space-y-6">
       <div className="space-y-1">
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">ParamÃ¨tres</h1>
+        <h1 className="text-3xl font-bold tracking-tight text-foreground">Paramètres</h1>
         <p className="text-muted-foreground text-sm">
-          GÃ©rez vos informations de compte, prÃ©fÃ©rences d'affichage et sÃ©curitÃ©.
+          Gérez vos informations de compte, préférences d'affichage et sécurité.
         </p>
       </div>
 
@@ -114,7 +114,7 @@ export function SettingsLayout({ children }: SettingsLayoutProps) {
           </TabsTrigger>
           <TabsTrigger value={ROUTES.SETTINGS_MFA} className="flex-1 md:flex-initial py-2 px-4 gap-2 text-xs md:text-sm font-medium">
             <Lock className="h-4 w-4" />
-            SÃ©curitÃ© (MFA)
+            Sécurité (MFA)
           </TabsTrigger>
         </TabsList>
 

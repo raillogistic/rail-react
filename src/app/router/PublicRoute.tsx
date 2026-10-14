@@ -11,7 +11,7 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuthContext } from '@/features/auth/context';
-import { DEFAULT_APP_ROUTE } from "@/app/router/navigation";
+import { getDefaultAppRoute } from "@/app/router/navigation";
 
 interface PublicRouteProps {
   children: React.ReactNode;
@@ -25,7 +25,7 @@ interface PublicRouteState {
 
 export const PublicRoute: React.FC<PublicRouteProps> = ({
   children,
-  redirectTo = DEFAULT_APP_ROUTE,
+  redirectTo = getDefaultAppRoute(),
   allowAuthenticated = false,
 }) => {
   const { isAuthenticated, isLoading } = useAuthContext();

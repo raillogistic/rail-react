@@ -63,14 +63,12 @@ export const toNavigationSections = (
   }));
 };
 
-export const NAVIGATION_LINKS: NavigationSection[] = toNavigationSections(
-  getNavigationGroups(),
-);
+export const getNavigationLinks = (): NavigationSection[] => toNavigationSections(getNavigationGroups());
 
-export const DEFAULT_APP_ROUTE = getDefaultRoute();
+export const getDefaultAppRoute = getDefaultRoute;
 
 export const flattenNavigationPages = (
-  navigationLinks: NavigationSection[] = NAVIGATION_LINKS,
+  navigationLinks: NavigationSection[] = getNavigationLinks(),
 ): NavigationPage[] =>
   navigationLinks.flatMap((section) =>
     section.items.flatMap((item) => [
@@ -94,7 +92,7 @@ export const flattenNavigationPages = (
 
 export const findNavigationByPath = (
   pathname: string,
-  navigationLinks: NavigationSection[] = NAVIGATION_LINKS,
+  navigationLinks: NavigationSection[] = getNavigationLinks(),
 ):
   | {
       section: NavigationSection;

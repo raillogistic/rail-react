@@ -140,7 +140,7 @@ export const FilterFieldSelector: React.FC<Props> = ({
  </span>
  {item.path_labels.length > 1 && (
  <span className="text-[11px] text-muted-foreground">
- {item.path_labels.slice(0, -1).join("â–¸ ")}
+ {item.path_labels.slice(0, -1).join("▸ ")}
  </span>
  )}
  </button>

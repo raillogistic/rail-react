@@ -125,11 +125,11 @@ function DefaultAuthErrorUI({ error, onRetry, onLogout, canRetry }: DefaultAuthE
         return 'â°';
       case AuthErrorType.UNAUTHORIZED:
       case AuthErrorType.TOKEN_INVALID:
-        return 'ðŸ”’';
+        return '🔒';
       case AuthErrorType.FORBIDDEN:
-        return 'ðŸš«';
+        return '🚫';
       default:
-        return 'âš ï¸';
+        return '⚠ï¸';
     }
   };
 
