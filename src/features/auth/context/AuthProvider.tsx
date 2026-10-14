@@ -137,13 +137,41 @@ export function AuthProvider({
 
   const login = useCallback(async (credentials: LoginCredentials) => {
     if (!onLogin) throw new Error('onLogin handler not provided');
-    return manager.login(credentials, onLogin);
-  }, [manager, onLogin]);
+
+    const result = await manager.login(credentials, onLogin);
+    if (result.success && onResolveCurrentUser) {
+      try {
+        const resolvedUser = await onResolveCurrentUser();
+        if (resolvedUser) {
+          manager.syncAuthenticatedUser(resolvedUser);
+          return { ...result, user: resolvedUser };
+        }
+      } catch {
+        // Keep the login payload user when the full current-user lookup fails.
+      }
+    }
+
+    return result;
+  }, [manager, onLogin, onResolveCurrentUser]);
 
   const verifyMFA = useCallback(async (code: string) => {
     if (!onVerifyMFA) throw new Error('onVerifyMFA handler not provided');
-    return manager.verifyMFA(code, onVerifyMFA);
-  }, [manager, onVerifyMFA]);
+
+    const result = await manager.verifyMFA(code, onVerifyMFA);
+    if (result.success && onResolveCurrentUser) {
+      try {
+        const resolvedUser = await onResolveCurrentUser();
+        if (resolvedUser) {
+          manager.syncAuthenticatedUser(resolvedUser);
+          return { ...result, user: resolvedUser };
+        }
+      } catch {
+        // Keep the MFA payload user when the full current-user lookup fails.
+      }
+    }
+
+    return result;
+  }, [manager, onResolveCurrentUser, onVerifyMFA]);
 
   const logout = useCallback(async (options?: LogoutOptions) => {
     const shouldCallRemoteLogout =

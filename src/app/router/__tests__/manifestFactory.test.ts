@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { LayoutDashboard } from "lucide-react";
 import {
   defineProjectManifest,
   navGroup,
@@ -30,6 +31,8 @@ describe("manifestFactory", () => {
   it("returns the same manifest shape", () => {
     const manifest = defineProjectManifest({
       projectId: "starter",
+      label: "Starter",
+      icon: LayoutDashboard,
       defaultRoute: "/starter/overview",
       routes: [
         {

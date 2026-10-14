@@ -1,3 +1,11 @@
+/**
+ * @file decimal.tsx
+ * @description Entrée de formulaire décimale avec formater de badge.
+ * Modifié pour forcer shadow-none sur l'input, supprimer l'ombre interne du badge,
+ * et utiliser des coins arrondis rounded-xl.
+ *
+ * @module form/inputs/decimal
+ */
 import React from "react";
 import { useStore } from "@tanstack/react-form";
 import { Hash } from "lucide-react";
@@ -66,7 +74,7 @@ const DecimalInput: React.FC<Props> = ({ config, field, form }) => {
   return (
     <FieldWrapper config={config} fieldId={fieldId} error={error} dirty={dirty}>
       <div className="relative group/decimal">
-        <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/30 transition-all duration-300 group-focus-within/decimal:text-primary/50 group-focus-within/decimal:scale-110">
+        <div className="pointer-events-none absolute left-4.5 top-1/2 -translate-y-1/2 text-muted-foreground/35 transition-all duration-300 group-focus-within/decimal:text-primary group-focus-within/decimal:scale-110">
           <Hash className="size-4.5 stroke-[2.5]" />
         </div>
         <Input
@@ -82,16 +90,16 @@ const DecimalInput: React.FC<Props> = ({ config, field, form }) => {
           onBlur={handleBlur}
           disabled={config.disabled}
           className={cn(
-            "h-12 rounded-xl border border-input/70 bg-muted/5 pl-11 pr-4 text-[13.5px] font-bold transition-all duration-300 ease-out",
-            "hover:border-primary/40 hover:bg-muted/8 hover:shadow-inner",
-            "focus:border-primary focus:ring-4 focus:ring-primary/10 focus-visible:ring-0",
+            "h-9 w-full rounded-xl border border-transparent bg-muted/50 pl-11 pr-4 text-[13.5px] font-medium transition-all duration-300 ease-out shadow-sm",
+            "hover:border-primary/40 hover:bg-muted/60",
+            "focus:border-primary focus:ring-4 focus:ring-primary/10 focus-visible:ring-0 focus-visible:outline-none",
             config.disabled && "cursor-not-allowed opacity-60 grayscale-[0.5]",
           )}
         />
 
         {config.format && canFormat ? (
           <div className="absolute right-3 top-1/2 -translate-y-1/2 animate-in fade-in slide-in-from-right-2 duration-500">
-            <span className="rounded-lg bg-primary/10 px-2.5 py-1 text-[10.5px] font-black uppercase tracking-wider text-primary shadow-inner shadow-primary/10">
+            <span className="rounded-lg bg-primary/10 px-2.5 py-1 text-[10.5px] font-black uppercase tracking-wider text-primary shadow-none">
               {config.format(numericValue)}
             </span>
           </div>

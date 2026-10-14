@@ -1,5 +1,6 @@
 import * as React from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/features/auth/hooks/useAuth";
 import {
   ArrowUpRight,
   FileText,
@@ -98,6 +99,8 @@ export function CommandMenu({
 }: CommandMenuProps = {}) {
   const [open, setOpen] = React.useState(false);
   const navigate = useNavigate();
+  const { user, hasRole } = useAuth();
+  const isAdmin = Boolean(user?.is_superuser || hasRole("admin_system"));
 
   React.useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -126,15 +129,15 @@ export function CommandMenu({
       <Button
         variant="outline"
         className={cn(
-          "relative h-9 w-full justify-start bg-muted/30 border-muted-foreground/20 text-sm font-normal text-muted-foreground shadow-none hover:bg-muted/50 hover:border-muted-foreground/40 sm:pr-12 max-w-sm md:w-64",
+          "relative h-9 w-full justify-start rounded-full bg-neutral-100/30 dark:bg-zinc-950/25 border-neutral-200/45 dark:border-zinc-800/60 text-xs font-semibold text-muted-foreground/80 shadow-none hover:bg-neutral-100/55 dark:hover:bg-zinc-900/35 hover:border-primary/30 hover:text-foreground transition-all duration-300 sm:pr-12 max-w-sm md:w-80 group/search",
         )}
         onClick={() => setOpen(true)}
       >
-        <Search className="mr-2 h-4 w-4 opacity-70" />
-        <span className="hidden sm:inline-flex">Rechercher...</span>
-        <span className="inline-flex sm:hidden">Search...</span>
-        <kbd className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2 hidden h-5 select-none items-center gap-1 border bg-background px-1.5 font-mono text-[10px] font-medium opacity-100 md:flex">
-          <span className="text-xs">Ctrl</span>K
+        <Search className="mr-2 h-3.5 w-3.5 opacity-60 group-hover/search:text-primary group-hover/search:opacity-100 transition-colors" />
+        <span className="hidden sm:inline-flex">Rechercher dans l'app...</span>
+        <span className="inline-flex sm:hidden">Rechercher...</span>
+        <kbd className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 hidden h-5 select-none items-center gap-1 bg-neutral-200/60 dark:bg-zinc-800/70 px-1.5 rounded text-[9px] font-bold text-muted-foreground/80 opacity-100 md:flex border-none">
+          <span className="text-[8px] font-extrabold uppercase">Ctrl</span>K
         </kbd>
       </Button>
 
@@ -143,19 +146,19 @@ export function CommandMenu({
           <div className="flex items-center gap-2">
             <Sparkles className="size-3 text-primary" />
             <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-              Command Palette
+              Palette de commande
             </span>
           </div>
           <Badge
             variant="outline"
             className="text-[10px] py-0 px-1.5 h-4 font-mono bg-background/50 border-muted-foreground/20"
           >
-            ESC to close
+            Échap pour fermer
           </Badge>
         </div>
 
         <CommandInput
-          placeholder="Type a command or search for anything..."
+          placeholder="Saisissez une commande ou recherchez..."
           className="border-none focus:ring-0 text-base py-6"
         />
 
@@ -165,14 +168,14 @@ export function CommandMenu({
               <Search className="size-6 text-muted-foreground/30" />
             </div>
             <div className="text-center">
-              <p className="font-semibold text-foreground">No matches found</p>
+              <p className="font-semibold text-foreground">Aucun résultat trouvé</p>
               <p className="text-sm text-muted-foreground">
-                Try searching for something else or browse categories.
+                Essayez une autre recherche ou parcourez les catégories.
               </p>
             </div>
           </CommandEmpty>
 
-          <CommandGroup heading="Recent Actions" className="p-2">
+          <CommandGroup heading="Actions récentes" className="p-2">
             <CommandItem
               onSelect={() => runCommand(() => navigate(defaultPath))}
               className="px-3 py-3 cursor-pointer group"
@@ -180,10 +183,10 @@ export function CommandMenu({
               <History className="mr-3 h-4 w-4 text-muted-foreground group-aria-selected:text-primary" />
               <div className="flex flex-col">
                 <span className="font-semibold text-sm group-aria-selected:text-primary">
-                  Return to Dashboard
+                  Retourner au Tableau de Bord
                 </span>
                 <span className="text-[11px] text-muted-foreground opacity-70">
-                  Recently viewed
+                  Consulté récemment
                 </span>
               </div>
               <ArrowUpRight className="ml-auto size-3 opacity-0 group-aria-selected:opacity-40" />
@@ -192,7 +195,7 @@ export function CommandMenu({
 
           <CommandSeparator className="bg-muted/50 mx-2" />
 
-          <CommandGroup heading="Navigation & Records" className="p-2">
+          <CommandGroup heading="Navigation & Éléments" className="p-2">
             {links.map((link) => {
               const Icon = link.icon || FileText;
               return (
@@ -233,7 +236,7 @@ export function CommandMenu({
 
           <CommandSeparator className="bg-muted/50 mx-2" />
 
-          <CommandGroup heading="Quick Settings" className="p-2">
+          <CommandGroup heading="Paramètres rapides" className="p-2">
             <CommandItem
               onSelect={() =>
                 runCommand(() => navigate(ROUTES.SETTINGS_ACCOUNT))
@@ -241,9 +244,9 @@ export function CommandMenu({
               className="px-3 py-2 cursor-pointer group"
             >
               <User className="mr-3 h-4 w-4 text-muted-foreground group-aria-selected:text-primary" />
-              <span className="font-medium">Account Settings</span>
+              <span className="font-medium">Paramètres du compte</span>
               <CommandShortcut className="group-aria-selected:text-primary-foreground">
-                Cmd+P
+                Ctrl+P
               </CommandShortcut>
             </CommandItem>
             <CommandItem
@@ -253,15 +256,26 @@ export function CommandMenu({
               className="px-3 py-2 cursor-pointer group"
             >
               <Settings className="mr-3 h-4 w-4 text-muted-foreground group-aria-selected:text-primary" />
-              <span className="font-medium">Theme & Appearance</span>
+              <span className="font-medium">Thème & Apparence</span>
               <CommandShortcut className="group-aria-selected:text-primary-foreground">
-                Cmd+S
+                Ctrl+S
               </CommandShortcut>
             </CommandItem>
             <CommandItem className="px-3 py-2 cursor-pointer group">
               <ShieldCheck className="mr-3 h-4 w-4 text-muted-foreground group-aria-selected:text-primary" />
-              <span className="font-medium">Security & Privacy</span>
+              <span className="font-medium">Sécurité & Confidentialité</span>
             </CommandItem>
+            {isAdmin && (
+              <CommandItem
+                onSelect={() =>
+                  runCommand(() => navigate(ROUTES.SETTINGS_AI))
+                }
+                className="px-3 py-2 cursor-pointer group"
+              >
+                <Sparkles className="mr-3 h-4 w-4 text-muted-foreground group-aria-selected:text-primary" />
+                <span className="font-medium">Modèles d'IA & Clés API</span>
+              </CommandItem>
+            )}
           </CommandGroup>
 
           <CommandSeparator className="bg-muted/50 mx-2" />
@@ -273,29 +287,29 @@ export function CommandMenu({
             </CommandItem>
             <CommandItem className="px-3 py-2 cursor-pointer group">
               <Mail className="mr-3 h-4 w-4 text-muted-foreground group-aria-selected:text-primary" />
-              <span className="font-medium">Contact Support</span>
+              <span className="font-medium">Contacter le support</span>
             </CommandItem>
           </CommandGroup>
         </CommandList>
 
         <div className="bg-muted/30 p-3 border-t flex items-center justify-center gap-6">
           <div className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-            <kbd className="border bg-background px-1.5 py-0.5 shadow-sm">
-              Up/Down
+            <kbd className="border bg-background px-1.5 py-0.5 shadow-sm rounded">
+              ↑ / ↓
             </kbd>
-            navigate
+            naviguer
           </div>
           <div className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-            <kbd className="border bg-background px-1.5 py-0.5 shadow-sm">
-              Enter
+            <kbd className="border bg-background px-1.5 py-0.5 shadow-sm rounded">
+              Entrée
             </kbd>
-            select
+            sélectionner
           </div>
           <div className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
-            <kbd className="border bg-background px-1.5 py-0.5 shadow-sm">
-              Esc
+            <kbd className="border bg-background px-1.5 py-0.5 shadow-sm rounded">
+              Échap
             </kbd>
-            close
+            fermer
           </div>
         </div>
       </CommandDialog>

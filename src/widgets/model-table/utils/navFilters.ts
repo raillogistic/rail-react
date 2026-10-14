@@ -146,18 +146,20 @@ export function resolveNavFilterVariables(
   selections: NavFilterSelectionState | undefined,
   options: { excludeGroupKeys?: string[] } = {},
 ): ModelTableNavFilterVariables | undefined {
-  if (!navFilters?.groups.length || !selections) {
+  if (!navFilters) {
     return undefined;
   }
 
   const excludedGroups = new Set(options.excludeGroupKeys ?? []);
-  let merged: Record<string, unknown> = {};
+  let merged: Record<string, unknown> = mergeModelTableQueryVariables(
+    undefined, { where: navFilters.fixedWhere },
+  );
 
   navFilters.groups.forEach((group) => {
     if (excludedGroups.has(group.key)) {
       return;
     }
-    const selectedKey = normalizeSelectionValue(selections[group.key]);
+    const selectedKey = normalizeSelectionValue(selections?.[group.key]);
     if (!selectedKey) {
       return;
     }

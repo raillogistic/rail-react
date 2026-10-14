@@ -1,11 +1,16 @@
 import { describe, expect, it } from "vitest";
-import type { AppRouteConfig, NavigationGroup } from "../contracts";
+import { LayoutDashboard } from "lucide-react";
+import type { AppManifest, AppRouteConfig, NavigationGroup } from "../contracts";
 import {
+  buildAccessibleAppRailItems,
   buildRouteMembershipIndex,
   canAccessAppRoute,
+  filterNavigationSectionsByProject,
   filterNavigationGroupsByAccess,
+  findCurrentProjectId,
   resolveAccessibleDefaultRoute,
 } from "../routeAccess";
+import { toNavigationSections } from "../navigation";
 import type { RouteAccessManifest } from "@/shared/routing/access";
 
 const routes: AppRouteConfig[] = [
@@ -67,6 +72,25 @@ const navigationGroups: NavigationGroup[] = [
         ],
       },
     ],
+  },
+];
+
+const manifests: AppManifest[] = [
+  {
+    projectId: "core",
+    label: "Core",
+    icon: LayoutDashboard,
+    defaultRoute: "/dashboard",
+    routes: [routes[0]],
+    navigation: [],
+  },
+  {
+    projectId: "operations",
+    label: "Operations",
+    icon: LayoutDashboard,
+    defaultRoute: "/operations/orders",
+    routes: [routes[1], routes[2]],
+    navigation: navigationGroups,
   },
 ];
 
@@ -155,5 +179,57 @@ describe("routeAccess", () => {
     expect(
       resolveAccessibleDefaultRoute(routes, "/operations/shipments", canAccessRoute),
     ).toBe("/dashboard");
+  });
+
+  it("builds app rail items and filters submenu sections for the active project", () => {
+    const routeMembershipIndex = buildRouteMembershipIndex(routes, navigationGroups);
+    const canAccessRoute = (route: AppRouteConfig): boolean =>
+      canAccessAppRoute(route, {
+        user: {
+          roles: ["ops_manager"],
+          permissions: ["operations.view_orders"],
+        },
+        isAuthenticated: true,
+        groups: navigationGroups,
+        routeMembershipIndex,
+      });
+
+    const appRailItems = buildAccessibleAppRailItems(
+      manifests,
+      routes,
+      canAccessRoute,
+    );
+    const sections = toNavigationSections(navigationGroups);
+
+    expect(appRailItems).toEqual([
+      {
+        projectId: "operations",
+        label: "Operations",
+        icon: LayoutDashboard,
+        defaultRoute: "/operations/orders",
+      },
+    ]);
+    // The core fixture has routes but no navigation: compatibility URLs remain usable.
+    expect(canAccessRoute(routes[0])).toBe(true);
+    expect(filterNavigationSectionsByProject(sections, "operations")).toEqual(
+      sections,
+    );
+    expect(filterNavigationSectionsByProject(sections, "core")).toEqual([]);
+  });
+
+  it("resolves the current project id from static and parameterized routes", () => {
+    expect(findCurrentProjectId("/operations/orders", routes)).toBe("operations");
+    expect(
+      findCurrentProjectId("/operations/shipments", [
+        ...routes,
+        {
+          id: "operations.shipment.detail",
+          path: "/operations/shipments/:shipmentId",
+          guard: "protected",
+          projectId: "operations",
+          element: "shipment-detail",
+        },
+      ]),
+    ).toBe("operations");
   });
 });

@@ -102,10 +102,10 @@ function DraggableHead({
         "border-b border-primary-foreground/15 bg-primary text-primary-foreground hover:bg-primary/95 text-left",
         "transition-all duration-200",
         density === "compact"
-          ? "h-8 p-0 text-[11px] tracking-normal"
+          ? "h-5 p-0 text-[10px] tracking-normal"
           : density === "spacious"
-            ? "h-12 p-0 text-sm"
-            : "h-10 p-0 text-xs tracking-normal",
+            ? "h-7 p-0 text-xs"
+            : "h-6 p-0 text-[11px] tracking-normal",
         isDragging && "opacity-75 z-30 ring-1 ring-white shadow-sm bg-primary text-primary-foreground",
         isActions && "bg-primary font-semibold text-xs tracking-wider",
         className,
@@ -374,10 +374,10 @@ export function TableHeader({
               "border-b border-primary-foreground/15 bg-primary",
               "transition-colors duration-200",
               density === "compact"
-                ? "py-0 px-2 h-8"
+                ? "py-0 px-2 h-5"
                 : density === "spacious"
-                  ? "py-0 px-3.5 h-12"
-                  : "py-0 px-3 h-10",
+                  ? "py-0 px-3.5 h-7"
+                  : "py-0 px-3 h-6",
             )}
           >
             <div className="flex items-center justify-center h-full">
@@ -478,7 +478,7 @@ export function TableHeader({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="h-7 w-7 rounded-md hover:bg-primary-foreground/10 text-primary-foreground border-none transition-none shadow-none focus-visible:ring-0"
+                  className="h-5 w-5 rounded-md hover:bg-primary-foreground/10 text-primary-foreground border-none transition-none shadow-none focus-visible:ring-0"
                   title="Configuration de la table"
                 >
                   <SlidersHorizontal className="h-3.5 w-3.5" />

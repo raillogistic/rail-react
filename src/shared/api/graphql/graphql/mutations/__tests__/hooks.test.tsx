@@ -1,8 +1,11 @@
+/** Exercise the actual generated mutation hooks and their documents. */
 import React from "react";
 import { act, renderHook, waitFor } from "@testing-library/react";
 import { MockedProvider } from "@apollo/client/testing";
 import { print } from "graphql";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+
+vi.unmock("@/shared/api/graphql/graphql/mutations/hooks/useModelBulkDeleteMutation");
 import {
   MODEL_FORM_CONTRACT_QUERY,
   MODEL_FORM_INITIAL_DATA_QUERY,

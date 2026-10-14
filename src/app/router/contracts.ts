@@ -8,6 +8,7 @@ export interface AppRouteConfig {
   path: string;
   guard: RouteGuard;
   projectId: string;
+  moduleId?: string;
   requiredPermission?: string;
   access?: RouteAccessRequirement;
   title?: string;
@@ -27,6 +28,7 @@ export interface NavigationEntry {
   hidden?: boolean;
   description?: string;
   icon?: ComponentType<{ className?: string }>;
+  badge?: ReactNode;
   children?: NavigationEntry[];
   routeId?: string;
 }
@@ -41,10 +43,22 @@ export interface NavigationGroup {
   entries: NavigationEntry[];
 }
 
+export interface AppRailItem {
+  projectId: string;
+  moduleId?: string;
+  label: string;
+  shortLabel?: string;
+  defaultRoute: string;
+  icon: ComponentType<{ className?: string }>;
+}
+
 export interface AppManifest {
   projectId: string;
   moduleId?: string;
   order?: number;
+  label: string;
+  shortLabel?: string;
+  icon: ComponentType<{ className?: string }>;
   defaultRoute: string;
   routes: AppRouteConfig[];
   navigation: NavigationGroup[];

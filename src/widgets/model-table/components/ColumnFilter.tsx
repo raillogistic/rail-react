@@ -162,7 +162,7 @@ export function ColumnFilter({
           className={cn(
             hideTrigger
               ? "sr-only h-0 w-0 p-0 m-0 border-0"
-              : "h-8 w-8 p-0 ml-1 data-[state=open]:bg-accent",
+              : "h-5 w-5 p-0 ml-1 data-[state=open]:bg-accent",
             !hideTrigger &&
               (isActive
                 ? "text-primary hover:text-primary"

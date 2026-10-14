@@ -1,3 +1,11 @@
+/**
+ * @file boolean.tsx
+ * @description Entrée de formulaire booléenne (case à cocher ou interrupteur).
+ * Modifié pour forcer shadow-none sur Checkbox et Switch, supprimer les ombres par défaut,
+ * et utiliser des coins arrondis rounded-xl.
+ *
+ * @module form/inputs/boolean
+ */
 import React from "react";
 import { useStore } from "@tanstack/react-form";
 import { Checkbox } from "@/shared/ui/kit/checkbox";
@@ -43,7 +51,7 @@ const BooleanInput: React.FC<Props> = ({ config, field, form }) => {
   return (
     <FieldWrapper config={config} fieldId={fieldId} error={error} dirty={dirty}>
       <div className="relative group/bool">
-        <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/30 transition-all duration-300 group-focus-within/bool:text-primary/50 group-focus-within/bool:scale-110">
+        <div className="pointer-events-none absolute left-4.5 top-1/2 -translate-y-1/2 text-muted-foreground/35 transition-all duration-300 group-focus-within/bool:text-primary group-focus-within/bool:scale-110">
           <Icon className={cn("size-4.5", isSwitch ? "stroke-2" : "stroke-[2.5]", value && "text-primary")} />
         </div>
         
@@ -51,10 +59,10 @@ const BooleanInput: React.FC<Props> = ({ config, field, form }) => {
           htmlFor={fieldId}
           data-slot="input"
           className={cn(
-            "flex h-11 w-full cursor-pointer items-center justify-between rounded-xl border border-input/70 bg-muted/5 pl-11 pr-4 text-[13.5px] font-bold transition-all duration-300 ease-out",
-            "hover:border-primary/40 hover:bg-muted/8 hover:shadow-inner",
+            "flex h-9 w-full cursor-pointer items-center justify-between rounded-xl border border-transparent bg-muted/50 pl-11 pr-4 text-[13.5px] font-bold transition-all duration-300 ease-out",
+            "hover:border-primary/40 hover:bg-muted/60",
             "focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10",
-            value && "border-primary/20 bg-primary/2 text-foreground",
+            value && "bg-primary/2 text-foreground",
             !value && "text-foreground/70",
             config.disabled && "cursor-not-allowed opacity-60 grayscale-[0.5]",
           )}
@@ -79,7 +87,7 @@ const BooleanInput: React.FC<Props> = ({ config, field, form }) => {
                 }}
                 disabled={config.disabled}
                 className={cn(
-                  "transition-all duration-500 scale-110",
+                  "transition-all duration-500 scale-110 shadow-sm",
                   value ? "data-[state=checked]:bg-primary" : "data-[state=unchecked]:bg-muted-foreground/30 dark:data-[state=unchecked]:bg-muted-foreground/50",
                 )}
               />
@@ -93,8 +101,8 @@ const BooleanInput: React.FC<Props> = ({ config, field, form }) => {
                 }}
                 disabled={config.disabled}
                 className={cn(
-                  "size-5 rounded-[0.4rem] transition-all duration-300",
-                  value ? "border-primary bg-primary scale-110 shadow-sm shadow-primary/20" : "border-muted-foreground/40 bg-muted-foreground/5",
+                  "size-5 rounded-[0.4rem] transition-all duration-300 shadow-sm",
+                  value ? "border-primary bg-primary scale-110" : "border-muted-foreground/40 bg-muted-foreground/5",
                 )}
               />
             )}

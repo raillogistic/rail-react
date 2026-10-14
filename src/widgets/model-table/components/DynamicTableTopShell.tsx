@@ -89,7 +89,7 @@ export function DynamicTableTopShell<TSource extends object>({
   return (
     <div className="flex w-full flex-col bg-background relative z-10 transition-colors">
       {showHeaderRow && (
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between px-2 py-4 gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between px-2 py-2 gap-4">
           {sectionVisibility.header ? (
             <div className="flex-1 min-w-0">
               <HeaderSlot

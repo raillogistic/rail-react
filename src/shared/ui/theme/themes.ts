@@ -47,6 +47,7 @@ import { pulsarTheme } from "./themes/pulsar";
 import { obsidianTheme } from "./themes/obsidian";
 import { logisticTheme } from "./themes/logistic";
 import { transtevTheme } from "./themes/transtev";
+import { instagramTheme } from "./themes/instagram";
 
 export const themes: Record<string, ThemeDefinition> = {
   default: defaultTheme,
@@ -92,6 +93,7 @@ export const themes: Record<string, ThemeDefinition> = {
   obsidian: obsidianTheme,
   logistic: logisticTheme,
   transtev: transtevTheme,
+  instagram: instagramTheme,
 };
 
 /**

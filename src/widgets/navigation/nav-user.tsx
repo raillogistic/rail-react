@@ -38,6 +38,8 @@ export type NavUserProps = {
   user?: UserLike | null;
   /** Callback déclenché pour se déconnecter de la session. */
   onLogout?: () => void | Promise<void>;
+  /** Si vrai, force l'affichage compact (pour l'App Rail) */
+  isRail?: boolean;
 };
 
 /**
@@ -46,9 +48,9 @@ export type NavUserProps = {
  * et ouvrant un menu déroulant premium avec ses préférences, profil, et déconnexion.
  * Tous les libellés sont entièrement traduits en français et conformes à l'esthétique Localira.
  */
-export function NavUser({ user, onLogout }: NavUserProps = {}) {
+export function NavUser({ user, onLogout, isRail }: NavUserProps = {}) {
   const { isMobile, state } = useSidebar();
-  const is_collapsed = state === "collapsed";
+  const is_collapsed = isRail || state === "collapsed";
   const is_mobile = isMobile;
   const {
     userAvatar: user_avatar,
@@ -69,16 +71,16 @@ export function NavUser({ user, onLogout }: NavUserProps = {}) {
 
   return (
     <SidebarMenu>
-      <SidebarMenuItem>
+      <SidebarMenuItem className={cn(is_collapsed && "flex justify-center")}>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <SidebarMenuButton
               size="lg"
               className={cn(
-                "h-12 w-full group rounded-lg transition-all duration-200",
+                "group transition-all duration-200",
                 "data-[state=open]:bg-neutral-100/80 dark:data-[state=open]:bg-zinc-800/80 data-[state=open]:text-foreground",
                 "hover:bg-neutral-100/60 dark:hover:bg-zinc-800/60",
-                is_collapsed ? "justify-center p-0" : "px-2",
+                is_collapsed ? "h-10 w-10 justify-center p-0 rounded-full" : "h-12 w-full px-2 rounded-lg",
               )}
             >
               {/* Conteneur d'avatar avec témoin de présence en ligne vert */}
@@ -86,7 +88,7 @@ export function NavUser({ user, onLogout }: NavUserProps = {}) {
                 <Avatar
                   className={cn(
                     "border border-neutral-200/30 group-hover:border-primary/45 transition-colors duration-200",
-                    is_collapsed ? "h-8 w-8" : "h-9 w-9",
+                    is_collapsed ? "h-10 w-10" : "h-9 w-9",
                   )}
                 >
                   <AvatarImage
@@ -104,10 +106,10 @@ export function NavUser({ user, onLogout }: NavUserProps = {}) {
               {!is_collapsed && (
                 <>
                   <div className="grid flex-1 text-left text-sm leading-tight ml-2.5">
-                    <span className="truncate font-semibold text-foreground/90 tracking-tight text-[13px]">
+                    <span className="truncate font-semibold text-foreground/90 tracking-tight text-[0.8125rem]">
                       {primary_identity}
                     </span>
-                    <span className="text-muted-foreground/60 truncate text-[10px] font-medium tracking-wide">
+                    <span className="text-muted-foreground/60 truncate text-[0.625rem] font-medium tracking-wide">
                       {secondary_identity}
                     </span>
                   </div>
@@ -146,11 +148,11 @@ export function NavUser({ user, onLogout }: NavUserProps = {}) {
                   <div className="flex items-center gap-1.5 mt-0.5">
                     <Badge
                       variant="secondary"
-                      className="text-[9px] h-4.5 px-1.5 py-0 font-bold uppercase tracking-wider bg-primary/10 text-primary border-none shadow-none"
+                      className="text-[0.5625rem] h-4.5 px-1.5 py-0 font-bold uppercase tracking-wider bg-primary/10 text-primary border-none shadow-none"
                     >
                       Compte Interne
                     </Badge>
-                    <span className="text-muted-foreground/50 truncate text-[10px] font-medium">
+                    <span className="text-muted-foreground/50 truncate text-[0.625rem] font-medium">
                       {user?.username || "actif"}
                     </span>
                   </div>
@@ -160,19 +162,22 @@ export function NavUser({ user, onLogout }: NavUserProps = {}) {
 
             {/* Groupe Navigation */}
             <DropdownMenuGroup className="space-y-0.5 py-1 px-1">
-              <div className="px-3 py-1 text-[9px] font-bold text-muted-foreground/60 uppercase tracking-[0.2em] mb-1">
+              <div className="px-3 py-1 text-[0.5625rem] font-bold text-muted-foreground/60 uppercase tracking-[0.2em] mb-1">
                 Navigation
               </div>
               <DropdownMenuItem
                 asChild
                 className="px-3 py-2 rounded-lg focus:bg-primary/8 focus:text-primary group cursor-pointer transition-colors duration-150"
               >
-                <Link to={ROUTES.SETTINGS_ACCOUNT} className="w-full flex items-center">
+                <Link
+                  to={ROUTES.SETTINGS_ACCOUNT}
+                  className="w-full flex items-center"
+                >
                   <IconUserCircle className="size-4.5 mr-3 opacity-60 group-focus:text-primary" />
-                  <span className="flex-1 font-medium text-[13px] tracking-tight">
+                  <span className="flex-1 font-medium text-[0.8125rem] tracking-tight">
                     Mon Profil
                   </span>
-                  <DropdownMenuShortcut className="group-focus:text-primary opacity-50 text-[10px]">
+                  <DropdownMenuShortcut className="group-focus:text-primary opacity-50 text-[0.625rem]">
                     Shift+Cmd+P
                   </DropdownMenuShortcut>
                 </Link>
@@ -186,40 +191,13 @@ export function NavUser({ user, onLogout }: NavUserProps = {}) {
                   className="w-full flex items-center"
                 >
                   <IconSettings className="size-4.5 mr-3 opacity-60 group-focus:text-primary" />
-                  <span className="flex-1 font-medium text-[13px] tracking-tight">
+                  <span className="flex-1 font-medium text-[0.8125rem] tracking-tight">
                     Préférences
                   </span>
-                  <DropdownMenuShortcut className="group-focus:text-primary opacity-50 text-[10px]">
+                  <DropdownMenuShortcut className="group-focus:text-primary opacity-50 text-[0.625rem]">
                     Cmd+S
                   </DropdownMenuShortcut>
                 </Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem className="px-3 py-2 rounded-lg focus:bg-primary/8 focus:text-primary group cursor-pointer transition-colors duration-150">
-                <IconShieldLock className="size-4.5 mr-3 opacity-60 group-focus:text-primary" />
-                <span className="flex-1 font-medium text-[13px] tracking-tight">
-                  Sécurité
-                </span>
-              </DropdownMenuItem>
-            </DropdownMenuGroup>
-
-            <DropdownMenuSeparator className="bg-neutral-200/20 dark:bg-zinc-800/40 my-1.5 mx-1" />
-
-            {/* Groupe Support & Notifications */}
-            <DropdownMenuGroup className="space-y-0.5 py-1 px-1">
-              <DropdownMenuItem className="px-3 py-2 rounded-lg focus:bg-primary/8 focus:text-primary group cursor-pointer transition-colors duration-150">
-                <IconBell className="size-4.5 mr-3 opacity-60 group-focus:text-primary" />
-                <span className="flex-1 font-medium text-[13px] tracking-tight">
-                  Notifications
-                </span>
-                <Badge className="ml-auto h-4 px-1.5 min-w-4 justify-center bg-primary text-primary-foreground text-[9px] font-bold border-none shadow-none rounded-full">
-                  12
-                </Badge>
-              </DropdownMenuItem>
-              <DropdownMenuItem className="px-3 py-2 rounded-lg focus:bg-primary/8 focus:text-primary group cursor-pointer transition-colors duration-150">
-                <IconHelpCircle className="size-4.5 mr-3 opacity-60 group-focus:text-primary" />
-                <span className="flex-1 font-medium text-[13px] tracking-tight">
-                  Centre d'aide
-                </span>
               </DropdownMenuItem>
             </DropdownMenuGroup>
 
@@ -232,8 +210,10 @@ export function NavUser({ user, onLogout }: NavUserProps = {}) {
                 className="px-3 py-2 rounded-lg focus:bg-destructive/10 focus:text-destructive text-destructive font-semibold cursor-pointer transition-colors duration-150"
               >
                 <IconLogout className="size-4.5 mr-3" />
-                <span className="flex-1 text-[13px] tracking-tight">Se déconnecter</span>
-                <DropdownMenuShortcut className="opacity-70 text-[10px]">
+                <span className="flex-1 text-[0.8125rem] tracking-tight">
+                  Se déconnecter
+                </span>
+                <DropdownMenuShortcut className="opacity-70 text-[0.625rem]">
                   Option+Cmd+Q
                 </DropdownMenuShortcut>
               </DropdownMenuItem>

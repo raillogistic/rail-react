@@ -1,13 +1,9 @@
 import type { AppManifest, AppRouteConfig, NavigationGroup } from "./contracts";
 import { normalizePath } from "./contracts";
-import { getLocalManifestExtension } from "./localManifestExtension";
 import { assertValidManifestSet } from "./manifestValidation";
 
-type ManifestModule = {
-  default?: AppManifest;
-  manifest?: AppManifest;
-  PROJECT_MANIFEST?: AppManifest;
-};
+import application from '@rail/application';
+import coreManifest from '@/projects/core/manifest';
 
 type RegistrySnapshot = {
   manifests: AppManifest[];
@@ -15,21 +11,6 @@ type RegistrySnapshot = {
   navigation: NavigationGroup[];
   defaultRouteByProject: Record<string, string>;
 };
-
-const projectManifestModules = import.meta.glob<ManifestModule>(
-  "@/projects/*/manifest.ts",
-  {
-    eager: true,
-  },
-);
-
-const normalizeManifestModule = (module: ManifestModule): AppManifest | null =>
-  module.default ?? module.manifest ?? module.PROJECT_MANIFEST ?? null;
-
-const loadProjectManifests = (): AppManifest[] =>
-  Object.values(projectManifestModules)
-    .map(normalizeManifestModule)
-    .filter((manifest): manifest is AppManifest => !!manifest);
 
 const normalizeOrder = (order: number | undefined): number =>
   Number.isFinite(order) ? Number(order) : Number.MAX_SAFE_INTEGER;
@@ -79,7 +60,10 @@ const mergeManifests = (manifests: AppManifest[]): RegistrySnapshot => {
     );
 
   const defaultRouteByProject = Object.fromEntries(
-    sortedManifests.map((manifest) => [manifest.projectId, manifest.defaultRoute]),
+    sortedManifests.map((manifest) => [
+      manifest.projectId,
+      manifest.defaultRoute,
+    ]),
   );
 
   return {
@@ -91,9 +75,8 @@ const mergeManifests = (manifests: AppManifest[]): RegistrySnapshot => {
 };
 
 const loadManifests = (): AppManifest[] => {
-  const projectManifests = loadProjectManifests();
-  const localManifest = getLocalManifestExtension();
-  const manifests = [...projectManifests, ...(localManifest ? [localManifest] : [])];
+  const core = { ...coreManifest, routes: [...coreManifest.routes, ...(application.coreRoutes ?? [])] };
+  const manifests = [core, ...(application.manifests ?? [])];
   return manifests;
 };
 
@@ -118,17 +101,23 @@ export const __resetManifestRegistryForTests = (): void => {
 
 export const getAllRoutes = (): AppRouteConfig[] => getSnapshot().routes;
 
-export const getNavigationGroups = (): NavigationGroup[] => getSnapshot().navigation;
+export const getNavigationGroups = (): NavigationGroup[] =>
+  getSnapshot().navigation;
 
-export const getDefaultRouteByProject = (projectId: string): string | undefined =>
-  getSnapshot().defaultRouteByProject[projectId];
+export const getProjectManifests = (): AppManifest[] => getSnapshot().manifests;
+
+export const getDefaultRouteByProject = (
+  projectId: string,
+): string | undefined => getSnapshot().defaultRouteByProject[projectId];
 
 export const getDefaultRoute = (): string => {
   const defaults = getSnapshot().defaultRouteByProject;
-  return defaults.core ?? Object.values(defaults)[0] ?? "/";
+  return application.defaultRoute ?? defaults.core ?? Object.values(defaults)[0] ?? "/";
 };
 
-export const findRouteByPath = (pathname: string): AppRouteConfig | undefined => {
+export const findRouteByPath = (
+  pathname: string,
+): AppRouteConfig | undefined => {
   const normalized = normalizePath(pathname);
   return getSnapshot().routes.find(
     (route) => normalizePath(route.path) === normalized,

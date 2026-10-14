@@ -1,12 +1,13 @@
 import { Button } from "@/shared/ui/kit/button";
 import { localizeTableErrorMessage } from "../DynamicModelTable.shared";
 
-export function ModelTableLoadingSkeleton() {
+export function ModelTableLoadingSkeleton({ text = "Chargement du tableau…" }: { text?: string } = {}) {
   return (
     <div
       className="flex h-105 w-full flex-col gap-5 p-4"
       role="status"
     >
+      <span className="sr-only">{text}</span>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div className="size-12 bg-muted/40" />

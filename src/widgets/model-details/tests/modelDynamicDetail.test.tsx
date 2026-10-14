@@ -1,3 +1,4 @@
+/** Verify detail actions, layouts and refresh behavior. */
 import * as React from "react";
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -1364,7 +1365,7 @@ describe("ModelDynamicDetail", () => {
     expect(publishItem).toBeEnabled();
   });
 
-  it("does not refetch detail data after custom action mutation success", async () => {
+  it("refetches detail data after custom action mutation success", async () => {
     const user = userEvent.setup();
     const { metadataRefetch, queryRefetch } = setupDefaultMocks({
       metadata: {
@@ -1407,8 +1408,8 @@ describe("ModelDynamicDetail", () => {
       expect(apolloClientMock.mutate).toHaveBeenCalled();
     });
 
-    expect(metadataRefetch).not.toHaveBeenCalled();
-    expect(queryRefetch).not.toHaveBeenCalled();
+    expect(metadataRefetch).toHaveBeenCalledTimes(1);
+    expect(queryRefetch).toHaveBeenCalledTimes(1);
   });
 
   it("renders header title from name by default", async () => {

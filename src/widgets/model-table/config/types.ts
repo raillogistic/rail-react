@@ -67,6 +67,8 @@ export type ModelTableNavFilterGroup = {
 };
 
 export type ModelTableNavFiltersConfig = {
+  /** Fixed scope retained for queries, counts and exports when filters are cleared. */
+  fixedWhere?: Record<string, unknown>;
   count?: boolean;
   includeTableVariable?: boolean;
   groups: ModelTableNavFilterGroup[];
@@ -704,6 +706,25 @@ export interface DynamicModelTableHandle<
 /**
  * Public props contract for the DynamicTable-backed model table implementation.
  */
+/** A read-only projection supplied by an already authorized query or detail record. */
+export interface ModelTableDataSource<TSource extends object> {
+  rows: TSource[];
+  loading?: boolean;
+  error?: Error | null;
+  refetch?: () => unknown | Promise<unknown>;
+  pagination?: {
+    page: number;
+    pageSize: number;
+    total: number;
+    hasNext: boolean;
+    onPageChange: (page: number) => void;
+  };
+}
+
 export type DynamicModelTableProps<
   TSource extends object = Record<string, unknown>,
-> = ModelTableV2Props<TSource>;
+> = ModelTableV2Props<TSource> & (
+  | { dataSource?: undefined; toolbar?: never }
+  | { dataSource: ModelTableDataSource<TSource>; toolbar?: React.ReactNode;
+      baseTable: NonNullable<ModelTableV2Props<TSource>["baseTable"]> & { fields: BaseModelTableFieldsInput<TSource> } }
+);

@@ -359,7 +359,7 @@ export function RowActions<TSource extends object = Record<string, unknown>>({
   const modelPermissions = metadata?.permissions;
   const canDeleteByMutation = baseDeleteMutation?.allowed;
   const canUpdateByMutation = baseUpdateMutation?.allowed;
-  const detailUsesUpdateLink = (update?.type ?? "drawer") === "link";
+  const detailUsesUpdateLink = (detail?.type ?? "drawer") === "link";
   const canDelete =
     !!rowId &&
     (permissions?.canDelete ??
@@ -373,7 +373,7 @@ export function RowActions<TSource extends object = Record<string, unknown>>({
     true;
   const canDetail =
     !!rowId &&
-    (detailUsesUpdateLink ? canEdit : (modelPermissions?.canRetrieve ?? true));
+    (modelPermissions?.canRetrieve ?? true);
 
   const updateContext = useMemo<ModelTableUpdateContext<TSource>>(
     () => ({

@@ -1,7 +1,7 @@
 /**
- * Time-only input with a clock icon indicator.
- *
- * Renders an HTML `<input type="time">` inside the shared FieldWrapper.
+ * @file time.tsx
+ * @description Entrée d'heure seule avec indicateur d'icône d'horloge.
+ * Modifié pour forcer shadow-none sur l'input et utiliser des coins arrondis rounded-xl.
  *
  * @module form/inputs/time
  */
@@ -32,7 +32,7 @@ const TimeInput: React.FC<Props> = ({ config, field, form }) => {
   return (
     <FieldWrapper config={config} error={error} dirty={dirty}>
       <div className="relative group/time">
-        <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/30 transition-all duration-300 group-focus-within/time:text-primary/50 group-focus-within/time:scale-110">
+        <div className="pointer-events-none absolute left-4.5 top-1/2 -translate-y-1/2 text-muted-foreground/35 transition-all duration-300 group-focus-within/time:text-primary group-focus-within/time:scale-110">
           <ClockIcon className="size-4.5 stroke-[2.5]" />
         </div>
         <Input
@@ -45,9 +45,9 @@ const TimeInput: React.FC<Props> = ({ config, field, form }) => {
           onBlur={field.handleBlur}
           disabled={config.disabled}
           className={cn(
-            "h-12 rounded-xl border border-input/60 bg-background pl-11 pr-4 text-[13.5px] font-bold transition-all duration-300 ease-out",
-            "hover:border-primary/30 hover:bg-muted/3 hover:shadow-md hover:shadow-primary/1",
-            "focus:border-primary focus:ring-4 focus:ring-primary/10 focus-visible:ring-0",
+            "h-9 w-full rounded-xl border border-transparent bg-muted/50 pl-11 pr-4 text-[13.5px] font-medium transition-all duration-300 ease-out shadow-sm",
+            "hover:border-primary/40 hover:bg-muted/60",
+            "focus:border-primary focus:ring-4 focus:ring-primary/10 focus-visible:ring-0 focus-visible:outline-none",
              config.disabled && "cursor-not-allowed opacity-60 grayscale-[0.5]",
           )}
         />

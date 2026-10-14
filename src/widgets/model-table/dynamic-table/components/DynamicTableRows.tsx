@@ -4,6 +4,7 @@
  * Redessiné pour correspondre au style Localira (bordures en pointillés, suppression du striping, texte gris).
  * Modifié pour supprimer les animations et les ombres afin d'améliorer les performances de l'interface utilisateur.
  * Ajoute un attribut `title` natif sur les cellules tronquées pour afficher la valeur complète au survol.
+ * Centre et formate correctement les messages de chargement et d'absence de résultat (empty state).
  */
 import { useMemo } from "react";
 import type { CSSProperties, RefObject } from "react";
@@ -370,8 +371,8 @@ export function DynamicTableRows<TRow extends Record<string, unknown>>({
     return (
       <TableBody>
         <TableRow className="hover:bg-transparent">
-          <TableCell colSpan={visibleColumnCount} className="h-64 border-0">
-            <div className="flex flex-col items-center justify-center gap-4 py-12">
+          <TableCell colSpan={visibleColumnCount} className="h-64 border-0 whitespace-normal">
+            <div className="flex w-full flex-col items-center justify-center gap-4 py-12">
               <div className="relative flex size-12 items-center justify-center rounded-full bg-primary/10">
                 <Loader2 className="size-6 text-primary animate-spin" />
               </div>
@@ -395,8 +396,8 @@ export function DynamicTableRows<TRow extends Record<string, unknown>>({
     return (
       <TableBody>
         <TableRow className="hover:bg-transparent">
-          <TableCell colSpan={visibleColumnCount} className="h-64 border-0">
-            <div className="flex flex-col items-center justify-center gap-4 py-12">
+          <TableCell colSpan={visibleColumnCount} className="h-64 border-0 whitespace-normal">
+            <div className="flex w-full flex-col items-center justify-center gap-4 py-12">
               <div className="flex size-14 items-center justify-center rounded-full bg-primary/5 text-primary/60 border border-primary/10">
                 <Inbox className="size-6" />
               </div>

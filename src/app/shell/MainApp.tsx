@@ -1,3 +1,10 @@
+/**
+ * @file MainApp.tsx
+ * @description Layout principal de l'application.
+ * Modifié pour supprimer la surcharge de --sidebar-width afin d'utiliser la valeur globale définie dans sidebar.tsx.
+ *
+ * @module app/shell/MainApp
+ */
 import React, { useEffect } from "react";
 import {
   OfflineAlert,
@@ -5,9 +12,13 @@ import {
 } from "@/widgets/components/OfflineAlert";
 import { SidebarProvider } from "@/shared/ui/kit/sidebar";
 import { AppSidebar } from "./AppSidebar";
-import AppContent, { AppRoutes } from "./AppContent";
+import AppContent from "./AppContent";
+import { AppRail } from "./AppRail";
+import { useLocation } from "react-router-dom";
+import { findNavigationByPath } from "@/app/router/navigation";
+import { useRouteAccess } from "@/app/router/routeAccess";
 import { useTheme } from "@/shared/ui/theme";
-import { AppNavbar } from "./AppNavbar";
+import { cn } from "@/shared/utils";
 
 /**
  * Shell layout used for all authenticated screens.
@@ -23,7 +34,14 @@ export const MainApp: React.FC = () => {
     hideOfflineAlert,
     retryConnection,
   } = useOfflineAlert();
-  const { layout } = useTheme();
+
+  const location = useLocation();
+  const { sidebarMode } = useTheme();
+  const { defaultRoute, navigationLinks, projectNavigationLinks } =
+    useRouteAccess();
+  const currentNavigation = findNavigationByPath(location.pathname, navigationLinks);
+  const title = currentNavigation?.page.title ?? "Navigation";
+  const sectionLabel = currentNavigation?.section.label;
 
   useEffect(() => {
     const handleBackendOffline = (event: CustomEvent) => {
@@ -44,69 +62,34 @@ export const MainApp: React.FC = () => {
   }, [showOfflineAlert]);
 
   const sidebarProviderStyle = {
-    "--sidebar-width": "calc(var(--spacing) * 70)",
     "--header-height": "calc(var(--spacing) * 13)",
+    "--app-rail-width": "4.5rem",
   } as React.CSSProperties;
 
-  if (layout === "horizontal") {
-    return (
-      <>
-        <OfflineAlert
-          isVisible={showAlert}
-          onRetry={retryConnection}
-          onDismiss={hideOfflineAlert}
-          message={lastError || undefined}
-        />
-        <div className="flex min-h-screen w-full min-w-0 flex-col bg-background">
-          <AppNavbar />
-          <main className="flex-1 min-w-0 overflow-x-hidden">
-            <div className="flex min-w-0 flex-col gap-4 py-4 md:gap-6 md:py-8">
-              <div className="min-w-0 px-4 lg:px-6">
-                <AppRoutes />
-              </div>
-            </div>
-          </main>
-        </div>
-      </>
-    );
-  }
-
-  if (layout === "mixed") {
-    return (
-      <SidebarProvider style={sidebarProviderStyle}>
-        <OfflineAlert
-          isVisible={showAlert}
-          onRetry={retryConnection}
-          onDismiss={hideOfflineAlert}
-          message={lastError || undefined}
-        />
-        <div className="flex min-h-screen w-full min-w-0 flex-col bg-background">
-          <AppNavbar />
-          <div className="flex min-w-0 flex-1 overflow-hidden">
-            <AppSidebar />
-            <main className="w-0 flex-1 min-w-0 overflow-y-auto overflow-x-hidden">
-              <div className="flex min-w-0 flex-col gap-4 py-4 md:gap-6 md:py-8">
-                <div className="min-w-0 px-4 lg:px-6">
-                  <AppRoutes />
-                </div>
-              </div>
-            </main>
-          </div>
-        </div>
-      </SidebarProvider>
-    );
-  }
-
   return (
-    <SidebarProvider style={sidebarProviderStyle}>
+    <SidebarProvider
+      style={sidebarProviderStyle}
+      className="flex-col h-svh overflow-hidden bg-muted dark:bg-[#09090b]"
+    >
       <OfflineAlert
         isVisible={showAlert}
         onRetry={retryConnection}
         onDismiss={hideOfflineAlert}
         message={lastError || undefined}
       />
-      <AppSidebar />
-      <AppContent />
+      <div className="flex flex-1 min-h-0 min-w-0 py-6">
+        {sidebarMode === "icons" && <AppRail />}
+        <div
+          data-slot="shell-card"
+          className={cn(
+            "flex flex-1 min-h-0 min-w-0 overflow-hidden bg-background border border-border/60 rounded-2xl shadow-md",
+            sidebarMode === "icons" ? "mr-6" : "mx-6",
+          )}
+        >
+          <AppSidebar />
+          <AppContent />
+        </div>
+      </div>
     </SidebarProvider>
   );
 };

@@ -64,6 +64,7 @@ export const GET_CURRENT_USER = gql`
         font_family: fontFamily
         table_configs: tableConfigs
       }
+
     }
   }
 `;
@@ -457,7 +458,7 @@ export const model_metadata = gql`
             {
               "name": "username__icontains",
               "lookupExpr": "icontains",
-              "helpText": "Nom d'utilisateur contient (insensible à la casse)",
+              "helpText": "Nom d'utilisateur contient (insensible Ã  la casse)",
               "filterType": "CharFilter"
             }
           ]

@@ -105,4 +105,16 @@ describe("navFilters utils", () => {
       }),
     ).toBe(1);
   });
+  it("retains the fixed scope through clearing, missing selections and conflicting saved filters", () => {
+    const scope = { department: { eq: "12" } };
+    const config = { ...navFilters, fixedWhere: scope };
+    expect(resolveNavFilterVariables(config, { status: "all", period: "all" })).toEqual({ where: scope });
+    expect(resolveNavFilterVariables(config, undefined)).toEqual({ where: scope });
+    const merged = mergeModelTableQueryVariables({ where: { department: { eq: "99" } } },
+      resolveNavFilterVariables(config, { status: "all" }));
+    expect(merged.where).toEqual({ AND: [{ department: { eq: "99" } }, scope] });
+    expect(resolveNavFilterVariables({ groups: [], fixedWhere: { purchaseRequestsCount: { eq: 0 } } }, {}))
+      .toEqual({ where: { purchaseRequestsCount: { eq: 0 } } });
+  });
+
 });

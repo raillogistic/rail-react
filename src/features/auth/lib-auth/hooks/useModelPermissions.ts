@@ -31,14 +31,23 @@ export type UseModelPermissionsOptions = {
   skip?: boolean;
 };
 
+function normalizePermissionModelName(modelName: string): string | null {
+  const normalized = modelName.trim();
+  if (!normalized || !normalized.includes(".")) {
+    return null;
+  }
+  return normalized;
+}
+
 export function useModelPermissions(
   modelName: string,
   options?: UseModelPermissionsOptions,
 ): ModelPermissions {
-  const shouldSkip = options?.skip ?? false;
+  const normalizedModelName = normalizePermissionModelName(modelName);
+  const shouldSkip = (options?.skip ?? false) || !normalizedModelName;
 
   const { data, loading } = useQuery(MY_PERMISSIONS_QUERY, {
-    variables: { modelName },
+    variables: { modelName: normalizedModelName },
     fetchPolicy: "cache-first",
     skip: shouldSkip,
   });

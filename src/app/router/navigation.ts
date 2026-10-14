@@ -4,6 +4,7 @@ import {
   getNavigationGroups,
 } from "./manifestRegistry";
 import { normalizePath, type NavigationGroup } from "./contracts";
+import { matchPath } from "react-router-dom";
 import type {
   NavigationItem,
   NavigationPage,
@@ -24,6 +25,7 @@ export const toNavigationSections = (
   return groups.map((group) => ({
     id: group.id,
     label: group.label,
+    projectId: group.projectId,
     items: group.entries.map((entry) => {
       const route = entry.routeId ? routeById.get(entry.routeId) : undefined;
       const entryPermission =
@@ -39,6 +41,7 @@ export const toNavigationSections = (
         component: route?.element,
         description: entry.description,
         hidden: entry.hidden,
+        badge: entry.badge,
         children: entry.children?.map((child) => {
           const childRoute = child.routeId ? routeById.get(child.routeId) : undefined;
           const childPermission =
@@ -101,14 +104,25 @@ export const findNavigationByPath = (
   | undefined => {
   const normalized = normalizePath(pathname);
 
+  const matchesPath = (targetPath: string): boolean =>
+    Boolean(
+      matchPath(
+        {
+          path: normalizePath(targetPath),
+          end: true,
+        },
+        normalized,
+      ),
+    );
+
   for (const section of navigationLinks) {
     for (const item of section.items) {
-      if (normalizePath(item.path) === normalized && item.component) {
+      if (matchesPath(item.path) && item.component) {
         return { section, item, page: { ...item, component: item.component } };
       }
 
       const match = item.children?.find(
-        (child) => normalizePath(child.path) === normalized,
+        (child) => matchesPath(child.path),
       );
       if (match) {
         return { section, item, page: match };

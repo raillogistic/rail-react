@@ -135,8 +135,8 @@ export const discordTheme: ThemeDefinition = {
       border: none !important;
     `,
     navbar: `
-      background: var(--background) !important;
-      border-bottom: 1px solid var(--border) !important;
+      background: transparent !important;
+      border-bottom: none !important;
     `,
     "tabs-list": `
       background: transparent !important;

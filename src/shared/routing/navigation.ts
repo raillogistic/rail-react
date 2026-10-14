@@ -21,11 +21,13 @@ export interface NavigationItem {
   component?: ReactNode;
   description?: string;
   hidden?: boolean;
+  badge?: ReactNode;
   children?: NavigationPage[];
 }
 
 export interface NavigationSection {
   id: string;
   label: string;
+  projectId?: string;
   items: NavigationItem[];
 }

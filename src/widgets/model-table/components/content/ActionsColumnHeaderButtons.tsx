@@ -74,7 +74,7 @@ export function ActionsColumnHeaderButtons<
 
   /** Classes communes aux boutons icône de cet en-tête. */
   const btn_class = cn(
-    "h-7 w-7 rounded-md border-none shadow-none transition-none focus-visible:ring-0",
+    "h-5 w-5 rounded-md border-none shadow-none transition-none focus-visible:ring-0",
     isPrimary
       ? "text-primary-foreground hover:bg-primary-foreground/10 hover:text-white"
       : "text-muted-foreground hover:bg-muted",

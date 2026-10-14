@@ -3,6 +3,7 @@
  *
  * Provides a toolbar with common formatting actions and a WYSIWYG editing
  * area, all wrapped inside the shared FieldWrapper.
+ * Modifié pour utiliser des coins arrondis rounded-xl.
  *
  * @module form/inputs/rich-text
  */
@@ -106,14 +107,14 @@ const RichTextInput: React.FC<Props> = ({ config, field, form }) => {
 
   /** Shared toggle button className for all toolbar items. */
   const toggleClass =
-    "size-8 rounded-lg p-0 transition-all duration-200 data-[state=on]:bg-primary/10 data-[state=on]:text-primary hover:bg-muted/50 hover:scale-105 active:scale-95";
+    "size-8 rounded-full p-0 transition-all duration-200 data-[state=on]:bg-primary/10 data-[state=on]:text-primary hover:bg-muted/50 hover:scale-105 active:scale-95 cursor-pointer";
 
   return (
     <FieldWrapper config={config} fieldId={fieldId} error={error} dirty={dirty}>
       <div
         className={cn(
-          "flex flex-col overflow-hidden rounded-2xl border border-input/70 bg-muted/5 transition-all duration-300 ease-out",
-          "focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10 focus-within:shadow-lg focus-within:shadow-primary/2",
+          "flex flex-col overflow-hidden rounded-xl border border-input/70 bg-muted/30 transition-all duration-300 ease-out",
+          "focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10",
           showError && "border-destructive/40 ring-4 ring-destructive/5",
           config.disabled && "opacity-60 cursor-not-allowed grayscale-[0.5]",
         )}

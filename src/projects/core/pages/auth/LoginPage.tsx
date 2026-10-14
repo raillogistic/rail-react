@@ -22,7 +22,6 @@ import {
   testServerConnectivity,
 } from "@/shared/utils/legacy-utils/offline-detector";
 import { BRANDING } from "@/shared/config/branding";
-import Logo from "@/shared/assets/legacy-assets/logos/logo.png";
 
 // UI Kit Imports
 import { Button } from "@/shared/ui/kit/button";
@@ -135,7 +134,7 @@ export const LoginPage: React.FC = () => {
         <div className="flex flex-col items-center text-center space-y-2">
           <div className="bg-primary/10 p-3 rounded-2xl mb-2">
             <img
-              src={Logo}
+              src={BRANDING.logo}
               alt={BRANDING.productName}
               className="h-12 w-12 object-contain"
             />
@@ -216,7 +215,10 @@ export const LoginPage: React.FC = () => {
                         id="username"
                         {...register("username")}
                         placeholder="nom@entreprise.com"
-                        className={cn("pl-9", errors.username && "border-destructive")}
+                        className={cn(
+                          "pl-9",
+                          errors.username && "border-destructive",
+                        )}
                         disabled={isLoading || isSubmitting}
                         autoComplete="email"
                       />
@@ -248,7 +250,10 @@ export const LoginPage: React.FC = () => {
                         type="password"
                         {...register("password")}
                         placeholder="••••••••"
-                        className={cn("pl-9", errors.password && "border-destructive")}
+                        className={cn(
+                          "pl-9",
+                          errors.password && "border-destructive",
+                        )}
                         disabled={isLoading || isSubmitting}
                         autoComplete="current-password"
                       />
@@ -302,7 +307,8 @@ export const LoginPage: React.FC = () => {
           <CardFooter className="flex flex-col space-y-4 pt-2">
             <div className="text-center w-full">
               <p className="text-xs text-muted-foreground">
-                &copy; {new Date().getFullYear()} {BRANDING.productName} — Système de Gestion du Patrimoine
+                &copy; {new Date().getFullYear()} {BRANDING.productName} —
+                {BRANDING.description}
               </p>
             </div>
           </CardFooter>
@@ -323,4 +329,3 @@ export const LoginPage: React.FC = () => {
     </div>
   );
 };
-

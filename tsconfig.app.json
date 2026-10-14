@@ -34,6 +34,7 @@
     "noUncheckedSideEffectImports": true,
     "baseUrl": ".",
     "paths": {
+      "@rail/application": ["./src/application.ts"],
       "@/*": [
         "./src/*"
       ]
@@ -41,5 +42,9 @@
   },
   "include": [
     "src"
+  ],
+  "exclude": [
+    "src/**/*.backup.ts",
+    "src/**/*.backup.tsx"
   ]
 }

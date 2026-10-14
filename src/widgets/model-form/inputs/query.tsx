@@ -1,3 +1,12 @@
+/**
+ * @file query.tsx
+ * @description Entrée de choix relationnel basée sur GraphQL avec sélection simple/multiple et création en ligne.
+ * Modifié pour forcer shadow-none sur le bouton déclencheur, supprimer l'ombre interne de l'icône de création,
+ * utiliser le data-slot "select-trigger" afin de s'aligner avec le style général des champs de saisie,
+ * et utiliser des coins arrondis rounded-xl.
+ *
+ * @module form/inputs/query
+ */
 import React from "react";
 import { useApolloClient } from "@apollo/client";
 import { useStore } from "@tanstack/react-form";
@@ -136,11 +145,14 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
   const inlineModelNameRaw =
     inlineModelFormOverrides.model ?? inlineModelInfo.modelName ?? null;
   const inlineModelName = normalizeInlineModelName(inlineModelNameRaw);
-  const permissionTarget =
+  const inlinePermissionTarget =
     inlineCreateConfig?.permissionModelName ??
-    (inlineAppName && inlineModelName
-      ? `${inlineAppName}.${inlineModelName}`
-      : (inlineModelInfo.permissionModelName ?? inlineModelName));
+    inlineModelInfo.permissionModelName ??
+    inlineModelInfo.fullName;
+  const permissionTarget =
+    inlinePermissionTarget && inlinePermissionTarget.includes(".")
+      ? inlinePermissionTarget
+      : null;
   const inlinePermissions = useModelPermissions(permissionTarget ?? "", {
     skip: !inlineCreationEnabled || !permissionTarget,
   });
@@ -511,7 +523,7 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
     field.handleChange(value);
   };
 
-  const canClearSelection = !config.required && selectedValues.length > 0;
+  const canClearSelection = !config.required && !config.disabled && selectedValues.length > 0;
 
   const clearSelection = React.useCallback(
     (event?: React.MouseEvent<HTMLElement>) => {
@@ -657,24 +669,22 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="outline"
-                  data-slot="button"
+                  data-slot="select-trigger"
+                  disabled={config.disabled}
                   className={cn(
-                    "h-11 w-full justify-between rounded-xl border border-input/70 bg-muted/5 px-4 py-0 text-left text-[13.5px] font-medium transition-all duration-300 ease-out",
-                    "hover:border-primary/40 hover:bg-muted/8 hover:shadow-inner hover:shadow-primary/1",
-                    "focus:border-primary focus:ring-4 focus:ring-primary/10 data-[state=open]:border-primary data-[state=open]:ring-4 data-[state=open]:ring-primary/10",
+                    "h-9 w-full justify-between rounded-xl border border-transparent bg-muted/50 px-4 py-0 text-left text-[13.5px] font-medium transition-all duration-300 ease-out shadow-sm",
+                    "hover:border-primary/40 hover:bg-muted/60",
+                    "focus:border-primary focus:ring-4 focus:ring-primary/10 data-[state=open]:border-primary data-[state=open]:ring-4 data-[state=open]:ring-primary/10 cursor-pointer",
                     canClearSelection ? "pr-12" : "",
-                    selectedValues.length > 0
-                      ? "border-primary/20 bg-primary/3"
-                      : "",
                   )}
                 >
                   <div className="flex min-w-0 flex-1 items-center gap-2 overflow-hidden pr-4">
                     {selectedOptions.length === 0 && (
-                      <Database className="mr-1 size-4 text-primary/40 shrink-0" />
+                      <Database className="mr-1 size-4 text-primary/45 shrink-0 animate-pulse" />
                     )}
                     {selectedOptions.length > 0 ? (
                       selectedDisplay === "count" && config.multiple ? (
-                        <span className="rounded-lg bg-primary/5 px-2.5 py-1 text-[11.5px] font-bold text-primary">
+                        <span className="rounded-full bg-primary/5 px-2.5 py-1 text-[11.5px] font-bold text-primary border border-primary/20">
                           {selectionSummary}
                         </span>
                       ) : (
@@ -682,12 +692,12 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
                           <Badge
                             key={opt.value}
                             variant="secondary"
-                            className="group/badge max-w-full shrink-0 truncate rounded-lg bg-primary/5 px-2.5 py-1 text-[11.5px] font-bold text-primary transition-all hover:bg-primary/10 border-none"
+                            className="group/badge max-w-full shrink-0 truncate rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-semibold text-primary transition-all hover:bg-primary/15 border border-primary/20"
                           >
                             {opt.label}
                             {config.multiple && (
                               <X
-                                className="ml-2 size-3 cursor-pointer opacity-40 group-hover/badge:opacity-100 transition-opacity"
+                                className="ml-1.5 size-3 cursor-pointer opacity-50 group-hover/badge:opacity-100 transition-opacity"
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   toggle(opt.value);
@@ -707,7 +717,7 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
                     {loading ? (
                       <Loader2 className="h-4 w-4 animate-spin text-primary" />
                     ) : (
-                      <ChevronDown className="size-4 opacity-30 transition-transform duration-300 group-data-[state=open]:rotate-180" />
+                      <ChevronDown className="size-4 opacity-35 transition-transform duration-300 group-data-[state=open]:rotate-180" />
                     )}
                   </div>
                 </Button>
@@ -716,7 +726,7 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
                 <button
                   type="button"
                   aria-label="Effacer la sélection"
-                  className="absolute right-8 top-1/2 z-10 inline-flex size-7 -translate-y-1/2 items-center justify-center rounded-lg text-muted-foreground/50 transition-colors hover:bg-muted/60 hover:text-foreground"
+                  className="absolute right-8 top-1/2 z-10 inline-flex size-7 -translate-y-1/2 items-center justify-center rounded-lg text-muted-foreground/50 transition-colors hover:bg-muted/60 hover:text-foreground cursor-pointer"
                   onMouseDown={(event) => {
                     event.preventDefault();
                     event.stopPropagation();
@@ -728,7 +738,7 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
               ) : null}
             </div>
             <DropdownMenuContent
-              className="w-96 rounded-2xl border border-border/50 bg-popover/95 backdrop-blur-xl p-0 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-300"
+              className="w-96 rounded-2xl border border-border/40 bg-popover/98 backdrop-blur-xl p-0 shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-300"
               align="start"
               // @ts-expect-error Popover/Dropdown onOpenAutoFocus focus shift
               onOpenAutoFocus={(event: { preventDefault: () => void }) => {
@@ -739,10 +749,10 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
               }}
             >
               <div className="flex items-center border-b border-border/30 bg-muted/3 px-4 py-3.5">
-                <Search className="mr-3 size-4.5 text-primary/40 transition-transform group-focus-within:scale-110" />
+                <Search className="mr-3 size-4.5 text-primary/45 transition-transform group-focus-within:scale-110" />
                 <Input
                   ref={searchInputRef}
-                  className="h-6 border-none bg-transparent p-0 text-[14px] font-bold shadow-none focus-visible:ring-0 placeholder:text-muted-foreground/40"
+                  className="h-6 border-none bg-transparent p-0 text-[14px] font-bold shadow-none focus-visible:ring-0 placeholder:text-muted-foreground/45"
                   placeholder="Tapez pour rechercher..."
                   value={search}
                   onChange={(event) => {
@@ -776,16 +786,16 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
                     <DropdownMenuCheckboxItem
                       key={option.value}
                       className={cn(
-                        "relative flex cursor-pointer select-none items-center rounded-xl py-3 pl-11 pr-4 outline-none transition-all duration-200",
-                        "hover:bg-primary/3 focus:bg-primary/5 focus:text-primary",
+                        "relative flex cursor-pointer select-none items-center rounded-xl py-2.5 pl-11 pr-4 outline-none transition-all duration-200 text-[13.5px]",
+                        "focus:bg-primary/5 focus:text-primary",
                         index === highlightedIndex
                           ? "bg-primary/5 text-primary"
                           : "",
                         selectedValues.some((value) =>
                           areChoiceValuesEqual(value, option.value),
                         )
-                          ? "bg-primary/4 font-bold text-primary"
-                          : "text-foreground/70",
+                          ? "bg-primary/5 font-bold text-primary"
+                          : "text-foreground/85",
                       )}
                       checked={selectedValues.some((value) =>
                         areChoiceValuesEqual(value, option.value),
@@ -794,7 +804,7 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
                       disabled={option.disabled}
                       data-option-index={index}
                     >
-                      <span className="absolute left-3.5 flex size-5 items-center justify-center rounded-lg bg-primary/5 text-primary/40 group-hover:bg-primary/10 transition-colors">
+                      <span className="absolute left-3.5 flex size-5 items-center justify-center rounded-full bg-primary/5 text-primary/40 group-hover:bg-primary/10 transition-colors">
                         {loading && index === highlightedIndex ? (
                           <Loader2 className="size-3 animate-spin" />
                         ) : selectedValues.some((value) =>
@@ -806,11 +816,11 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
                         )}
                       </span>
                       <div className="flex flex-col gap-0.5">
-                        <span className="text-[13.5px] leading-tight">
+                        <span className="leading-tight">
                           {option.label}
                         </span>
                         {option.description ? (
-                          <span className="text-[10px] text-muted-foreground/50 font-medium leading-tight mt-0.5">
+                          <span className="text-[10px] text-muted-foreground/55 font-medium leading-tight mt-0.5">
                             {option.description}
                           </span>
                         ) : null}
@@ -824,7 +834,7 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="w-full justify-start rounded-xl text-primary font-bold text-[12px] hover:bg-primary/10 hover:text-primary transition-all active:scale-[0.98]"
+                    className="w-full justify-start rounded-xl text-primary font-bold text-[12px] hover:bg-primary/10 hover:text-primary transition-all active:scale-[0.98] cursor-pointer"
                     onClick={() => {
                       if (canOpenInlineForm) {
                         setInlineFormOpen(true);
@@ -845,7 +855,7 @@ const QueryChoiceInput: React.FC<Props> = ({ config, field, form }) => {
         <DialogContent className="sm:max-w-4xl overflow-hidden rounded-3xl border border-border/50 bg-background/95 backdrop-blur-xl p-0 shadow-[0_30px_80px_rgba(0,0,0,0.1)] dark:shadow-[0_30px_80px_rgba(0,0,0,0.4)]">
           <DialogHeader className="px-8 pt-8 pb-4">
             <DialogTitle className="flex items-center gap-4 text-2xl font-black tracking-tight text-foreground">
-              <div className="flex size-11 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-inner shadow-primary/10">
+              <div className="flex size-11 items-center justify-center rounded-2xl bg-primary/10 text-primary shadow-none">
                 <Plus className="size-6 stroke-[2.5]" />
               </div>
               <div className="flex flex-col">

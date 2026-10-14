@@ -552,10 +552,10 @@ const DynamicForm = <TValues extends Record<string, any> = Record<string, any>>(
         ) : null}
 
         {isLoading && (
-          <div className="absolute inset-0 z-[100] flex items-center justify-center rounded-xl bg-background/70 backdrop-blur-sm animate-in fade-in duration-300">
-            <div className="flex flex-col items-center gap-3 rounded-2xl bg-background border border-border/50 p-8 shadow-lg">
+          <div className="absolute inset-0 z-[100] flex items-center justify-center rounded-3xl bg-background/60 backdrop-blur-md animate-in fade-in duration-300">
+            <div className="flex flex-col items-center gap-3 rounded-3xl bg-background border border-border/40 p-8 shadow-2xl shadow-primary/5 hover:scale-105 transition-transform duration-300">
               <Loader2 className="size-8 animate-spin text-primary" />
-              <p className="text-sm font-medium text-muted-foreground">
+              <p className="text-sm font-semibold text-muted-foreground animate-pulse">
                 Chargement...
               </p>
             </div>

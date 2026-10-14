@@ -3,7 +3,7 @@ import { cn } from "@/shared/utils";
 import type { UseFormReturn } from "@tanstack/react-form";
 import type { GroupFieldConfig } from "../types/schema";
 import { FieldRenderer } from "./FieldRenderer";
-import { buildResponsiveGridClass } from "./utils";
+import { buildResponsiveGridClass, buildResponsiveColSpanClass } from "./utils";
 import { Card } from "@/shared/ui/kit/card";
 import {
   Collapsible,
@@ -18,6 +18,7 @@ type GroupFieldRendererProps<TValues> = {
   form: UseFormReturn<TValues>;
   colSpan?: number;
   defaultColSpan?: number;
+  columns?: number;
   globalReadOnly?: boolean;
   globalDisabled?: boolean;
   hiddenFields?: Set<string>;
@@ -29,6 +30,7 @@ export const GroupFieldRenderer = <TValues extends Record<string, any>>({
   form,
   colSpan,
   defaultColSpan,
+  columns,
   globalReadOnly,
   globalDisabled,
   hiddenFields,
@@ -36,12 +38,14 @@ export const GroupFieldRenderer = <TValues extends Record<string, any>>({
   const [isOpen, setIsOpen] = React.useState(true);
   const isCollapsible = config.collapsible;
 
+  const groupColumns = config.columns ?? 1;
   const gridClass = cn(
     "grid gap-x-4 gap-y-4",
-    buildResponsiveGridClass(config.columns ?? 1),
+    buildResponsiveGridClass(groupColumns),
   );
 
   const variant = config.ui?.variant ?? "default";
+  const colSpanClass = colSpan ? buildResponsiveColSpanClass(colSpan, columns ?? 1) : "";
 
   // Base content to render (the grid of fields)
   const content = (
@@ -54,6 +58,7 @@ export const GroupFieldRenderer = <TValues extends Record<string, any>>({
           form={form}
           colSpan={child.colSpan ?? defaultColSpan}
           defaultColSpan={defaultColSpan}
+          columns={groupColumns}
           globalReadOnly={globalReadOnly}
           globalDisabled={globalDisabled}
           hiddenFields={hiddenFields}
@@ -69,12 +74,8 @@ export const GroupFieldRenderer = <TValues extends Record<string, any>>({
         className={cn(
           "overflow-hidden  border-border/40  transition-all hover:",
           config.ui?.className,
+          colSpanClass,
         )}
-        style={
-          colSpan
-            ? { gridColumn: `span ${colSpan} / span ${colSpan}` }
-            : undefined
-        }
       >
         {config.label && (
           <div className="flex items-center justify-between border-b bg-muted/30 px-4 py-3">
@@ -130,12 +131,8 @@ export const GroupFieldRenderer = <TValues extends Record<string, any>>({
         className={cn(
           " border border-border/60 p-4",
           config.ui?.className,
+          colSpanClass,
         )}
-        style={
-          colSpan
-            ? { gridColumn: `span ${colSpan} / span ${colSpan}` }
-            : undefined
-        }
       >
         {config.label && (
           <legend className="-ml-1 px-1 text-sm font-medium text-muted-foreground">
@@ -155,12 +152,7 @@ export const GroupFieldRenderer = <TValues extends Record<string, any>>({
   // Default variant (just a div, maybe with a header)
   return (
     <div
-      className={cn("flex flex-col gap-4", config.ui?.className)}
-      style={
-        colSpan
-          ? { gridColumn: `span ${colSpan} / span ${colSpan}` }
-          : undefined
-      }
+      className={cn("flex flex-col gap-4", config.ui?.className, colSpanClass)}
     >
       {(config.label || config.description) && (
         <div className="flex flex-col gap-1 pb-1">

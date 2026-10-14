@@ -1,3 +1,4 @@
+/** Exercise DynamicForm layouts, field validation and submission behavior. */
 import { describe, expect, it, vi } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import React from "react";
@@ -132,7 +133,8 @@ vi.mock("@/shared/ui/kit/dialog", () => ({
  }) => <div className={className}>{children}</div>,
 }));
 
-vi.mock("lucide-react", () => ({
+vi.mock("lucide-react", async (importOriginal) => ({
+ ...await importOriginal<typeof import("lucide-react")>(),
  ChevronDownIcon: ({ className }: { className?: string }) => (
  <svg data-testid="chevron-down" className={className} />
  ),

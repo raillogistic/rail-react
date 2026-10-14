@@ -1056,7 +1056,6 @@ export function DynamicBaseTableContent<
 
   const handleRowSelectionChange = useCallback(
     (nextSelection: RowSelectionState) => {
-
       if (!areBooleanMapsEqual(nextSelection, rowSelection)) {
         setRowSelection(nextSelection);
       }
@@ -1211,7 +1210,7 @@ export function DynamicBaseTableContent<
 
   return (
     <div
-      className="flex h-full w-full flex-col overflow-hidden bg-background"
+      className="flex h-full w-full flex-col overflow-hidden bg-background p-4 rounded-xl "
       data-model-table-persistence-key={effectiveKey}
     >
       {devtoolsEnabled && <ModelTableDevtoolsPanel timings={timings} />}

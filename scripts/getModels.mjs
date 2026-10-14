@@ -16,11 +16,16 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import dotenv from "dotenv";
+import { Agent, setGlobalDispatcher } from "undici";
+
+// Configurer le rÃ©partiteur global undici avec un en-tÃªte Ã©tendu (64 Ko)
+// pour Ã©viter HeadersOverflowError avec les gros cookies JWT superadmin.
+setGlobalDispatcher(new Agent({ maxHeaderSize: 65536 }));
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-dotenv.config({ path: path.resolve(__dirname, "../.env") });
+dotenv.config({ path: path.resolve(process.cwd(), ".env") });
 
 const OUTPUT_PATH = path.resolve(
   __dirname,
@@ -469,8 +474,9 @@ async function run() {
 }
 
 run().catch((error) => {
+  const causeInfo = error?.cause ? ` (Cause: ${error.cause.message || error.cause})` : "";
   console.error(
-    `[getModels] Generation failed: ${error instanceof Error ? error.message : String(error)}`,
+    `[getModels] Generation failed: ${error instanceof Error ? error.message : String(error)}${causeInfo}`,
   );
   process.exitCode = 1;
 });

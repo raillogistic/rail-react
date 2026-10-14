@@ -18,6 +18,7 @@ import {
   normalizeSessionIdClaim,
   selectSessionIdFromTokenPayload,
 } from "./sessionIds";
+import application from '@rail/application';
 
 type RawAuthRole = {
   name?: unknown;
@@ -99,6 +100,52 @@ const buildTokenPair = (
   };
 };
 
+export const isAbortLikeSessionValidationError = (error: unknown): boolean => {
+  const visited = new Set<unknown>();
+
+  const walk = (value: unknown): boolean => {
+    if (!value) return false;
+    if (value instanceof DOMException && value.name === "AbortError") {
+      return true;
+    }
+    if (value instanceof Error) {
+      const message = value.message.toLowerCase();
+      if (value.name === "AbortError" || message.includes("abort")) {
+        return true;
+      }
+    }
+    if (typeof value !== "object") return false;
+    if (visited.has(value)) return false;
+    visited.add(value);
+
+    const candidate = value as {
+      name?: unknown;
+      message?: unknown;
+      cause?: unknown;
+      networkError?: unknown;
+      originalError?: unknown;
+    };
+
+    if (candidate.name === "AbortError") {
+      return true;
+    }
+    if (
+      typeof candidate.message === "string" &&
+      candidate.message.toLowerCase().includes("abort")
+    ) {
+      return true;
+    }
+
+    return (
+      walk(candidate.cause) ||
+      walk(candidate.networkError) ||
+      walk(candidate.originalError)
+    );
+  };
+
+  return walk(error);
+};
+
 const normalizeAuthUser = (
   rawUser: RawAuthUser | null | undefined,
   fallbackPermissions?: string[] | null,
@@ -177,7 +224,7 @@ const normalizeAuthUser = (
   const resolvedId =
     rawUser?.id ?? rawUser?.user_id ?? rawUser?.userId ?? rawUser?.sub ?? "";
 
-  return {
+  const user: AuthUser = {
     id: String(resolvedId),
     email: toStringValue(rawUser?.email),
     username: toStringValue(rawUser?.username),
@@ -189,9 +236,10 @@ const normalizeAuthUser = (
       rawUser?.settings && typeof rawUser.settings === "object"
         ? (rawUser.settings as AuthUser["settings"])
         : undefined,
-    roles: roleNames,
-    permissions,
+    roles: Array.from(new Set(roleNames)),
+    permissions: Array.from(new Set(permissions)),
   };
+  return application.auth?.extendUser?.(user, rawUser as Record<string, unknown> ?? {}) ?? user;
 };
 
 const extractSessionIdFromToken = (
@@ -256,6 +304,17 @@ const isExpectedLogoutAuthError = (error: unknown): boolean => {
     statusCode === 403
   );
 };
+
+/** Load the configured profile after sign-in, including optional application extensions. */
+export async function resolveSignedInUser(client: Pick<ReturnType<typeof useApolloClient>, "query">, accessToken: string) {
+  const { data } = await client.query({
+    query: application.auth?.currentUserQuery ?? GET_CURRENT_USER,
+    fetchPolicy: "network-only",
+    context: { headers: { authorization: `Bearer ${accessToken}` }, skipAuthRefresh: true, skipAuthErrorHandling: true },
+  });
+  if (!data?.me) throw new Error("Impossible de charger votre profil.");
+  return normalizeAuthUser(data.me, data.me.permissions);
+}
 
 export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -339,7 +398,7 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
         throw new Error(login.errors?.[0] || "Login failed");
       }
 
-      const normalizedUser = normalizeAuthUser(login.user, login.permissions);
+      const normalizedUser = await resolveSignedInUser(client, login.token);
       resolvedCurrentUserRef.current = normalizedUser;
       const refreshToken = normalizeRefreshTokenCandidate(login.refresh_token);
       const sessionId = await resolveSessionId(
@@ -370,10 +429,7 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
         throw new Error(verify_mfa_login.errors?.[0] || "Verification failed");
       }
 
-      const normalizedUser = normalizeAuthUser(
-        verify_mfa_login.user,
-        verify_mfa_login.permissions,
-      );
+      const normalizedUser = await resolveSignedInUser(client, verify_mfa_login.token);
       resolvedCurrentUserRef.current = normalizedUser;
       const refreshToken = normalizeRefreshTokenCandidate(
         verify_mfa_login.refresh_token,
@@ -482,7 +538,7 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }
 
       const { data, errors } = await client.query({
-        query: GET_CURRENT_USER,
+        query: application.auth?.currentUserQuery ?? GET_CURRENT_USER,
         fetchPolicy: "network-only",
         context: {
           skipAuthRefresh: true,
@@ -545,6 +601,7 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
       const message = String(maybeError.message ?? "").toLowerCase();
       const isTransientNetworkError =
+        isAbortLikeSessionValidationError(e) ||
         !!maybeError.networkError ||
         message.includes("network") ||
         message.includes("fetch") ||
@@ -569,7 +626,7 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
     try {
       const { data } = await client.query({
-        query: GET_CURRENT_USER,
+        query: application.auth?.currentUserQuery ?? GET_CURRENT_USER,
         fetchPolicy: "network-only",
         context: {
           skipAuthRefresh: true,

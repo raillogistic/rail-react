@@ -1,8 +1,17 @@
+/**
+ * @file MFASetupPage.tsx
+ * @description Page de configuration de l'authentification à deux facteurs (MFA).
+ * JSDoc: Ce composant guide l'utilisateur à travers le processus de scan du code QR
+ * et de validation du code de vérification pour activer la MFA. Si la MFA est déjà
+ * activée, il affiche l'interface de gestion de la MFA (désactivation, codes de secours).
+ */
+
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useMutation, useQuery } from "@apollo/client";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { Button } from "@/shared/ui/kit/button";
+import { SettingsLayout } from "@/projects/core/pages/settings/SettingsLayout";
 import {
   Card,
   CardContent,
@@ -98,7 +107,7 @@ export function MFASetupPage({
         });
         setStep("setup");
       } else {
-        setError("Failed to initialize MFA setup.");
+        setError("Échec de l'initialisation de la configuration MFA.");
       }
     } catch (err) {
       console.error(err);
@@ -161,30 +170,36 @@ export function MFASetupPage({
   };
 
   if (mfaLoading && !ephemeralToken) {
-    return <div className="p-8 text-center">Loading security settings...</div>;
+    return <div className="p-8 text-center">Chargement des paramètres de sécurité...</div>;
   }
 
   // If MFA is already enabled and we are not in embedded mode, show management view
   if (mfaEnabled && !embedded) {
-    return <MFAManagement />;
+    return (
+      <SettingsLayout>
+        <MFAManagement />
+      </SettingsLayout>
+    );
   }
 
+  let content: React.ReactNode = null;
+
   if (step === "intro") {
-    return (
-      <div className={embedded ? "" : "container max-w-md mx-auto py-12"}>
+    content = (
+      <div className={embedded ? "" : "max-w-md mx-auto py-6"}>
         <Card className={embedded ? "border-0 shadow-none" : ""}>
           <CardHeader>
-            <CardTitle>Set up Multi-Factor Authentication</CardTitle>
+            <CardTitle>Configurer l'authentification à deux facteurs</CardTitle>
             <CardDescription>
-              Enhance your account security by requiring a verification code
-              when logging in.
+              Renforcez la sécurité de votre compte en exigeant un code de vérification
+              lors de la connexion.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground mb-4">
-              Multi-Factor Authentication (MFA) adds an extra layer of security
-              to your account. You will need an authenticator app like Google
-              Authenticator or Authy.
+              L'authentification à deux facteurs (MFA) ajoute une couche de sécurité
+              supplémentaire à votre compte. Vous aurez besoin d'une application d'authentification
+              comme Google Authenticator ou Authy.
             </p>
             {error && (
               <Alert variant="destructive" className="mb-4">
@@ -198,7 +213,7 @@ export function MFASetupPage({
               disabled={loadingSetup}
               className="w-full"
             >
-              Start Setup
+              Commencer la configuration
             </Button>
           </CardFooter>
         </Card>
@@ -207,18 +222,17 @@ export function MFASetupPage({
   }
 
   if (step === "setup" && mfaData) {
-    return (
-      <div className={embedded ? "" : "container max-w-md mx-auto py-12"}>
+    content = (
+      <div className={embedded ? "" : "max-w-md mx-auto py-6"}>
         <Card className={embedded ? "border-0 shadow-none" : ""}>
           <CardHeader>
-            <CardTitle>Scan QR Code</CardTitle>
+            <CardTitle>Scanner le code QR</CardTitle>
             <CardDescription>
-              Scan this QR code with your authenticator app.
+              Scannez ce code QR avec votre application d'authentification.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
             <div className="flex justify-center">
-              {/* Note: In a real app, use a QR code component. For now, displaying an image or placeholder */}
               <img
                 src={mfaData.qrCodeUrl}
                 alt="QR Code"
@@ -228,7 +242,7 @@ export function MFASetupPage({
 
             <div className="text-center">
               <p className="text-sm text-muted-foreground mb-2">
-                Can't scan the code?
+                Impossible de scanner le code ?
               </p>
               <div className="flex items-center gap-2">
                 <code className="bg-muted p-2 rounded text-xs flex-1 block overflow-hidden text-ellipsis">
@@ -239,13 +253,13 @@ export function MFASetupPage({
                   size="sm"
                   onClick={() => copyToClipboard(mfaData.secret)}
                 >
-                  Copy
+                  Copier
                 </Button>
               </div>
             </div>
 
             <Button onClick={() => setStep("verify")} className="w-full">
-              Next
+              Suivant
             </Button>
           </CardContent>
         </Card>
@@ -254,13 +268,13 @@ export function MFASetupPage({
   }
 
   if (step === "verify") {
-    return (
-      <div className={embedded ? "" : "container max-w-md mx-auto py-12"}>
+    content = (
+      <div className={embedded ? "" : "max-w-md mx-auto py-6"}>
         <Card className={embedded ? "border-0 shadow-none" : ""}>
           <CardHeader>
-            <CardTitle>Verify Code</CardTitle>
+            <CardTitle>Vérifier le code</CardTitle>
             <CardDescription>
-              Enter the 6-digit code from your authenticator app.
+              Saisissez le code à 6 chiffres de votre application d'authentification.
             </CardDescription>
           </CardHeader>
           <form onSubmit={handleVerify}>
@@ -272,7 +286,7 @@ export function MFASetupPage({
                   </Alert>
                 )}
                 <div className="space-y-2">
-                  <Label htmlFor="code">Verification Code</Label>
+                  <Label htmlFor="code">Code de vérification</Label>
                   <Input
                     id="code"
                     value={verificationCode}
@@ -291,13 +305,13 @@ export function MFASetupPage({
                 type="button"
                 onClick={() => setStep("setup")}
               >
-                Back
+                Retour
               </Button>
               <Button
                 type="submit"
                 disabled={loadingVerify || verificationCode.length !== 6}
               >
-                Verify
+                Vérifier
               </Button>
             </CardFooter>
           </form>
@@ -307,26 +321,26 @@ export function MFASetupPage({
   }
 
   if (step === "success") {
-    return (
-      <div className={embedded ? "" : "container max-w-md mx-auto py-12"}>
+    content = (
+      <div className={embedded ? "" : "max-w-md mx-auto py-6"}>
         <Card className={embedded ? "border-0 shadow-none" : ""}>
           <CardHeader>
-            <CardTitle>MFA Enabled</CardTitle>
+            <CardTitle>MFA Activée</CardTitle>
             <CardDescription>
-              Multi-Factor Authentication has been successfully set up.
+              L'authentification à deux facteurs a été configurée avec succès.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="bg-green-50 text-green-800 p-4 rounded mb-6 dark:bg-green-900/20 dark:text-green-300">
-              Your account is now more secure.
+              Votre compte est désormais plus sécurisé.
             </div>
 
             {mfaData?.backupCodes && mfaData.backupCodes.length > 0 && (
               <div className="space-y-4">
-                <h4 className="font-medium text-sm">Backup Codes</h4>
+                <h4 className="font-medium text-sm">Codes de secours</h4>
                 <p className="text-sm text-muted-foreground">
-                  Save these codes in a secure place. You can use them to access
-                  your account if you lose your device.
+                  Enregistrez ces codes dans un endroit sûr. Vous pourrez les utiliser pour
+                  accéder à votre compte si vous perdez votre appareil.
                 </p>
                 <div className="grid grid-cols-2 gap-2 bg-muted p-4 rounded">
                   {mfaData.backupCodes.map((code, i) => (
@@ -343,7 +357,7 @@ export function MFASetupPage({
                   }
                   className="w-full"
                 >
-                  Copy All Codes
+                  Copier tous les codes
                 </Button>
               </div>
             )}
@@ -353,7 +367,7 @@ export function MFASetupPage({
               onClick={() => navigate(ROUTES.SETTINGS_ACCOUNT)}
               className="w-full"
             >
-              Done
+              Terminé
             </Button>
           </CardFooter>
         </Card>
@@ -361,7 +375,11 @@ export function MFASetupPage({
     );
   }
 
-  return null;
+  if (embedded) {
+    return content;
+  }
+
+  return content ? <SettingsLayout>{content}</SettingsLayout> : null;
 }
 
 

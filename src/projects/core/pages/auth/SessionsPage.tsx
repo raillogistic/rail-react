@@ -1,9 +1,18 @@
+/**
+ * @file SessionsPage.tsx
+ * @description Page de gestion des sessions actives de l'utilisateur.
+ * JSDoc: Ce composant permet d'afficher la liste des appareils et navigateurs connectés
+ * à la session de l'utilisateur et offre des actions de révocation unitaire ou globale.
+ * Intégré au layout à onglets de configuration 'SettingsLayout'.
+ */
+
 import React from 'react';
 import { useQuery, useMutation } from '@apollo/client';
 import { SessionManager, Session } from '@/features/auth/components/SessionManager';
 import { GET_ACTIVE_SESSIONS } from '@/shared/api/graphql/legacy/queries';
 import { REVOKE_SESSION_MUTATION, REVOKE_ALL_SESSIONS_MUTATION } from '@/shared/api/graphql/legacy/mutations';
 import { useAuth } from '@/features/auth/hooks/useAuth';
+import { SettingsLayout } from "../settings/SettingsLayout";
 
 export function SessionsPage() {
   const { user } = useAuth();
@@ -49,19 +58,23 @@ export function SessionsPage() {
   }
 
   return (
-    <div className="container mx-auto py-8 max-w-4xl">
-      <h1 className="text-2xl font-bold mb-6">Gestion des Sessions</h1>
-      <p className="text-muted-foreground mb-8">
-        Gérez vos sessions actives sur les différents appareils et navigateurs.
-        Revoking a session will sign you out from that device.
-      </p>
+    <SettingsLayout>
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-2xl font-bold mb-2">Gestion des Sessions</h2>
+          <p className="text-muted-foreground text-sm">
+            Gérez vos sessions actives sur les différents appareils et navigateurs.
+            La révocation d'une session vous déconnectera de cet appareil.
+          </p>
+        </div>
 
-      <SessionManager
-        sessions={sessions}
-        isLoading={loading}
-        onRevoke={handleRevokeSession}
-        onRevokeAll={handleRevokeAllSessions}
-      />
-    </div>
+        <SessionManager
+          sessions={sessions}
+          isLoading={loading}
+          onRevoke={handleRevokeSession}
+          onRevokeAll={handleRevokeAllSessions}
+        />
+      </div>
+    </SettingsLayout>
   );
 }

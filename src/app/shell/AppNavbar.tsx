@@ -10,7 +10,7 @@ import { type NavigationSection } from "@/app/router/navigation";
 import { useRouteAccess } from "@/app/router/routeAccess";
 import { BRANDING } from "@/shared/config/branding";
 import { UserNav } from "@/widgets/navigation/nav-user-menu";
-import Logo from "@/shared/assets/legacy-assets/logos/logo.png";
+import { get_best_matching_path } from "@/widgets/navigation/nav-main";
 import { useTheme } from "@/shared/ui/theme";
 import {
   NavigationMenu,
@@ -92,6 +92,12 @@ const getSectionEntries = (section: NavigationSection): NavigationMenuEntry[] =>
     ];
   });
 
+/**
+ * Affiche le menu de navigation horizontal principal de l'application.
+ * Utilise la logique de meilleur chemin correspondant pour activer les sections appropriées.
+ *
+ * @param props Propriétés du composant comprenant le layout, l'emplacement actuel et les liens de navigation.
+ */
 const AppNavMenu = ({
   layout,
   location,
@@ -102,18 +108,25 @@ const AppNavMenu = ({
   location: Location;
   navigationLinks: NavigationSection[];
   className?: string;
-}) => (
-  <NavigationMenu viewport={false} className={cn("max-w-full", className)}>
-    <NavigationMenuList className="gap-1">
-      {navigationLinks.map((section) => {
-        const sectionEntries = getSectionEntries(section);
-        const isActive = section.items.some(
-          (item) =>
-            location.pathname.startsWith(item.path) ||
-            item.children?.some((child) =>
-              location.pathname.startsWith(child.path),
-            ),
-        );
+}) => {
+  const all_paths = navigationLinks.flatMap((section) =>
+    section.items.flatMap((item) => [
+      item.path,
+      ...(item.children?.map((child) => child.path) || []),
+    ]),
+  );
+  const best_match = get_best_matching_path(location.pathname, all_paths);
+
+  return (
+    <NavigationMenu viewport={false} className={cn("max-w-full", className)}>
+      <NavigationMenuList className="gap-1">
+        {navigationLinks.map((section) => {
+          const sectionEntries = getSectionEntries(section);
+          const isActive = section.items.some(
+            (item) =>
+              item.path === best_match ||
+              item.children?.some((child) => child.path === best_match),
+          );
 
         if (layout === "mixed") {
           const firstPath = sectionEntries[0]?.path || "#";
@@ -213,7 +226,8 @@ const AppNavMenu = ({
       })}
     </NavigationMenuList>
   </NavigationMenu>
-);
+  );
+};
 
 export function AppNavbar() {
   const location = useLocation();
@@ -244,7 +258,7 @@ export function AppNavbar() {
               <div className="relative">
                 <div className="absolute inset-0 bg-primary/20 blur-xl opacity-0 group-hover:opacity-100" />
                 <img
-                  src={Logo}
+                  src={BRANDING.logo}
                   alt={BRANDING.logoAlt}
                   className="h-9 w-9 object-contain relative z-10"
                 />
@@ -281,7 +295,7 @@ export function AppNavbar() {
         {layout === "mixed" && (
           <>
             <div className="flex-none lg:flex hidden items-center">
-              <img src={Logo} alt={BRANDING.logoAlt} className="h-8 w-8" />
+              <img src={BRANDING.logo} alt={BRANDING.logoAlt} className="h-8 w-8" />
             </div>
             <div className="flex-1 hidden lg:flex justify-center">
               <AppNavMenu
@@ -396,7 +410,7 @@ function MobileNav({
             <SheetTitle className="flex items-center gap-3 text-xl font-black tracking-tighter">
               <div className="h-10 w-10 bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
                 <img
-                  src={Logo}
+                  src={BRANDING.logo}
                   alt={BRANDING.logoAlt}
                   className="h-7 w-7 brightness-0 invert"
                 />

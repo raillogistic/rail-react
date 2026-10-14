@@ -19,6 +19,7 @@ vi.mock('react-router-dom', async () => {
   return {
     ...actual,
     useNavigate: () => navigateMock,
+    useLocation: () => ({ pathname: '/' }),
   };
 });
 
@@ -124,68 +125,63 @@ describe('MFASetupPage', () => {
 
   it('renders intro step initially', async () => {
     renderPage();
-
-    expect(await screen.findByText('Set up Multi-Factor Authentication')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Start Setup' })).toBeInTheDocument();
+    expect(await screen.findByText("Configurer l'authentification à deux facteurs")).toBeInTheDocument();
   });
 
   it('progresses to setup step on start', async () => {
     renderPage();
 
-    await screen.findByRole('button', { name: 'Start Setup' });
+    await screen.findByRole('button', { name: 'Commencer la configuration' });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start Setup' }));
-
-    expect(await screen.findByText('Scan QR Code')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Commencer la configuration' }));
+    expect(await screen.findByText('Scanner le code QR')).toBeInTheDocument();
     expect(screen.getByText('TESTSECRET123')).toBeInTheDocument();
   });
 
   it('allows copying secret to clipboard', async () => {
     renderPage();
 
-    await screen.findByRole('button', { name: 'Start Setup' });
+    await screen.findByRole('button', { name: 'Commencer la configuration' });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start Setup' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Commencer la configuration' }));
     await screen.findByText('TESTSECRET123');
 
-    fireEvent.click(screen.getByRole('button', { name: 'Copy' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Copier' }));
     expect(navigator.clipboard.writeText).toHaveBeenCalledWith('TESTSECRET123');
   });
 
   it('progresses to verify step', async () => {
     renderPage();
 
-    await screen.findByRole('button', { name: 'Start Setup' });
+    await screen.findByRole('button', { name: 'Commencer la configuration' });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Start Setup' }));
-    await screen.findByRole('button', { name: 'Next' });
+    fireEvent.click(screen.getByRole('button', { name: 'Commencer la configuration' }));
+    await screen.findByRole('button', { name: 'Suivant' });
 
-    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
-    expect(await screen.findByText('Verify Code')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Suivant' }));
+    expect(await screen.findByText('Vérifier le code')).toBeInTheDocument();
   });
 
   it('handles verification success', async () => {
     renderPage();
 
-    await screen.findByRole('button', { name: 'Start Setup' });
-
     // Go to setup
-    fireEvent.click(screen.getByRole('button', { name: 'Start Setup' }));
-    await screen.findByRole('button', { name: 'Next' });
+    await screen.findByRole('button', { name: 'Commencer la configuration' });
+    fireEvent.click(screen.getByRole('button', { name: 'Commencer la configuration' }));
 
     // Go to verify
-    fireEvent.click(screen.getByRole('button', { name: 'Next' }));
+    await screen.findByRole('button', { name: 'Suivant' });
+    fireEvent.click(screen.getByRole('button', { name: 'Suivant' }));
 
-    // Enter code
-    const input = screen.getByLabelText('Verification Code');
+    // Verify
+    const input = await screen.findByLabelText('Code de vérification');
     fireEvent.change(input, { target: { value: '123456' } });
 
-    // Submit
-    fireEvent.click(screen.getByRole('button', { name: 'Verify' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Vérifier' }));
 
-    expect(await screen.findByText('MFA Enabled')).toBeInTheDocument();
+    expect(await screen.findByText('MFA Activée')).toBeInTheDocument();
 
-    expect(screen.getByText('Backup Codes')).toBeInTheDocument();
+    expect(screen.getByText('Codes de secours')).toBeInTheDocument();
     expect(screen.getByText('code1')).toBeInTheDocument();
   });
 });

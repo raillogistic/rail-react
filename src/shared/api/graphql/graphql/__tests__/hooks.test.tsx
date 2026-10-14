@@ -207,7 +207,7 @@ describe("generated graphql hooks", () => {
     };
     expect(data.items[0]?.username).toBe("alice");
     expect(result.current.dev.metadataFetchMs).toBeGreaterThanOrEqual(0);
-    expect(result.current.dev.dataFetchMs).toBeGreaterThanOrEqual(0);
+    await waitFor(() => expect(result.current.dev.dataFetchMs).toBeGreaterThanOrEqual(0));
   });
 
   it("builds metadata-driven page query with quick and where input", () => {

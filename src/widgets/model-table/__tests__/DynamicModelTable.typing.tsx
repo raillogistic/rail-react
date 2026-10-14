@@ -1,15 +1,15 @@
-import type { LocationsAssetMovement } from "@/models";
+import type { TypingAssetMovement } from "@/test/typingModels";
 import {
   DynamicModelTable,
   type DynamicModelTableHandle,
 } from "@/widgets/model-table";
 
-const validHandle: DynamicModelTableHandle<LocationsAssetMovement> | null = null;
+const validHandle: DynamicModelTableHandle<TypingAssetMovement> | null = null;
 void validHandle?.data[0]?.reason;
 void validHandle?.selectedRows[0]?.asset?.name;
 
 const validDechargeTable = (
-  <DynamicModelTable<LocationsAssetMovement>
+  <DynamicModelTable<TypingAssetMovement>
     app="locations"
     model="AssetMovement"
     baseTable={{
@@ -78,12 +78,12 @@ const validDechargeTable = (
 void validDechargeTable;
 
 const invalidAccessor = (
-  <DynamicModelTable<LocationsAssetMovement>
+  <DynamicModelTable<TypingAssetMovement>
     app="locations"
     model="AssetMovement"
     baseTable={{
       fields: {
-        // @ts-expect-error accessor must exist on LocationsAssetMovement or derived relation paths
+        // @ts-expect-error accessor must exist on TypingAssetMovement or derived relation paths
         include: ["missingField"],
       },
     }}
@@ -93,7 +93,7 @@ const invalidAccessor = (
 void invalidAccessor;
 
 const invalidDottedAccessor = (
-  <DynamicModelTable<LocationsAssetMovement>
+  <DynamicModelTable<TypingAssetMovement>
     app="locations"
     model="AssetMovement"
     baseTable={{
@@ -108,12 +108,12 @@ const invalidDottedAccessor = (
 void invalidDottedAccessor;
 
 const invalidRelationKey = (
-  <DynamicModelTable<LocationsAssetMovement>
+  <DynamicModelTable<TypingAssetMovement>
     app="locations"
     model="AssetMovement"
     baseTable={{
       relations: {
-        // @ts-expect-error relation key must exist on LocationsAssetMovement
+        // @ts-expect-error relation key must exist on TypingAssetMovement
         unknownRelation: {
           display: "name",
         },
@@ -125,7 +125,7 @@ const invalidRelationKey = (
 void invalidRelationKey;
 
 const invalidCreateFormOverrideField = (
-  <DynamicModelTable<LocationsAssetMovement>
+  <DynamicModelTable<TypingAssetMovement>
     app="locations"
     model="AssetMovement"
     create={{

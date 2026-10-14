@@ -1,8 +1,8 @@
 /**
- * Text-based form inputs: text, email, password, color, textarea, file, json.
- *
- * Renders the appropriate input variant based on `config.type`, using
- * the shared FieldWrapper for consistent label/error presentation.
+ * @file text.tsx
+ * @description Composants d'entrée basés sur le texte : texte, e-mail, mot de passe, couleur, zone de texte, fichier, JSON.
+ * Modifié pour supprimer explicitement toutes les ombres (shadow-none), appliquer les styles thématiques arrondis,
+ * et utiliser des coins arrondis rounded-xl.
  *
  * @module form/inputs/text
  */
@@ -21,7 +21,17 @@ import type {
   TextFieldConfig,
 } from "./types";
 import { Textarea } from "@/shared/ui/kit/textarea";
-import { File, X, FileJson, CloudUpload, Type, Mail, Lock, Palette, AlignLeft } from "lucide-react";
+import {
+  File,
+  X,
+  FileJson,
+  CloudUpload,
+  Type,
+  Mail,
+  Lock,
+  Palette,
+  AlignLeft,
+} from "lucide-react";
 
 type Props = FieldComponentProps<TextFieldConfig | FileFieldConfig>;
 
@@ -83,16 +93,17 @@ const TextInput: React.FC<Props> = ({ config, field, form }) => {
         dirty={dirty}
       >
         <div className="relative group/text">
-          <div className="pointer-events-none absolute left-4 top-4 text-muted-foreground/30 transition-all duration-300 group-focus-within/text:text-primary/50 group-focus-within/text:scale-110">
+          <div className="pointer-events-none absolute left-4.5 top-4 text-muted-foreground/35 transition-all duration-300 group-focus-within/text:text-primary group-focus-within/text:scale-110">
             <Icon className="size-4.5 stroke-[2.5]" />
           </div>
           <Textarea
             id={fieldId}
             data-slot="textarea"
             className={cn(
-              "flex min-h-32 w-full resize-y rounded-md border border-input bg-background pl-11 pr-4 py-3 text-sm shadow-sm transition-colors",
-              "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
-              config.readOnly && "cursor-default bg-muted/50",
+              "flex min-h-32 w-full resize-y rounded-3xl border border-transparent bg-muted/50 pl-12 pr-4 py-3 text-[13.5px] font-medium transition-all duration-300 ease-out shadow-sm",
+              "hover:border-primary/40 hover:bg-muted/60",
+              "focus-visible:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10",
+              config.readOnly && "cursor-default bg-muted/70",
               config.disabled && "cursor-not-allowed opacity-50",
             )}
             rows={config.rows ?? 4}
@@ -123,7 +134,7 @@ const TextInput: React.FC<Props> = ({ config, field, form }) => {
         <div className="flex flex-col gap-4">
           <div className="group relative">
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-               <CloudUpload className="size-6 text-primary/40 animate-bounce" />
+              <CloudUpload className="size-6 text-primary animate-bounce" />
             </div>
             <Input
               id={fieldId}
@@ -132,10 +143,10 @@ const TextInput: React.FC<Props> = ({ config, field, form }) => {
               accept={config.accept}
               multiple={Boolean(config.multiple)}
               className={cn(
-                "flex h-12 w-full cursor-pointer items-center rounded-md border-2 border-dashed border-input bg-background p-0 text-sm transition-colors",
-                "hover:border-foreground/20 hover:bg-muted/10",
-                "focus-within:outline-none focus-within:ring-1 focus-within:ring-ring",
-                "file:h-full file:border-0 file:border-r file:border-dashed file:border-input file:bg-muted/20 file:px-6 file:py-0 file:text-xs file:font-semibold file:text-foreground/70 file:hover:bg-muted/30 file:transition-all file:mr-4",
+                "flex h-9 w-full cursor-pointer items-center rounded-xl border border-transparent bg-muted/50 p-0 text-sm transition-all duration-300 shadow-sm",
+                "hover:border-primary/40 hover:bg-muted/60",
+                "focus-within:outline-none focus-within:ring-4 focus-within:ring-primary/10",
+                "file:h-full file:border-0 file:border-r file:border-transparent file:bg-muted/20 file:px-4 file:py-0 file:text-xs file:font-semibold file:text-foreground/70 file:hover:bg-muted/30 file:transition-all file:mr-4",
               )}
               onChange={(event) => {
                 const list = event.target.files;
@@ -157,7 +168,7 @@ const TextInput: React.FC<Props> = ({ config, field, form }) => {
               {fileList.map((file, idx) => (
                 <div
                   key={`${file.name}-${idx}`}
-                  className="group/file-item relative flex items-center gap-3 rounded-md border border-input bg-background p-2.5 transition-colors hover:border-foreground/20 hover:bg-muted/5 shadow-sm"
+                  className="group/file-item relative flex items-center gap-3 rounded-xl border border-input/70 bg-muted/50 px-4 py-2 transition-all duration-300 hover:border-primary/40 hover:bg-muted/60"
                 >
                   <div className="flex size-9 items-center justify-center rounded-md bg-muted/30 text-muted-foreground transition-colors group-hover/file-item:text-foreground">
                     <File className="size-4.5" />
@@ -209,7 +220,7 @@ const TextInput: React.FC<Props> = ({ config, field, form }) => {
         error={error}
         dirty={dirty}
       >
-        <div className="group/json overflow-hidden rounded-md border border-input bg-background shadow-sm transition-colors focus-within:ring-1 focus-within:ring-ring hover:border-foreground/20">
+        <div className="group/json overflow-hidden rounded-xl border border-input/70 bg-muted/50 transition-all duration-300 focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10">
           <div className="flex items-center justify-between border-b border-input bg-muted/20 px-4 py-2">
             <div className="flex items-center gap-2.5 text-[11px] font-bold uppercase tracking-wider text-muted-foreground/60 group-focus-within/json:text-primary/70 transition-colors">
               <FileJson className="size-4" />
@@ -219,7 +230,7 @@ const TextInput: React.FC<Props> = ({ config, field, form }) => {
           <textarea
             id={fieldId}
             data-slot="textarea"
-            className="font-mono min-h-48 w-full resize-y bg-background p-4 text-sm outline-none transition-colors"
+            className="font-mono min-h-48 w-full resize-y bg-transparent p-4 text-sm outline-none transition-colors"
             value={value}
             onChange={(event) => field.handleChange(event.target.value)}
             onBlur={field.handleBlur}
@@ -248,7 +259,7 @@ const TextInput: React.FC<Props> = ({ config, field, form }) => {
   return (
     <FieldWrapper config={config} fieldId={fieldId} error={error} dirty={dirty}>
       <div className="relative group/text">
-        <div className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground/30 transition-all duration-300 group-focus-within/text:text-primary/50 group-focus-within/text:scale-110">
+        <div className="pointer-events-none absolute left-4.5 top-1/2 -translate-y-1/2 text-muted-foreground/35 transition-all duration-300 group-focus-within/text:text-primary group-focus-within/text:scale-110">
           <Icon className="size-4.5 stroke-[2.5]" />
         </div>
         <Input
@@ -264,10 +275,11 @@ const TextInput: React.FC<Props> = ({ config, field, form }) => {
           readOnly={config.readOnly}
           disabled={config.disabled}
           className={cn(
-            "flex h-9 w-full rounded-md border border-input bg-background pl-11 pr-4 py-2 text-sm shadow-sm transition-colors",
-            "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
-            inputType === "color" && "pl-11 h-12 cursor-pointer border-2",
-            config.disabled && "cursor-not-allowed opacity-50",
+            "flex h-9 w-full rounded-xl border border-transparent bg-muted/50 pl-11 pr-4 py-1.5 text-[13.5px] font-medium transition-all duration-300 ease-out shadow-sm",
+            "hover:border-primary/40 hover:bg-muted/60",
+            "focus:border-primary focus:ring-4 focus:ring-primary/10 focus-visible:outline-none focus-visible:ring-0",
+            inputType === "color" && "pl-11 h-9 cursor-pointer border-2",
+            config.disabled && "cursor-not-allowed opacity-60 grayscale-[0.5]",
             safeInputProps?.className,
           )}
           {...safeInputProps}

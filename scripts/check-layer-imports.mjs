@@ -1,9 +1,10 @@
+import { sharedRoot, sourceRoots, sourceRootFor, resolveSourceImport } from './source-paths.mjs';
 import fs from "node:fs";
 import path from "node:path";
 
 const repoRoot = process.cwd();
 const srcRoot = path.join(repoRoot, "src");
-const migrationMapPath = path.join(repoRoot, "scripts", "layer-migration-map.json");
+const migrationMapPath = path.join(sharedRoot, "scripts", "layer-migration-map.json");
 const layerOrder = [
   "shared",
   "entities",
@@ -44,7 +45,7 @@ const pathOverrides = Array.isArray(migrationMapConfig.pathOverrides)
   : [];
 
 const getLayerFromAbsolutePath = (absolutePath) => {
-  const relative = path.relative(srcRoot, absolutePath).replace(/\\/g, "/");
+  const relative = path.relative(sourceRootFor(absolutePath), absolutePath).replace(/\\/g, "/");
   const overrideMatch = pathOverrides.find(
     (override) =>
       relative === override.prefix || relative.startsWith(`${override.prefix}/`),
@@ -74,17 +75,7 @@ const getImportSpecifiers = (source) => {
   return specs;
 };
 
-const resolveSpecifier = (specifier, importerPath) => {
-  if (specifier.startsWith("@/")) {
-    return path.join(srcRoot, specifier.slice(2));
-  }
-
-  if (specifier.startsWith(".")) {
-    return path.resolve(path.dirname(importerPath), specifier);
-  }
-
-  return null;
-};
+const resolveSpecifier = resolveSourceImport;
 
 const listSourceFiles = (dirPath) => {
   const stack = [dirPath];
@@ -123,7 +114,7 @@ const listSourceFiles = (dirPath) => {
   return output;
 };
 
-const allFiles = listSourceFiles(srcRoot).filter((file) =>
+const allFiles = sourceRoots.flatMap(listSourceFiles).filter((file) =>
   /(\/|\\)(app|processes|pages|widgets|features|entities|shared)(\/|\\)/.test(
     file,
   ),

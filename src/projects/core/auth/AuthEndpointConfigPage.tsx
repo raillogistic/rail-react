@@ -17,7 +17,6 @@ import {
   Globe,
   CheckCircle2,
 } from "lucide-react";
-import Logo from "@/shared/assets/legacy-assets/logos/logo.png";
 import { BRANDING } from "@/shared/config/branding";
 
 // UI Kit Imports
@@ -130,7 +129,7 @@ export function AuthEndpointConfigPage() {
         <div className="flex flex-col items-center text-center space-y-2">
           <div className="bg-primary/10 p-3 rounded-2xl mb-2 cursor-pointer hover:bg-primary/20 transition-colors" onClick={() => navigate(ROUTES.LOGIN)}>
             <img
-              src={Logo}
+              src={BRANDING.logo}
               alt="Logo"
               className="h-10 w-10 object-contain"
             />

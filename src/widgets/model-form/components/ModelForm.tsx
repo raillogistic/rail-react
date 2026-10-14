@@ -1,3 +1,10 @@
+/**
+ * @file ModelForm.tsx
+ * @description Composant principal de formulaire généré à partir d'un modèle Django.
+ * Redessiné pour un conteneur premium et de style glassmorphic statique (sans animations ni lueurs).
+ *
+ * @module widgets/model-form/components/ModelForm
+ */
 import React from "react";
 import { gql, useApolloClient } from "@apollo/client";
 import { cn } from "@/shared/utils";
@@ -224,6 +231,7 @@ type ResolvedModelFormValues<TSource extends object> =
 
 /**
  * Composant principal de formulaire généré à partir d'un modèle Django.
+ * Redessiné avec une enveloppe en verre dépoli statique.
  * 
  * @param props Propriétés du formulaire
  */
@@ -341,7 +349,7 @@ export function ModelForm<
 
     const autoExcluded = (contract?.relations ?? [])
       .filter((rel) => {
-        const isReverse = Boolean(rel.toMany);
+        const isReverse = rel.relationType ? rel.relationType.startsWith("REVERSE") : Boolean(rel.toMany);
         const relationFieldName = resolveRelationFieldName(rel);
         const isNestedExplicitly =
           nestedControls &&
@@ -655,32 +663,26 @@ export function ModelForm<
       className={cn(
         "group/model-form relative w-full",
         !isPopupLayoutVariant && [
-          "bg-linear-to-br from-background via-background/98 to-primary/2",
+          "bg-linear-to-br from-card/90 via-card/75 to-card/60 dark:from-card/85 dark:via-card/70 dark:to-card/50",
           "backdrop-blur-xl",
-          "shadow-[0_20px_50px_rgba(0,0,0,0.04)] dark:shadow-[0_20px_50px_rgba(0,0,0,0.2)]",
-          "border border-border/50 rounded-2xl p-6 md:p-10",
-          "hover:shadow-[0_25px_60px_rgba(0,0,0,0.06)] dark:hover:shadow-[0_25px_60px_rgba(0,0,0,0.3)]",
-          "hover:border-border/80",
+          "shadow-[0_20px_50px_-12px_rgba(0,0,0,0.03)] dark:shadow-[0_20px_50px_-12px_rgba(0,0,0,0.25)]",
+          "border border-border/30 dark:border-border/20 rounded-3xl p-6 md:p-10",
         ],
         containerClassName,
       )}
     >
-      {!isPopupLayoutVariant && (
-        <div className="absolute -top-[10%] -left-[5%] size-[40%] rounded-full bg-primary/5 blur-[100px] pointer-events-none opacity-0 group-hover/model-form:opacity-100" />
-      )}
-
       {showHeading && (title || description) ? (
-        <header className={cn("space-y-2 px-1 relative", isPopupLayoutVariant ? "mb-4" : "mb-10")}>
+        <header className={cn("space-y-3 px-1 relative", isPopupLayoutVariant ? "mb-4" : "mb-10")}>
           {title && (
             <div className="flex items-center gap-3">
-              <div className="h-6 w-1 rounded-full bg-primary/40" />
+              <div className="h-6 w-1 rounded-full bg-linear-to-b from-primary via-primary/50 to-transparent shadow-sm shadow-primary/20" />
               <h2 className="text-2xl font-bold tracking-tight text-foreground bg-clip-text">
                 {title}
               </h2>
             </div>
           )}
           {description && (
-            <p className="max-w-2xl text-[14px] leading-relaxed text-muted-foreground/75 font-medium ml-4">
+            <p className="max-w-2xl text-[13.5px] leading-relaxed text-muted-foreground/75 font-medium ml-4">
               {description}
             </p>
           )}
@@ -689,7 +691,7 @@ export function ModelForm<
       <div
         className={cn(
           "relative",
-          !isPopupLayoutVariant && "pt-8 border-t border-border/30",
+          !isPopupLayoutVariant && "pt-8 border-t border-border/25",
           contentClassName,
         )}
       >

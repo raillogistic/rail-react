@@ -1,3 +1,4 @@
+/** Verify generated submissions preserve decimal precision and relation policies. */
 import { act, renderHook } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 
@@ -101,7 +102,7 @@ describe("generated submit workflow", () => {
  "updateProduct",
  {
  sku: "SKU-001",
- input: { sku: "SKU-001", name: "Widget", price: 12 },
+ input: { sku: "SKU-001", name: "Widget", price: "12" },
  },
  expect.objectContaining({
  operationName: "updateProduct",

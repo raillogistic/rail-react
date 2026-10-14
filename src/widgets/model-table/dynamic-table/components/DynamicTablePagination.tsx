@@ -46,6 +46,10 @@ export interface DynamicTablePaginationProps {
   hasPreviousPage?: boolean;
   /** Pagination execution mode. */
   mode: "client" | "server";
+  /** Restrict page sizes for a bounded server projection. */
+  pageSizeOptions?: number[];
+  /** Prevent navigation while the controlled query is pending. */
+  disabled?: boolean;
 }
 
 /**
@@ -61,6 +65,8 @@ export function DynamicTablePagination({
   hasNextPage,
   hasPreviousPage,
   mode,
+  pageSizeOptions: permittedPageSizes,
+  disabled = false,
 }: DynamicTablePaginationProps) {
   const [pageInput, setPageInput] = useState(
     String(state.pagination.pageIndex + 1),
@@ -74,9 +80,9 @@ export function DynamicTablePagination({
   const pageSizeOptions = useMemo(
     () =>
       Array.from(
-        new Set([10, 20, 30, 40, 50, 100, state.pagination.pageSize]),
+        new Set(permittedPageSizes ?? [10, 20, 30, 40, 50, 100, state.pagination.pageSize]),
       ).sort((left, right) => left - right),
-    [state.pagination.pageSize],
+    [state.pagination.pageSize, permittedPageSizes],
   );
 
   const selectedCount = useMemo(
@@ -159,11 +165,11 @@ export function DynamicTablePagination({
             </span>
           ) : null}
         </div>
-        xx
         {/* Right: Controls */}
         <div className="flex flex-wrap items-center justify-center gap-2 sm:justify-end">
           {/* Page Size Selector */}
           <Select
+            disabled={disabled || pageSizeOptions.length === 1}
             value={String(state.pagination.pageSize)}
             onValueChange={(value) => {
               state.setPagination((previousValue) => ({
@@ -199,7 +205,7 @@ export function DynamicTablePagination({
                   variant="ghost"
                   size="icon"
                   className="hidden h-7 w-7 lg:flex hover:bg-background hover:text-primary disabled:opacity-20"
-                  disabled={!canGoPrevious}
+                  disabled={disabled || !canGoPrevious}
                   onClick={() => goToPage(0)}
                   aria-label="Première page"
                 >
@@ -219,7 +225,7 @@ export function DynamicTablePagination({
                   variant="ghost"
                   size="icon"
                   className="h-7 w-7 hover:bg-background hover:text-primary disabled:opacity-20"
-                  disabled={!canGoPrevious}
+                  disabled={disabled || !canGoPrevious}
                   onClick={() => goToPage(state.pagination.pageIndex - 1)}
                   aria-label="Page précédente"
                 >
@@ -264,6 +270,7 @@ export function DynamicTablePagination({
                 </div>
               ) : (
                 <button
+                  disabled={disabled}
                   type="button"
                   className="flex flex-col items-center gap-0 cursor-pointer"
                   onClick={() => totalPages !== null && setIsJumpMode(true)}
@@ -288,7 +295,7 @@ export function DynamicTablePagination({
                   variant="ghost"
                   size="icon"
                   className="h-7 w-7 hover:bg-background hover:text-primary disabled:opacity-20"
-                  disabled={!canGoNext}
+                  disabled={disabled || !canGoNext}
                   onClick={() => goToPage(state.pagination.pageIndex + 1)}
                   aria-label="Page suivante"
                 >
@@ -308,7 +315,7 @@ export function DynamicTablePagination({
                   variant="ghost"
                   size="icon"
                   className="hidden h-7 w-7 lg:flex hover:bg-background hover:text-primary disabled:opacity-20"
-                  disabled={!canGoNext || totalPages === null}
+                  disabled={disabled || !canGoNext || totalPages === null}
                   onClick={() => {
                     if (totalPages !== null) {
                       goToPage(totalPages - 1);

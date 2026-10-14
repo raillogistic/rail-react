@@ -75,27 +75,89 @@
 
   body {
     @apply bg-background text-foreground;
+    background-image:
+      radial-gradient(rgba(120, 119, 198, 0.04) 1px, transparent 1px),
+      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(120, 119, 198, 0.08), rgba(255, 255, 255, 0));
+    background-size: 24px 24px, 100% 100%;
+    background-attachment: fixed;
   }
 
+  .dark body {
+    background-image:
+      radial-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
+      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(120, 119, 198, 0.12), rgba(0, 0, 0, 0));
+  }
+
+  .glass-card {
+    background: color-mix(in srgb, var(--card) 60%, transparent);
+    backdrop-filter: blur(20px);
+    border: 1px solid color-mix(in srgb, var(--border) 45%, transparent);
+  }
+
+  .glass-card-hover {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .glass-card-hover:hover {
+    background: color-mix(in srgb, var(--card) 75%, transparent);
+    border-color: color-mix(in srgb, var(--primary) 30%, transparent);
+    box-shadow: 0 12px 40px -12px color-mix(in srgb, var(--primary) 12%, transparent);
+  }
+
+  .premium-shadow {
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.04);
+  }
+  .dark .premium-shadow {
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.3);
+  }
+
+  /* Premium Global Scrollbar */
+  ::-webkit-scrollbar {
+    width: 14px;
+    height: 14px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: color-mix(in srgb, var(--muted-foreground) 30%, transparent);
+    border-radius: 10px;
+    border: 4px solid transparent;
+    background-clip: padding-box;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: color-mix(in srgb, var(--muted-foreground) 60%, transparent);
+    border: 4px solid transparent;
+    background-clip: padding-box;
+  }
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  /* Custom Scrollbar for sidebars / smaller containers */
   .custom-scrollbar {
     scrollbar-width: thin;
-    scrollbar-color: transparent transparent;
+    scrollbar-color: color-mix(in srgb, var(--muted-foreground) 30%, transparent) transparent;
   }
   .custom-scrollbar:hover {
-    scrollbar-color: var(--sidebar-border) transparent;
+    scrollbar-color: color-mix(in srgb, var(--muted-foreground) 60%, transparent) transparent;
   }
   .custom-scrollbar::-webkit-scrollbar {
-    width: 4px;
+    width: 8px;
+    height: 8px;
   }
   .custom-scrollbar::-webkit-scrollbar-track {
     background: transparent;
   }
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: transparent;
+    background: color-mix(in srgb, var(--muted-foreground) 30%, transparent);
     border-radius: 10px;
+    border: 2px solid transparent;
+    background-clip: padding-box;
   }
   .custom-scrollbar:hover::-webkit-scrollbar-thumb {
-    background: var(--sidebar-border);
+    background: color-mix(in srgb, var(--muted-foreground) 60%, transparent);
+    border: 2px solid transparent;
+    background-clip: padding-box;
   }
 }
 
@@ -254,6 +316,10 @@ body {
 /* Premium Modern ERP Theme (Light) */
 :root {
   --radius: 0.75rem;
+  --layout-gap: 1rem;
+  --card-radius: 1.25rem;
+  --sidebar-margin: 1rem;
+  --sidebar-radius: 1.25rem;
   --background: oklch(0.99 0 0);
   --foreground: oklch(0.14 0 0);
   --card: oklch(1 0 0);
@@ -299,7 +365,7 @@ body {
   /* Custom component vars */
   --navbar-background: calc(oklch(1 0 0) / 0.8);
   --navbar-foreground: oklch(0.14 0 0);
-  --input-background: oklch(1 0 0);
+  --input-background: oklch(0.93 0.015 270);
   --table-header: oklch(0.98 0 0);
   --table-header-foreground: oklch(0.45 0.02 270);
   --table-row-hover: oklch(0.98 0.01 270);
@@ -316,6 +382,10 @@ body {
 
 /* Premium Modern ERP Theme (Dark) */
 .dark {
+  --layout-gap: 1rem;
+  --card-radius: 1.25rem;
+  --sidebar-margin: 1rem;
+  --sidebar-radius: 1.25rem;
   /* Rich, deep indigo-tinted slate background */
   --background: oklch(0.16 0.01 270);
   --foreground: oklch(0.98 0.01 270);
@@ -375,4 +445,182 @@ body {
   --command-foreground: oklch(0.98 0.01 270);
   --dropdown: oklch(0.19 0.01 270);
   --dropdown-foreground: oklch(0.98 0.01 270);
+}
+
+/* ==========================================
+   REFONTE MAJEURE DU LAYOUT (MODERNE & GLASSMORPHIC)
+   ========================================== */
+
+@media (min-width: 768px) {
+  /* Unified shell card: wraps sidebar + content in one panel */
+  [data-slot="shell-card"] {
+    background: color-mix(in srgb, var(--card) 60%, transparent) !important;
+    backdrop-filter: blur(20px) !important;
+    border: 1px solid color-mix(in srgb, var(--border) 35%, transparent) !important;
+    border-radius: var(--card-radius, 1.25rem) !important;
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.04) !important;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+    overflow: hidden !important;
+  }
+
+  .dark [data-slot="shell-card"] {
+    box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.3) !important;
+  }
+
+  /* Sidebar container: transparent, no padding, no border */
+  [data-slot="sidebar-container"] {
+    padding: 0 !important;
+    border: none !important;
+    background: transparent !important;
+    height: 100% !important;
+  }
+
+  /* Sidebar inner: flat inside the unified card, subtle right separator */
+  [data-slot="sidebar-inner"] {
+    background: transparent !important;
+    backdrop-filter: none !important;
+    border: none !important;
+    border-right: 1px solid color-mix(in srgb, var(--sidebar-border) 40%, transparent) !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  /* Content inset: flat inside the unified card, no margin/border */
+  [data-slot="sidebar-inset"] {
+    background: transparent !important;
+    backdrop-filter: none !important;
+    border: none !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    margin: 0 !important;
+    overflow: hidden !important;
+  }
+}
+
+/* Suppression des effets de flou/flottement en mode layout mixte/horizontal pour la cohérence */
+[data-layout="mixed"] [data-slot="shell-card"],
+[data-layout="horizontal"] [data-slot="shell-card"] {
+  border-radius: 0 !important;
+  border: none !important;
+  background: var(--background) !important;
+  backdrop-filter: none !important;
+  box-shadow: none !important;
+  margin: 0 !important;
+}
+
+[data-layout="mixed"] [data-slot="sidebar-inner"],
+[data-layout="horizontal"] [data-slot="sidebar-inner"] {
+  border-radius: 0 !important;
+  border: none !important;
+  border-right: 1px solid var(--sidebar-border) !important;
+  background: var(--sidebar) !important;
+  backdrop-filter: none !important;
+}
+
+[data-layout="mixed"] [data-slot="sidebar-inset"],
+[data-layout="horizontal"] [data-slot="sidebar-inset"] {
+  border-radius: 0 !important;
+  border: none !important;
+  margin: 0 !important;
+  background: var(--background) !important;
+  backdrop-filter: none !important;
+}
+
+/* ==========================================
+   REFONTE GLOBALE DES COMPOSANTS UI
+   ========================================== */
+
+/* Cartes (Card) modernisées en Glassmorphism */
+[data-slot="card"] {
+  background: color-mix(in srgb, var(--card) 60%, transparent) !important;
+  backdrop-filter: blur(16px) !important;
+  border: 1px solid color-mix(in srgb, var(--border) 40%, transparent) !important;
+  border-radius: var(--card-radius, 1.25rem) !important;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.02) !important;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.dark [data-slot="card"] {
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Boutons (Button) sublimés */
+[data-slot="button"][data-variant="default"] {
+  background: linear-gradient(135deg, var(--primary) 0%, color-mix(in srgb, var(--primary) 85%, black) 100%) !important;
+  box-shadow: 0 2px 8px -2px color-mix(in srgb, var(--primary) 30%, transparent) !important;
+  border: 1px solid color-mix(in srgb, var(--primary) 10%, black) !important;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+  font-weight: 600 !important;
+}
+
+[data-slot="button"][data-variant="default"]:hover {
+  box-shadow: 0 4px 12px -2px color-mix(in srgb, var(--primary) 45%, transparent) !important;
+  transform: translateY(-0.5px);
+  filter: brightness(1.05);
+}
+
+[data-slot="button"][data-variant="default"]:active {
+  transform: translateY(0.5px);
+}
+
+/* En-têtes et lignes de Tableaux (Table) */
+[data-slot="table-header"] tr {
+  background-color: color-mix(in srgb, var(--muted) 40%, transparent) !important;
+  border-bottom: 2px solid var(--border) !important;
+}
+
+[data-slot="table-head"] {
+  font-size: 0.72rem !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.06em !important;
+  color: var(--muted-foreground) !important;
+}
+
+[data-slot="table-row"] {
+  transition: all 0.2s ease !important;
+  border-bottom: 1px solid color-mix(in srgb, var(--border) 40%, transparent) !important;
+}
+
+[data-slot="table-row"]:hover {
+  background-color: color-mix(in srgb, var(--muted) 25%, transparent) !important;
+}
+
+[data-slot="table-cell"] {
+  padding: 0.5rem 0.5rem;
+}
+
+/* Champs de saisie (Input, Textarea, Select, Select Trigger) */
+[data-slot="input"],
+[data-slot="textarea"],
+[data-slot="select"],
+[data-slot="select-trigger"] {
+  transition: all 0.2s ease !important;
+  background: color-mix(in srgb, var(--input-background) 80%, transparent) !important;
+  border: 1px solid color-mix(in srgb, var(--border) 80%, transparent) !important;
+}
+
+[data-slot="input"]:focus-visible,
+[data-slot="textarea"]:focus-visible,
+[data-slot="select"]:focus-visible,
+[data-slot="select-trigger"]:focus-visible,
+[data-slot="select-trigger"][data-state="open"] {
+  border-color: var(--primary) !important;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 15%, transparent) !important;
+  outline: none !important;
+}
+
+/* Dialogues & Panneaux coulissants (Dialog, Sheet) */
+[data-slot="dialog-content"],
+[data-slot="sheet-content"] {
+  background: color-mix(in srgb, var(--popover) 75%, transparent) !important;
+  backdrop-filter: blur(24px) !important;
+  border: 1px solid color-mix(in srgb, var(--border) 40%, transparent) !important;
+  box-shadow: 0 24px 60px -15px rgba(0, 0, 0, 0.08) !important;
+  border-radius: var(--card-radius, 1.25rem) !important;
+}
+
+.dark [data-slot="dialog-content"],
+.dark [data-slot="sheet-content"] {
+  box-shadow: 0 24px 60px -15px rgba(0, 0, 0, 0.5) !important;
 }

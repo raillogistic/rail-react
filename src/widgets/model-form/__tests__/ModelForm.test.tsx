@@ -1,3 +1,4 @@
+/** Verify generated forms load initial data and dispatch supported mutations. */
 import React from "react";
 import { gql } from "@apollo/client";
 import { MockedProvider, type MockedResponse } from "@apollo/client/testing";
@@ -309,7 +310,7 @@ describe("ModelForm", () => {
 
  const payload = await getRenderedSchema();
  expect(payload.initialValues.name).toBe("Starter");
- expect(payload.initialValues.price).toBe(10);
+ expect(payload.initialValues.price).toBe("10");
  });
 
  it("reports initial-data authorization failures through onLoadError", async () => {

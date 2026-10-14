@@ -1,104 +1,18 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  __resetManifestRegistryForTests,
-  getAllRoutes,
-  getDefaultRoute,
-  getNavigationGroups,
-  isProtectedRoute,
-} from "../manifestRegistry";
-import { NAVIGATION_LINKS, flattenNavigationPages } from "../navigation";
-import { normalizePath } from "../contracts";
+/** Generic manifest registration must work without any purchasing application. */
+import { describe, expect, it, vi } from 'vitest';
+vi.mock('@rail/application', () => ({ default: { manifests: [{
+  projectId: 'fixture', defaultRoute: '/fixture', routes: [{
+    id: 'fixture:index', path: '/fixture', title: 'Exemple', projectId: 'fixture', guard: 'protected', element: null,
+  }], navigation: [],
+}] } }));
+import { getAllRoutes, getProjectManifests, isProtectedRoute } from '../manifestRegistry';
 
-const toRouteFingerprint = (
-  routes: ReturnType<typeof getAllRoutes>,
-): string[] =>
-  routes
-    .map((route) => `${normalizePath(route.path)}|${route.guard}`)
-    .sort((a, b) => a.localeCompare(b));
-
-describe("manifestRegistry", () => {
-  beforeEach(() => {
-    __resetManifestRegistryForTests();
-    vi.unstubAllEnvs();
-  });
-
-  it("exposes manifest routes", () => {
-    const routes = getAllRoutes();
-    expect(routes.length).toBeGreaterThan(0);
-    expect(
-      routes.some(
-        (route) => normalizePath(route.path) === normalizePath(getDefaultRoute()),
-      ),
-    ).toBe(true);
-  });
-
-  it("returns default routes and route protection metadata", () => {
-    const defaultRoute = getDefaultRoute();
-    expect(defaultRoute).toBeTruthy();
-    expect(isProtectedRoute("/login")).toBe(false);
-    expect(isProtectedRoute("/dashboard")).toBe(true);
-    expect(getNavigationGroups().length).toBeGreaterThan(0);
-  });
-
-  it("loads project manifests and keeps the core default route", () => {
-    const routes = getAllRoutes();
-    const projectIds = new Set(routes.map((route) => route.projectId));
-
-    expect(projectIds.has("core")).toBe(true);
-    // Dans ce projet, le defaultRoute du manifest core est ROUTES.SETTINGS_ACCOUNT
-    expect(getDefaultRoute()).toBeTruthy();
-
-    const navigationProjectIds = new Set(
-      getNavigationGroups().map((group) => group.projectId),
-    );
-    for (const projectId of navigationProjectIds) {
-      expect(projectIds.has(projectId)).toBe(true);
-    }
-  });
-
-  it("includes project manifests discovered from src/projects", () => {
-    const routes = getAllRoutes();
-    const navigationGroups = getNavigationGroups();
-
-    const routeProjectIds = Array.from(
-      new Set(routes.map((route) => route.projectId)),
-    );
-    expect(routeProjectIds).toEqual(
-      expect.arrayContaining(["core", "patrimoine", "operations"]),
-    );
-
-    const navigationProjectIds = Array.from(
-      new Set(navigationGroups.map((group) => group.projectId)),
-    );
-    expect(navigationProjectIds).toEqual(
-      expect.arrayContaining(["core", "patrimoine", "operations"]),
-    );
-  });
-
-  it("maps navigation links to protected pages", () => {
-    const protectedPaths = new Set(
-      getAllRoutes()
-        .filter((route) => route.guard === "protected" && !!route.element)
-        .map((route) => normalizePath(route.path)),
-    );
-
-    const flattenedPaths = new Set(
-      flattenNavigationPages()
-        .filter((page) => !page.hidden)
-        .map((page) => normalizePath(page.path)),
-    );
-
-    for (const path of flattenedPaths) {
-      expect(protectedPaths.has(path)).toBe(true);
-    }
-
-    expect(NAVIGATION_LINKS.length).toBe(getNavigationGroups().length);
-  });
-
-  it("keeps path and guard fingerprints stable", () => {
-    const first = toRouteFingerprint(getAllRoutes());
-    __resetManifestRegistryForTests();
-    const second = toRouteFingerprint(getAllRoutes());
-    expect(first).toEqual(second);
+describe('shared manifest registry', () => {
+  it('combines generic core routes with supplied application manifests', () => {
+    expect(getProjectManifests().map(manifest => manifest.projectId)).toEqual(expect.arrayContaining(['core', 'fixture']));
+    expect(getAllRoutes().some(route => route.id === 'fixture:index')).toBe(true);
+    expect(isProtectedRoute('/login')).toBe(false);
+    expect(isProtectedRoute('/fixture')).toBe(true);
+    expect(isProtectedRoute('/unregistered')).toBe(true);
   });
 });

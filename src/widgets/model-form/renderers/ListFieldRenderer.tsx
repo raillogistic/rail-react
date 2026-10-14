@@ -20,7 +20,7 @@ import {
 import type { ListFieldConfig } from "../types/schema";
 import { resolveFieldErrors, resolveRequiredError } from "../inputs/common";
 import { FieldRenderer } from "./FieldRenderer";
-import { buildResponsiveGridClass } from "./utils";
+import { buildResponsiveGridClass, buildResponsiveColSpanClass } from "./utils";
 import { buildDefaultsFromFields } from "../hooks/useFormDefaults";
 import { createValidators } from "./FieldRenderer";
 import {
@@ -53,6 +53,7 @@ export type ListFieldRendererProps<TValues> = {
   path: string;
   colSpan?: number;
   defaultColSpan?: number;
+  columns?: number;
   globalReadOnly?: boolean;
   globalDisabled?: boolean;
   hiddenFields?: Set<string>;
@@ -129,6 +130,7 @@ export const ListFieldRenderer = <TValues extends Record<string, any>>({
   path,
   colSpan,
   defaultColSpan,
+  columns,
   globalReadOnly,
   globalDisabled,
   hiddenFields,
@@ -167,8 +169,10 @@ export const ListFieldRenderer = <TValues extends Record<string, any>>({
           path={path}
           colSpan={colSpan}
           defaultColSpan={defaultColSpan}
+          columns={columns}
           itemGridClassName={itemGridClassName}
           itemGridGapStyle={itemGridGapStyle}
+          itemColumns={itemColumns}
           globalReadOnly={globalReadOnly}
           globalDisabled={globalDisabled}
           hiddenFields={hiddenFields}
@@ -185,8 +189,10 @@ type ListFieldItemsProps<TValues extends Record<string, any>> = {
   path: string;
   colSpan?: number;
   defaultColSpan?: number;
+  columns?: number;
   itemGridClassName: string;
   itemGridGapStyle?: React.CSSProperties;
+  itemColumns: number;
   globalReadOnly?: boolean;
   globalDisabled?: boolean;
   hiddenFields?: Set<string>;
@@ -198,8 +204,10 @@ const ListFieldItems = <TValues extends Record<string, any>>({
   path,
   colSpan,
   defaultColSpan,
+  columns,
   itemGridClassName,
   itemGridGapStyle,
+  itemColumns,
   form,
   globalReadOnly,
   globalDisabled,
@@ -467,14 +475,14 @@ const ListFieldItems = <TValues extends Record<string, any>>({
     [enforceOrdering, fieldApi, items],
   );
 
+  const colSpanClass = colSpan ? buildResponsiveColSpanClass(colSpan, columns ?? 1) : "";
+
   return (
     <div
-      className="group/list-container relative flex flex-col gap-3  border border-border/40 bg-muted/5 p-1 transition-all duration-500"
-      style={
-        colSpan
-          ? { gridColumn: `span ${colSpan} / span ${colSpan}` }
-          : undefined
-      }
+      className={cn(
+        "group/list-container relative flex flex-col gap-3  border border-border/40 bg-muted/5 p-1 transition-all duration-500",
+        colSpanClass
+      )}
     >
       {/* List Header */}
       <div className="flex items-center justify-between px-4 py-2.5">
@@ -571,6 +579,7 @@ const ListFieldItems = <TValues extends Record<string, any>>({
                       defaultColSpan={defaultColSpan}
                       itemGridClassName={itemGridClassName}
                       itemGridGapStyle={itemGridGapStyle}
+                      itemColumns={itemColumns}
                       isReadOnly={isReadOnly}
                       globalDisabled={globalDisabled}
                       hiddenFields={hiddenFields}
@@ -610,6 +619,7 @@ type SortableListItemProps<TValues> = {
   defaultColSpan?: number;
   itemGridClassName: string;
   itemGridGapStyle?: React.CSSProperties;
+  itemColumns: number;
   isReadOnly?: boolean;
   globalDisabled?: boolean;
   hiddenFields?: Set<string>;
@@ -634,6 +644,7 @@ const SortableListItem = <TValues extends Record<string, any>>({
   defaultColSpan,
   itemGridClassName,
   itemGridGapStyle,
+  itemColumns,
   isReadOnly,
   globalDisabled,
   hiddenFields,
@@ -775,6 +786,7 @@ const SortableListItem = <TValues extends Record<string, any>>({
               form={form}
               colSpan={child.colSpan ?? defaultColSpan}
               defaultColSpan={defaultColSpan}
+              columns={itemColumns}
               globalReadOnly={isReadOnly}
               globalDisabled={globalDisabled}
               hiddenFields={hiddenFields}

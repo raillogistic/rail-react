@@ -1,12 +1,28 @@
+/**
+ * @file AppearanceSettings.tsx
+ * @description Page de configuration de l'apparence de l'application.
+ * Permet de configurer le mode clair/sombre, le thème de couleur,
+ * la disposition de la barre latérale (icônes vs complète), le type de sous-navigation,
+ * ainsi que la typographie (taille, police, interligne, espacement).
+ *
+ * @module projects/core/pages/settings/AppearanceSettings
+ */
+
 import {
   useTheme,
   themeNames,
   type ThemeName,
+  type NavigationPattern,
+  type SidebarMode,
   type FontSize,
   type FontFamily,
   type LineHeight,
   type LetterSpacing,
 } from "@/shared/ui/theme";
+import {
+  NAVIGATION_PATTERN_OPTIONS,
+  SIDEBAR_MODE_OPTIONS,
+} from "@/app/shell/navigation-patterns";
 import {
   Card,
   CardContent,
@@ -33,6 +49,11 @@ import {
 } from "@tabler/icons-react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
+/**
+ * Composant de formulaire de réglages de l'apparence.
+ *
+ * @returns {JSX.Element} Le composant des paramètres d'apparence.
+ */
 export function AppearanceSettings() {
   const {
     theme,
@@ -47,7 +68,19 @@ export function AppearanceSettings() {
     setLineHeight,
     letterSpacing,
     setLetterSpacing,
+    navigationPattern,
+    setNavigationPattern,
+    sidebarMode,
+    setSidebarMode,
   } = useTheme();
+
+  const selectedSidebarMode =
+    SIDEBAR_MODE_OPTIONS.find((option) => option.value === sidebarMode) ??
+    SIDEBAR_MODE_OPTIONS[0];
+
+  const selectedNavigationPattern =
+    NAVIGATION_PATTERN_OPTIONS.find((option) => option.value === navigationPattern) ??
+    NAVIGATION_PATTERN_OPTIONS[0];
 
   const handleNextTheme = () => {
     const currentIndex = themeNames.indexOf(theme);
@@ -119,6 +152,53 @@ export function AppearanceSettings() {
               </Button>
             </div>
           </div>
+          <div className="space-y-2">
+            <Label>Disposition de la barre latérale</Label>
+            <Select
+              value={sidebarMode}
+              onValueChange={(value) => setSidebarMode(value as SidebarMode)}
+            >
+              <SelectTrigger className="w-[260px]">
+                <SelectValue placeholder="Sélectionner une disposition" />
+              </SelectTrigger>
+              <SelectContent>
+                {SIDEBAR_MODE_OPTIONS.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-sm text-muted-foreground">
+              {selectedSidebarMode.description}
+            </p>
+          </div>
+
+          {sidebarMode === "icons" && (
+            <div className="space-y-2">
+              <Label>Type de navigation</Label>
+              <Select
+                value={navigationPattern}
+                onValueChange={(value) =>
+                  setNavigationPattern(value as NavigationPattern)
+                }
+              >
+                <SelectTrigger className="w-[260px]">
+                  <SelectValue placeholder="Sélectionner une navigation" />
+                </SelectTrigger>
+                <SelectContent>
+                  {NAVIGATION_PATTERN_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-sm text-muted-foreground">
+                {selectedNavigationPattern.description}
+              </p>
+            </div>
+          )}
         </CardContent>
       </Card>
 

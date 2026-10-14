@@ -1,8 +1,8 @@
 /**
- * JSON Nested form input.
- *
- * Renders a structured nested form for a JSON field based on dynamic section
- * and field definitions provided via config.
+ * @file json-nested.tsx
+ * @description Entrée de formulaire JSON imbriqué.
+ * Modifié pour forcer shadow-none sur les inputs enfants, les Switches,
+ * et utiliser des coins arrondis rounded-xl.
  *
  * @module form/inputs/json-nested
  */
@@ -187,8 +187,8 @@ const JsonNestedInput: React.FC<Props> = ({ config, field, form }) => {
             onBlur={field.handleBlur}
             disabled={config.disabled || config.readOnly}
             className={cn(
-              "h-9 transition-colors shadow-sm",
-              subError && "border-destructive focus-visible:ring-destructive",
+              "h-9 rounded-xl bg-muted/50 pl-4 pr-4 border border-transparent transition-all duration-300 hover:border-primary/40 hover:bg-muted/60 focus:border-primary focus:ring-4 focus:ring-primary/10 focus-visible:ring-0 focus-visible:outline-none shadow-sm",
+              subError && "border-destructive focus:ring-destructive focus:border-destructive",
             )}
           />
           {errorNode}
@@ -209,6 +209,7 @@ const JsonNestedInput: React.FC<Props> = ({ config, field, form }) => {
                 field.handleBlur();
               }}
               disabled={config.disabled || config.readOnly}
+              className="shadow-sm"
             />
             {labelNode}
           </div>
@@ -233,8 +234,8 @@ const JsonNestedInput: React.FC<Props> = ({ config, field, form }) => {
     <FieldWrapper config={config} fieldId={fieldId} dirty={dirty}>
       <div
         className={cn(
-          "flex flex-col gap-4 rounded-xl border bg-muted/5 p-4 transition-colors",
-          hasFields ? "border-input/60" : "border-dashed border-input/40",
+          "flex flex-col gap-5 rounded-xl border bg-slate-50/50 dark:bg-slate-900/10 p-5 transition-all duration-300",
+          hasFields ? "border-border/60" : "border-dashed border-border/40",
         )}
       >
         {/* Header optionnel */}
@@ -297,7 +298,7 @@ const JsonNestedInput: React.FC<Props> = ({ config, field, form }) => {
                       {section.fields.length > 1 ? "s" : ""}
                     </Badge>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5 bg-background rounded-lg border border-input/40 p-4 shadow-sm">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-5 bg-background rounded-2xl p-5">
                     {sortedFields.map(renderField)}
                   </div>
                 </div>

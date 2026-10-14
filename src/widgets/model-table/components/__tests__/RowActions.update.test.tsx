@@ -384,7 +384,7 @@ describe("RowActions update integration", () => {
     expect(latestProps?.extraActions?.[0]?.label).toBe("Flag");
   });
 
-  it("keeps detail action visible when retrieve is denied but update link mode is enabled", async () => {
+  it("keeps detail action visible when retrieve is allowed and detail uses a link", async () => {
     mockUseMetadata.mockReturnValue({
       app: "store",
       model: "Order",
@@ -397,7 +397,7 @@ describe("RowActions update integration", () => {
         templates: [],
         permissions: {
           canList: true,
-          canRetrieve: false,
+          canRetrieve: true,
           canCreate: true,
           canUpdate: true,
           canDelete: false,
@@ -418,6 +418,7 @@ describe("RowActions update integration", () => {
           hrefTemplate: "/orders/:id/edit",
         }}
         detail={{
+          type: "link",
           hrefTemplate: "/orders/:id",
         }}
       />,
@@ -485,6 +486,62 @@ describe("RowActions update integration", () => {
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith("/orders/105");
     });
+  });
+
+  it("keeps detail and template actions available for read-only rows when detail is a link", () => {
+    mockUseMetadata.mockReturnValue({
+      app: "store",
+      model: "Order",
+      metadata: {
+        model: "Order",
+        verboseName: "Commande",
+        mutations: [
+          { name: "updateOrder", operation: "update", allowed: false },
+          { name: "deleteOrder", operation: "delete", allowed: false },
+        ],
+        permissions: {
+          canList: true,
+          canRetrieve: true,
+          canCreate: false,
+          canUpdate: false,
+          canDelete: false,
+          canBulkCreate: false,
+          canBulkUpdate: false,
+          canBulkDelete: false,
+          canExport: false,
+        },
+        templates: [
+          {
+            key: "invoice_pdf",
+            title: "Invoice",
+            endpoint: "/api/templates/store/order/invoice_pdf/<pk>/",
+            templateType: "pdf",
+            allowed: true,
+          },
+        ],
+      },
+    });
+
+    render(
+      <RowActions
+        row={{ id: 205 }}
+        data={[{ id: 205 }]}
+        update={{
+          type: "link",
+          hrefTemplate: "/orders/:id/edit",
+        }}
+        detail={{
+          type: "link",
+          hrefTemplate: "/orders/:id",
+        }}
+      />,
+    );
+
+    expect(
+      screen.getByRole("button", { name: /Voir les d/i }),
+    ).toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Modifier" })).not.toBeInTheDocument();
+    expect(screen.getByTestId("model-template-action")).toBeInTheDocument();
   });
 
   it("closes popup and refetches table after successful update submit", async () => {

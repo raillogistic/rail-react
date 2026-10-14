@@ -15,6 +15,7 @@ export const ROUTES = {
   SETTINGS_APPEARANCE: "/settings/appearance",
   SETTINGS_LAYOUT: "/settings/layout",
   SETTINGS_ADMIN: "/settings/admin",
+  SETTINGS_AI: "/settings/ai",
   SETTINGS_SESSIONS: "/settings/sessions",
   SETTINGS_MFA: "/settings/mfa",
 } as const;

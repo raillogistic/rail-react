@@ -121,8 +121,8 @@ async function run() {
      * Example: node scripts/generate-schema-types.mjs
      */
     // Load .env for completeness (allows process.env to have values if present)
-    dotenv.config({ path: path.resolve(__dirname, '../.env') });
-    const env_path = path.resolve(__dirname, '../.env');
+    dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+    const env_path = path.resolve(process.cwd(), '.env');
     const endpoint = process.env.VITE_API_ENDPOINT || read_env_value(env_path, 'VITE_API_ENDPOINT');
     if (!endpoint) {
         throw new Error('VITE_API_ENDPOINT not found in .env');
@@ -132,7 +132,7 @@ async function run() {
     const introspection = await fetch_introspection(endpoint);
     const schema = buildClientSchema(introspection);
 
-    const out_path = path.resolve(__dirname, '../src/schema.ts');
+    const out_path = path.resolve(process.cwd(), 'src/schema.ts');
     await generate_types(schema, out_path);
     console.log(`[generate-schema-types] Wrote TypeScript types to: ${out_path}`);
 }

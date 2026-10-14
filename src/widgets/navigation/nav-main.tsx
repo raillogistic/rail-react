@@ -2,7 +2,6 @@ import { useEffect, useState } from "react";
 import { ChevronRight } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import type { NavigationSection } from "@/shared/routing/navigation";
-import { useTheme } from "@/shared/ui/theme";
 import {
   Collapsible,
   CollapsibleContent,
@@ -22,12 +21,86 @@ import {
 } from "@/shared/ui/kit/sidebar";
 import { cn } from "@/shared/utils";
 
+
+
 /**
  * Propriétés du composant NavMain.
  */
 export type NavMainProps = {
   /** Liste des sections de navigation configurées dans l'application. */
   navigationLinks: NavigationSection[];
+  /** Fonction optionnelle pour filtrer l'accès aux chemins */
+  filterPath?: (path: string) => boolean;
+};
+
+/**
+ * Normalise un chemin en supprimant les espaces, en convertissant en minuscules,
+ * et en enlevant le slash de fin s'il y en a un.
+ * @param path Le chemin à normaliser.
+ * @returns Le chemin normalisé.
+ */
+export const normalizePath = (path: string): string => {
+  if (!path) return "";
+  let normalized = path.trim().toLowerCase();
+  if (normalized.endsWith("/") && normalized.length > 1) {
+    normalized = normalized.slice(0, -1);
+  }
+  return normalized;
+};
+
+/**
+ * Convertit un chemin avec paramètres (ex: :id) en une expression régulière.
+ * @param path Le chemin cible à convertir.
+ * @returns Une RegExp correspondant au chemin et à ses sous-chemins potentiels.
+ */
+export const path_to_regex = (path: string): RegExp => {
+  const normalized = normalizePath(path);
+  const escaped = normalized.replace(/[.+*?^${}()|[\]\\]/g, "\\$&");
+  const pattern = escaped.replace(/:[a-zA-Z0-9_]+/g, "[^/]+");
+  return new RegExp(`^${pattern}(?:/|$)`);
+};
+
+/**
+ * Vérifie si le chemin d'URL actuel correspond au motif du chemin cible.
+ * @param target_path Le chemin cible à comparer.
+ * @param current_pathname Le chemin d'URL actuel.
+ * @returns Vrai si le chemin correspond, sinon faux.
+ */
+export const matches_pathname = (target_path: string, current_pathname: string): boolean => {
+  if (!target_path) return false;
+  return path_to_regex(target_path).test(normalizePath(current_pathname));
+};
+
+/**
+ * Détermine le meilleur chemin correspondant (le plus spécifique ou exact) pour l'URL actuelle.
+ * @param current_pathname Le chemin d'URL actuel.
+ * @param paths La liste des chemins disponibles dans la navigation.
+ * @returns Le chemin correspondant le plus spécifique, ou null.
+ */
+export const get_best_matching_path = (current_pathname: string, paths: string[]): string | null => {
+  const normalized_current = normalizePath(current_pathname);
+
+  // Recherche d'abord une correspondance exacte
+  for (const path of paths) {
+    if (path && normalizePath(path) === normalized_current) {
+      return path;
+    }
+  }
+
+  // Recherche de la correspondance regex/préfixe la plus longue
+  let best_match: string | null = null;
+  let max_len = -1;
+
+  for (const path of paths) {
+    if (path && matches_pathname(path, current_pathname)) {
+      if (path.length > max_len) {
+        max_len = path.length;
+        best_match = path;
+      }
+    }
+  }
+
+  return best_match;
 };
 
 /**
@@ -36,25 +109,32 @@ export type NavMainProps = {
  * Gère le déploiement automatique des sous-menus contenant l'élément actif,
  * et applique une esthétique épurée (sans ombres, indicateur à gauche, animations fines).
  */
-export function NavMain({ navigationLinks }: NavMainProps) {
+export function NavMain({ navigationLinks, filterPath }: NavMainProps) {
   const location = useLocation();
   const { state } = useSidebar();
   const is_collapsed = state === "collapsed";
 
-  const [expanded_items, set_expanded_items] = useState<Record<string, boolean>>(
-    {},
+  const [expanded_items, set_expanded_items] = useState<
+    Record<string, boolean>
+  >({});
+
+  // Collecte tous les chemins de la navigation pour déterminer le meilleur match
+  const all_paths = navigationLinks.flatMap((section) =>
+    section.items.flatMap((item) => [
+      item.path,
+      ...(item.children?.map((child) => child.path) || []),
+    ]),
   );
 
+  const best_match = get_best_matching_path(location.pathname, all_paths);
+
   /**
-   * Vérifie si le chemin d'URL actuel correspond ou commence par le chemin cible.
+   * Vérifie si le chemin cible est le meilleur match pour l'URL actuelle.
    * @param target_path Chemin à comparer.
-   * @returns Vrai si le chemin correspond, sinon faux.
+   * @returns Vrai si le chemin correspond exactement au meilleur match.
    */
   const matches_path = (target_path: string): boolean => {
-    if (location.pathname === target_path) {
-      return true;
-    }
-    return location.pathname.startsWith(`${target_path}/`);
+    return target_path === best_match;
   };
 
   // Déplier automatiquement les sections parentes si un sous-élément est actif
@@ -69,9 +149,9 @@ export function NavMain({ navigationLinks }: NavMainProps) {
           }
 
           const has_active_child = item.children.some((child) =>
-            matches_path(child.path),
+            child.path === best_match,
           );
-          const is_item_active = matches_path(item.path);
+          const is_item_active = item.path === best_match;
 
           if ((has_active_child || is_item_active) && !prev[item.id]) {
             next = { ...next, [item.id]: true };
@@ -81,22 +161,17 @@ export function NavMain({ navigationLinks }: NavMainProps) {
 
       return next;
     });
-  }, [location.pathname, navigationLinks]);
+  }, [best_match, navigationLinks]);
 
-  const { layout } = useTheme();
-
-  const visible_sections =
-    layout === "mixed"
-      ? navigationLinks.filter((section) =>
-          section.items.some(
-            (item) =>
-              location.pathname.startsWith(item.path) ||
-              item.children?.some((child) =>
-                location.pathname.startsWith(child.path),
-              ),
-          ),
-        )
-      : navigationLinks;
+  // Keep the sidebar navigable across projects even when the current route
+  // belongs to a different default module such as core settings.
+  const visible_sections = navigationLinks.filter((section) => {
+    // Vérifier si la section a au moins un item accessible
+    return section.items.some((item) => {
+      if (item.hidden) return false;
+      return filterPath ? filterPath(item.path) : true;
+    });
+  });
 
   return (
     <SidebarGroup className="py-0 px-1">
@@ -104,22 +179,29 @@ export function NavMain({ navigationLinks }: NavMainProps) {
         {visible_sections.map((section) => (
           <div key={section.id} className="space-y-1.5">
             {!is_collapsed && (
-              <SidebarGroupLabel className="px-3 py-1 text-[9px] font-bold uppercase tracking-[0.2em] text-muted-foreground/45">
+              <SidebarGroupLabel className="px-3 py-1 text-[0.5625rem] font-bold uppercase tracking-[0.2em] text-muted-foreground/45">
                 {section.label}
               </SidebarGroupLabel>
             )}
             <SidebarMenu className="gap-1">
               {section.items
-                .filter((item) => !item.hidden)
+                .filter((item) => {
+                  if (item.hidden) return false;
+                  return filterPath ? filterPath(item.path) : true;
+                })
                 .map((item) => {
                   const visible_children = item.children?.filter(
-                    (child) => !child.hidden,
+                    (child) => {
+                      if (child.hidden) return false;
+                      return filterPath ? filterPath(child.path) : true;
+                    }
                   );
                   const has_children = Boolean(visible_children?.length);
                   const is_item_active =
                     matches_path(item.path) ||
-                    visible_children?.some((child) => matches_path(child.path));
-                  const is_open = has_children && Boolean(expanded_items[item.id]);
+                    item.children?.some((child) => matches_path(child.path));
+                  const is_open =
+                    has_children && Boolean(expanded_items[item.id]);
 
                   if (!has_children) {
                     return (
@@ -127,32 +209,13 @@ export function NavMain({ navigationLinks }: NavMainProps) {
                         <SidebarMenuButton
                           asChild
                           tooltip={item.title}
-                          className={cn(
-                            "relative h-9 w-full group/btn overflow-hidden rounded-lg transition-all duration-200",
-                            is_item_active
-                              ? "bg-primary/8 dark:bg-primary/12 text-primary font-semibold border-none"
-                              : "text-muted-foreground/80 hover:bg-neutral-100/50 dark:hover:bg-zinc-800/40 hover:text-foreground hover:translate-x-0.5",
-                          )}
+                          isActive={is_item_active}
                         >
-                          <Link
-                            to={item.path}
-                            className="relative flex items-center gap-3 px-3 z-10 w-full h-full"
-                          >
-                            {item.icon && (
-                              <div className="relative flex items-center justify-center shrink-0">
-                                <item.icon
-                                  className={cn(
-                                    "size-4 shrink-0 relative z-10 transition-colors duration-200",
-                                    is_item_active
-                                      ? "text-primary"
-                                      : "text-muted-foreground/60 group-hover/btn:text-foreground",
-                                  )}
-                                />
-                              </div>
-                            )}
-                            <span className="truncate text-[13px]">{item.title}</span>
-                            {is_item_active && !is_collapsed && (
-                              <div className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r bg-primary transition-all duration-300" />
+                          <Link to={item.path}>
+                            {item.icon && <item.icon />}
+                            <span>{item.title}</span>
+                            {!is_collapsed && item.badge && (
+                              <div className="ml-auto">{item.badge}</div>
                             )}
                           </Link>
                         </SidebarMenuButton>
@@ -177,72 +240,30 @@ export function NavMain({ navigationLinks }: NavMainProps) {
                         <CollapsibleTrigger asChild>
                           <SidebarMenuButton
                             tooltip={item.title}
-                            className={cn(
-                              "h-9 w-full group/btn relative overflow-hidden rounded-lg transition-all duration-200",
-                              is_item_active && !is_open
-                                ? "bg-primary/8 dark:bg-primary/12 text-primary font-semibold border-none"
-                                : "text-muted-foreground/80 hover:bg-neutral-100/50 dark:hover:bg-zinc-800/40 hover:text-foreground hover:translate-x-0.5",
-                            )}
+                            isActive={is_item_active && !is_open}
                           >
-                            <div className="flex w-full items-center gap-3 px-1 z-10">
-                              {item.icon && (
-                                <div className="relative flex items-center justify-center shrink-0">
-                                  <item.icon
-                                    className={cn(
-                                      "size-4 shrink-0 relative z-10 transition-colors duration-200",
-                                      is_item_active
-                                        ? "text-primary"
-                                        : "text-muted-foreground/60 group-hover/btn:text-foreground",
-                                    )}
-                                  />
-                                </div>
+                            {item.icon && <item.icon />}
+                            <span>{item.title}</span>
+                            <ChevronRight
+                              className={cn(
+                                "ml-auto transition-transform duration-200",
+                                is_open && "rotate-90"
                               )}
-                              <span className="truncate text-[13px] text-left flex-1">{item.title}</span>
-                              <ChevronRight
-                                className={cn(
-                                  "ml-auto size-3.5 transition-transform duration-200 shrink-0",
-                                  is_open && "rotate-90",
-                                  is_item_active
-                                    ? "text-primary"
-                                    : "text-muted-foreground/40 group-hover/btn:text-foreground",
-                                )}
-                              />
-                            </div>
-                            {is_item_active && !is_open && !is_collapsed && (
-                              <div className="absolute left-0 top-1/2 h-5 w-1 -translate-y-1/2 rounded-r bg-primary transition-all duration-300" />
-                            )}
+                            />
                           </SidebarMenuButton>
                         </CollapsibleTrigger>
                         <CollapsibleContent className="overflow-hidden transition-all duration-300">
-                          <SidebarMenuSub className="mt-1 ml-4.5 gap-1.5 border-l border-neutral-200/10 dark:border-zinc-800/60 pl-2.5">
+                          <SidebarMenuSub>
                             {visible_children?.map((child) => {
                               const is_child_active = matches_path(child.path);
                               return (
                                 <SidebarMenuSubItem key={child.path}>
                                   <SidebarMenuSubButton
                                     asChild
-                                    className={cn(
-                                      "h-8 rounded-md transition-all duration-200 hover:translate-x-0.5 group/sub",
-                                      is_child_active
-                                        ? "bg-primary/5 text-primary font-semibold border-none"
-                                        : "text-muted-foreground/70 hover:bg-neutral-100/30 dark:hover:bg-zinc-800/20 hover:text-foreground",
-                                    )}
+                                    isActive={is_child_active}
                                   >
-                                    <Link
-                                      to={child.path}
-                                      className="flex w-full items-center gap-2.5 px-2.5"
-                                    >
-                                      <div
-                                        className={cn(
-                                          "rounded-full transition-all duration-300 shrink-0",
-                                          is_child_active
-                                            ? "size-1.5 bg-primary"
-                                            : "size-1 bg-muted-foreground/30 group-hover/sub:bg-muted-foreground/50",
-                                        )}
-                                      />
-                                      <span className="truncate text-[12.5px]">
-                                        {child.title}
-                                      </span>
+                                    <Link to={child.path}>
+                                      <span>{child.title}</span>
                                     </Link>
                                   </SidebarMenuSubButton>
                                 </SidebarMenuSubItem>

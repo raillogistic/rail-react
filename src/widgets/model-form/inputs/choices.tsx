@@ -1,8 +1,8 @@
 /**
- * Choice-based form inputs: select dropdown, multi-select, and radio group.
- *
- * Uses shadcn/ui Select for single choice, DropdownMenu for multi-select,
- * and custom radio cards for radio groups.
+ * @file choices.tsx
+ * @description Entrées de formulaire basées sur le choix : liste déroulante simple, sélection multiple, et groupe de boutons radio.
+ * Modifié pour forcer shadow-none sur les sélecteurs simples et multiples afin de supprimer toute ombre,
+ * et utiliser des coins arrondis rounded-xl.
  *
  * @module form/inputs/choices
  */
@@ -38,15 +38,15 @@ import type {
 type Props = FieldComponentProps<ChoiceFieldConfig>;
 
 const choiceTriggerClassName = [
-  "flex w-full items-center justify-between rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors",
-  "hover:border-foreground/20",
-  "focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring",
-  "data-[state=open]:outline-none data-[state=open]:ring-1 data-[state=open]:ring-ring",
+  "flex w-full items-center justify-between rounded-xl border border-transparent bg-muted/50 px-4 text-[13.5px] font-medium transition-all duration-300 ease-out shadow-sm",
+  "hover:border-primary/40 hover:bg-muted/60",
+  "focus-visible:outline-none focus:border-primary focus:ring-4 focus:ring-primary/10",
+  "data-[state=open]:border-primary data-[state=open]:ring-4 data-[state=open]:ring-primary/10",
   "disabled:cursor-not-allowed disabled:opacity-50"
 ].join(" ");
 
 const multiChoiceTriggerClassName = `${choiceTriggerClassName} min-h-9 py-1`;
-const singleChoiceTriggerClassName = `${choiceTriggerClassName} h-9`;
+const singleChoiceTriggerClassName = `${choiceTriggerClassName} !h-9 !w-full`;
 
 /** Renders a choice input based on configuration (select | multi | radio). */
 const ChoiceInput: React.FC<Props> = ({ config, field, form }) => {
@@ -106,23 +106,22 @@ const ChoiceInput: React.FC<Props> = ({ config, field, form }) => {
                 className={cn(
                   multiChoiceTriggerClassName,
                   canClearSelection ? "pr-12" : "",
-                  selectedValues.length > 0 ? "border-primary/20 bg-primary/2" : "",
                 )}
               >
                 <div className="flex flex-wrap items-center gap-2 pr-4">
                   {selectedOptions.length === 0 && (
-                     <ListChecks className="mr-1 size-4 text-primary/40 shrink-0" />
+                     <ListChecks className="mr-1 size-4 text-primary/55 shrink-0 animate-pulse" />
                   )}
                   {selectedOptions.length > 0 ? (
                     selectedOptions.map((opt) => (
                       <Badge
                         key={opt.value}
                         variant="secondary"
-                        className="group/badge rounded-sm px-1.5 py-0.5 text-xs font-medium"
+                        className="group/badge rounded-full px-2.5 py-0.5 text-xs font-semibold bg-primary/10 text-primary border border-primary/20 hover:bg-primary/15 transition-colors"
                       >
                         {opt.label}
                         <X
-                          className="ml-2 size-3 cursor-pointer opacity-40 group-hover/badge:opacity-100 transition-opacity"
+                          className="ml-1.5 size-3 cursor-pointer opacity-50 group-hover/badge:opacity-100 transition-opacity"
                           onClick={(e) => {
                             e.stopPropagation();
                             toggleValue(opt.value);
@@ -136,14 +135,14 @@ const ChoiceInput: React.FC<Props> = ({ config, field, form }) => {
                     </span>
                   )}
                 </div>
-                <ChevronDown className="size-4 shrink-0 text-muted-foreground/30 transition-transform duration-300 group-data-[state=open]:rotate-180" />
+                <ChevronDown className="size-4 shrink-0 text-muted-foreground/35 transition-transform duration-300 group-data-[state=open]:rotate-180" />
               </Button>
             </DropdownMenuTrigger>
             {canClearSelection ? (
               <button
                 type="button"
                 aria-label="Effacer la sélection"
-                className="absolute right-8 top-1/2 z-10 inline-flex size-7 -translate-y-1/2 items-center justify-center rounded-lg text-muted-foreground/50 transition-colors hover:bg-muted/60 hover:text-foreground"
+                className="absolute right-8 top-1/2 z-10 inline-flex size-7 -translate-y-1/2 items-center justify-center rounded-lg text-muted-foreground/50 transition-colors hover:bg-muted/60 hover:text-foreground cursor-pointer"
                 onMouseDown={(event) => {
                   event.preventDefault();
                   event.stopPropagation();
@@ -155,7 +154,7 @@ const ChoiceInput: React.FC<Props> = ({ config, field, form }) => {
             ) : null}
           </div>
           <DropdownMenuContent 
-            className="w-80 rounded-md border border-input bg-popover p-1 shadow-md animate-in fade-in"
+            className="w-80 rounded-2xl border border-border/40 bg-popover p-1.5 shadow-2xl animate-in fade-in zoom-in-95 duration-200"
             align="start"
           >
             <div className="max-h-72 overflow-y-auto space-y-1 pr-1 scrollbar-thin">
@@ -163,22 +162,22 @@ const ChoiceInput: React.FC<Props> = ({ config, field, form }) => {
                 <DropdownMenuCheckboxItem
                   key={option.value}
                   className={cn(
-                    "rounded-xl px-3 py-3 transition-all duration-200 cursor-pointer",
+                    "rounded-xl px-4 py-2.5 transition-all duration-200 cursor-pointer text-[13px]",
                     "focus:bg-primary/5 focus:text-primary",
                     selectedValues.includes(option.value)
                       ? "bg-primary/5 text-primary font-bold"
-                      : "text-foreground/70 hover:bg-muted/50",
+                      : "text-foreground/80 hover:bg-muted/50",
                   )}
                   checked={selectedValues.includes(option.value)}
                   onCheckedChange={() => toggleValue(option.value)}
                   disabled={option.disabled}
                 >
                   <div className="flex flex-col gap-0.5">
-                    <span className="text-[13px] leading-none">
+                    <span className="leading-none">
                       {option.label}
                     </span>
                     {option.description ? (
-                      <span className="text-[10px] text-muted-foreground/50 font-medium leading-tight mt-1">
+                      <span className="text-[10px] text-muted-foreground/60 font-medium leading-tight mt-1">
                         {option.description}
                       </span>
                     ) : null}
@@ -202,9 +201,9 @@ const ChoiceInput: React.FC<Props> = ({ config, field, form }) => {
             <label
               key={option.value}
               className={cn(
-                "group relative flex w-full cursor-pointer items-center gap-3 rounded-md border border-input bg-background px-4 py-3 shadow-sm transition-colors",
-                "hover:bg-accent",
-                value === option.value && "border-ring ring-1 ring-ring",
+                "group relative flex w-full cursor-pointer items-center gap-3 rounded-xl border border-transparent bg-muted/50 px-4 py-1.5 transition-all duration-300",
+                "hover:bg-muted/60 hover:border-primary/30",
+                value === option.value && "border-primary bg-primary/5 ring-4 ring-primary/10",
               )}
               onClick={(event) => {
                 if (!config.required && value === option.value) {
@@ -215,36 +214,36 @@ const ChoiceInput: React.FC<Props> = ({ config, field, form }) => {
             >
               <div
                 className={cn(
-                  "flex size-4 shrink-0 items-center justify-center rounded-full border transition-colors",
+                  "flex size-4.5 shrink-0 items-center justify-center rounded-full border transition-all duration-300",
                   value === option.value
                     ? "border-primary bg-primary"
-                    : "border-primary/30",
+                    : "border-muted-foreground/30",
                 )}
               >
                 {value === option.value && (
-                  <div className="size-1.5 rounded-full bg-primary-foreground" />
+                  <div className="size-1.5 rounded-full bg-primary-foreground animate-in zoom-in duration-300" />
                 )}
               </div>
-              <div className="flex flex-col gap-1">
+              <div className="flex flex-col gap-0.5">
                 <span className={cn(
-                  "text-[13.5px] font-bold transition-colors",
+                  "text-[13.5px] font-bold transition-colors duration-300",
                   value === option.value
                     ? "text-primary"
-                    : "text-foreground/70 group-hover:text-foreground/90",
+                    : "text-foreground/75 group-hover:text-foreground/90",
                 )}>
                   {option.label}
                 </span>
                 {option.description && (
-                  <span className="text-[11px] font-medium text-muted-foreground/50 leading-tight">
+                  <span className="text-[10.5px] font-medium text-muted-foreground/60 leading-tight">
                     {option.description}
                   </span>
                 )}
               </div>
-              <div className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity">
+              <div className="ml-auto opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                  {value === option.value ? (
-                   <CheckCircle2 className="size-4 text-primary animate-in zoom-in-50 duration-300" />
+                   <CheckCircle2 className="size-4.5 text-primary animate-in zoom-in-50 duration-300" />
                  ) : (
-                   <CircleDot className="size-4 text-muted-foreground/10" />
+                   <CircleDot className="size-4.5 text-muted-foreground/15" />
                  )}
               </div>
               <input
@@ -290,7 +289,7 @@ const ChoiceInput: React.FC<Props> = ({ config, field, form }) => {
             className={cn(
               singleChoiceTriggerClassName,
               canClearSelection ? "pr-12" : "",
-              "focus-visible:ring-0",
+              "focus-visible:ring-0 shadow-sm",
             )}
           >
             <div className="flex items-center gap-3">
@@ -313,7 +312,7 @@ const ChoiceInput: React.FC<Props> = ({ config, field, form }) => {
             </div>
           </SelectTrigger>
           <SelectContent 
-            className="rounded-md border border-input bg-popover p-1 shadow-md animate-in fade-in"
+            className="rounded-2xl border border-border/40 bg-popover p-1.5 shadow-2xl animate-in fade-in zoom-in-95 duration-200"
             align="start"
           >
             <div className="max-h-75 overflow-y-auto space-y-1 pr-1 scrollbar-thin">
@@ -322,7 +321,7 @@ const ChoiceInput: React.FC<Props> = ({ config, field, form }) => {
                   key={option.value}
                   value={String(option.value)}
                   disabled={option.disabled}
-                  className="rounded-xl py-3 px-4 transition-all duration-200 cursor-pointer hover:bg-primary/3 focus:bg-primary/5 focus:text-primary data-[state=checked]:bg-primary/4 data-[state=checked]:font-bold"
+                  className="rounded-xl py-2.5 px-4 transition-all duration-200 cursor-pointer focus:bg-primary/5 focus:text-primary data-[state=checked]:bg-primary/5 data-[state=checked]:text-primary data-[state=checked]:font-bold text-[13.5px]"
                   onPointerUpCapture={(event) => {
                     if (
                       !config.required &&
@@ -336,9 +335,9 @@ const ChoiceInput: React.FC<Props> = ({ config, field, form }) => {
                   }}
                 >
                   <div className="flex flex-col gap-0.5">
-                    <span className="text-[13.5px]">{option.label}</span>
+                    <span>{option.label}</span>
                     {option.description && (
-                      <span className="text-[10px] font-medium text-muted-foreground/50 mt-0.5">
+                      <span className="text-[10px] font-medium text-muted-foreground/60 mt-0.5">
                         {option.description}
                       </span>
                     )}
@@ -352,7 +351,7 @@ const ChoiceInput: React.FC<Props> = ({ config, field, form }) => {
           <button
             type="button"
             aria-label="Effacer la sélection"
-            className="absolute right-8 top-1/2 z-10 inline-flex size-7 -translate-y-1/2 items-center justify-center rounded-lg text-muted-foreground/50 transition-colors hover:bg-muted/60 hover:text-foreground"
+            className="absolute right-8 top-1/2 z-10 inline-flex size-7 -translate-y-1/2 items-center justify-center rounded-lg text-muted-foreground/50 transition-colors hover:bg-muted/60 hover:text-foreground cursor-pointer"
             onMouseDown={(event) => {
               event.preventDefault();
               event.stopPropagation();

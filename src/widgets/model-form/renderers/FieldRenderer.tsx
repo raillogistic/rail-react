@@ -17,7 +17,7 @@ import type {
 import { resolveInputComponent } from "../inputs/factory";
 import { ListFieldRenderer } from "./ListFieldRenderer";
 import { GroupFieldRenderer } from "./GroupFieldRenderer";
-import { buildResponsiveGridClass } from "./utils";
+import { buildResponsiveGridClass, buildResponsiveColSpanClass } from "./utils";
 
 type PrimitiveField = Exclude<
   FormFieldConfig,
@@ -30,6 +30,7 @@ export type FieldRendererProps<TValues> = {
   form: UseFormReturn<TValues>;
   colSpan?: number;
   defaultColSpan?: number;
+  columns?: number;
   globalReadOnly?: boolean;
   globalDisabled?: boolean;
   hiddenFields?: Set<string>;
@@ -44,6 +45,7 @@ export const FieldRenderer = <TValues extends Record<string, any>>({
   form,
   colSpan,
   defaultColSpan,
+  columns,
   globalReadOnly,
   globalDisabled,
   hiddenFields,
@@ -71,6 +73,8 @@ export const FieldRenderer = <TValues extends Record<string, any>>({
     } as PrimitiveField;
   }, [normalizedConfig, globalReadOnly, globalDisabled]);
 
+  const colSpanClass = colSpan ? buildResponsiveColSpanClass(colSpan, columns ?? 1) : "";
+
   // Check hidden status
   if (config.hidden || hiddenFields?.has(path)) {
     return null;
@@ -84,6 +88,7 @@ export const FieldRenderer = <TValues extends Record<string, any>>({
         form={form}
         colSpan={colSpan}
         defaultColSpan={defaultColSpan}
+        columns={columns}
         globalReadOnly={globalReadOnly}
         globalDisabled={globalDisabled}
         hiddenFields={hiddenFields}
@@ -102,12 +107,8 @@ export const FieldRenderer = <TValues extends Record<string, any>>({
           "group/object relative overflow-hidden transition-all duration-500 ease-in-out",
           "rounded-2xl border border-border/30 bg-muted/20 p-6 md:p-8",
           "hover:border-primary/20 hover:bg-muted/30 hover:shadow-lg hover:shadow-primary/2",
+          colSpanClass
         )}
-        style={
-          colSpan
-            ? { gridColumn: `span ${colSpan} / span ${colSpan}` }
-            : undefined
-        }
       >
         {/* Animated left accent line */}
         <div className="absolute left-0 top-0 bottom-0 w-1 bg-linear-to-b from-primary/40 via-primary/10 to-transparent opacity-50 transition-all duration-500 group-hover/object:w-1.5 group-hover/object:opacity-100" />
@@ -154,6 +155,7 @@ export const FieldRenderer = <TValues extends Record<string, any>>({
               form={form}
               colSpan={child.colSpan ?? defaultColSpan}
               defaultColSpan={defaultColSpan}
+              columns={config.columns ?? 1}
               globalReadOnly={globalReadOnly}
               globalDisabled={globalDisabled}
               hiddenFields={hiddenFields}
@@ -173,6 +175,7 @@ export const FieldRenderer = <TValues extends Record<string, any>>({
         path={path}
         colSpan={colSpan}
         defaultColSpan={defaultColSpan}
+        columns={columns}
         globalReadOnly={globalReadOnly}
         globalDisabled={globalDisabled}
         hiddenFields={hiddenFields}
@@ -185,12 +188,10 @@ export const FieldRenderer = <TValues extends Record<string, any>>({
       <form.Field name={path as any}>
         {(fieldApi) => (
           <div
-            className="animate-in fade-in slide-in-from-bottom-2 duration-500 ease-out"
-            style={
-              colSpan
-                ? { gridColumn: `span ${colSpan} / span ${colSpan}` }
-                : undefined
-            }
+            className={cn(
+              "animate-in fade-in slide-in-from-bottom-2 duration-500 ease-out",
+              colSpanClass
+            )}
           >
             {config.render({
               config,
@@ -211,12 +212,10 @@ export const FieldRenderer = <TValues extends Record<string, any>>({
         );
         return (
           <div
-            className="animate-in fade-in slide-in-from-bottom-3 duration-400 ease-out"
-            style={
-              colSpan
-                ? { gridColumn: `span ${colSpan} / span ${colSpan}` }
-                : undefined
-            }
+            className={cn(
+              "animate-in fade-in slide-in-from-bottom-3 duration-400 ease-out",
+              colSpanClass
+            )}
           >
             {Component ? (
               <Component

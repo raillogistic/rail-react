@@ -1,5 +1,5 @@
 import { render, screen, fireEvent } from '@testing-library/react';
-import { describe, it, expect, vi } from 'vitest';
+import { afterEach, describe, it, expect, vi } from 'vitest';
 import { ActivityTimeoutModal } from '../ActivityTimeoutModal';
 import * as useActivityMonitorHook from '../../hooks/useActivityMonitor';
 import * as useAuthHook from '../../hooks/useAuth';
@@ -18,9 +18,23 @@ describe('ActivityTimeoutModal', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.stubEnv('VITE_AUTO_LOGOUT_ENABLED', 'true');
     (useAuthHook.useAuth as any).mockReturnValue({
       logout: logoutMock,
     });
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('does not start activity monitoring when auto logout is disabled', () => {
+    vi.stubEnv('VITE_AUTO_LOGOUT_ENABLED', 'False');
+
+    render(<ActivityTimeoutModal />);
+
+    expect(useActivityMonitorHook.useActivityMonitor).not.toHaveBeenCalled();
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
   });
 
   it('renders nothing when not warning', () => {

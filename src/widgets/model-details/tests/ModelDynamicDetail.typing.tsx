@@ -1,15 +1,15 @@
-import type { LocationsAssetMovement } from "@/models";
+import type { TypingAssetMovement } from "@/test/typingModels";
 import {
   ModelDynamicDetail,
   type ModelDynamicDetailHandle,
 } from "@/widgets/model-details";
 
-const detailHandle: ModelDynamicDetailHandle<LocationsAssetMovement> | null = null;
+const detailHandle: ModelDynamicDetailHandle<TypingAssetMovement> | null = null;
 void detailHandle?.getSnapshot().data?.reason;
 void detailHandle?.getSnapshot().data?.asset?.name;
 
 const validDechargeDetail = (
-  <ModelDynamicDetail<LocationsAssetMovement>
+  <ModelDynamicDetail<TypingAssetMovement>
     app="locations"
     model="AssetMovement"
     id="1"
@@ -67,13 +67,13 @@ const validDechargeDetail = (
 void validDechargeDetail;
 
 const invalidDetailFieldPath = (
-  <ModelDynamicDetail<LocationsAssetMovement>
+  <ModelDynamicDetail<TypingAssetMovement>
     app="locations"
     model="AssetMovement"
     id="1"
     baseDetail={{
       layout: {
-        // @ts-expect-error unknownField is not present on LocationsAssetMovement
+        // @ts-expect-error unknownField is not present on TypingAssetMovement
         includeFields: ["unknownField"],
       },
     }}
@@ -83,7 +83,7 @@ const invalidDetailFieldPath = (
 void invalidDetailFieldPath;
 
 const invalidDetailRenderAccess = (
-  <ModelDynamicDetail<LocationsAssetMovement>
+  <ModelDynamicDetail<TypingAssetMovement>
     app="locations"
     model="AssetMovement"
     id="1"
@@ -95,7 +95,7 @@ const invalidDetailRenderAccess = (
             fields: [
               {
                 path: "reason",
-                // @ts-expect-error missingField does not exist on LocationsAssetMovement
+                // @ts-expect-error missingField does not exist on TypingAssetMovement
                 render: ({ record }) => record.missingField,
               },
             ],
@@ -109,7 +109,7 @@ const invalidDetailRenderAccess = (
 void invalidDetailRenderAccess;
 
 const invalidUpdateFormField = (
-  <ModelDynamicDetail<LocationsAssetMovement>
+  <ModelDynamicDetail<TypingAssetMovement>
     app="locations"
     model="AssetMovement"
     id="1"
@@ -117,7 +117,7 @@ const invalidUpdateFormField = (
       actions: {
         updateForm: {
           modelFormProps: {
-            // @ts-expect-error update form overrides must use LocationsAssetMovement form fields
+            // @ts-expect-error update form overrides must use TypingAssetMovement form fields
             onlyFields: ["missingField"],
           },
         },

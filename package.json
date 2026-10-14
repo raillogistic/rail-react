@@ -1,10 +1,10 @@
 {
-  "name": "rail-react-starter",
+  "name": "rail-react",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0",
   "type": "module",
   "scripts": {
-    "dev": "yarn getModels && vite",
+    "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "node scripts/lint-changed.mjs",
     "lint:full": "eslint .",
@@ -13,19 +13,21 @@
     "check:layers": "node scripts/check-layer-imports.mjs",
     "check:layers:full": "node scripts/check-layer-imports-full.mjs --strict",
     "check:manifests": "node scripts/check-manifests.mjs",
-    "check:architecture": "npm run check:layers && npm run check:manifests",
-    "check:architecture:full": "npm run check:layers:full && npm run check:manifests",
+    "check:architecture": "npm run check:layers && npm run check:shared && npm run check:manifests",
+    "check:architecture:full": "npm run check:layers:full && npm run check:shared && npm run check:manifests",
     "test": "npm run test:unit",
     "test:all": "npm run test:unit && npm run test:integration",
     "test:unit": "vitest run --exclude src/test/integration/**",
-    "test:integration": "vitest run src/test/integration",
+    "test:integration": "vitest run src/test/integration --maxWorkers=1",
     "test:ui": "vitest --ui",
     "preview": "vite preview",
     "schema": "node scripts/generate-schema-types.mjs",
-    "getModels": "node scripts/getModels.mjs",
+    "getModels": "node --max-http-header-size=65536 scripts/getModels.mjs",
     "startapp": "node scripts/startapp.mjs",
     "register": "node scripts/register.mjs",
-    "unregister": "node scripts/unregister.mjs"
+    "unregister": "node scripts/unregister.mjs",
+    "test:commands": "node --test scripts/__tests__/project-commands.test.mjs",
+    "check:shared": "node scripts/check-shared-boundary.mjs"
   },
   "dependencies": {
     "@apollo/client": "^3.8.10",
@@ -68,7 +70,6 @@
     "@tanstack/react-store": "^0.8.0",
     "@tanstack/react-table": "^8.21.3",
     "@tanstack/react-virtual": "^3.11.2",
-    "@tanstack/zod-form-adapter": "^0.42.1",
     "@tiptap/extension-link": "^3.19.0",
     "@tiptap/extension-placeholder": "^3.19.0",
     "@tiptap/pm": "^3.19.0",
@@ -128,5 +129,27 @@
     "typescript-eslint": "^8.45.0",
     "vite": "^8.0.10",
     "vitest": "^4.1.5"
-  }
+  },
+  "bin": {
+    "create-rail-app": "scripts/create-rail-app.mjs"
+  },
+  "engines": {
+    "node": ">=20.19",
+    "npm": ">=10"
+  },
+  "files": [
+    "src",
+    "scripts",
+    "templates",
+    "docs",
+    "vite.config.ts",
+    "tsconfig.app.json",
+    "tsconfig.node.json",
+    "tsconfig.json",
+    "eslint.config.js",
+    "index.html",
+    ".env.example",
+    "README.md",
+    "components.json"
+  ]
 }

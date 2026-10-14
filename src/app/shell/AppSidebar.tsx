@@ -1,200 +1,247 @@
-import { Link } from "react-router-dom";
-import { useEffect, useRef, useState } from "react";
+/**
+ * @file AppSidebar.tsx
+ * @description Barre latérale de l'application. Supporte le mode barre d'icônes (AppRail avec sous-navigation contextuelle)
+ * et le mode barre latérale complète (affichant l'intégralité des menus et sous-menus sans menu déroulant).
+ *
+ * @module app/shell/AppSidebar
+ */
+
 import { NavMain } from "@/widgets/navigation/nav-main";
 import { NavUser } from "@/widgets/navigation/nav-user";
+import { NavNotifications } from "@/widgets/navigation/nav-notifications";
+import { ModeToggle } from "@/shared/ui/kit/themeToggle";
 import { useRouteAccess } from "@/app/router/routeAccess";
+import { findRouteByPath } from "@/app/router/manifestRegistry";
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
+  SidebarSeparator,
+  SidebarTrigger,
   useSidebar,
 } from "@/shared/ui/kit/sidebar";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/shared/ui/kit/tooltip";
 import { cn } from "@/shared/utils";
 import { useTheme } from "@/shared/ui/theme";
-import { BRANDING, SYSTEM_STATUS } from "@/shared/config/branding";
-import LogoMark from "@/shared/assets/legacy-assets/logos/logo.png";
-import { Badge } from "@/shared/ui/kit/badge";
-import { Zap } from "lucide-react";
 import { useAuthContext } from "@/features/auth/context";
+import { AppRailList, NewDocumentMenu } from "./AppRail";
+import { BRANDING } from "@/shared/config/branding";
 
 /**
- * Interface représentant les coordonnées de la position de la souris.
- */
-interface mouse_position {
-  x: number;
-  y: number;
-}
-
-/**
- * @file AppSidebar.tsx
- * @description Composant de barre latérale principale pour l'application authentifiée.
- * Il affiche l'identité de la marque, l'arbre de navigation et les informations utilisateur en bas.
- * Intègre un effet visuel interactif réagissant aux mouvements de la souris.
+ * Barre latérale principale ou secondaire de l'application.
  *
- * @param props Propriétés héritées du composant Sidebar de shadcn.
+ * @param props Propriétés passées au composant Sidebar
+ * @returns {JSX.Element | null}
  */
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-  const { layout } = useTheme();
-  const { state } = useSidebar();
+  const { sidebarCollapseMode, navigationPattern, sidebarMode } = useTheme();
+  const { state, isMobile } = useSidebar();
   const { user, logout } = useAuthContext();
-  const { navigationLinks } = useRouteAccess();
-  const is_collapsed = state === "collapsed";
-  const sidebar_ref = useRef<HTMLDivElement>(null);
-  const [mouse_pos, set_mouse_pos] = useState<mouse_position>({ x: 0, y: 0 });
+  const {
+    appRailItems,
+    currentProjectId,
+    navigationLinks,
+    projectNavigationLinks,
+    canAccessRoute,
+  } = useRouteAccess();
+  const isCollapsed = state === "collapsed";
+  const currentProject = appRailItems.find(
+    (item) => item.projectId === currentProjectId,
+  );
+  const shouldShowCreateMenu = true;
 
-  useEffect(() => {
-    /**
-     * Gère le déplacement de la souris pour calculer sa position relative par rapport à la barre latérale.
-     * @param event Événement MouseEvent standard.
-     */
-    const handle_mouse_move = (event: MouseEvent) => {
-      if (!sidebar_ref.current) {
-        return;
-      }
-      const rect = sidebar_ref.current.getBoundingClientRect();
-      set_mouse_pos({
-        x: event.clientX - rect.left,
-        y: event.clientY - rect.top,
-      });
-    };
+  const effectiveNavigationLinks =
+    sidebarMode === "complete" ? navigationLinks : projectNavigationLinks;
 
-    window.addEventListener("mousemove", handle_mouse_move);
-    return () => window.removeEventListener("mousemove", handle_mouse_move);
-  }, []);
+  const totalVisibleItems =
+    effectiveNavigationLinks?.reduce((count, section) => {
+      return (
+        count +
+        section.items.reduce((itemCount, item) => {
+          if (item.hidden) return itemCount;
+          const route = findRouteByPath(item.path);
+          return itemCount + (!route || canAccessRoute(route) ? 1 : 0);
+        }, 0)
+      );
+    }, 0) ?? 0;
+
+  if (!isMobile && sidebarMode === "icons") {
+    if (navigationPattern !== "secondary-sidebar") {
+      return null;
+    }
+
+    if (totalVisibleItems <= 1) {
+      return null;
+    }
+  }
 
   return (
     <Sidebar
-      ref={sidebar_ref}
-      variant="sidebar"
-      collapsible="offcanvas"
+      variant="embedded"
+      collapsible={sidebarCollapseMode}
       {...props}
       className={cn(
-        "overflow-hidden border-r border-neutral-200/20 dark:border-zinc-800/40 bg-sidebar text-sidebar-foreground transition-all duration-300",
-        layout === "mixed" && "top-14 h-[calc(100svh-3.5rem)]",
+        "bg-transparent text-sidebar-foreground transition-[width] duration-200 ease-linear",
+        sidebarMode === "complete" ? "border-r border-border/50" : "!border-r-0",
+        props.className,
       )}
-      style={
-        {
-          ...props.style,
-          "--sidebar-background": "var(--background)",
-          "--sidebar-border": "var(--border)",
-          "--foreground": "var(--sidebar-foreground)",
-          "--muted-foreground": "var(--sidebar-foreground)",
-        } as React.CSSProperties
-      }
     >
-      {/* Fond en verre dépoli et grille de points discrets */}
-      <div className="absolute inset-0 z-0 bg-background/5 backdrop-blur-xl transition-all" />
-      <div
-        className="absolute inset-0 z-0 opacity-[0.02] pointer-events-none"
-        style={{
-          backgroundImage:
-            "radial-gradient(var(--sidebar-foreground) 0.5px, transparent 0.5px)",
-          backgroundSize: "20px 24px",
-        }}
-      />
-      {/* Halo lumineux dynamique qui suit le curseur de la souris (sans ombres) */}
-      <div
-        className="pointer-events-none absolute inset-0 z-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500"
-        style={{
-          background: `radial-gradient(350px circle at ${mouse_pos.x}px ${mouse_pos.y}px, rgba(var(--primary-rgb), 0.04), transparent 70%)`,
-        }}
-      />
-
-      <SidebarHeader className="relative z-10 p-4 pb-2 border-b border-neutral-200/10 dark:border-zinc-800/30">
-        <div className="flex items-center justify-between gap-2">
-          <Link
-            to="/"
-            className={cn(
-              "group flex items-center gap-3",
-              is_collapsed ? "w-10 justify-center" : "w-full",
+      {isMobile ? (
+        <>
+          <SidebarHeader className="gap-4 border-b border-border/50 px-4 py-4">
+            {sidebarMode === "icons" ? (
+              <>
+                <div>
+                  <div className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                    Applications
+                  </div>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Basculer d'un espace à l'autre.
+                  </p>
+                </div>
+                <AppRailList className="grid grid-cols-3 gap-2" />
+                <SidebarSeparator className="mx-0 w-full" />
+                <div>
+                  <div className="text-xs font-bold uppercase tracking-[0.18em] text-muted-foreground">
+                    {currentProject?.label ?? "Navigation"}
+                  </div>
+                  {shouldShowCreateMenu && (
+                    <div className="mt-3">
+                      <NewDocumentMenu />
+                    </div>
+                  )}
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center gap-2.5">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                    <img
+                      src={BRANDING.logo}
+                      alt={BRANDING.logoAlt}
+                      className="h-5 w-5 object-contain"
+                    />
+                  </div>
+                  <div className="min-w-0 flex flex-col justify-center">
+                    <span className="truncate text-sm font-bold text-foreground leading-tight">
+                      {BRANDING.productName}
+                    </span>
+                    <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">
+                      {BRANDING.editionLabel}
+                    </span>
+                  </div>
+                </div>
+                {shouldShowCreateMenu && (
+                  <div className="mt-1">
+                    <NewDocumentMenu />
+                  </div>
+                )}
+              </>
             )}
-          >
-            {/* Logo de l'application avec un style premium et micro-zoom au survol (pas d'ombre portée) */}
-            <div className="relative flex h-9 w-9 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-neutral-100 dark:bg-zinc-900 border border-neutral-200/50 dark:border-zinc-800/80 transition-all duration-300 group-hover:border-primary/50">
-              <img
-                src={LogoMark}
-                alt={BRANDING.logoAlt}
-                className="h-5 w-5 object-contain brightness-0 dark:brightness-100 dark:invert-0 dark:group-hover:scale-110 transition-transform duration-300"
-              />
-            </div>
+          </SidebarHeader>
 
-            {!is_collapsed && (
-              <div className="flex flex-col">
-                <div className="flex items-center gap-1.5">
-                  <span className="text-sm font-bold tracking-tight text-foreground leading-none group-hover:text-primary transition-colors">
+          <SidebarContent className="px-3 py-4">
+            <NavMain
+              navigationLinks={effectiveNavigationLinks}
+              filterPath={(path) => {
+                const route = findRouteByPath(path);
+                return !route || canAccessRoute(route);
+              }}
+            />
+          </SidebarContent>
+        </>
+      ) : (
+        <>
+          <SidebarHeader className="h-14 border-b border-border/50 px-3 py-0 flex flex-row items-center justify-between">
+            {sidebarMode === "complete" ? (
+              <div
+                className={cn("flex items-center gap-2.5", isCollapsed && "hidden")}
+              >
+                <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+                  <img
+                    src={BRANDING.logo}
+                    alt={BRANDING.logoAlt}
+                    className="h-5 w-5 object-contain"
+                  />
+                </div>
+                <div className="min-w-0 flex flex-col justify-center">
+                  <span className="truncate text-sm font-bold text-foreground leading-tight">
                     {BRANDING.productName}
                   </span>
-                  <Badge className="h-4 px-1 py-0 text-[9px] font-extrabold uppercase bg-primary/10 text-primary border-none shadow-none">
+                  <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wider">
                     {BRANDING.editionLabel}
-                  </Badge>
+                  </span>
                 </div>
-                <span className="text-[9px] font-bold uppercase tracking-[0.2em] text-muted-foreground/50 mt-0.5">
-                  {BRANDING.hubLabel || "LOGISTIQUE"}
-                </span>
+              </div>
+            ) : (
+              <div
+                className={cn("flex items-center gap-2", isCollapsed && "hidden")}
+              >
+                {currentProject?.icon && (
+                  <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-[0.4rem] border bg-background shadow-sm">
+                    <currentProject.icon
+                      className="h-3.5 w-3.5 text-foreground"
+                    />
+                  </div>
+                )}
+                <div className="min-w-0 flex flex-col justify-center">
+                  <span className="truncate text-sm font-semibold text-foreground leading-tight">
+                    {currentProject?.label ?? "Navigation"}
+                  </span>
+                </div>
               </div>
             )}
-          </Link>
+            <SidebarTrigger
+              className={cn(
+                "h-8 w-8 hover:bg-accent hover:text-accent-foreground",
+                isCollapsed && "mx-auto",
+              )}
+            />
+          </SidebarHeader>
 
-          {!is_collapsed && (
-            <div className="flex items-center gap-2">
-              <TooltipProvider>
-                <Tooltip delayDuration={0}>
-                  <TooltipTrigger asChild>
-                    {/* Indicateur de statut réseau interactif avec animation pulse soft, sans ombre */}
-                    <div className="flex h-7 w-7 cursor-help items-center justify-center rounded-lg border border-neutral-200/40 bg-neutral-100/50 dark:border-zinc-800/40 dark:bg-zinc-800/50 hover:bg-neutral-200/50 dark:hover:bg-zinc-700/50 transition-colors duration-200">
-                      <div className="relative h-2 w-2">
-                        <div className="absolute inset-0 rounded-full bg-emerald-500/40 animate-ping" />
-                        <div className="relative h-2 w-2 rounded-full bg-emerald-500" />
-                      </div>
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent
-                    side="right"
-                    className="bg-sidebar border border-neutral-200/30 dark:border-zinc-800/50 shadow-none backdrop-blur-xl rounded-xl p-3"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="h-7 w-7 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-                        <Zap className="size-4 text-emerald-500" />
-                      </div>
-                      <div className="flex flex-col">
-                        <p className="text-xs font-bold uppercase tracking-widest text-emerald-600 dark:text-emerald-500">
-                          {SYSTEM_STATUS.connectedLabel}
-                        </p>
-                        <p className="text-[10px] font-medium text-muted-foreground">
-                          {SYSTEM_STATUS.latencyRegionLabel || "Serveur Actif"}
-                        </p>
-                      </div>
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+          <SidebarContent className="px-2 py-3">
+            {sidebarMode === "complete" && shouldShowCreateMenu && (
+              <div className="mb-2 px-1">
+                <NewDocumentMenu compact={isCollapsed} />
+              </div>
+            )}
+            <NavMain
+              navigationLinks={effectiveNavigationLinks}
+              filterPath={(path) => {
+                const route = findRouteByPath(path);
+                return !route || canAccessRoute(route);
+              }}
+            />
+          </SidebarContent>
+        </>
+      )}
+
+      <SidebarFooter
+        className={cn(
+          "border-t border-border/50 p-2.5",
+          !isMobile && sidebarMode === "icons" && "hidden",
+        )}
+      >
+        <div className="flex flex-col gap-2">
+          {sidebarMode === "complete" && !isMobile && (
+            <div
+              className={cn(
+                "flex items-center justify-between px-1",
+                isCollapsed && "flex-col gap-2 py-1",
+              )}
+            >
+              <NavNotifications />
+              <ModeToggle />
             </div>
           )}
-        </div>
-      </SidebarHeader>
-
-      <SidebarContent className="relative z-10 custom-scrollbar px-2 py-3 space-y-3">
-        <NavMain navigationLinks={navigationLinks} />
-      </SidebarContent>
-
-      <SidebarFooter className="relative z-10 p-3 border-t border-neutral-200/10 dark:border-zinc-800/30">
-        {/* Conteneur utilisateur à l'aspect verre poli sans ombres */}
-        <div
-          className={cn(
-            "transition-all duration-300 rounded-xl",
-            is_collapsed
-              ? "p-0 bg-transparent"
-              : "p-1.5 bg-neutral-100/30 dark:bg-zinc-800/20 border border-neutral-200/30 dark:border-zinc-800/40 backdrop-blur-md hover:bg-neutral-100/50 dark:hover:bg-zinc-800/35 hover:border-primary/25",
-          )}
-        >
-          <NavUser user={user} onLogout={logout} />
+          <div
+            className={cn(
+              "rounded-xl border border-border/50 bg-background/80 p-1",
+              isCollapsed && !isMobile && "border-transparent bg-transparent p-0",
+            )}
+          >
+            <NavUser user={user} onLogout={logout} />
+          </div>
         </div>
       </SidebarFooter>
     </Sidebar>

@@ -124,6 +124,7 @@ export const SectionRenderer = <TValues extends Record<string, any>>({
             form={form}
             colSpan={span}
             defaultColSpan={defaultColSpan}
+            columns={columns}
             globalReadOnly={globalReadOnly}
             globalDisabled={globalDisabled}
             hiddenFields={hiddenFields}

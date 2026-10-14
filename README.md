@@ -1,50 +1,68 @@
-# Frontend workspace
+# Rail React
 
-This folder contains the React frontend. It is based on the `rail-react`
-starter and already includes generated model-driven UI patterns.
+Reusable React frontend for Rail-Django: authentication, layouts, themes, model tables, forms, details, and GraphQL utilities.
 
-## Core responsibilities
+## Create directly from GitHub
 
-Use this area for:
-
-- project manifests and routes
-- generated model list pages
-- generated model form pages
-- generated model detail pages and sections
-- shared widgets, features, and API client code
-
-## Generated model screens
-
-The frontend already supports auto-generated screens for model-driven flows.
-
-- Tables live through the model table widgets under `src/widgets/model-table/`.
-- Forms live through the model form widgets under `src/widgets/model-form/`.
-- Detail views live through the model details widgets under
-  `src/widgets/model-details/`.
-
-## Project scaffolding
-
-Run these commands from `frontend/`:
+Prerequisites: Node.js 20.19+, npm 10+, Git, configured Git author identity, and GitHub access. No local starter checkout is required.
 
 ```bash
-npm run startapp -- <project-id>
-npm run register -- --model <app.model> --project <project-id>
-npm run unregister -- --model <app.model> --project <project-id>
+npx --yes --package="git+https://github.com/raillogistic/rail-react.git#master" create-rail-app inventory
+cd inventory
+npm run dev
 ```
 
-Use them like this:
+Creation refuses an existing destination. It creates an independent Git repository, a placeholder `.env`, and a `rail/` subtree fetched from GitHub, then installs dependencies. Configure the backend endpoint in `.env`. Add the new application's own GitHub repository as `origin` when ready; `rail` remains the shared-source remote.
 
-1. Run `npm run startapp -- <project-id>` to create a new project shell under
-   `src/projects/`.
-2. Run `npm run register -- --model <app.model> --project <project-id>` to add
-   generated table, form, and detail pages for one backend model.
-3. Adjust the generated pages and manifest when you need custom behavior.
+## Submit and pull improvements
 
-## Documentation
+Edit reusable source inside `rail/`, then submit it from the application root:
 
-Frontend implementation docs live under `frontend/docs/`.
+```bash
+npm run shared:push -- "Improve table filtering"
+```
 
-Start with:
+Commit or stash application-owned changes first. Push commits only `rail/`, merges upstream changes, installs dependencies, checks architecture, runs unit tests and the production build, then submits shared source. Run real-endpoint integration tests as well for GraphQL changes.
 
-- [`docs/frontend/index.md`](./docs/frontend/index.md)
-- [`src/projects/README.md`](./src/projects/README.md)
+In another application:
+
+```bash
+npm run shared:pull
+```
+
+Pull requires a clean working tree and runs installation and the same checks. Commit `package-lock.json` in that application if installation changes it. Each application chooses when to update and deploy.
+
+Conflicts stop synchronization without overwriting work or force-pushing. Resolve the files, stage them, and commit the merge before retrying; `git merge --abort` restores the preceding local state. Failed checks leave changes locally for repair. If another contributor updated GitHub during submission, pull and validate again before retrying.
+
+## Application boundaries
+
+- Local `src/` owns business pages, generated models, integration tests, branding, and backend configuration.
+- `rail/` owns reusable source and dependencies, linked through the application's npm workspace.
+- `src/application.ts` supplies manifests, branding, a default route, auth query/user mapping, additional route restrictions, and shell/settings integrations.
+- Authentication defaults to the generic Rail-Django user contract. Additional checks can restrict access further; backend authorization remains authoritative.
+- Existing imports such as `@/widgets/model-form` resolve into shared source; `@/projects/inventory/...` remains local.
+
+The shared boundary check rejects application imports and generated backend types in reusable source. Keep field lists explicit in model tables, forms, and details. Never include credentials, real environment files, or business records in shared code.
+
+## Add modules and model screens
+
+```bash
+npm run startapp -- inventory
+npm run register -- --model catalog.article --project inventory
+npm run unregister -- --model catalog.article --project inventory
+```
+
+Generators read the consuming application's backend settings and write into its source tree.
+
+## Maintain the foundation
+
+```bash
+npm install
+npm run dev
+npm run test:unit
+npm run test:commands
+npm run check:architecture:full
+npm run build
+```
+
+The repository runs standalone with generic core routes. Previous application examples remain recoverable in Git history; new consumers keep their business modules in their own repositories. No npm registry publication is needed.

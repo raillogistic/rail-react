@@ -1,8 +1,8 @@
-import type { LocationsAssetMovement } from "@/models";
+import type { TypingAssetMovement } from "@/test/typingModels";
 import { ModelForm } from "@/widgets/model-form";
 
 const validDechargeForm = (
-  <ModelForm<LocationsAssetMovement>
+  <ModelForm<TypingAssetMovement>
     app="locations"
     model="AssetMovement"
     mode="CREATE"
@@ -56,11 +56,11 @@ const validDechargeForm = (
 void validDechargeForm;
 
 const invalidOnlyFields = (
-  <ModelForm<LocationsAssetMovement>
+  <ModelForm<TypingAssetMovement>
     app="locations"
     model="AssetMovement"
     mode="CREATE"
-    // @ts-expect-error "etat" is not a field on LocationsAssetMovement form values
+    // @ts-expect-error "etat" is not a field on TypingAssetMovement form values
     onlyFields={["etat"]}
   />
 );
@@ -68,7 +68,7 @@ const invalidOnlyFields = (
 void invalidOnlyFields;
 
 const invalidRelationDefaultValue = (
-  <ModelForm<LocationsAssetMovement>
+  <ModelForm<TypingAssetMovement>
     app="locations"
     model="AssetMovement"
     mode="CREATE"
@@ -84,7 +84,7 @@ const invalidRelationDefaultValue = (
 void invalidRelationDefaultValue;
 
 const invalidNestedRelationKey = (
-  <ModelForm<LocationsAssetMovement>
+  <ModelForm<TypingAssetMovement>
     app="locations"
     model="AssetMovement"
     mode="CREATE"
@@ -96,13 +96,13 @@ const invalidNestedRelationKey = (
 void invalidNestedRelationKey;
 
 const invalidOrderingField = (
-  <ModelForm<LocationsAssetMovement>
+  <ModelForm<TypingAssetMovement>
     app="locations"
     model="AssetMovement"
     mode="CREATE"
     layout={{
       ordering: {
-        // @ts-expect-error ordering field names must exist on LocationsAssetMovement form values
+        // @ts-expect-error ordering field names must exist on TypingAssetMovement form values
         tailing: ["etat"],
       },
     }}
@@ -112,12 +112,12 @@ const invalidOrderingField = (
 void invalidOrderingField;
 
 const invalidFieldOverrideKey = (
-  <ModelForm<LocationsAssetMovement>
+  <ModelForm<TypingAssetMovement>
     app="locations"
     model="AssetMovement"
     mode="CREATE"
     fieldOverrides={{
-      // @ts-expect-error field override keys must exist on LocationsAssetMovement form values
+      // @ts-expect-error field override keys must exist on TypingAssetMovement form values
       etat: { colSpan: 2 },
     }}
   />
@@ -126,7 +126,7 @@ const invalidFieldOverrideKey = (
 void invalidFieldOverrideKey;
 
 const invalidNestedFieldOverrideKey = (
-  <ModelForm<LocationsAssetMovement>
+  <ModelForm<TypingAssetMovement>
     app="locations"
     model="AssetMovement"
     mode="CREATE"
@@ -144,12 +144,12 @@ const invalidNestedFieldOverrideKey = (
 void invalidNestedFieldOverrideKey;
 
 const invalidNestedScalarField = (
-  <ModelForm<LocationsAssetMovement>
+  <ModelForm<TypingAssetMovement>
     app="locations"
     model="AssetMovement"
     mode="CREATE"
     nested={{
-      // @ts-expect-error nested config keys must point to relation fields on LocationsAssetMovement
+      // @ts-expect-error nested config keys must point to relation fields on TypingAssetMovement
       status: {
         onlyFields: ["nom"],
       },

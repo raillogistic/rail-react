@@ -32,6 +32,18 @@ export const LOGIN_MUTATION = gql`
         email
         first_name: firstName
         last_name: lastName
+        is_staff: isStaff
+        is_superuser: isSuperuser
+        roles {
+          id
+          name
+          permissions {
+            id
+            name
+            codename
+          }
+        }
+        permissions
       }
     }
   }
@@ -101,6 +113,18 @@ export interface LoginResponse {
       email: string;
       first_name: string;
       last_name: string;
+      is_staff?: boolean;
+      is_superuser?: boolean;
+      roles?: Array<{
+        id: string;
+        name: string;
+        permissions?: Array<{
+          id: string;
+          name: string;
+          codename: string;
+        }>;
+      }>;
+      permissions?: string[];
     };
   };
 }
@@ -178,6 +202,18 @@ export const VERIFY_MFA_LOGIN_MUTATION = gql`
         email
         first_name: firstName
         last_name: lastName
+        is_staff: isStaff
+        is_superuser: isSuperuser
+        roles {
+          id
+          name
+          permissions {
+            id
+            name
+            codename
+          }
+        }
+        permissions
       }
     }
   }

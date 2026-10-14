@@ -1,8 +1,8 @@
 /**
- * Date picker input using a pop-over calendar.
- *
- * Stores the selected date as an ISO `yyyy-MM-dd` string and renders a
- * localized French display label via date-fns.
+ * @file date.tsx
+ * @description Sélecteur de date avec calendrier pop-over.
+ * Modifié pour forcer shadow-none sur le bouton déclencheur, appliquer des styles thématiques arrondis,
+ * et utiliser des coins arrondis rounded-xl.
  *
  * @module form/inputs/date
  */
@@ -99,11 +99,11 @@ const DateInput: React.FC<Props> = ({ config, field, form }) => {
             variant="outline"
             data-slot="input"
             className={cn(
-              "h-11 w-full justify-start rounded-xl border border-input/70 bg-muted/5 px-4 text-left text-[13.5px] font-medium transition-all duration-300 ease-out",
-              "hover:border-primary/40 hover:bg-muted/8 hover:shadow-inner",
-              "focus:border-primary focus:ring-4 focus:ring-primary/10",
+              "h-9 w-full justify-start rounded-xl border border-transparent bg-muted/50 px-4 text-left text-[13.5px] font-medium transition-all duration-300 ease-out shadow-sm",
+              "hover:border-primary/40 hover:bg-muted/60",
+              "focus:border-primary focus:ring-4 focus:ring-primary/10 cursor-pointer",
               !parsedValue && "text-muted-foreground/60",
-              parsedValue && "text-foreground font-bold border-primary/20 bg-primary/2",
+              parsedValue && "text-foreground",
               config.disabled && "cursor-not-allowed opacity-50 grayscale",
             )}
             disabled={config.disabled}
@@ -111,7 +111,7 @@ const DateInput: React.FC<Props> = ({ config, field, form }) => {
             <CalendarDays
               className={cn(
                 "mr-3 size-4.5 transition-all duration-300",
-                parsedValue ? "text-primary scale-110" : "text-muted-foreground/30",
+                parsedValue ? "text-primary scale-110" : "text-muted-foreground/35",
               )}
             />
             <span className="truncate flex-1">{buttonLabel}</span>

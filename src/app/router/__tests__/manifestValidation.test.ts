@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { LayoutDashboard } from "lucide-react";
 import type { AppManifest } from "../contracts";
 import {
   assertValidManifestSet,
@@ -7,6 +8,8 @@ import {
 
 const createManifest = (overrides?: Partial<AppManifest>): AppManifest => ({
   projectId: "core",
+  label: "Core",
+  icon: LayoutDashboard,
   defaultRoute: "/dashboard",
   routes: [
     {
@@ -106,6 +109,7 @@ describe("manifestValidation", () => {
     const first = createManifest();
     const second = createManifest({
       projectId: "starter",
+      label: "Starter",
       defaultRoute: "/starter/overview",
       routes: [
         {
@@ -157,6 +161,7 @@ describe("manifestValidation", () => {
     });
     const second = createManifest({
       projectId: "sample",
+      label: "Sample",
       defaultRoute: "/dashboard",
       routes: [
         {

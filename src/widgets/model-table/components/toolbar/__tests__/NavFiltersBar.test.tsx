@@ -80,6 +80,16 @@ describe("NavFiltersBar", () => {
     );
   });
 
+  it("keeps counters inside the fixed department even without table variables", () => {
+    mockUseModelPageQuery.mockClear();
+    const fixedWhere = { department: { eq: "12" } };
+    render(<TableProvider><NavFiltersBar navFilters={{ ...navFilters, fixedWhere }} /></TableProvider>);
+    const clauses = mockUseModelPageQuery.mock.calls.map(([input]) => input.variables.where);
+    expect(clauses).toContainEqual(fixedWhere);
+    expect(clauses).toContainEqual({ AND: [fixedWhere, { statut: { eq: "draft" } }] });
+    expect(clauses.every((clause) => clause === fixedWhere || clause.AND?.includes(fixedWhere))).toBe(true);
+  });
+
   it("keeps one active item per group and allows clearing with all", async () => {
     const user = userEvent.setup();
 

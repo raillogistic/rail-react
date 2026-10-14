@@ -204,6 +204,23 @@ function createMetadata(): ModelSchema {
 describe("schema helper exposure controls", () => {
   const metadata = mergeModelSchemaWithRelationships(createMetadata())!;
 
+  it("ignores null field and relationship metadata entries", () => {
+    const source = createMetadata();
+    const malformed = {
+      ...source,
+      fields: [null, ...source.fields],
+      relationships: [null, ...source.relationships],
+    } as unknown as ModelSchema;
+
+    const merged = mergeModelSchemaWithRelationships(malformed)!;
+
+    expect(merged.fields.every(Boolean)).toBe(true);
+    expect(merged.relationships.every(Boolean)).toBe(true);
+    expect(merged.fields).toContainEqual(
+      expect.objectContaining({ name: "orders", isRelation: true }),
+    );
+  });
+
   it("implicitly excludes reverse relation and count fields unless requested", () => {
     const exclusions = getImplicitModelTableFieldExclusions(metadata);
     expect(exclusions).toContain("createdAt");

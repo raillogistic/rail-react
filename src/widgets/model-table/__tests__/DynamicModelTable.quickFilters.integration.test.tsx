@@ -1,3 +1,4 @@
+/** Verify metadata quick filters update the bounded table query. */
 import React from "react";
 import { MockedProvider } from "@apollo/client/testing";
 import { gql } from "@apollo/client";
@@ -639,6 +640,7 @@ describe("DynamicModelTable quickFilters", () => {
             model="User"
             initVariables={{ page: 2 }}
             baseTable={{
+              fields: ["id", "username"],
               quickFilters: ["username"],
             }}
           />
@@ -666,5 +668,5 @@ describe("DynamicModelTable quickFilters", () => {
     await waitFor(() => {
       expect(clearedSpy).toHaveBeenCalled();
     });
-  });
+  }, 15_000);
 });

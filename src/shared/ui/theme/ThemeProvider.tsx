@@ -13,6 +13,8 @@ import {
   ThemeMode,
   ThemeColors,
   Layout,
+  NavigationPattern,
+  SidebarMode,
   SidebarCollapseMode,
   FontSize,
   FontFamily,
@@ -24,6 +26,8 @@ import {
   DEFAULT_THEME,
   DEFAULT_MODE,
   DEFAULT_LAYOUT,
+  DEFAULT_NAVIGATION_PATTERN,
+  DEFAULT_SIDEBAR_MODE,
   DEFAULT_SIDEBAR_COLLAPSE_MODE,
   DEFAULT_FONT_SIZE,
   DEFAULT_FONT_FAMILY,
@@ -40,13 +44,15 @@ import {
   type UpdateUserSettingsVariables,
   type UserSettingsInputPayload,
 } from "@/shared/api/graphql/legacy/mutations";
-import { AUTH_SESSION_EVENT } from "@/shared/api/auth/token-storage";
+import { AUTH_SESSION_EVENT, tokenStorage } from "@/shared/api/auth/token-storage";
 
 type ThemeProviderProps = {
   children: React.ReactNode;
   defaultTheme?: ThemeKey;
   defaultMode?: ThemeMode;
   defaultLayout?: Layout;
+  defaultNavigationPattern?: NavigationPattern;
+  defaultSidebarMode?: SidebarMode;
   defaultSidebarCollapseMode?: SidebarCollapseMode;
   defaultFontSize?: FontSize;
   defaultFontFamily?: FontFamily;
@@ -59,6 +65,8 @@ type ThemeProviderState = {
   theme: ThemeKey;
   mode: ThemeMode;
   layout: Layout;
+  navigationPattern: NavigationPattern;
+  sidebarMode: SidebarMode;
   sidebarCollapseMode: SidebarCollapseMode;
   fontSize: FontSize;
   fontFamily: FontFamily;
@@ -68,6 +76,8 @@ type ThemeProviderState = {
   setMode: (mode: ThemeMode) => void;
   toggleMode: () => void;
   setLayout: (layout: Layout) => void;
+  setNavigationPattern: (pattern: NavigationPattern) => void;
+  setSidebarMode: (mode: SidebarMode) => void;
   setSidebarCollapseMode: (mode: SidebarCollapseMode) => void;
   setFontSize: (size: FontSize) => void;
   setFontFamily: (family: FontFamily) => void;
@@ -80,6 +90,8 @@ const initialState: ThemeProviderState = {
   theme: DEFAULT_THEME,
   mode: DEFAULT_MODE,
   layout: DEFAULT_LAYOUT,
+  navigationPattern: DEFAULT_NAVIGATION_PATTERN,
+  sidebarMode: DEFAULT_SIDEBAR_MODE,
   sidebarCollapseMode: DEFAULT_SIDEBAR_COLLAPSE_MODE,
   fontSize: DEFAULT_FONT_SIZE,
   fontFamily: DEFAULT_FONT_FAMILY,
@@ -89,6 +101,8 @@ const initialState: ThemeProviderState = {
   setMode: () => {},
   toggleMode: () => {},
   setLayout: () => {},
+  setNavigationPattern: () => {},
+  setSidebarMode: () => {},
   setSidebarCollapseMode: () => {},
   setFontSize: () => {},
   setFontFamily: () => {},
@@ -200,6 +214,8 @@ export function ThemeProvider({
   defaultTheme = DEFAULT_THEME,
   defaultMode = DEFAULT_MODE,
   defaultLayout = DEFAULT_LAYOUT,
+  defaultNavigationPattern = DEFAULT_NAVIGATION_PATTERN,
+  defaultSidebarMode = DEFAULT_SIDEBAR_MODE,
   defaultSidebarCollapseMode = DEFAULT_SIDEBAR_COLLAPSE_MODE,
   defaultFontSize = DEFAULT_FONT_SIZE,
   defaultFontFamily = DEFAULT_FONT_FAMILY,
@@ -225,6 +241,22 @@ export function ThemeProvider({
   const [layout, setLayoutState] = useState<Layout>(() => {
     return (
       (localStorage.getItem(`${storageKey}-layout`) as Layout) || defaultLayout
+    );
+  });
+
+  const [navigationPattern, setNavigationPatternState] =
+    useState<NavigationPattern>(() => {
+      return (
+        (localStorage.getItem(
+          `${storageKey}-navigation-pattern`,
+        ) as NavigationPattern) || defaultNavigationPattern
+      );
+    });
+
+  const [sidebarMode, setSidebarModeState] = useState<SidebarMode>(() => {
+    return (
+      (localStorage.getItem(`${storageKey}-sidebar-mode`) as SidebarMode) ||
+      defaultSidebarMode
     );
   });
 
@@ -338,6 +370,12 @@ export function ThemeProvider({
     const persistedTheme = localStorage.getItem(`${storageKey}-theme`);
     const persistedMode = localStorage.getItem(`${storageKey}-mode`);
     const persistedLayout = localStorage.getItem(`${storageKey}-layout`);
+    const persistedNavigationPattern = localStorage.getItem(
+      `${storageKey}-navigation-pattern`,
+    );
+    const persistedSidebarMode = localStorage.getItem(
+      `${storageKey}-sidebar-mode`,
+    );
     const persistedSidebarCollapseMode = localStorage.getItem(
       `${storageKey}-sidebar-collapse`,
     );
@@ -361,6 +399,14 @@ export function ThemeProvider({
     if (persistedLayout) {
       setLayoutState(persistedLayout as Layout);
     }
+    if (persistedNavigationPattern) {
+      setNavigationPatternState(
+        persistedNavigationPattern as NavigationPattern,
+      );
+    }
+    if (persistedSidebarMode) {
+      setSidebarModeState(persistedSidebarMode as SidebarMode);
+    }
     if (persistedSidebarCollapseMode) {
       setSidebarCollapseModeState(
         persistedSidebarCollapseMode as SidebarCollapseMode,
@@ -382,6 +428,13 @@ export function ThemeProvider({
     let cancelled = false;
 
     const hydrateFromBackend = async () => {
+      if (
+        !tokenStorage.hasValidSession() &&
+        !tokenStorage.getAccessToken()
+      ) {
+        return;
+      }
+
       try {
         const { data } =
           await apolloClient.query<CurrentUserSettingsRecordResponse>({
@@ -589,6 +642,17 @@ export function ThemeProvider({
     void saveSetting({ layout: newLayout });
   };
 
+  const setNavigationPattern = (newPattern: NavigationPattern) => {
+    localStorage.setItem(`${storageKey}-navigation-pattern`, newPattern);
+    setNavigationPatternState(newPattern);
+    // Note: Backend does not expose this preference yet. Keep it local for now.
+  };
+
+  const setSidebarMode = (newMode: SidebarMode) => {
+    localStorage.setItem(`${storageKey}-sidebar-mode`, newMode);
+    setSidebarModeState(newMode);
+  };
+
   const setSidebarCollapseMode = (newMode: SidebarCollapseMode) => {
     localStorage.setItem(`${storageKey}-sidebar-collapse`, newMode);
     setSidebarCollapseModeState(newMode);
@@ -628,6 +692,16 @@ export function ThemeProvider({
     if (defaultLayout && defaultLayout !== DEFAULT_LAYOUT)
       setLayoutState(defaultLayout);
     if (
+      defaultNavigationPattern &&
+      defaultNavigationPattern !== DEFAULT_NAVIGATION_PATTERN
+    )
+      setNavigationPatternState(defaultNavigationPattern);
+    if (
+      defaultSidebarMode &&
+      defaultSidebarMode !== DEFAULT_SIDEBAR_MODE
+    )
+      setSidebarModeState(defaultSidebarMode);
+    if (
       defaultSidebarCollapseMode &&
       defaultSidebarCollapseMode !== DEFAULT_SIDEBAR_COLLAPSE_MODE
     )
@@ -644,6 +718,8 @@ export function ThemeProvider({
     defaultTheme,
     defaultMode,
     defaultLayout,
+    defaultNavigationPattern,
+    defaultSidebarMode,
     defaultSidebarCollapseMode,
     defaultFontSize,
     defaultFontFamily,
@@ -692,10 +768,25 @@ export function ThemeProvider({
     root.setAttribute("data-font-family", fontFamily);
     root.setAttribute("data-line-height", lineHeight);
     root.setAttribute("data-letter-spacing", letterSpacing);
+    root.setAttribute("data-navigation-pattern", navigationPattern);
+    root.setAttribute("data-sidebar-mode", sidebarMode);
+    // Keep legacy user settings persisted, but normalize the shell styling to
+    // the single supported sidebar layout.
+    root.setAttribute("data-layout", "vertical");
 
     // Set Color Scheme
     root.style.colorScheme = mode;
-  }, [theme, mode, fontSize, fontFamily, lineHeight, letterSpacing]);
+  }, [
+    theme,
+    mode,
+    layout,
+    navigationPattern,
+    sidebarMode,
+    fontSize,
+    fontFamily,
+    lineHeight,
+    letterSpacing,
+  ]);
 
   // Helper function to apply theme colors
   const applyThemeColors = (
@@ -749,6 +840,8 @@ export function ThemeProvider({
     theme,
     mode,
     layout,
+    navigationPattern,
+    sidebarMode,
     sidebarCollapseMode,
     fontSize,
     fontFamily,
@@ -758,6 +851,8 @@ export function ThemeProvider({
     setMode,
     toggleMode,
     setLayout,
+    setNavigationPattern,
+    setSidebarMode,
     setSidebarCollapseMode,
     setFontSize,
     setFontFamily,

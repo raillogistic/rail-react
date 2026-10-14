@@ -425,7 +425,7 @@ export function TableColumnMenu({
               variant="ghost"
               size="sm"
               className={cn(
-                "h-8 w-8 p-0 ml-1 border-none",
+                "h-5 w-5 p-0 ml-1 border-none",
                 variant === "primary"
                   ? "text-primary-foreground/80 hover:text-white hover:bg-primary-foreground/10 data-[state=open]:bg-primary-foreground/15 data-[state=open]:text-white"
                   : "text-neutral-600 dark:text-neutral-300 hover:text-foreground data-[state=open]:bg-accent data-[state=open]:text-accent-foreground",

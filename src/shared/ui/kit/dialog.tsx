@@ -34,7 +34,9 @@ function DialogOverlay({ className, ...props }: React.ComponentProps<typeof Dial
   )
 }
 
-function DialogContent({ className, children, ...props }: React.ComponentProps<typeof DialogPrimitive.Content>) {
+/** Optionally restore focus for controlled dialogs opened without DialogTrigger. */
+function DialogContent({ className, children, restoreFocusToOpener = false, onOpenAutoFocus, onCloseAutoFocus, ...props }: React.ComponentProps<typeof DialogPrimitive.Content> & { restoreFocusToOpener?: boolean }) {
+  const opener = React.useRef<HTMLElement | null>(null)
   return (
     <DialogPortal>
       <DialogOverlay />
@@ -45,6 +47,17 @@ function DialogContent({ className, children, ...props }: React.ComponentProps<t
           className
         )}
         {...props}
+        onOpenAutoFocus={(event) => {
+          if (restoreFocusToOpener) opener.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
+          onOpenAutoFocus?.(event)
+        }}
+        onCloseAutoFocus={(event) => {
+          onCloseAutoFocus?.(event)
+          if (restoreFocusToOpener && !event.defaultPrevented && opener.current?.isConnected) {
+            event.preventDefault()
+            opener.current.focus()
+          }
+        }}
       >
         {children}
         <DialogPrimitive.Close className="ring-offset-background focus:ring-ring absolute right-4 top-4 rounded-xs opacity-70 hover:opacity-100 focus:ring-2 focus:ring-offset-2 focus:outline-hidden">

@@ -386,10 +386,10 @@ function DraggableHeaderCell<TRow extends Record<string, unknown>>({
             ? "text-white font-bold bg-primary-foreground/10"
             : "text-foreground font-semibold bg-neutral-100/30 dark:bg-zinc-900/30"),
         density === "compact"
-          ? "h-8 text-[11px]"
+          ? "h-5 text-[10px]"
           : density === "spacious"
-            ? "h-12 text-sm"
-            : "h-10 text-xs",
+            ? "h-7 text-xs"
+            : "h-6 text-[11px]",
         stickyClassName,
         fitContent && "w-[1%] whitespace-nowrap",
         isDragging &&

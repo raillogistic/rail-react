@@ -1,9 +1,10 @@
+import { sharedRoot, sourceRoots, sourceRootFor, resolveSourceImport } from './source-paths.mjs';
 import fs from "node:fs";
 import path from "node:path";
 
 const repoRoot = process.cwd();
 const srcRoot = path.join(repoRoot, "src");
-const migrationMapPath = path.join(repoRoot, "scripts", "layer-migration-map.json");
+const migrationMapPath = path.join(sharedRoot, "scripts", "layer-migration-map.json");
 const strictMode = process.argv.includes("--strict");
 
 const layerOrder = [
@@ -89,7 +90,7 @@ const listSourceFiles = (dirPath) => {
 };
 
 const normalizeRelativePath = (absolutePath) =>
-  path.relative(srcRoot, absolutePath).replace(/\\/g, "/");
+  path.relative(sourceRootFor(absolutePath), absolutePath).replace(/\\/g, "/");
 
 const getTopFolder = (absolutePath) => {
   const relativePath = normalizeRelativePath(absolutePath);
@@ -131,17 +132,9 @@ const getImportSpecifiers = (sourceCode) => {
   return specifiers;
 };
 
-const resolveSpecifier = (specifier, importerPath) => {
-  if (specifier.startsWith("@/")) {
-    return path.join(srcRoot, specifier.slice(2));
-  }
-  if (specifier.startsWith(".")) {
-    return path.resolve(path.dirname(importerPath), specifier);
-  }
-  return null;
-};
+const resolveSpecifier = resolveSourceImport;
 
-const allFiles = listSourceFiles(srcRoot);
+const allFiles = sourceRoots.flatMap(listSourceFiles);
 const violations = [];
 const scannedByRoot = new Map();
 

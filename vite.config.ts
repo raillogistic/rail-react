@@ -14,6 +14,7 @@ export default defineConfig({
     // (e.g. @tiptap/react resolved from a parent node_modules).
     dedupe: ["react", "react-dom"],
     alias: {
+      "@rail/application": path.resolve(__dirname, "./src/application.ts"),
       "@": path.resolve(__dirname, "./src"),
       "@core": path.resolve(__dirname, "./src/core"),
       react: path.resolve(__dirname, "./node_modules/react"),
@@ -67,6 +68,7 @@ export default defineConfig({
       "./src/test/setup.ts",
       "./src/widgets/model-table/filtering/__tests__/setup/setup.ts",
     ],
+    exclude: ["**/node_modules/**", "**/dist/**", "templates/**", "scripts/**"],
     css: true,
   },
 });

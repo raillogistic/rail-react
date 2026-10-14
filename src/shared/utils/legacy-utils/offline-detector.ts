@@ -72,10 +72,7 @@ const getDefaultServerUrl = (): string => {
 
 const HEALTH_CHECK_PATHS = [
   "/health/",
-  "/health",
-  "/health",
-  "/readyz/",
-  "/readyz",
+  "/health/ready/",
 ];
 
 export const testServerConnectivity = async (
@@ -86,14 +83,16 @@ export const testServerConnectivity = async (
 
   for (const path of HEALTH_CHECK_PATHS) {
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+    const timeoutId = setTimeout(() => controller.abort(new Error("Timeout")), 5000); // 5 second timeout
 
     try {
-      const response = await fetch(`${normalizedBaseUrl}${path}`, {
+      const fetchPromise = fetch(`${normalizedBaseUrl}${path}`, {
         method: "GET",
         signal: controller.signal,
         cache: "no-cache",
       });
+      fetchPromise.catch(() => {}); // Prevent DevTools "Uncaught (in promise)" false positive
+      const response = await fetchPromise;
 
       if (response.ok) {
         return true;

@@ -1,3 +1,4 @@
+/** Shared browser API shims and safe logging for the jsdom test environment. */
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 import React from 'react';
@@ -8,6 +9,14 @@ globalThis.ResizeObserver ??= class ResizeObserver {
   unobserve() {}
   disconnect() {}
 };
+
+if (typeof window !== 'undefined') {
+  window.matchMedia ??= ((query: string) => ({
+    matches: false, media: query, onchange: null,
+    addListener: vi.fn(), removeListener: vi.fn(),
+    addEventListener: vi.fn(), removeEventListener: vi.fn(), dispatchEvent: vi.fn(),
+  })) as typeof window.matchMedia;
+}
 
 // Global mock for lucide-react to avoid missing icon exports
 vi.mock('lucide-react', async (importOriginal) => {

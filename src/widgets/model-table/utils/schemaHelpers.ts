@@ -334,9 +334,10 @@ export function mergeModelSchemaWithRelationships(
   metadata?: ModelSchema | null,
 ): ModelSchema | undefined {
   if (!metadata) return undefined;
-  const relationships = metadata.relationships ?? [];
+  const relationships = (metadata.relationships ?? []).filter(Boolean);
+  const fields = (metadata.fields ?? []).filter(Boolean);
   if (relationships.length === 0) {
-    return metadata;
+    return { ...metadata, fields, relationships };
   }
 
   const relationLookup = new Map<string, RelationshipSchema>();
@@ -345,7 +346,7 @@ export function mergeModelSchemaWithRelationships(
     if (relation.fieldName) relationLookup.set(relation.fieldName, relation);
   });
 
-  const mergedFields = metadata.fields.map((field) => {
+  const mergedFields = fields.map((field) => {
     if (!field.isRelation) return field;
     const relation =
       relationLookup.get(field.name) ?? relationLookup.get(field.fieldName);
@@ -382,12 +383,13 @@ export function mergeModelSchemaWithRelationships(
     });
 
   if (relationshipFields.length === 0 && countFields.length === 0) {
-    return { ...metadata, fields: mergedFields };
+    return { ...metadata, fields: mergedFields, relationships };
   }
 
   return {
     ...metadata,
     fields: [...mergedFields, ...relationshipFields, ...countFields],
+    relationships,
   };
 }
 

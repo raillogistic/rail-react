@@ -230,8 +230,8 @@ const createErrorLink = () => {
 
           const authError = new AuthError(
             AuthErrorType.SESSION_EXPIRED,
-            'Authentication failed',
-            'Your session has expired. Please log in again.',
+            'Échec de l\'authentification',
+            'Votre session a expiré. Veuillez vous reconnecter.',
             { shouldLogout: true, meta: { graphQLErrors } }
           );
 
@@ -285,8 +285,8 @@ const createErrorLink = () => {
 
               const authError = new AuthError(
                 AuthErrorType.TOKEN_EXPIRED,
-                'Unauthorized access',
-                'Your session has expired. Please log in again.',
+                'Accès non autorisé',
+                'Votre session a expiré. Veuillez vous reconnecter.',
                 { shouldLogout: true, meta: networkError }
               );
 
@@ -306,8 +306,8 @@ const createErrorLink = () => {
           const event = new CustomEvent('backend-offline', {
             detail: {
               message: numericStatusCode !== undefined && numericStatusCode >= 500
-                ? 'Server is experiencing issues. Please try again later.'
-                : 'Unable to connect to the server. Please check your connection.'
+                ? 'Le serveur rencontre des problèmes. Veuillez réessayer plus tard.'
+                : 'Impossible de se connecter au serveur. Veuillez vérifier votre connexion.'
             }
           });
           window.dispatchEvent(event);
@@ -316,7 +316,7 @@ const createErrorLink = () => {
         // Handle network errors without status codes (server offline, connection refused, etc.)
         const event = new CustomEvent('backend-offline', {
           detail: {
-            message: 'Unable to connect to the server. Please check your connection and ensure the server is running.'
+            message: 'Impossible de se connecter au serveur. Veuillez vérifier votre connexion et vous assurer que le serveur est en cours d\'exécution.'
           }
         });
         window.dispatchEvent(event);

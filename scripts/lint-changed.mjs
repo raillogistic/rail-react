@@ -1,13 +1,10 @@
+import path from 'node:path';
 import { execFileSync, spawnSync } from "node:child_process";
 import fs from "node:fs";
 import { fileURLToPath } from "node:url";
 const gitCmd = process.platform === "win32" ? "git.exe" : "git";
 const nodeCmd = process.execPath;
-const eslintCli = new URL(
-  "../node_modules/eslint/bin/eslint.js",
-  import.meta.url,
-);
-const eslintCliPath = fileURLToPath(eslintCli);
+const eslintCliPath = path.resolve(process.cwd(), 'node_modules/eslint/bin/eslint.js');
 
 const readLines = (value) =>
   value

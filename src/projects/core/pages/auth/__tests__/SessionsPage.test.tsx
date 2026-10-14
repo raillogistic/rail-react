@@ -1,4 +1,6 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+/** Verify session loading and revocation within the settings router. */
+import { render as renderComponent, screen, fireEvent, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { describe, it, expect, vi } from 'vitest';
 import { MockedProvider } from '@apollo/client/testing';
 import { InMemoryCache } from '@apollo/client';
@@ -13,6 +15,9 @@ vi.mock('@/features/auth/hooks/useAuth', () => ({
 }));
 
 const cache = new InMemoryCache();
+const render = (ui: React.ReactNode) => renderComponent(
+  <MemoryRouter initialEntries={['/settings/sessions']}>{ui}</MemoryRouter>
+);
 
 describe('SessionsPage', () => {
   const mockUser = { id: '1', username: 'test' };

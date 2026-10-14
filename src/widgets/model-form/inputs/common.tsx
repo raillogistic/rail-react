@@ -59,8 +59,8 @@ export const FieldWrapper: React.FC<FieldWrapperProps> = ({
       data-error={hasError ? "true" : undefined}
       className={cn(
         "group/field flex flex-col transition-all duration-500 ease-in-out",
-        "gap-2 group-data-[layout=compact]/form:gap-1.5 group-data-[layout=popup]/form:gap-1.5",
-        "py-2.5 group-data-[layout=compact]/form:py-1 group-data-[layout=popup]/form:py-1",
+        "gap-1.5 group-data-[layout=compact]/form:gap-1 group-data-[layout=popup]/form:gap-1",
+        "py-1.5 group-data-[layout=compact]/form:py-0.5 group-data-[layout=popup]/form:py-0.5",
         config.className,
       )}
     >
@@ -71,7 +71,7 @@ export const FieldWrapper: React.FC<FieldWrapperProps> = ({
             <Label
               htmlFor={fieldId}
               className={cn(
-                "text-[13.5px] font-bold tracking-tight text-foreground/60 transition-all duration-300",
+                "text-[13.5px] font-bold tracking-tight text-foreground/70 transition-all duration-300",
                 hasError && "text-destructive",
                 "group-focus-within/field:text-primary group-focus-within/field:translate-x-0.5",
               )}
@@ -93,7 +93,7 @@ export const FieldWrapper: React.FC<FieldWrapperProps> = ({
                   <TooltipTrigger asChild>
                     <button
                       type="button"
-                      className="text-muted-foreground/30 hover:text-primary/60 transition-all outline-none hover:scale-110 active:scale-95"
+                      className="text-muted-foreground/45 hover:text-primary transition-all outline-none hover:scale-110 active:scale-95 cursor-pointer"
                     >
                       <Info className="size-3.5" />
                       <span className="sr-only">Description</span>
@@ -102,11 +102,11 @@ export const FieldWrapper: React.FC<FieldWrapperProps> = ({
                   <TooltipContent
                     side="top"
                     align="start"
-                    className="max-w-72 rounded-xl border border-border/50 bg-popover/95 backdrop-blur-md px-4 py-3 text-[12px] font-medium shadow-2xl"
+                    className="max-w-72 rounded-2xl border border-border/40 bg-popover/98 backdrop-blur-md px-4 py-3 text-[12px] font-medium shadow-2xl shadow-primary/5 animate-in fade-in duration-200"
                   >
                     <div className="flex gap-2.5">
-                      <Sparkles className="size-4 shrink-0 text-primary/60" />
-                      <span className="leading-relaxed">{config.description}</span>
+                      <Sparkles className="size-4 shrink-0 text-primary" />
+                      <span className="leading-relaxed text-foreground/90">{config.description}</span>
                     </div>
                   </TooltipContent>
                 </Tooltip>
@@ -128,11 +128,11 @@ export const FieldWrapper: React.FC<FieldWrapperProps> = ({
       {/* ── Slot container — propagates data-dirty / data-error to children ─ */}
       <div
         className={cn(
-          "relative transition-colors",
+          "relative transition-all duration-300",
           // ── Dirty state ──
-          "data-[dirty=true]:**:data-[slot=input]:border-emerald-500/50",
-          "data-[dirty=true]:**:data-[slot=textarea]:border-emerald-500/50",
-          "data-[dirty=true]:**:data-[slot=select-trigger]:border-emerald-500/50",
+          "data-[dirty=true]:**:data-[slot=input]:border-emerald-500/40",
+          "data-[dirty=true]:**:data-[slot=textarea]:border-emerald-500/40",
+          "data-[dirty=true]:**:data-[slot=select-trigger]:border-emerald-500/40",
 
           // ── Error state ──
           "data-[error=true]:**:data-[slot=input]:border-destructive focus-within:data-[error=true]:**:data-[slot=input]:ring-destructive",
@@ -149,7 +149,7 @@ export const FieldWrapper: React.FC<FieldWrapperProps> = ({
 
       {/* ── Help text ────────────────────────────────────────────── */}
       {config.helpText && !hasError && (
-        <p className="px-1.5 text-xs text-muted-foreground/80">
+        <p className="px-1.5 text-xs text-muted-foreground/75 font-medium">
           {config.helpText}
         </p>
       )}
@@ -160,7 +160,7 @@ export const FieldWrapper: React.FC<FieldWrapperProps> = ({
           {errorList.map((item, index) => (
             <div
               key={`${config.name}-error-${index}`}
-              className="flex items-start gap-2 text-xs font-medium text-destructive px-1"
+              className="flex items-start gap-2 text-xs font-semibold text-destructive px-1"
             >
               <AlertCircle className="mt-0.5 size-3.5 shrink-0" />
               <span className="leading-tight">{item}</span>

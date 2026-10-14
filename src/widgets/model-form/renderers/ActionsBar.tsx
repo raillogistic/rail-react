@@ -85,7 +85,7 @@ export const ActionsBar = <TValues extends Record<string, any>>({
   const isPopup = variant === "popup" || variant === "compact";
 
   const actionsClass = cn(
-    "z-50 flex flex-wrap items-center justify-between px-4 py-3",
+    "z-50 flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between px-4 py-3",
     "transition-all duration-200 ease-in-out",
     isPopup
       ? "mt-3 rounded-lg border border-border/30 bg-muted/20"
@@ -117,7 +117,7 @@ export const ActionsBar = <TValues extends Record<string, any>>({
   return (
     <>
       <div className={actionsClass}>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-start">
           {showDirtyIndicator && isDirty ? (
             <Badge
               variant="secondary"
@@ -131,7 +131,7 @@ export const ActionsBar = <TValues extends Record<string, any>>({
           )}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
           {renderedExtra}
 
           {showUndoRedo && history ? (
@@ -167,7 +167,7 @@ export const ActionsBar = <TValues extends Record<string, any>>({
             size="sm"
             onClick={() => form.reset()}
             disabled={isSubmitting || !isDirty}
-            className="rounded-md text-muted-foreground hover:text-foreground"
+            className="w-full sm:w-auto rounded-md text-muted-foreground hover:text-foreground"
           >
             <RotateCcw className="mr-1.5 size-3.5" />
             {resetLabel}
@@ -177,7 +177,7 @@ export const ActionsBar = <TValues extends Record<string, any>>({
             type={confirmSubmit?.enabled ? "button" : "submit"}
             size="sm"
             disabled={isSubmitting || isLoading || (!isDirty && !canSubmit)}
-            className="min-w-[120px] rounded-md"
+            className="w-full sm:w-auto min-w-[120px] rounded-md"
             onClick={confirmSubmit?.enabled ? handleSubmitClick : undefined}
           >
             {isSubmitting ? (

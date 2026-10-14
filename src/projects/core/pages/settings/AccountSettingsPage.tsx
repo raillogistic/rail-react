@@ -3,6 +3,7 @@ import { gql, useQuery } from "@apollo/client";
 import { SettingsLayout } from "./SettingsLayout";
 import { AccountSettingsForm } from "./users/AccountSettingsForm";
 import { ChangePasswordForm } from "./users/ChangePasswordForm";
+import application from '@rail/application';
 
 export const GET_USER_DATA = gql`
   query GetUserData {
@@ -63,6 +64,7 @@ export function AccountSettingsPage() {
     email: remoteUser?.email ?? fallbackUser.email,
   };
 
+  const AccountExtras = application.slots?.AccountExtras;
   const content = () => {
     if (loading) {
       return <div className="p-4 text-muted-foreground">Chargement...</div>;
@@ -76,6 +78,7 @@ export function AccountSettingsPage() {
       <div className="space-y-6">
         <AccountSettingsForm user={formUser} />
         <ChangePasswordForm />
+        {AccountExtras && <AccountExtras />}
       </div>
     );
   };

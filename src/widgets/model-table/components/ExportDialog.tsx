@@ -73,14 +73,11 @@ const buildOrderingPayload = (metadata: ModelSchema, orderBy?: string[]) => {
 const buildRootFieldSelection = (
   metadata: ModelSchema,
   orderedFieldNames: string[],
-  columnVisibility: Record<string, boolean>,
-  selectAll: boolean,
 ): ExportFieldSelection => {
   const selection: ExportFieldSelection = {};
   orderedFieldNames.forEach((fieldName) => {
     const field = metadata.fields.find((item) => item.name === fieldName);
     if (!field || !isReadableField(field)) return;
-    if (!selectAll && columnVisibility[field.name] === false) return;
     const accessor = field.name || field.fieldName;
     selection[accessor] = field.verboseName || field.name;
   });
@@ -140,8 +137,7 @@ export function ModelTableExportDialog({
   trigger?: React.ReactNode;
 }) {
   const { metadata, actionBootstrapLoading } = useMetadata();
-  const { columnOrder, columnVisibility, filterVariables, groupingField } =
-    useTable();
+  const { columnOrder, filterVariables, groupingField } = useTable();
   const filterPayload =
     filterVariablesOverride ??
     (filterVariables as FilterQueryVariables | undefined);
@@ -172,11 +168,9 @@ export function ModelTableExportDialog({
     setExportError(null);
     const initialOrder = buildRootFieldOrder(metadata, columnOrder);
     setFieldOrder(initialOrder);
-    setSelectedFields(
-      buildRootFieldSelection(metadata, initialOrder, columnVisibility, false),
-    );
+    setSelectedFields({});
     setExportFilename(metadata.verboseNamePlural || metadata.model || "export");
-  }, [open, metadata, columnOrder, columnVisibility]);
+  }, [open, metadata, columnOrder]);
 
   useEffect(() => {
     if (open && !canOpenDialog) {
@@ -208,10 +202,8 @@ export function ModelTableExportDialog({
     const ordered = fieldOrder.length
       ? fieldOrder
       : buildRootFieldOrder(metadata, columnOrder);
-    setSelectedFields(
-      buildRootFieldSelection(metadata, ordered, columnVisibility, true),
-    );
-  }, [metadata, columnOrder, columnVisibility, fieldOrder]);
+    setSelectedFields(buildRootFieldSelection(metadata, ordered));
+  }, [metadata, columnOrder, fieldOrder]);
 
   const clearFields = useCallback(() => {
     setSelectedFields({});

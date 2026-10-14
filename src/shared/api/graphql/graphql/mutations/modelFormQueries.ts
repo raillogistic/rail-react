@@ -48,6 +48,7 @@ const MUTATION_MODEL_FORM_CONTRACT_FIELDS_SELECTION = `
       }
       relations {
         name
+        relationType
         path
         label
         toMany

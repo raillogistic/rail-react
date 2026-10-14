@@ -1,4 +1,4 @@
-﻿import { execFileSync } from "node:child_process";
+ï»¿import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -7,7 +7,7 @@ const gitCmd = process.platform === "win32" ? "git.exe" : "git";
 const args = new Set(process.argv.slice(2));
 const runFullScan = args.has("--full");
 
-const includeRoots = ["src", "docs", "scripts"];
+const includeRoots = ["src", "docs", "scripts", "rail/src", "rail/docs", "rail/scripts"];
 const allowedExtensions = new Set([
   ".ts",
   ".tsx",
@@ -26,7 +26,7 @@ const ignoredDirectories = new Set([
   "build",
   "coverage",
 ]);
-const ignoredRelativePaths = new Set(["scripts/check-mojibake.mjs"]);
+const ignoredRelativePaths = new Set(["scripts/check-mojibake.mjs", "rail/scripts/check-mojibake.mjs"]);
 
 const suspiciousFragments = [
   "\u00C3",

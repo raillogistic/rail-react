@@ -1,3 +1,4 @@
+/** Required booleans accept false and use the French validation message. */
 import type { UseFormReturn } from "@tanstack/react-form";
 import { describe, expect, it } from "vitest";
 
@@ -36,6 +37,6 @@ describe("required boolean validation", () => {
  const validators = createValidators(config, form, "is_active");
  const onSubmit = validators?.onSubmit;
  expect(onSubmit?.({ value: false })).toBeUndefined();
- expect(onSubmit?.({ value: undefined })).toBe("This field is required");
+ expect(onSubmit?.({ value: undefined })).toBe("Ce champ est obligatoire");
  });
 });

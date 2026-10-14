@@ -35,12 +35,13 @@ import type {
   RowMutationPermissions,
 } from "../types";
 import type {
+  BaseModelTableProps,
   ModelTableV2TableConfig,
   ModelTableDetailConfig,
   ModelTableUpdateConfig,
 } from "../config/types";
 import type { TemplatePdfPreviewPayload } from "../utils/templateExecution";
-import { cn } from "@/shared/utils";
+import type { ReactNode } from "react";
 import { RowActions } from "./row/RowActions";
 import { ProtectedFileCell } from "./ProtectedFileCell";
 import {
@@ -53,6 +54,22 @@ import {
 
 const MOBILE_BATCH_SIZE = 24;
 
+/** Shared mobile presentation for model records and controlled, authorized projections. */
+export function ModelTableMobileRecord({ title, description, actions, fields }: {
+  title: ReactNode; description?: ReactNode; actions?: ReactNode;
+  fields: { key: string; label: ReactNode; value: ReactNode }[];
+}) {
+  return <Card className="min-w-0 overflow-hidden border-border [overflow-wrap:anywhere]">
+    <CardHeader className="px-4 pb-2 pt-4"><div className="flex flex-wrap items-start justify-between gap-2">
+      <div className="min-w-0"><CardTitle className="text-sm font-semibold">{title}</CardTitle>{description && <CardDescription>{description}</CardDescription>}</div>
+      {actions && <div className="max-w-full">{actions}</div>}
+    </div></CardHeader>
+    <CardContent className="grid gap-2 px-4 pb-4 text-xs">{fields.map(field=><div key={field.key} className="grid min-w-0 grid-cols-[minmax(0,1fr)_minmax(0,2fr)] items-start gap-3 border-b border-border/10 pb-1.5 last:border-0">
+      <span className="text-[11px] font-medium text-muted-foreground/70">{field.label}</span><div className="min-w-0 text-foreground/80">{field.value}</div>
+    </div>)}</CardContent>
+  </Card>;
+}
+
 /**
  * Props for mobile-card rendering of table rows.
  */
@@ -61,7 +78,7 @@ type TableMobileCardProps = {
   refetch?: BaseModelTableRefetch;
   fields?: BaseModelTableFieldsInput;
   columnActions?: BaseModelTableColumnActionsInput;
-  customMutations?: any;
+  customMutations?: BaseModelTableProps["customMutations"];
   update?: ModelTableUpdateConfig;
   detail?: ModelTableDetailConfig;
   pdfPreview?: ModelTableV2TableConfig["pdfPreview"];
@@ -104,7 +121,6 @@ export function TableMobileCard({
     loading,
     columnOrder,
     columnVisibility,
-    density,
     wrapCells,
     groupingField,
     groupCollapsed,
@@ -284,12 +300,6 @@ export function TableMobileCard({
   const pdfPreviewEnabled = pdfPreview?.enabled ?? false;
   const titleField = visibleColumns[0];
   const otherFields = visibleColumns.slice(1);
-  const rowSpacingClass =
-    density === "compact"
-      ? "gap-1 py-1"
-      : density === "spacious"
-        ? "gap-3 py-2"
-        : "gap-2 py-1.5";
   const valueClass = wrapCells
     ? "text-right break-words"
     : "max-w-[200px] truncate text-right";
@@ -353,65 +363,13 @@ export function TableMobileCard({
       | RowMutationPermissions
       | undefined;
 
-    return (
-      <Card
-        key={`${keyPrefix ?? "row"}:${rowId || index}`}
-        className="overflow-hidden border-border"
-      >
-        <CardHeader className="pb-2 px-4 pt-4">
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
-              <CardTitle
-                className={cn(
-                  "text-sm font-semibold",
-                  wrapCells ? "" : "truncate",
-                )}
-              >
-                {titleField
-                  ? renderMobileValue(
-                      resolveFieldValue(row, titleField),
-                      titleField,
-                    )
-                  : metadata?.verboseName || "Element"}
-              </CardTitle>
-              {showIdDescription ? (
-                <CardDescription className="text-[10px] font-mono text-muted-foreground/50 mt-0.5">
-                  ID: {rowId}
-                </CardDescription>
-              ) : null}
-            </div>
-            <div className="shrink-0">
-              <RowActions
-                row={row}
-                data={data}
-                refetch={refetch}
-                permissions={rowPermissions}
-                columnActions={columnActions}
-                customMutations={customMutations}
-                update={update}
-                detail={detail}
-                onTemplatePdfPreview={onTemplatePdfPreview}
-              />
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className={`grid text-xs px-4 pb-4 ${rowSpacingClass}`}>
-          {otherFields.map((field) => (
-            <div
-              key={field.name}
-              className="flex items-start justify-between gap-3 border-b border-border/10 pb-1.5 last:border-0 last:pb-0"
-            >
-              <span className="font-medium text-muted-foreground/70 text-[11px]">
-                {field.verboseName}
-              </span>
-              <span className={cn(valueClass, "text-foreground/80")}>
-                {renderMobileValue(resolveFieldValue(row, field), field)}
-              </span>
-            </div>
-          ))}
-        </CardContent>
-      </Card>
-    );
+    return <ModelTableMobileRecord key={`${keyPrefix ?? "row"}:${rowId || index}`}
+      title={<span className={wrapCells ? "" : "truncate"}>{titleField ? renderMobileValue(resolveFieldValue(row, titleField), titleField) : metadata?.verboseName || "Élément"}</span>}
+      description={showIdDescription ? `ID: ${rowId}` : undefined}
+      actions={<RowActions row={row} data={data} refetch={refetch} permissions={rowPermissions}
+        columnActions={columnActions} customMutations={customMutations} update={update} detail={detail} onTemplatePdfPreview={onTemplatePdfPreview} />}
+      fields={otherFields.map(field => ({ key: field.name, label: field.verboseName,
+        value: <span className={valueClass}>{renderMobileValue(resolveFieldValue(row, field), field)}</span> }))} />;
   };
 
   if (loading && data.length === 0) {

@@ -1,3 +1,11 @@
+/**
+ * @file manifest.tsx
+ * @description Manifeste du projet 'core' dÃ©finissant ses routes et ses menus de navigation.
+ * JSDoc: Ce fichier configure les routes d'authentification, de profil, de configuration globale,
+ * ainsi que le menu de navigation principal dans lequel l'option "ParamÃ¨tres" a Ã©tÃ© simplifiÃ©e sous forme
+ * d'un onglet unique redirigeant vers les diffÃ©rentes sections.
+ */
+
 import { lazy, Suspense, type ReactNode } from "react";
 import { Navigate } from "react-router-dom";
 import {
@@ -6,6 +14,7 @@ import {
   Settings,
   Shield,
   Smartphone,
+  Sparkles,
   User,
 } from "lucide-react";
 import type { AppManifest } from "@/app/router/contracts";
@@ -78,14 +87,6 @@ const AppearanceSettingsPage = lazy(() =>
   ),
 );
 
-const LayoutSettingsPage = lazy(() =>
-  import("@/projects/core/pages/settings/LayoutSettingsPage").then(
-    (module) => ({
-      default: module.LayoutSettingsPage,
-    }),
-  ),
-);
-
 const SessionsPage = lazy(() =>
   import("@/projects/core/pages/auth/SessionsPage").then((module) => ({
     default: module.SessionsPage,
@@ -102,6 +103,9 @@ export const CORE_MANIFEST: AppManifest = defineProjectManifest({
   projectId: "core",
   moduleId: "core",
   order: 101,
+  label: "ParamÃ¨tres",
+  shortLabel: "Param.",
+  icon: Settings,
   defaultRoute: ROUTES.SETTINGS_ACCOUNT,
   routes: [
     {
@@ -163,6 +167,14 @@ export const CORE_MANIFEST: AppManifest = defineProjectManifest({
       element: withRouteSuspense(<ModelImportPage />),
     },
     {
+      id: "core:settings-root",
+      path: "/settings",
+      guard: "protected",
+      projectId: "core",
+      title: "ParamÃ¨tres",
+      element: <Navigate to={ROUTES.SETTINGS_ACCOUNT} replace />,
+    },
+    {
       id: "core:settings-account",
       path: ROUTES.SETTINGS_ACCOUNT,
       guard: "protected",
@@ -190,7 +202,7 @@ export const CORE_MANIFEST: AppManifest = defineProjectManifest({
       title: "Disposition",
       description: "Disposition de l'interface",
       icon: LayoutDashboard,
-      element: withRouteSuspense(<LayoutSettingsPage />),
+      element: <Navigate to={ROUTES.SETTINGS_APPEARANCE} replace />,
     },
     {
       id: "core:settings-admin",
@@ -244,8 +256,8 @@ export const CORE_MANIFEST: AppManifest = defineProjectManifest({
     // }),
     navGroup("core", {
       id: "parametre",
-      label: "parametre",
-      order: 99,
+      label: "ParamÃ¨tres",
+      order: 90,
       entries: [
         {
           id: "core:model-import",
@@ -257,67 +269,12 @@ export const CORE_MANIFEST: AppManifest = defineProjectManifest({
         },
         {
           id: "core:settings",
-          title: "parametre",
-          path: ROUTES.SETTINGS_ACCOUNT,
+          routeId: "core:settings-account",
+          title: "ParamÃ¨tres",
+          path: "/settings",
           icon: Settings,
           guard: "protected",
-          description: "Acceder aux parametres",
-          children: [
-            {
-              id: "core:settings-account",
-              routeId: "core:settings-account",
-              title: "Compte",
-              path: ROUTES.SETTINGS_ACCOUNT,
-              icon: User,
-              guard: "protected",
-              description: "Gerer votre profil",
-            },
-            {
-              id: "core:settings-appearance",
-              routeId: "core:settings-appearance",
-              title: "Apparence",
-              path: ROUTES.SETTINGS_APPEARANCE,
-              icon: Settings,
-              guard: "protected",
-              description: "Theme et affichage",
-            },
-            {
-              id: "core:settings-layout",
-              routeId: "core:settings-layout",
-              title: "Disposition",
-              path: ROUTES.SETTINGS_LAYOUT,
-              icon: LayoutDashboard,
-              guard: "protected",
-              description: "Disposition de l'interface",
-            },
-            {
-              id: "core:settings-admin",
-              routeId: "core:settings-admin",
-              title: "Administration UI",
-              path: ROUTES.SETTINGS_ADMIN,
-              icon: Shield,
-              guard: "protected",
-              description: "Configuration globale UI",
-            },
-            {
-              id: "core:settings-sessions",
-              routeId: "core:settings-sessions",
-              title: "Sessions",
-              path: ROUTES.SETTINGS_SESSIONS,
-              icon: Smartphone,
-              guard: "protected",
-              description: "Gerer vos sessions actives",
-            },
-            {
-              id: "core:settings-mfa",
-              routeId: "core:settings-mfa",
-              title: "Authentification a deux facteurs",
-              path: ROUTES.SETTINGS_MFA,
-              icon: Lock,
-              guard: "protected",
-              description: "Securiser votre compte",
-            },
-          ],
+          description: "AccÃ©der aux paramÃ¨tres",
         },
       ],
     }),

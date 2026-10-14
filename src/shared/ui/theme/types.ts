@@ -1,6 +1,17 @@
 export type ThemeMode = "light" | "dark";
 
 export type Layout = "vertical" | "horizontal" | "mixed";
+export type NavigationPattern =
+  | "secondary-sidebar"
+  | "contextual-tabs"
+  | "header-dropdown"
+  | "rail-flyout";
+/**
+ * Mode de disposition de la barre latérale.
+ * - 'icons' : Barre d'icônes compacte avec sous-menus définis par le modèle de navigation.
+ * - 'complete' : Barre latérale complète affichant les menus et sous-menus directement.
+ */
+export type SidebarMode = "icons" | "complete";
 export type SidebarCollapseMode = "offcanvas" | "icon";
 export type FontSize = "sm" | "md" | "lg" | "xl";
 export type LineHeight = "compact" | "normal" | "relaxed";

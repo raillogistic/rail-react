@@ -1,26 +1,27 @@
-import React, {
-  createContext,
-  useCallback,
-  useContext,
-  useMemo,
-} from "react";
+import React, { createContext, useCallback, useContext, useMemo, useEffect } from "react";
 import { useQuery } from "@apollo/client";
+import { matchPath, useLocation } from "react-router-dom";
 import type {
+  AppManifest,
+  AppRailItem,
   AppRouteConfig,
   NavigationEntry,
   NavigationGroup,
 } from "./contracts";
 import { normalizePath } from "./contracts";
-import { getAllRoutes, getDefaultRoute, getNavigationGroups } from "./manifestRegistry";
+import {
+  getAllRoutes,
+  getDefaultRoute,
+  getNavigationGroups,
+  getProjectManifests,
+} from "./manifestRegistry";
 import { toNavigationSections } from "./navigation";
 import { useAuthContext } from "@/features/auth/context";
 import {
   userMeetsRouteAccessRequirement,
   type PermissionMatchingUser,
 } from "@/features/auth/utils/permission-matching";
-import {
-  FRONTEND_ROUTE_ACCESS_QUERY,
-} from "@/shared/api/graphql/graphql/metadata/queries";
+import { FRONTEND_ROUTE_ACCESS_QUERY } from "@/shared/api/graphql/graphql/metadata/queries";
 import { useEnabledModules } from "./useEnabledModules";
 import type {
   RouteAccessManifest,
@@ -30,6 +31,10 @@ import type {
 } from "@/shared/routing/access";
 import { normalizeRouteAccessRequirement } from "@/shared/routing/access";
 import type { NavigationSection } from "@/shared/routing/navigation";
+import application from '@rail/application';
+
+/** Default applications do not add further route restrictions. */
+const useDefaultRouteAccess = () => ({ isLoading: false, canAccessRoute: (_route: AppRouteConfig) => true });
 
 type RouteMembership = {
   groupIds: Set<string>;
@@ -64,6 +69,9 @@ interface RouteAccessContextValue {
   defaultRoute: string;
   isLoading: boolean;
   navigationLinks: NavigationSection[];
+  projectNavigationLinks: NavigationSection[];
+  appRailItems: AppRailItem[];
+  currentProjectId: string | null;
   canAccessRoute: (route: AppRouteConfig) => boolean;
 }
 
@@ -88,11 +96,9 @@ const toAccessRequirement = (
   const normalized = normalizeRouteAccessRequirement(access) ?? {};
   const allPermissions = [
     ...(normalized.allPermissions ?? []),
-    ...(
-      requiredPermission && requiredPermission.trim().length > 0
-        ? [requiredPermission.trim()]
-        : []
-    ),
+    ...(requiredPermission && requiredPermission.trim().length > 0
+      ? [requiredPermission.trim()]
+      : []),
   ];
 
   return normalizeRouteAccessRequirement({
@@ -165,7 +171,9 @@ const normalizeBackendManifest = (
   const rules: RouteAccessRule[] = (payload.rules ?? [])
     .filter((rule): rule is NonNullable<typeof rule> => !!rule)
     .map((rule) => {
-      const targetType = String(rule.targetType ?? "").trim() as RouteAccessTargetType;
+      const targetType = String(
+        rule.targetType ?? "",
+      ).trim() as RouteAccessTargetType;
       const target = String(rule.target ?? "").trim();
       const requirement = normalizeRouteAccessRequirement({
         requireAuthentication: rule.requireAuthentication ?? undefined,
@@ -178,10 +186,7 @@ const normalizeBackendManifest = (
           rule.requireAuthentication === false ? false : undefined,
       };
 
-      if (
-        !ALLOWED_TARGET_TYPES.includes(targetType) ||
-        target.length === 0
-      ) {
+      if (!ALLOWED_TARGET_TYPES.includes(targetType) || target.length === 0) {
         return null;
       }
 
@@ -189,8 +194,7 @@ const normalizeBackendManifest = (
         targetType,
         target,
         ...requirement,
-        allowed:
-          typeof rule.allowed === "boolean" ? rule.allowed : undefined,
+        allowed: typeof rule.allowed === "boolean" ? rule.allowed : undefined,
         denialReason: rule.denialReason ?? null,
       } satisfies RouteAccessRule;
     })
@@ -437,67 +441,149 @@ export const resolveAccessibleDefaultRoute = (
   return (
     routes.find(
       (route) =>
-        route.guard === "protected" &&
-        !!route.element &&
-        canAccessRoute(route),
+        route.guard === "protected" && !!route.element && canAccessRoute(route),
     )?.path ?? fallbackRoute
   );
+};
+
+export const buildAccessibleAppRailItems = (
+  manifests: AppManifest[],
+  routes: AppRouteConfig[],
+  canAccessRoute: (route: AppRouteConfig) => boolean,
+): AppRailItem[] =>
+  manifests.flatMap((manifest) => {
+    // Route-only manifests keep compatibility URLs without redundant navigation.
+    if (manifest.navigation.length === 0) return [];
+    const projectRoutes = routes.filter(
+      (route) =>
+        route.projectId === manifest.projectId &&
+        route.guard === "protected" &&
+        !!route.element,
+    );
+
+    if (!projectRoutes.some((route) => canAccessRoute(route))) {
+      return [];
+    }
+
+    return [
+      {
+        projectId: manifest.projectId,
+        moduleId: manifest.moduleId,
+        label: manifest.label,
+        shortLabel: manifest.shortLabel,
+        icon: manifest.icon,
+        defaultRoute: resolveAccessibleDefaultRoute(
+          projectRoutes,
+          manifest.defaultRoute,
+          canAccessRoute,
+        ),
+      } satisfies AppRailItem,
+    ];
+  });
+
+export const filterNavigationSectionsByProject = (
+  navigationLinks: NavigationSection[],
+  projectId: string | null,
+): NavigationSection[] => {
+  if (!projectId) {
+    return [];
+  }
+
+  return navigationLinks.filter((section) => section.projectId === projectId);
+};
+
+export const findCurrentProjectId = (
+  pathname: string,
+  routes: AppRouteConfig[],
+): string | null => {
+  const normalizedPath = normalizePath(pathname);
+
+  const activeRoute = routes
+    .filter((route) =>
+      Boolean(
+        matchPath(
+          {
+            path: normalizePath(route.path),
+            end: true,
+          },
+          normalizedPath,
+        ),
+      ),
+    )
+    .sort((left, right) => right.path.length - left.path.length)[0];
+
+  return activeRoute?.projectId ?? null;
 };
 
 export const RouteAccessProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
+  const location = useLocation();
   const { user, isAuthenticated } = useAuthContext();
-  const { modules: enabledModules, isLoading: modulesLoading } = useEnabledModules();
-  
+  const { modules: enabledModules, isLoading: modulesLoading } =
+    useEnabledModules();
+
   const allRoutes = useMemo(() => getAllRoutes(), []);
   const allGroups = useMemo(() => getNavigationGroups(), []);
+  const allManifests = useMemo(() => getProjectManifests(), []);
 
   const routes = useMemo(() => {
     if (modulesLoading) return [];
-    return allRoutes.filter(route => 
-      !route.moduleId || 
-      route.moduleId === "core" || 
-      enabledModules.includes(route.moduleId)
+    return allRoutes.filter(
+      (route) =>
+        !route.moduleId ||
+        route.moduleId === "core" ||
+        enabledModules.includes(route.moduleId),
     );
   }, [allRoutes, enabledModules, modulesLoading]);
 
   const groups = useMemo(() => {
     if (modulesLoading) return [];
-    return allGroups.filter(group => 
-      !group.moduleId || 
-      group.moduleId === "core" || 
-      enabledModules.includes(group.moduleId)
+    return allGroups.filter(
+      (group) =>
+        !group.moduleId ||
+        group.moduleId === "core" ||
+        enabledModules.includes(group.moduleId),
     );
   }, [allGroups, enabledModules, modulesLoading]);
+
+  const manifests = useMemo(() => {
+    if (modulesLoading) return [];
+    return allManifests.filter(
+      (manifest) =>
+        !manifest.moduleId ||
+        manifest.moduleId === "core" ||
+        enabledModules.includes(manifest.moduleId),
+    );
+  }, [allManifests, enabledModules, modulesLoading]);
 
   const routeMembershipIndex = useMemo(
     () => buildRouteMembershipIndex(routes, groups),
     [groups, routes],
   );
-  const { data, loading: accessLoading } = useQuery<FrontendRouteAccessQueryData>(
-    FRONTEND_ROUTE_ACCESS_QUERY,
-    {
+  const { data, loading: accessLoading } =
+    useQuery<FrontendRouteAccessQueryData>(FRONTEND_ROUTE_ACCESS_QUERY, {
       skip: !isAuthenticated,
       fetchPolicy: "cache-first",
-    },
-  );
+    });
 
   const backendManifest = useMemo(
     () => normalizeBackendManifest(data?.frontendRouteAccess),
     [data?.frontendRouteAccess],
   );
 
+  const additionalAccess = (application.useRouteAccess ?? useDefaultRouteAccess)();
+
   const canAccessRoute = useCallback(
     (route: AppRouteConfig) =>
-      canAccessAppRoute(route, {
+      !additionalAccess.isLoading && additionalAccess.canAccessRoute(route) && canAccessAppRoute(route, {
         user,
         isAuthenticated,
         groups,
         routeMembershipIndex,
         backendManifest,
       }),
-    [backendManifest, groups, isAuthenticated, routeMembershipIndex, user],
+    [backendManifest, groups, isAuthenticated, routeMembershipIndex, user, additionalAccess],
   );
 
   const navigationLinks = useMemo(
@@ -514,11 +600,38 @@ export const RouteAccessProvider: React.FC<{ children: React.ReactNode }> = ({
     [canAccessRoute, groups, isAuthenticated, routes, user],
   );
 
-  const isLoading = (isAuthenticated && accessLoading) || modulesLoading;
+  const isLoading = (isAuthenticated && (accessLoading || additionalAccess.isLoading)) || modulesLoading;
 
   const effectiveNavigationLinks = useMemo(
     () => (isAuthenticated && isLoading ? [] : navigationLinks),
     [isAuthenticated, isLoading, navigationLinks],
+  );
+
+  const appRailItems = useMemo(
+    () =>
+      isAuthenticated && isLoading
+        ? []
+        : buildAccessibleAppRailItems(manifests, routes, canAccessRoute),
+    [canAccessRoute, isAuthenticated, isLoading, manifests, routes],
+  );
+
+  const currentProjectId = useMemo(() => {
+    const activeProjectId = findCurrentProjectId(location.pathname, routes);
+    if (activeProjectId && appRailItems.some((item) => item.projectId === activeProjectId)) {
+      return activeProjectId;
+    }
+
+    return appRailItems.find((item) => location.pathname.startsWith(`${item.defaultRoute}/`))?.projectId
+      ?? appRailItems[0]?.projectId ?? null;
+  }, [appRailItems, location.pathname, routes]);
+
+  const projectNavigationLinks = useMemo(
+    () =>
+      filterNavigationSectionsByProject(
+        effectiveNavigationLinks,
+        currentProjectId,
+      ),
+    [currentProjectId, effectiveNavigationLinks],
   );
 
   const defaultRoute = useMemo(
@@ -532,13 +645,19 @@ export const RouteAccessProvider: React.FC<{ children: React.ReactNode }> = ({
       defaultRoute,
       isLoading,
       navigationLinks: effectiveNavigationLinks,
+      projectNavigationLinks,
+      appRailItems,
+      currentProjectId,
       canAccessRoute,
     }),
     [
+      appRailItems,
       canAccessRoute,
+      currentProjectId,
       defaultRoute,
       effectiveNavigationLinks,
       isLoading,
+      projectNavigationLinks,
     ],
   );
 

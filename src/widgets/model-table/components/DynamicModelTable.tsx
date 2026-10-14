@@ -5,161 +5,17 @@
  * Modifié pour définir la densité par défaut à "comfortable" (confortable).
  */
 
-import React, {
-  forwardRef,
-  useCallback,
-  useEffect,
-  useImperativeHandle,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
-import type {
-  ColumnSizingState,
-  ExpandedState,
-  PaginationState as DynamicPaginationState,
-  RowSelectionState,
-  VisibilityState,
-} from "@tanstack/react-table";
-import {
-  DynamicTable,
-  DYNAMIC_TABLE_SELECTION_COLUMN_ID,
-  type DynamicTableColumnInput,
-} from "../dynamic-table";
-import type { DynamicTableFeatureFlags } from "../dynamic-table";
-import { MetadataProvider, useMetadata } from "../context/MetadataContext";
-import { TableProvider, useTable } from "../context/TableContext";
-import type {
-  BaseModelTableColumnActionsInput,
-  BaseModelTableColumnDef,
-  BaseModelTableColumnOrderingConfig,
-  BaseModelTableFieldsInput,
-  BaseModelTableRefetch,
-  BaseModelTableRelationConfig,
-  BaseModelTableRelationStatsConfig,
-  DynamicModelTableRow,
-  FieldSchema,
-  ModelTableAccessorPath,
-  ModelTableRelationKey,
-  RowMutationPermissions,
-} from "../types";
-import type {
-  DynamicModelTableHandle,
-  DynamicModelTableProps,
-  DynamicModelTableSnapshot,
-  ModelTableCreateConfig,
-  ModelTableDetailConfig,
-  ModelTableFilterPanelProps,
-  ModelTableNavFiltersConfig,
-  ModelTableUpdateConfig,
-  ModelTableV2ExpandConfig,
-  ModelTableV2TopActionsInput,
-  ModelTableV2PerformanceOptions,
-  ModelTableV2TableConfig,
-  ModelTableV2ViewOptions,
-} from "../config/types";
-import {
-  getNormalizedTablePersistenceKeys,
-  loadPersistedTableState,
-  markPendingTablePersistenceReset,
-  type PersistedTableState,
-  useTablePersistence,
-} from "../hooks/useTablePersistence";
-import {
-  clearPersistedMetadataStore,
-  getActiveMetadataUserKey,
-} from "@/shared/api/graphql/graphql/metadata/persisted-cache";
-import { useModelTableDevtools } from "../hooks/useModelTableDevtools";
-import { useModelTablePdfPreview } from "../hooks/useModelTablePdfPreview";
-import { useTableColumns } from "../hooks/useTableColumns";
-import { useTableData } from "../hooks/useTableData";
-import { useTableLayout } from "../hooks/useTableLayout";
-import { useTableQueryConfig } from "../hooks/useTableQueryConfig";
-import { useTableFilters } from "../hooks/useTableFilters";
-import { ColumnFilter } from "./ColumnFilter";
-import { ProtectedFileCell } from "./ProtectedFileCell";
-import { RowActions } from "./row/RowActions";
-import {
-  useModelTableContentController,
-  type UseModelTableContentControllerInput,
-} from "./content/useModelTableContentController";
-import { ModelTableBulkActionsBar } from "./content/ModelTableBulkActionsBar";
-import {
-  ModelTableDataErrorDisplay,
-  ModelTableLoadingSkeleton,
-  ModelTableMetadataErrorState,
-} from "./content/ModelTableFeedback";
-import { ModelTableDialogs } from "./content/ModelTableDialogs";
-import { ModelTableDevtoolsPanel } from "./content/ModelTableDevtoolsPanel";
-import { ModelTableFooter } from "./content/ModelTableFooter";
-import { ModelTableHeader } from "./content/ModelTableHeader";
-import { ModelTablePdfPreviewDialog } from "./content/ModelTablePdfPreviewDialog";
-import { ModelTableToolbarSection } from "./content/ModelTableToolbarSection";
-import { ModelTableTopActions } from "./content/ModelTableTopActions";
-import type {
-  ModelTableBulkActionsBarSlotProps,
-  ModelTableContentConfig,
-  ModelTableDialogsSlotProps,
-  ModelTableFooterSlotProps,
-  ModelTableHeaderSlotProps,
-  ModelTableTopActionsSlotProps,
-  ModelTableToolbarSlotProps,
-} from "./content/types";
-import {
-  RelationStatsHover,
-  type StatsRelationMeta,
-} from "./row/RelationStatsHover";
-import { TableColumnMenu } from "./TableColumnMenu";
-import { TableMobileCard } from "./TableMobileCard";
-import { TablePagination } from "./TablePagination";
-import {
-  areBooleanMapsEqual,
-  areNumberMapsEqual,
-  areStringArraysEqual,
-  buildPersistedStateFromBootstrap,
-  collectExplicitFieldAccessors,
-  collectIncludedFieldAccessors,
-  extractMissingGraphqlField,
-  formatFallbackCellValue,
-  getSelectedRowIds,
-  hasRecoverableTableBadRequest,
-  isExpandedStateEqual,
-  isPaginationStateEqual,
-  isPersistedTableStateEqual,
-  isRecord,
-  mergeManagedFieldExclusions,
-  normalizePdfUrl,
-  resolveDevtoolsEnabled,
-  resolveInitialTableState,
-  resolveOrderByWithFallback,
-  resolveRowId,
-  resolveSectionVisibility,
-  toOrderByEntries,
-} from "./DynamicModelTable.shared";
-import {
-  formatCellValue,
-  getDefaultHiddenColumnIds,
-  getImplicitModelTableFieldExclusions,
-  getSyntheticRelationCountSource,
-  normalizeBaseModelTableFieldsInput,
-  mergeModelTableQueryVariables,
-  resolveInitialNavFilterSelections,
-  resolveNavFilterVariables,
-  toGraphqlFieldName,
-} from "../utils";
-import { cn } from "@/shared/utils";
-import {
-  buildAccessorPath,
-  resolveValueOptimized,
-} from "../utils/valueResolution";
-
-/**
- * Internal props used by the dynamic-table powered content implementation.
- */
+import React, { forwardRef, useCallback, useImperativeHandle, useMemo, useRef } from "react";
+import { MetadataProvider } from "../context/MetadataContext";
+import { TableProvider } from "../context/TableContext";
+import type { BaseModelTableColumnOrderingConfig, BaseModelTableRefetch, ModelTableAccessorPath } from "../types";
+import type { DynamicModelTableHandle, DynamicModelTableProps, DynamicModelTableSnapshot, ModelTableFilterPanelProps, ModelTableV2Props } from "../config/types";
+import { collectIncludedFieldAccessors, resolveDevtoolsEnabled, resolveInitialTableState } from "./DynamicModelTable.shared";
+import { normalizeBaseModelTableFieldsInput, resolveInitialNavFilterSelections } from "../utils";
 import { DynamicBaseTableContent } from "./DynamicBaseTableContent";
-import type { DynamicBaseTableContentProps } from "./DynamicBaseTableContent";
+import { ControlledModelTable } from "./ControlledModelTable";
 
-const DynamicModelTableInner = <
+const ModelQueryTableInner = <
   TSource extends object = Record<string, unknown>,
 >(
   {
@@ -370,6 +226,17 @@ const DynamicModelTableInner = <
     </div>
   );
 };
+
+const ModelQueryTable = forwardRef(ModelQueryTableInner) as <TSource extends object>(
+  props: ModelTableV2Props<TSource> & React.RefAttributes<DynamicModelTableHandle<TSource>>,
+) => React.ReactElement | null;
+
+/** Controlled projections never mount metadata, generated-query or mutation providers. */
+const DynamicModelTableInner = <TSource extends object = Record<string, unknown>>(
+  props: DynamicModelTableProps<TSource>, ref: React.ForwardedRef<DynamicModelTableHandle<TSource>>,
+) => props.dataSource
+  ? <ControlledModelTable {...props} dataSource={props.dataSource} tableRef={ref} />
+  : <ModelQueryTable {...props} ref={ref} />;
 
 export const DynamicModelTable = forwardRef(DynamicModelTableInner) as <
   TSource extends object = Record<string, unknown>,

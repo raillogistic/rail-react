@@ -1,8 +1,8 @@
 /**
- * DateTime picker input combining a calendar and time selector.
- *
- * Stores the selected datetime as a `yyyy-MM-dd'T'HH:mm` string and renders
- * a localized French display label via date-fns.
+ * @file datetime.tsx
+ * @description Sélecteur combiné date et heure.
+ * Modifié pour forcer shadow-none sur le bouton déclencheur et sur l'entrée horaire interne,
+ * et utiliser des coins arrondis rounded-xl.
  *
  * @module form/inputs/datetime
  */
@@ -105,11 +105,11 @@ const DateTimeInput: React.FC<Props> = ({ config, field, form }) => {
             variant="outline"
             data-slot="input"
             className={cn(
-              "h-12 w-full justify-start rounded-xl border border-input/70 bg-muted/5 px-4 text-left text-[13.5px] font-medium transition-all duration-300 ease-out",
-              "hover:border-primary/30 hover:bg-muted/3 hover:shadow-md hover:shadow-primary/1",
-              "focus:border-primary focus:ring-4 focus:ring-primary/10 data-[state=open]:border-primary data-[state=open]:ring-4 data-[state=open]:ring-primary/10",
+              "h-9 w-full justify-start rounded-xl border border-transparent bg-muted/50 px-4 text-left text-[13.5px] font-medium transition-all duration-300 ease-out shadow-sm",
+              "hover:border-primary/40 hover:bg-muted/60",
+              "focus:border-primary focus:ring-4 focus:ring-primary/10 data-[state=open]:border-primary data-[state=open]:ring-4 data-[state=open]:ring-primary/10 cursor-pointer",
               !value && "text-muted-foreground/60",
-              isValidDate && "text-foreground font-bold border-primary/20 bg-primary/2",
+              isValidDate && "text-foreground",
               config.disabled && "cursor-not-allowed opacity-60 grayscale-[0.5]",
             )}
             disabled={config.disabled}
@@ -117,7 +117,7 @@ const DateTimeInput: React.FC<Props> = ({ config, field, form }) => {
             <CalendarDays
               className={cn(
                 "mr-3 size-4.5 transition-all duration-300",
-                isValidDate ? "text-primary scale-110" : "text-muted-foreground/40",
+                isValidDate ? "text-primary scale-110" : "text-muted-foreground/35",
               )}
             />
             <span className="truncate">
@@ -142,13 +142,13 @@ const DateTimeInput: React.FC<Props> = ({ config, field, form }) => {
             className="p-4"
           />
           <div className="flex items-center gap-4 border-t border-border/30 bg-muted/30 p-4">
-            <div className="flex size-9 items-center justify-center rounded-xl bg-primary/10 text-primary shadow-inner shadow-primary/5">
+            <div className="flex size-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
               <Clock className="size-4.5 stroke-[2.5]" />
             </div>
             <div className="flex-1">
               <Input
                 type="time"
-                className="h-10 rounded-xl border border-input/60 bg-background px-3 font-bold transition-all duration-300 focus:border-primary focus:ring-4 focus:ring-primary/10"
+                className="h-10 rounded-xl border border-transparent bg-muted/50 px-4 font-bold transition-all duration-300 focus:border-primary focus:ring-4 focus:ring-primary/10 shadow-sm"
                 value={isValidDate ? format(dateValue, "HH:mm") : ""}
                 onChange={handleTimeChange}
               />

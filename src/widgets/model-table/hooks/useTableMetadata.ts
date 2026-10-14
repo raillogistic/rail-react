@@ -72,7 +72,7 @@ function normalizeModelSchema(
  fallback: { app: string; model: string },
 ): ModelSchema {
  const fields = Array.isArray(payload.fields)
- ? payload.fields.map((field) => ({
+ ? payload.fields.filter(Boolean).map((field) => ({
  ...field,
  name: toGraphqlFieldName(field.name),
  fieldName: field.fieldName
@@ -82,7 +82,7 @@ function normalizeModelSchema(
  : [];
 
  const relationships = Array.isArray(payload.relationships)
- ? payload.relationships.map((relation) => ({
+ ? payload.relationships.filter(Boolean).map((relation) => ({
  ...relation,
  name: toGraphqlFieldName(relation.name),
  fieldName: relation.fieldName

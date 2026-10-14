@@ -46,14 +46,14 @@ export function NavFiltersBar({
       )}
       data-testid="table-nav-filters"
     >
-      <div className="flex w-full gap-5 items-center overflow-x-auto pb-1 select-none no-scrollbar">
+      <div className="flex w-full gap-5 items-center flex-wrap pb-1 select-none">
         {navFilters.groups.map((group) => {
           const selectedValue = navFilterSelections[group.key] ?? undefined;
 
           return (
             <div key={group.key} className="flex min-w-max items-center gap-3">
               {group.label ? (
-                <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted-foreground/60 mr-1">
+                <span className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground/60 mr-1">
                   {group.label}
                 </span>
               ) : null}
@@ -64,7 +64,7 @@ export function NavFiltersBar({
                 onValueChange={(value) =>
                   setNavFilterSelection(group.key, value || null)
                 }
-                className="flex items-center gap-1 bg-muted/40 p-0.5 rounded-lg border border-border/5"
+                className="flex flex-wrap items-center gap-1 bg-muted/40 p-0.5 rounded-lg border border-border/5"
                 aria-label={group.label || group.key}
               >
                 {group.items.map((item) => (
@@ -72,7 +72,7 @@ export function NavFiltersBar({
                     key={item.key}
                     value={item.key}
                     className={cn(
-                      "h-7 rounded-md px-3 text-[11px] font-semibold transition-all duration-300 whitespace-nowrap border-none shadow-none",
+                      "h-8 rounded-md px-3 text-xs font-semibold transition-all duration-300 whitespace-nowrap border-none shadow-none",
                       "text-muted-foreground/80 hover:text-foreground hover:bg-muted/35",
                       "data-[state=on]:bg-background data-[state=on]:text-primary data-[state=on]:font-bold data-[state=on]:shadow-sm data-[state=on]:border-border/10",
                     )}
@@ -140,8 +140,8 @@ function NavFilterItemLabel({
     () =>
       navFilters.includeTableVariable
         ? mergeModelTableQueryVariables(filterVariables, siblingNavVariables)
-        : undefined,
-    [filterVariables, navFilters.includeTableVariable, siblingNavVariables],
+        : navFilters.fixedWhere ? { where: navFilters.fixedWhere } : undefined,
+    [filterVariables, navFilters.includeTableVariable, navFilters.fixedWhere, siblingNavVariables],
   );
   const itemVariables = useMemo(
     () =>
@@ -200,7 +200,7 @@ function NavFilterItemLabel({
       {navFilters.count && typeof count === "number" && (
         <span
           className={cn(
-            "inline-flex items-center justify-center rounded-full px-1.5 py-0.25 text-[9px] font-bold transition-all duration-300",
+            "inline-flex items-center justify-center rounded-full px-1.5 py-0.25 text-[10px] font-bold transition-all duration-300",
             isSelected
               ? "bg-primary/10 text-primary"
               : "bg-muted-foreground/10 text-muted-foreground/75",

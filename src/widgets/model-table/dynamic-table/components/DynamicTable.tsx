@@ -416,7 +416,7 @@ function buildExpandColumnDef<TRow extends Record<string, unknown>>(
         <div className="grid place-items-center">
           <button
             type="button"
-            className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground hover:bg-muted/80 hover:text-foreground transition-colors"
+            className="inline-flex h-5 w-5 items-center justify-center rounded-md text-muted-foreground hover:bg-muted/80 hover:text-foreground transition-colors"
             onClick={context.row.getToggleExpandedHandler()}
             aria-label={ariaLabel}
             aria-expanded={expanded}
