@@ -1,9 +1,9 @@
 /**
  * @file manifest.tsx
- * @description Manifeste du projet 'core' dÃ©finissant ses routes et ses menus de navigation.
+ * @description Manifeste du projet 'core' définissant ses routes et ses menus de navigation.
  * JSDoc: Ce fichier configure les routes d'authentification, de profil, de configuration globale,
- * ainsi que le menu de navigation principal dans lequel l'option "ParamÃ¨tres" a Ã©tÃ© simplifiÃ©e sous forme
- * d'un onglet unique redirigeant vers les diffÃ©rentes sections.
+ * ainsi que le menu de navigation principal dans lequel l'option "Paramètres" a été simplifiée sous forme
+ * d'un onglet unique redirigeant vers les différentes sections.
  */
 
 import { lazy, Suspense, type ReactNode } from "react";
@@ -103,7 +103,7 @@ export const CORE_MANIFEST: AppManifest = defineProjectManifest({
   projectId: "core",
   moduleId: "core",
   order: 101,
-  label: "ParamÃ¨tres",
+  label: "Paramètres",
   shortLabel: "Param.",
   icon: Settings,
   defaultRoute: ROUTES.SETTINGS_ACCOUNT,
@@ -171,7 +171,7 @@ export const CORE_MANIFEST: AppManifest = defineProjectManifest({
       path: "/settings",
       guard: "protected",
       projectId: "core",
-      title: "ParamÃ¨tres",
+      title: "Paramètres",
       element: <Navigate to={ROUTES.SETTINGS_ACCOUNT} replace />,
     },
     {
@@ -256,7 +256,7 @@ export const CORE_MANIFEST: AppManifest = defineProjectManifest({
     // }),
     navGroup("core", {
       id: "parametre",
-      label: "ParamÃ¨tres",
+      label: "Paramètres",
       order: 90,
       entries: [
         {
@@ -270,11 +270,11 @@ export const CORE_MANIFEST: AppManifest = defineProjectManifest({
         {
           id: "core:settings",
           routeId: "core:settings-account",
-          title: "ParamÃ¨tres",
+          title: "Paramètres",
           path: "/settings",
           icon: Settings,
           guard: "protected",
-          description: "AccÃ©der aux paramÃ¨tres",
+          description: "Accéder aux paramètres",
         },
       ],
     }),

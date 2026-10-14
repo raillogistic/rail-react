@@ -87,7 +87,7 @@ export const useTokenRefresh = (
   const refreshToken = useCallback(async (): Promise<boolean> => {
     // Prevent concurrent refresh attempts
     if (isRefreshingRef.current) {
-      console.log('ðŸ”„ Token refresh already in progress, skipping...');
+      console.log('🔄 Token refresh already in progress, skipping...');
       return false;
     }
 
@@ -96,19 +96,19 @@ export const useTokenRefresh = (
       setIsRefreshing(true);
 
       const storedRefreshToken = tokenStorage.getRefreshToken();
-      console.log('ðŸ”„ Starting token refresh...');
+      console.log('🔄 Starting token refresh...');
       console.log(
         '  - Refresh token available:',
         storedRefreshToken ? 'YES (legacy/fallback)' : 'NO (cookie-based)'
       );
 
-      console.log('ðŸ”„ Calling refresh token mutation...');
+      console.log('🔄 Calling refresh token mutation...');
       const { data } = await refreshTokenMutation({
         // Prefer cookie-based refresh; fall back to a stored refresh token when present.
         variables: { refresh_token: storedRefreshToken ?? null },
       });
 
-      console.log('ðŸ”„ Refresh mutation response:', data ? 'SUCCESS' : 'NO_DATA');
+      console.log('🔄 Refresh mutation response:', data ? 'SUCCESS' : 'NO_DATA');
 
       if (!data?.refresh_token?.ok || !data.refresh_token.token) {
         console.warn('âŒ Token refresh failed - no data received');
@@ -117,7 +117,7 @@ export const useTokenRefresh = (
       }
 
       const { token, refresh_token: newRefreshToken } = data.refresh_token;
-      console.log('âœ… New tokens received, updating storage...');
+      console.log('✅ New tokens received, updating storage...');
 
       // Update stored tokens securely
       tokenStorage.setAccessToken(token);
@@ -135,7 +135,7 @@ export const useTokenRefresh = (
       // Schedule the next refresh based on the newly issued token.
       scheduleRefresh();
 
-      console.log('âœ… Token refreshed successfully');
+      console.log('✅ Token refreshed successfully');
       return true;
     } catch (error) {
       console.error('âŒ Token refresh failed:', error);

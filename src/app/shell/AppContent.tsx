@@ -1,8 +1,8 @@
 import application from '@rail/application';
 /**
  * @file AppContent.tsx
- * @description Zone de contenu principale de l'application avec en-tÃªte, fil d'Ariane,
- * onglets contextuels conditionnels (si mode icÃ´nes) et routes protÃ©gÃ©es.
+ * @description Zone de contenu principale de l'application avec en-tête, fil d'Ariane,
+ * onglets contextuels conditionnels (si mode icônes) et routes protégées.
  *
  * @module app/shell/AppContent
  */

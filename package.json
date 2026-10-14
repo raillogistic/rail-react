@@ -26,7 +26,7 @@
     "startapp": "node scripts/startapp.mjs",
     "register": "node scripts/register.mjs",
     "unregister": "node scripts/unregister.mjs",
-    "test:commands": "node --test scripts/__tests__/project-commands.test.mjs",
+    "test:commands": "node --test scripts/__tests__/project-commands.test.mjs scripts/__tests__/shared-boundary.test.mjs",
     "check:shared": "node scripts/check-shared-boundary.mjs"
   },
   "dependencies": {

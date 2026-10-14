@@ -4,7 +4,7 @@
     "baseUrl": ".",
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
     "paths": {
-      "@rail/application": ["./src/application.ts"],
+      "@rail/application": ["./rail/src/application.ts"],
       "@/app/*": ["./rail/src/app/*"],
       "@/entities/*": ["./rail/src/entities/*"],
       "@/features/*": ["./rail/src/features/*"],

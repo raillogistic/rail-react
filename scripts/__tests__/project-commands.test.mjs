@@ -49,6 +49,17 @@ test('creation checks upstream access before creating the destination', () => {
   assert.equal(existsSync(target), false);
 });
 
+test('creation tracks the installed lockfile and ignores the placeholder environment', () => {
+  const { upstream } = fixture('lockfile');
+  const target = path.join(temporaryRoot, 'lockfile', 'app');
+  createRailApp(target, { repository: upstream, install: cwd => {
+    writeFileSync(path.join(cwd, 'package-lock.json'), '{"lockfileVersion":3}\n');
+  } });
+  assert.equal(git(target, ['status', '--porcelain'], true).trim(), '');
+  assert.equal(git(target, ['ls-files', '.env'], true).trim(), '');
+  assert.equal(git(target, ['ls-files', 'package-lock.json'], true).trim(), 'package-lock.json');
+});
+
 test('a component and dependency change travel between independent projects', () => {
   const { upstream, app } = fixture('roundtrip');
   const first = app('first');

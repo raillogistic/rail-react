@@ -291,7 +291,7 @@ async function fetchTemplateBlob(
     credentials: "include",
   });
   if (!response.ok) {
-    let detail = "Ã‰chec de génération du template.";
+    let detail = "Échec de génération du template.";
     try {
       const payload = (await response.json()) as {
         error?: string;

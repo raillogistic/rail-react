@@ -43,16 +43,16 @@ export const isColumnFilterValueFilled = (
 const LOOKUP_SYMBOLS: Partial<Record<FilterOptionType["lookup_expr"], string>> =
  {
  exact: "=",
- contains: "âˆ‹",
- icontains: "â‰ˆ",
- startswith: "âª¡",
- endswith: "âª¢",
+ contains: "∋",
+ icontains: "≈",
+ startswith: "⪡",
+ endswith: "⪢",
  lt: "<",
- lte: "â‰¤",
+ lte: "≤",
  gt:">",
- gte: "â‰¥",
+ gte: "≥",
  range: "<->",
- in: "âˆˆ",
+ in: "∈",
  };
 
 export const ColumnFilterInput: React.FC<Props> = ({

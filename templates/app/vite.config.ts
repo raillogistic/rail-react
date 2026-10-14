@@ -10,7 +10,7 @@ export default defineConfig({
   resolve: {
     ...shared.resolve,
     alias: [
-      { find: '@rail/application', replacement: path.join(root, 'src/application.ts') },
+      { find: '@rail/application', replacement: path.join(root, 'rail/src/application.ts') },
       { find: /^@\/(app|entities|features|shared|widgets)(\/|$)/, replacement: path.join(root, 'rail/src/$1$2') },
       { find: '@/projects/core', replacement: path.join(root, 'rail/src/projects/core') },
       { find: '@/test/typingModels', replacement: path.join(root, 'rail/src/test/typingModels') },
@@ -23,6 +23,6 @@ export default defineConfig({
     ...shared.test,
     setupFiles: [path.join(root, 'rail/src/test/setup.ts'), path.join(root, 'rail/src/widgets/model-table/filtering/__tests__/setup/setup.ts')],
     include: ['src/**/*.{test,spec}.{ts,tsx}', 'rail/src/**/*.{test,spec}.{ts,tsx}'],
-    exclude: ['**/node_modules/**', '**/dist/**', '**/templates/**'],
+    exclude: ['**/node_modules/**', '**/dist/**', '**/templates/**', 'rail/src/test/integration/**'],
   },
 });
