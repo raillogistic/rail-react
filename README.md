@@ -12,7 +12,7 @@ cd inventory
 npm run dev
 ```
 
-Creation refuses an existing destination. It creates an independent Git repository, a placeholder `.env`, and a `rail/` subtree fetched from GitHub, then installs dependencies. Configure the backend endpoint in `.env`. Add the new application's own GitHub repository as `origin` when ready; `rail` remains the shared-source remote.
+Creation refuses an existing destination. It creates an independent Git repository, a placeholder `.env`, and a `rail/` subtree fetched from the latest numbered GitHub release, then installs dependencies. Configure the backend endpoint in `.env`. Add the new application's own GitHub repository as `origin` when ready; `rail` remains the shared-source remote.
 
 ## Submit and pull improvements
 
@@ -22,17 +22,27 @@ Edit reusable source inside `rail/`, then submit it from the application root:
 npm run shared:push -- "Improve table filtering"
 ```
 
-Commit or stash application-owned changes first. Push commits only `rail/`, merges upstream changes, installs dependencies, checks architecture, runs unit tests and the production build, then submits shared source. Run real-endpoint integration tests as well for GraphQL changes.
+Commit or stash application-owned changes first. Push commits only `rail/`, merges upstream changes, installs dependencies, checks architecture, runs unit tests and the production build, then submits shared source. Each changed submission automatically creates the next version: `v1`, `v2`, `v3`, and so on. No patch/minor/major choice is needed. Submitting unchanged source reuses its existing version. Source and its version tag are published together; a rejected push publishes neither. Run real-endpoint integration tests as well for GraphQL changes.
 
 In another application:
 
 ```bash
 npm run shared:pull
+
+# Choose a particular version, including an older one
+npm run shared:pull -- v2
+
+# Show available versions, newest first
+npm run shared:pull -- --list
 ```
 
-Pull requires a clean working tree and runs installation and the same checks. Commit `package-lock.json` in that application if installation changes it. Each application chooses when to update and deploy.
+Plain `shared:pull` (or `shared:pull -- latest`) selects the latest numbered release. A specific version always resolves to that release's commit. Once numbered releases exist, unversioned edits on `master` are not selected by ordinary pulls or new-project creation. Repositories without any numbered releases temporarily use `master`; the next shared push creates `v1`.
+
+Pull requires a clean working tree and runs installation and the same checks. Commit `package-lock.json` in that application if installation changes it. Each application chooses when to update and deploy. Git history records the selected version and preserves committed local shared improvements; those improvements can still conflict with an update or downgrade.
 
 Conflicts stop synchronization without overwriting work or force-pushing. Resolve the files, stage them, and commit the merge before retrying; `git merge --abort` restores the preceding local state. Failed checks leave changes locally for repair. If another contributor updated GitHub during submission, pull and validate again before retrying.
+
+Versions identify saved source snapshots; they do not promise backward compatibility. Checks run in the current checkout, and failed checks do not automatically undo a completed merge. Review the application and test important flows before deploying.
 
 ## Application boundaries
 

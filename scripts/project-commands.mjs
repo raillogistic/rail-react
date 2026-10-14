@@ -26,9 +26,29 @@ export function verifyFrontend(cwd) {
   for (const script of ['check:architecture', 'test:unit', 'build']) npm(cwd, ['run', script]);
 }
 
+/** Read automatic release numbers from the shared remote, newest first. */
+export function getSharedVersions(cwd, repository = 'rail') {
+  return git(cwd, ['ls-remote', '--refs', '--tags', repository, 'v[0-9]*'], true)
+    .split(/\r?\n/).flatMap(line => {
+      const match = /^([a-f\d]{40,64})\s+refs\/tags\/(v[1-9]\d*)$/.exec(line);
+      return match ? [{ version: match[2], revision: match[1] }] : [];
+    }).sort((a, b) => BigInt(a.version.slice(1)) > BigInt(b.version.slice(1)) ? -1 : 1);
+}
+
+/** Resolve a release to its exact commit; support repositories not yet versioned. */
+function resolveSharedVersion(cwd, repository, version) {
+  const versions = getSharedVersions(cwd, repository);
+  const release = version === 'latest' ? versions[0] : versions.find(item => item.version === version);
+  if (release) return release;
+  if (version !== 'latest') throw new Error(`Shared version ${version} does not exist. Run npm run shared:pull -- --list.`);
+  const revision = git(cwd, ['ls-remote', '--exit-code', repository, `refs/heads/${SHARED_BRANCH}`], true).split(/\s/)[0];
+  if (!/^[a-f\d]{40,64}$/.test(revision)) throw new Error(`Cannot resolve shared branch: ${SHARED_BRANCH}`);
+  return { version: 'master (not yet versioned)', revision };
+}
+
 /** Create an independent application and import its foundation directly from GitHub. */
 export function createRailApp(destination, {
-  repository = SHARED_REPOSITORY, ref = SHARED_BRANCH,
+  repository = SHARED_REPOSITORY,
   install = cwd => npm(cwd, ['install']),
 } = {}) {
   if (!destination?.trim()) throw new Error('Usage: create-rail-app <destination>');
@@ -37,8 +57,7 @@ export function createRailApp(destination, {
   git(process.cwd(), ['--version'], true);
   git(process.cwd(), ['var', 'GIT_AUTHOR_IDENT'], true);
   // Check access before creating any destination files.
-  const revision = git(process.cwd(), ['ls-remote', '--exit-code', repository, `refs/heads/${ref}`], true).split(/\s/)[0];
-  if (!/^[a-f\d]{40,64}$/.test(revision)) throw new Error(`Cannot resolve shared branch: ${ref}`);
+  const { version, revision } = resolveSharedVersion(process.cwd(), repository, 'latest');
   mkdirSync(target, { recursive: true });
   cpSync(path.join(packageRoot, 'templates/app'), target, { recursive: true });
   renameSync(path.join(target, 'gitignore.template'), path.join(target, '.gitignore'));
@@ -58,7 +77,7 @@ export function createRailApp(destination, {
     git(target, ['add', '--', 'package-lock.json']);
     git(target, ['commit', '-m', 'Lock application dependencies']);
   }
-  console.log(`\nCreated ${target}\nConfigure your backend in .env, then run:\n  cd "${target}"\n  npm run dev`);
+  console.log(`\nCreated ${target} with shared ${version}\nConfigure your backend in .env, then run:\n  cd "${target}"\n  npm run dev`);
   return target;
 }
 
@@ -84,22 +103,52 @@ export function assertSyncReady(cwd, mode) {
 
 /** Submit only shared source, or pull updates, without force-pushing or hiding conflicts. */
 export function syncShared(mode, {
-  cwd = process.cwd(), message,
+  cwd = process.cwd(), message, version = 'latest',
   install = dir => npm(dir, ['install']), verify = verifyFrontend,
 } = {}) {
   if (!['pull', 'push'].includes(mode)) throw new Error('Usage: shared.mjs <pull|push> [commit message]');
   if (mode === 'push' && !message?.trim()) throw new Error('Supply a commit message: npm run shared:push -- "Describe your change"');
+  if (mode === 'pull' && !/^(latest|v[1-9]\d*)$/.test(version)) {
+    throw new Error('Use npm run shared:pull, npm run shared:pull -- v2, or npm run shared:pull -- --list.');
+  }
   assertSyncReady(cwd, mode);
+  const release = mode === 'pull' ? resolveSharedVersion(cwd, 'rail', version) : null;
   if (mode === 'push' && git(cwd, ['status', '--porcelain=v1', '--untracked-files=all', '--', 'rail'], true).trim()) {
     git(cwd, ['add', '--', 'rail']);
     git(cwd, ['commit', '-m', message, '--only', '--', 'rail']);
   }
-  git(cwd, ['subtree', 'pull', '--prefix=rail', 'rail', SHARED_BRANCH, '--squash']);
+  if (release) {
+    git(cwd, ['fetch', '--no-tags', 'rail', release.revision]);
+    git(cwd, ['subtree', 'merge', '--prefix=rail', release.revision, '--squash', '-m', `Use shared Rail ${release.version}`]);
+  } else {
+    git(cwd, ['subtree', 'pull', '--prefix=rail', 'rail', SHARED_BRANCH, '--squash']);
+  }
   install(cwd);
   verify(cwd);
-  if (mode === 'push') git(cwd, ['subtree', 'push', '--prefix=rail', 'rail', SHARED_BRANCH]);
-  console.log(`Shared ${mode} completed. ${mode === 'push' ? 'Other applications can now run npm run shared:pull.' : 'Review the update before deploying.'}`);
+  let completedVersion = release?.version;
+  if (mode === 'push') {
+    const revision = git(cwd, ['subtree', 'split', '--prefix=rail'], true).trim();
+    const versions = getSharedVersions(cwd);
+    completedVersion = versions.find(item => item.revision === revision)?.version;
+    if (!completedVersion) {
+      completedVersion = `v${versions.length ? BigInt(versions[0].version.slice(1)) + 1n : 1n}`;
+      // Publish source and its version together; concurrent submissions must retry.
+      git(cwd, ['push', '--atomic', 'rail', `${revision}:refs/heads/${SHARED_BRANCH}`, `${revision}:refs/tags/${completedVersion}`]);
+    }
+    // Record the published baseline so the next edit does not conflict with our own push.
+    const lockfile = path.join(cwd, 'package-lock.json');
+    const pendingLockfile = git(cwd, ['diff', '--name-only', '--', 'package-lock.json'], true).trim()
+      ? readFileSync(lockfile) : null;
+    try {
+      if (pendingLockfile) git(cwd, ['restore', '--worktree', '--', 'package-lock.json']);
+      git(cwd, ['subtree', 'merge', '--prefix=rail', revision, '--squash', '-m', `Record shared Rail ${completedVersion}`]);
+    } finally {
+      if (pendingLockfile) writeFileSync(lockfile, pendingLockfile);
+    }
+  }
+  console.log(`Shared ${mode} completed: ${completedVersion}. ${mode === 'push' ? 'Other applications can now run npm run shared:pull.' : 'Review the update before deploying.'}`);
   if (git(cwd, ['status', '--porcelain=v1', '--', 'package-lock.json'], true).trim()) {
     console.log('Dependencies changed. Commit package-lock.json in this application.');
   }
+  return completedVersion;
 }
