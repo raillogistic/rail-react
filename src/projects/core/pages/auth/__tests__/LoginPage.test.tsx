@@ -1,3 +1,4 @@
+vi.mock('@rail/application', () => ({ default: { branding: { productName: 'Application de test' } } }));
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { LoginPage } from '@/projects/core/pages/auth/LoginPage';
@@ -72,6 +73,7 @@ describe('LoginPage', () => {
     });
 
     expect(screen.getByPlaceholderText("••••••••")).toBeInTheDocument();
+    expect(screen.getByText('Accédez à votre espace Application de test')).toBeInTheDocument();
     expect(screen.queryByTestId('mfa-challenge')).not.toBeInTheDocument();
   });
 

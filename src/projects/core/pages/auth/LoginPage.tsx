@@ -145,7 +145,7 @@ export const LoginPage: React.FC = () => {
           <p className="text-muted-foreground text-sm">
             {status === "mfa_required"
               ? "Veuillez vérifier votre identité pour continuer"
-              : "Accédez à votre espace collaborateur Patrimoin"}
+              : "Accédez à votre espace {BRANDING.productName}"}
           </p>
         </div>
 
