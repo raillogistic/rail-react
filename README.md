@@ -78,3 +78,5 @@ npm run build
 The repository runs standalone with generic core routes. Previous application examples remain recoverable in Git history; new consumers keep their business modules in their own repositories. No npm registry publication is needed.
 
 Application startup calls `configureApplication(application)` before loading the shared root. Shared imports read a side-effect-free configuration object and never import application manifests themselves.
+
+Every application opening starts with **Barre latérale complète**. The appearance selector can change the sidebar during the current session; reopening returns to the complete sidebar, including when an older icon-only preference is saved. Other appearance preferences keep their existing persistence.

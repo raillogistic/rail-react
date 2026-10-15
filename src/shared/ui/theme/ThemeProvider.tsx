@@ -253,12 +253,8 @@ export function ThemeProvider({
       );
     });
 
-  const [sidebarMode, setSidebarModeState] = useState<SidebarMode>(() => {
-    return (
-      (localStorage.getItem(`${storageKey}-sidebar-mode`) as SidebarMode) ||
-      defaultSidebarMode
-    );
-  });
+  // Each application opening starts in the configured mode, regardless of an older saved choice.
+  const [sidebarMode, setSidebarModeState] = useState<SidebarMode>(defaultSidebarMode);
 
   const [sidebarCollapseMode, setSidebarCollapseModeState] =
     useState<SidebarCollapseMode>(() => {
@@ -373,9 +369,6 @@ export function ThemeProvider({
     const persistedNavigationPattern = localStorage.getItem(
       `${storageKey}-navigation-pattern`,
     );
-    const persistedSidebarMode = localStorage.getItem(
-      `${storageKey}-sidebar-mode`,
-    );
     const persistedSidebarCollapseMode = localStorage.getItem(
       `${storageKey}-sidebar-collapse`,
     );
@@ -403,9 +396,6 @@ export function ThemeProvider({
       setNavigationPatternState(
         persistedNavigationPattern as NavigationPattern,
       );
-    }
-    if (persistedSidebarMode) {
-      setSidebarModeState(persistedSidebarMode as SidebarMode);
     }
     if (persistedSidebarCollapseMode) {
       setSidebarCollapseModeState(
@@ -649,7 +639,6 @@ export function ThemeProvider({
   };
 
   const setSidebarMode = (newMode: SidebarMode) => {
-    localStorage.setItem(`${storageKey}-sidebar-mode`, newMode);
     setSidebarModeState(newMode);
   };
 
