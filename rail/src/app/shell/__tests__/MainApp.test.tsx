@@ -76,7 +76,7 @@ describe("MainApp", () => {
   });
 
   it.each(["vertical", "horizontal", "mixed"] as const)(
-    "renders the same dual-sidebar shell for legacy layout value %s",
+    "résout la valeur d'agencement héritée %s vers l'espace de travail à barre latérale complète",
     (layout) => {
       render(
         <MemoryRouter>
@@ -89,17 +89,17 @@ describe("MainApp", () => {
       );
 
       expect(screen.getByTestId("offline-alert")).toBeInTheDocument();
-      expect(screen.getByTestId("app-rail")).toBeInTheDocument();
+      expect(screen.queryByTestId("app-rail")).not.toBeInTheDocument();
       expect(screen.getByTestId("app-sidebar")).toBeInTheDocument();
       expect(screen.getByTestId("app-content")).toBeInTheDocument();
     },
   );
 
-  it("masque app-rail lorsque le mode barre latérale complète est activé", () => {
+  it("conserve l'agencement à barre latérale unique quel que soit le mode hérité", () => {
     render(
       <MemoryRouter>
         <ThemeProviderContext.Provider
-          value={{ ...baseThemeContext, sidebarMode: "complete" }}
+          value={{ ...baseThemeContext, sidebarMode: "icons" }}
         >
           <MainApp />
         </ThemeProviderContext.Provider>

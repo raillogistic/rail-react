@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { gql, useQuery } from "@apollo/client";
 import { ROUTES } from "@/shared/routing/routes";
+import { PageHeader } from "@/shared/ui/common/PageHeader";
 import { Tabs, TabsList, TabsTrigger } from "@/shared/ui/kit/tabs";
 import { User, Settings, Shield, Smartphone, Lock, Sparkles } from "lucide-react";
 
@@ -79,12 +80,10 @@ export function SettingsLayout({ children }: SettingsLayoutProps) {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-3xl font-bold tracking-tight text-foreground">Paramètres</h1>
-        <p className="text-muted-foreground text-sm">
-          Gérez vos informations de compte, préférences d'affichage et sécurité.
-        </p>
-      </div>
+      <PageHeader
+        title="Paramètres"
+        description="Gérez vos informations de compte, préférences d'affichage et sécurité."
+      />
 
       <Tabs value={currentTab} onValueChange={handleTabChange} className="w-full space-y-6">
         <TabsList className="flex flex-wrap w-full md:w-auto h-auto p-1 bg-muted/60 dark:bg-zinc-800/40 rounded-lg">

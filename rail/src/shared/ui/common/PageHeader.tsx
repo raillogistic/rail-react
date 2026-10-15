@@ -1,36 +1,71 @@
 /**
  * @file PageHeader.tsx
- * @description This component displays a page header with a title and an optional description.
- * It is used to provide a consistent look and feel for page titles across the application.
+ * @description En-tête de page standardisé fournissant un titre (24px),
+ * une description optionnelle (14px) et des actions optionnelles alignées à droite.
+ * Sur mobile, les éléments s'empilent verticalement.
+ *
+ * @module shared/ui/common/PageHeader
  */
 
-import React from 'react';
+import React from "react";
+import { cn } from "@/shared/utils";
 
 /**
- * Props for the PageHeader component.
+ * Propriétés du composant PageHeader.
  */
-interface PageHeaderProps {
+export interface PageHeaderProps {
   /**
-   * The main title to be displayed in the page header.
+   * Titre principal affiché dans l'en-tête de page (24px).
    */
-  title: string;
+  title: React.ReactNode;
   /**
-   * An optional description or subtitle to be displayed below the title.
+   * Description ou sous-titre optionnel affiché sous le titre (14px).
    */
   description?: string;
+  /**
+   * Boutons ou composants d'actions optionnels alignés à droite (empilés sur mobile).
+   */
+  actions?: React.ReactNode;
+  /**
+   * Classes CSS additionnelles pour le conteneur d'en-tête.
+   */
+  className?: string;
 }
 
 /**
- * PageHeader component displays a consistent page header with a title and an optional description.
+ * Composant d'en-tête de page standardisé pour l'application.
  *
- * @param {PageHeaderProps} { title, description } - The props for the component.
- * @returns {React.ReactElement} The rendered page header.
+ * @param {PageHeaderProps} props Les propriétés de l'en-tête.
+ * @returns {React.ReactElement}
  */
-export function PageHeader({ title, description }: PageHeaderProps): React.ReactElement {
+export function PageHeader({
+  title,
+  description,
+  actions,
+  className,
+}: PageHeaderProps): React.ReactElement {
   return (
-    <div className="flex flex-col space-y-1">
-      <h1 className="text-2xl font-semibold tracking-tight">{title}</h1>
-      {description && <p className="text-sm text-muted-foreground">{description}</p>}
+    <div
+      className={cn(
+        "flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between",
+        className,
+      )}
+    >
+      <div className="space-y-1 min-w-0">
+        <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+          {title}
+        </h1>
+        {description ? (
+          <p className="text-sm text-muted-foreground">{description}</p>
+        ) : null}
+      </div>
+      {actions ? (
+        <div className="flex flex-wrap items-center gap-2 shrink-0">
+          {actions}
+        </div>
+      ) : null}
     </div>
   );
 }
+
+export default PageHeader;

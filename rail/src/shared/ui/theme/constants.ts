@@ -17,7 +17,7 @@ import type {
   LetterSpacing,
 } from './types';
 
-export const DEFAULT_THEME: ThemeKey = 'transtev';
+export const DEFAULT_THEME: ThemeKey = 'default';
 export const DEFAULT_MODE: ThemeMode = 'light';
 export const DEFAULT_LAYOUT: Layout = 'vertical';
 export const DEFAULT_NAVIGATION_PATTERN: NavigationPattern = 'secondary-sidebar';
