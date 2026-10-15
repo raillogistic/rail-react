@@ -1,0 +1,244 @@
+/**
+ * Shared field wrapper and validation utilities for DynamicForm inputs.
+ *
+ * Provides a consistent container around every field with label, description
+ * tooltip, dirty indicator, error messages, and data-attribute-driven styling
+ * for all nested input slots.
+ *
+ * @module form/inputs/common
+ */
+import React from "react";
+import { Label } from "@/shared/ui/kit/label";
+import { cn } from "@/shared/utils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/shared/ui/kit/tooltip";
+import { Info, AlertCircle, CircleDot, Sparkles } from "lucide-react";
+import type { BaseFieldConfig } from "./types";
+
+/** Props accepted by the FieldWrapper component. */
+type FieldWrapperProps = {
+  config: BaseFieldConfig;
+  fieldId?: string;
+  error?: string | string[];
+  dirty?: boolean;
+  children: React.ReactNode;
+};
+
+/**
+ * Wraps every form field with a consistent layout:
+ * - Label row (label + required asterisk + info tooltip + dirty pill)
+ * - Slot container with data-attribute-driven focus/error/dirty styling
+ * - Help text or error messages
+ */
+export const FieldWrapper: React.FC<FieldWrapperProps> = ({
+  config,
+  fieldId,
+  error,
+  dirty,
+  children,
+}) => {
+  const errorList = Array.isArray(error)
+    ? error.filter(Boolean)
+    : error
+      ? [error]
+      : [];
+
+  const hasError = errorList.length > 0;
+
+  if (config.hidden) {
+    return <div className="hidden">{children}</div>;
+  }
+
+  return (
+    <div
+      data-dirty={dirty ? "true" : undefined}
+      data-error={hasError ? "true" : undefined}
+      className={cn(
+        "group/field flex flex-col transition-all duration-500 ease-in-out",
+        "gap-1.5 group-data-[layout=compact]/form:gap-1 group-data-[layout=popup]/form:gap-1",
+        "py-1.5 group-data-[layout=compact]/form:py-0.5 group-data-[layout=popup]/form:py-0.5",
+        config.className,
+      )}
+    >
+      {/* ── Label row ────────────────────────────────────────────── */}
+      <div className="flex items-center justify-between gap-3 px-1">
+        {config.label ? (
+          <div className="flex items-center gap-2">
+            <Label
+              htmlFor={fieldId}
+              className={cn(
+                "text-[13.5px] font-bold tracking-tight text-foreground/70 transition-all duration-300",
+                hasError && "text-destructive",
+                "group-focus-within/field:text-primary group-focus-within/field:translate-x-0.5",
+              )}
+            >
+              {config.label}
+              {config.required ? (
+                <span
+                  className="text-destructive/80 ml-1 text-sm leading-none"
+                  aria-hidden="true"
+                >
+                  *
+                </span>
+              ) : null}
+            </Label>
+
+            {config.description && (
+              <TooltipProvider>
+                <Tooltip delayDuration={300}>
+                  <TooltipTrigger asChild>
+                    <button
+                      type="button"
+                      className="text-muted-foreground/45 hover:text-primary transition-all outline-none hover:scale-110 active:scale-95 cursor-pointer"
+                    >
+                      <Info className="size-3.5" />
+                      <span className="sr-only">Description</span>
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent
+                    side="top"
+                    align="start"
+                    className="max-w-72 rounded-2xl border border-border/40 bg-popover/98 backdrop-blur-md px-4 py-3 text-[12px] font-medium shadow-2xl shadow-primary/5 animate-in fade-in duration-200"
+                  >
+                    <div className="flex gap-2.5">
+                      <Sparkles className="size-4 shrink-0 text-primary" />
+                      <span className="leading-relaxed text-foreground/90">{config.description}</span>
+                    </div>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            )}
+          </div>
+        ) : (
+          <div />
+        )}
+
+        {dirty && !hasError && (
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400 animate-in fade-in zoom-in-95 duration-500">
+            <CircleDot className="size-2.5" />
+            Modifié
+          </span>
+        )}
+      </div>
+
+      {/* ── Slot container — propagates data-dirty / data-error to children ─ */}
+      <div
+        className={cn(
+          "relative transition-all duration-300",
+          // ── Dirty state ──
+          "data-[dirty=true]:**:data-[slot=input]:border-emerald-500/40",
+          "data-[dirty=true]:**:data-[slot=textarea]:border-emerald-500/40",
+          "data-[dirty=true]:**:data-[slot=select-trigger]:border-emerald-500/40",
+
+          // ── Error state ──
+          "data-[error=true]:**:data-[slot=input]:border-destructive focus-within:data-[error=true]:**:data-[slot=input]:ring-destructive",
+          "data-[error=true]:**:data-[slot=textarea]:border-destructive focus-within:data-[error=true]:**:data-[slot=textarea]:ring-destructive",
+          "data-[error=true]:**:data-[slot=select-trigger]:border-destructive focus-within:data-[error=true]:**:data-[slot=select-trigger]:ring-destructive",
+          "data-[error=true]:**:data-[slot=checkbox]:border-destructive focus-within:data-[error=true]:**:data-[slot=checkbox]:ring-destructive",
+          "data-[error=true]:**:data-[slot=button]:border-destructive focus-within:data-[error=true]:**:data-[slot=button]:ring-destructive",
+        )}
+        data-dirty={dirty ? "true" : undefined}
+        data-error={hasError ? "true" : undefined}
+      >
+        {children}
+      </div>
+
+      {/* ── Help text ────────────────────────────────────────────── */}
+      {config.helpText && !hasError && (
+        <p className="px-1.5 text-xs text-muted-foreground/75 font-medium">
+          {config.helpText}
+        </p>
+      )}
+
+      {/* ── Error messages ───────────────────────────────────────── */}
+      {hasError && (
+        <div className="mt-1 flex flex-col gap-1.5 animate-in fade-in slide-in-from-top-1 duration-200">
+          {errorList.map((item, index) => (
+            <div
+              key={`${config.name}-error-${index}`}
+              className="flex items-start gap-2 text-xs font-semibold text-destructive px-1"
+            >
+              <AlertCircle className="mt-0.5 size-3.5 shrink-0" />
+              <span className="leading-tight">{item}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
+/**
+ * Resolves field-level error messages from meta state.
+ * Returns the unique, non-empty list if any errors are found, otherwise undefined.
+ */
+export function resolveFieldErrors(meta: any, showError: boolean) {
+  if (!showError) return undefined;
+  const collected: string[] = [];
+  if (Array.isArray(meta?.touchedErrors)) {
+    collected.push(...meta.touchedErrors);
+  }
+  if (Array.isArray(meta?.errors)) {
+    collected.push(...meta.errors);
+  }
+  const submitError = meta?.errorMap?.onSubmit;
+  if (submitError) {
+    collected.push(submitError);
+  }
+  const unique = Array.from(new Set(collected.filter(Boolean)));
+  return unique.length ? unique : undefined;
+}
+
+/**
+ * Returns a required-field error string if the value is empty AND
+ * showError is true AND the config says required.
+ */
+export function resolveRequiredError(
+  config: BaseFieldConfig,
+  value: any,
+  showError: boolean,
+) {
+  if (!showError || !config.required) return undefined;
+  if (Array.isArray(value)) {
+    return value.length > 0 ? undefined : "Ce champ est obligatoire";
+  }
+  if (typeof value === "string") {
+    return value.trim().length > 0 ? undefined : "Ce champ est obligatoire";
+  }
+  if (value === undefined || value === null) {
+    return "Ce champ est obligatoire";
+  }
+  return undefined;
+}
+
+const REQUIRED_FIELD_MESSAGES = new Set([
+  "Ce champ est obligatoire",
+  "This field is required",
+]);
+
+/**
+ * Removes stale required-field messages when the current value is no longer empty.
+ */
+export function pruneResolvedRequiredErrors(
+  error: string | string[] | undefined,
+  requiredError: string | undefined,
+) {
+  if (requiredError || !error) {
+    return error;
+  }
+
+  const errors = Array.isArray(error) ? error : [error];
+  const filtered = errors.filter(
+    (entry) => !REQUIRED_FIELD_MESSAGES.has(String(entry).trim()),
+  );
+
+  if (filtered.length === 0) {
+    return undefined;
+  }
+
+  return Array.isArray(error) ? filtered : filtered[0];
+}

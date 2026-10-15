@@ -1,0 +1,54 @@
+# Dependencies
+node_modules
+node_modules/*
+
+.pnp
+.pnp.js
+yarn.lock
+
+# Testing
+coverage
+.nyc_output
+
+# Production
+dist
+build
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+dist_tmp/*
+# IDEs
+.vscode
+.idea
+*.swp
+*.swo
+
+# System
+.DS_Store
+Thumbs.db
+
+# Generated Types (Changeable/Domain Specific)
+
+# App/domain-specific pages (local-only)
+src/apps/**
+!src/apps/README.md
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+
+*.tsbuildinfo
+
+*.log
+.env.*
+!.env.example
+src/models.ts
+src/schema.ts
+**/*.backup.ts
+**/*.backup.tsx

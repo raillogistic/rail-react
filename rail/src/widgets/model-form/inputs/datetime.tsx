@@ -1,0 +1,163 @@
+/**
+ * @file datetime.tsx
+ * @description Sélecteur combiné date et heure.
+ * Modifié pour forcer shadow-none sur le bouton déclencheur et sur l'entrée horaire interne,
+ * et utiliser des coins arrondis rounded-xl.
+ *
+ * @module form/inputs/datetime
+ */
+import React from "react";
+import { useStore } from "@tanstack/react-form";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
+import { CalendarDays, Clock } from "lucide-react";
+import { cn } from "@/shared/utils";
+import { Button } from "@/shared/ui/kit/button";
+import { Calendar as CalendarComponent } from "@/shared/ui/kit/calendar";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/shared/ui/kit/popover";
+import { Input } from "@/shared/ui/kit/input";
+import {
+  FieldWrapper,
+  resolveFieldErrors,
+  resolveRequiredError,
+} from "./common";
+import type { DateFieldConfig, FieldComponentProps } from "./types";
+
+type Props = FieldComponentProps<DateFieldConfig, string>;
+const STORAGE_FORMAT = "yyyy-MM-dd'T'HH:mm";
+
+/** Returns the current local date and time in the storage format used by the input. */
+export function now(): string {
+  return format(new Date(), STORAGE_FORMAT);
+}
+
+/** Renders a combined date + time picker. */
+const DateTimeInput: React.FC<Props> = ({ config, field, form }) => {
+  const meta = field.state.meta;
+  const dirty = meta.isDirty;
+  const submitCount = useStore(
+    form.store,
+    (state) =>
+      (state as any).submissionAttempts ?? (state as any).submitCount ?? 0,
+  );
+  const isSubmitted = submitCount > 0;
+  const showError =
+    dirty || meta.isBlurred || isSubmitted || Boolean(meta.errorMap?.onSubmit);
+  const fieldErrors = resolveFieldErrors(meta, showError);
+  const error =
+    fieldErrors ?? resolveRequiredError(config, field.state.value, showError);
+  const value = (field.state.value as string) ?? "";
+
+  // Parse the current value
+  const dateValue = value ? new Date(value) : undefined;
+  const isValidDate = dateValue && !isNaN(dateValue.getTime());
+
+  /** Handles date selection from the calendar, preserving existing time. */
+  const handleDateSelect = (selectedDate: Date | undefined) => {
+    if (!selectedDate) {
+      field.handleChange("");
+      return;
+    }
+
+    // Preserve existing time or default to 00:00
+    const currentTime = isValidDate
+      ? { hours: dateValue.getHours(), minutes: dateValue.getMinutes() }
+      : { hours: 0, minutes: 0 };
+
+    const newDate = new Date(selectedDate);
+    newDate.setHours(currentTime.hours);
+    newDate.setMinutes(currentTime.minutes);
+    newDate.setSeconds(0);
+    newDate.setMilliseconds(0);
+
+    // Format to YYYY-MM-DDThh:mm (local time)
+    const isoString = format(newDate, STORAGE_FORMAT);
+    field.handleChange(isoString);
+  };
+
+  /** Handles time change from the time input, preserving existing date. */
+  const handleTimeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const timeStr = event.target.value;
+    if (!timeStr) return;
+
+    const [hours, minutes] = timeStr.split(":").map(Number);
+
+    // Use existing date or today if not set
+    const newDate = isValidDate ? new Date(dateValue) : new Date();
+    newDate.setHours(hours);
+    newDate.setMinutes(minutes);
+    newDate.setSeconds(0);
+    newDate.setMilliseconds(0);
+
+    const isoString = format(newDate, STORAGE_FORMAT);
+    field.handleChange(isoString);
+  };
+
+  return (
+    <FieldWrapper config={config} error={error} dirty={dirty}>
+      <Popover>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            data-slot="input"
+            className={cn(
+              "h-9 w-full justify-start rounded-xl border border-transparent bg-muted/50 px-4 text-left text-[13.5px] font-medium transition-all duration-300 ease-out shadow-sm",
+              "hover:border-primary/40 hover:bg-muted/60",
+              "focus:border-primary focus:ring-4 focus:ring-primary/10 data-[state=open]:border-primary data-[state=open]:ring-4 data-[state=open]:ring-primary/10 cursor-pointer",
+              !value && "text-muted-foreground/60",
+              isValidDate && "text-foreground",
+              config.disabled && "cursor-not-allowed opacity-60 grayscale-[0.5]",
+            )}
+            disabled={config.disabled}
+          >
+            <CalendarDays
+              className={cn(
+                "mr-3 size-4.5 transition-all duration-300",
+                isValidDate ? "text-primary scale-110" : "text-muted-foreground/35",
+              )}
+            />
+            <span className="truncate">
+              {isValidDate ? (
+                format(dateValue, "dd MMMM yyyy 'à' HH:mm", { locale: fr })
+              ) : (
+                <span>{config.placeholder ?? "Choisir date et heure"}</span>
+              )}
+            </span>
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent
+          className="w-auto overflow-hidden rounded-2xl border border-border/50 bg-popover/95 backdrop-blur-xl p-0 shadow-2xl animate-in fade-in zoom-in-95 duration-300"
+          align="start"
+        >
+          <CalendarComponent
+            mode="single"
+            selected={dateValue}
+            onSelect={handleDateSelect}
+            initialFocus
+            locale={fr}
+            className="p-4"
+          />
+          <div className="flex items-center gap-4 border-t border-border/30 bg-muted/30 p-4">
+            <div className="flex size-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <Clock className="size-4.5 stroke-[2.5]" />
+            </div>
+            <div className="flex-1">
+              <Input
+                type="time"
+                className="h-10 rounded-xl border border-transparent bg-muted/50 px-4 font-bold transition-all duration-300 focus:border-primary focus:ring-4 focus:ring-primary/10 shadow-sm"
+                value={isValidDate ? format(dateValue, "HH:mm") : ""}
+                onChange={handleTimeChange}
+              />
+            </div>
+          </div>
+        </PopoverContent>
+      </Popover>
+    </FieldWrapper>
+  );
+};
+
+export default DateTimeInput;

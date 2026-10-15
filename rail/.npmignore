@@ -1,0 +1,10 @@
+.env
+.env.*
+!.env.example
+node_modules/
+dist/
+coverage/
+**/*.backup.*
+src/models.ts
+src/schema.ts
+*.log

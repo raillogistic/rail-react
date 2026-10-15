@@ -1,0 +1,20 @@
+{
+  "extends": "./rail/tsconfig.app.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo",
+    "paths": {
+      "@rail/application": ["./rail/src/application.ts"],
+      "@/app/*": ["./rail/src/app/*"],
+      "@/entities/*": ["./rail/src/entities/*"],
+      "@/features/*": ["./rail/src/features/*"],
+      "@/shared/*": ["./rail/src/shared/*"],
+      "@/widgets/*": ["./rail/src/widgets/*"],
+      "@/projects/core/*": ["./rail/src/projects/core/*"],
+      "@/test/typingModels": ["./rail/src/test/typingModels"],
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["src", "rail/src"],
+  "exclude": ["**/*.backup.ts", "**/*.backup.tsx"]
+}

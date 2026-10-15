@@ -1,0 +1,24 @@
+{
+    "topFolders":  {
+                       "app":  "app",
+                       "apps":  "app",
+                       "projects":  "app",
+                       "pages":  "pages",
+                       "features":  "features",
+                       "widgets":  "widgets",
+                       "entities":  "entities",
+                       "shared":  "shared",
+                       "processes":  "processes",
+                       "test":  "shared",
+                       "auth":  "features",
+                       "lib":  "widgets",
+                       "graphql":  "widgets",
+                       "hooks":  "shared",
+                       "utils":  "shared",
+                       "assets":  "shared",
+                       "styles":  "shared"
+                   },
+    "pathOverrides":  [
+
+                      ]
+}
