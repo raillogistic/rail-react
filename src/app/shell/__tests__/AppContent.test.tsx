@@ -22,6 +22,15 @@ vi.mock("@/shared/ui/kit/sidebar", () => ({
   SidebarTrigger: () => <button type="button">Sidebar</button>,
 }));
 
+vi.mock("@/app/router/routeAccess", () => ({
+  useRouteAccess: () => ({
+    defaultRoute: "/achat",
+    navigationLinks: [],
+    projectNavigationLinks: [],
+    canAccessRoute: () => true,
+  }),
+}));
+
 describe("SiteHeader", () => {
   const loginMock = vi.fn();
   const logoutMock = vi.fn().mockResolvedValue(undefined);

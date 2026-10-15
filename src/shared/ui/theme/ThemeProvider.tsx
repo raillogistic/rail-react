@@ -253,8 +253,8 @@ export function ThemeProvider({
       );
     });
 
-  // Each application opening starts in the configured mode, regardless of an older saved choice.
-  const [sidebarMode, setSidebarModeState] = useState<SidebarMode>(defaultSidebarMode);
+  // Full sidebar is the only navigation layout in the redesigned business workspace.
+  const [sidebarMode] = useState<SidebarMode>("complete");
 
   const [sidebarCollapseMode, setSidebarCollapseModeState] =
     useState<SidebarCollapseMode>(() => {
@@ -638,8 +638,8 @@ export function ThemeProvider({
     // Note: Backend does not expose this preference yet. Keep it local for now.
   };
 
-  const setSidebarMode = (newMode: SidebarMode) => {
-    setSidebarModeState(newMode);
+  const setSidebarMode = (_newMode: SidebarMode) => {
+    // Obsolete setter retained for source compatibility; cannot activate alternate layouts.
   };
 
   const setSidebarCollapseMode = (newMode: SidebarCollapseMode) => {
@@ -686,11 +686,6 @@ export function ThemeProvider({
     )
       setNavigationPatternState(defaultNavigationPattern);
     if (
-      defaultSidebarMode &&
-      defaultSidebarMode !== DEFAULT_SIDEBAR_MODE
-    )
-      setSidebarModeState(defaultSidebarMode);
-    if (
       defaultSidebarCollapseMode &&
       defaultSidebarCollapseMode !== DEFAULT_SIDEBAR_COLLAPSE_MODE
     )
@@ -708,7 +703,6 @@ export function ThemeProvider({
     defaultMode,
     defaultLayout,
     defaultNavigationPattern,
-    defaultSidebarMode,
     defaultSidebarCollapseMode,
     defaultFontSize,
     defaultFontFamily,

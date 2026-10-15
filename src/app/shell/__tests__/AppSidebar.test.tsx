@@ -137,12 +137,7 @@ vi.mock("@/widgets/navigation/nav-main", () => ({
 }));
 
 describe("AppSidebar", () => {
-  it("affiche tous les menus et sous-menus sans menu déroulant en mode complète", () => {
-    mock_use_theme.mockReturnValue({
-      sidebarMode: "complete",
-      navigationPattern: "secondary-sidebar",
-      sidebarCollapseMode: "offcanvas",
-    });
+  it("affiche tous les menus et sous-menus sans menu déroulant dans la barre latérale", () => {
     mock_use_sidebar.mockReturnValue({
       state: "expanded",
       isMobile: false,
@@ -158,49 +153,44 @@ describe("AppSidebar", () => {
       canAccessRoute: () => true,
     });
 
-  render(
-    <MemoryRouter>
-      <AppSidebar />
-    </MemoryRouter>,
-  );
+    render(
+      <MemoryRouter>
+        <AppSidebar />
+      </MemoryRouter>,
+    );
 
-  // Vérifie que toutes les sections de tous les modules sont affichées dans la barre latérale
-  expect(screen.getByTestId("section-achat-ops")).toBeInTheDocument();
-  expect(screen.getByTestId("section-core-settings")).toBeInTheDocument();
-  expect(screen.getByTestId("section-users-management")).toBeInTheDocument();
-  expect(screen.getByText("Mes BC")).toBeInTheDocument();
+    // Vérifie que toutes les sections de tous les modules sont affichées dans la barre latérale
+    expect(screen.getByTestId("section-achat-ops")).toBeInTheDocument();
+    expect(screen.getByTestId("section-core-settings")).toBeInTheDocument();
+    expect(screen.getByTestId("section-users-management")).toBeInTheDocument();
+    expect(screen.getByText("Mes BC")).toBeInTheDocument();
 
-  // Vérifie qu'aucun dropdown de sélection d'espace n'est affiché
-  expect(screen.queryByText("Espaces de travail")).not.toBeInTheDocument();
-});
+    // Vérifie qu'aucun dropdown de sélection d'espace n'est affiché
+    expect(screen.queryByText("Espaces de travail")).not.toBeInTheDocument();
 
-it("affiche uniquement les liens du projet en mode icônes", () => {
-  mock_use_theme.mockReturnValue({
-    sidebarMode: "icons",
-    navigationPattern: "secondary-sidebar",
-    sidebarCollapseMode: "offcanvas",
-  });
-  mock_use_sidebar.mockReturnValue({
-    state: "expanded",
-    isMobile: false,
-  });
-  mock_use_route_access.mockReturnValue({
-    appRailItems: [
-      { projectId: "achat", label: "Achat", defaultRoute: "/achat" },
-    ],
-    currentProjectId: "achat",
-    navigationLinks: mock_all_links,
-    projectNavigationLinks: mock_project_links,
-    canAccessRoute: () => true,
+    // Vérifie la présence du profil utilisateur dans le footer
+    expect(screen.getByTestId("nav-user")).toBeInTheDocument();
   });
 
-  render(
-    <MemoryRouter>
-      <AppSidebar />
-    </MemoryRouter>,
-  );
+  it("affiche la marque une seule fois sur bureau et omet les badges vides", () => {
+    mock_use_sidebar.mockReturnValue({
+      state: "expanded",
+      isMobile: false,
+    });
+    mock_use_route_access.mockReturnValue({
+      defaultRoute: "/achat",
+      navigationLinks: mock_all_links,
+      projectNavigationLinks: mock_project_links,
+      canAccessRoute: () => true,
+    });
 
-  expect(screen.getByTestId("section-achat-ops")).toBeInTheDocument();
-  expect(screen.queryByTestId("section-core-settings")).not.toBeInTheDocument();
-});
+    render(
+      <MemoryRouter>
+        <AppSidebar />
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByRole("link", { name: /rail/i })).toBeInTheDocument();
+    expect(screen.queryByText(/enterprise edition/i)).not.toBeInTheDocument();
+  });
 });

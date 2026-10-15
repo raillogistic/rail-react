@@ -1,10 +1,12 @@
 /**
  * @file MainApp.tsx
- * @description Layout principal de l'application.
- * Modifié pour supprimer la surcharge de --sidebar-width afin d'utiliser la valeur globale définie dans sidebar.tsx.
+ * @description Fenêtre principale partagée de l'application (Main Window Redesign).
+ * Remplace la boîte arrondie par un shell plein écran de bout en bout,
+ * intégrant la barre latérale complète et la zone de contenu principale.
  *
  * @module app/shell/MainApp
  */
+
 import React, { useEffect } from "react";
 import {
   OfflineAlert,
@@ -13,18 +15,12 @@ import {
 import { SidebarProvider } from "@/shared/ui/kit/sidebar";
 import { AppSidebar } from "./AppSidebar";
 import AppContent from "./AppContent";
-import { AppRail } from "./AppRail";
-import { useLocation } from "react-router-dom";
-import { findNavigationByPath } from "@/app/router/navigation";
-import { useRouteAccess } from "@/app/router/routeAccess";
-import { useTheme } from "@/shared/ui/theme";
-import { cn } from "@/shared/utils";
 
 /**
- * Shell layout used for all authenticated screens.
+ * Shell principal de l'application partagée pour les écrans authentifiés.
+ * Héberge la barre latérale complète, l'en-tête et la zone de contenu.
  *
- * Hosts the sidebar, header, and the main content outlet. Also wires the
- * offline banner to backend connectivity events.
+ * @returns {React.ReactElement}
  */
 export const MainApp: React.FC = () => {
   const {
@@ -34,14 +30,6 @@ export const MainApp: React.FC = () => {
     hideOfflineAlert,
     retryConnection,
   } = useOfflineAlert();
-
-  const location = useLocation();
-  const { sidebarMode } = useTheme();
-  const { defaultRoute, navigationLinks, projectNavigationLinks } =
-    useRouteAccess();
-  const currentNavigation = findNavigationByPath(location.pathname, navigationLinks);
-  const title = currentNavigation?.page.title ?? "Navigation";
-  const sectionLabel = currentNavigation?.section.label;
 
   useEffect(() => {
     const handleBackendOffline = (event: CustomEvent) => {
@@ -61,15 +49,10 @@ export const MainApp: React.FC = () => {
     };
   }, [showOfflineAlert]);
 
-  const sidebarProviderStyle = {
-    "--header-height": "calc(var(--spacing) * 13)",
-    "--app-rail-width": "4.5rem",
-  } as React.CSSProperties;
-
   return (
     <SidebarProvider
-      style={sidebarProviderStyle}
-      className="flex-col h-svh overflow-hidden bg-muted dark:bg-[#09090b]"
+      defaultOpen={true}
+      className="h-svh w-full flex-col overflow-hidden bg-background text-foreground"
     >
       <OfflineAlert
         isVisible={showAlert}
@@ -77,19 +60,12 @@ export const MainApp: React.FC = () => {
         onDismiss={hideOfflineAlert}
         message={lastError || undefined}
       />
-      <div className="flex flex-1 min-h-0 min-w-0 py-6">
-        {sidebarMode === "icons" && <AppRail />}
-        <div
-          data-slot="shell-card"
-          className={cn(
-            "flex flex-1 min-h-0 min-w-0 overflow-hidden bg-background border border-border/60 rounded-2xl shadow-md",
-            sidebarMode === "icons" ? "mr-6" : "mx-6",
-          )}
-        >
-          <AppSidebar />
-          <AppContent />
-        </div>
+      <div className="flex flex-1 min-h-0 min-w-0 w-full overflow-hidden">
+        <AppSidebar />
+        <AppContent />
       </div>
     </SidebarProvider>
   );
 };
+
+export default MainApp;

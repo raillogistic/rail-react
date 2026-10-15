@@ -41,11 +41,8 @@ type AppRailListProps = {
   className?: string;
 };
 
-/** Application-owned shortcuts, rendered in either shell layout. */
-export function NewDocumentMenu(props: { compact?: boolean }) {
-  const Menu = application.slots?.NewDocumentMenu;
-  return Menu ? <Menu {...props} /> : null;
-}
+import { NewDocumentMenu } from "./AppSidebar";
+export { NewDocumentMenu };
 
 export function AppRailList({ className }: AppRailListProps) {
   const location = useLocation();

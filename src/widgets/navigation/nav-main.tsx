@@ -111,8 +111,14 @@ export const get_best_matching_path = (current_pathname: string, paths: string[]
  */
 export function NavMain({ navigationLinks, filterPath }: NavMainProps) {
   const location = useLocation();
-  const { state } = useSidebar();
+  const { state, isMobile, setOpenMobile } = useSidebar();
   const is_collapsed = state === "collapsed";
+
+  const handleLinkClick = () => {
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  };
 
   const [expanded_items, set_expanded_items] = useState<
     Record<string, boolean>
@@ -179,7 +185,7 @@ export function NavMain({ navigationLinks, filterPath }: NavMainProps) {
         {visible_sections.map((section) => (
           <div key={section.id} className="space-y-1.5">
             {!is_collapsed && (
-              <SidebarGroupLabel className="px-3 py-1 text-[0.5625rem] font-bold uppercase tracking-[0.2em] text-muted-foreground/45">
+              <SidebarGroupLabel className="px-2 py-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 {section.label}
               </SidebarGroupLabel>
             )}
@@ -211,7 +217,7 @@ export function NavMain({ navigationLinks, filterPath }: NavMainProps) {
                           tooltip={item.title}
                           isActive={is_item_active}
                         >
-                          <Link to={item.path}>
+                          <Link to={item.path} onClick={handleLinkClick}>
                             {item.icon && <item.icon />}
                             <span>{item.title}</span>
                             {!is_collapsed && item.badge && (
@@ -262,7 +268,7 @@ export function NavMain({ navigationLinks, filterPath }: NavMainProps) {
                                     asChild
                                     isActive={is_child_active}
                                   >
-                                    <Link to={child.path}>
+                                    <Link to={child.path} onClick={handleLinkClick}>
                                       <span>{child.title}</span>
                                     </Link>
                                   </SidebarMenuSubButton>
