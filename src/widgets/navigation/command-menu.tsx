@@ -1,0 +1,318 @@
+import * as React from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/features/auth/hooks/useAuth";
+import {
+  ArrowUpRight,
+  FileText,
+  HelpCircle,
+  History,
+  Mail,
+  Search,
+  Settings,
+  ShieldCheck,
+  Sparkles,
+  User,
+} from "lucide-react";
+// import { ROUTES } from "@/shared/routing/routes";
+import {
+  CommandDialog,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+  CommandSeparator,
+  CommandShortcut,
+} from "@/shared/ui/kit/command";
+import { Button } from "@/shared/ui/kit/button";
+import { cn } from "@/shared/utils";
+import { Badge } from "@/shared/ui/kit/badge";
+import type { NavigationSection } from "@/shared/routing/navigation";
+import { ROUTES } from "@/shared/routing/routes";
+
+type IconComponent = React.ComponentType<{ className?: string }>;
+
+type CommandLink = {
+  title: string;
+  path: string;
+  description?: string;
+  section: string;
+  icon?: IconComponent;
+};
+
+export type CommandMenuProps = {
+  navigationLinks?: NavigationSection[];
+  defaultPath?: string;
+};
+
+/**
+ * Builds palette links from visible navigation entries.
+ * Mirrors navbar behavior: prefer visible children, otherwise include parent.
+ */
+function buildCommandLinks(
+  navigationLinks: NavigationSection[],
+): CommandLink[] {
+  const output: CommandLink[] = [];
+
+  navigationLinks.forEach((section) => {
+    section.items.forEach((item) => {
+      const visibleChildren =
+        item.children?.filter((child) => !child.hidden) ?? [];
+
+      if (visibleChildren.length > 0) {
+        visibleChildren.forEach((child) => {
+          output.push({
+            title: child.title,
+            path: child.path,
+            description: child.description,
+            section: item.title,
+            icon: child.icon || item.icon,
+          });
+        });
+        return;
+      }
+
+      if (item.hidden) {
+        return;
+      }
+
+      output.push({
+        title: item.title,
+        path: item.path,
+        description: item.description,
+        section: section.label,
+        icon: item.icon,
+      });
+    });
+  });
+
+  return output;
+}
+
+/**
+ * Global command palette.
+ * Integrates with navigation manifests to keep searchable links in sync.
+ */
+export function CommandMenu({
+  navigationLinks = [],
+  defaultPath = ROUTES.LOGIN,
+}: CommandMenuProps = {}) {
+  const [open, setOpen] = React.useState(false);
+  const navigate = useNavigate();
+  const { user, hasRole } = useAuth();
+  const isAdmin = Boolean(user?.is_superuser || hasRole("admin_system"));
+
+  React.useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "k" && (event.metaKey || event.ctrlKey)) {
+        event.preventDefault();
+        setOpen((isOpen) => !isOpen);
+      }
+    };
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, []);
+
+  const runCommand = React.useCallback((command: () => unknown) => {
+    setOpen(false);
+    command();
+  }, []);
+
+  const links = React.useMemo<CommandLink[]>(
+    () => buildCommandLinks(navigationLinks),
+    [navigationLinks],
+  );
+
+  return (
+    <>
+      <Button
+        variant="outline"
+        className={cn(
+          "relative h-9 w-full justify-start rounded-full bg-neutral-100/30 dark:bg-zinc-950/25 border-neutral-200/45 dark:border-zinc-800/60 text-xs font-semibold text-muted-foreground/80 shadow-none hover:bg-neutral-100/55 dark:hover:bg-zinc-900/35 hover:border-primary/30 hover:text-foreground transition-all duration-300 sm:pr-12 max-w-sm md:w-80 group/search",
+        )}
+        onClick={() => setOpen(true)}
+      >
+        <Search className="mr-2 h-3.5 w-3.5 opacity-60 group-hover/search:text-primary group-hover/search:opacity-100 transition-colors" />
+        <span className="hidden sm:inline-flex">Rechercher dans l'app...</span>
+        <span className="inline-flex sm:hidden">Rechercher...</span>
+        <kbd className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 hidden h-5 select-none items-center gap-1 bg-neutral-200/60 dark:bg-zinc-800/70 px-1.5 rounded text-[9px] font-bold text-muted-foreground/80 opacity-100 md:flex border-none">
+          <span className="text-[8px] font-extrabold uppercase">Ctrl</span>K
+        </kbd>
+      </Button>
+
+      <CommandDialog open={open} onOpenChange={setOpen}>
+        <div className="bg-accent/30 px-4 py-2 border-b flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Sparkles className="size-3 text-primary" />
+            <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+              Palette de commande
+            </span>
+          </div>
+          <Badge
+            variant="outline"
+            className="text-[10px] py-0 px-1.5 h-4 font-mono bg-background/50 border-muted-foreground/20"
+          >
+            Échap pour fermer
+          </Badge>
+        </div>
+
+        <CommandInput
+          placeholder="Saisissez une commande ou recherchez..."
+          className="border-none focus:ring-0 text-base py-6"
+        />
+
+        <CommandList className="max-h-[450px]">
+          <CommandEmpty className="py-12 flex flex-col items-center gap-3">
+            <div className="size-12 bg-muted/50 flex items-center justify-center">
+              <Search className="size-6 text-muted-foreground/30" />
+            </div>
+            <div className="text-center">
+              <p className="font-semibold text-foreground">Aucun résultat trouvé</p>
+              <p className="text-sm text-muted-foreground">
+                Essayez une autre recherche ou parcourez les catégories.
+              </p>
+            </div>
+          </CommandEmpty>
+
+          <CommandGroup heading="Actions récentes" className="p-2">
+            <CommandItem
+              onSelect={() => runCommand(() => navigate(defaultPath))}
+              className="px-3 py-3 cursor-pointer group"
+            >
+              <History className="mr-3 h-4 w-4 text-muted-foreground group-aria-selected:text-primary" />
+              <div className="flex flex-col">
+                <span className="font-semibold text-sm group-aria-selected:text-primary">
+                  Retourner au Tableau de Bord
+                </span>
+                <span className="text-[11px] text-muted-foreground opacity-70">
+                  Consulté récemment
+                </span>
+              </div>
+              <ArrowUpRight className="ml-auto size-3 opacity-0 group-aria-selected:opacity-40" />
+            </CommandItem>
+          </CommandGroup>
+
+          <CommandSeparator className="bg-muted/50 mx-2" />
+
+          <CommandGroup heading="Navigation & Éléments" className="p-2">
+            {links.map((link) => {
+              const Icon = link.icon || FileText;
+              return (
+                <CommandItem
+                  key={link.path}
+                  value={`${link.title} ${link.description || ""} ${link.section}`}
+                  onSelect={() => {
+                    runCommand(() => navigate(link.path));
+                  }}
+                  className="px-3 py-3 cursor-pointer group"
+                >
+                  <div className="mr-3 flex h-9 w-9 items-center justify-center bg-muted/50 group-aria-selected:bg-primary/10">
+                    <Icon className="h-4.5 w-4.5 text-muted-foreground group-aria-selected:text-primary" />
+                  </div>
+                  <div className="flex flex-col flex-1 truncate">
+                    <span className="font-semibold text-sm group-aria-selected:text-primary truncate">
+                      {link.title}
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider opacity-60">
+                        {link.section}
+                      </span>
+                      {link.description && (
+                        <>
+                          <span className="size-1 bg-muted-foreground/30" />
+                          <span className="text-[11px] text-muted-foreground opacity-70 truncate">
+                            {link.description}
+                          </span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  <ArrowUpRight className="ml-auto size-3 opacity-0 group-aria-selected:opacity-40" />
+                </CommandItem>
+              );
+            })}
+          </CommandGroup>
+
+          <CommandSeparator className="bg-muted/50 mx-2" />
+
+          <CommandGroup heading="Paramètres rapides" className="p-2">
+            <CommandItem
+              onSelect={() =>
+                runCommand(() => navigate(ROUTES.SETTINGS_ACCOUNT))
+              }
+              className="px-3 py-2 cursor-pointer group"
+            >
+              <User className="mr-3 h-4 w-4 text-muted-foreground group-aria-selected:text-primary" />
+              <span className="font-medium">Paramètres du compte</span>
+              <CommandShortcut className="group-aria-selected:text-primary-foreground">
+                Ctrl+P
+              </CommandShortcut>
+            </CommandItem>
+            <CommandItem
+              onSelect={() =>
+                runCommand(() => navigate(ROUTES.SETTINGS_APPEARANCE))
+              }
+              className="px-3 py-2 cursor-pointer group"
+            >
+              <Settings className="mr-3 h-4 w-4 text-muted-foreground group-aria-selected:text-primary" />
+              <span className="font-medium">Thème & Apparence</span>
+              <CommandShortcut className="group-aria-selected:text-primary-foreground">
+                Ctrl+S
+              </CommandShortcut>
+            </CommandItem>
+            <CommandItem className="px-3 py-2 cursor-pointer group">
+              <ShieldCheck className="mr-3 h-4 w-4 text-muted-foreground group-aria-selected:text-primary" />
+              <span className="font-medium">Sécurité & Confidentialité</span>
+            </CommandItem>
+            {isAdmin && (
+              <CommandItem
+                onSelect={() =>
+                  runCommand(() => navigate(ROUTES.SETTINGS_AI))
+                }
+                className="px-3 py-2 cursor-pointer group"
+              >
+                <Sparkles className="mr-3 h-4 w-4 text-muted-foreground group-aria-selected:text-primary" />
+                <span className="font-medium">Modèles d'IA & Clés API</span>
+              </CommandItem>
+            )}
+          </CommandGroup>
+
+          <CommandSeparator className="bg-muted/50 mx-2" />
+
+          <CommandGroup heading="Support" className="p-2">
+            <CommandItem className="px-3 py-2 cursor-pointer group">
+              <HelpCircle className="mr-3 h-4 w-4 text-muted-foreground group-aria-selected:text-primary" />
+              <span className="font-medium">Documentation</span>
+            </CommandItem>
+            <CommandItem className="px-3 py-2 cursor-pointer group">
+              <Mail className="mr-3 h-4 w-4 text-muted-foreground group-aria-selected:text-primary" />
+              <span className="font-medium">Contacter le support</span>
+            </CommandItem>
+          </CommandGroup>
+        </CommandList>
+
+        <div className="bg-muted/30 p-3 border-t flex items-center justify-center gap-6">
+          <div className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+            <kbd className="border bg-background px-1.5 py-0.5 shadow-sm rounded">
+              ↑ / ↓
+            </kbd>
+            naviguer
+          </div>
+          <div className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+            <kbd className="border bg-background px-1.5 py-0.5 shadow-sm rounded">
+              Entrée
+            </kbd>
+            sélectionner
+          </div>
+          <div className="flex items-center gap-1.5 text-[10px] font-bold text-muted-foreground uppercase tracking-widest">
+            <kbd className="border bg-background px-1.5 py-0.5 shadow-sm rounded">
+              Échap
+            </kbd>
+            fermer
+          </div>
+        </div>
+      </CommandDialog>
+    </>
+  );
+}
