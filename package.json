@@ -1,0 +1,31 @@
+{
+  "name": "plateforme-commandes",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "rail"
+  ],
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "preview": "vite preview",
+    "test:unit": "vitest run --exclude **/test/integration/**",
+    "test:integration": "vitest run src/test/integration --maxWorkers=1 --passWithNoTests",
+    "test:all": "npm run test:unit && npm run test:integration",
+    "check:architecture": "node rail/scripts/check-layer-imports-full.mjs --strict && node rail/scripts/check-shared-boundary.mjs && node rail/scripts/check-manifests.mjs",
+    "check:encoding": "node rail/scripts/check-mojibake.mjs",
+    "lint": "node rail/scripts/lint-changed.mjs",
+    "startapp": "node rail/scripts/startapp.mjs",
+    "register": "node rail/scripts/register.mjs",
+    "unregister": "node rail/scripts/unregister.mjs",
+    "getModels": "node --max-http-header-size=65536 rail/scripts/getModels.mjs",
+    "schema": "node rail/scripts/generate-schema-types.mjs",
+    "shared:push": "node rail/scripts/shared.mjs push",
+    "shared:pull": "node rail/scripts/shared.mjs pull"
+  },
+  "dependencies": {
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1"
+  }
+}
