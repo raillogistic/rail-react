@@ -42,10 +42,10 @@ it('ignores a legacy icons choice without resetting other appearance preferences
   expect(screen.getByLabelText('font size')).toHaveTextContent('lg');
 });
 
-it('allows a session change but returns to the complete sidebar on reopening', () => {
+it('ignores obsolete layout setters and maintains the complete sidebar', () => {
   const view = renderSidebar();
   fireEvent.click(screen.getByRole('button', { name: 'Menu avec icônes' }));
-  expect(screen.getByLabelText('sidebar mode')).toHaveTextContent('icons');
+  expect(screen.getByLabelText('sidebar mode')).toHaveTextContent('complete');
   view.unmount();
   renderSidebar();
   expect(screen.getByLabelText('sidebar mode')).toHaveTextContent('complete');

@@ -41,38 +41,18 @@ vi.mock("@/shared/ui/theme", async (importOriginal) => {
 });
 
 describe("AppearanceSettings", () => {
-  it("affiche le sélecteur de disposition de la barre latérale et le type de navigation en mode icônes", () => {
-    mock_theme_state = {
-      ...mock_theme_state,
-      sidebarMode: "icons",
-      navigationPattern: "secondary-sidebar",
-    };
-
+  it("affiche les sélecteurs de mode, thème et typographie", () => {
     render(<AppearanceSettings />);
 
-    expect(screen.getByText("Disposition de la barre latérale")).toBeInTheDocument();
-    expect(screen.getByText("Type de navigation")).toBeInTheDocument();
-    expect(
-      screen.getByText(
-        "Barre d'icônes compacte. L'affichage des sous-menus est défini par le type de navigation.",
-      ),
-    ).toBeInTheDocument();
+    expect(screen.getByText("Mode")).toBeInTheDocument();
+    expect(screen.getByText("Thème")).toBeInTheDocument();
+    expect(screen.getByText("Typographie")).toBeInTheDocument();
   });
 
-  it("masque le type de navigation lorsque la barre latérale complète est sélectionnée", () => {
-    mock_theme_state = {
-      ...mock_theme_state,
-      sidebarMode: "complete",
-    };
-
+  it("ne présente plus les options obsolètes de disposition ou de type de navigation", () => {
     render(<AppearanceSettings />);
 
-    expect(screen.getByText("Disposition de la barre latérale")).toBeInTheDocument();
+    expect(screen.queryByText("Disposition de la barre latérale")).not.toBeInTheDocument();
     expect(screen.queryByText("Type de navigation")).not.toBeInTheDocument();
-    expect(
-      screen.getByText(
-        "Barre latérale complète affichant directement le menu et les sous-menus.",
-      ),
-    ).toBeInTheDocument();
   });
 });

@@ -7,6 +7,7 @@ export const BRANDING = {
   get logo() { return application.branding?.logo ?? defaultLogo; },
   get logoAlt() { return application.branding?.logoAlt ?? 'Logo'; },
   get description() { return application.branding?.description ?? 'Votre espace de travail'; },
+  get subtitle() { return (application.branding as { subtitle?: string })?.subtitle ?? ''; },
   editionLabel: '', platformLabel: '', hubLabel: '',
 };
 export const SYSTEM_STATUS = { connectedLabel: 'Connecté', latencyRegionLabel: '' } as const;

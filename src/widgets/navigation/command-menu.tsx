@@ -129,16 +129,25 @@ export function CommandMenu({
       <Button
         variant="outline"
         className={cn(
-          "relative h-9 w-full justify-start rounded-full bg-neutral-100/30 dark:bg-zinc-950/25 border-neutral-200/45 dark:border-zinc-800/60 text-xs font-semibold text-muted-foreground/80 shadow-none hover:bg-neutral-100/55 dark:hover:bg-zinc-900/35 hover:border-primary/30 hover:text-foreground transition-all duration-300 sm:pr-12 max-w-sm md:w-80 group/search",
+          "relative h-9 justify-start rounded-lg bg-muted/40 border-border/60 text-xs font-medium text-muted-foreground shadow-none hover:bg-muted/70 hover:text-foreground transition-all duration-200 pr-12 w-48 sm:w-64 md:w-72 lg:w-80 group/search hidden sm:inline-flex",
         )}
         onClick={() => setOpen(true)}
       >
-        <Search className="mr-2 h-3.5 w-3.5 opacity-60 group-hover/search:text-primary group-hover/search:opacity-100 transition-colors" />
-        <span className="hidden sm:inline-flex">Rechercher dans l'app...</span>
-        <span className="inline-flex sm:hidden">Rechercher...</span>
-        <kbd className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 hidden h-5 select-none items-center gap-1 bg-neutral-200/60 dark:bg-zinc-800/70 px-1.5 rounded text-[9px] font-bold text-muted-foreground/80 opacity-100 md:flex border-none">
-          <span className="text-[8px] font-extrabold uppercase">Ctrl</span>K
+        <Search className="mr-2 h-4 w-4 opacity-60 group-hover/search:text-primary group-hover/search:opacity-100 transition-colors" />
+        <span>Rechercher...</span>
+        <kbd className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 flex h-5 select-none items-center gap-0.5 rounded border border-border/70 bg-background px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
+          <span className="text-[10px]">Ctrl</span>K
         </kbd>
+      </Button>
+
+      <Button
+        variant="ghost"
+        size="icon"
+        aria-label="Rechercher"
+        className="h-9 w-9 sm:hidden"
+        onClick={() => setOpen(true)}
+      >
+        <Search className="h-4 w-4" />
       </Button>
 
       <CommandDialog open={open} onOpenChange={setOpen}>
