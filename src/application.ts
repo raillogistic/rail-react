@@ -7,7 +7,11 @@ const modules = import.meta.glob<ManifestModule>(['./projects/*/manifest.ts', '.
 
 const application: RailApplication = {
   defaultRoute: '/home',
-  branding: { productName: 'Mon application', description: 'Votre espace de travail' },
+  branding: {
+    productName: 'Plateforme de commandes',
+    productNameLong: 'Plateforme de commandes',
+    description: 'Votre espace de gestion des commandes',
+  },
   manifests: Object.values(modules).map(module => module.default ?? module.APP_MANIFEST).filter(Boolean) as AppManifest[],
 };
 export default application;

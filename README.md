@@ -1,20 +1,38 @@
-# Rail application
+# Plateforme de commandes
 
-Copy `.env.example` to `.env`, set your Rail-Django backend endpoint, then run `npm run dev`.
+Frontend React vide basé sur Rail React : authentification, mise en page, thèmes et composants partagés, avec une page d'accueil. Aucun module métier, commande ou jeu de données n'est ajouté.
 
-Application code belongs in `src/`. Reusable source belongs in `rail/`.
+## Démarrer
 
 ```bash
-npm run startapp -- inventory
-npm run register -- --model catalog.article --project inventory
-npm run shared:push -- "Improve table filtering"
+npm run dev
+```
+
+Configurer les URL du backend Rail-Django dans `.env` avant d'utiliser l'authentification ou les données. Ce fichier est ignoré par Git ; ses valeurs initiales sont des exemples. Aucun identifiant ni paramètre d'Achat n'a été copié.
+
+## Organisation
+
+- `src/projects/` : pages et fonctionnalités propres à cette plateforme.
+- `src/application.ts` : identité, navigation et extensions de l'application.
+- `rail/` : infrastructure et composants partagés, intégrés par Git subtree et npm workspace.
+
+## Vérifier
+
+```bash
+npm run check:architecture
+npm run test:unit
+npm run build
+```
+
+## Partager les composants
+
+```bash
+npm run shared:push -- "Description du changement"
 npm run shared:pull
-npm run shared:pull -- v2
+npm run shared:pull -- v1
 npm run shared:pull -- --list
 ```
 
-Push automatically publishes the next shared version (`v1`, `v2`, ...), after checks pass. Pull without a version gets the latest release; supplying a version selects that release, including an older one. `--list` shows available versions. No patch/minor/major decision is required.
+Chaque publication crée automatiquement la version suivante. Garder les fichiers de l'application propres avant une synchronisation ; les conflits et échecs de vérification arrêtent la commande. Les mises à jour ne déploient pas l'application.
 
-Commit or stash application changes before synchronization. Shared push commits only `rail/` changes. Both commands install dependencies, check architecture, run unit tests, and build. If dependency installation changes `package-lock.json`, commit that lockfile in this application afterward. Conflicts or failed checks stop the command and preserve local work; failed checks do not undo an already completed merge. See `rail/README.md` for recovery. Test important application flows before deploying.
-
-Keep model fields explicit in tables, forms, and details. The backend remains authoritative for permissions. Configure test credentials through `.env` and run `npm run test:all` for GraphQL changes.
+Ce projet a été initialisé depuis la version GitHub `v1` vérifiée (`4481fce3c8d75f55adf080329051b3aaf2c9ca93`), disponible dans le cache local, car GitHub était inaccessible pendant la création. Le remote `rail` pointe vers `https://github.com/raillogistic/rail-react.git`. La présence de versions plus récentes n'a pas pu être vérifiée. Aucun chemin de dépendance vers une autre application locale n'est nécessaire.
