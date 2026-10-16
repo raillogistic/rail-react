@@ -13,7 +13,7 @@
     "test:unit": "vitest run --exclude **/test/integration/**",
     "test:integration": "vitest run src/test/integration --maxWorkers=1 --passWithNoTests",
     "test:all": "npm run test:unit && npm run test:integration",
-    "check:architecture": "node rail/scripts/check-layer-imports-full.mjs --strict && node rail/scripts/check-shared-boundary.mjs && node rail/scripts/check-manifests.mjs",
+    "check:architecture": "node rail/scripts/check-layer-imports-full.mjs --strict && node rail/scripts/check-shared-boundary.mjs && node rail/scripts/check-manifests.mjs && npm run check:shared-apps",
     "check:encoding": "node rail/scripts/check-mojibake.mjs",
     "lint": "node rail/scripts/lint-changed.mjs",
     "startapp": "node rail/scripts/startapp.mjs",
@@ -22,10 +22,16 @@
     "getModels": "node --max-http-header-size=65536 rail/scripts/getModels.mjs",
     "schema": "node rail/scripts/generate-schema-types.mjs",
     "shared:push": "node rail/scripts/shared.mjs push",
-    "shared:pull": "node rail/scripts/shared.mjs pull"
+    "shared:pull": "node rail/scripts/shared.mjs pull",
+    "apps:push": "shared-apps push",
+    "apps:pull": "shared-apps pull",
+    "check:shared-apps": "shared-apps check"
   },
   "dependencies": {
     "react": "^19.1.1",
     "react-dom": "^19.1.1"
+  },
+  "devDependencies": {
+    "@raillogistic/shared-apps": "git+https://github.com/raillogistic/shared_apps.git#28e15f65bec88f8de2c0c6a7b887fbff55bb46e9"
   }
 }

@@ -24,7 +24,28 @@ npm run test:unit
 npm run build
 ```
 
-## Partager les composants
+## Partager les projets métier
+
+Les projets partagés restent dans `src/projects/`, par exemple `src/projects/shared_projects/partners/`. Toutes les interfaces utilisent le dépôt privé unique [shared_apps](https://github.com/raillogistic/shared_apps).
+
+```powershell
+npm run apps:pull -- shared_projects.partners
+npm run apps:push -- shared_projects.partners -m "Améliorer les partenaires"
+
+# Télécharger ou publier tout le groupe.
+npm run apps:pull -- shared_projects
+npm run apps:push -- shared_projects -m "Publier les projets partagés"
+```
+
+Les dépendances sont installées et les pages sont enregistrées automatiquement selon les permissions. Les choix locaux de pages restent dans `src/application/shared_project_options.ts`. Chaque backend doit fournir les modèles et permissions attendus. Les projets partagés restent indépendants du dossier `rail/`.
+
+Pour préparer une nouvelle interface :
+
+```powershell
+npx --yes --package="git+https://github.com/raillogistic/shared_apps.git" shared-apps init
+```
+
+## Partager les composants du framework
 
 ```bash
 npm run shared:push -- "Description du changement"
