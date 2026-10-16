@@ -79,4 +79,4 @@ The repository runs standalone with generic core routes. Previous application ex
 
 Application startup calls `configureApplication(application)` before loading the shared root. Shared imports read a side-effect-free configuration object and never import application manifests themselves.
 
-Every application opening starts with **Barre latérale complète**. The appearance selector can change the sidebar during the current session; reopening returns to the complete sidebar, including when an older icon-only preference is saved. Other appearance preferences keep their existing persistence.
+The shared main window uses **Barre latérale complète** as its only navigation layout. Desktop openings start with the sidebar visible; it can be hidden and reopened, and mobile uses a navigation drawer. Legacy layout preferences and setters cannot activate alternate layouts. Saved themes, light/dark mode, and typography preferences keep their existing persistence. New users use the neutral-and-blue default theme.

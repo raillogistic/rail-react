@@ -129,7 +129,7 @@ export function CommandMenu({
       <Button
         variant="outline"
         className={cn(
-          "relative h-9 justify-start rounded-lg bg-muted/40 border-border/60 text-xs font-medium text-muted-foreground shadow-none hover:bg-muted/70 hover:text-foreground transition-all duration-200 pr-12 w-48 sm:w-64 md:w-72 lg:w-80 group/search hidden sm:inline-flex",
+          "relative h-9 justify-start rounded-lg bg-muted/40 border-border/60 text-xs font-medium text-muted-foreground shadow-none hover:bg-muted/70 hover:text-foreground transition-all duration-200 pr-12 w-80 group/search hidden lg:inline-flex",
         )}
         onClick={() => setOpen(true)}
       >
@@ -144,7 +144,7 @@ export function CommandMenu({
         variant="ghost"
         size="icon"
         aria-label="Rechercher"
-        className="h-9 w-9 sm:hidden"
+        className="h-9 w-9 lg:hidden"
         onClick={() => setOpen(true)}
       >
         <Search className="h-4 w-4" />
