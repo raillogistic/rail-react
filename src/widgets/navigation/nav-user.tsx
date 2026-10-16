@@ -78,8 +78,8 @@ export function NavUser({ user, onLogout, isRail }: NavUserProps = {}) {
               size="lg"
               className={cn(
                 "group transition-all duration-200",
-                "data-[state=open]:bg-neutral-100/80 dark:data-[state=open]:bg-zinc-800/80 data-[state=open]:text-foreground",
-                "hover:bg-neutral-100/60 dark:hover:bg-zinc-800/60",
+                "data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground",
+                "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
                 is_collapsed ? "h-10 w-10 justify-center p-0 rounded-full" : "h-12 w-full px-2 rounded-lg",
               )}
             >
@@ -87,7 +87,7 @@ export function NavUser({ user, onLogout, isRail }: NavUserProps = {}) {
               <div className="relative shrink-0 flex items-center justify-center">
                 <Avatar
                   className={cn(
-                    "border border-neutral-200/30 group-hover:border-primary/45 transition-colors duration-200",
+                    "border border-sidebar-border group-hover:border-sidebar-primary/45 transition-colors duration-200",
                     is_collapsed ? "h-10 w-10" : "h-9 w-9",
                   )}
                 >
@@ -106,31 +106,31 @@ export function NavUser({ user, onLogout, isRail }: NavUserProps = {}) {
               {!is_collapsed && (
                 <>
                   <div className="grid flex-1 text-left text-sm leading-tight ml-2.5">
-                    <span className="truncate font-semibold text-foreground/90 tracking-tight text-[0.8125rem]">
+                    <span className="truncate font-semibold tracking-tight text-[0.8125rem]">
                       {primary_identity}
                     </span>
-                    <span className="text-muted-foreground/60 truncate text-[0.625rem] font-medium tracking-wide">
+                    <span className="text-sidebar-foreground/70 truncate text-[0.625rem] font-medium tracking-wide">
                       {secondary_identity}
                     </span>
                   </div>
                   <div className="ml-auto flex items-center shrink-0">
-                    <IconChevronRight className="size-3.5 text-muted-foreground/30 group-hover:text-muted-foreground transition-colors duration-200" />
+                    <IconChevronRight className="size-3.5 opacity-60 group-hover:opacity-100 transition-opacity duration-200" />
                   </div>
                 </>
               )}
             </SidebarMenuButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent
-            className="w-72 border border-neutral-200/30 dark:border-zinc-800/65 bg-sidebar/90 p-2.5 backdrop-blur-2xl shadow-none rounded-xl"
+            className="w-72 border border-border bg-popover text-popover-foreground p-2.5 shadow-sm rounded-xl"
             side={is_mobile ? "bottom" : "right"}
             align="end"
             sideOffset={12}
           >
             <DropdownMenuLabel className="p-0 font-normal">
               {/* En-tête du menu utilisateur avec badge premium en français */}
-              <div className="flex items-center gap-3 px-3 py-3 text-left bg-neutral-100/50 dark:bg-zinc-800/50 border border-neutral-200/20 dark:border-zinc-800/40 rounded-lg mb-2">
+              <div className="flex items-center gap-3 px-3 py-3 text-left bg-muted/50 border border-border rounded-lg mb-2">
                 <div className="relative shrink-0">
-                  <Avatar className="h-11 w-11 border border-neutral-200/30">
+                  <Avatar className="h-11 w-11 border border-border">
                     <AvatarImage
                       src={user_avatar}
                       alt={user?.username ?? undefined}
@@ -139,10 +139,10 @@ export function NavUser({ user, onLogout, isRail }: NavUserProps = {}) {
                       {avatar_fallback}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 border-2 border-sidebar bg-emerald-500 rounded-full" />
+                  <div className="absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 border-2 border-popover bg-emerald-500 rounded-full" />
                 </div>
                 <div className="grid flex-1 text-left text-sm leading-tight">
-                  <span className="truncate font-bold text-foreground text-sm tracking-tight">
+                  <span className="truncate font-bold text-popover-foreground text-sm tracking-tight">
                     {primary_identity}
                   </span>
                   <div className="flex items-center gap-1.5 mt-0.5">
@@ -201,7 +201,7 @@ export function NavUser({ user, onLogout, isRail }: NavUserProps = {}) {
               </DropdownMenuItem>
             </DropdownMenuGroup>
 
-            <DropdownMenuSeparator className="bg-neutral-200/20 dark:bg-zinc-800/40 my-1.5 mx-1" />
+            <DropdownMenuSeparator className="bg-border my-1.5 mx-1" />
 
             {/* Déconnexion */}
             <div className="px-1 py-0.5">

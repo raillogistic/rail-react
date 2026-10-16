@@ -213,10 +213,10 @@ export function ThemeProvider({
   children,
   defaultTheme = DEFAULT_THEME,
   defaultMode = DEFAULT_MODE,
-  defaultLayout = DEFAULT_LAYOUT,
-  defaultNavigationPattern = DEFAULT_NAVIGATION_PATTERN,
-  defaultSidebarMode = DEFAULT_SIDEBAR_MODE,
-  defaultSidebarCollapseMode = DEFAULT_SIDEBAR_COLLAPSE_MODE,
+  defaultLayout: _defaultLayout,
+  defaultNavigationPattern: _defaultNavigationPattern,
+  defaultSidebarMode: _defaultSidebarMode,
+  defaultSidebarCollapseMode: _defaultSidebarCollapseMode,
   defaultFontSize = DEFAULT_FONT_SIZE,
   defaultFontFamily = DEFAULT_FONT_FAMILY,
   defaultLineHeight = DEFAULT_LINE_HEIGHT,
@@ -238,32 +238,11 @@ export function ThemeProvider({
     );
   });
 
-  const [layout, setLayoutState] = useState<Layout>(() => {
-    return (
-      (localStorage.getItem(`${storageKey}-layout`) as Layout) || defaultLayout
-    );
-  });
-
-  const [navigationPattern, setNavigationPatternState] =
-    useState<NavigationPattern>(() => {
-      return (
-        (localStorage.getItem(
-          `${storageKey}-navigation-pattern`,
-        ) as NavigationPattern) || defaultNavigationPattern
-      );
-    });
-
-  // Full sidebar is the only navigation layout in the redesigned business workspace.
-  const [sidebarMode] = useState<SidebarMode>("complete");
-
-  const [sidebarCollapseMode, setSidebarCollapseModeState] =
-    useState<SidebarCollapseMode>(() => {
-      return (
-        (localStorage.getItem(
-          `${storageKey}-sidebar-collapse`,
-        ) as SidebarCollapseMode) || defaultSidebarCollapseMode
-      );
-    });
+  // Legacy layout props and stored preferences cannot change the shared shell.
+  const layout: Layout = "vertical";
+  const navigationPattern: NavigationPattern = "secondary-sidebar";
+  const sidebarMode: SidebarMode = "complete";
+  const sidebarCollapseMode: SidebarCollapseMode = "offcanvas";
 
   const [fontSize, setFontSizeState] = useState<FontSize>(() => {
     return (
@@ -330,9 +309,6 @@ export function ThemeProvider({
 
       const resolvedTheme = settings.theme;
       const resolvedMode = settings.mode;
-      const resolvedLayout = settings.layout;
-      const resolvedSidebar =
-        settings.sidebar_collapse_mode ?? settings.sidebarCollapseMode;
       const resolvedFontSize = settings.font_size ?? settings.fontSize;
       const resolvedFontFamily = settings.font_family ?? settings.fontFamily;
 
@@ -343,14 +319,6 @@ export function ThemeProvider({
       if (resolvedMode) {
         localStorage.setItem(`${storageKey}-mode`, resolvedMode);
         setModeState(resolvedMode as ThemeMode);
-      }
-      if (resolvedLayout) {
-        localStorage.setItem(`${storageKey}-layout`, resolvedLayout);
-        setLayoutState(resolvedLayout as Layout);
-      }
-      if (resolvedSidebar) {
-        localStorage.setItem(`${storageKey}-sidebar-collapse`, resolvedSidebar);
-        setSidebarCollapseModeState(resolvedSidebar as SidebarCollapseMode);
       }
       if (resolvedFontSize) {
         localStorage.setItem(`${storageKey}-font-size`, resolvedFontSize);
@@ -365,13 +333,6 @@ export function ThemeProvider({
     // Apply local fallback immediately while waiting for server-authoritative values.
     const persistedTheme = localStorage.getItem(`${storageKey}-theme`);
     const persistedMode = localStorage.getItem(`${storageKey}-mode`);
-    const persistedLayout = localStorage.getItem(`${storageKey}-layout`);
-    const persistedNavigationPattern = localStorage.getItem(
-      `${storageKey}-navigation-pattern`,
-    );
-    const persistedSidebarCollapseMode = localStorage.getItem(
-      `${storageKey}-sidebar-collapse`,
-    );
     const persistedFontSize = localStorage.getItem(`${storageKey}-font-size`);
     const persistedFontFamily = localStorage.getItem(
       `${storageKey}-font-family`,
@@ -388,19 +349,6 @@ export function ThemeProvider({
     }
     if (persistedMode) {
       setModeState(persistedMode as ThemeMode);
-    }
-    if (persistedLayout) {
-      setLayoutState(persistedLayout as Layout);
-    }
-    if (persistedNavigationPattern) {
-      setNavigationPatternState(
-        persistedNavigationPattern as NavigationPattern,
-      );
-    }
-    if (persistedSidebarCollapseMode) {
-      setSidebarCollapseModeState(
-        persistedSidebarCollapseMode as SidebarCollapseMode,
-      );
     }
     if (persistedFontSize) {
       setFontSizeState(persistedFontSize as FontSize);
@@ -626,27 +574,11 @@ export function ThemeProvider({
     setMode(newMode);
   };
 
-  const setLayout = (newLayout: Layout) => {
-    localStorage.setItem(`${storageKey}-layout`, newLayout);
-    setLayoutState(newLayout);
-    void saveSetting({ layout: newLayout });
-  };
-
-  const setNavigationPattern = (newPattern: NavigationPattern) => {
-    localStorage.setItem(`${storageKey}-navigation-pattern`, newPattern);
-    setNavigationPatternState(newPattern);
-    // Note: Backend does not expose this preference yet. Keep it local for now.
-  };
-
-  const setSidebarMode = (_newMode: SidebarMode) => {
-    // Obsolete setter retained for source compatibility; cannot activate alternate layouts.
-  };
-
-  const setSidebarCollapseMode = (newMode: SidebarCollapseMode) => {
-    localStorage.setItem(`${storageKey}-sidebar-collapse`, newMode);
-    setSidebarCollapseModeState(newMode);
-    void saveSetting({ sidebar_collapse_mode: newMode });
-  };
+  // Deprecated setters remain callable without persisting obsolete preferences.
+  const setLayout = (_newLayout: Layout) => {};
+  const setNavigationPattern = (_newPattern: NavigationPattern) => {};
+  const setSidebarMode = (_newMode: SidebarMode) => {};
+  const setSidebarCollapseMode = (_newMode: SidebarCollapseMode) => {};
 
   const setFontSize = (newSize: FontSize) => {
     localStorage.setItem(`${storageKey}-font-size`, newSize);
@@ -678,18 +610,6 @@ export function ThemeProvider({
     if (defaultTheme && defaultTheme !== DEFAULT_THEME)
       setThemeState(defaultTheme);
     if (defaultMode && defaultMode !== DEFAULT_MODE) setModeState(defaultMode);
-    if (defaultLayout && defaultLayout !== DEFAULT_LAYOUT)
-      setLayoutState(defaultLayout);
-    if (
-      defaultNavigationPattern &&
-      defaultNavigationPattern !== DEFAULT_NAVIGATION_PATTERN
-    )
-      setNavigationPatternState(defaultNavigationPattern);
-    if (
-      defaultSidebarCollapseMode &&
-      defaultSidebarCollapseMode !== DEFAULT_SIDEBAR_COLLAPSE_MODE
-    )
-      setSidebarCollapseModeState(defaultSidebarCollapseMode);
     if (defaultFontSize && defaultFontSize !== DEFAULT_FONT_SIZE)
       setFontSizeState(defaultFontSize);
     if (defaultFontFamily && defaultFontFamily !== DEFAULT_FONT_FAMILY)
@@ -701,9 +621,6 @@ export function ThemeProvider({
   }, [
     defaultTheme,
     defaultMode,
-    defaultLayout,
-    defaultNavigationPattern,
-    defaultSidebarCollapseMode,
     defaultFontSize,
     defaultFontFamily,
     defaultLineHeight,
@@ -753,9 +670,7 @@ export function ThemeProvider({
     root.setAttribute("data-letter-spacing", letterSpacing);
     root.setAttribute("data-navigation-pattern", navigationPattern);
     root.setAttribute("data-sidebar-mode", sidebarMode);
-    // Keep legacy user settings persisted, but normalize the shell styling to
-    // the single supported sidebar layout.
-    root.setAttribute("data-layout", "vertical");
+    root.setAttribute("data-layout", layout);
 
     // Set Color Scheme
     root.style.colorScheme = mode;

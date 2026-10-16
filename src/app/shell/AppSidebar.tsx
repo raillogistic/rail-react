@@ -102,7 +102,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarContent>
 
       <SidebarFooter className="border-t border-border/60 p-2.5">
-        <div className="rounded-xl border border-border/50 bg-background/80 p-1">
+        <div className="rounded-xl border border-sidebar-border bg-sidebar p-1">
           <NavUser user={user} onLogout={logout} />
         </div>
       </SidebarFooter>

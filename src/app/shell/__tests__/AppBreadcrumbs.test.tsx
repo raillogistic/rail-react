@@ -78,6 +78,7 @@ vi.mock("@/app/router/routeAccess", () => ({
   useRouteAccess: () => ({
     defaultRoute: "/achat",
     navigationLinks: mock_navigation_links,
+    canAccessRoute: () => true,
   }),
 }));
 
@@ -90,6 +91,34 @@ vi.mock("@/app/router/manifestRegistry", async (importOriginal) => {
 });
 
 describe("deriveBreadcrumbItems", () => {
+  it("résout les ancêtres paramétrés et désactive les destinations interdites", () => {
+    const routes: AppRouteConfig[] = [
+      ...mock_routes,
+      { id: "edit", path: "/achat/bons-de-commande/:id/edit", guard: "protected", projectId: "achat", title: "Modifier" },
+    ];
+    const items = deriveBreadcrumbItems(
+      "/achat/bons-de-commande/42/edit", [], "/achat", routes,
+      (route) => route.id !== "route-orders-list",
+    );
+    expect(items.find((item) => item.path === "/achat/bons-de-commande/42"))
+      .toMatchObject({ title: "Détail du bon de commande", isClickable: true });
+    expect(items.find((item) => item.path === "/achat/bons-de-commande"))
+      .toMatchObject({ isClickable: false });
+    expect(items.some((item) => item.path?.includes(":id"))).toBe(false);
+  });
+
+  it("préfère une route exacte et conserve la page courante après déduplication", () => {
+    const routes: AppRouteConfig[] = [
+      { id: "dynamic", path: "/achat/:id", guard: "public", projectId: "achat", title: "Détail" },
+      ...mock_routes,
+      { id: "new", path: "/achat/new", guard: "public", projectId: "achat", title: "Accueil Achats" },
+    ];
+    const items = deriveBreadcrumbItems("/achat/new", [], "/achat", routes);
+    expect(items).toEqual([
+      { title: "Accueil Achats", path: "/achat/new", isClickable: false },
+    ]);
+  });
+
   it("masque le fil d'Ariane sur la page d'atterrissage (landing route)", () => {
     const items = deriveBreadcrumbItems(
       "/achat",
