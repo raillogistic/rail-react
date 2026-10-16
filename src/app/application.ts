@@ -22,6 +22,7 @@ export interface RailApplication {
     logo?: string;
     logoAlt?: string;
     description?: string;
+    subtitle?: string;
   };
   auth?: {
     currentUserQuery?: DocumentNode;

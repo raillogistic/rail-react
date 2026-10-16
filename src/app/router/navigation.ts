@@ -102,28 +102,25 @@ export const findNavigationByPath = (
   | undefined => {
   const normalized = normalizePath(pathname);
 
-  const matchesPath = (targetPath: string): boolean =>
-    Boolean(
-      matchPath(
-        {
-          path: normalizePath(targetPath),
-          end: true,
-        },
-        normalized,
-      ),
-    );
+  const matchesPath = (targetPath: string, exact: boolean): boolean =>
+    exact
+      ? normalizePath(targetPath) === normalized
+      : Boolean(matchPath({ path: normalizePath(targetPath), end: true }, normalized));
 
-  for (const section of navigationLinks) {
-    for (const item of section.items) {
-      if (matchesPath(item.path) && item.component) {
-        return { section, item, page: { ...item, component: item.component } };
-      }
+  // Static destinations take precedence over earlier parameterized entries.
+  for (const exact of [true, false]) {
+    for (const section of navigationLinks) {
+      for (const item of section.items) {
+        if (matchesPath(item.path, exact) && item.component) {
+          return { section, item, page: { ...item, component: item.component } };
+        }
 
-      const match = item.children?.find(
-        (child) => matchesPath(child.path),
-      );
-      if (match) {
-        return { section, item, page: match };
+        const match = item.children?.find(
+          (child) => matchesPath(child.path, exact),
+        );
+        if (match) {
+          return { section, item, page: match };
+        }
       }
     }
   }

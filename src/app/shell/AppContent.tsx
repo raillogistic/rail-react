@@ -114,7 +114,7 @@ export function SiteHeader({
   return (
     <header className="sticky top-0 z-40 flex h-14 w-full shrink-0 items-center justify-between border-b border-border/60 bg-background px-4">
       {/* Gauche : déclencheur sidebar, marque mobile, fil d'Ariane bureau */}
-      <div className="flex items-center gap-3 min-w-0">
+      <div className="flex flex-1 items-center gap-3 min-w-0 overflow-hidden">
         <SidebarTrigger
           aria-label="Basculer le menu"
           className="h-9 w-9 text-muted-foreground hover:text-foreground shrink-0"
@@ -139,7 +139,7 @@ export function SiteHeader({
         </Link>
 
         {/* Fil d'Ariane dérivé sur bureau */}
-        <div className="hidden md:flex items-center min-w-0">
+        <div className="hidden md:flex items-center min-w-0 overflow-hidden">
           <AppBreadcrumbs />
         </div>
       </div>
