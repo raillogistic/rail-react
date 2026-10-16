@@ -8,6 +8,7 @@ import {
   IconShieldLock,
   IconUserCircle,
 } from "@tabler/icons-react";
+import { MoreVertical } from "lucide-react";
 import { ROUTES } from "@/shared/routing/routes";
 import { getUserIdentity, type UserLike } from "@/shared/auth/userIdentity";
 import { Avatar, AvatarFallback, AvatarImage } from "@/shared/ui/kit/avatar";
@@ -78,17 +79,17 @@ export function NavUser({ user, onLogout, isRail }: NavUserProps = {}) {
               size="lg"
               className={cn(
                 "group transition-all duration-200",
-                "data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground",
-                "hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
-                is_collapsed ? "h-10 w-10 justify-center p-0 rounded-full" : "h-12 w-full px-2 rounded-lg",
+                "data-[state=open]:bg-muted/80 data-[state=open]:text-foreground",
+                "hover:bg-muted/60 hover:text-foreground",
+                is_collapsed ? "h-11 w-11 justify-center p-0 rounded-full mx-auto" : "h-13 w-full px-2.5 rounded-xl",
               )}
             >
-              {/* Conteneur d'avatar avec témoin de présence en ligne vert */}
+              {/* Conteneur d'avatar circulaire épuré */}
               <div className="relative shrink-0 flex items-center justify-center">
                 <Avatar
                   className={cn(
-                    "border border-sidebar-border group-hover:border-sidebar-primary/45 transition-colors duration-200",
-                    is_collapsed ? "h-10 w-10" : "h-9 w-9",
+                    "border border-border/50 transition-colors duration-200",
+                    is_collapsed ? "h-10 w-10" : "h-10 w-10",
                   )}
                 >
                   <AvatarImage
@@ -96,25 +97,24 @@ export function NavUser({ user, onLogout, isRail }: NavUserProps = {}) {
                     alt={user?.username ?? undefined}
                     className="object-cover"
                   />
-                  <AvatarFallback className="bg-primary/10 text-primary font-bold">
+                  <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs">
                     {avatar_fallback}
                   </AvatarFallback>
                 </Avatar>
-                <div className="absolute -bottom-0.5 -right-0.5 h-3 w-3 border-2 border-sidebar bg-emerald-500 rounded-full" />
               </div>
 
               {!is_collapsed && (
                 <>
-                  <div className="grid flex-1 text-left text-sm leading-tight ml-2.5">
-                    <span className="truncate font-semibold tracking-tight text-[0.8125rem]">
+                  <div className="grid flex-1 text-left text-sm leading-tight ml-3 group-data-[collapsible=icon]:hidden">
+                    <span className="truncate font-semibold tracking-tight text-[0.9375rem] text-foreground">
                       {primary_identity}
                     </span>
-                    <span className="text-sidebar-foreground/70 truncate text-[0.625rem] font-medium tracking-wide">
+                    <span className="text-muted-foreground/75 truncate text-xs font-normal mt-0.5">
                       {secondary_identity}
                     </span>
                   </div>
-                  <div className="ml-auto flex items-center shrink-0">
-                    <IconChevronRight className="size-3.5 opacity-60 group-hover:opacity-100 transition-opacity duration-200" />
+                  <div className="ml-auto flex items-center shrink-0 group-data-[collapsible=icon]:hidden">
+                    <MoreVertical className="size-4 text-muted-foreground/60 group-hover:text-foreground transition-colors" />
                   </div>
                 </>
               )}

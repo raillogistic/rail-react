@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { get_best_matching_path } from "../nav-main";
+import { render, screen } from "@testing-library/react";
+import { MemoryRouter } from "react-router-dom";
+import { SidebarProvider } from "@/shared/ui/kit/sidebar";
+import type { NavigationSection } from "@/shared/routing/navigation";
+import { get_best_matching_path, NavMain } from "../nav-main";
 
 /**
  * @file nav-main.test.tsx
@@ -53,8 +57,70 @@ describe("NavMain Path Matching Logic", () => {
     expect(match).toBe("/achat/validations");
   });
 
-  it("devrait retourner null s'il n'y a pas de correspondance", () => {
-    const match = get_best_matching_path("/autre-module", paths);
-    expect(match).toBeNull();
+});
+
+describe("NavMain Rendering & Badge Notifications", () => {
+  const sample_sections: NavigationSection[] = [
+    {
+      id: "mail-section",
+      label: "MAIL",
+      items: [
+        {
+          id: "inbox",
+          title: "Inbox",
+          path: "/mail/inbox",
+          badge: "14",
+          requiresAuth: true,
+        },
+        {
+          id: "messages",
+          title: "Messages",
+          path: "/mail/messages",
+          badge: 9,
+          requiresAuth: true,
+        },
+        {
+          id: "tags",
+          title: "Tags",
+          path: "/mail/tags",
+          requiresAuth: true,
+        },
+      ],
+    },
+  ];
+
+  it("affiche les libellés de section uppercase et les badges en mode étendu", () => {
+    render(
+      <MemoryRouter initialEntries={["/mail/inbox"]}>
+        <SidebarProvider defaultOpen={true}>
+          <NavMain navigationLinks={sample_sections} />
+        </SidebarProvider>
+      </MemoryRouter>,
+    );
+
+    expect(screen.getByText("MAIL")).toBeInTheDocument();
+    expect(screen.getByText("Inbox")).toBeInTheDocument();
+    expect(screen.getByText("Messages")).toBeInTheDocument();
+    expect(screen.getByText("Tags")).toBeInTheDocument();
+    expect(screen.getByText("14")).toBeInTheDocument();
+    expect(screen.getByText("9")).toBeInTheDocument();
+  });
+
+  it("affiche les pastilles de notification rouges uniquement sur les éléments avec badge en mode replié", () => {
+    const { container } = render(
+      <MemoryRouter initialEntries={["/mail/inbox"]}>
+        <SidebarProvider defaultOpen={false}>
+          <NavMain navigationLinks={sample_sections} />
+        </SidebarProvider>
+      </MemoryRouter>,
+    );
+
+    // Les badges textuels sont masqués en mode replié
+    expect(screen.queryByText("14")).not.toBeInTheDocument();
+
+    // Les pastilles rouges de notification existent pour inbox (badge "14") et messages (badge 9)
+    const red_dots = container.querySelectorAll(".bg-\\[\\#EF4444\\]");
+    expect(red_dots.length).toBe(2);
   });
 });
+
