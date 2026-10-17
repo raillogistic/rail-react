@@ -113,12 +113,12 @@ export function SiteHeader({
   };
 
   return (
-    <header className="sticky top-0 z-40 flex h-14 w-full shrink-0 items-center justify-between border-b border-border/60 bg-background px-4">
+    <header className="sticky top-0 z-40 flex h-14 w-full shrink-0 items-center justify-between border-0 bg-card/80 backdrop-blur-md px-4 md:px-6 shadow-[0_2px_10px_-3px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_10px_-3px_rgba(0,0,0,0.3)] transition-all duration-200">
       {/* Gauche : déclencheur sidebar, marque mobile, fil d'Ariane bureau */}
       <div className="flex flex-1 items-center gap-3 min-w-0 overflow-hidden">
         <SidebarTrigger
           aria-label="Basculer le menu"
-          className="h-9 w-9 text-muted-foreground hover:text-foreground shrink-0"
+          className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted/70 rounded-xl transition-all active:scale-95 shrink-0"
         />
 
         {/* Marque sur mobile uniquement */}
@@ -146,7 +146,7 @@ export function SiteHeader({
       </div>
 
       {/* Droite : recherche, connexion rapide, notifications, thème */}
-      <div className="flex items-center gap-2 shrink-0">
+      <div className="flex items-center gap-1.5 md:gap-2 shrink-0">
         <CommandMenu
           navigationLinks={navigationLinks}
           defaultPath={defaultPath}
@@ -156,9 +156,9 @@ export function SiteHeader({
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
-                variant="outline"
+                variant="ghost"
                 size="icon"
-                className="h-9 w-9"
+                className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted/70 rounded-xl transition-all active:scale-95"
                 disabled={switchingUser !== null}
                 aria-label="Connexion rapide"
               >
@@ -248,14 +248,16 @@ export const AppRoutes = (): React.ReactElement => {
 
 /**
  * Contenu principal encapsulé dans SidebarInset avec en-tête fixe et défilement indépendant.
+ * Comprend un bandeau d'en-tête net avec ligne de démarcation horizontale et une zone de contenu
+ * sur canevas doux contrasté (bg-muted/60), évitant l'effet de page blanche uniforme.
  *
  * @returns {React.ReactElement}
  */
 export default function AppContent(): React.ReactElement {
   return (
-    <SidebarInset className="bg-background flex flex-col flex-1 min-w-0 h-full overflow-hidden">
+    <SidebarInset className="flex flex-col flex-1 min-w-0 h-full overflow-hidden bg-background">
       <SiteHeader />
-      <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6 min-w-0">
+      <main className="flex-1 overflow-y-auto overflow-x-hidden p-4 md:p-6 min-w-0 bg-muted/60 text-foreground dark:bg-zinc-950/80">
         <AppRoutes />
       </main>
     </SidebarInset>

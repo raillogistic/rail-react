@@ -251,7 +251,7 @@ const Sidebar = React.forwardRef<
             // Adjust the padding for floating and inset variants.
             variant === "floating" || variant === "inset"
               ? "p-2 group-data-[collapsible=icon]:w-[calc(var(--sidebar-width-icon)+(--spacing(4))+2px)]"
-              : "group-data-[collapsible=icon]:w-(--sidebar-width-icon) group-data-[side=left]:border-r group-data-[side=right]:border-l",
+              : "group-data-[collapsible=icon]:w-(--sidebar-width-icon) group-data-[side=left]:border-r group-data-[side=right]:border-l border-border bg-sidebar",
             className,
           )}
           {...props}
@@ -259,7 +259,7 @@ const Sidebar = React.forwardRef<
           <div
             data-sidebar="sidebar"
             data-slot="sidebar-inner"
-            className="group-data-[variant=floating]:border-border/60 flex h-full w-full flex-col bg-sidebar group-data-[variant=floating]:rounded-2xl group-data-[variant=floating]:border group-data-[variant=floating]:shadow-sm group-data-[variant=floating]:overflow-hidden"
+            className="group-data-[variant=floating]:border-border/60 group-data-[variant=inset]:border-border/60 flex h-full w-full flex-col bg-sidebar group-data-[variant=floating]:rounded-2xl group-data-[variant=inset]:rounded-2xl group-data-[variant=floating]:border group-data-[variant=inset]:border group-data-[variant=floating]:shadow-sm group-data-[variant=inset]:shadow-sm group-data-[variant=floating]:overflow-hidden group-data-[variant=inset]:overflow-hidden"
           >
             {children}
           </div>
@@ -327,7 +327,8 @@ function SidebarInset({ className, ...props }: React.ComponentProps<"main">) {
       data-slot="sidebar-inset"
       className={cn(
         "bg-background relative flex w-full min-w-0 flex-1 flex-col overflow-x-hidden",
-        "md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-xl md:peer-data-[variant=inset]:shadow-sm md:peer-data-[variant=inset]:peer-data-[state=collapsed]:ml-2",
+        "md:peer-data-[variant=inset]:m-2 md:peer-data-[variant=inset]:ml-0 md:peer-data-[variant=inset]:rounded-2xl md:peer-data-[variant=inset]:border md:peer-data-[variant=inset]:border-border/60 md:peer-data-[variant=inset]:shadow-xs md:peer-data-[variant=inset]:peer-data-[state=collapsed]:peer-data-[collapsible=offcanvas]:ml-2",
+        "md:peer-data-[variant=floating]:m-2 md:peer-data-[variant=floating]:ml-0 md:peer-data-[variant=floating]:rounded-2xl md:peer-data-[variant=floating]:border md:peer-data-[variant=floating]:border-border/60 md:peer-data-[variant=floating]:shadow-xs md:peer-data-[variant=floating]:peer-data-[state=collapsed]:peer-data-[collapsible=offcanvas]:ml-2",
         className,
       )}
       {...props}

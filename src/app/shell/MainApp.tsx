@@ -1,8 +1,8 @@
 /**
  * @file MainApp.tsx
- * @description Fenêtre principale partagée de l'application (Main Window Redesign).
- * Remplace la boîte arrondie par un shell plein écran de bout en bout,
- * intégrant la barre latérale complète et la zone de contenu principale.
+ * @description Fenêtre principale partagée de l'application (Global Layout Redesign).
+ * Établit une distinction visuelle nette entre la barre latérale flottante (navigation)
+ * et l'espace de travail principal (main content card) reposant sur un canevas neutre épuré.
  *
  * @module app/shell/MainApp
  */
@@ -18,7 +18,8 @@ import AppContent from "./AppContent";
 
 /**
  * Shell principal de l'application partagée pour les écrans authentifiés.
- * Héberge la barre latérale complète, l'en-tête et la zone de contenu.
+ * Fournit le canevas de fond unifié et héberge la barre latérale flottante
+ * ainsi que le panneau de contenu principal distinct.
  *
  * @returns {React.ReactElement}
  */
