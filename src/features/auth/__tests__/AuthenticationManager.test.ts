@@ -95,6 +95,28 @@ describe('AuthenticationManager', () => {
     expect(authManager.hasPermission('profile:read')).toBe(true);
   });
 
+  it('discards a login response that arrives after logout', async () => {
+    let finish!: (value: Awaited<ReturnType<typeof loginFn>>) => void;
+    const pending = authManager.login({ username: 'test', password: 'synthetic' },
+      () => new Promise(resolve => { finish = resolve; }));
+    await authManager.logout({ silent: true });
+    finish({ success: true, user: mockUser, tokens: mockTokens, sessionId: 'late' });
+    expect((await pending).success).toBe(false);
+    expect(authManager.getState()).toMatchObject({ isAuthenticated: false, isLoading: false, user: null });
+    expect(authManager.tokenService.getAccessToken()).toBeNull();
+  });
+
+  it('discards an MFA response and its challenge after logout', async () => {
+    authManager.mfaService.setEphemeralToken('synthetic-challenge');
+    let finish!: (value: { user: AuthUser; tokens: TokenPair; sessionId: string }) => void;
+    const pending = authManager.verifyMFA('123456', () => new Promise(resolve => { finish = resolve; }));
+    await authManager.logout({ silent: true });
+    finish({ user: mockUser, tokens: mockTokens, sessionId: 'late' });
+    expect((await pending).success).toBe(false);
+    expect(authManager.mfaService.getEphemeralToken()).toBeNull();
+    expect(authManager.getState().isAuthenticated).toBe(false);
+  });
+
   it('handles login failure', async () => {
     const error = new Error('Invalid creds');
     const failLoginFn = vi.fn().mockRejectedValue(error);
@@ -148,7 +170,7 @@ describe('AuthenticationManager', () => {
       sessionId: 'session-1'
     });
 
-    const result = await authManager.verifyMFA('123456', badVerifyFn as any);
+    const result = await authManager.verifyMFA('123456', badVerifyFn as unknown as Parameters<AuthenticationManager['verifyMFA']>[1]);
 
     expect(result.success).toBe(false);
     expect(result.error?.code).toBe('SERVER_ERROR');
@@ -164,7 +186,7 @@ describe('AuthenticationManager', () => {
       sessionId: 'session-1'
     });
 
-    const result = await authManager.login({ username: 'u', password: 'p' }, badLoginFn as any);
+    const result = await authManager.login({ username: 'u', password: 'p' }, badLoginFn as unknown as Parameters<AuthenticationManager['login']>[1]);
 
     expect(result.success).toBe(false);
     expect(result.error?.code).toBe('SERVER_ERROR');

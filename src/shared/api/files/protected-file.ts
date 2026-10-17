@@ -23,6 +23,17 @@ function getBackendBaseUrl(): string | null {
   return raw.endsWith("/") ? raw : `${raw}/`;
 }
 
+/** Reject metadata-controlled destinations before attaching backend credentials. */
+export function assertBackendFileUrl(value: string): string {
+  const base = getBackendBaseUrl() ?? window.location.origin;
+  const target = new URL(value, base);
+  if (!['http:', 'https:'].includes(target.protocol) ||
+      target.origin !== new URL(base).origin || target.username || target.password) {
+    throw new Error("La destination du fichier ne correspond pas au serveur configuré.");
+  }
+  return target.toString();
+}
+
 function normalizeRelativeFilePath(rawValue: string): string | null {
   const trimmed = String(rawValue ?? "").trim();
   if (!trimmed) {
@@ -175,10 +186,11 @@ export function resolveProtectedFileRequestFilename(
 export async function fetchProtectedFile(
   value: string,
 ): Promise<ProtectedFileFetchResult> {
-  const requestUrl = resolveProtectedFileUrl(value);
-  if (!requestUrl) {
+  const resolvedUrl = resolveProtectedFileUrl(value);
+  if (!resolvedUrl) {
     throw new Error("Fichier introuvable.");
   }
+  const requestUrl = assertBackendFileUrl(resolvedUrl);
 
   const authorizationHeader = getAuthorizationHeader();
   const response = await fetch(requestUrl, {

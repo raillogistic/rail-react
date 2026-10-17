@@ -21,15 +21,28 @@ export type PermissionMatchingUser = {
     | null;
 };
 
-const escapeRegExp = (value: string): string =>
-  value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-
-const globToRegExp = (glob: string): RegExp => {
-  // Very small glob subset:
-  // - `*` matches any characters
-  // Examples: `store.*`, `*.view_*`, `*.*`
-  const escaped = escapeRegExp(glob).replace(/\\\*/g, ".*");
-  return new RegExp(`^${escaped}$`);
+/** Match the existing literal-plus-star syntax without exponential regexp backtracking. */
+const matchesGlob = (pattern: string, value: string): boolean => {
+  let patternIndex = 0;
+  let valueIndex = 0;
+  let starIndex = -1;
+  let retryIndex = 0;
+  while (valueIndex < value.length) {
+    if (pattern[patternIndex] === "*") {
+      starIndex = patternIndex++;
+      retryIndex = valueIndex;
+    } else if (pattern[patternIndex] === value[valueIndex]) {
+      patternIndex++;
+      valueIndex++;
+    } else if (starIndex >= 0 && !/[\n\r\u2028\u2029]/.test(value[retryIndex])) {
+      patternIndex = starIndex + 1;
+      valueIndex = ++retryIndex;
+    } else {
+      return false;
+    }
+  }
+  while (pattern[patternIndex] === "*") patternIndex++;
+  return patternIndex === pattern.length;
 };
 
 const matchesPermission = (granted: string, required: string): boolean => {
@@ -47,7 +60,7 @@ const matchesPermission = (granted: string, required: string): boolean => {
 
   // Wildcard / glob patterns.
   if (grantedTrimmed.includes("*")) {
-    return globToRegExp(grantedTrimmed).test(requiredTrimmed);
+    return matchesGlob(grantedTrimmed, requiredTrimmed);
   }
 
   // Exact match.
@@ -79,19 +92,13 @@ export const userHasPermission = (
     return true;
   }
 
-  const granted: string[] = [];
+  /** Stop at the first grant without allocating a flattened permission list. */
+  const matches = (permission: NonNullable<PermissionMatchingUser["permissions"]>[number]): boolean => {
+    const value = typeof permission === "string" ? permission : permission?.codename || permission?.name;
+    return !!value && matchesPermission(value, requiredPermission);
+  };
   for (const perm of user.permissions ?? []) {
-    if (typeof perm === "string") {
-      granted.push(perm);
-      continue;
-    }
-    if (perm?.codename) {
-      granted.push(perm.codename);
-      continue;
-    }
-    if (perm?.name) {
-      granted.push(perm.name);
-    }
+    if (matches(perm)) return true;
   }
 
   for (const role of user.roles ?? []) {
@@ -100,17 +107,11 @@ export const userHasPermission = (
     }
 
     for (const perm of role.permissions ?? []) {
-      if (typeof perm === "string") {
-        granted.push(perm);
-      } else if (perm?.codename) {
-        granted.push(perm.codename);
-      } else if (perm?.name) {
-        granted.push(perm.name);
-      }
+      if (matches(perm)) return true;
     }
   }
 
-  return granted.some((g) => matchesPermission(g, requiredPermission));
+  return false;
 };
 
 const collectRoleNames = (

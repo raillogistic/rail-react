@@ -31,6 +31,7 @@ export class TokenService {
   private config: TokenRefreshConfig;
   private refreshPromise: Promise<TokenPair> | null = null;
   private refreshTimer: NodeJS.Timeout | null = null;
+  private tokenRevision = 0;
 
   constructor(
     storage: StorageAdapter,
@@ -44,6 +45,8 @@ export class TokenService {
 
   // Store tokens securely
   setTokens(tokens: TokenPair): void {
+    this.tokenRevision += 1;
+    this.refreshPromise = null;
     const normalizedRefreshToken = normalizeOptionalToken(tokens.refreshToken);
     // Pass expiration for persistent storage types (like cookie)
     this.storage.set('access_token', tokens.accessToken, { expires: tokens.accessTokenExpiresAt });
@@ -131,31 +134,36 @@ export class TokenService {
 
     const refreshToken = this.getRefreshToken();
 
-    this.refreshPromise = this.executeRefresh(refreshFn, refreshToken);
+    const pending = this.executeRefresh(refreshFn, refreshToken, this.tokenRevision);
+    this.refreshPromise = pending;
 
     try {
-      const tokens = await this.refreshPromise;
+      const tokens = await pending;
       return tokens;
     } finally {
-      this.refreshPromise = null;
+      if (this.refreshPromise === pending) this.refreshPromise = null;
     }
   }
 
   private async executeRefresh(
     refreshFn: (token: string | null) => Promise<TokenPair>,
-    refreshToken: string | null
+    refreshToken: string | null,
+    revision: number,
   ): Promise<TokenPair> {
     let lastError: Error | null = null;
 
     for (let attempt = 0; attempt < this.config.maxRetries; attempt++) {
       try {
+        this.assertCurrentRevision(revision);
         const tokens = await refreshFn(refreshToken);
+        this.assertCurrentRevision(revision);
         this.setTokens(tokens);
         this.eventBus.emit('auth:token_refreshed', {
           expiresAt: tokens.accessTokenExpiresAt
         });
         return tokens;
       } catch (error) {
+        this.assertCurrentRevision(revision);
         lastError = error as Error;
         if (attempt < this.config.maxRetries - 1) {
           await this.delay(this.config.retryDelayMs * (attempt + 1));
@@ -174,7 +182,10 @@ export class TokenService {
       clearTimeout(this.refreshTimer);
     }
 
-    const refreshAt = expiresAt.getTime() - (this.config.refreshThresholdSeconds * 1000);
+    // A short-lived token must not trigger an immediate, repeating refresh loop.
+    const remaining = Math.max(0, expiresAt.getTime() - Date.now());
+    const margin = Math.min(this.config.refreshThresholdSeconds * 1000, remaining / 2);
+    const refreshAt = expiresAt.getTime() - margin;
     const delay = Math.max(0, refreshAt - Date.now());
 
     this.refreshTimer = setTimeout(() => {
@@ -184,6 +195,8 @@ export class TokenService {
 
   // Clear all tokens
   clearTokens(): void {
+    this.tokenRevision += 1;
+    this.refreshPromise = null;
     if (this.refreshTimer) {
       clearTimeout(this.refreshTimer);
       this.refreshTimer = null;
@@ -201,7 +214,14 @@ export class TokenService {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
+  /** A late refresh must not restore logged-out or replaced credentials. */
+  private assertCurrentRevision(revision: number): void {
+    if (revision !== this.tokenRevision) throw new Error('Token refresh superseded');
+  }
+
   destroy(): void {
+    this.tokenRevision += 1;
+    this.refreshPromise = null;
     if (this.refreshTimer) {
       clearTimeout(this.refreshTimer);
     }

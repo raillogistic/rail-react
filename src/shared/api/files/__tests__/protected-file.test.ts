@@ -18,6 +18,7 @@ import {
   getProtectedFileDisplayName,
   resolveProtectedFileRequestFilename,
   resolveProtectedFileUrl,
+  assertBackendFileUrl,
 } from "../protected-file";
 
 describe("protected-file helpers", () => {
@@ -89,5 +90,19 @@ describe("protected-file helpers", () => {
     expect(result.requestUrl).toBe(
       "https://backend.example/api/v1/media/decharge/piece_jointe.pdf",
     );
+  });
+
+  it("refuses credentials for an external protected-media URL before fetching", async () => {
+    const request = vi.fn();
+    vi.stubGlobal('fetch', request);
+    await expect(fetchProtectedFile('https://untrusted.example/api/v1/media/report.pdf')).rejects.toThrow(/destination/);
+    expect(request).not.toHaveBeenCalled();
+  });
+
+  it("accepts backend paths while rejecting protocol-relative, embedded-credential and non-HTTP destinations", () => {
+    expect(assertBackendFileUrl('/api/v1/export/report')).toBe('https://backend.example/api/v1/export/report');
+    for (const url of ['//untrusted.example/report', 'data:text/plain,file', 'https://user:secret@backend.example/report']) {
+      expect(() => assertBackendFileUrl(url)).toThrow();
+    }
   });
 });

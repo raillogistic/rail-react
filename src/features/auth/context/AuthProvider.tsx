@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { AuthenticationManager } from '../AuthenticationManager';
 import type {
   AuthState,
@@ -48,6 +48,7 @@ export function AuthProvider({
   onResolveCurrentUser,
 }: AuthProviderProps) {
   const [manager] = useState(() => new AuthenticationManager(config));
+  const authAttempt = useRef(0);
   // Initialize with loading state to prevent flash of unauthenticated content
   const [state, setState] = useState<AuthState>(() => ({
     ...manager.getState(),
@@ -57,6 +58,9 @@ export function AuthProvider({
 
   useEffect(() => {
     let cancelled = false;
+    const revision = authAttempt.current;
+    /** Bootstrap work belongs only to the authentication attempt that started it. */
+    const isCurrentAttempt = () => !cancelled && revision === authAttempt.current;
     // Subscribe to state changes
     const unsubscribe = manager.subscribe(setState);
 
@@ -70,7 +74,7 @@ export function AuthProvider({
       if (onRefresh && !manager.tokenService.getAccessToken()) {
         try {
           const tokens = await onRefresh(null);
-          if (!cancelled) {
+          if (isCurrentAttempt()) {
             manager.tokenService.setTokens(tokens);
           }
         } catch {
@@ -78,18 +82,18 @@ export function AuthProvider({
         }
       }
 
-      if (!cancelled) {
+      if (isCurrentAttempt()) {
         await manager.initialize();
       }
 
       if (
-        !cancelled &&
+        isCurrentAttempt() &&
         onResolveCurrentUser &&
         manager.getState().isAuthenticated
       ) {
         try {
           const resolvedUser = await onResolveCurrentUser();
-          if (!cancelled && resolvedUser) {
+          if (isCurrentAttempt() && resolvedUser) {
             manager.syncAuthenticatedUser(resolvedUser);
           }
         } catch {
@@ -113,7 +117,8 @@ export function AuthProvider({
 
     const handleSessionChange = (event: Event) => {
       const detail = (event as CustomEvent<{ isActive?: boolean }>).detail;
-      if (detail?.isActive === false && manager.getState().isAuthenticated) {
+      if (detail?.isActive === false) {
+        authAttempt.current += 1;
         // Keep manager state in sync with tokenStorage-driven session invalidation
         // (e.g. Apollo auth failures clearing tokens outside manager APIs).
         void manager.logout({ silent: true, reason: 'session_expired' });
@@ -137,11 +142,13 @@ export function AuthProvider({
 
   const login = useCallback(async (credentials: LoginCredentials) => {
     if (!onLogin) throw new Error('onLogin handler not provided');
+    const revision = ++authAttempt.current;
 
     const result = await manager.login(credentials, onLogin);
     if (result.success && onResolveCurrentUser) {
       try {
         const resolvedUser = await onResolveCurrentUser();
+        if (revision !== authAttempt.current) return { success: false };
         if (resolvedUser) {
           manager.syncAuthenticatedUser(resolvedUser);
           return { ...result, user: resolvedUser };
@@ -156,11 +163,13 @@ export function AuthProvider({
 
   const verifyMFA = useCallback(async (code: string) => {
     if (!onVerifyMFA) throw new Error('onVerifyMFA handler not provided');
+    const revision = ++authAttempt.current;
 
     const result = await manager.verifyMFA(code, onVerifyMFA);
     if (result.success && onResolveCurrentUser) {
       try {
         const resolvedUser = await onResolveCurrentUser();
+        if (revision !== authAttempt.current) return { success: false };
         if (resolvedUser) {
           manager.syncAuthenticatedUser(resolvedUser);
           return { ...result, user: resolvedUser };
@@ -174,6 +183,7 @@ export function AuthProvider({
   }, [manager, onResolveCurrentUser, onVerifyMFA]);
 
   const logout = useCallback(async (options?: LogoutOptions) => {
+    authAttempt.current += 1;
     const shouldCallRemoteLogout =
       !!onLogout &&
       options?.silent !== true &&
@@ -206,7 +216,7 @@ export function AuthProvider({
     manager.clearError();
   }, [manager]);
 
-  const value: AuthContextValue = {
+  const value = useMemo<AuthContextValue>(() => ({
     ...state,
     login,
     verifyMFA,
@@ -215,7 +225,7 @@ export function AuthProvider({
     hasRole,
     refreshSession,
     clearError,
-  };
+  }), [state, login, verifyMFA, logout, hasPermission, hasRole, refreshSession, clearError]);
 
   return (
     <AuthContext.Provider value={value}>
