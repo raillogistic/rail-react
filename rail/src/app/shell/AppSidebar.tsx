@@ -55,10 +55,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar
       collapsible="icon"
-      variant="floating"
+      variant="sidebar"
       {...props}
       className={cn(
-        "transition-[width,left,right] duration-200 ease-linear",
+        "transition-[width,left,right] duration-200 ease-linear border-r border-border bg-sidebar",
         props.className,
       )}
     >
