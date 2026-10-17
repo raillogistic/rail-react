@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "workspaces": [
-    "rail"
+    "rail",
+    "src/projects/partners"
   ],
   "scripts": {
     "dev": "vite",

@@ -2,5 +2,9 @@
   "version": 1,
   "repository": "https://github.com/raillogistic/shared_apps.git",
   "branch": "main",
-  "apps": {}
+  "apps": {
+    "partners": {
+      "upstreamCommit": "23801f7ce5eec55d47a60d34ba7bb7834cce3e66"
+    }
+  }
 }
