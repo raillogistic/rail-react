@@ -89,6 +89,15 @@ describe('TokenService', () => {
     expect(emitSpy).toHaveBeenCalledWith('auth:token_expiring', { expiresAt });
   });
 
+  it('does not refresh short-lived tokens in an immediate loop', () => {
+    const emit = vi.spyOn(eventBus, 'emitLocal');
+    tokenService.setTokens({ ...mockTokens, accessTokenExpiresAt: new Date(Date.now() + 60000) });
+    vi.advanceTimersByTime(29000);
+    expect(emit).not.toHaveBeenCalled();
+    vi.advanceTimersByTime(1000);
+    expect(emit).toHaveBeenCalledOnce();
+  });
+
   it('refreshes tokens successfully', async () => {
     tokenService.setTokens(mockTokens);
     const newTokens = { ...mockTokens, accessToken: 'new-access' };
@@ -106,7 +115,7 @@ describe('TokenService', () => {
     tokenService.setTokens(mockTokens);
     const newTokens = { ...mockTokens, accessToken: 'new-access' };
 
-    let resolveRefresh: (val: TokenPair) => void;
+    let resolveRefresh!: (val: TokenPair) => void;
     const refreshPromise = new Promise<TokenPair>(resolve => {
       resolveRefresh = resolve;
     });
@@ -117,11 +126,23 @@ describe('TokenService', () => {
 
     expect(refreshFn).toHaveBeenCalledTimes(1);
 
-    // @ts-ignore
     resolveRefresh(newTokens);
 
     const [r1, r2] = await Promise.all([p1, p2]);
     expect(r1).toBe(r2);
+  });
+
+  it('does not restore credentials when an in-flight refresh finishes after logout', async () => {
+    tokenService.setTokens(mockTokens);
+    let finish!: (tokens: TokenPair) => void;
+    const refreshFn = vi.fn(() => new Promise<TokenPair>(resolve => { finish = resolve; }));
+    const pending = tokenService.refreshTokens(refreshFn);
+    const outcome = pending.catch(error => error);
+    tokenService.clearTokens();
+    finish({ ...mockTokens, accessToken: 'stale-refresh' });
+    expect(await outcome).toBeInstanceOf(Error);
+    expect(tokenService.getAccessToken()).toBeNull();
+    expect(refreshFn).toHaveBeenCalledTimes(1);
   });
 
   it('supports cookie-based refresh when no refresh token is stored', async () => {
@@ -136,7 +157,7 @@ describe('TokenService', () => {
 
   it('retries on failure', async () => {
     // Mock delay to resolve immediately to avoid timer issues with fake timers
-    vi.spyOn(tokenService as any, 'delay').mockResolvedValue(undefined);
+    vi.spyOn(tokenService as unknown as { delay: (ms: number) => Promise<void> }, 'delay').mockResolvedValue(undefined);
 
     tokenService.setTokens(mockTokens);
     const newTokens = { ...mockTokens, accessToken: 'retry-success' };

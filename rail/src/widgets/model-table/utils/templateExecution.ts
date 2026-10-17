@@ -5,11 +5,12 @@ import {
 } from "@/shared/api/auth/token-storage";
 import { getRuntimeBackendConfig } from "@/shared/config/backend-endpoint";
 import * as XLSX from "xlsx";
+import { assertBackendFileUrl } from "@/shared/api/files/protected-file";
 import type { TemplateClientField, TemplateInfo } from "../types";
 
 const ABSOLUTE_URL_PATTERN = /^[a-zA-Z][a-zA-Z\d+\-.]*:/;
 const SHEET_NAME_MAX_LENGTH = 31;
-const INVALID_SHEET_NAME_PATTERN = /[:\\/?*\[\]]/g;
+const INVALID_SHEET_NAME_PATTERN = /[:\\/?*[\]]/g;
 
 export type TemplateActionType = "pdf" | "excel";
 type TemplateFormFieldType = "text" | "number" | "checkbox" | "date";
@@ -107,7 +108,7 @@ export function normalizeTemplateType(
 function humanizeFieldName(value: string): string {
   const withSpaces = value
     .replace(/([a-z0-9])([A-Z])/g, "$1 $2")
-    .replace(/[_\-]+/g, " ")
+    .replace(/[_-]+/g, " ")
     .trim();
   if (!withSpaces) return value;
   return withSpaces.charAt(0).toUpperCase() + withSpaces.slice(1);
@@ -216,7 +217,7 @@ function resolveDownloadFilename(
 ): string {
   if (!contentDisposition) return fallbackName;
   const match = contentDisposition.match(
-    /filename\*?=(?:UTF-8''|")?([^\";]+)/i,
+    /filename\*?=(?:UTF-8''|")?([^";]+)/i,
   );
   if (!match?.[1]) return fallbackName;
   return decodeURIComponent(match[1].replace(/"/g, "").trim()) || fallbackName;
@@ -244,7 +245,7 @@ function sanitizeSheetName(value: string): string {
 }
 
 function ensureUniqueSheetName(name: string, used: Set<string>): string {
-  let next = sanitizeSheetName(name);
+  const next = sanitizeSheetName(name);
   if (!used.has(next)) {
     used.add(next);
     return next;
@@ -279,7 +280,7 @@ async function fetchTemplateBlob(
   if (!baseUrl) {
     throw new Error("URL du template introuvable.");
   }
-  const requestUrl = appendQueryParams(baseUrl, extraQueryParams);
+  const requestUrl = assertBackendFileUrl(appendQueryParams(baseUrl, extraQueryParams));
 
   const authorizationHeader = getAuthorizationHeader();
   const response = await fetch(requestUrl, {

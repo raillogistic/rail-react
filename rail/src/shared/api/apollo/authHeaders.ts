@@ -1,3 +1,4 @@
+/** Preserve caller credentials regardless of HTTP header-name casing. */
 export const hasExplicitAuthorizationHeader = (
   headers: Record<string, unknown> | undefined,
 ): boolean => {
@@ -5,17 +6,7 @@ export const hasExplicitAuthorizationHeader = (
     return false;
   }
 
-  const lowercaseAuthorization = headers.authorization;
-  if (
-    typeof lowercaseAuthorization === "string" &&
-    lowercaseAuthorization.trim().length > 0
-  ) {
-    return true;
-  }
-
-  const uppercaseAuthorization = headers.Authorization;
-  return (
-    typeof uppercaseAuthorization === "string" &&
-    uppercaseAuthorization.trim().length > 0
+  return Object.entries(headers).some(([name, value]) =>
+    name.toLowerCase() === 'authorization' && typeof value === 'string' && value.trim().length > 0,
   );
 };

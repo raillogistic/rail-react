@@ -2,7 +2,7 @@ vi.mock('@rail/application', () => ({ default: { quickLogin: { password: 'test-p
 import React from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import * as AuthContext from "@/features/auth/context";
 import { SiteHeader } from "@/app/shell/AppContent";
 
@@ -38,6 +38,7 @@ describe("SiteHeader", () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.stubEnv("DEV", true);
     vi.stubEnv("VITE_USERS", "milia,rouini");
     vi.spyOn(AuthContext, "useAuthContext").mockReturnValue({
       login: loginMock,
@@ -63,6 +64,14 @@ describe("SiteHeader", () => {
       mfaSetupRequired: false,
       ephemeralToken: null,
     } as ReturnType<typeof AuthContext.useAuthContext>);
+  });
+
+  afterEach(() => { vi.unstubAllEnvs(); });
+
+  it("does not offer password-based quick switching in production", () => {
+    vi.stubEnv("DEV", false);
+    render(<MemoryRouter><SiteHeader /></MemoryRouter>);
+    expect(screen.queryByRole("button", { name: /connexion rapide/i })).not.toBeInTheDocument();
   });
 
   it("renders quick switch users from env", async () => {

@@ -1,4 +1,4 @@
-import React, { useCallback, useRef } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import { useApolloClient } from "@apollo/client";
 import { AuthProvider } from "./AuthProvider";
 import {
@@ -10,7 +10,7 @@ import {
   GET_CURRENT_USER,
 } from "@/features/auth/api";
 import { AuthUser, LoginCredentials, TokenPair } from "../types";
-import { tokenStorage } from "@/shared/api/auth/token-storage";
+import { AUTH_SESSION_EVENT, tokenStorage } from "@/shared/api/auth/token-storage";
 import { decodeToken } from "../utils/token";
 import { SessionValidationIndeterminateError } from "../services/SessionService";
 import {
@@ -85,7 +85,12 @@ const buildTokenPair = (
   refreshTokenCandidate: unknown,
 ): TokenPair => {
   const refreshToken = normalizeRefreshTokenCandidate(refreshTokenCandidate);
-  const accessTokenExpiresAt = new Date(Date.now() + 15 * 60 * 1000);
+  const payload = decodeToken(accessToken);
+  const accessTokenExpiresAt = new Date(
+    typeof payload?.exp === "number" && Number.isFinite(payload.exp)
+      ? payload.exp * 1000
+      : Date.now() + 15 * 60 * 1000,
+  );
   const refreshTokenExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
 
   return {
@@ -320,7 +325,18 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const client = useApolloClient();
-  const resolvedCurrentUserRef = useRef<AuthUser | null>(null);
+  const resolvedCurrentUserRef = useRef<{ user: AuthUser; accessToken: string | null } | null>(null);
+
+  useEffect(() => {
+    /** Silent expiration and cross-tab logout must also discard user-specific data. */
+    const clearSessionData = (event: Event) => {
+      if ((event as CustomEvent<{ isActive?: boolean }>).detail?.isActive !== false) return;
+      resolvedCurrentUserRef.current = null;
+      void client.clearStore().catch(() => {});
+    };
+    window.addEventListener(AUTH_SESSION_EVENT, clearSessionData);
+    return () => window.removeEventListener(AUTH_SESSION_EVENT, clearSessionData);
+  }, [client]);
 
   const fetchCurrentSessionId = useCallback(
     async (accessToken: string): Promise<string | null> => {
@@ -399,7 +415,7 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }
 
       const normalizedUser = await resolveSignedInUser(client, login.token);
-      resolvedCurrentUserRef.current = normalizedUser;
+      resolvedCurrentUserRef.current = { user: normalizedUser, accessToken: login.token };
       const refreshToken = normalizeRefreshTokenCandidate(login.refresh_token);
       const sessionId = await resolveSessionId(
         login.token,
@@ -430,7 +446,7 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
       }
 
       const normalizedUser = await resolveSignedInUser(client, verify_mfa_login.token);
-      resolvedCurrentUserRef.current = normalizedUser;
+      resolvedCurrentUserRef.current = { user: normalizedUser, accessToken: verify_mfa_login.token };
       const refreshToken = normalizeRefreshTokenCandidate(
         verify_mfa_login.refresh_token,
       );
@@ -465,7 +481,6 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
         console.warn("Logout mutation failed", e);
       }
     }
-    await client.clearStore();
   }, [client]);
 
   const handleRefresh = useCallback(
@@ -546,6 +561,8 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
         },
       });
 
+      if (tokenStorage.getAccessToken() !== accessToken) return false;
+
       if (Array.isArray(errors) && errors.some(isAuthError)) {
         resolvedCurrentUserRef.current = null;
         return false;
@@ -564,7 +581,7 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
 
       const isMatchingUser = String(currentUserId) === String(expectedUserId);
       resolvedCurrentUserRef.current = isMatchingUser
-        ? normalizeAuthUser(data?.me, data?.me?.permissions)
+        ? { user: normalizeAuthUser(data?.me, data?.me?.permissions), accessToken }
         : null;
       if (!isMatchingUser) {
         console.error(
@@ -620,8 +637,9 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
   }, [client]);
 
   const handleResolveCurrentUser = useCallback(async () => {
-    if (resolvedCurrentUserRef.current) {
-      return resolvedCurrentUserRef.current;
+    const accessToken = tokenStorage.getAccessToken();
+    if (resolvedCurrentUserRef.current?.accessToken === accessToken) {
+      return resolvedCurrentUserRef.current.user;
     }
 
     try {
@@ -634,10 +652,12 @@ export const ConnectedAuthProvider: React.FC<{ children: React.ReactNode }> = ({
         },
       });
 
+      if (tokenStorage.getAccessToken() !== accessToken) return null;
+
       const normalizedUser = data?.me
         ? normalizeAuthUser(data.me, data.me.permissions)
         : null;
-      resolvedCurrentUserRef.current = normalizedUser;
+      resolvedCurrentUserRef.current = normalizedUser ? { user: normalizedUser, accessToken } : null;
       return normalizedUser;
     } catch {
       return null;

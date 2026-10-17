@@ -10,6 +10,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { getAuthorizationHeader, getSecureHeaders } from "@/shared/api/auth/token-storage";
+import { assertBackendFileUrl } from "@/shared/api/files/protected-file";
 import { Badge } from "@/shared/ui/kit/badge";
 import { Button } from "@/shared/ui/kit/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/shared/ui/kit/card";
@@ -211,7 +212,7 @@ export function TemplateDownloadCard({ template, loading }: TemplateDownloadCard
     setDownloading(true);
     try {
       const authorizationHeader = getAuthorizationHeader();
-      const response = await fetch(templateDownloadUrl, {
+      const response = await fetch(assertBackendFileUrl(templateDownloadUrl), {
         method: "GET",
         headers: {
           ...(authorizationHeader ? { Authorization: authorizationHeader } : {}),

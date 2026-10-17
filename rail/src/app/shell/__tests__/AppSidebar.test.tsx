@@ -47,6 +47,7 @@ vi.mock("@/shared/ui/kit/sidebar", () => ({
   ),
   SidebarSeparator: () => <hr />,
   SidebarTrigger: () => <button>trigger</button>,
+  SidebarRail: () => <button data-testid="sidebar-rail">rail</button>,
   useSidebar: () => mock_use_sidebar(),
 }));
 
@@ -193,4 +194,28 @@ describe("AppSidebar", () => {
     expect(screen.getByRole("link", { name: /rail/i })).toBeInTheDocument();
     expect(screen.queryByText(/enterprise edition/i)).not.toBeInTheDocument();
   });
+
+  it("affiche le titre de marque, la version 'v 1.0' et le SidebarRail conforme à sidebar.jpg", () => {
+    mock_use_sidebar.mockReturnValue({
+      state: "expanded",
+      isMobile: false,
+    });
+    mock_use_route_access.mockReturnValue({
+      defaultRoute: "/achat",
+      navigationLinks: mock_project_links,
+      projectNavigationLinks: mock_project_links,
+      canAccessRoute: () => true,
+    });
+
+    render(
+      <MemoryRouter>
+        <AppSidebar />
+      </MemoryRouter>,
+    );
+
+    // Titre de l'application et version 'v 1.0' (comme dans sidebar.jpg)
+    expect(screen.getByText("v 1.0")).toBeInTheDocument();
+    expect(screen.getByTestId("sidebar-rail")).toBeInTheDocument();
+  });
 });
+

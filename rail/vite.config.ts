@@ -8,7 +8,16 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), tailwindcss()],
+  plugins: [react(), tailwindcss(), {
+    name: "rail-production-env",
+    /** Dynamic import.meta.env reads must never publish integration-test credentials. */
+    configResolved(config) {
+      if (config.command !== "build") return;
+      for (const key of Object.keys(config.env)) {
+        if (key.startsWith("VITE_TEST_")) delete config.env[key];
+      }
+    },
+  }],
   resolve: {
     // Force a single React instance across workspace-level dependencies
     // (e.g. @tiptap/react resolved from a parent node_modules).

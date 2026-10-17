@@ -54,6 +54,16 @@ Versions identify saved source snapshots; they do not promise backward compatibi
 
 The shared boundary check rejects application imports and generated backend types in reusable source. Keep field lists explicit in model tables, forms, and details. Never include credentials, real environment files, or business records in shared code.
 
+## Authentication and file downloads
+
+Quick-login accounts are available only in development. Keep any application quick-login password behind `import.meta.env.DEV` so production builds can remove the literal. Shared Vite configuration removes `VITE_TEST_*` values from build environments, including dynamic environment lookups; development and integration tests still receive them. Other `VITE_*` values are public browser configuration.
+
+Authenticated file downloads accept HTTP(S) URLs on the configured backend origin, including relative paths. External storage must use a backend download endpoint rather than receiving backend authorization or CSRF headers. `assertBackendFileUrl` applies this rule before a download attaches credentials.
+
+Session validation shares overlapping requests and immediately discards the result afterward. Logout or replacement credentials invalidate pending authentication work and clear user-specific Apollo data. HTTP 403 remains a permission failure; HTTP 401 and GraphQL authentication errors can refresh and retry once. Permission matching keeps its literal-plus-star syntax without storing authorization decisions.
+
+To compare permission CPU cost against a saved previous `permission-matching.ts`, run `node rail/scripts/benchmark-permissions.mjs baseline.ts results.json` from the application root. To measure the entry/login static JavaScript dependency closure, build with `--manifest` and run `node rail/scripts/measure-login-build.mjs path/to/dist`. The latter measures bytes, not browser latency.
+
 ## Add modules and model screens
 
 ```bash

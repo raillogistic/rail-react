@@ -179,13 +179,47 @@ export function NavMain({ navigationLinks, filterPath }: NavMainProps) {
     });
   });
 
+  /**
+   * Vérifie si le badge contient un contenu significatif à afficher.
+   * @param badge Contenu du badge.
+   * @returns Vrai si le badge est présent.
+   */
+  const has_badge_content = (badge?: React.ReactNode): boolean => {
+    return badge !== undefined && badge !== null && badge !== false && badge !== "";
+  };
+
+  /**
+   * Affiche le badge en mode déplié avec le style capsule approprié.
+   * @param badge Contenu du badge.
+   * @param is_active Indique si l'élément parent est actif.
+   * @returns Élément React ou null.
+   */
+  const render_badge = (badge: React.ReactNode, is_active: boolean) => {
+    if (!has_badge_content(badge)) return null;
+    if (typeof badge === "string" || typeof badge === "number") {
+      return (
+        <span
+          className={cn(
+            "ml-auto text-xs font-medium px-2 py-0.5 rounded-full tabular-nums transition-colors group-data-[collapsible=icon]:hidden",
+            is_active
+              ? "bg-white text-foreground shadow-xs dark:bg-card"
+              : "bg-muted text-muted-foreground"
+          )}
+        >
+          {badge}
+        </span>
+      );
+    }
+    return <div className="ml-auto group-data-[collapsible=icon]:hidden">{badge}</div>;
+  };
+
   return (
     <SidebarGroup className="py-0 px-1">
       <SidebarGroupContent className="flex flex-col gap-4">
         {visible_sections.map((section) => (
-          <div key={section.id} className="space-y-1.5">
+          <div key={section.id} className="space-y-1">
             {!is_collapsed && (
-              <SidebarGroupLabel className="px-2 py-1 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              <SidebarGroupLabel className="px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wider text-muted-foreground/60">
                 {section.label}
               </SidebarGroupLabel>
             )}
@@ -208,10 +242,11 @@ export function NavMain({ navigationLinks, filterPath }: NavMainProps) {
                     item.children?.some((child) => matches_path(child.path));
                   const is_open =
                     has_children && Boolean(expanded_items[item.id]);
+                  const has_badge = has_badge_content(item.badge);
 
                   if (!has_children) {
                     return (
-                      <SidebarMenuItem key={item.id}>
+                      <SidebarMenuItem key={item.id} className="relative">
                         <SidebarMenuButton
                           asChild
                           tooltip={item.title}
@@ -219,9 +254,13 @@ export function NavMain({ navigationLinks, filterPath }: NavMainProps) {
                         >
                           <Link to={item.path} onClick={handleLinkClick}>
                             {item.icon && <item.icon />}
-                            <span>{item.title}</span>
-                            {!is_collapsed && item.badge && (
-                              <div className="ml-auto">{item.badge}</div>
+                            <span className="truncate group-data-[collapsible=icon]:hidden">{item.title}</span>
+                            {!is_collapsed && render_badge(item.badge, is_item_active)}
+                            {has_badge && (
+                              <span
+                                aria-hidden="true"
+                                className="absolute top-2 right-2 h-2.5 w-2.5 rounded-full bg-[#EF4444] ring-2 ring-white dark:ring-card pointer-events-none hidden group-data-[collapsible=icon]:block"
+                              />
                             )}
                           </Link>
                         </SidebarMenuButton>
@@ -242,24 +281,32 @@ export function NavMain({ navigationLinks, filterPath }: NavMainProps) {
                       }
                       className="group/collapsible"
                     >
-                      <SidebarMenuItem key={item.id}>
+                      <SidebarMenuItem key={item.id} className="relative">
                         <CollapsibleTrigger asChild>
                           <SidebarMenuButton
                             tooltip={item.title}
                             isActive={is_item_active && !is_open}
                           >
                             {item.icon && <item.icon />}
-                            <span>{item.title}</span>
+                            <span className="truncate group-data-[collapsible=icon]:hidden">{item.title}</span>
+                            {!is_collapsed && render_badge(item.badge, is_item_active)}
+                            {has_badge && (
+                              <span
+                                aria-hidden="true"
+                                className="absolute top-2 right-2 h-2.5 w-2.5 rounded-full bg-[#EF4444] ring-2 ring-white dark:ring-card pointer-events-none hidden group-data-[collapsible=icon]:block"
+                              />
+                            )}
                             <ChevronRight
                               className={cn(
-                                "ml-auto transition-transform duration-200",
+                                "ml-auto size-4 transition-transform duration-200 text-muted-foreground/60 group-data-[collapsible=icon]:hidden",
+                                has_badge && "ml-1.5",
                                 is_open && "rotate-90"
                               )}
                             />
                           </SidebarMenuButton>
                         </CollapsibleTrigger>
                         <CollapsibleContent className="overflow-hidden transition-all duration-300">
-                          <SidebarMenuSub>
+                          <SidebarMenuSub className="my-1 border-l border-border/50 pl-3">
                             {visible_children?.map((child) => {
                               const is_child_active = matches_path(child.path);
                               return (
@@ -267,9 +314,10 @@ export function NavMain({ navigationLinks, filterPath }: NavMainProps) {
                                   <SidebarMenuSubButton
                                     asChild
                                     isActive={is_child_active}
+                                    className="h-8 rounded-lg px-2 text-xs font-medium"
                                   >
                                     <Link to={child.path} onClick={handleLinkClick}>
-                                      <span>{child.title}</span>
+                                      <span className="truncate">{child.title}</span>
                                     </Link>
                                   </SidebarMenuSubButton>
                                 </SidebarMenuSubItem>

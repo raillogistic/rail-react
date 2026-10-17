@@ -19,6 +19,7 @@ import {
   SidebarContent,
   SidebarFooter,
   SidebarHeader,
+  SidebarRail,
 } from "@/shared/ui/kit/sidebar";
 import { cn } from "@/shared/utils";
 import { useAuthContext } from "@/features/auth/context";
@@ -36,9 +37,9 @@ export function NewDocumentMenu(props: { compact?: boolean }): React.ReactElemen
 }
 
 /**
- * Barre latérale principale de l'application partagée.
- * Largeur fixe de 256px sur bureau, comportement off-canvas au masquage,
- * et tiroir mobile sous 768px.
+ * Barre latérale principale de l'application partagée, conforme au design épuré sidebar.jpg.
+ * Dispose d'une silhouette flottante avec coins arrondis, d'un badge de marque rouge,
+ * d'un en-tête et pied de page sans bordures brutes, et d'un basculement icon / expanded fluide.
  *
  * @param props Propriétés du composant Sidebar.
  * @returns {React.ReactElement}
@@ -53,42 +54,52 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   return (
     <Sidebar
-      collapsible="offcanvas"
+      collapsible="icon"
+      variant="floating"
       {...props}
       className={cn(
-        "w-64 border-r border-border/60 bg-sidebar text-sidebar-foreground transition-[width,left,right] duration-200 ease-linear",
+        "transition-[width,left,right] duration-200 ease-linear",
         props.className,
       )}
     >
-      <SidebarHeader className="h-14 border-b border-border/60 px-4 py-0 flex flex-row items-center justify-between">
+      <SidebarHeader className="px-4 pt-5 pb-3 flex flex-row items-center border-b-0 group-data-[collapsible=icon]:px-0 group-data-[collapsible=icon]:justify-center">
         <Link
           to={defaultRoute || "/"}
-          className="flex items-center gap-2.5 min-w-0 group"
+          className="flex items-center gap-3.5 min-w-0 group w-full group-data-[collapsible=icon]:justify-center"
           aria-label={BRANDING.productName}
         >
-          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 transition-colors group-hover:bg-primary/20">
-            <img
-              src={BRANDING.logo}
-              alt={BRANDING.logoAlt}
-              className="h-5 w-5 object-contain"
-            />
+          {/* Logo marque avec carré arrondi rouge et symbole blanc arch/chevron */}
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#F04438] text-white shadow-xs transition-transform group-hover:scale-[1.02]">
+            <svg
+              viewBox="0 0 32 32"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-7 w-7"
+              aria-hidden="true"
+            >
+              <path
+                d="M9.5 22.5L14.6 11.2C15.2 9.9 16.8 9.9 17.4 11.2L22.5 22.5"
+                stroke="white"
+                strokeWidth="3.6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
           </div>
-          <div className="min-w-0 flex flex-col justify-center">
-            <span className="truncate text-sm font-bold text-foreground leading-tight">
+          <div className="min-w-0 flex flex-col justify-center group-data-[collapsible=icon]:hidden">
+            <span className="truncate text-base font-bold text-foreground leading-tight">
               {BRANDING.productName}
             </span>
-            {BRANDING.subtitle ? (
-              <span className="truncate text-xs text-muted-foreground">
-                {BRANDING.subtitle}
-              </span>
-            ) : null}
+            <span className="truncate text-xs text-muted-foreground/75 font-normal mt-0.5">
+              {BRANDING.subtitle || "v 1.0"}
+            </span>
           </div>
         </Link>
       </SidebarHeader>
 
-      <SidebarContent className="px-2 py-2 overflow-y-auto">
+      <SidebarContent className="px-3 py-2.5 overflow-y-auto overflow-x-hidden">
         {application.slots?.NewDocumentMenu && (
-          <div className="px-1 pt-1 pb-2">
+          <div className="px-1 pt-1 pb-2 group-data-[collapsible=icon]:hidden">
             <NewDocumentMenu />
           </div>
         )}
@@ -101,11 +112,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         />
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-border/60 p-2.5">
-        <div className="rounded-xl border border-sidebar-border bg-sidebar p-1">
-          <NavUser user={user} onLogout={logout} />
-        </div>
+      <SidebarFooter className="p-2.5 pt-1 border-t-0">
+        <NavUser user={user} onLogout={logout} />
       </SidebarFooter>
+      <SidebarRail />
     </Sidebar>
   );
 }
