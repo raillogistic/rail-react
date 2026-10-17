@@ -35,6 +35,8 @@ export class SessionService {
   private currentSession: Session | null = null;
   private validationInterval: ReturnType<typeof setInterval> | null = null;
   private validateFn: (() => Promise<boolean>) | null = null;
+  private validationInFlight: Promise<boolean> | null = null;
+  private validationRevision = 0;
   private readonly focusHandler: () => void;
 
   constructor(eventBus: EventBus, config: SessionConfig) {
@@ -49,6 +51,7 @@ export class SessionService {
 
   // Start a new session
   startSession(user: AuthUser, sessionId: string, expiresAt: Date): void {
+    this.invalidateValidation();
     this.currentSession = {
       id: sessionId,
       userId: user.id,
@@ -87,6 +90,7 @@ export class SessionService {
 
   // Set validation function
   setValidationFn(fn: () => Promise<boolean>): void {
+    if (this.validateFn !== fn) this.invalidateValidation();
     this.validateFn = fn;
   }
 
@@ -94,28 +98,44 @@ export class SessionService {
   async validateSession(options: ValidateSessionOptions = {}): Promise<boolean> {
     const { allowIndeterminate = false } = options;
     if (!this.validateFn) return this.isSessionValid();
+    const revision = this.validationRevision;
+    const pending = this.validationInFlight ?? this.runValidation(this.validateFn, revision);
+    this.validationInFlight = pending;
 
     try {
-      const isValid = await this.validateFn();
-      this.eventBus.emitLocal('auth:session_validated', { valid: isValid });
-
-      if (!isValid && this.currentSession) {
-        this.eventBus.emit('auth:session_expired', {
-          sessionId: this.currentSession.id,
-          reason: 'server_validation_failed',
-        });
-      }
-
-      return isValid;
+      return await pending;
     } catch (error) {
       if (
+        revision === this.validationRevision &&
         allowIndeterminate &&
         error instanceof SessionValidationIndeterminateError
       ) {
         return true;
       }
       return false;
+    } finally {
+      if (this.validationInFlight === pending) this.validationInFlight = null;
     }
+  }
+
+  /** Share only an overlapping request; stale results cannot affect another session. */
+  private async runValidation(validate: () => Promise<boolean>, revision: number): Promise<boolean> {
+    const isValid = await validate.call(this);
+    if (revision !== this.validationRevision) return false;
+    this.eventBus.emitLocal('auth:session_validated', { valid: isValid });
+    if (!isValid && this.currentSession) {
+      this.eventBus.emit('auth:session_expired', {
+        sessionId: this.currentSession.id,
+        reason: 'server_validation_failed',
+      });
+    }
+    return isValid;
+  }
+
+  /** Discard pending work when its session or validation function changes. */
+  private invalidateValidation(): void {
+    this.validationRevision += 1;
+    this.validationInFlight = null;
   }
 
   // Extend session
@@ -128,6 +148,7 @@ export class SessionService {
 
   // End current session
   endSession(reason: string): void {
+    this.invalidateValidation();
     if (this.currentSession) {
       this.eventBus.emit('auth:session_expired', {
         sessionId: this.currentSession.id,
@@ -160,6 +181,7 @@ export class SessionService {
   }
 
   destroy(): void {
+    this.invalidateValidation();
     this.stopValidationInterval();
     if (typeof window !== 'undefined') {
       window.removeEventListener('focus', this.focusHandler);

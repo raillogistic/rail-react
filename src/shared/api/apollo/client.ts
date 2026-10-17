@@ -3,7 +3,7 @@ import { setContext } from '@apollo/client/link/context';
 import { onError } from '@apollo/client/link/error';
 import { fromPromise } from '@apollo/client/link/utils';
 import { createUploadLink } from 'apollo-upload-client';
-import { tokenStorage, getSecureHeaders } from '@/shared/api/auth/token-storage';
+import { AUTH_SESSION_EVENT, tokenStorage, getSecureHeaders } from '@/shared/api/auth/token-storage';
 import { ensureCsrfCookie } from '@/shared/api/auth/csrf';
 import { AuthError, AuthErrorType, handleAuthError } from '@/shared/api/auth/error-handler';
 import { ROUTES } from "@/shared/routing/routes";
@@ -27,6 +27,7 @@ const authUploadLink = createUploadLink({
 });
 
 let refreshInFlight: Promise<boolean> | null = null;
+let refreshCredential: string | null = null;
 
 type RefreshTokenMutationPayload = {
   data?: {
@@ -39,13 +40,30 @@ type RefreshTokenMutationPayload = {
 };
 
 const refreshAccessToken = async (): Promise<boolean> => {
-  if (refreshInFlight) {
+  const credential = tokenStorage.getAccessToken();
+  if (refreshInFlight && refreshCredential === credential) {
     return refreshInFlight;
   }
 
-  refreshInFlight = (async () => {
+  let invalidated = false;
+  /** Reject a response after logout or a credential replacement. */
+  const assertCurrentSession = () => {
+    if (invalidated || tokenStorage.getAccessToken() !== credential) {
+      throw new DOMException('Authentication changed during refresh', 'AbortError');
+    }
+  };
+  /** Cancel this refresh on logout, including a cookie-only bootstrap. */
+  const onSessionChange = (event: Event) => {
+    if ((event as CustomEvent<{ isActive?: boolean }>).detail?.isActive === false) {
+      invalidated = true;
+      if (refreshInFlight === pending) refreshInFlight = null;
+    }
+  };
+  window.addEventListener(AUTH_SESSION_EVENT, onSessionChange);
+  const pending = (async () => {
     try {
       await ensureCsrfCookie();
+      assertCurrentSession();
       const { authEndpoint } = getRuntimeBackendConfig();
       // Refresh tokens are backend-managed HttpOnly cookies; the variable remains optional
       // for backward compatibility with deployments still accepting header-only flows.
@@ -76,6 +94,7 @@ const refreshAccessToken = async (): Promise<boolean> => {
             : {},
         }),
       });
+      assertCurrentSession();
 
       if (!response.ok) {
         return false;
@@ -85,6 +104,8 @@ const refreshAccessToken = async (): Promise<boolean> => {
       const token: string | undefined = payload?.data?.refresh_token?.token;
       const ok: boolean | undefined = payload?.data?.refresh_token?.ok;
       const refreshToken: string | undefined = payload?.data?.refresh_token?.refresh_token;
+
+      assertCurrentSession();
 
       if (!ok || !token) {
         return false;
@@ -98,21 +119,27 @@ const refreshAccessToken = async (): Promise<boolean> => {
 
       return true;
     } catch (error) {
+      assertCurrentSession();
+      if (error instanceof DOMException && error.name === 'AbortError') throw error;
       console.warn('Silent refresh failed:', error);
       return false;
-    } finally {
-      refreshInFlight = null;
     }
   })();
-
-  return refreshInFlight;
+  refreshInFlight = pending;
+  refreshCredential = credential;
+  try {
+    return await pending;
+  } finally {
+    window.removeEventListener(AUTH_SESSION_EVENT, onSessionChange);
+    if (refreshInFlight === pending) refreshInFlight = null;
+  }
 };
 
 /**
  * Create authentication link that adds authorization headers
  */
 const createAuthLink = () => {
-  return setContext(async (_, { headers }) => {
+  return setContext(async (_, { headers, railAuthorization }) => {
     // If the backend enforces CSRF for cookie-auth flows, prime a CSRF cookie before
     // sending requests. (No-op unless VITE_CSRF_ENDPOINT is configured.)
     try {
@@ -123,13 +150,18 @@ const createAuthLink = () => {
 
     const token = tokenStorage.getAccessToken();
     const secureHeaders = getSecureHeaders();
-    const normalizedHeaders = (headers ?? {}) as Record<string, unknown>;
+    const normalizedHeaders = { ...headers } as Record<string, unknown>;
+    // Replace only our own header on retries; caller-supplied credentials remain explicit.
+    if (railAuthorization && normalizedHeaders.authorization === railAuthorization) {
+      delete normalizedHeaders.authorization;
+    }
     const shouldAttachAuthorization =
       !hasExplicitAuthorizationHeader(normalizedHeaders) && !!token;
 
     return {
+      railAuthorization: shouldAttachAuthorization ? `Bearer ${token}` : null,
       headers: {
-        ...headers,
+        ...normalizedHeaders,
         ...(shouldAttachAuthorization
           ? { authorization: `Bearer ${token}` }
           : {}),
@@ -266,7 +298,7 @@ const createErrorLink = () => {
           typeof statusCode === 'number' ? statusCode : undefined;
 
         if (
-          (numericStatusCode === 401 || numericStatusCode === 403) &&
+          numericStatusCode === 401 &&
           !skipAuthRefresh &&
           !skipAuthErrorHandling
         ) {

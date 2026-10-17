@@ -106,4 +106,31 @@ describe('SessionService', () => {
 
     expect(sessionService.getSession()?.expiresAt).toEqual(newExpiresAt);
   });
+
+  it('coalesces overlapping validation without retaining a settled result', async () => {
+    let finish!: (valid: boolean) => void;
+    const validate = vi.fn(() => new Promise<boolean>(resolve => { finish = resolve; }));
+    sessionService.setValidationFn(validate);
+    const pending = Array.from({ length: 20 }, () => sessionService.validateSession());
+    expect(validate).toHaveBeenCalledTimes(1);
+    finish(true);
+    expect(await Promise.all(pending)).toEqual(Array(20).fill(true));
+    const next = sessionService.validateSession();
+    expect(validate).toHaveBeenCalledTimes(2);
+    finish(false);
+    expect(await next).toBe(false);
+  });
+
+  it('does not expire a new session using an older validation response', async () => {
+    let finish!: (valid: boolean) => void;
+    sessionService.setValidationFn(() => new Promise<boolean>(resolve => { finish = resolve; }));
+    sessionService.startSession(user, 'old-session', new Date(Date.now() + 10000));
+    const pending = sessionService.validateSession();
+    sessionService.startSession(user, 'new-session', new Date(Date.now() + 10000));
+    const emit = vi.spyOn(eventBus, 'emit');
+    finish(false);
+    await pending;
+    expect(emit).not.toHaveBeenCalledWith('auth:session_expired', expect.anything());
+    expect(sessionService.getSession()?.id).toBe('new-session');
+  });
 });

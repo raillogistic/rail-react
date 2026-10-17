@@ -45,6 +45,7 @@ export interface SiteHeaderProps {
 const QUICK_SWITCH_PASSWORD = application.quickLogin?.password ?? "";
 
 const getQuickSwitchUsers = (): string[] => {
+  if (!import.meta.env.DEV) return [];
   const env = (
     import.meta as ImportMeta & {
       env: Record<string, string | boolean | undefined>;

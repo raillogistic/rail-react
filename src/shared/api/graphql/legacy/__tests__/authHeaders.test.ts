@@ -2,6 +2,10 @@ import { describe, expect, it } from "vitest";
 import { hasExplicitAuthorizationHeader } from "@/shared/api/apollo/authHeaders";
 
 describe("hasExplicitAuthorizationHeader", () => {
+  it("detects arbitrary HTTP header casing", () => {
+    expect(hasExplicitAuthorizationHeader({ AUTHORIZATION: 'Bearer synthetic' })).toBe(true);
+    expect(hasExplicitAuthorizationHeader({ aUtHoRiZaTiOn: 'Bearer synthetic' })).toBe(true);
+  });
   it("detects lowercase authorization header", () => {
     expect(
       hasExplicitAuthorizationHeader({

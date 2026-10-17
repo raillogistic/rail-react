@@ -1,4 +1,5 @@
 import { renderHook, act, waitFor } from '@testing-library/react';
+import { StrictMode } from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { useAuth } from '../useAuth';
 import { AuthProvider } from '../../context/AuthProvider';
@@ -79,6 +80,39 @@ describe('useAuth', () => {
 
     expect(result.current.isAuthenticated).toBe(false);
     expect(result.current.user).toBeNull();
+    expect(result.current.isLoading).toBe(false);
+  });
+
+  it('retains focus validation after StrictMode effect replay', async () => {
+    const validate = vi.fn().mockResolvedValue(true);
+    const strictWrapper = ({ children }: { children: React.ReactNode }) => (
+      <StrictMode><AuthProvider onLogin={onLogin} onValidateSession={validate}
+        config={{ token: { storageType: 'memory' }, session: { validateOnFocus: true } }}>
+        {children}
+      </AuthProvider></StrictMode>
+    );
+    const { result } = renderHook(() => useAuth(), { wrapper: strictWrapper });
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+    await act(async () => { await result.current.login({ username: 'synthetic', password: 'synthetic' }); });
+    const before = validate.mock.calls.length;
+    act(() => { window.dispatchEvent(new Event('focus')); });
+    await waitFor(() => expect(validate.mock.calls.length).toBe(before + 1));
+  });
+
+  it('discards a cookie bootstrap that finishes after logout', async () => {
+    let finish!: (tokens: TokenPair) => void;
+    const refresh = vi.fn(() => new Promise<TokenPair>(resolve => { finish = resolve; }));
+    const validate = vi.fn().mockResolvedValue(true);
+    const bootstrapWrapper = ({ children }: { children: React.ReactNode }) => (
+      <AuthProvider onRefresh={refresh} onValidateSession={validate} config={{ token: { storageType: 'memory' } }}>
+        {children}
+      </AuthProvider>
+    );
+    const { result } = renderHook(() => useAuth(), { wrapper: bootstrapWrapper });
+    await waitFor(() => expect(refresh).toHaveBeenCalledOnce());
+    await act(async () => { await result.current.logout({ silent: true }); });
+    await act(async () => { finish(mockTokens); });
+    expect(result.current.isAuthenticated).toBe(false);
     expect(result.current.isLoading).toBe(false);
   });
 

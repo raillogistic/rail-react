@@ -36,6 +36,7 @@ export class AuthenticationManager {
   public deviceService: DeviceService;
   public mfaService: MFAService;
   private logoutInProgress = false;
+  private authRevision = 0;
 
   private state: AuthState = {
     status: "idle",
@@ -87,6 +88,7 @@ export class AuthenticationManager {
 
   // Initialize and check existing session
   async initialize(): Promise<void> {
+    const revision = ++this.authRevision;
     this.updateState({ status: "loading", isLoading: true });
     // Defensive cleanup for stale tokens from older builds.
     // Keep persisted tokens intact when the configured storage is session/local/cookie.
@@ -95,11 +97,12 @@ export class AuthenticationManager {
       this.clearStorageTokens("local");
     }
 
-    let accessToken = this.tokenService.getAccessToken();
+    const accessToken = this.tokenService.getAccessToken();
 
     if (!accessToken) {
       // No access token in memory: validate server-side session best-effort (cookie auth).
       await this.sessionService.validateSession({ allowIndeterminate: true });
+      if (revision !== this.authRevision) return;
       this.updateState({
         status: "unauthenticated",
         isLoading: false,
@@ -114,6 +117,7 @@ export class AuthenticationManager {
     const isValid = await this.sessionService.validateSession({
       allowIndeterminate: true,
     });
+    if (revision !== this.authRevision) return;
     if (isValid) {
       const payload = this.tokenService.decodeToken(accessToken);
       if (payload) {
@@ -201,11 +205,13 @@ export class AuthenticationManager {
       };
     }
 
+    const revision = ++this.authRevision;
     this.updateState({ status: "loading", isLoading: true });
     this.eventBus.emit("auth:login_started", { username });
 
     try {
       const result = await loginFn(enhancedCredentials);
+      if (revision !== this.authRevision) return { success: false };
 
       if (!result.success && "requiresMFA" in result && result.requiresMFA) {
         this.mfaService.setEphemeralToken(result.ephemeralToken);
@@ -254,6 +260,7 @@ export class AuthenticationManager {
 
       throw new Error("Unexpected login result");
     } catch (error) {
+      if (revision !== this.authRevision) return { success: false };
       // Determine error details
       let message = 'Invalid username or password';
       let code: AuthErrorCode = 'INVALID_CREDENTIALS';
@@ -328,10 +335,12 @@ export class AuthenticationManager {
       };
     }
 
+    const revision = ++this.authRevision;
     this.updateState({ isLoading: true });
 
     try {
       const { user, tokens, sessionId } = await verifyFn(code, ephemeralToken);
+      if (revision !== this.authRevision) return { success: false };
 
       if (!user) {
         throw new Error("MFA verification successful but no user data returned");
@@ -359,6 +368,7 @@ export class AuthenticationManager {
       this.eventBus.emit("auth:login_success", { user, sessionId });
       return { success: true, user };
     } catch (error) {
+      if (revision !== this.authRevision) return { success: false };
       let code: AuthErrorCode = 'MFA_INVALID';
       let message = 'Invalid verification code';
 
@@ -403,18 +413,23 @@ export class AuthenticationManager {
       return;
     }
     this.logoutInProgress = true;
+    this.authRevision += 1;
 
     const userId = this.state.user?.id;
     const reason = options.reason || "user_initiated";
 
     try {
       this.tokenService.clearTokens();
+      this.mfaService.clearEphemeralToken();
       this.clearStorageTokens("session");
       this.clearStorageTokens("local");
 
       this.updateState({
         status: "unauthenticated",
         isAuthenticated: false,
+        isLoading: false,
+        ephemeralToken: undefined,
+        mfaSetupRequired: false,
         user: null,
         error: null,
         sessionExpiresAt: null,
@@ -487,6 +502,7 @@ export class AuthenticationManager {
 
   // Cleanup
   destroy(): void {
+    this.authRevision += 1;
     this.eventBus.destroy();
     this.tokenService.destroy();
     this.sessionService.destroy();
