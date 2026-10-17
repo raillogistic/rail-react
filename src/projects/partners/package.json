@@ -1,0 +1,23 @@
+{
+  "name": "@raillogistic/partners",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Portable Rail Partners frontend: suppliers, contacts, intake, lots and reporting.",
+  "peerDependencies": {
+    "@apollo/client": "^3.8.10",
+    "@tanstack/react-form": "^0.42.1",
+    "lucide-react": "^0.546.0",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "react-router-dom": "^7.9.4",
+    "recharts": "2.15.4",
+    "@raillogistic/shared-apps": "^0.1.0",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.5",
+    "@testing-library/react": "^16.3.2",
+    "@types/node": "^24.8.1"
+  }
+}
